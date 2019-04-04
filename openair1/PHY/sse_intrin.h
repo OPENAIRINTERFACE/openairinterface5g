@@ -26,11 +26,11 @@
  * The host CPU needs to have support for SSE2 at least. SSE3 and SSE4.1 functions are emulated if the CPU lacks support for them.
  * This will slow down the softmodem, but may be valuable if only offline signal processing is required.
  *
- * \author S. Held
- * \email sebastian.held@imst.de
- * \company IMST GmbH
- * \date 2015
- * \version 0.1
+ * \author S. Held, Laurent THOMAS
+ * \email sebastian.held@imst.de, laurent.thomas@open-cells.com	
+ * \company IMST GmbH, Open Cells Project
+ * \date 2019
+ * \version 0.2
 */
 
 #ifndef SSE_INTRIN_H
@@ -40,23 +40,23 @@
 #if defined(__x86_64) || defined(__i386__)
 
 #ifndef __SSE2__
-#  error SSE2 processor intrinsics disabled
+  #  error SSE2 processor intrinsics disabled
 #endif
 
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
 #ifdef __SSE3__
-#  include <pmmintrin.h>
-#  include <tmmintrin.h>
+  #include <pmmintrin.h>
+  #include <tmmintrin.h>
 #endif
 
 #ifdef __SSE4_1__
-#  include <smmintrin.h>
+  #include <smmintrin.h>
 #endif
 
 #ifdef __AVX2__
-#  include <immintrin.h>
+  #include <immintrin.h>
 #endif
 
 // ------------------------------------------------
@@ -108,8 +108,7 @@ typedef union {
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_comge_epi8_SSE2(__m128i a, __m128i b)
-{
+static inline __m128i ssp_comge_epi8_SSE2(__m128i a, __m128i b) {
   __m128i c;
   c = _mm_cmpgt_epi8( a, b );
   a = _mm_cmpeq_epi8( a, b );
@@ -126,13 +125,11 @@ static inline __m128i ssp_comge_epi8_SSE2(__m128i a, __m128i b)
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_shuffle_epi8_SSE2 (__m128i a, __m128i mask)
-{
+static inline __m128i ssp_shuffle_epi8_SSE2 (__m128i a, __m128i mask) {
   ssp_m128 A,B, MASK, maskZero;
   A.i        = a;
   maskZero.i = ssp_comge_epi8_SSE2( mask, _mm_setzero_si128()        );
   MASK.i     = _mm_and_si128      ( mask, _mm_set1_epi8( (char)0x0F) );
-
   B.s8[ 0] = A.s8[ (MASK.s8[ 0]) ];
   B.s8[ 1] = A.s8[ (MASK.s8[ 1]) ];
   B.s8[ 2] = A.s8[ (MASK.s8[ 2]) ];
@@ -149,7 +146,6 @@ static inline __m128i ssp_shuffle_epi8_SSE2 (__m128i a, __m128i mask)
   B.s8[13] = A.s8[ (MASK.s8[13]) ];
   B.s8[14] = A.s8[ (MASK.s8[14]) ];
   B.s8[15] = A.s8[ (MASK.s8[15]) ];
-
   B.i = _mm_and_si128( B.i, maskZero.i );
   return B.i;
 }
@@ -182,8 +178,7 @@ static inline __m128i ssp_shuffle_epi8_SSE2 (__m128i a, __m128i mask)
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_insert_epi8_SSE2( __m128i a, int b, const int ndx )
-{
+static inline __m128i ssp_insert_epi8_SSE2( __m128i a, int b, const int ndx ) {
   ssp_m128 Ahi, Alo;
   b = b & 0xFF;                                           /* Convert to 8-bit integer */
   Ahi.i = _mm_unpackhi_epi8( a, _mm_setzero_si128() );    /* Ahi = a_8[8:15]  Simulate 8bit integers as 16-bit integers */
@@ -191,72 +186,71 @@ static inline __m128i ssp_insert_epi8_SSE2( __m128i a, int b, const int ndx )
 
   /* Insert b as a 16-bit integer to upper or lower half of a */
   switch( ndx & 0xF ) {
-  case 0:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 0 );
-    break;
+    case 0:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 0 );
+      break;
 
-  case 1:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 1 );
-    break;
+    case 1:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 1 );
+      break;
 
-  case 2:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 2 );
-    break;
+    case 2:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 2 );
+      break;
 
-  case 3:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 3 );
-    break;
+    case 3:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 3 );
+      break;
 
-  case 4:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 4 );
-    break;
+    case 4:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 4 );
+      break;
 
-  case 5:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 5 );
-    break;
+    case 5:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 5 );
+      break;
 
-  case 6:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 6 );
-    break;
+    case 6:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 6 );
+      break;
 
-  case 7:
-    Alo.i = _mm_insert_epi16( Alo.i, b, 7 );
-    break;
+    case 7:
+      Alo.i = _mm_insert_epi16( Alo.i, b, 7 );
+      break;
 
-  case 8:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 0 );
-    break;
+    case 8:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 0 );
+      break;
 
-  case 9:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 1 );
-    break;
+    case 9:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 1 );
+      break;
 
-  case 10:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 2 );
-    break;
+    case 10:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 2 );
+      break;
 
-  case 11:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 3 );
-    break;
+    case 11:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 3 );
+      break;
 
-  case 12:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 4 );
-    break;
+    case 12:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 4 );
+      break;
 
-  case 13:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 5 );
-    break;
+    case 13:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 5 );
+      break;
 
-  case 14:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 6 );
-    break;
+    case 14:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 6 );
+      break;
 
-  default:
-    Ahi.i = _mm_insert_epi16( Ahi.i, b, 7 );
+    default:
+      Ahi.i = _mm_insert_epi16( Ahi.i, b, 7 );
   }
 
   return _mm_packus_epi16( Alo.i, Ahi.i ); // Pack the 16-bit integers to 8bit again.
-
   ///* Another implementation, but slower: */
   //ssp_m128 A, B, mask;
   //mask.i = _mm_setzero_si128();
@@ -277,16 +271,13 @@ static inline __m128i ssp_insert_epi8_SSE2( __m128i a, int b, const int ndx )
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_cvtepi8_epi16_SSE2 ( __m128i a)
-{
+static inline __m128i ssp_cvtepi8_epi16_SSE2 ( __m128i a) {
   __m128i b = _mm_setzero_si128 ();
   __m128i c = _mm_unpacklo_epi8(a, b);
   __m128i d = _mm_set1_epi16 (128);
-
   b = _mm_and_si128(d, c);
   d = _mm_set1_epi16(0x1FE);
   b = _mm_mullo_epi16(b, d);
-
   return _mm_add_epi16(c, b);
 }
 
@@ -299,8 +290,7 @@ static inline __m128i ssp_cvtepi8_epi16_SSE2 ( __m128i a)
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_logical_bitwise_select_SSE2( __m128i a, __m128i b, __m128i mask )   // Bitwise (mask ? a : b)
-{
+static inline __m128i ssp_logical_bitwise_select_SSE2( __m128i a, __m128i b, __m128i mask ) { // Bitwise (mask ? a : b)
   a = _mm_and_si128   ( a,    mask );                                 // clear a where mask = 0
   b = _mm_andnot_si128( mask, b    );                                 // clear b where mask = 1
   a = _mm_or_si128    ( a,    b    );                                 // a = a OR b
@@ -316,8 +306,7 @@ static inline __m128i ssp_logical_bitwise_select_SSE2( __m128i a, __m128i b, __m
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_max_epi8_SSE2( __m128i a, __m128i b )
-{
+static inline __m128i ssp_max_epi8_SSE2( __m128i a, __m128i b ) {
   __m128i mask  = _mm_cmpgt_epi8( a, b );                             // FFFFFFFF where a > b
   a = ssp_logical_bitwise_select_SSE2( a, b, mask );
   return a;
@@ -332,15 +321,12 @@ static inline __m128i ssp_max_epi8_SSE2( __m128i a, __m128i b )
  * \date 2006-2008
  * \copyright Apache License 2.0
  */
-static inline __m128i ssp_cvtepi16_epi32_SSE2 ( __m128i a)
-{
+static inline __m128i ssp_cvtepi16_epi32_SSE2 ( __m128i a) {
   __m128i b = _mm_set1_epi32 (-1);         //0xFFFFFFFF
   __m128i c = _mm_unpacklo_epi16(a, b);    //FFFFa0**FFFFa1**....
   __m128i d = _mm_set1_epi32 (0x8000);     //0x8000
-
   b = _mm_andnot_si128(c, d);              // 0x80 for positive, 0x00 for negative
   d = _mm_slli_epi32(b, 1);                // 0x100 for positive, 0x000 for negative
-
   return _mm_add_epi32(c, d);
 }
 #endif // __SSE4_1__
@@ -350,5 +336,46 @@ static inline __m128i ssp_cvtepi16_epi32_SSE2 ( __m128i a)
 
 #endif // x86_64 || i386
 
-#endif // SSE_INTRIN_H
+#if defined(__x86_64__) || defined(__i386__)
+  #define vect128 __m128i
+#elif defined(__arm__)
+  #define vect128 int16x8_t
+#endif
 
+static const short minusConjug128[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+static inline vect128 mulByConjugate128(vect128 *a, vect128 *b, int8_t output_shift) {
+
+#if defined(__x86_64__) || defined(__i386__)
+  vect128 realPart = _mm_madd_epi16(*a,*b);
+  realPart = _mm_srai_epi32(realPart,output_shift);
+  vect128 imagPart = _mm_shufflelo_epi16(*b,_MM_SHUFFLE(2,3,0,1));
+  imagPart = _mm_shufflehi_epi16(imagPart,_MM_SHUFFLE(2,3,0,1));
+  imagPart = _mm_sign_epi16(imagPart,*(vect128 *)minusConjug128);
+  imagPart = _mm_madd_epi16(imagPart,*a);
+  imagPart = _mm_srai_epi32(imagPart,output_shift);
+  vect128 lowPart = _mm_unpacklo_epi32(realPart,imagPart);
+  vect128 highPart = _mm_unpackhi_epi32(realPart,imagPart);
+  return ( _mm_packs_epi32(lowPart,highPart));
+#elif defined(__arm__)
+  AssertFatal(false, "not developped\n");
+#endif
+}
+
+#if defined(__x86_64__) || defined(__i386__)
+#define displaySamples128(vect)  {\
+    __m128i x=vect;                                       \
+    printf("vector: %s = (%hd,%hd) (%hd,%hd) (%hd,%hd) (%hd,%hd)\n", #vect, \
+           _mm_extract_epi16(x,0),                                  \
+           _mm_extract_epi16(x,1),\
+           _mm_extract_epi16(x,2),\
+           _mm_extract_epi16(x,3),\
+           _mm_extract_epi16(x,4),\
+           _mm_extract_epi16(x,5),\
+           _mm_extract_epi16(x,6),\
+           _mm_extract_epi16(x,7));\
+  }
+#elif defined(__arm__)
+  displaySamples128(vect) {}
+//TBD
+#endif
+#endif // SSE_INTRIN_H

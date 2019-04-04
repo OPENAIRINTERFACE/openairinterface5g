@@ -96,3 +96,8 @@ target_link_libraries(pucch_uci_test
                        -Wl,--start-group UTIL SCHED_NR_UE_LIB PHY PHY_COMMON PHY_UE PHY_NR_UE -Wl,--end-group
                       pthread m ${ATLAS_LIBRARIES}
                       )
+add_executable(pucch_uci_generator_test ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_generator_test.c ${SRC_UNIT_TESTS} )
+target_link_libraries(pucch_uci_generator_test 
+                       -Wl,--start-group UTIL SCHED_NR_UE_LIB PHY PHY_COMMON PHY_UE PHY_NR_UE -Wl,--end-group
+                      pthread m ${ATLAS_LIBRARIES}
+                      )

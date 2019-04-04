@@ -103,7 +103,6 @@ void RCconfig_nr_flexran()
             *UL_frequencyShift7p5khz, *UL_SCS_SubcarrierSpacing, *UL_BWP_SubcarrierSpacing,
             *UL_BWP_prefix_type, *UL_timeAlignmentTimerCommon, 
             *ServingCellConfigCommon_n_TimingAdvanceOffset,
-            *ServingCellConfigCommon_ssb_PositionsInBurst_PR,
             *NIA_SubcarrierSpacing, *referenceSubcarrierSpacing, *dl_UL_TransmissionPeriodicity,
             *rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
             *rach_groupBconfigured, *rach_messagePowerOffsetGroupB, 
@@ -118,7 +117,7 @@ void RCconfig_nr_flexran()
             *SearchSpace_searchSpaceType, *ue_Specific__dci_Formats,
             *RateMatchPatternLTE_CRS_subframeAllocation_choice;
 
-  uint64_t  downlink_frequency;
+  uint64_t  downlink_frequency, ServingCellConfigCommon_ssb_PositionsInBurst_PR;
 
   int32_t   nr_band, uplink_frequency_offset, N_RB_DL, nb_antenna_ports,
             MIB_subCarrierSpacingCommon, MIB_ssb_SubcarrierOffset, MIB_dmrs_TypeA_Position,
@@ -484,7 +483,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  UL_timeAlignmentTimerCommon                                   = 0;
   
   char*                  ServingCellConfigCommon_n_TimingAdvanceOffset                 = 0;
-  char*                  ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
+  uint64_t               ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
   int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
   int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
   char*                  NIA_SubcarrierSpacing                                         = 0; 
@@ -1125,19 +1124,23 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, ServingCellConfigCommon_n_TimingAdvanceOffset);
             }        
 
-            if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"shortBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
-            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"mediumBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
-            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"longBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap;
-            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"NOTHING")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_NOTHING;
-            }else { 
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ServingCellConfigCommon_ssb_PositionsInBurst_PR choice !\n",
-                           RC.config_file_name, i, ServingCellConfigCommon_ssb_PositionsInBurst_PR);
-            }            
 
+	    uint64_t t_freq;
+	    if(nr_band == 41 || (nr_band > 76 && nr_band < 80))
+		t_freq = 2400000000;
+	    else
+		t_freq = 3000000000;
+		
+            if (downlink_frequency<t_freq && (ServingCellConfigCommon_ssb_PositionsInBurst_PR > 15))
+		AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unvalid value \"%ld\" for ssb_PositionsInBurst at DL frequency %ld !\n",
+                           RC.config_file_name, i, ServingCellConfigCommon_ssb_PositionsInBurst_PR, downlink_frequency);
+	    else {
+		if(downlink_frequency<6000000000 && (ServingCellConfigCommon_ssb_PositionsInBurst_PR > 255))
+			AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unvalid value \"%ld\" for ssb_PositionsInBurst at DL frequency %ld !\n",
+                           RC.config_file_name, i, ServingCellConfigCommon_ssb_PositionsInBurst_PR, downlink_frequency);
+		else
+			NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon_ssb_PositionsInBurst_PR;
+	    }
 
             switch (ServingCellConfigCommon_ssb_periodicityServingCell) {
               case 5:

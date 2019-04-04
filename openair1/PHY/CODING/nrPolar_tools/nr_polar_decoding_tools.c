@@ -184,14 +184,7 @@ void updateCrcChecksum2(uint8_t **crcChecksum,
 	}
 }
 
-void build_decoder_tree(t_nrPolar_params *polarParams)
-{
-  polarParams->tree.num_nodes=0;
-  polarParams->tree.root = add_nodes(polarParams->n,0,polarParams);
-#ifdef DEBUG_NEW_IMPL
-  printf("root : left %p, right %p\n",polarParams->tree.root->left,polarParams->tree.root->right);
-#endif
-}
+
 
 decoder_node_t *new_decoder_node(int first_leaf_index, int level) {
 
@@ -251,6 +244,15 @@ decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *pol
 #endif
 
   return(new_node);
+}
+
+void build_decoder_tree(t_nrPolar_params *polarParams)
+{
+  polarParams->tree.num_nodes=0;
+  polarParams->tree.root = add_nodes(polarParams->n,0,polarParams);
+#ifdef DEBUG_NEW_IMPL
+  printf("root : left %p, right %p\n",polarParams->tree.root->left,polarParams->tree.root->right);
+#endif
 }
 
 #if defined(__arm__) || defined(__aarch64__)
@@ -512,17 +514,19 @@ void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
   memcpy((void*)&betav[node->Nv/2],betar,(node->Nv/2)*sizeof(int16_t));
 }
 
-void generic_polar_decoder(t_nrPolar_params *polarParams, decoder_node_t *node) {
+void generic_polar_decoder(const t_nrPolar_params *pp,decoder_node_t *node) {
+
 
   // Apply F to left
-  applyFtoleft(polarParams, node);
+  applyFtoleft(pp, node);
   // if left is not a leaf recurse down to the left
   if (node->left->leaf==0)
-	  generic_polar_decoder(polarParams, node->left);
+    generic_polar_decoder(pp, node->left);
 
-  applyGtoright(polarParams, node);
-  if (node->right->leaf==0) generic_polar_decoder(polarParams, node->right);
+  applyGtoright(pp, node);
+  if (node->right->leaf==0) generic_polar_decoder(pp, node->right);
 
-  computeBeta(polarParams, node);
+  computeBeta(pp, node);
 
 } 
+

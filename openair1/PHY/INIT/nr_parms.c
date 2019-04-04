@@ -27,6 +27,59 @@ uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
 
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_frame_index)
+{
+
+  int mu = fp->numerology_index;
+  int symbol = 0;
+  uint8_t n, n_temp;
+  nr_ssb_type_e type = fp->ssb_type;
+  int case_AC[2] = {2,8};
+  int case_BD[4] = {4,8,16,20};
+  int case_E[8] = {8, 12, 16, 20, 32, 36, 40, 44};
+
+  switch(mu) {
+
+	case NR_MU_0: // case A
+	    n = i_ssb >> 1;
+	    symbol = case_AC[i_ssb % 2] + 14*n;
+	break;
+
+	case NR_MU_1: 
+	    if (type == 1){ // case B
+		n = i_ssb >> 2;
+	    	symbol = case_BD[i_ssb % 4] + 28*n;
+	    }
+	    if (type == 2){ // case C
+		n = i_ssb >> 1;
+		symbol = case_AC[i_ssb % 2] + 14*n;
+	    }
+	 break;
+
+	 case NR_MU_3: // case D
+	    n_temp = i_ssb >> 2; 
+	    n = n_temp + (n_temp >> 2);
+	    symbol = case_BD[i_ssb % 4] + 28*n;
+	 break;
+
+	 case NR_MU_4:  // case E
+	    n_temp = i_ssb >> 3; 
+	    n = n_temp + (n_temp >> 2);
+	    symbol = case_E[i_ssb % 8] + 56*n;
+	 break;
+
+
+	 default:
+	      AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+  }
+
+  if (half_frame_index)
+    symbol += (5 * fp->symbols_per_slot * fp->slots_per_subframe);
+
+  return symbol;
+}
+
+
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,
 			 int Ncp,
@@ -46,17 +99,28 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
-  
+
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_0];
+      fp->ssb_type = nr_ssb_type_A;
       break;
 
     case NR_MU_1: //30kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
+
+      // selection of SS block pattern according to TS 38101-1 Table 5.4.3.3-1 for SCS 30kHz
+      if (fp->eutra_band == 5 || fp->eutra_band == 66) 
+	      fp->ssb_type = nr_ssb_type_B;
+      else{  
+      	if (fp->eutra_band == 41 || ( fp->eutra_band > 76 && fp->eutra_band < 80) )
+		fp->ssb_type = nr_ssb_type_C;
+	else
+		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->eutra_band, mu);
+      }
 
       switch(N_RB_DL){
         case 11:
@@ -144,11 +208,13 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
     case NR_MU_3:
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
+      fp->ssb_type = nr_ssb_type_D;
       break;
 
     case NR_MU_4:
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_4];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_4];
+      fp->ssb_type = nr_ssb_type_E;
       break;
 
   default:
@@ -156,6 +222,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   }
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
+
+  fp->nb_antenna_ports_eNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
@@ -165,6 +234,16 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
                                       (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
+
+  // definition of Lmax according to ts 38.213 section 4.1
+  if (fp->dl_CarrierFreq < 6e9){
+	if(fp->frame_type && (fp->ssb_type==2))
+		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+	else
+		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  }  
+  else
+    fp->Lmax = 64;
 
   // Initial bandwidth part configuration -- full carrier bandwidth
   fp->initial_bwp_dl.bwp_id = 0;
@@ -181,7 +260,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *fp)
 {
 
-
+  fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
+  fp->frame_type = !(config->subframe_config.duplex_mode.value);
+  fp->L_ssb = config->sch_config.ssb_scg_position_in_burst.value;
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
 			      config->subframe_config.dl_cyclic_prefix_type.value,
@@ -219,3 +300,6 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->initial_bwp_dl.location=%d\n",fp->initial_bwp_dl.location);
   LOG_I(PHY,"fp->initial_bwp_dl.ofdm_symbol_size=%d\n",fp->initial_bwp_dl.ofdm_symbol_size);
 }
+
+
+

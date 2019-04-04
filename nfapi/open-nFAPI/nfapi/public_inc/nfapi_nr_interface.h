@@ -13,6 +13,9 @@
 
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
+#define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
+#define NFAPI_NR_MAX_NB_CORESETS 12
+#define NFAPI_NR_MAX_NB_SEARCH_SPACES 40
 
 // Extension to the generic structures for single tlv values
 typedef struct {
@@ -28,12 +31,12 @@ typedef struct {
 /*typedef struct {
 	nfapi_tl_t tl;
 	int64_t value;
-} nfapi_int64_tlv_t;
+} nfapi_int64_tlv_t;*/
 
 typedef struct {
 	nfapi_tl_t tl;
 	uint64_t value;
-} nfapi_uint64_tlv_t;*/
+} nfapi_uint64_tlv_t;
 
 // nFAPI enums
 typedef enum {
@@ -175,8 +178,8 @@ typedef struct {
   nfapi_uint16_tlv_t  physical_cell_id;
   nfapi_uint16_tlv_t  half_frame_index;
   nfapi_uint16_tlv_t  ssb_subcarrier_offset;
-  nfapi_uint16_tlv_t  ssb_sib1_position_in_burst;
-  nfapi_uint16_tlv_t  ssb_scg_position_in_burst;
+  nfapi_uint16_tlv_t  ssb_sib1_position_in_burst; // in sib1
+  nfapi_uint64_tlv_t  ssb_scg_position_in_burst;  // in servingcellconfigcommon 
   nfapi_uint16_tlv_t  ssb_periodicity;
   nfapi_uint16_tlv_t  ss_pbch_block_power;
   nfapi_uint16_tlv_t  n_ssb_crb;
@@ -356,13 +359,39 @@ typedef enum {
 
 typedef enum {
   NFAPI_NR_CSET_CONFIG_MIB_SIB1=0,
-  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG
+  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG, // implicit assumption of coreset Id other than 0
+  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0
 } nfapi_nr_coreset_config_type_e;
 
 typedef enum {
   NFAPI_NR_CSET_SAME_AS_REG_BUNDLE=0,
   NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
 } nfapi_nr_coreset_precoder_granularity_type_e;
+
+typedef enum {
+  NFAPI_NR_QCL_TYPE_A=0,
+  NFAPI_NR_QCL_TYPE_B,
+  NFAPI_NR_QCL_TYPE_C,
+  NFAPI_NR_QCL_TYPE_D
+} nfapi_nr_qcl_type_e;
+
+typedef enum {
+  NFAPI_NR_SS_PERIODICITY_SL1=1,
+  NFAPI_NR_SS_PERIODICITY_SL2=2,
+  NFAPI_NR_SS_PERIODICITY_SL4=4,
+  NFAPI_NR_SS_PERIODICITY_SL5=5,
+  NFAPI_NR_SS_PERIODICITY_SL8=8,
+  NFAPI_NR_SS_PERIODICITY_SL10=10,
+  NFAPI_NR_SS_PERIODICITY_SL16=16,
+  NFAPI_NR_SS_PERIODICITY_SL20=20,
+  NFAPI_NR_SS_PERIODICITY_SL40=40,
+  NFAPI_NR_SS_PERIODICITY_SL80=80,
+  NFAPI_NR_SS_PERIODICITY_SL160=160,
+  NFAPI_NR_SS_PERIODICITY_SL320=320,
+  NFAPI_NR_SS_PERIODICITY_SL640=640,
+  NFAPI_NR_SS_PERIODICITY_SL1280=1280,
+  NFAPI_NR_SS_PERIODICITY_SL2560=2560
+} nfapi_nr_search_space_monitoring_periodicity_e;
 
 typedef enum {
   NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A=0,
@@ -496,9 +525,9 @@ typedef struct{
   uint8_t   css_format_2_2;
   uint8_t   css_format_2_3;
   uint8_t   uss_dci_formats;
-  uint8_t   srs_monitoring_periodicity;
-  uint8_t   slot_monitoring_periodicity;
-  uint8_t   slot_monitoring_offset;
+  uint16_t   srs_monitoring_periodicity;
+  uint16_t   slot_monitoring_periodicity;
+  uint16_t   slot_monitoring_offset;
   uint16_t  monitoring_symbols_in_slot;
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
@@ -516,7 +545,7 @@ typedef struct {
   uint8_t aggregation_level;
   uint8_t n_rb;
   uint8_t n_symb;
-  uint8_t rb_offset;
+  int8_t rb_offset;
   uint8_t cr_mapping_type;
   uint8_t reg_bundle_size;
   uint8_t interleaver_size;
@@ -643,5 +672,46 @@ typedef struct {
   nfapi_nr_dl_config_request_body_t dl_config_request_body;
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_config_request_t;
+
+
+typedef enum {nr_pusch_freq_hopping_disabled = 0 , 
+              nr_pusch_freq_hopping_enabled = 1
+              } nr_pusch_freq_hopping_t;
+
+typedef struct{
+    uint8_t aperiodicSRS_ResourceTrigger;
+} nfapi_nr_ul_srs_config_t;
+
+typedef struct {
+    uint8_t bandwidth_part_ind;
+    uint16_t number_rbs;
+    uint16_t start_rb;
+    uint8_t frame_offset;
+    uint16_t number_symbols;
+    uint16_t start_symbol;
+    nr_pusch_freq_hopping_t pusch_freq_hopping;
+    uint8_t mcs;
+    uint8_t Qm;
+    uint8_t ndi;
+    uint8_t rv;
+    uint8_t harq_process_nbr;
+    int8_t accumulated_delta_PUSCH;
+    int8_t absolute_delta_PUSCH;
+    uint8_t n_layers;
+    uint8_t tpmi;
+    uint8_t n_dmrs_cdm_groups;
+    uint8_t dmrs_ports[4];
+    uint8_t n_front_load_symb;
+    nfapi_nr_ul_srs_config_t srs_config;
+    uint8_t csi_reportTriggerSize;
+    uint8_t maxCodeBlockGroupsPerTransportBlock;
+    uint8_t ptrs_dmrs_association_port;
+    uint8_t beta_offset_ind;
+} nfapi_nr_ul_config_ulsch_pdu_rel15_t;
+
+typedef struct {
+  uint16_t rnti;
+  nfapi_nr_ul_config_ulsch_pdu_rel15_t ulsch_pdu_rel15;
+} nfapi_nr_ul_config_ulsch_pdu;
 
 #endif

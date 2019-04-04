@@ -43,10 +43,10 @@
 
 /*!\brief UE layer 2 status */
 typedef enum {
-    CONNECTION_OK = 0,
-    CONNECTION_LOST,
-    PHY_RESYNCH,
-    PHY_HO_PRACH
+    UE_CONNECTION_OK = 0,
+    UE_CONNECTION_LOST,
+    UE_PHY_RESYNCH,
+    UE_PHY_HO_PRACH
 } NR_UE_L2_STATE_t;
 
 typedef struct {

@@ -747,15 +747,21 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   //ssb_PositionsInBurst
   (*servingcellconfigcommon)->ssb_PositionsInBurst->present = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
 
-  if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
+  uint64_t t_freq;
+  if(configuration->nr_band[CC_id] == 41 || (configuration->nr_band[CC_id] > 76 && configuration->nr_band[CC_id] < 80))
+	t_freq = 2400000000;
+  else
+	t_freq = 3000000000;
+
+  if(configuration->downlink_frequency[CC_id]<t_freq){
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = 0x0f;
-  }else if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
+  }else if(configuration->downlink_frequency[CC_id]<6000000000){
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0xff;
-  }else if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap){
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
+  }else {
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
@@ -767,6 +773,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
     (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;
   }
+
 
   //ssb_periodicityServingCell
   *(*servingcellconfigcommon)->ssb_periodicityServingCell  = configuration->ServingCellConfigCommon_ssb_periodicityServingCell[CC_id];

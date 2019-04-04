@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
 				testInput<<=1;
 				}
 			testInput |= ( ((uint32_t) (rand()%2)) &1);
-
 			//Encoding
 			start_meas(&timeEncoder);
 			encoderOutput = encodeSmallBlock((uint16_t*)&testInput, (uint8_t)messageLength);

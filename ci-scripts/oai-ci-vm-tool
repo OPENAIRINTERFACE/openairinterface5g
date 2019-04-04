@@ -39,7 +39,7 @@ function variant_usage {
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant gnb-usrp     OR -v5"
-    echo "    --variant nu-ue-usrp   OR -v6"
+    echo "    --variant nr-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
 }
@@ -252,9 +252,9 @@ case $key in
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=8
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--phy_simulators"
-    VM_MEMORY=4096
+    VM_MEMORY=8192
     RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
     NBARGS=$[$NBARGS+256]
     shift
@@ -331,9 +331,9 @@ case $key in
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=8
+        NB_PATTERN_FILES=9
         BUILD_OPTIONS="--phy_simulators"
-	VM_MEMORY=4096
+	VM_MEMORY=8192
         RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -354,7 +354,7 @@ case $key in
         BUILD_OPTIONS="--gNB -w USRP"
         NBARGS=$[$NBARGS+256]
         ;;
-        nu-ue-usrp)
+        nr-ue-usrp)
         VM_NAME=ci-ue-nr-usrp
         ARCHIVES_LOC=nrue_usrp
         LOG_PATTERN=.Rel15.txt

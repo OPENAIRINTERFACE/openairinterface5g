@@ -361,7 +361,7 @@ typedef struct NRRrcConfigurationReq_s {
   lte_prefix_type_t       UL_BWP_prefix_type[MAX_NUM_CCs];
   long                    UL_timeAlignmentTimerCommon[MAX_NUM_CCs];
   long                    ServingCellConfigCommon_n_TimingAdvanceOffset[MAX_NUM_CCs];
-  long                    ServingCellConfigCommon_ssb_PositionsInBurst_PR[MAX_NUM_CCs];
+  uint64_t                ServingCellConfigCommon_ssb_PositionsInBurst_PR[MAX_NUM_CCs];
   long                    ServingCellConfigCommon_ssb_periodicityServingCell[MAX_NUM_CCs]; //ServingCellConfigCommon
   long                    ServingCellConfigCommon_dmrs_TypeA_Position[MAX_NUM_CCs];        //ServingCellConfigCommon
   long                    NIA_SubcarrierSpacing[MAX_NUM_CCs];      //ServingCellConfigCommon Used only for non-initial access

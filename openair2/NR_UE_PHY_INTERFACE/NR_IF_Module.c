@@ -74,7 +74,7 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
   return nr_ue_process_dlsch( module_id,
 			      cc_id,
 			      gNB_index,
-			      &dci_ind,
+			      dci_ind,
 			      pduP,
 			      pdu_len);
 
@@ -102,13 +102,13 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 			0, 0); //  TODO check tx/rx frame/slot is need for NR version
 
   switch(ret){
-  case CONNECTION_OK:
+  case UE_CONNECTION_OK:
     break;
-  case CONNECTION_LOST:
+  case UE_CONNECTION_LOST:
     break;
-  case PHY_RESYNCH:
+  case UE_PHY_RESYNCH:
     break;
-  case PHY_HO_PRACH:
+  case UE_PHY_HO_PRACH:
     break;
   default:
     break;
@@ -268,11 +268,11 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   //  Type0 PDCCH search space
   dl_config->number_pdus =  1;
   dl_config->dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	//	to be set
   
   uint64_t mask = 0x0;
-  uint16_t num_rbs=48;
-  uint16_t rb_offset=47;
+  uint16_t num_rbs=24;
+  uint16_t rb_offset=0;
   uint16_t cell_id=0;
   uint16_t num_symbols=2;
   for(int i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
@@ -283,16 +283,16 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_INTERLEAVED;
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 0;   //  L 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 0;  //  R 38.211 7.3.2.2
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
-  uint32_t search_space_duration=1;  //  element of search space
+  uint32_t search_space_duration=0;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;
@@ -308,4 +308,5 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;
 
   
+  return 0;
 }

@@ -144,8 +144,9 @@ int main(int argc, char **argv) {
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint8_t N_RB_DL = 106, mu = 1;
-	unsigned char frame_type = 0, pbch_phase = 0;
+	uint16_t N_RB_DL = 106, mu = 1;
+	unsigned char frame_type = 0;
+	unsigned char pbch_phase = 0;
 	int frame = 0, subframe = 0;
 	int frame_length_complex_samples;
 	//int frame_length_complex_samples_no_prefix;
@@ -159,7 +160,7 @@ int main(int argc, char **argv) {
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
 	float target_error_rate = 0.01;
-
+        uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
@@ -173,7 +174,7 @@ int main(int argc, char **argv) {
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:N:F:R:P:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
 		switch (c) {
 		case 'f':
 			write_output_file = 1;
@@ -284,6 +285,10 @@ int main(int argc, char **argv) {
 
 			break;
 
+	        case 'M':
+      			SSB_positions = atoi(optarg);
+			break;		    
+
 		case 'N':
 			Nid_cell = atoi(optarg);
 			break;
@@ -340,8 +345,9 @@ int main(int argc, char **argv) {
 			printf("-x Transmission mode (1,2,6 for the moment)\n");
 			printf("-y Number of TX antennas used in eNB\n");
 			printf("-z Number of RX antennas used in UE\n");
-			printf("-i Relative strength of first interfering eNB (in dB) - cell_id mod 3 = 1\n");
-			printf("-j Relative strength of second interfering eNB (in dB) - cell_id mod 3 = 2\n");
+			printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+			printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+  		        printf("-M Multiple SSB positions in burst\n");
 			printf("-N Nid_cell\n");
 			printf("-R N_RB_DL\n");
 			printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -361,9 +367,10 @@ int main(int argc, char **argv) {
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
 
-	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 61.44e6, //N_RB2sampling_rate(N_RB_DL),
-			40e6, //N_RB2channel_bandwidth(N_RB_DL),
-			0, 0, 0);
+	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
+				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
+				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
+				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
 		msg("Problem generating channel model. Exiting.\n");
@@ -379,8 +386,9 @@ int main(int argc, char **argv) {
 	frame_parms->nb_antennas_tx = n_tx;
 	frame_parms->nb_antennas_rx = n_rx;
 	frame_parms->N_RB_DL = N_RB_DL;
+	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
-	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
+	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell,SSB_positions);
 	phy_init_nr_gNB(gNB, 0, 0);
 	//init_eNB_afterRU();
 	frame_length_complex_samples = frame_parms->samples_per_subframe;
@@ -401,7 +409,7 @@ int main(int argc, char **argv) {
 		r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
 		bzero(r_im[i], frame_length_complex_samples * sizeof(double));
 		txdata[i] = malloc(frame_length_complex_samples * sizeof(int));
-		bzero(r_re[i], frame_length_complex_samples * sizeof(int));
+		bzero(r_re[i], frame_length_complex_samples * sizeof(int)); // [hna] r_re should be txdata
 	}
 
 	if (pbch_file_fd != NULL) {
@@ -477,7 +485,7 @@ int main(int argc, char **argv) {
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384);
+	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;
@@ -485,7 +493,10 @@ int main(int argc, char **argv) {
 	unsigned char *estimated_output_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned char *test_input_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned int errors_bit = 0;
-	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[UE->current_thread_id[subframe]][0][0];
+	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
 	harq_process->Nl = Nl;
@@ -595,8 +606,10 @@ int main(int argc, char **argv) {
 				(float) n_errors / (float) n_trials,
 				(float) n_false_positive / (float) n_trials);
 
-		if ((float) n_errors / (float) n_trials < target_error_rate)
-			break;
+		if ((float) n_errors / (float) n_trials < target_error_rate) {
+		  printf("PDSCH test OK\n");
+		  break;
+		}
 	}
 
 	/*LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
@@ -636,7 +649,7 @@ int main(int argc, char **argv) {
 		printf("gNB %d\n", i);
 		free_gNB_dlsch(gNB->dlsch[0][i]);
 		printf("UE %d\n", i);
-		free_nr_ue_dlsch(UE->dlsch[UE->current_thread_id[subframe]][0][i]);
+		free_nr_ue_dlsch(UE->dlsch[0][0][i]);
 	}
 
 	for (i = 0; i < 2; i++) {

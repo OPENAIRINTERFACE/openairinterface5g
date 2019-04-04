@@ -48,8 +48,8 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 		int16_t Rhat[NR_SMALL_BLOCK_CODED_BITS] = {0}, Rhatabs[NR_SMALL_BLOCK_CODED_BITS] = {0};
 		uint16_t maxVal;
 		uint8_t maxInd = 0;
-
-		for (int j = 0; j < NR_SMALL_BLOCK_CODED_BITS; ++j)
+                int jmax = (1<<(len-1));
+		for (int j = 0; j < jmax; ++j)
 			for (int k = 0; k < NR_SMALL_BLOCK_CODED_BITS; ++k)
 				Rhat[j] += in[k] * hadamard32InterleavedTransposed[j][k];
 
@@ -67,7 +67,7 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 		}
 #endif
 		maxVal = Rhatabs[0];
-		for (int k = 1; k < NR_SMALL_BLOCK_CODED_BITS; ++k){
+		for (int k = 1; k < jmax; ++k){
 			if (Rhatabs[k] > maxVal){
 				maxVal = Rhatabs[k];
 				maxInd = k;
@@ -77,7 +77,7 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 		out = properOrderedBasis[maxInd] | ( (Rhat[maxInd] > 0) ? (uint16_t)0 : (uint16_t)1 );
 
 #ifdef DEBUG_DECODESMALLBLOCK
-		for (int k = 0; k < NR_SMALL_BLOCK_CODED_BITS; ++k)
+		for (int k = 0; k < jmax; ++k)
 			printf("[decodeSmallBlock]Rhat[%d]=%d %d %d %d\n",k, Rhat[k], maxVal, maxInd, ((uint32_t)out>>k)&1);
 		printf("[decodeSmallBlock]0x%x 0x%x\n", out, properOrderedBasis[maxInd]);
 #endif

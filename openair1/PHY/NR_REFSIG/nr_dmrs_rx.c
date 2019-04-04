@@ -32,6 +32,7 @@
 
 //#define NR_PBCH_DMRS_LENGTH_DWORD 5
 //#define NR_PBCH_DMRS_LENGTH 144
+//#define DEBUG_PDCCH
 
 #include "refsig_defs_ue.h"
 #include "PHY/defs_nr_UE.h"

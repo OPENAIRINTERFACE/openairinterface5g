@@ -105,6 +105,15 @@ int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
 
+void config_common(int Mod_idP, 
+                   int CC_idP,
+		   int Nid_cell,
+                   int nr_bandP,
+		   uint64_t ssb_pattern,
+                   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP
+		   );
+
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
@@ -132,6 +141,7 @@ int main(int argc, char **argv)
   //int n_errors2=0,n_alamouti=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
+  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
   //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
@@ -149,12 +159,15 @@ int main(int argc, char **argv)
   //int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
+  uint64_t ssb_pattern = 0x01;
+
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
   int frame=0,slot=1;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
+  int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
   gNB_L1_rxtx_proc_t gNB_proc;
@@ -179,7 +192,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -306,6 +319,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'N':
       Nid_cell = atoi(optarg);
       break;
@@ -356,8 +373,9 @@ int main(int argc, char **argv)
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Relative strength of first interfering eNB (in dB) - cell_id mod 3 = 1\n");
-      printf("-j Relative strength of second interfering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -393,11 +411,11 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
   phy_init_nr_gNB(gNB,0,0);
-
+  mac_top_init_gNB();
 
 
   double fs,bw;
@@ -435,7 +453,8 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  slot_length_complex_samples_no_prefix = frame_parms->samples_per_slot_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -478,6 +497,7 @@ int main(int argc, char **argv)
   else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
                       
   UE->perfect_ce = 0;
+  for (i=0;i<10;i++) UE->current_thread_id[i] = 0;
 
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
@@ -494,11 +514,13 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
-  config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
+  config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
+  
+  UE->pdcch_vars[0][0]->crnti = 0x1234;
 
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
@@ -515,7 +537,7 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_css_dlsch_phytest(0,frame,slot);
+    nr_schedule_uss_dlsch_phytest(0,frame,slot);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
@@ -532,22 +554,24 @@ int main(int argc, char **argv)
     
     //nr_common_signal_procedures (gNB,frame,subframe);
 
-	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
-	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+    LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+    if (gNB->frame_parms.nb_antennas_tx>1)
+      LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+
+    int tx_offset = slot*frame_parms->samples_per_slot;
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
       if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
 	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		     txdata[aa],
+		     &txdata[aa][tx_offset],
 		     frame_parms->ofdm_symbol_size,
 		     12,
 		     frame_parms->nb_prefix_samples,
 		     CYCLIC_PREFIX);
       } else {
 	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			     txdata[aa],
+			     &txdata[aa][tx_offset],
 			     14,
 			     frame_parms);
       }
@@ -560,7 +584,7 @@ int main(int argc, char **argv)
 	      frame_length_complex_samples,
 	      input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
-      exit(-1);
+      //exit(-1);
     }
   }
 
@@ -596,7 +620,7 @@ int main(int argc, char **argv)
   //  Type0 PDCCH search space
   dl_config.number_pdus =  1;
   dl_config.dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 3;	//	to be set
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	//	to be set
   
   uint64_t mask = 0x0;
   uint16_t num_rbs=24;
@@ -611,9 +635,9 @@ int main(int argc, char **argv)
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_INTERLEAVED;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 0;   //  L 38.211 7.3.2.2
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 0;  //  R 38.211 7.3.2.2
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
@@ -661,7 +685,7 @@ int main(int argc, char **argv)
 
       if (n_trials==1) {
 	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
+	if (UE->frame_parms.nb_antennas_rx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
       if (UE->is_synchronized == 0) {
@@ -687,7 +711,12 @@ int main(int argc, char **argv)
 			       do_pdcch_flag,
 			       normal_txrx);
 
-		
+	if (n_trials==1) {
+	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
+	  if (UE->frame_parms.nb_antennas_rx>1)
+	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
+	}
+	
 	if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }
     } //noise trials

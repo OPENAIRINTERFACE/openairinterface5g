@@ -54,7 +54,7 @@ int32_t nrLDPC_decoder(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* 
     t_nrLDPC_lut lut;
     t_nrLDPC_lut* p_lut = &lut;
 
-    printf("p_procBuf->cnProcBuf = %p\n", p_procBuf->cnProcBuf);
+    //printf("p_procBuf->cnProcBuf = %p\n", p_procBuf->cnProcBuf);
 
     // Initialize decoder core(s) with correct LUTs
     numLLR = nrLDPC_init(p_decParams, p_lut);
