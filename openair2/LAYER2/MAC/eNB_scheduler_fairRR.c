@@ -585,6 +585,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   //  uint16_t r1=0;
   uint8_t CC_id;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  int N_RB_DL;
   UE_sched_ctrl_t *ue_sched_ctl;
   //  int rrc_status           = RRC_IDLE;
   COMMON_channels_t *cc;
@@ -640,7 +641,18 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
     average_rbs_per_user[CC_id] = 0;
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     // Get total available RBS count and total UE count
-    temp_total_rbs_count = RC.mac[Mod_id]->eNB_stats[CC_id].available_prbs;
+    N_RB_DL = to_prb(cc->mib->message.dl_Bandwidth);
+    temp_total_rbs_count = 0;
+    for(uint8_t rbg_i = 0;rbg_i < N_RBG[CC_id];rbg_i++ ){
+      if(rballoc_sub[CC_id][rbg_i] == 0){
+        if((rbg_i == N_RBG[CC_id] -1) &&
+           ((N_RB_DL == 25) || (N_RB_DL == 50))){
+          temp_total_rbs_count += (min_rb_unit[CC_id] -1);
+        }else{
+          temp_total_rbs_count += min_rb_unit[CC_id];
+        }
+      }
+    }
     temp_total_ue_count = dlsch_ue_select[CC_id].ue_num;
 
     for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
