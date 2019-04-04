@@ -1753,7 +1753,62 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
+	def IperfNoS1(self):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		server_on_enb = re.search('-R', str(self.iperf_args))
+		if server_on_enb is not None:
+			logging.debug('iperf server on eNB')
+			logging.debug('iperf client on UE')
+			iServerIPAddr = self.eNBIPAddress
+			iServerUser = self.eNBUserName
+			iServerPasswd = self.eNBPassword
+			iClientIPAddr = self.UEIPAddress
+			iClientUser = self.UEUserName
+			iClientPasswd = self.UEPassword
+		else:
+			logging.debug('iperf server on UE')
+			logging.debug('iperf client on eNB')
+			iServerIPAddr = self.UEIPAddress
+			iServerUser = self.UEUserName
+			iServerPasswd = self.UEPassword
+			iClientIPAddr = self.eNBIPAddress
+			iClientUser = self.eNBUserName
+			iClientPasswd = self.eNBPassword
+		logging.debug(self.iperf_args)
+		# Starting the iperf server
+		logging.debug('iServer params: ' + iServerIPAddr + ' ' + iServerUser + ' ' + iServerPasswd)
+		self.open(iServerIPAddr, iServerUser, iServerPasswd)
+		self.command('echo $USER; nohup iperf -u -s -i 1 > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
+		time.sleep(0.5)
+		self.close()
+
+		# Starting the iperf client
+		modified_options = self.Iperf_ComputeModifiedBW(0, 1)
+		modified_options = modified_options.replace('-R','')
+		iperf_time = self.Iperf_ComputeTime()
+		logging.debug('iClient params: ' + iClientIPAddr + ' ' + iClientUser + ' ' + iClientPasswd)
+		self.open(iClientIPAddr, iClientUser, iClientPasswd)
+		iperf_status = self.command('stdbuf -o0 iperf ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a /tmp/tmp_iperf_' + self.testCase_id + '.log', '\$', int(iperf_time)*5.0)
+		if iperf_status < 0:
+			message = 'iperf on OAI UE crashed due to TIMEOUT !'
+			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+		#else:
+		#	clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+		self.close()
+
+		# Stopping the iperf server
+		self.open(iServerIPAddr, iServerUser, iServerPasswd)
+		self.command('killall --signal SIGKILL iperf', '\$', 5)
+		time.sleep(0.5)
+		self.close()
+
 	def Iperf(self):
+		result = re.search('noS1', str(self.Initialize_eNB_args))
+		if result is not None:
+			self.IperfNoS1()
+			return
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -2456,8 +2511,11 @@ class SSHConnection():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
+				# In case of sniffing on commercial eNBs we have random results
+				# Not an error then
+				if (logStatus != UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
+					self.CreateHtmlTabFooter(False)
+					sys.exit(1)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Completed</b>\n' + self.htmlUEFailureMsg
@@ -3176,7 +3234,7 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	SSH.TerminateUE()
+	SSH.TerminateOAIUE()
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
 		Usage()
