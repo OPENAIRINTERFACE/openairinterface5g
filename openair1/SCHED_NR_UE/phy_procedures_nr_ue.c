@@ -2835,7 +2835,6 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
   if (ret==0) {
 
-    ue->trashed_frames = 0;
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 
 
@@ -4314,7 +4313,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 9; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
-  uint8_t ssb_periodicity = ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
+  uint8_t ssb_periodicity = 10; //ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
   uint8_t ssb_frame_periodicity;  
   uint8_t dci_cnt = 0;
   
@@ -4465,12 +4464,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   ssb_frame_periodicity = ssb_periodicity/10 ;  // 10ms is the frame length
 
-  frame_rx += ue->trashed_frames;
   int ssb_slot = (pbch_config.ssb_index)/2;
 
-
-  // looking for pbch only in frames according to ssb periodicity
-  if ((ue->decode_MIB == 1) && (nr_tti_rx == ssb_slot) )//&& !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
+  // looking for pbch only in frames according to ssb periodicity and in slot where decoded ssb is found
+  if ((ue->decode_MIB == 1) && (nr_tti_rx == ssb_slot) && !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 

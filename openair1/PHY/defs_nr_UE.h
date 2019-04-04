@@ -913,8 +913,6 @@ typedef struct {
   NR_DL_FRAME_PARMS  frame_parms_before_ho;
   NR_UE_COMMON    common_vars;
 
-  int16_t trashed_frames; 
-
   nr_ue_if_module_t *if_inst;
 
   nr_downlink_indication_t dl_indication;
