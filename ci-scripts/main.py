@@ -305,7 +305,6 @@ class SSHConnection():
 			sys.exit('SCP failed')
 
 	def BuildeNB(self):
-		return
 		if self.eNBIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -2014,7 +2013,7 @@ class SSHConnection():
 	def CheckHSSProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never hss', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
 			if re.match('OAI', self.EPCType, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			else:
@@ -2031,7 +2030,7 @@ class SSHConnection():
 	def CheckMMEProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never mme', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
 			if re.match('OAI', self.EPCType, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			else:
@@ -2049,10 +2048,10 @@ class SSHConnection():
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			if re.match('OAI', self.EPCType, re.IGNORECASE):
-				self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never spgw', '\$', 5)
+				self.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			else:
-				self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never xGw', '\$', 5)
+				self.command('stdbuf -o0 ps -aux | grep --color=never xGw | grep -v grep', '\$', 5)
 				result = re.search('xGw', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
@@ -2454,7 +2453,7 @@ class SSHConnection():
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_hss oai_hss || true', '\$', 5)
 			time.sleep(2)
-			self.command('stdbuf -o0  ps -aux | grep -v grep | grep hss', '\$', 5)
+			self.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_hss oai_hss || true', '\$', 5)
@@ -2473,7 +2472,7 @@ class SSHConnection():
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_mme mme || true', '\$', 5)
 			time.sleep(2)
-			self.command('stdbuf -o0 ps -aux | grep -v grep | grep mme', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep mme | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_mme mme || true', '\$', 5)
@@ -2488,7 +2487,7 @@ class SSHConnection():
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_spgw spgw || true', '\$', 5)
 			time.sleep(2)
-			self.command('stdbuf -o0 ps -aux | grep -v grep | grep spgw', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_spgw spgw || true', '\$', 5)
