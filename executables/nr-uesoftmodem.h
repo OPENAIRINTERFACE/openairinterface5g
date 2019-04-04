@@ -28,6 +28,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include <threadPool/thread-pool.h>
+#include <openair2/LAYER2/NR_MAC_gNB/mac_proto.h>
 
 
 #if defined(ENABLE_ITTI)

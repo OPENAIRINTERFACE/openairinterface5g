@@ -600,7 +600,8 @@ int main(int argc, char **argv)
       }
 
       if (UE->is_synchronized == 0) {
-	ret = nr_initial_sync(UE, normal_txrx);
+	UE_nr_rxtx_proc_t proc={0};
+	ret = nr_initial_sync(&proc, UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
@@ -621,9 +622,10 @@ int main(int argc, char **argv)
 
           nr_pbch_channel_estimation(UE,0,0,i,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
         }
+	UE_nr_rxtx_proc_t proc={0};
 
         ret = nr_rx_pbch(UE,
-	                 0,
+	                 &proc,
 		         UE->pbch_vars[0],
 		         frame_parms,
 		         0,

@@ -42,9 +42,10 @@
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(UE_nr_rxtx_proc_t *proc, module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
 
-  return nr_ue_decode_mib( module_id,
+  return nr_ue_decode_mib( proc,
+		           module_id,
 			   cc_id,
 			   gNB_index,
 			   additional_bits,
@@ -197,7 +198,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
-	ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+	ret_mask |= (handle_bcch_bch( dl_info->proc,
+				     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,

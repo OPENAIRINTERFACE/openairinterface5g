@@ -102,7 +102,7 @@ void free_list(NR_UE_SSB *node) {
 }
 
 
-int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
+int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
@@ -160,7 +160,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #endif
 
     ret = nr_rx_pbch(ue,
-	             0,
+	             proc,
 		     ue->pbch_vars[0],
 		     frame_parms,
 		     0,
@@ -201,7 +201,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
-int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
@@ -243,7 +243,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
    // initial sync performed on two successive frames, if pbch passes on first frame, no need to process second frame 
    for(int is=0; is<2;is++) {
-    
+
     /* process pss search on received buffer */
     sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
 
@@ -276,7 +276,6 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 	}
     }
 
-
     /* check that SSS/PBCH block is continuous inside the received buffer */
     if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
@@ -307,7 +306,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
       //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
 
       nr_gold_pbch(ue);
-      ret = nr_pbch_detection(ue,1,mode);  // start pbch detection at first symbol after pss
+      ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
 
       if (ret == 0) {
         // sync at symbol ue->symbol_offset

@@ -402,7 +402,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
      assert(0);
     }
 
-    size = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int64_t)*frame_parms_ue->samples_per_subframe;
+    size = sizeof(int64_t)*(frame_parms_ue->samples_per_frame + (2*ofdm_symbol_size));
     q = (int64_t*)malloc16(size);
     if (q != NULL) {
       pss_corr_ue[i] = q;
