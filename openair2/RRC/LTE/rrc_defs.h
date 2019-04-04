@@ -200,7 +200,7 @@ void *send_UE_status_notification(void *);
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
 
-#include "LTE_DRX-Config.h"   // Add DRX SSR 2018-11
+#include "LTE_DRX-Config.h"
 
 /* correct Rel(8|10)/Rel14 differences
  * the code is in favor of Rel14, those defines do the translation

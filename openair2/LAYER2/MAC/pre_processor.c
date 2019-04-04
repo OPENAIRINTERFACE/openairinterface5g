@@ -1653,7 +1653,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_sched_ctrl *ue_sched_ctl;
   int N_RB_UL = 0;
   uint16_t available_rbs, first_rb_offset;
-  rnti_t rntiTable[MAX_MOBILES_PER_ENB];        // Rnti array => Add SSR 12-2018
+  rnti_t rntiTable[MAX_MOBILES_PER_ENB];
 
   // sort ues
   LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");

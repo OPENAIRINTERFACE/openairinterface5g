@@ -71,7 +71,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 	       );
 
 /**
-\brief Generate configuration for DRX_Config (Add DRX SSR 2018-11)
+\brief Generate configuration for DRX_Config
 @param Mod_id Instance of eNB
 @param CC_id Id of component to configure
 @param configuration Pointer Configuration Request structure

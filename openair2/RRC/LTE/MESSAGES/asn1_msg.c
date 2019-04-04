@@ -317,10 +317,9 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
   return((enc_rval.encoded+7)/8);
 }
 
-// Begin add DRX SSR 2018-11
+
 LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *configuration, LTE_UE_EUTRA_Capability_t *UEcap)
 {
-  // Begin add DRX SSR 2018-12
   LTE_DRX_Config_t *drxConfig = NULL;
   BIT_STRING_t *featureGroupIndicators = NULL;
   bool ueSupportCdrxShortFlag = false;
@@ -335,7 +334,6 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *c
       } else LOG_W(RRC,"[do_DrxConfig] Not enough featureGroupIndicators bits\n");
     } else LOG_W(RRC,"[do_DrxConfig] No featureGroupIndicators pointer\n");
   } else LOG_W(RRC,"[do_DrxConfig] No UEcap pointer\n");
-  // End add DRX SSR 2018-12
 
   drxConfig = (LTE_DRX_Config_t *) malloc(sizeof(LTE_DRX_Config_t));
   if (drxConfig == NULL) return NULL;
@@ -419,8 +417,6 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *c
   }
   return drxConfig;
 }
-// End add DRX SSR 2018-11
-
 
 uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 		int Mod_id,int CC_id
