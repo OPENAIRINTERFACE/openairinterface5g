@@ -25,7 +25,7 @@
 	<htmlTabName>Test-05MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
- 030101 000001 090101 000002 040501 040502 000001 040601 000001 040641 000001 090109 030201
+ 030101 000001 090101 000002 040501 040502 000001 040601 040641 000001 040602 040642 000001 090109 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -90,6 +90,13 @@
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 
+        <testCase id="040602">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -c 10.0.1.2</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        </testCase>
+
         <testCase id="040606">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/TCP)(30 sec)(single-ue profile)</desc>
@@ -116,10 +123,10 @@
 
 	<testCase id="040642">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 9M -t 30 -i 1 -R</iperf_args>
+		<desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 9M -t 30 -i 1 -R -c 10.0.1.1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
-		<iperf_profile>single-ue</iperf_profile>
+		<iperf_profile>balanced</iperf_profile>
 	</testCase>
 
         <testCase id="040643">
