@@ -684,54 +684,69 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,u
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
+//-----------------------------------------------------------------------------
+/*
+ * Main handler of PUCCH received
+ */
+void
+uci_procedures(PHY_VARS_eNB *eNB,
+               L1_rxtx_proc_t *proc)
+//-----------------------------------------------------------------------------
 {
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
-  int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric=0;
+  uint8_t SR_payload = 0;
+  uint8_t pucch_b0b1[4][2] = {{0,0},{0,0},{0,0},{0,0}};
+  uint8_t harq_ack[4] = {0,0,0,0};
+  uint16_t tdd_multiplexing_mask = 0;
+  int32_t metric[4] = {0,0,0,0};
+  int32_t metric_SR = 0;
+  int32_t max_metric = 0;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
-  int i;
-  LTE_eNB_UCI *uci;
-  uint16_t tdd_multiplexing_mask=0;
-  
-  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
-    
-    
-    uci = &eNB->uci_vars[i];
+  LTE_eNB_UCI *uci = NULL;
+  LTE_DL_FRAME_PARMS *fp = &(eNB->frame_parms);
+
+  for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    uci = &(eNB->uci_vars[i]);
+
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
+      LOG_D(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",
+            frame,
+            subframe,
+            uci->type,
+            i);
       
-      LOG_D (PHY, "Frame %d, subframe %d: Running uci procedures (type %d) for %d \n", frame, subframe, uci->type, i);
       uci->active = 0;
-      
+
       // Null out PUCCH PRBs for noise measurement
       switch (fp->N_RB_UL) {
-      case 6:
-	eNB->rb_mask_ul[0] |= (0x1 | (1 << 5)); //position 5
-	break;
-      case 15:
-	eNB->rb_mask_ul[0] |= (0x1 | (1 << 14));        // position 14
-	break;
-      case 25:
-	eNB->rb_mask_ul[0] |= (0x1 | (1 << 24));        // position 24
-	break;
-      case 50:
-	eNB->rb_mask_ul[0] |= 0x1;
-	eNB->rb_mask_ul[1] |= (1 << 17);        // position 49 (49-32)
-	break;
-      case 75:
-	eNB->rb_mask_ul[0] |= 0x1;
-	eNB->rb_mask_ul[2] |= (1 << 10);        // position 74 (74-64)
-	break;
-      case 100:
-	eNB->rb_mask_ul[0] |= 0x1;
-	eNB->rb_mask_ul[3] |= (1 << 3); // position 99 (99-96)
-	break;
-      default:
-	LOG_E (PHY, "Unknown number for N_RB_UL %d\n", fp->N_RB_UL);
-	break;
+        case 6:
+          eNB->rb_mask_ul[0] |= (0x1 | (1 << 5)); // position 5
+          break;
+        case 15:
+          eNB->rb_mask_ul[0] |= (0x1 | (1 << 14)); // position 14
+          break;
+        case 25:
+          eNB->rb_mask_ul[0] |= (0x1 | (1 << 24)); // position 24
+          break;
+        case 50:
+          eNB->rb_mask_ul[0] |= 0x1;
+          eNB->rb_mask_ul[1] |= (1 << 17); // position 49 (49-32)
+          break;
+        case 75:
+          eNB->rb_mask_ul[0] |= 0x1;
+          eNB->rb_mask_ul[2] |= (1 << 10); // position 74 (74-64)
+          break;
+        case 100:
+          eNB->rb_mask_ul[0] |= 0x1;
+          eNB->rb_mask_ul[3] |= (1 << 3); // position 99 (99-96)
+          break;
+        default:
+          LOG_E(PHY,"Unknown number for N_RB_UL %d\n", fp->N_RB_UL);
+          break;
       }
+
       SR_payload = 0;
+
       switch (uci->type) {
       case SR:
       case HARQ_SR:
@@ -1236,8 +1251,8 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 	  }
 	}
       }
-    }
-  }
+    } // end if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
+  } // end loop for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
 }
 
 void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
@@ -1602,87 +1617,152 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-/* release the harq if its round is >= 'after_rounds' */
-static void do_release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subframe,uint16_t mask, int after_rounds) {
-  
-  LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
-  LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
+//-----------------------------------------------------------------------------
+/*
+ * Release the harq if its round is >= 'after_rounds'
+ */
+static void do_release_harq(PHY_VARS_eNB *eNB,
+                            int UE_id,
+                            int tb,
+                            uint16_t frame,
+                            uint8_t subframe,
+                            uint16_t mask,
+                            int after_rounds)
+//-----------------------------------------------------------------------------
+{
+  LTE_eNB_DLSCH_t *dlsch0 = NULL;
+  LTE_eNB_DLSCH_t *dlsch1 = NULL;
+  LTE_DL_eNB_HARQ_t *dlsch0_harq = NULL;
+  LTE_DL_eNB_HARQ_t *dlsch1_harq = NULL;
+  int UE_id_mac = -1;
+  UE_sched_ctrl *UE_scheduling_control = NULL;
   int harq_pid;
-  int subframe_tx,frame_tx;
-  int M,m;
-  AssertFatal (UE_id != -1, "no existing dlsch context\n");
-  AssertFatal (UE_id < NUMBER_OF_UE_MAX, "returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
+  int subframe_tx;
+  int frame_tx;
+
+  AssertFatal(UE_id != -1, "No existing dlsch context\n");
+  AssertFatal(UE_id < NUMBER_OF_UE_MAX, "Returned UE_id %d >= %d (NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
+
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
-  
-  if (eNB->frame_parms.frame_type == FDD) {  
-    subframe_tx = (subframe+6)%10;
-    frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,subframe,subframe_tx);
-    harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx]; // or just use 0 for fdd?
+
+  UE_id_mac = find_UE_id(eNB->Mod_id, dlsch0->rnti);
+  UE_scheduling_control = &(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+
+  if (eNB->frame_parms.frame_type == FDD) {
+    subframe_tx = (subframe + 6) % 10;
+    frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,
+                                        frame,
+                                        subframe,
+                                        subframe_tx);
+
+    harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
+
+    AssertFatal((harq_pid >= 0) && (harq_pid < 8),"harq_pid %d not in 0...7\n", harq_pid);
+
+    dlsch0_harq = dlsch0->harq_processes[harq_pid];
+    dlsch1_harq = dlsch1->harq_processes[harq_pid];
     
-    AssertFatal((harq_pid>=0) && (harq_pid<10),"harq_pid %d not in 0...9\n",harq_pid);
-    dlsch0_harq     = dlsch0->harq_processes[harq_pid];
-    dlsch1_harq     = dlsch1->harq_processes[harq_pid];
-    AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
-    
+    AssertFatal(dlsch0_harq != NULL, "dlsch0_harq is null\n");
+
 #if T_TRACER
     if (after_rounds != -1) {
-      T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-	T_INT(dlsch0->rnti), T_INT(harq_pid));
+      T(T_ENB_PHY_DLSCH_UE_NACK,
+        T_INT(0),
+        T_INT(frame),
+        T_INT(subframe),
+        T_INT(dlsch0->rnti),
+        T_INT(harq_pid));
     } else {
-      T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-	T_INT(dlsch0->rnti), T_INT(harq_pid));
+      T(T_ENB_PHY_DLSCH_UE_ACK,
+        T_INT(0),
+        T_INT(frame),
+        T_INT(subframe),
+        T_INT(dlsch0->rnti),
+        T_INT(harq_pid));
     }
 #endif
-    
+
+    /*
+    LOG_I(PHY, "UE_id = %d; Frame %d, subframe %d: Releasing harq %d for UE %x, CC_id = %d; HARQ RTT Timer = %d,%d,%d,%d,%d,%d,%d,%d, drx-ReTX = %d, cdrx-configured = %d\n",
+          UE_id_mac,
+          frame,
+          subframe,
+          harq_pid,
+          dlsch0->rnti,
+          eNB->CC_id,
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][0],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][1],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][2],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][3],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][4],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][5],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][6],
+          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][7],
+          UE_scheduling_control->drx_retransmission_timer[harq_pid],
+          UE_scheduling_control->cdrx_configured);
+    */
+
     if (dlsch0_harq->round >= after_rounds) {
       dlsch0_harq->status = SCH_IDLE;
-      /*if ((dlsch1_harq == NULL)||
-	((dlsch1_harq!=NULL)&&
-	(dlsch1_harq->status == SCH_IDLE)))*/
-      dlsch0->harq_mask   &= ~(1<<harq_pid);
+      dlsch0->harq_mask &= ~(1 << harq_pid);
+
+      /* CDRX: PUCCH gives an ACK or no more repetitions, so reset corresponding HARQ RTT */
+      UE_scheduling_control->harq_rtt_timer[eNB->CC_id][harq_pid] = 0;
     }
-    LOG_D(PHY,"Frame %d, subframe %d: Releasing harq %d for UE %x\n",frame,subframe,harq_pid,dlsch0->rnti);
-    
-  }
-  else { // release all processes in the bundle that was acked, based on mask
-    // This is at most 4 for multiplexing and 9 for bundling/special bundling
-    M=ul_ACK_subframe2_M(&eNB->frame_parms,
-			 subframe);
-    
-    for (m=0; m<M; m++) {
+
+  } else {
+    /* Release all processes in the bundle that was acked, based on mask */
+    /* This is at most 4 for multiplexing and 9 for bundling/special bundling */
+    int M = ul_ACK_subframe2_M(&eNB->frame_parms, subframe);
+
+    for (int m=0; m < M; m++) {
       subframe_tx = ul_ACK_subframe2_dl_subframe(&eNB->frame_parms,
-						 subframe,
-						 m);
-      frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,subframe,subframe_tx);
-      if (((1<<m)&mask) > 0) {
-	harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
-	if ((harq_pid>=0) && (harq_pid<dlsch0->Mdlharq)) {
-	  dlsch0_harq     = dlsch0->harq_processes[harq_pid];
-	  dlsch1_harq     = dlsch1->harq_processes[harq_pid];
-	  AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
-	  
+                                                subframe,
+                                                m);
+
+      frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,
+                                          frame,
+                                          subframe,
+                                          subframe_tx);
+
+      if (((1 << m) & mask) > 0) {
+        harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
+
+        if ((harq_pid >= 0) && (harq_pid < dlsch0->Mdlharq)) {
+          dlsch0_harq = dlsch0->harq_processes[harq_pid];
+          dlsch1_harq = dlsch1->harq_processes[harq_pid];
+
+          AssertFatal(dlsch0_harq != NULL, "Dlsch0_harq is null\n");
+
 #if T_TRACER
-	  if (after_rounds != -1) {
-	    T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-	      T_INT(dlsch0->rnti), T_INT(harq_pid));
-	  } else {
-	    T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-	      T_INT(dlsch0->rnti), T_INT(harq_pid));
-	  }
+          if (after_rounds != -1) {
+            T(T_ENB_PHY_DLSCH_UE_NACK,
+              T_INT(0),
+              T_INT(frame),
+              T_INT(subframe),
+              T_INT(dlsch0->rnti),
+              T_INT(harq_pid));
+          } else {
+            T(T_ENB_PHY_DLSCH_UE_ACK,
+              T_INT(0),
+              T_INT(frame),
+              T_INT(subframe),
+              T_INT(dlsch0->rnti),
+              T_INT(harq_pid));
+          }
 #endif
-	  if (dlsch0_harq->round >= after_rounds) {
-	    dlsch0_harq->status = SCH_IDLE;
-	    if ((dlsch1_harq == NULL)||
-		((dlsch1_harq!=NULL)&&
-		 (dlsch1_harq->status == SCH_IDLE)))
-	      dlsch0->harq_mask   &= ~(1<<harq_pid);
-	  }
-	}
-	
-      }
-    }
-  } 
+          if (dlsch0_harq->round >= after_rounds) {
+            dlsch0_harq->status = SCH_IDLE;
+
+            if ((dlsch1_harq == NULL) || ((dlsch1_harq != NULL) && (dlsch1_harq->status == SCH_IDLE))) {
+              dlsch0->harq_mask &= ~(1 << harq_pid);
+            }
+          }
+	      } // end if ((harq_pid >= 0) && (harq_pid < dlsch0->Mdlharq))
+      } // end if (((1 << m) & mask) > 0)
+    } // end for (int m=0; m < M; m++)
+  } // end if TDD
 }
 
 static void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subframe,uint16_t mask, int is_ack) {

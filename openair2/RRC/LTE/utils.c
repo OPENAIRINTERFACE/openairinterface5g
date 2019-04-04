@@ -34,8 +34,7 @@ ________________________________________________________________*/
 
 
 //------------------------------------------------------------------------------------------------------------------//
-uint16_t find_free_dtch_position(uint8_t Mod_id, uint16_t UE_CH_index)
-{
+uint16_t find_free_dtch_position(uint8_t Mod_id, uint16_t UE_CH_index) {
   uint16_t i,j;
 
   if(UE_CH_index==0) {
@@ -45,22 +44,18 @@ uint16_t find_free_dtch_position(uint8_t Mod_id, uint16_t UE_CH_index)
   }
 
   for(i=j; i<NB_RAB_MAX; i++) { //first RAB IS BROADCAST DTCH
-
     if(CH_rrc_inst[Mod_id].Rab[i][UE_CH_index].Active==0) {
       return( i);
     }
   }
 
   msg("NO FREE DTCH LCHAN, exit... \n");
-
   Mac_rlc_xface->macphy_exit("NO FREE DTCH LCHAN, exit");
-
   return 0;
 }
 
 //-------------------------------------------------------------------------------------------//
-uint8_t rrc_find_free_ue_index(uint8_t Mod_id)
-{
+uint8_t rrc_find_free_ue_index(uint8_t Mod_id) {
   //-------------------------------------------------------------------------------------------//
   uint16_t i;
 
@@ -78,8 +73,7 @@ uint8_t rrc_find_free_ue_index(uint8_t Mod_id)
 
 
 //-------------------------------------------------------------------------------------------//
-unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id)
-{
+unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id) {
   //-------------------------------------------------------------------------------------------//
   unsigned char i;
   /*
@@ -90,8 +84,7 @@ unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id)
   */
 }
 //-------------------------------------------------------------------------------------------//
-uint8_t rrc_is_node_isolated(uint8_t Mod_id)
-{
+uint8_t rrc_is_node_isolated(uint8_t Mod_id) {
   //-------------------------------------------------------------------------------------------//
   /*uint8_t i;
   for(i=0;i<NB_CNX_UE;i++)
@@ -102,8 +95,7 @@ uint8_t rrc_is_node_isolated(uint8_t Mod_id)
 }
 
 //-------------------------------------------------------------------------------------------//
-uint8_t find_rrc_info_index(uint8_t Mod_id,uint8_t CH_id)
-{
+uint8_t find_rrc_info_index(uint8_t Mod_id,uint8_t CH_id) {
   //-------------------------------------------------------------------------------------------//
   /*uint8_t i;
 
@@ -170,8 +162,7 @@ RB_INFO* rrc_find_rb_info(uint8_t Mod_id,uint16_t Rb_id){
 */
 
 /*------------------------------------------------------------------------------*/
-unsigned char rrc_is_mobile_already_associated(uint8_t Mod_id, L2_ID Mac_id)
-{
+unsigned char rrc_is_mobile_already_associated(uint8_t Mod_id, L2_ID Mac_id) {
   /*------------------------------------------------------------------------------*/
   /*
   unsigned char i;
@@ -184,8 +175,7 @@ unsigned char rrc_is_mobile_already_associated(uint8_t Mod_id, L2_ID Mac_id)
 
 
 //-------------------------------------------------------------------------------------------//
-void rrc_reset_buffer(RRC_BUFFER *Rrc_buffer)
-{
+void rrc_reset_buffer(RRC_BUFFER *Rrc_buffer) {
   //-------------------------------------------------------------------------------------------//
   //    Rrc_buffer->Header->Rv_tb_idx=0;
   //  Rrc_buffer->W_idx=0;

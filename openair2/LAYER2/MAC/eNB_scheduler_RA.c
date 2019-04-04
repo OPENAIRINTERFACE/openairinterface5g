@@ -353,6 +353,9 @@ void generate_Msg2(module_id_t module_idP,
       AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
 
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
+
+      LOG_E(MAC, "start_symbol = %d \n", dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol);
+
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 2; // RA-RNTI

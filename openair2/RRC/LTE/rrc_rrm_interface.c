@@ -44,18 +44,18 @@
 */
 
 #ifndef RRC_RRM_FIFOS_XFACE
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <errno.h>
+  #include <string.h>
+  #include <unistd.h>
 
-#include <sys/socket.h>
-#include <sys/un.h>
+  #include <sys/socket.h>
+  #include <sys/un.h>
 
 #else
 
-#include<rtai_fifos.h>
+  #include<rtai_fifos.h>
 
 #endif
 
@@ -78,12 +78,11 @@
 \return  The return value is a socket handle
 */
 int open_socket(
-  sock_rrm_t *s   , ///< socket descriptor
+  sock_rrm_t *s,    ///< socket descriptor
   char *path_local,   ///< local socket path if unix socket
-  char *path_dest ,   ///< host  Socket path if unix socket
+  char *path_dest,    ///< host  Socket path if unix socket
   int rrm_inst        ///< instance of the rrm entity
-)
-{
+) {
   /* Unix socket */
   int   socket_fd ;
   int   len ;
@@ -109,8 +108,6 @@ int open_socket(
   s->un_dest_addr.sun_family = AF_UNIX;
   sprintf(s->un_dest_addr.sun_path,"%s%d", path_dest, rrm_inst );
   msg("Dest %s\n",s->un_dest_addr.sun_path);
-
-
   s->s = socket_fd ;
   return socket_fd ;
 }
@@ -121,8 +118,7 @@ int open_socket(
 */
 void close_socket(
   sock_rrm_t *sock  ///< the socket handle
-)
-{
+) {
   shutdown(sock->s, SHUT_RDWR);
   close(sock->s);
 }
@@ -134,10 +130,9 @@ void close_socket(
 */
 char BUFF[2048];
 int send_msg_sock(
-  sock_rrm_t *s   ,///< socket descriptor
+  sock_rrm_t *s,   ///< socket descriptor
   msg_t *smsg       ///< the message to send
-)
-{
+) {
   /* Unix socket */
   int         ret   = 0 ;
   //  char        *buf    = NULL;
@@ -156,13 +151,10 @@ int send_msg_sock(
   //buf = RRM_MALLOC(char, taille);
   //if (buf ==NULL)
   //return -1 ;
-
-  memcpy( BUFF , &(smsg->head) , sizeof(msg_head_t) ) ;
+  memcpy( BUFF, &(smsg->head), sizeof(msg_head_t) ) ;
   memcpy( BUFF+sizeof(msg_head_t), smsg->data, smsg->head.size ) ;
-
   iov.iov_base    = (void *)BUFF;
   iov.iov_len     = taille ;
-
   msghd.msg_name        = (void *)&(s->un_dest_addr);
   msghd.msg_namelen     = sizeof(s->un_dest_addr);
   msghd.msg_iov         = &iov;
@@ -179,7 +171,6 @@ int send_msg_sock(
   //RRM_FREE(buf) ;
   //RRM_FREE(msg->data) ;
   //RRM_FREE(msg) ;
-
   return ret ;
 }
 
@@ -191,8 +182,7 @@ int send_msg_sock(
 */
 char *recv_msg(
   sock_rrm_t *s   ///< socket descriptor
-)
-{
+) {
   /* Unix socket */
   char        *buf = NULL;
   char        *smsg = NULL;
@@ -201,9 +191,7 @@ char *recv_msg(
   int         size_msg ;
   msg_head_t      *head  ;
   int         ret ;
-
   int taille =  SIZE_MAX_PAYLOAD ;
-
   buf         = RRM_CALLOC( char,taille);
 
   if ( buf == NULL ) {
@@ -218,8 +206,7 @@ char *recv_msg(
   msghd.msg_iovlen    = 1;
   msghd.msg_control   = NULL ;
   msghd.msg_controllen= 0 ;
-
-  ret = recvmsg(s->s, &msghd , 0 ) ;
+  ret = recvmsg(s->s, &msghd, 0 ) ;
 
   if ( ret <= 0  ) {
     // non-blocking socket
@@ -236,22 +223,19 @@ char *recv_msg(
 
   head    = (msg_head_t *) buf  ;
   size_msg  = sizeof(msg_head_t) + head->size ;
-
-  smsg    = RRM_CALLOC(char , size_msg ) ;
+  smsg    = RRM_CALLOC(char, size_msg ) ;
 
   if ( smsg != NULL ) {
-    memcpy( smsg , buf , size_msg ) ;
+    memcpy( smsg, buf, size_msg ) ;
   }
 
   RRM_FREE( buf ) ;
-
   return smsg ;
 }
 
 #else  //XFACE
 
-int send_msg_fifo(int *s, msg_t *fmsg)
-{
+int send_msg_fifo(int *s, msg_t *fmsg) {
   int   ret   = 0, ret1;
   int  taille = sizeof(msg_head_t)  ;
   msg("write on fifos %d, msg %p\n",*s,fmsg);
@@ -261,9 +245,7 @@ int send_msg_fifo(int *s, msg_t *fmsg)
   }
 
   // envoi le header
-
-
-  ret1 = rtf_put (*s,(char*) &(fmsg->head) , taille);
+  ret1 = rtf_put (*s,(char *) &(fmsg->head), taille);
 
   if(ret1 <0) {
     msg("rtf_put H ERR %d\n",ret1);
@@ -275,7 +257,7 @@ int send_msg_fifo(int *s, msg_t *fmsg)
 
   // envoi les datas si elles sont definis
   if ( fmsg->data != NULL ) {
-    ret1 += rtf_put (*s,(char*) fmsg->data, fmsg->head.size);
+    ret1 += rtf_put (*s,(char *) fmsg->data, fmsg->head.size);
 
     if(ret1 <0) {
       msg("rtf_put D ERR %d\n",ret1);
@@ -290,7 +272,6 @@ int send_msg_fifo(int *s, msg_t *fmsg)
 
 #endif //XFACE
 
-int send_msg(void *s, msg_t *smsg)
-{
+int send_msg(void *s, msg_t *smsg) {
   send_msg_sock((sock_rrm_t *)s, smsg);
 }

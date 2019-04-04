@@ -1280,6 +1280,10 @@ uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 
+/* DRX Configuration */
+/* Configure local DRX timers and thresh following the drx_configuration input */
+void eNB_Config_Local_DRX(module_id_t Mod_id, rnti_t rnti, LTE_DRX_Config_t *drx_Configuration);
+
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
 #endif

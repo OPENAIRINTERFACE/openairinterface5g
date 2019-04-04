@@ -459,7 +459,7 @@ void decode_slice_positioning(module_id_t Mod_idP,
 }
 
 
-// This fuction sorts the UE in order their dlsch buffer and CQI
+// This function sorts the UE in order their dlsch buffer and CQI
 void
 sort_UEs(module_id_t Mod_idP,
          int slice_idx,
@@ -471,8 +471,18 @@ sort_UEs(module_id_t Mod_idP,
   int list_size = 0;
   struct sort_ue_dl_params params = {Mod_idP, frameP, subframeP, slice_idx};
   UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
+  UE_sched_ctrl *UE_scheduling_control = NULL;
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+
+    UE_scheduling_control = &(UE_list->UE_sched_ctrl[i]);
+
+    if (UE_scheduling_control->cdrx_configured == TRUE) {
+
+      if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
+        continue;
+      }
+    }
 
     if (UE_list->active[i] == TRUE &&
         UE_RNTI(Mod_idP, i) != NOT_A_RNTI &&
@@ -1636,8 +1646,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   uint16_t average_rbs_per_user[NFAPI_CC_MAX];
   int16_t total_remaining_rbs[NFAPI_CC_MAX];
   uint16_t total_ue_count[NFAPI_CC_MAX];
-  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
-  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
+  UE_list_t *UE_list = &eNB->UE_list;
+  slice_info_t *sli = &eNB->slice_info;
   UE_TEMPLATE *UE_template = 0;
   UE_sched_ctrl *ue_sched_ctl;
   int N_RB_UL = 0;
@@ -1695,7 +1706,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
           nCCE_to_be_used[CC_id] = nCCE_to_be_used[CC_id] + (1<<aggregation);
           max_num_ue_to_be_scheduled+=1;
           } */
-      N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+      N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx] =
         nb_rbs_allowed_slice(sli->ul[slice_idx].pct, N_RB_UL);
@@ -1740,7 +1751,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       UE_template = &UE_list->UE_template[CC_id][UE_id];
-      harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],
+      harq_pid = subframe2harqpid(&eNB->common_channels[CC_id],
                                   frameP, sched_subframeP);
 
       //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
@@ -1772,7 +1783,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       UE_template = &UE_list->UE_template[CC_id][UE_id];
-      N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+      N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
       first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
       available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx], N_RB_UL - first_rb[CC_id] - first_rb_offset);
       total_remaining_rbs[CC_id] = available_rbs - total_allocated_rbs[CC_id];
@@ -1993,8 +2004,19 @@ sort_ue_ul(module_id_t module_idP,
   int list_size = 0;
   struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
+  UE_sched_ctrl *UE_scheduling_control = NULL;
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+
+    UE_scheduling_control = &(UE_list->UE_sched_ctrl[i]);
+
+    if (UE_scheduling_control->cdrx_configured == TRUE) {
+
+      if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
+        continue;
+      }
+    }
+
     rntiTable[i] = UE_RNTI(module_idP, i);
     // Valid element and is not the actual CC_id in the list
     if (UE_list->active[i] == TRUE &&

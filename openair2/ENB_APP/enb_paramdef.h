@@ -321,8 +321,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2    "pucch_NumRepetitionCE_Msg4_Level2_r13"
 #define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3    "pucch_NumRepetitionCE_Msg4_Level3_r13"
 
-#define ENB_CONFIG_STRING_FREQ_HOPPING_PARAMETERS_R13                      "sib2_freq_hoppingParameters_r13"
-
+#define ENB_CONFIG_STRING_FREQ_HOPPING_PARAMETERS_R13                   "sib2_freq_hoppingParameters_r13"
 
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
 #define ENB_CONFIG_STRING_PDSCH_PB                                      "pdsch_p_b"
@@ -364,6 +363,14 @@ typedef enum {
 #define ENB_CONFIG_STRING_RACH_MAXHARQMSG3TX                            "rach_maxHARQ_Msg3Tx"
 #define ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE                     "pcch_default_PagingCycle"
 #define ENB_CONFIG_STRING_PCCH_NB                                       "pcch_nB"
+#define ENB_CONFIG_STRING_DRX_CONFIG_PRESENT                            "drx_Config_present"                  // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_ONDURATIONTIMER                           "drx_onDurationTimer"                 // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_INACTIVITYTIMER                           "drx_InactivityTimer"                 // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_RETRANSMISSIONTIMER                       "drx_RetransmissionTimer"             // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET_PRESENT          "drx_longDrx_CycleStartOffset_present" // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET                  "drx_longDrx_CycleStartOffset"        // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_SHORTDRX_CYCLE                            "drx_shortDrx_Cycle"                  // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_SHORTDRX_SHORTCYCLETIMER                  "drx_shortDrx_ShortCycleTimer"        // Add DRX SSR 2018-10
 #define ENB_CONFIG_STRING_BCCH_MODIFICATIONPERIODCOEFF                  "bcch_modificationPeriodCoeff"
 #define ENB_CONFIG_STRING_UETIMERS_T300                                 "ue_TimersAndConstants_t300"
 #define ENB_CONFIG_STRING_UETIMERS_T301                                 "ue_TimersAndConstants_t301"
@@ -496,6 +503,14 @@ typedef struct ccparams_lte_s {
   int32_t           rach_maxHARQ_Msg3Tx;
   int32_t           pcch_defaultPagingCycle;
   char             *pcch_nB;
+  char             *drx_Config_present;
+  char             *drx_onDurationTimer;
+  char             *drx_InactivityTimer;
+  char             *drx_RetransmissionTimer;
+  char             *drx_longDrx_CycleStartOffset_present;
+  int32_t           drx_longDrx_CycleStartOffset;
+  char             *drx_shortDrx_Cycle;
+  int32_t           drx_shortDrx_ShortCycleTimer;
   int32_t           bcch_modificationPeriodCoeff;
   int32_t           ue_TimersAndConstants_t300;
   int32_t           ue_TimersAndConstants_t301;
@@ -574,6 +589,14 @@ typedef struct ccparams_lte_s {
              { .s5= {NULL }} ,						     \
              { .s5= {NULL }} ,						     \
              { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
+             { .s5= {NULL }} ,	/* Add DRX SSR 2018-10 */					     \
              { .s5= {NULL }} ,						     \
              { .s1a= { config_check_modify_integer, UETIMER_T300_OKVALUES, UETIMER_T300_MODVALUES,8}} ,						     \
              { .s1a= { config_check_modify_integer, UETIMER_T301_OKVALUES, UETIMER_T301_MODVALUES,8}} ,						     \
@@ -688,6 +711,14 @@ typedef struct ccparams_lte_s {
 {ENB_CONFIG_STRING_RACH_MAXHARQMSG3TX,                           NULL,   0,           iptr:&ccparams.rach_maxHARQ_Msg3Tx,                      defintval:4,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE,                    NULL,   0,           iptr:&ccparams.pcch_defaultPagingCycle,                  defintval:128,             TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PCCH_NB,                                      NULL,   0,           strptr:&ccparams.pcch_nB,                                defstrval:"oneT",          TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_DRX_CONFIG_PRESENT,                           NULL,   0,           strptr:&ccparams.drx_Config_present,                     defstrval:"prNothing",     TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_ONDURATIONTIMER,                          NULL,   0,           strptr:&ccparams.drx_onDurationTimer,                    defstrval:"psf10",         TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_INACTIVITYTIMER,                          NULL,   0,           strptr:&ccparams.drx_InactivityTimer,                    defstrval:"psf10",         TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_RETRANSMISSIONTIMER,                      NULL,   0,           strptr:&ccparams.drx_RetransmissionTimer,                defstrval:"psf8",          TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET_PRESENT,         NULL,   0,           strptr:&ccparams.drx_longDrx_CycleStartOffset_present,   defstrval:"prSf128",       TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET,                 NULL,   0,           iptr:&ccparams.drx_longDrx_CycleStartOffset,             defintval:0,               TYPE_UINT,       0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_SHORTDRX_CYCLE,                           NULL,   0,           strptr:&ccparams.drx_shortDrx_Cycle,                     defstrval:"sf32",          TYPE_STRING,     0},  /* Add DRX SSR 2018-10 */ \
+{ENB_CONFIG_STRING_DRX_SHORTDRX_SHORTCYCLETIMER,                 NULL,   0,           iptr:&ccparams.drx_shortDrx_ShortCycleTimer,             defintval:3,               TYPE_UINT,       0},  /* Add DRX SSR 2018-10 */ \
 {ENB_CONFIG_STRING_BCCH_MODIFICATIONPERIODCOEFF,                 NULL,   0,           iptr:&ccparams.bcch_modificationPeriodCoeff,             defintval:2,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_T300,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_t300,               defintval:1000,            TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_T301,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_t301,               defintval:1000,            TYPE_UINT,       0},  \
@@ -696,7 +727,7 @@ typedef struct ccparams_lte_s {
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ccparams.ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0}  \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0}   \
 }
 
 
@@ -761,14 +792,22 @@ typedef struct ccparams_lte_s {
 #define ENB_CONFIG_RACH_MAXHARQMSG3TX_IDX  		     57
 #define ENB_CONFIG_PCCH_DEFAULT_PAGING_CYCLE_IDX	     58     
 #define ENB_CONFIG_PCCH_NB_IDX				     59
-#define ENB_CONFIG_BCCH_MODIFICATIONPERIODCOEFF_IDX	     60
-#define ENB_CONFIG_UETIMERS_T300_IDX			     61
-#define ENB_CONFIG_UETIMERS_T301_IDX			     62
-#define ENB_CONFIG_UETIMERS_T310_IDX			     63
-#define ENB_CONFIG_UETIMERS_T311_IDX			     64
-#define ENB_CONFIG_UETIMERS_N310_IDX			     65
-#define ENB_CONFIG_UETIMERS_N311_IDX			     66
-#define ENB_CONFIG_UE_TRANSMISSION_MODE_IDX		     67
+#define ENB_CONFIG_STRING_DRX_CONFIG_PRESENT_IDX 60                   // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_ONDURATIONTIMER_IDX 61                  // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_INACTIVITYTIMER_IDX 62                  // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_RETRANSMISSIONTIMER_IDX 63              // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET_PRESENT_IDX 64 // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_LONGDRX_CYCLESTARTOFFSET_IDX 65         // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_SHORTDRX_CYCLE_IDX 66                   // Add DRX SSR 2018-10
+#define ENB_CONFIG_STRING_DRX_SHORTDRX_SHORTCYCLETIMER_IDX 67         // Add DRX SSR 2018-10
+#define ENB_CONFIG_BCCH_MODIFICATIONPERIODCOEFF_IDX 68                // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_T300_IDX 69                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_T301_IDX 70                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_T310_IDX 71                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_T311_IDX 72                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_N310_IDX 73                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UETIMERS_N311_IDX 74                               // Modif DRX SSR 2018-10
+#define ENB_CONFIG_UE_TRANSMISSION_MODE_IDX 75                        // Modif DRX SSR 2018-10
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* SRB1 configuration parameters section name */

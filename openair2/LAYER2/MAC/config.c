@@ -1009,3 +1009,358 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
     return(0);			   
 }
+
+
+//-----------------------------------------------------------------------------
+/*
+* Configure local DRX timers and thresholds following the drx_configuration input
+*/
+void eNB_Config_Local_DRX(
+  module_id_t Mod_id,
+  rnti_t rnti,
+  LTE_DRX_Config_t *const drx_Configuration
+)
+//-----------------------------------------------------------------------------
+{
+  UE_list_t *UE_list_mac = NULL;
+  int UE_id = -1;
+  UE_sched_ctrl *UE_scheduling_control = NULL;
+
+  UE_list_mac = &(RC.mac[Mod_id]->UE_list);
+
+  UE_id = find_UE_id(Mod_id, rnti);
+
+  /* Check UE_id */
+  if (UE_id == -1) {
+    LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n",
+      __FILE__,
+      __LINE__,
+      __FUNCTION__);
+    return;
+  }
+
+  /* Get struct to modify */
+  UE_scheduling_control = &(UE_list_mac->UE_sched_ctrl[UE_id]);
+
+  /* Check drx_Configuration */
+  if (drx_Configuration == NULL) {
+    LOG_E(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+
+    UE_scheduling_control->cdrx_configured = FALSE;
+    return;
+  }
+
+  /* Check if drx config present */
+  if (drx_Configuration->present != LTE_DRX_Config_PR_setup) {
+    LOG_I(MAC, "No drx_Configuration present, don't configure local UE parameters\n");
+
+    UE_scheduling_control->cdrx_configured = FALSE;
+    return;
+  }
+
+  /* Modify scheduling control structure according to DRX configuration */
+  UE_scheduling_control->cdrx_configured = TRUE;
+  UE_scheduling_control->bypass_cdrx = TRUE;
+  UE_scheduling_control->in_active_time = FALSE;
+
+  UE_scheduling_control->on_duration_timer = 0;
+  switch (drx_Configuration->choice.setup.onDurationTimer) {
+    case 0:
+      UE_scheduling_control->on_duration_timer_thres = 1;
+      break;
+    case 1:
+      UE_scheduling_control->on_duration_timer_thres = 2;
+      break;
+    case 2:
+      UE_scheduling_control->on_duration_timer_thres = 3;
+      break;
+    case 3:
+      UE_scheduling_control->on_duration_timer_thres = 4;
+      break;
+    case 4:
+      UE_scheduling_control->on_duration_timer_thres = 5;
+      break;
+    case 5:
+      UE_scheduling_control->on_duration_timer_thres = 6;
+      break;
+    case 6:
+      UE_scheduling_control->on_duration_timer_thres = 8;
+      break;
+    case 7:
+      UE_scheduling_control->on_duration_timer_thres = 10;
+      break;
+    case 8:
+      UE_scheduling_control->on_duration_timer_thres = 20;
+      break;
+    case 9:
+      UE_scheduling_control->on_duration_timer_thres = 30;
+      break;
+    case 10:
+      UE_scheduling_control->on_duration_timer_thres = 40;
+      break;
+    case 11:
+      UE_scheduling_control->on_duration_timer_thres = 50;
+      break;
+    case 12:
+      UE_scheduling_control->on_duration_timer_thres = 60;
+      break;
+    case 13:
+      UE_scheduling_control->on_duration_timer_thres = 80;
+      break;
+    case 14:
+      UE_scheduling_control->on_duration_timer_thres = 100;
+      break;
+    case 15:
+      UE_scheduling_control->on_duration_timer_thres = 200;
+      break;
+    default:
+      LOG_E(MAC, "Error in local DRX configuration, the on duration timer value specified is unknown\n");
+      break;
+  }
+
+  UE_scheduling_control->drx_inactivity_timer = 0;
+  switch (drx_Configuration->choice.setup.drx_InactivityTimer) {
+    case 0:
+      UE_scheduling_control->drx_inactivity_timer_thres = 1;
+      break;
+    case 1:
+      UE_scheduling_control->drx_inactivity_timer_thres = 2;
+      break;
+    case 2:
+      UE_scheduling_control->drx_inactivity_timer_thres = 3;
+      break;
+    case 3:
+      UE_scheduling_control->drx_inactivity_timer_thres = 4;
+      break;
+    case 4:
+      UE_scheduling_control->drx_inactivity_timer_thres = 5;
+      break;
+    case 5:
+      UE_scheduling_control->drx_inactivity_timer_thres = 6;
+      break;
+    case 6:
+      UE_scheduling_control->drx_inactivity_timer_thres = 8;
+      break;
+    case 7:
+      UE_scheduling_control->drx_inactivity_timer_thres = 10;
+      break;
+    case 8:
+      UE_scheduling_control->drx_inactivity_timer_thres = 20;
+      break;
+    case 9:
+      UE_scheduling_control->drx_inactivity_timer_thres = 30;
+      break;
+    case 10:
+      UE_scheduling_control->drx_inactivity_timer_thres = 40;
+      break;
+    case 11:
+      UE_scheduling_control->drx_inactivity_timer_thres = 50;
+      break;
+    case 12:
+      UE_scheduling_control->drx_inactivity_timer_thres = 60;
+      break;
+    case 13:
+      UE_scheduling_control->drx_inactivity_timer_thres = 80;
+      break;
+    case 14:
+      UE_scheduling_control->drx_inactivity_timer_thres = 100;
+      break;
+    case 15:
+      UE_scheduling_control->drx_inactivity_timer_thres = 200;
+      break;
+    case 16:
+      UE_scheduling_control->drx_inactivity_timer_thres = 300;
+      break;
+    case 17:
+      UE_scheduling_control->drx_inactivity_timer_thres = 500;
+      break;
+    case 18:
+      UE_scheduling_control->drx_inactivity_timer_thres = 750;
+      break;
+    case 19:
+      UE_scheduling_control->drx_inactivity_timer_thres = 1280;
+      break;
+    case 20:
+      UE_scheduling_control->drx_inactivity_timer_thres = 1920;
+      break;
+    case 21:
+      UE_scheduling_control->drx_inactivity_timer_thres = 2560;
+      break;
+    case 22:
+      UE_scheduling_control->drx_inactivity_timer_thres = 0;
+      break;
+    default:
+      LOG_E(MAC, "Error in local DRX configuration, the drx inactivity timer value specified is unknown\n");
+      break;
+  }
+
+  if (drx_Configuration->choice.setup.shortDRX == NULL) {
+    UE_scheduling_control->in_short_drx_cycle = FALSE;
+    UE_scheduling_control->drx_shortCycle_timer_value = 0;
+    UE_scheduling_control->short_drx_cycle_duration = 0;
+    UE_scheduling_control->drx_shortCycle_timer = 0;
+    UE_scheduling_control->drx_shortCycle_timer_thres = -1;
+  } else {
+    UE_scheduling_control->in_short_drx_cycle = FALSE;
+    UE_scheduling_control->drx_shortCycle_timer_value = (uint8_t) drx_Configuration->choice.setup.shortDRX->drxShortCycleTimer;
+    switch (drx_Configuration->choice.setup.shortDRX->shortDRX_Cycle) {
+      case 0:
+        UE_scheduling_control->short_drx_cycle_duration = 2;
+        break;
+      case 1:
+        UE_scheduling_control->short_drx_cycle_duration = 5;
+        break;
+      case 2:
+        UE_scheduling_control->short_drx_cycle_duration = 8;
+        break;
+      case 3:
+        UE_scheduling_control->short_drx_cycle_duration = 10;
+        break;
+      case 4:
+        UE_scheduling_control->short_drx_cycle_duration = 16;
+        break;
+      case 5:
+        UE_scheduling_control->short_drx_cycle_duration = 20;
+        break;
+      case 6:
+        UE_scheduling_control->short_drx_cycle_duration = 32;
+        break;
+      case 7:
+        UE_scheduling_control->short_drx_cycle_duration = 40;
+        break;
+      case 8:
+        UE_scheduling_control->short_drx_cycle_duration = 64;
+        break;
+      case 9:
+        UE_scheduling_control->short_drx_cycle_duration = 80;
+        break;
+      case 10:
+        UE_scheduling_control->short_drx_cycle_duration = 128;
+        break;
+      case 11:
+        UE_scheduling_control->short_drx_cycle_duration = 160;
+        break;
+      case 12:
+        UE_scheduling_control->short_drx_cycle_duration = 256;
+        break;
+      case 13:
+        UE_scheduling_control->short_drx_cycle_duration = 320;
+        break;
+      case 14:
+        UE_scheduling_control->short_drx_cycle_duration = 512;
+        break;
+      case 15:
+        UE_scheduling_control->short_drx_cycle_duration = 640;
+        break;
+      default:
+        LOG_E(MAC, "Error in local DRX configuration, the short drx timer value specified is unknown\n");
+        break;
+    }
+
+    UE_scheduling_control->drx_shortCycle_timer = 0;
+    UE_scheduling_control->drx_shortCycle_timer_thres = UE_scheduling_control->drx_shortCycle_timer_value * UE_scheduling_control->short_drx_cycle_duration;
+  }
+
+  UE_scheduling_control->in_long_drx_cycle = FALSE;
+  UE_scheduling_control->drx_longCycle_timer = 0;
+  switch (drx_Configuration->choice.setup.longDRX_CycleStartOffset.present) {
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10:
+      UE_scheduling_control->drx_longCycle_timer_thres = 10;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf10;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20:
+      UE_scheduling_control->drx_longCycle_timer_thres = 20;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf20;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32:
+      UE_scheduling_control->drx_longCycle_timer_thres = 32;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf32;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40:
+      UE_scheduling_control->drx_longCycle_timer_thres = 40;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf40;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64:
+      UE_scheduling_control->drx_longCycle_timer_thres = 64;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf64;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80:
+      UE_scheduling_control->drx_longCycle_timer_thres = 80;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf80;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128:
+      UE_scheduling_control->drx_longCycle_timer_thres = 128;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf128;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160:
+      UE_scheduling_control->drx_longCycle_timer_thres = 160;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf160;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256:
+      UE_scheduling_control->drx_longCycle_timer_thres = 256;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf256;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320:
+      UE_scheduling_control->drx_longCycle_timer_thres = 320;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf320;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512:
+      UE_scheduling_control->drx_longCycle_timer_thres = 512;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf512;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640:
+      UE_scheduling_control->drx_longCycle_timer_thres = 640;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf640;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024:
+      UE_scheduling_control->drx_longCycle_timer_thres = 1024;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf1024;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280:
+      UE_scheduling_control->drx_longCycle_timer_thres = 1280;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf1280;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048:
+      UE_scheduling_control->drx_longCycle_timer_thres = 2048;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf2048;
+      break;
+    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560:
+      UE_scheduling_control->drx_longCycle_timer_thres = 2560;
+      UE_scheduling_control->drx_start_offset = (uint16_t) drx_Configuration->choice.setup.longDRX_CycleStartOffset.choice.sf2560;
+      break;
+    default:
+      LOG_E(MAC, "Invalid long_DRX value in DRX local configuration\n");
+      break;
+  }
+
+  memset(UE_scheduling_control->drx_retransmission_timer, 0, sizeof(UE_scheduling_control->drx_retransmission_timer));
+  switch (drx_Configuration->choice.setup.drx_RetransmissionTimer) {
+    case 0:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 1, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 1:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 2, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 2:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 4, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 3:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 6, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 4:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 8, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 5:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 16, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 6:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 24, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    case 7:
+      memset(UE_scheduling_control->drx_retransmission_timer_thres, 33, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
+      break;
+    default:
+      LOG_E(MAC, "Error in local DRX configuration, the drx retransmission timer value specified is unknown\n");
+      break;
+  }
+}

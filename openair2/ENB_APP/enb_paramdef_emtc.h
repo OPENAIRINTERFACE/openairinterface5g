@@ -61,7 +61,10 @@
 #define ENB_CONFIG_STRING_PREAMBLE_TRANSMAX_CE_R13                         "preamble_TransMax_ce_r13"
 #define ENB_CONFIG_STRING_PREAMBLE_TRANSMAX_CE_R13_VAL                     "preamble_TransMax_ce_r13_val"
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13           "pdsch_maxNumRepetitionCEmodeA_r13"
+#define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13           "pdsch_maxNumRepetitionCEmodeB_r13"
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13           "pusch_maxNumRepetitionCEmodeA_r13"
+#define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13           "pusch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                       "pusch_HoppingOffset_v1310"
 #define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                       "system_info_value_tag_SI"
 #define ENB_CONFIG_STRING_FIRST_PREAMBLE_R13                               "firstPreamble_r13"
 #define ENB_CONFIG_STRING_LAST_PREAMBLE_R13                                "lastPreamble_r13"
@@ -81,6 +84,9 @@
 #define ENB_CONFIG_STRING_PUCCH_INFO_VALUE                                 "pucch_info_value"
 #define ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13                          "n1PUCCH_AN_InfoList_r13"
 #define ENB_CONFIG_STRING_PCCH_CONFIG_V1310                                "pcch_config_v1310"
+#define ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13                           "paging_narrowbands_r13"
+#define ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13                  "mpdcch_numrepetition_paging_r13"
+#define ENB_CONFIG_STRING_NB_V1310                                         "nb_v1310"
 #define ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13                  "sib2_freq_hoppingParameters_r13" 
 
 typedef struct ccparams_eMTC_s {

@@ -36,6 +36,7 @@
 #include "LTE_SystemInformationBlockType2.h"
 #include "LTE_SL-OffsetIndicator-r12.h"
 #include "LTE_SubframeBitmapSL-r12.h"
+#include "LTE_DRX-Config.h"                   // Add DRX SSR 2018-10
 #include "LTE_SL-CP-Len-r12.h"
 #include "LTE_SL-PeriodComm-r12.h"
 #include "LTE_SL-DiscResourcePool-r12.h"
@@ -141,6 +142,14 @@ typedef struct RadioResourceConfig_s {
   long                    bcch_modificationPeriodCoeff;
   long                    pcch_defaultPagingCycle;
   long                    pcch_nB;
+  LTE_DRX_Config_PR                                   drx_Config_present;                   // Add DRX SSR 2018-10
+  long                                                drx_onDurationTimer;                  // Add DRX SSR 2018-10
+  long                                                drx_InactivityTimer;                  // Add DRX SSR 2018-10
+  long                                                drx_RetransmissionTimer;              // Add DRX SSR 2018-10
+  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR  drx_longDrx_CycleStartOffset_present; // Add DRX SSR 2018-10
+  long                                                drx_longDrx_CycleStartOffset;         // Add DRX SSR 2018-10
+  long                                                drx_shortDrx_Cycle;                   // Add DRX SSR 2018-10
+  long                                                drx_shortDrx_ShortCycleTimer;         // Add DRX SSR 2018-10
   long                    ue_TimersAndConstants_t300;
   long                    ue_TimersAndConstants_t301;
   long                    ue_TimersAndConstants_t310;
