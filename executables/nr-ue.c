@@ -592,6 +592,10 @@ void *UE_thread(void *arg) {
       // and we shifted above to the first slot of next frame
       // the synch thread proc context is hard linked to regular processing thread context, thread id  = 0
       UE_nr_rxtx_proc_t *proc=&(((processingData_t *)NotifiedFifoData(processingMsg[0]))->proc);
+      // synchronization is on two frame basis
+      // if it succeeds on the first frame the second one needs to be considered as trashed
+      if(!UE->is_synchronized_on_frame)
+        trashed_frames++;
       // shift the frame index with all the frames we trashed meanwhile we perform the synch search
       proc->decoded_frame_rx=(proc->decoded_frame_rx + trashed_frames) % MAX_FRAME_NUMBER;
       decoded_frame_rx=proc->decoded_frame_rx;

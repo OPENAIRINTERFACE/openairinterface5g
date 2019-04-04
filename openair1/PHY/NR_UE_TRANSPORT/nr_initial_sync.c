@@ -208,6 +208,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
+  int is;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
@@ -242,7 +243,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
    cnt =0;
 
    // initial sync performed on two successive frames, if pbch passes on first frame, no need to process second frame 
-   for(int is=0; is<2;is++) {
+   for(is=0; is<2;is++) {
 
     /* process pss search on received buffer */
     sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
@@ -371,6 +372,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
     LOG_I(PHY, "[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
 #endif
     //#endif
+
+    ue->is_synchronized_on_frame = is; // to notify on which of the two frames sync was successful
 
     if (ue->UE_scan_carrier == 0) {
 

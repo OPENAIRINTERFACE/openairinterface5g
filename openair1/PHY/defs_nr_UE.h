@@ -878,8 +878,10 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE should enable estimation and compensation of frequency offset
   int UE_fo_compensation;
-  /// \brief Indicator that UE is synchronized to an eNB
+  /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
+  /// \brief Indicates on which frame is synchronized in a two frame synchronization
+  int is_synchronized_on_frame;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
