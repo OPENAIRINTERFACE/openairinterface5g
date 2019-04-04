@@ -831,7 +831,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 	      (*pdcch_vars_th)[th_id][eNB_id]->dl_ch_estimates_time[idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
       
 	      //  size_t num = 7*2*fp->N_RB_DL*12;
-	      size_t num = 4*100*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
+	      size_t num = 4*273*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
               (*pdcch_vars_th)[th_id][eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
               (*pdcch_vars_th)[th_id][eNB_id]->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
               (*pdcch_vars_th)[th_id][eNB_id]->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
