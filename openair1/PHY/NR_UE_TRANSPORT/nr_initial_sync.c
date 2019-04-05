@@ -296,8 +296,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
 	          i,
 	          0,
 	          ue->ssb_offset,
-	          0,
-	          NR_PBCH_EST);
+	          0);
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"Calling sss detection (normal CP)\n");

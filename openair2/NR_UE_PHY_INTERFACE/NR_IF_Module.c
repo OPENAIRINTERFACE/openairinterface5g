@@ -34,6 +34,7 @@
 #include "mac_proto.h"
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
+#include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 #include <stdio.h>
 
@@ -127,16 +128,26 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
-  //  clean up scheduled_response structure
-
+  dl_config->number_pdus = 0;
+  ul_config->number_pdus = 0;
+  //hook up pointers
+  mac->scheduled_response.dl_config = dl_config;
+  mac->scheduled_response.ul_config = ul_config;
+  mac->scheduled_response.tx_request = &mac->tx_request;
+  mac->scheduled_response.module_id = dl_info->module_id;
+  mac->scheduled_response.CC_id = dl_info->cc_id;
+  mac->scheduled_response.frame = dl_info->frame;
+  mac->scheduled_response.slot = dl_info->slot;
 
   if(dl_info->dci_ind != NULL){
     printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
     for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
       printf(">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
-      /*
+
       ret_mask |= (handle_dci(
 			      dl_info->module_id,
 			      dl_info->cc_id,
@@ -144,7 +155,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 			      dci, 
 			      (dl_info->dci_ind->dci_list+i)->rnti, 
 			      (dl_info->dci_ind->dci_list+i)->dci_format)) << FAPI_NR_DCI_IND;
-      */
+
 
       /*switch((dl_info->dci_ind->dci_list+i)->dci_type){
 	case FAPI_NR_DCI_TYPE_0_0:
@@ -246,8 +257,8 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->cc_mask=0;
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
-    nr_ue_if_module_inst[module_id]->phy_config_request = NULL;
-    nr_ue_if_module_inst[module_id]->scheduled_response = NULL;
+    nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
+    nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
   }

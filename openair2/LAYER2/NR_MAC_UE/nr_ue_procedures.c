@@ -186,8 +186,8 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.twoPUCCH_PC_AdjustmentStates = 0;
 
     }
-    if(mac->if_module != NULL && mac->if_module->ul_indication != NULL){
-        mac->if_module->dl_indication(&mac->scheduled_response);
+    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+        mac->if_module->scheduled_response(&mac->scheduled_response);
     }
     return 0;
 }
@@ -1283,10 +1283,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+    
     const uint16_t n_RB_ULBWP = 106;
     const uint16_t n_RB_DLBWP = 106;
 
-printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
+    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
 
     switch(dci_format){
         case format0_0:
@@ -1743,8 +1744,6 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
         /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
             dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
 
-            dl_config->number_pdus = dl_config->number_pdus + 1;
-            
             printf("\n>>> (nr_ue_procedures.c) rnti=%d dl_config->number_pdus=%d\n",
                     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
                     dl_config->number_pdus);
@@ -1772,14 +1771,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
 
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
-            if(mac->if_module != NULL && mac->if_module->dl_indication != NULL)
-              //printf(">>> mac->if_module->dl_indication(&mac->phy_config); \n");
-              //for (int k=0;k<1000;k++) printf(">>> %d ",k); 
-              //mac->if_module->dl_indication(&mac->dl_info);       
-              //mac->if_module->dl_indication(&mac->dl_config_request);       
-	      mac->if_module->dl_indication(&mac->phy_config);
-            
-
+            dl_config->number_pdus = dl_config->number_pdus + 1;
             break;
 
         case format1_1:        
@@ -1961,14 +1953,12 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
         /* DMRS_SEQ_INI */
             //FIXME!!!
 
-            dl_config->number_pdus = dl_config->number_pdus + 1;
             
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
-            if(mac->if_module != NULL && mac->if_module->dl_indication != NULL)
-		      mac->if_module->dl_indication(&mac->phy_config);
-		      
+            dl_config->number_pdus = dl_config->number_pdus + 1;
+
             break;
 
         case format2_0:        
@@ -1986,7 +1976,6 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
         default: 
             break;
     }
-
 
 
     if(rnti == SI_RNTI){
