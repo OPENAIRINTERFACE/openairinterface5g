@@ -639,17 +639,22 @@ int main(int argc, char **argv) {
     for (l=start_symbol; l<start_symbol+nb_symb_sch; l++) {
 
       k = start_sc;
-      sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
       for (i=0; i<nb_rb*NR_NB_SC_PER_RB; i++) {
+
+        sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
+
         if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
+
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
-#ifdef DEBUG_PUSCH_MAPPING
-printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
-dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-#endif
+
+          #ifdef DEBUG_PUSCH_MAPPING
+            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
+            dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
+            ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
+          #endif
+
           dmrs_idx++;
           k_prime++;
           k_prime&=1;
@@ -660,11 +665,14 @@ dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
-#ifdef DEBUG_PUSCH_MAPPING
-printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-#endif
+
+
+          #ifdef DEBUG_PUSCH_MAPPING
+            printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+            m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
+            ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
+          #endif
+
           m++;
         }
         if (++k >= frame_parms->ofdm_symbol_size)
