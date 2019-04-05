@@ -118,7 +118,7 @@ void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
         mpdcch5ss1tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
         re++;
       } else if ((kmod == 0) || (kmod == 5) || (kmod == 10)) {
-	mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
+	    mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
       }
     }
   }

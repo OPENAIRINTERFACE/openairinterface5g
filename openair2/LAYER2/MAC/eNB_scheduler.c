@@ -649,16 +649,20 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             }
           }
 
-          /* UL synchronous HARQ process */
+          /* UL asynchronous HARQ process: only UL HARQ RTT timer is implemented (hence not implemented) */
           if (UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id] > 0) {
             UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id]++;
 
             if (UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id] > 4) {
-              // drx_ULRetransmissionTimer should be started here
+              /* 
+               * TODO: implement the handling of UL asynchronous HARQ
+               * drx_ULRetransmissionTimer should be (re)started here
+               */
               UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id] = 0;
             }
           }
 
+          /* UL synchronous HARQ process */
           if (UE_scheduling_control->ul_synchronous_harq_timer[CC_id][harq_process_id] > 0) {
             UE_scheduling_control->ul_synchronous_harq_timer[CC_id][harq_process_id]++;
 
@@ -684,6 +688,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           UE_scheduling_control->drx_inactivity_timer++;
 
           if (UE_scheduling_control->drx_inactivity_timer > (UE_scheduling_control->drx_inactivity_timer_thres + 1)) {
+            /* Note: the +1 on the threshold is due to information in table C-1 of 36.321 */
             UE_scheduling_control->drx_inactivity_timer = 0;
 
             /* When timer expires switch into short or long DRX cycle */
@@ -701,7 +706,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         if (UE_scheduling_control->in_short_drx_cycle == TRUE) {
           UE_scheduling_control->drx_shortCycle_timer++;
 
-          /* When the Short DRX cycles are over */
+          /* When the Short DRX cycles are over, switch to long DRX cycle */
           if (UE_scheduling_control->drx_shortCycle_timer > UE_scheduling_control->drx_shortCycle_timer_thres) {
             UE_scheduling_control->drx_shortCycle_timer = 0;
             UE_scheduling_control->in_short_drx_cycle = FALSE;
@@ -723,7 +728,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           UE_scheduling_control->drx_longCycle_timer = 0;
         }
 
-        /* Check for error case */
+        /* Check for error cases */
         if ((UE_scheduling_control->in_short_drx_cycle == TRUE) && (UE_scheduling_control->in_long_drx_cycle == TRUE)) {
           LOG_E(MAC, "Error in C-DRX: UE id %d is in both short and long DRX cycle. Should not happen. Back it to long cycle only\n", UE_id);
           UE_scheduling_control->in_short_drx_cycle = FALSE;
@@ -750,21 +755,23 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
          * ONLY here. The variable can then be used for testing the actual state of the UE for scheduling purpose.
          */
         UE_template = &(UE_list->UE_template[CC_id][UE_id]);
-        /* (a)synchronous HARQ Processes handling for Active Time */
+        /* (a)synchronous HARQ processes handling for Active Time */
         for (int harq_process_id = 0; harq_process_id < 8; harq_process_id++) {
           if (UE_scheduling_control->drx_retransmission_timer[harq_process_id] > 0) {
             harq_active_time_condition = TRUE;
-            active_time_condition = 2;
+            active_time_condition = 2; // for tracing purpose
             break;
           }
         }
 
+        /* Active time conditions */
         if (UE_scheduling_control->on_duration_timer > 0 ||
             UE_scheduling_control->drx_inactivity_timer > 1 ||
             harq_active_time_condition ||
             UE_template->ul_SR > 0) {
 
           UE_scheduling_control->in_active_time = TRUE;
+
         } else {
           UE_scheduling_control->in_active_time = FALSE;
         }
@@ -774,11 +781,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_ON_DURATION_TIMER, (unsigned long) UE_scheduling_control->on_duration_timer);
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_scheduling_control->drx_inactivity_timer);
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_SHORT_CYCLE, (unsigned long) UE_scheduling_control->drx_shortCycle_timer);
-          //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SHORT_DRX_CYCLE_NUMBER, (unsigned long) UE_scheduling_control->short_drx_cycle);
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_LONG_CYCLE, (unsigned long) UE_scheduling_control->drx_longCycle_timer);
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) UE_scheduling_control->drx_retransmission_timer[0]);
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_ACTIVE_TIME, (unsigned long) UE_scheduling_control->in_active_time);
 
+          /* For tracing purpose */
           if (UE_template->ul_SR > 0) {
             active_time_condition = 1;
           } else if ((UE_scheduling_control->on_duration_timer > 0) && (active_time_condition == 0)) {
@@ -790,7 +797,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_ACTIVE_TIME_CONDITION, (unsigned long) active_time_condition);
         }
         /* END VCD */
-      } else { // end if CDRX is configured
+
+      } else { // else: CDRX not configured
+        /* Note: (UL) HARQ RTT timers processing is done here and can be used by other features than CDRX */
         /* HARQ RTT timers */
         for (int harq_process_id = 0; harq_process_id < 8; harq_process_id++) {
           if (UE_scheduling_control->harq_rtt_timer[CC_id][harq_process_id] > 0) {
@@ -988,7 +997,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
   }
 
-  // Allocate CCEs for good after scheduling is done
+  /* Allocate CCEs for good after scheduling is done */
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP))) {
       allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
