@@ -1189,7 +1189,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_setup;
             } else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_Config_present choice: prNothing,prRelease,prSetup !\n",
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_Config_present choice: prNothing, prRelease, prSetup!\n",
                            RC.config_file_name, i, ccparams_lte.drx_Config_present);
             }
 

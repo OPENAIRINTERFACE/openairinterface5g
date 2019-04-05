@@ -317,13 +317,22 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
   return((enc_rval.encoded+7)/8);
 }
 
-
-LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *configuration, LTE_UE_EUTRA_Capability_t *UEcap)
+//-----------------------------------------------------------------------------
+/*
+ * Generate the configuration structure for CDRX feature
+ */
+LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, 
+              int CC_id, 
+              RrcConfigurationReq *configuration, 
+              LTE_UE_EUTRA_Capability_t *UEcap)
+//-----------------------------------------------------------------------------
 {
   LTE_DRX_Config_t *drxConfig = NULL;
   BIT_STRING_t *featureGroupIndicators = NULL;
   bool ueSupportCdrxShortFlag = false;
   bool ueSupportCdrxLongFlag = false;
+
+  /* Check the UE capabilities for short and long CDRX cycles support */
   if (UEcap) {
     featureGroupIndicators = UEcap->featureGroupIndicators;
     if (featureGroupIndicators) {
@@ -339,6 +348,7 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *c
   if (drxConfig == NULL) return NULL;
   memset(drxConfig, 0, sizeof(LTE_DRX_Config_t));
 
+  /* Long DRX cycle support is mandatory for CDRX activation */
   if (!ueSupportCdrxLongFlag || configuration == NULL) {
     drxConfig->present = LTE_DRX_Config_PR_release;
   } else {
@@ -405,6 +415,8 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *c
         default:
           break;
       }
+
+      /* Short DRX cycle configuration */
       if (!ueSupportCdrxShortFlag || configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer == 0) {
         drxConfig->choice.setup.shortDRX = NULL;
       } else {
