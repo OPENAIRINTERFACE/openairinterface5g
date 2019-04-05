@@ -236,8 +236,8 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
   char broadcastAddress[20];
   char interfaceName[20];
   int returnValue;
-  sprintf(ipAddress, "10.0.%d.%d", thirdOctet,fourthOctet);
-  sprintf(broadcastAddress, "10.0.%d.255", thirdOctet);
+  sprintf(ipAddress, "%s.%d.%d", baseNetAddress,thirdOctet,fourthOctet);
+  sprintf(broadcastAddress, "%s.%d.255",baseNetAddress, thirdOctet);
   sprintf(interfaceName, "%s%s%d", (UE_NAS_USE_TUN || ENB_NAS_USE_TUN)?"oaitun_":ifname,
           UE_NAS_USE_TUN?"ue": (ENB_NAS_USE_TUN?"enb":""),interface_id);
   bringInterfaceUp(interfaceName, 0);

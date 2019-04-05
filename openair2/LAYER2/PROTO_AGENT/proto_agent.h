@@ -29,7 +29,7 @@
  *******************************************************************************/
 
 /*! \file proto_agent.h
- * \brief top level protocol agent  
+ * \brief top level protocol agent
  * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
@@ -41,18 +41,18 @@
 #include "proto_agent_common.h"
 
 
-void * proto_agent_receive(void *args);
+void *proto_agent_receive(void *args);
 
 int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p);
 void proto_agent_stop(mod_id_t mod_id);
 
-void proto_agent_send_rlc_data_req( const protocol_ctxt_t* const ctxt_pP,
+rlc_op_status_t proto_agent_send_rlc_data_req( const protocol_ctxt_t *const ctxt_pP,
     const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
     const rb_id_t rb_idP, const mui_t muiP, confirm_t confirmP,
     sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
 
-void proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP,
-    const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
-    const rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
+void proto_agent_send_pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
+                                    const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
+                                    const rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
 
 #endif

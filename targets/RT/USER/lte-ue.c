@@ -53,6 +53,7 @@
 #include <inttypes.h>
 
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
@@ -63,7 +64,7 @@
 #include "T.h"
 
 extern double cpuf;
-extern uint8_t  nfapi_mode;
+
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
@@ -93,7 +94,7 @@ extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
-extern int simL1flag;
+
 extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 
@@ -192,7 +193,7 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
   ue->mac_enabled = 1;
 
   // In phy_stub_UE (MAC-to-MAC) mode these init functions don't need to get called. Is this correct?
-  if (nfapi_mode!=3) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     // initialize all signal buffers
     init_lte_ue_signal(ue,1,abstraction_flag);
     // intialize transport
@@ -266,7 +267,7 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
 
     LOG_I(PHY,"Allocating UE context %d\n",inst);
 
-    if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
+    if ( !IS_SOFTMODEM_SIML1 ) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
     else {
       // needed for memcopy below. these are not used in the RU, but needed for UE
       RC.ru[0]->frame_parms.nb_antennas_rx = fp0->nb_antennas_rx;
@@ -354,12 +355,12 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
        */
       UE->N_TA_offset = 0;
 
-    if (simL1flag == 1) init_ue_devices(UE);
+    if (IS_SOFTMODEM_SIML1 ) init_ue_devices(UE);
 
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
 
-    if (simL1flag == 0) {
+    if (!IS_SOFTMODEM_SIML1 ) {
       ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
 
       if (ret !=0) {
@@ -397,7 +398,7 @@ void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, 
   printf("UE threads created \n");
   LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
 
-  if(nfapi_mode!=3)
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
 }
 
@@ -427,7 +428,7 @@ void init_UE_stub(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_ifa
   printf("UE threads created \n");
   LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
 
-  if(nfapi_mode !=3)
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
 }
 
@@ -1123,7 +1124,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
           hi_dci0_req_UE_MAC(hi_dci0_req, ue_Mod_id);
         }
 
-        if(nfapi_mode!=3)
+        if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
           phy_procedures_UE_SL_TX(UE,proc);
       }
 
@@ -1405,7 +1406,7 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg) {
         hi_dci0_req = NULL;
       }
 
-      if (nfapi_mode != 3)
+      if (NFAPI_MODE!=NFAPI_UE_STUB_PNF)
         phy_procedures_UE_SL_TX(UE,proc);
     }
 
@@ -1858,7 +1859,7 @@ void init_UE_single_thread_stub(int nb_inst) {
     AssertFatal(PHY_vars_UE_g[i]!=NULL,"PHY_vars_UE_g[inst] is NULL\n");
     AssertFatal(PHY_vars_UE_g[i][0]!=NULL,"PHY_vars_UE_g[inst][0] is NULL\n");
 
-    if(nfapi_mode == 3) {
+    if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
@@ -2040,7 +2041,7 @@ static void *timer_thread( void *param ) {
   opp_enabled = 1;
 
   // first check if we are receiving timing indications
-  if(nfapi_mode==4) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_OFFNET) {
     usleep(10000);
 
     if (UE->instance_cnt_timer > 0) {
@@ -2128,7 +2129,7 @@ static void *timer_thread( void *param ) {
       pdu.header.packet_type = TTI_SYNC;
       pdu.header.absSF = (timer_frame*10)+timer_subframe;
 
-      if (nfapi_mode!=3) {
+      if (NFAPI_MODE != NFAPI_UE_STUB_PNF) {
         multicast_link_write_sock(0,
                                   (char *)&pdu,
                                   sizeof(UE_tport_header_t));

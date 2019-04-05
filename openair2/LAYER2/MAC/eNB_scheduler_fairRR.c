@@ -40,6 +40,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/eNB_scheduler_fairRR.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
@@ -49,7 +50,7 @@
 
 #include "T.h"
 
-extern uint8_t nfapi_mode;
+
 #ifdef PHY_TX_THREAD
   extern volatile int16_t phy_tx_txdataF_end;
   extern int oai_exit;
@@ -841,7 +842,6 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 #ifdef DEBUG_eNB_SCHEDULER
   int k;
 #endif
-
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -1012,7 +1012,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
          DevCheck(((eNB_UE_stats->dl_cqi < MIN_CQI_VALUE) || (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
          eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
        */
-      if (nfapi_mode) {
+      if (NFAPI_MODE != NFAPI_MONOLITHIC) {
         eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       } else {
         eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
