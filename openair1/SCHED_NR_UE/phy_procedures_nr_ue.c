@@ -4299,6 +4299,26 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 
+int is_pbch_in_slot(fapi_nr_pbch_config_t pbch_config, int frame, int slot, int periodicity, uint16_t slots_per_frame)  {
+
+  int ssb_slot_decoded = (pbch_config.ssb_index)/2;
+
+  if (periodicity == 5) {  
+    // check for pbch in corresponding slot each half frame
+    if (pbch_config.half_frame_bit)
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - slots_per_frame/2);
+    else
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + slots_per_frame/2);
+  }
+  else {
+    // if the current frame is supposed to contain ssb
+    if (!((frame-(pbch_config.system_frame_number))%(periodicity/10)))
+      return(slot == ssb_slot_decoded);
+    else
+      return 0;
+  }
+}
+
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
 			   uint8_t do_pdcch_flag,runmode_t mode,
@@ -4310,11 +4330,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   int pilot1;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
+  int slot_pbch;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 9; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
-  uint8_t ssb_periodicity = 10; //ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
-  uint8_t ssb_frame_periodicity;  
+  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity; // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
   uint8_t dci_cnt = 0;
   
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
@@ -4462,12 +4482,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
-  ssb_frame_periodicity = ssb_periodicity/10 ;  // 10ms is the frame length
+  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
 
-  int ssb_slot = (pbch_config.ssb_index)/2;
-
-  // looking for pbch only in frames according to ssb periodicity and in slot where decoded ssb is found
-  if ((ue->decode_MIB == 1) && (nr_tti_rx == ssb_slot) && !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
+  // looking for pbch only in slot where it is supposed to be
+  if ((ue->decode_MIB == 1) && slot_pbch)
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
