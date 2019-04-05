@@ -1003,8 +1003,8 @@ typedef struct {
     /* HARQ RRT Timers */
     /// (UL) HARQ RTT timers, especially used for CDRX operations, one timer per cell per harq process (and per user)
     uint8_t harq_rtt_timer[NFAPI_CC_MAX][8];
-    uint8_t ul_harq_rtt_timer[NFAPI_CC_MAX][8]; // Note: UL HARQ RTT timers are only for asynchronous HARQ processes!!
-    uint8_t ul_synchronous_harq_timer[NFAPI_CC_MAX][8];
+    uint8_t ul_harq_rtt_timer[NFAPI_CC_MAX][8]; // Note: UL HARQ RTT timers are only for asynchronous HARQ processes
+    uint8_t ul_synchronous_harq_timer[NFAPI_CC_MAX][8];  // These timers are used for UL synchronous HARQ processes
 
     /* C-DRX related timers */
     /* Note: only valid for FDD when this comment is written (11-01-19)*/
@@ -1012,7 +1012,11 @@ typedef struct {
     boolean_t cqi_mask_boolean;
     /// is TRUE if the following drx parameters are configured for UE
     boolean_t cdrx_configured;
-    /// if TRUE, the scheduler should bypass in_active_time and consider the UE as active
+    /* 
+     * if TRUE, the scheduler should bypass in_active_time and consider the UE as active
+     * This can be needed, especially during the RRC configuration process, when the context is
+     * configured on the eNB side, but not yet on the UE side...
+     */
     boolean_t bypass_cdrx;
     /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
     boolean_t in_active_time;
@@ -1026,7 +1030,7 @@ typedef struct {
     boolean_t in_short_drx_cycle;
     /// drxShortCycleTimer int (1..16) (number of short DRX cycles duration before long DRX cycles)
     uint8_t  drx_shortCycle_timer_value;
-    /// shortDRX-Cycle (duration of a short DRX cycle)
+    /// shortDRX-Cycle (duration of one short DRX cycle)
     uint16_t   short_drx_cycle_duration;
     /// DRX short cycle timer before switching to long DRX cycle = drx_shortCycle_timer_value * short_drx_cycle_duration
     uint16_t  drx_shortCycle_timer;
@@ -1041,6 +1045,8 @@ typedef struct {
     /// DRX retransmission timer, one per DL HARQ process
     uint8_t   drx_retransmission_timer[8];
     uint8_t   drx_retransmission_timer_thres[8];
+    /// DRX UL retransmission timer, one per UL HARQ process
+    /* Not implemented yet */
     /* End of C-DRX related timers */
 } UE_sched_ctrl;
 

@@ -1275,13 +1275,13 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
                                  uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
 #endif
 
-/*Slice related functions */
+/* Slice related functions */
 uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 
 /* DRX Configuration */
-/* Configure local DRX timers and thresh following the drx_configuration input */
+/* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */
 void eNB_Config_Local_DRX(module_id_t Mod_id, rnti_t rnti, LTE_DRX_Config_t *drx_Configuration);
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
