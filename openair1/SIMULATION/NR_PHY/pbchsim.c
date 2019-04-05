@@ -605,6 +605,7 @@ int main(int argc, char **argv)
 	if (ret<0) n_errors++;
       }
       else {
+        UE->common_vars.rxdata = UE->common_vars.rxdata_is;
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb

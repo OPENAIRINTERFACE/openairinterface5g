@@ -173,7 +173,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     } else {
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol;
       //                  + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
-
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *) &(rxdata[aa][frame_length_samples]),
                (void *) &(rxdata[aa][0]),
