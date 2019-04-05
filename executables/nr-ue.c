@@ -239,7 +239,7 @@ static void UE_synch(void *arg) {
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
-      if (nr_initial_sync( syncD->proc, UE, UE->mode ) == 0) {
+      if (nr_initial_sync( syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",

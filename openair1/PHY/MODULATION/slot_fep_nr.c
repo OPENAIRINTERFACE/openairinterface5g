@@ -133,8 +133,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
-
-
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 

@@ -1435,7 +1435,9 @@ void generate_RIV_tables(void);
   @param mode current running mode
 */
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
-                    PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
+                    PHY_VARS_NR_UE *phy_vars_ue, 
+                    runmode_t mode,
+                    int n_frames);
 
 
 /*!

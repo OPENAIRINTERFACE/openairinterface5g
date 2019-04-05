@@ -478,8 +478,7 @@ int main(int argc, char **argv)
   if(eps!=0.0)
 	UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0)
-  {
+  if (init_nr_ue_signal(UE, 1, 0) != 0) {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
@@ -588,39 +587,37 @@ int main(int argc, char **argv)
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
-	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata_is[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata_is[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_frame,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata_is[0],frame_parms->samples_per_frame,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata_is[1],frame_parms->samples_per_frame,1,1);
       }
 
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, normal_txrx);
+	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
       else {
 	UE->rx_offset=0;
-	
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
-
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+        int ssb_slot = (ssb_index/2)+(n_hf*frame_parms->slots_per_frame);
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
 	  nr_slot_fep(UE,
-	  	      i,
-		      0,
+	  	      i%frame_parms->symbols_per_slot,
+		      ssb_slot,
 		      0,
 		      0,
 		      NR_PBCH_EST);
-
-          nr_pbch_channel_estimation(UE,0,0,i,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+          nr_pbch_channel_estimation(UE,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
         }
 	UE_nr_rxtx_proc_t proc={0};
 

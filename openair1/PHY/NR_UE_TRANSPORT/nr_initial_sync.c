@@ -201,7 +201,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode, int n_frames)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
@@ -243,7 +243,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
    cnt =0;
 
    // initial sync performed on two successive frames, if pbch passes on first frame, no need to process second frame 
-   for(is=0; is<2;is++) {
+   // only one frame is used for symulation tools
+   for(is=0; is<n_frames;is++) {
 
     /* process pss search on received buffer */
     sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
@@ -252,7 +253,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
       ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
     else
       ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
-
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
