@@ -233,7 +233,7 @@ printf("\n");
   for (int q=0; q<rel15->nb_codewords; q++)
     memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
-  ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
+  ((pdcch_params.scrambling_id==0)?pdcch_params.rnti:0) : 0;
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
   pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->nb_codewords; q++)

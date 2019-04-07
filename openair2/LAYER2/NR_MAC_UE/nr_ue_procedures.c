@@ -236,12 +236,12 @@ int8_t nr_ue_decode_mib(
 #ifdef DEBUG_MIB
 		printf("system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
 		printf("system frame number(with LSB): %d\n", (int)frame);
-		printf("subcarrier spacing:            %d\n", (int)mac->mib->subCarrierSpacingCommon);
+		printf("subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
 		printf("ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
-		printf("dmrs type A position:          %d\n", (int)mac->mib->dmrs_TypeA_Position);
+		printf("dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
 		printf("pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
-		printf("cell barred:                   %d\n", (int)mac->mib->cellBarred);
-		printf("intra frequency reselection:   %d\n", (int)mac->mib->intraFreqReselection);
+		printf("cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
+		printf("intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
 		printf("half frame bit(extra bits):    %d\n", (int)half_frame_bit);
 		printf("ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
@@ -662,9 +662,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
     	
+	/*
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;	//	to be set
-	/*
+
 	printf("nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);  
@@ -1124,19 +1125,19 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
   fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
   uint8_t time_domain_ind,
-  long dmrs_typeA_pos
+  long dmrs_typeA_pos //0=pos2,1=pos3
 ){
   uint8_t k_offset=0;
   uint8_t sliv_S=0;
   uint8_t sliv_L=0;
   uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
-  {0,(dmrs_typeA_pos == 2)?9:10,(dmrs_typeA_pos == 2)?4:4},   // row index 6
-  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?12:11}, // row index 1
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 0)?9:10,(dmrs_typeA_pos == 0)?4:4},   // row index 6
+  {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
   {0,5,7},  // row index 8
   {0,5,2},  // row index 9
   {0,9,2},  // row index 10
@@ -1148,13 +1149,13 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,8,4}   // row index 16
   };
   uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?6:5},   // row index 1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
-  {0,(dmrs_typeA_pos == 2)?6:8, (dmrs_typeA_pos == 2)?4:2},   // row index 6
-  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?6:5},   // row index 1
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 0)?6:8, (dmrs_typeA_pos == 0)?4:2},   // row index 6
+  {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
   {0,5,6},  // row index 8
   {0,5,2},  // row index 9
   {0,9,2},  // row index 10
@@ -1179,7 +1180,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,8,4},  // row index 11
   {0,10,4}, // row index 12
   {0,2,7},  // row index 13
-  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
   {1,2,4},  // row index 15
   {0,0,0}   // row index 16
   };
@@ -1197,7 +1198,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,8,4},  // row index 11
   {0,10,4}, // row index 12
   {0,2,7},  // row index 13
-  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
   {0,0,6},  // row index 15
   {0,2,6}   // row index 16
   };
@@ -1245,9 +1246,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
  * TS 38.214 subclause 5.1.2.1 Resource allocation in time domain (downlink)
  */
   if(dlsch_config_pdu != NULL){
-      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][0];
-      sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
-      sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
+      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
+      sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
+      sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
       // k_offset = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -1264,9 +1265,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
  * TS 38.214 subclause 6.1.2.1 Resource allocation in time domain (uplink)
  */
   if(ulsch_config_pdu != NULL){
-      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][0];
-      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
-      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
+      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
+      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
+      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
       // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -1284,10 +1285,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
     
-    const uint16_t n_RB_ULBWP = 106;
-    const uint16_t n_RB_DLBWP = 106;
+    //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
+    const uint16_t n_RB_DLBWP = mac->initial_bwp_dl.N_RB;
+    const uint16_t n_RB_ULBWP = mac->initial_bwp_ul.N_RB;
 
-    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
+    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
 
     switch(dci_format){
         case format0_0:
@@ -1768,7 +1770,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
                   dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
 
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-
+	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
+	    
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
             dl_config->number_pdus = dl_config->number_pdus + 1;
@@ -1953,7 +1956,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
         /* DMRS_SEQ_INI */
             //FIXME!!!
 
-            
+	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
+	    
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             

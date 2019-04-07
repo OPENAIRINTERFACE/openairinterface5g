@@ -3596,22 +3596,26 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   memcpy(harq_ack_dest, current_harq_ack, sizeof(nr_harq_status_t));
   }*/
 
-void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1, int s0, int s1) {
+void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
 
   int nr_tti_rx = proc->nr_tti_rx;
   int m;
-  int harq_pid;
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
-  uint16_t pdsch_start_rb = 0;
-  uint16_t pdsch_nb_rb = 50;
 
   if (dlsch0->active == 0)
     return;
 
-  for (m=s0;m<=s1;m++) {
+  if (dlsch0 && (!dlsch1))  {
+    int harq_pid = dlsch0->current_harq_pid;
+    uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
+    uint16_t pdsch_nb_rb =  dlsch0->harq_processes[harq_pid]->nb_rb;
+    uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
+    uint16_t s1 =  dlsch0->harq_processes[harq_pid]->nb_symbols;
 
-    if (dlsch0 && (!dlsch1))  {
+    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
+
+    for (m=s0;m<=s1;m++) {
 
       if (m==s0)
 	nr_pdsch_channel_estimation(ue,
@@ -3622,8 +3626,6 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 				    ue->frame_parms.first_carrier_offset+pdsch_start_rb*12,
 				    pdsch_nb_rb);
       
-      harq_pid = dlsch0->current_harq_pid;
-      LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d Symbol %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,m);
 
       dual_stream_UE = 0;
       eNB_id_i = eNB_id+1;
@@ -4440,9 +4442,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   PDSCH,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
-			   NULL,
-			   nb_symb_pdcch, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   (nb_symb_sch+nb_symb_pdcch-1)); //ue->frame_parms.symbols_per_tti>>1,
+			   NULL);
 
     /*
     write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);
@@ -4464,9 +4464,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   SI_PDSCH,
 			   ue->dlsch_SI[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
@@ -4478,9 +4477,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   P_PDSCH,
 			   ue->dlsch_p[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
@@ -4492,9 +4490,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   RA_PDSCH,
 			   ue->dlsch_ra[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
@@ -4592,9 +4589,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   SI_PDSCH,
 			   ue->dlsch_SI[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,
@@ -4615,9 +4610,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   P_PDSCH,
 			   ue->dlsch_p[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
 
     /*ue_dlsch_procedures(ue,
@@ -4638,9 +4631,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   RA_PDSCH,
 			   ue->dlsch_ra[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,

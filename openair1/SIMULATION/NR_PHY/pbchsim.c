@@ -617,8 +617,7 @@ int main(int argc, char **argv)
 	  	      i,
 		      0,
 		      0,
-		      0,
-		      NR_PBCH_EST);
+		      0);
 
           nr_pbch_channel_estimation(UE,0,0,i,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
         }
