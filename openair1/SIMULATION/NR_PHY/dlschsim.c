@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
 	float target_error_rate = 0.01;
-
+        uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:N:F:R:P:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
 		case 'f':
 			write_output_file = 1;
@@ -285,6 +285,10 @@ int main(int argc, char **argv) {
 
 			break;
 
+	        case 'M':
+      			SSB_positions = atoi(optarg);
+			break;		    
+
 		case 'N':
 			Nid_cell = atoi(optarg);
 			break;
@@ -310,6 +314,10 @@ int main(int argc, char **argv) {
 				printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
 
 			break;
+
+		case 'L':
+		  loglvl = atoi(optarg);
+		  break;
 
 		case 'm':
 			Imcs = atoi(optarg);
@@ -343,6 +351,7 @@ int main(int argc, char **argv) {
 			printf("-z Number of RX antennas used in UE\n");
 			printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
 			printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+  		        printf("-M Multiple SSB positions in burst\n");
 			printf("-N Nid_cell\n");
 			printf("-R N_RB_DL\n");
 			printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -383,7 +392,7 @@ int main(int argc, char **argv) {
 	frame_parms->N_RB_DL = N_RB_DL;
 	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
-	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
+	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell,SSB_positions);
 	phy_init_nr_gNB(gNB, 0, 0);
 	//init_eNB_afterRU();
 	frame_length_complex_samples = frame_parms->samples_per_subframe;
@@ -404,7 +413,7 @@ int main(int argc, char **argv) {
 		r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
 		bzero(r_im[i], frame_length_complex_samples * sizeof(double));
 		txdata[i] = malloc(frame_length_complex_samples * sizeof(int));
-		bzero(r_re[i], frame_length_complex_samples * sizeof(int));
+		bzero(r_re[i], frame_length_complex_samples * sizeof(int)); // [hna] r_re should be txdata
 	}
 
 	if (pbch_file_fd != NULL) {
@@ -480,7 +489,7 @@ int main(int argc, char **argv) {
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384);
+	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;

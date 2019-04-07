@@ -686,7 +686,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     mac->scheduled_response.dl_config = dl_config;
     
 
-	return CONNECTION_OK;
+	return UE_CONNECTION_OK;
 }
 
 //////////////

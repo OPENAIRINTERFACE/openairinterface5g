@@ -59,7 +59,6 @@ int nr_generate_pss(  int16_t *d_pss,
   /// Resource mapping
   a = amp;
 
-
     // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
     if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;

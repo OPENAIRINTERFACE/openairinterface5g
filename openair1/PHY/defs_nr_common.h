@@ -87,10 +87,10 @@
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
-#define NR_MAX_NB_LAYERS 8
+#define NR_MAX_NB_LAYERS 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
 #define NR_MAX_NB_CODEWORDS 2
 #define NR_MAX_NB_HARQ_PROCESSES 16
-#define NR_MAX_PDSCH_ENCODED_LENGTH 950984
+#define NR_MAX_PDSCH_ENCODED_LENGTH NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS // 8 is the maximum modulation order (it was 950984 before !!) 
 #define NR_MAX_PDSCH_TBS 3824
 
 typedef enum {
@@ -303,11 +303,15 @@ typedef struct NR_DL_FRAME_PARMS {
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
 
-   //SSB related params
+  //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
   /// SSB type
   nr_ssb_type_e ssb_type;
+  /// Max number of SSB in frame
+  uint8_t Lmax;
+  /// SS block pattern (max 64 ssb, each bit is on/off ssb)
+  uint64_t L_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 
@@ -316,6 +320,24 @@ typedef struct NR_DL_FRAME_PARMS {
   NR_BWP_PARMS initial_bwp_ul;
 
 } NR_DL_FRAME_PARMS;
+
+#define KHz (1000UL)
+#define MHz (1000*KHz)
+
+typedef struct nr_bandentry_s {
+  int16_t band;
+  uint64_t ul_min;
+  uint64_t ul_max;
+  uint64_t dl_min;
+  uint64_t dl_max;
+  uint64_t N_OFFs_DL;
+  uint64_t step_size;
+} nr_bandentry_t;
+
+typedef struct nr_band_info_s {
+  int nbands;
+  nr_bandentry_t band_info[100];
+} nr_band_info_t;
 
 
 #endif

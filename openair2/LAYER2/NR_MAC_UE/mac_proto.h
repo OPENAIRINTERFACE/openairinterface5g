@@ -30,8 +30,8 @@
  * \warning
  */
 
-#ifndef __LAYER2_MAC_PROTO_H__
-#define __LAYER2_MAC_PROTO_H__
+#ifndef __LAYER2_MAC_UE_PROTO_H__
+#define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
 #include "mac.h"
