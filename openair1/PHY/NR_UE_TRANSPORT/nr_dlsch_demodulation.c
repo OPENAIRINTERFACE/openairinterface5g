@@ -131,11 +131,15 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   unsigned short nb_rb_pdsch = 50;
   int16_t  *pllr_symbol_cw0;
   int16_t  *pllr_symbol_cw1;
+  int16_t  *pllr_symbol_layer0;
+  int16_t  *pllr_symbol_layer1;
   //int16_t  *pllr_symbol_cw0_deint;
   //int16_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
   //uint16_t bundle_L = 2;
   uint8_t l0 =2;
+  uint16_t n_tx=1, n_rx=1;
+  int32_t median[16];
   
   switch (type) {
   case SI_PDSCH:
@@ -279,7 +283,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_HARQ
   printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
 #endif
-#if 0
+
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
     LOG_I(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0],dlsch0_harq->rb_alloc_even[0]);
@@ -288,7 +292,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
-    nb_rb = dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
+    nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                    common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
                                    pdsch_vars[eNB_id]->rxdataF_ext,
                                    pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -296,6 +300,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                    pdsch_vars[eNB_id]->pmi_ext,
                                    rballoc,
                                    symbol,
+								   start_rb,
+								   nb_rb_pdsch,
                                    nr_tti_rx,
                                    ue->high_speed_flag,
                                    frame_parms,
@@ -307,10 +313,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
        printf("\n");
 #endif
 
-
    if (rx_type >= rx_IC_single_stream) {
       if (eNB_id_i<ue->n_connected_eNB) // we are in TM5
-      nb_rb = dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
+      nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                        common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id_i],
                                        pdsch_vars[eNB_id_i]->rxdataF_ext,
                                        pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
@@ -318,12 +323,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        rballoc,
                                        symbol,
+									   start_rb,
+									   nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
                                        dlsch0_harq->mimo_mode);
       else
-        nb_rb = dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
+        nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                        common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
                                        pdsch_vars[eNB_id_i]->rxdataF_ext,
                                        pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
@@ -331,15 +338,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        rballoc,
                                        symbol,
+									   start_rb,
+									   nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
                                        dlsch0_harq->mimo_mode);
     }
-  } else
-
-#endif
-	  if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
+  } else if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
 		  //printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                      pdsch_vars[eNB_id]->dl_ch_estimates,
@@ -418,8 +424,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
-  aatx = frame_parms->nb_antenna_ports_eNB;
-  aarx = frame_parms->nb_antennas_rx;
+  n_tx = frame_parms->nb_antenna_ports_eNB;
+  n_rx = frame_parms->nb_antennas_rx;
+  nb_re= (symbol==l0)? (nb_rb*6):(nb_rb*12);
 
   nr_dlsch_scale_channel(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                       frame_parms,
@@ -466,36 +473,29 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
             avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
         pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)+1;
-     }/*
+     }
      else if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
            ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
             (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))
      {
-      dlsch_channel_level_TM34(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                 frame_parms,
-                                 pdsch_vars[eNB_id]->pmi_ext,
-                                 avg_0,
-                                 avg_1,
-                                 symbol,
-                                 nb_rb,
-                                 dlsch0_harq->mimo_mode);
+    	 nr_dlsch_channel_level_median(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+    	                             median,
+    	                             n_tx,
+    	                             n_rx,
+    	                             2*nb_re,// subcarriers Re Im
+    	                             0);
 
-      LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, dlsch_demod_shift %d \n", avg_0[0],
-              avg_1[0], rx_type, rx_standard, dlsch_demod_shift);
-        if (rx_type>rx_standard) {
-          avg_0[0] = (log2_approx(avg_0[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
-          avg_1[0] = (log2_approx(avg_1[0])/2) + dlsch_demod_shift;// + 2 ;//+ 4;
-          pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
-          pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
-         // printf("dlsch_demod_shift  %d\n", dlsch_demod_shift);
-         }
-          else {
-          avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + interf_unaw_shift;
-          avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + interf_unaw_shift;
-          pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
-          pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
-        }
-      }
+    	  for (aatx = 0; aatx < n_tx; ++aatx)
+    	  {
+    	    for (aarx = 0; aarx < n_rx; ++aarx)
+    	    {
+    	      avgs = cmax(avgs, median[aatx*n_rx + aarx]);
+    	    }
+    	  }
+
+    	  pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1; // this might need to be tuned
+
+     }/*
       else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
         if ((rx_type==rx_IC_single_stream) && (eNB_id_i==ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {
             dlsch_channel_level_TM56(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -629,22 +629,20 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     }*/
   }
 
-#if 0
   else if ((dlsch0_harq->mimo_mode == LARGE_CDD) || ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
             (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){
-      dlsch_channel_compensation_TM34(frame_parms,
-                                     pdsch_vars[eNB_id],
-                                     measurements,
-                                     eNB_id,
-                                     symbol,
-                                     dlsch0_harq->Qm,
-                                     dlsch1_harq->Qm,
-                                     harq_pid,
-                                     dlsch0_harq->round,
-                                     dlsch0_harq->mimo_mode,
-                                     nb_rb,
-                                     pdsch_vars[eNB_id]->log2_maxh0,
-                                     pdsch_vars[eNB_id]->log2_maxh1);
+	  nr_dlsch_channel_compensation_core(pdsch_vars[eNB_id]->rxdataF_ext,
+			  	  	  	  	  	  	  	pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+										pdsch_vars[eNB_id]->dl_ch_mag0,
+										pdsch_vars[eNB_id]->dl_ch_magb0,
+										pdsch_vars[eNB_id]->rxdataF_comp0, //rxdataF_comp
+	                                    NULL,
+	                                    n_tx,
+	                                    n_rx,
+										dlsch0_harq->Qm,
+										pdsch_vars[eNB_id]->log2_maxh,
+	                                    2*nb_re, // subcarriers Re Im
+	                                    0); // we start from the beginning of the vector
   /*   if (symbol == 5) {
      write_output("rxF_comp_d00.m","rxF_c_d00",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rxF_comp_d01.m","rxF_c_d01",&pdsch_vars[eNB_id]->rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
@@ -652,22 +650,23 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
      write_output("rxF_comp_d11.m","rxF_c_d11",&pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
         } */
       // compute correlation between signal and interference channels (rho12 and rho21)
-        dlsch_dual_stream_correlation(frame_parms, // this is doing h11'*h12 and h21'*h22
-                                    symbol,
-                                    nb_rb,
-                                    pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    &(pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
-                                    pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                                    pdsch_vars[eNB_id]->log2_maxh0);
+        nr_dlsch_dual_stream_correlation_core(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+        									 &(pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
+											 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                                             n_tx,
+                                             n_rx,
+											 pdsch_vars[eNB_id]->log2_maxh,
+                                             2*nb_re,
+                                             0);
         //printf("rho stream1 =%d\n", &pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
-      //to be optimized (just take complex conjugate)
-      dlsch_dual_stream_correlation(frame_parms, // this is doing h12'*h11 and h22'*h21
-                                    symbol,
-                                    nb_rb,
-                                    &(pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
-                                    pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                    pdsch_vars[eNB_id]->log2_maxh1);
+        nr_dlsch_dual_stream_correlation_core(&(pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
+        									pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+											pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+                                            n_tx,
+                                            n_rx,
+       										pdsch_vars[eNB_id]->log2_maxh,
+                                            2*nb_re,
+                                            0);
     //  printf("rho stream2 =%d\n",&pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",pdsch_vars[eNB_id]->log2_maxh);
   /*     if (symbol == 5) {
@@ -677,105 +676,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
      write_output("rho2_1.m","rho2_1",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
         } */
 
-    } else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
-        if ((rx_type==rx_IC_single_stream) && (eNB_id_i==ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {
-          dlsch_channel_compensation_TM56(pdsch_vars[eNB_id]->rxdataF_ext,
-                                      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                                      pdsch_vars[eNB_id]->dl_ch_magb0,
-                                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                                      pdsch_vars[eNB_id]->pmi_ext,
-                                      frame_parms,
-                                      measurements,
-                                      eNB_id,
-                                      symbol,
-                                      dlsch0_harq->Qm,
-                                      nb_rb,
-                                      pdsch_vars[eNB_id]->log2_maxh,
-                                      dlsch0_harq->dl_power_off);
-
-        for (rb=0; rb<nb_rb; rb++) {
-          switch(pdsch_vars[eNB_id]->pmi_ext[rb]) {
-          case 0:
-            pdsch_vars[eNB_id_i]->pmi_ext[rb]=1;
-            break;
-         case 1:
-            pdsch_vars[eNB_id_i]->pmi_ext[rb]=0;
-            break;
-         case 2:
-            pdsch_vars[eNB_id_i]->pmi_ext[rb]=3;
-            break;
-          case 3:
-            pdsch_vars[eNB_id_i]->pmi_ext[rb]=2;
-            break;
-          }
-       //  if (rb==0)
-        //    printf("pmi %d, pmi_i %d\n",pdsch_vars[eNB_id]->pmi_ext[rb],pdsch_vars[eNB_id_i]->pmi_ext[rb]);
-      }
-      dlsch_channel_compensation_TM56(pdsch_vars[eNB_id_i]->rxdataF_ext,
-                                      pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                      pdsch_vars[eNB_id_i]->dl_ch_mag0,
-                                      pdsch_vars[eNB_id_i]->dl_ch_magb0,
-                                      pdsch_vars[eNB_id_i]->rxdataF_comp0,
-                                      pdsch_vars[eNB_id_i]->pmi_ext,
-                                      frame_parms,
-                                      measurements,
-                                      eNB_id_i,
-                                      symbol,
-                                      i_mod,
-                                      nb_rb,
-                                      pdsch_vars[eNB_id]->log2_maxh,
-                                      dlsch0_harq->dl_power_off);
-#ifdef DEBUG_PHY
-      if (symbol==5) {
-        write_output("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-       write_output("rxF_comp_i.m","rxF_c_i",&pdsch_vars[eNB_id_i]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-      }
-#endif
-      dlsch_dual_stream_correlation(frame_parms,
-                                    symbol,
-                                    nb_rb,
-                                    pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                    pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                    pdsch_vars[eNB_id]->log2_maxh);
-    }  else if (dlsch0_harq->dl_power_off==1)  {
-      dlsch_channel_compensation_TM56(pdsch_vars[eNB_id]->rxdataF_ext,
-                                      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                                      pdsch_vars[eNB_id]->dl_ch_magb0,
-                                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                                      pdsch_vars[eNB_id]->pmi_ext,
-                                      frame_parms,
-                                      measurements,
-                                      eNB_id,
-                                      symbol,
-                                      dlsch0_harq->Qm,
-                                      nb_rb,
-                                      pdsch_vars[eNB_id]->log2_maxh,
-                                      1);
-
-      }
-
-
-    } else if (dlsch0_harq->mimo_mode==TM7) { //TM7
-
-      nr_dlsch_channel_compensation(pdsch_vars[eNB_id]->rxdataF_ext,
-                                 pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
-                                 pdsch_vars[eNB_id]->dl_ch_mag0,
-                                 pdsch_vars[eNB_id]->dl_ch_magb0,
-                                 pdsch_vars[eNB_id]->rxdataF_comp0,
-                                 (aatx>1) ? pdsch_vars[eNB_id]->rho : NULL,
-                                 frame_parms,
-                                 symbol,
-                                 first_symbol_flag,
-                                 get_Qm(dlsch0_harq->mcs),
-                                 nb_rb,
-                                 //9,
-                                 pdsch_vars[eNB_id]->log2_maxh,
-                                 measurements); // log2_maxh+I0_shift
-  }
-#endif
+    }
 
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -790,39 +691,29 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
 
-#if 0
     if (frame_parms->nb_antennas_rx > 1) {
     if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
         ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
          (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){  // TM3 or TM4
-      if (frame_parms->nb_antenna_ports_eNB == 2) {
-        dlsch_detection_mrc_TM34(frame_parms,
-                                 pdsch_vars[eNB_id],
-                                 harq_pid,
-                                 dlsch0_harq->round,
-                                 symbol,
-                                 nb_rb,
-                                 1);
+        nr_dlsch_detection_mrc_core(pdsch_vars[eNB_id]->rxdataF_comp0,
+                                   NULL,
+								   pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+								   pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+								   pdsch_vars[eNB_id]->dl_ch_mag0,
+								   pdsch_vars[eNB_id]->dl_ch_magb0,
+                                   NULL,
+                                   NULL,
+                                   n_tx,
+                                   n_rx,
+                                   2*nb_re,
+                                   0);
     /*   if (symbol == 5) {
      write_output("rho0_mrc.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rho2_mrc.m","rho2_0",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
         } */
-      }
-    } else {
-      dlsch_detection_mrc(frame_parms,
-                          pdsch_vars[eNB_id]->rxdataF_comp0,
-                          pdsch_vars[eNB_id_i]->rxdataF_comp0,
-                          pdsch_vars[eNB_id]->rho,
-                          pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                          pdsch_vars[eNB_id]->dl_ch_mag0,
-                          pdsch_vars[eNB_id]->dl_ch_magb0,
-                          pdsch_vars[eNB_id_i]->dl_ch_mag0,
-                          pdsch_vars[eNB_id_i]->dl_ch_magb0,
-                          symbol,
-                          nb_rb,
-                          rx_type==rx_IC_single_stream);
     }
   }
+#if 0
   //  printf("Combining");
   if ((dlsch0_harq->mimo_mode == SISO) ||
       ((dlsch0_harq->mimo_mode >= UNIFORM_PRECODING11) &&
@@ -878,12 +769,15 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol-1];
   //pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
   //pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
+  pllr_symbol_layer0 = pdsch_vars[eNB_id]->layer_llr[0];
+  pllr_symbol_layer1 = pdsch_vars[eNB_id]->layer_llr[1];
+  pllr_symbol_layer0 += llr_offset_symbol;
+  pllr_symbol_layer1 += llr_offset_symbol;
   pllr_symbol_cw0 = pdsch_vars[eNB_id]->llr[0];
   pllr_symbol_cw1 = pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
   
-  nb_re= (symbol==l0)? (nb_rb*6):(nb_rb*12);
   pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm + llr_offset_symbol;
  
   /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
@@ -929,7 +823,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               pdsch_vars[eNB_id]->rxdataF_comp0,
                               rxdataF_comp_ptr,
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                              pdsch_vars[eNB_id]->llr[0],
+                              pdsch_vars[eNB_id]->layer_llr[0],
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
@@ -938,7 +832,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 rxdataF_comp_ptr,
                                 pdsch_vars[eNB_id]->rxdataF_comp0,
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                pdsch_vars[eNB_id]->llr[1],
+                                pdsch_vars[eNB_id]->layer_llr[1],
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -950,7 +844,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                rxdataF_comp_ptr,//i
                                dl_ch_mag_ptr,//i
                                pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                               pdsch_vars[eNB_id]->llr[0],
+                               pdsch_vars[eNB_id]->layer_llr[0],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                pdsch_vars[eNB_id]->llr128);
@@ -960,7 +854,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                  pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                  dl_ch_mag_ptr,
                                  pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                 pdsch_vars[eNB_id]->llr[1],
+                                 pdsch_vars[eNB_id]->layer_llr[1],
                                  symbol,first_symbol_flag,nb_rb,
                                  adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                                  pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -972,7 +866,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                rxdataF_comp_ptr,//i
                                dl_ch_mag_ptr,//i
                                pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                               pdsch_vars[eNB_id]->llr[0],
+                               pdsch_vars[eNB_id]->layer_llr[0],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                pdsch_vars[eNB_id]->llr128);
@@ -982,7 +876,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                  pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                  dl_ch_mag_ptr,
                                  pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                 pdsch_vars[eNB_id]->llr[1],
+                                 pdsch_vars[eNB_id]->layer_llr[1],
                                  symbol,first_symbol_flag,nb_rb,
                                  adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                                  pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1015,7 +909,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              rxdataF_comp_ptr,//i
                              pdsch_vars[eNB_id]->dl_ch_mag0,
                              pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                             pdsch_vars[eNB_id]->llr[0],
+                             pdsch_vars[eNB_id]->layer_llr[0],
                              symbol,first_symbol_flag,nb_rb,
                              adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                              pdsch_vars[eNB_id]->llr128);
@@ -1025,7 +919,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                               pdsch_vars[eNB_id]->llr[1],
+                               pdsch_vars[eNB_id]->layer_llr[1],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1038,7 +932,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               pdsch_vars[eNB_id]->dl_ch_mag0,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                              pdsch_vars[eNB_id]->llr[0],
+                              pdsch_vars[eNB_id]->layer_llr[0],
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
@@ -1049,7 +943,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 dl_ch_mag_ptr,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                pdsch_vars[eNB_id]->llr[1],
+                                pdsch_vars[eNB_id]->layer_llr[1],
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1062,7 +956,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               pdsch_vars[eNB_id]->dl_ch_mag0,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                              pdsch_vars[eNB_id]->llr[0],
+                              pdsch_vars[eNB_id]->layer_llr[0],
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
@@ -1073,7 +967,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 dl_ch_mag_ptr,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                pdsch_vars[eNB_id]->llr[1],
+                                pdsch_vars[eNB_id]->layer_llr[1],
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1108,7 +1002,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              rxdataF_comp_ptr,//i
                              pdsch_vars[eNB_id]->dl_ch_mag0,
                              pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                             pdsch_vars[eNB_id]->llr[0],
+                             pdsch_vars[eNB_id]->layer_llr[0],
                              symbol,first_symbol_flag,nb_rb,
                              adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                              pdsch_vars[eNB_id]->llr128);
@@ -1118,7 +1012,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                pdsch_vars[eNB_id]->dl_ch_mag0,
                                pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                               pdsch_vars[eNB_id]->llr[1],
+                               pdsch_vars[eNB_id]->layer_llr[1],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1131,7 +1025,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               pdsch_vars[eNB_id]->dl_ch_mag0,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                              pdsch_vars[eNB_id]->llr[0],
+                              pdsch_vars[eNB_id]->layer_llr[0],
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
@@ -1142,7 +1036,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 dl_ch_mag_ptr,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                pdsch_vars[eNB_id]->llr[1],
+                                pdsch_vars[eNB_id]->layer_llr[1],
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
@@ -1155,7 +1049,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               pdsch_vars[eNB_id]->dl_ch_mag0,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-                              (int16_t*)pllr_symbol_cw0,
+                              (int16_t*)pllr_symbol_layer0,
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr_offset[symbol]);
@@ -1166,7 +1060,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 dl_ch_mag_ptr,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                pllr_symbol_cw1,
+                                pllr_symbol_layer1,
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr_offset[symbol]);
@@ -1222,6 +1116,13 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
   
+ if (rx_type==rx_IC_dual_stream) {  
+	nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
+		  	  	  	  	   dlsch[0]->harq_processes[harq_pid]->Nl,
+						   dlsch[0]->harq_processes[harq_pid]->G,
+                           pdsch_vars[eNB_id]->layer_llr);
+ }
+
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -1382,10 +1283,10 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
           // get channel amplitude if not QPSK
 
           mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,(output_shift-2));
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
 
           mmtmpD1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
-          mmtmpD1 = _mm_srai_epi32(mmtmpD1,(output_shift-2));
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
 
           mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
 
@@ -1793,6 +1694,209 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
 #endif
 }
 
+void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
+                                     int **dl_ch_estimates_ext,
+                                     int **dl_ch_mag,
+                                     int **dl_ch_magb,
+                                     int **rxdataF_comp,
+                                     int **rho,
+                                     unsigned char n_tx,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     unsigned char output_shift,
+                                     int length,
+                                     int start_point)
+
+{
+
+  unsigned short ii;
+  int length_mod8 = 0;
+  int length2;
+  __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b, *dl_ch128_2, *rxdataF128,*rxdataF_comp128,*rho128;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  int aatx = 0, aarx = 0;
+
+  for (aatx=0; aatx<n_tx; aatx++) {
+
+    if (mod_order == 4) {
+      QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
+      QAM_amp128b = _mm_setzero_si128();
+    } else if (mod_order == 6) {
+      QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
+      QAM_amp128b = _mm_set1_epi16(QAM64_n2);
+    }
+
+    for (aarx=0; aarx<n_rx; aarx++) {
+      /* TODO: hack to be removed. There is crash for 1 antenna case, so
+       * for 1 antenna case, I put back the value 2 as it was before
+       * Elena's commit.
+       */
+      int x = n_rx > 1 ? n_rx : 2;
+
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*x + aarx][start_point];
+    dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*x + aarx][start_point];
+    dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*x + aarx][start_point];
+    rxdataF128        = (__m128i *)&rxdataF_ext[aarx][start_point];
+    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*x + aarx][start_point];
+
+      length_mod8 = length&7;
+      if (length_mod8 == 0){
+        length2 = length>>3;
+
+        for (ii=0; ii<length2; ++ii) {
+          if (mod_order>2) {
+            // get channel amplitude if not QPSK
+
+            mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
+            mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+
+            mmtmpD1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
+            mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+
+            mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
+
+            // store channel magnitude here in a new field of dlsch
+
+            dl_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
+            dl_ch_mag128b[0] = dl_ch_mag128[0];
+            dl_ch_mag128[0] = _mm_mulhi_epi16(dl_ch_mag128[0],QAM_amp128);
+            dl_ch_mag128[0] = _mm_slli_epi16(dl_ch_mag128[0],1);
+            //print_ints("Re(ch):",(int16_t*)&mmtmpD0);
+            //print_shorts("QAM_amp:",(int16_t*)&QAM_amp128);
+            //print_shorts("mag:",(int16_t*)&dl_ch_mag128[0]);
+            dl_ch_mag128[1] = _mm_unpackhi_epi16(mmtmpD0,mmtmpD0);
+            dl_ch_mag128b[1] = dl_ch_mag128[1];
+            dl_ch_mag128[1] = _mm_mulhi_epi16(dl_ch_mag128[1],QAM_amp128);
+            dl_ch_mag128[1] = _mm_slli_epi16(dl_ch_mag128[1],1);
+
+            dl_ch_mag128b[0] = _mm_mulhi_epi16(dl_ch_mag128b[0],QAM_amp128b);
+            dl_ch_mag128b[0] = _mm_slli_epi16(dl_ch_mag128b[0],1);
+
+            dl_ch_mag128b[1] = _mm_mulhi_epi16(dl_ch_mag128b[1],QAM_amp128b);
+            dl_ch_mag128b[1] = _mm_slli_epi16(dl_ch_mag128b[1],1);
+
+          }
+
+          // multiply by conjugated channel
+          mmtmpD0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
+
+          // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+          mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
+          //  print_ints("im",&mmtmpD1);
+          mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[0]);
+          // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          //  print_ints("re(shift)",&mmtmpD0);
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          //  print_ints("im(shift)",&mmtmpD1);
+          mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+          mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+          //        print_ints("c0",&mmtmpD2);
+          //  print_ints("c1",&mmtmpD3);
+          rxdataF_comp128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+          //  print_shorts("rx:",rxdataF128);
+          //  print_shorts("ch:",dl_ch128);
+          //  print_shorts("pack:",rxdataF_comp128);
+
+          // multiply by conjugated channel
+          mmtmpD0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
+          // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+          mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
+          mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[1]);
+          // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+          mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+
+          rxdataF_comp128[1] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+          //  print_shorts("rx:",rxdataF128+1);
+          //  print_shorts("ch:",dl_ch128+1);
+          //print_shorts("pack:",rxdataF_comp128+1);
+
+          dl_ch128+=2;
+          dl_ch_mag128+=2;
+          dl_ch_mag128b+=2;
+          rxdataF128+=2;
+          rxdataF_comp128+=2;
+        }
+      }else {
+        printf ("Channel Compensation: Received number of subcarriers is not multiple of 8, \n"
+                 "need to adapt the code!\n");
+      }
+    }
+  }
+
+/*This part of code makes sense only for processing in 2x2 blocks*/
+  if (rho) {
+
+
+    for (aarx=0; aarx<n_rx; aarx++) {
+      rho128        = (__m128i *)&rho[aarx][start_point];
+      dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aarx][start_point];
+      dl_ch128_2    = (__m128i *)&dl_ch_estimates_ext[2+aarx][start_point];
+
+      if (length_mod8 == 0){
+        length2 = length>>3;
+
+        for (ii=0; ii<length2; ++ii) {
+          // multiply by conjugated channel
+          mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128_2[0]);
+          //  print_ints("re",&mmtmpD0);
+
+          // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+          mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
+          //  print_ints("im",&mmtmpD1);
+          mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128_2[0]);
+          // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          //  print_ints("re(shift)",&mmtmpD0);
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          //  print_ints("im(shift)",&mmtmpD1);
+          mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+          mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+          //        print_ints("c0",&mmtmpD2);
+          //  print_ints("c1",&mmtmpD3);
+          rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+
+          //print_shorts("rx:",dl_ch128_2);
+          //print_shorts("ch:",dl_ch128);
+          //print_shorts("pack:",rho128);
+
+          // multiply by conjugated channel
+          mmtmpD0 = _mm_madd_epi16(dl_ch128[1],dl_ch128_2[1]);
+          // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+          mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+          mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
+          mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128_2[1]);
+          // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+          mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+
+          rho128[1] =_mm_packs_epi32(mmtmpD2,mmtmpD3);
+          dl_ch128+=2;
+          dl_ch128_2+=2;
+          rho128+=2;
+        }
+      }else {
+        printf ("Channel Compensation: Received number of subcarriers is not multiple of 8, \n"
+                 "need to adapt the code!\n");
+      }
+    }
+  }
+  _mm_empty();
+  _m_empty();
+}
+
 
 void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
@@ -1804,7 +1908,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb, ch_amp;
-  unsigned char aatx,aarx,pilots=0,symbol_mod;
+  unsigned char aatx,aarx,pilots=0;
   __m128i *dl_ch128, ch_amp128;
 
   
@@ -1817,7 +1921,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 
 ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
+    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
@@ -1980,6 +2084,389 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
 #endif
 }
 
+void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point)
+{
+
+#if defined(__x86_64__)||defined(__i386__)
+
+  short ii;
+  int aatx,aarx;
+  int length2;
+  int max = 0, min=0;
+  int norm_pack;
+  __m128i *dl_ch128, norm128D;
+
+  for (aatx=0; aatx<n_tx; aatx++){
+    for (aarx=0; aarx<n_rx; aarx++) {
+      max = 0;
+      min = 0;
+      norm128D = _mm_setzero_si128();
+
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*2 + aarx][start_point];
+
+      length2 = length>>2;
+
+      for (ii=0;ii<length2;ii++) {
+        norm128D = _mm_srai_epi32( _mm_madd_epi16(dl_ch128[0],dl_ch128[0]), 1);
+          //print_ints("norm128D",&norm128D[0]);
+
+        norm_pack = ((int32_t*)&norm128D)[0] +
+                    ((int32_t*)&norm128D)[1] +
+                    ((int32_t*)&norm128D)[2] +
+                    ((int32_t*)&norm128D)[3];
+
+        if (norm_pack > max)
+          max = norm_pack;
+        if (norm_pack < min)
+          min = norm_pack;
+
+        dl_ch128+=1;
+      }
+
+        median[aatx*n_rx + aarx]  = (max+min)>>1;
+
+     // printf("Channel level  median [%d]: %d\n",aatx*n_rx + aarx, median[aatx*n_rx + aarx]);
+      }
+    }
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+  short rb;
+  unsigned char aatx,aarx,nre=12,symbol_mod;
+  int32x4_t norm128D;
+  int16x4_t *dl_ch128;
+
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++){
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      max = 0;
+      min = 0;
+      norm128D = vdupq_n_s32(0);
+
+      dl_ch128=(int16x4_t *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
+
+      length_mod8=length&3;
+      length2 = length>>2;
+
+      for (ii=0;ii<length2;ii++) {
+        norm128D = vshrq_n_u32(vmull_s16(dl_ch128[0],dl_ch128[0]), 1);
+        norm_pack = ((int32_t*)&norm128D)[0] +
+                    ((int32_t*)&norm128D)[1] +
+                    ((int32_t*)&norm128D)[2] +
+                    ((int32_t*)&norm128D)[3];
+
+        if (norm_pack > max)
+          max = norm_pack;
+        if (norm_pack < min)
+          min = norm_pack;
+
+          dl_ch128+=1;
+      }
+
+        median[aatx*n_rx + aarx]  = (max+min)>>1;
+
+      //printf("Channel level  median [%d]: %d\n",aatx*n_rx + aarx, median[aatx*n_rx + aarx]);
+      }
+    }
+#endif
+
+}
+
+void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
+                                        int **dl_ch_estimates_ext_i,
+                                        int **dl_ch_rho_ext,
+                                        unsigned char n_tx,
+                                        unsigned char n_rx,
+                                        unsigned char output_shift,
+                                        int length,
+                                        int start_point)
+{
+#if defined(__x86_64__)||defined(__i386__)
+
+  __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128,mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
+  unsigned char aarx;
+  int ii, length2, length_mod8;
+
+
+  for (aarx=0; aarx<n_rx; aarx++) {
+
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][start_point];
+
+    if (dl_ch_estimates_ext_i == NULL)
+      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext[aarx + n_rx][start_point];
+    else
+      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext_i[aarx][start_point];
+
+    dl_ch_rho128      = (__m128i *)&dl_ch_rho_ext[aarx][start_point];
+
+    length_mod8 = length&7;
+
+    if (length_mod8 == 0){
+      length2 = length>>3;
+
+      for (ii=0; ii<length2; ++ii) {
+      // multiply by conjugated channel
+        mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128i[0]);
+        //      print_ints("re",&mmtmpD0);
+        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+        mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
+        mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128i[0]);
+        //      print_ints("im",&mmtmpD1);
+        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        //      print_ints("re(shift)",&mmtmpD0);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        //      print_ints("im(shift)",&mmtmpD1);
+        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+        //      print_ints("c0",&mmtmpD2);
+        //      print_ints("c1",&mmtmpD3);
+        dl_ch_rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+      // print_shorts("rho 0:",dl_ch_rho128);
+        // multiply by conjugated channel
+        mmtmpD0 = _mm_madd_epi16(dl_ch128[1],dl_ch128i[1]);
+        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+        mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
+        mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128i[1]);
+        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+        dl_ch_rho128[1] =_mm_packs_epi32(mmtmpD2,mmtmpD3);
+
+        dl_ch128+=2;
+        dl_ch128i+=2;
+        dl_ch_rho128+=2;
+      }
+
+    }else {
+        printf ("Channel Correlarion: Received number of subcarriers is not multiple of 8, \n"
+                 "need to adapt the code!\n");
+      }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+#endif
+}
+
+void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
+                              int **rxdataF_comp_i,
+                              int **rho,
+                              int **rho_i,
+                              int **dl_ch_mag,
+                              int **dl_ch_magb,
+                              int **dl_ch_mag_i,
+                              int **dl_ch_magb_i,
+                              unsigned char n_tx,
+                              unsigned char n_rx,
+                              int length,
+                              int start_point)
+{
+
+#if defined(__x86_64__)||defined(__i386__)
+
+  unsigned char aatx;
+  int i;
+  __m128i *rxdataF_comp128_0, *rxdataF_comp128_1, *rxdataF_comp128_2, *rxdataF_comp128_3;
+  __m128i *dl_ch_mag128_0, *dl_ch_mag128_1, *dl_ch_mag128_2, *dl_ch_mag128_3;
+  __m128i *dl_ch_mag128_0b, *dl_ch_mag128_1b,  *dl_ch_mag128_2b,  *dl_ch_mag128_3b;
+  __m128i *rho128_0, *rho128_1, *rho128_2, *rho128_3;
+  __m128i *rho128_i0, *rho128_i1, *rho128_i2, *rho128_i3;
+  int length_mod4 = 0;
+  int length2;
+
+  if (n_rx>1) {
+
+    for (aatx=0; aatx<n_tx; aatx++) {
+
+      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][start_point];
+      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][start_point];
+      dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[(aatx<<1)][start_point];
+      dl_ch_mag128_1      = (__m128i *)&dl_ch_mag[(aatx<<1)+1][start_point];
+      dl_ch_mag128_0b     = (__m128i *)&dl_ch_magb[(aatx<<1)][start_point];
+      dl_ch_mag128_1b     = (__m128i *)&dl_ch_magb[(aatx<<1)+1][start_point];
+
+      if (length_mod4 == 0){
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++i) {
+          rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
+          dl_ch_mag128_0[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
+          dl_ch_mag128_0b[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
+        }
+      }
+    }
+
+
+    if (rho) {
+      rho128_0 = (__m128i *) &rho[0][start_point];
+      rho128_1 = (__m128i *) &rho[1][start_point];
+
+      if (n_tx == 4){
+        rho128_2 = (__m128i *) &rho[2][start_point];
+        rho128_3 = (__m128i *) &rho[3][start_point];
+      }
+        if (length_mod4 == 0){
+          length2 = length>>2;
+
+          for (i=0; i<length2; ++i) {
+            rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
+          if (n_tx == 4){
+            rho128_2[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_2[i],1),_mm_srai_epi16(rho128_3[i],1));
+          }
+        }
+      }
+    }
+
+    if (rho_i){
+      rho128_i0 = (__m128i *) &rho_i[0][start_point];
+      rho128_i1 = (__m128i *) &rho_i[1][start_point];
+      if (n_tx == 4){
+        rho128_i2 = (__m128i *) &rho_i[2][start_point];
+        rho128_i3 = (__m128i *) &rho_i[3][start_point];
+      }
+      if (length_mod4 == 0){
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++i){
+          rho128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
+          if (n_tx == 4){
+            rho128_i2[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_i2[i],1),_mm_srai_epi16(rho128_i3[i],1));
+          }
+        }
+      }
+    }
+
+      if (n_tx == 4){
+
+      rxdataF_comp128_0 = (__m128i *)&rxdataF_comp[0][start_point];
+      rxdataF_comp128_1 = (__m128i *)&rxdataF_comp[2][start_point];
+      rxdataF_comp128_2 = (__m128i *)&rxdataF_comp[4][start_point];
+      rxdataF_comp128_3 = (__m128i *)&rxdataF_comp[6][start_point];
+
+      dl_ch_mag128_0 = (__m128i *)&dl_ch_mag[0][start_point];
+      dl_ch_mag128_1 = (__m128i *)&dl_ch_mag[2][start_point];
+      dl_ch_mag128_2 = (__m128i *)&dl_ch_mag[4][start_point];
+      dl_ch_mag128_3 = (__m128i *)&dl_ch_mag[6][start_point];
+
+      dl_ch_mag128_0b = (__m128i *)&dl_ch_magb[0][start_point];
+      dl_ch_mag128_1b = (__m128i *)&dl_ch_magb[2][start_point];
+      dl_ch_mag128_2b = (__m128i *)&dl_ch_magb[4][start_point];
+      dl_ch_mag128_3b = (__m128i *)&dl_ch_magb[6][start_point];
+
+      rho128_0 = (__m128i *)&rho[0][start_point];
+      rho128_1 = (__m128i *)&rho[2][start_point];
+
+      rho128_i0 = (__m128i *)&rho_i[0][start_point];
+      rho128_i1 = (__m128i *)&rho_i[2][start_point];
+
+
+      if (length_mod4 == 0){
+
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++i) {
+          rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
+          rxdataF_comp128_2[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_2[i],1),_mm_srai_epi16(rxdataF_comp128_3[i],1));
+
+          dl_ch_mag128_0[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0[i],1),_mm_srai_epi16(dl_ch_mag128_1[i],1));
+          dl_ch_mag128_2[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_2[i],1),_mm_srai_epi16(dl_ch_mag128_3[i],1));
+
+          dl_ch_mag128_0b[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
+          dl_ch_mag128_2b[i] = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_2b[i],1),_mm_srai_epi16(dl_ch_mag128_3b[i],1));
+
+          rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
+
+          rho128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
+        }
+    }
+  }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+  unsigned char aatx;
+  int i;
+  int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0,*dl_ch_mag128_1,*dl_ch_mag128_0b,*dl_ch_mag128_1b,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
+  int length_mod4 = 0;
+  int length2;
+  int ii=0;
+
+  if (n_rx>1) {
+
+    for (aatx=0; aatx<n_tx; aatx++) {
+
+      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][start_point];
+      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][start_point];
+      dl_ch_mag128_0      = (int16x8_t *)&dl_ch_mag[(aatx<<1)][start_point];
+      dl_ch_mag128_1      = (int16x8_t *)&dl_ch_mag[(aatx<<1)+1][start_point];
+      dl_ch_mag128_0b     = (int16x8_t *)&dl_ch_magb[(aatx<<1)][start_point];
+      dl_ch_mag128_1b     = (int16x8_t *)&dl_ch_magb[(aatx<<1)+1][start_point];
+
+      if (length_mod4 == 0){
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++ii) {
+          rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+          dl_ch_mag128_0[i]    = vhaddq_s16(dl_ch_mag128_0[i],dl_ch_mag128_1[i]);
+          dl_ch_mag128_0b[i]   = vhaddq_s16(dl_ch_mag128_0b[i],dl_ch_mag128_1b[i]);
+        }
+      }
+
+    if (rho) {
+      rho128_0 = (int16x8_t *) &rho[0][start_point];
+      rho128_1 = (int16x8_t *) &rho[1][start_point];
+
+      if (length_mod4 == 0){
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++i) {
+          rho128_0[i] = vhaddq_s16(rho128_0[i],rho128_1[i]);
+        }
+      }
+    }
+
+    if (rho_i){
+
+      rho128_i0 = (__m128i *) &rho_i[0][start_point];
+      rho128_i1 = (__m128i *) &rho_i[1][start_point];
+
+      if (length_mod4 == 0){
+        length2 = length>>2;
+
+        for (i=0; i<length2; ++i)
+          rho128_i0[i] = vhaddq_s16(rho128_i0[i],rho128_i1[i]);
+
+      }
+    }
+  }
+
+  }
+
+#endif
+}
+
 //==============================================================================================
 // Extraction functions
 //==============================================================================================
@@ -2085,6 +2572,135 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   return(nb_rb_pdsch/frame_parms->nb_antennas_rx);
 }
 
+unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
+                                      int **dl_ch_estimates,
+                                      int **rxdataF_ext,
+                                      int **dl_ch_estimates_ext,
+                                      unsigned short pmi,
+                                      unsigned char *pmi_ext,
+                                      unsigned int *rb_alloc,
+                                      unsigned char symbol,
+									  unsigned short start_rb,
+									  unsigned short nb_rb_pdsch,
+                                      unsigned char nr_tti_rx,
+                                      uint32_t high_speed_flag,
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      MIMO_mode_t mimo_mode) {
+
+  int prb,nb_rb=0;
+  unsigned short k;
+  //int prb_off,prb_off2;
+  int skip_half=0,l;//sss_symb,pss_symb=0,nsymb
+  int i,aarx;
+  int32_t *dl_ch0,*dl_ch0p,*dl_ch0_ext,*dl_ch1,*dl_ch1p,*dl_ch1_ext,*rxF,*rxF_ext;
+  int symbol_mod,pilots=0,j=0;
+  unsigned char *pmi_loc;
+
+  pilots = (symbol==2) ? 1 : 0; //to updated from config
+  k = frame_parms->first_carrier_offset + 516; //0
+
+  //nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
+  l=symbol;
+
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+
+    if (high_speed_flag==1) {
+      dl_ch0     = &dl_ch_estimates[aarx][symbol*(frame_parms->ofdm_symbol_size)];
+      dl_ch1     = &dl_ch_estimates[2+aarx][symbol*(frame_parms->ofdm_symbol_size)];
+    } else {
+      dl_ch0     = &dl_ch_estimates[aarx][0];
+      dl_ch1     = &dl_ch_estimates[2+aarx][0];
+    }
+
+    pmi_loc = pmi_ext;
+
+    // pointers to extracted RX signals and channel estimates
+    rxF_ext    = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
+    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(nb_rb_pdsch*12)];
+
+    for (prb=0; prb<frame_parms->N_RB_DL; prb++) {
+      skip_half=0;
+
+      if ((frame_parms->N_RB_DL&1) == 0) {  // even number of RBs
+
+        // For second half of RBs skip DC carrier
+        if (k>=frame_parms->ofdm_symbol_size) {
+          rxF       = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
+          k=k-(frame_parms->ofdm_symbol_size);
+        }
+
+         /*
+         if (mimo_mode <= PUSCH_PRECODING1)
+          *pmi_loc = (pmi>>((prb>>2)<<1))&3;
+         else
+          *pmi_loc=(pmi>>prb)&1;*/
+
+        // *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
+        //  pmi_loc++;
+
+
+          if (pilots == 0) {
+
+            memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+            memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
+            memcpy(rxF_ext,rxF,12*sizeof(int));
+            dl_ch0_ext +=12;
+            dl_ch1_ext +=12;
+            rxF_ext    +=12;
+          } else { // pilots==1
+            j=0;
+            for (i=0; i<12; i++) {
+              if ((i&1)!=frame_parms->nushift) {
+                rxF_ext[j]=rxF[i];
+                //        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+                dl_ch0_ext[j]=dl_ch0p[i];
+                dl_ch1_ext[j++]=dl_ch1p[i];
+              }
+            }
+            dl_ch0_ext+=6;
+            dl_ch1_ext+=6;
+            rxF_ext+=6;
+          } // pilots==1
+
+          dl_ch0+=12;
+          dl_ch1+=12;
+          rxF+=12;
+          k+=12;
+      }
+    } // for prb
+  } // for aarx
+  return(nb_rb/frame_parms->nb_antennas_rx);
+}
+
+void nr_dlsch_layer_demapping(int16_t **llr_cw,
+                         uint8_t Nl,
+						 uint8_t mod_order,
+                         uint16_t length,
+                         int16_t **llr_layers) {
+
+  switch (Nl) {
+
+    case 1:
+      memcpy((void*)llr_layers[0], (void*)llr_cw[0], (length)*sizeof(int16_t));
+    break;
+
+    case 2:
+    case 3:
+    case 4:
+      for (int i=0; i<(length/Nl/mod_order); i++){
+        for (int l=0; l<Nl; l++) {
+        	for (int m=0; m<mod_order; m++){
+        		llr_cw[0][Nl*i+l*mod_order+m] = llr_layers[l][i*mod_order+m];
+        	}
+        }
+  	  }
+    break;
+
+  default:
+  AssertFatal(0, "Not supported number of layers %d\n", Nl);
+  }
+}
 //==============================================================================================
 
 #ifdef USER_MODE

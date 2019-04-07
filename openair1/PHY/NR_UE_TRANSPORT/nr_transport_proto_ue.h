@@ -753,18 +753,20 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
-uint16_t dlsch_extract_rbs_dual(int32_t **rxdataF,
-                                int32_t **dl_ch_estimates,
-                                int32_t **rxdataF_ext,
-                                int32_t **dl_ch_estimates_ext,
-                                uint16_t pmi,
-                                uint8_t *pmi_ext,
-                                uint32_t *rb_alloc,
-                                uint8_t symbol,
-                                uint8_t subframe,
-                                uint32_t high_speed_flag,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                MIMO_mode_t mimo_mode);
+unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
+                                      int **dl_ch_estimates,
+                                      int **rxdataF_ext,
+                                      int **dl_ch_estimates_ext,
+                                      unsigned short pmi,
+                                      unsigned char *pmi_ext,
+                                      unsigned int *rb_alloc,
+                                      unsigned char symbol,
+									  unsigned short start_rb,
+									  unsigned short nb_rb_pdsch,
+                                      unsigned char nr_tti_rx,
+                                      uint32_t high_speed_flag,
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      MIMO_mode_t mimo_mode);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,
@@ -826,6 +828,19 @@ void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 uint8_t output_shift,
                                 PHY_NR_MEASUREMENTS *phy_measurements);
 
+void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
+                                     int **dl_ch_estimates_ext,
+                                     int **dl_ch_mag,
+                                     int **dl_ch_magb,
+                                     int **rxdataF_comp,
+                                     int **rho,
+                                     unsigned char n_tx,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     unsigned char output_shift,
+                                     int length,
+                                     int start_point);
+
 void nr_dlsch_deinterleaving(uint8_t symbol,
 							uint16_t L,
 							uint16_t *llr,
@@ -880,6 +895,26 @@ void dlsch_channel_level_TM34_meas(int *ch00,
                                    int *avg_0,
                                    int *avg_1,
                                    unsigned short nb_rb);
+
+void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point);
+
+void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
+                              int **rxdataF_comp_i,
+                              int **rho,
+                              int **rho_i,
+                              int **dl_ch_mag,
+                              int **dl_ch_magb,
+                              int **dl_ch_mag_i,
+                              int **dl_ch_magb_i,
+                              unsigned char n_tx,
+                              unsigned char n_rx,
+                              int length,
+                              int start_point);
 
 void det_HhH(int32_t *after_mf_00,
              int32_t *after_mf_01,

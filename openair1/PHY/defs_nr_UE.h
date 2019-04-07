@@ -379,6 +379,8 @@ typedef struct {
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
   int16_t *llr[2];
+  /// Pointers to layer llr vectors (4 layers).
+  int16_t *layer_llr[4];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
   /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
