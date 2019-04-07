@@ -275,6 +275,7 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   
   fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+  NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
   
   //  Type0 PDCCH search space
   dl_config->number_pdus =  1;
@@ -316,7 +317,7 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
 
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = UE_mac->initial_bwp_dl.N_RB;
 
   
   return 0;

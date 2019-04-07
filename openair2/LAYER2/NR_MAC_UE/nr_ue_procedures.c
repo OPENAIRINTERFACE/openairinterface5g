@@ -660,9 +660,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
     	
+	/*
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;	//	to be set
-	/*
+
 	printf("nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);  
@@ -1282,10 +1283,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
     
-    const uint16_t n_RB_ULBWP = 106;
-    const uint16_t n_RB_DLBWP = 106;
+    //const uint16_t n_RB_DLBWP = dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP; //make sure this has been set
+    const uint16_t n_RB_DLBWP = mac->initial_bwp_dl.N_RB;
+    const uint16_t n_RB_ULBWP = mac->initial_bwp_ul.N_RB;
 
-    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
+    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
 
     switch(dci_format){
         case format0_0:
@@ -1766,7 +1768,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
                   dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
 
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-
+	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
+	    
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
             dl_config->number_pdus = dl_config->number_pdus + 1;
@@ -1951,7 +1954,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
         /* DMRS_SEQ_INI */
             //FIXME!!!
 
-            
+	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
+	    
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
