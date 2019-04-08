@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */ 
 
-/*! \file flexran_agent_mac.c
+/*! \file flexran_agent_rrc.c
  * \brief FlexRAN agent Control Module RRC 
  * \author shahab SHARIAT BAGHERI
  * \date 2017
@@ -381,7 +381,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS) {
       	
-        /*Source Cell*/
+        /*Source cell EUTRA Measurements*/
         Protocol__FlexRrcMeasurements *rrc_measurements;
       	rrc_measurements = malloc(sizeof(Protocol__FlexRrcMeasurements));
       	if (rrc_measurements == NULL)
@@ -397,7 +397,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id, rnti);
       	rrc_measurements->has_pcell_rsrq = 1 ;
         
-        /* Target Cell, Neghibouring*/
+        /* Neighbouring cells EUTRA Measurements*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;
         neigh_meas = malloc(sizeof(Protocol__FlexNeighCellsMeasurements));
         if (neigh_meas == NULL) {
@@ -406,13 +406,12 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
           goto error;
         }
         protocol__flex_neigh_cells_measurements__init(neigh_meas);
-         
         
         neigh_meas->n_eutra_meas = flexran_get_rrc_num_ncell(mod_id, rnti);
 
         Protocol__FlexEutraMeasurements **eutra_meas = NULL;
 
-        if (neigh_meas->n_eutra_meas > 0){
+        if (neigh_meas->n_eutra_meas > 0) {
           
           eutra_meas = malloc(sizeof(Protocol__FlexEutraMeasurements) * neigh_meas->n_eutra_meas);
           if (eutra_meas == NULL) {
@@ -422,117 +421,103 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
             goto error;
           }
           
-          for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
+          for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ) {
+            eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
+            if (eutra_meas[j] == NULL) {
+              for (int k = 0 ; k < j ; k++)
+                free(eutra_meas[k]);
+              free(eutra_meas);
+              free(neigh_meas);
+              free(rrc_measurements);
+              rrc_measurements = NULL;
+              goto error;
+            }
+            protocol__flex_eutra_measurements__init(eutra_meas[j]);
 
-              eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
-              if (eutra_meas[j] == NULL) {
-                for (int k = 0 ; k < j ; k++) {
-                  free(eutra_meas[k]);
-                }
-                free(eutra_meas);
-                free(neigh_meas);
-                free(rrc_measurements);
-                rrc_measurements = NULL;
-                goto error;
-              }
+            /* Fill in the physical cell identifier. */
+            eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
+            eutra_meas[j]->has_phys_cell_id = 1;
 
-              protocol__flex_eutra_measurements__init(eutra_meas[j]);
+            /* Initialize CGI measurements. */
+            Protocol__FlexEutraCgiMeasurements *cgi_meas;
+            cgi_meas = malloc(sizeof(Protocol__FlexEutraCgiMeasurements));
 
-              eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
-              eutra_meas[j]->has_phys_cell_id = 1;
+            protocol__flex_eutra_cgi_measurements__init(cgi_meas);
 
+            /* EUTRA Cell Global Identity (CGI) */
+            Protocol__FlexCellGlobalEutraId *cgi;
+            cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
 
-              /*TODO: Extend for CGI and PLMNID*/
+            protocol__flex_cell_global_eutra_id__init(cgi);
 
-              Protocol__FlexEutraRefSignalMeas *meas_result;
-              meas_result = malloc(sizeof(Protocol__FlexEutraRefSignalMeas));
+            cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+            cgi->has_cell_id = 1;
 
-              protocol__flex_eutra_ref_signal_meas__init(meas_result);     
+            cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+            cgi_meas->has_tracking_area_code = 1;
 
-              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, eutra_meas[j]->phys_cell_id);
-              meas_result->has_rsrp = 1;
+            /* PLMN for neighbouring cell */
+            Protocol__FlexPlmnIdentity *plmn_id;
+            plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
 
-              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, eutra_meas[j]->phys_cell_id);
-              meas_result->has_rsrq = 1;
+            protocol__flex_plmn_identity__init(plmn_id);
 
-              eutra_meas[j]->meas_result = meas_result;
-             
-          }    
+            plmn_id->mcc = 0;
+            for (int m = 0; m < flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, eutra_meas[j]->phys_cell_id); m++) {
+              plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, eutra_meas[j]->phys_cell_id, m);
+            }
 
-           neigh_meas->eutra_meas = eutra_meas;   
+            plmn_id->mnc = 0;
+            for (int m = 0; m < flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, eutra_meas[j]->phys_cell_id); m++) {
+              plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, eutra_meas[j]->phys_cell_id, m);
+            }
 
-           rrc_measurements->neigh_meas = neigh_meas;
-       
+            /*RSRP/RSRQ of the neighbouring cell */
+            Protocol__FlexEutraRefSignalMeas *meas_result;
+            meas_result = malloc(sizeof(Protocol__FlexEutraRefSignalMeas));
+
+            protocol__flex_eutra_ref_signal_meas__init(meas_result);
+
+            meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+            meas_result->has_rsrp = 1;
+
+            meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+            meas_result->has_rsrq = 1;
+
+            eutra_meas[j]->cgi_meas = cgi_meas;
+            eutra_meas[j]->meas_result = meas_result;
+          }
+
+          neigh_meas->eutra_meas = eutra_meas;
+
+          rrc_measurements->neigh_meas = neigh_meas;
         } else {
            free(neigh_meas);
         }
 
-      	 ue_report[i]->rrc_measurements = rrc_measurements;
-         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
-      	
+        ue_report[i]->rrc_measurements = rrc_measurements;
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
       }
-
-    } 
-
+    }
   }
-
-  /* To be considered for RRC signaling of cell*/ 
-  // if (report_config->nr_cc > 0) { 
-    
-            
-  //           // Fill in the Cell reports
-  //           for (i = 0; i < report_config->nr_cc; i++) {
-
-
-  //                     /* Check flag for creation of noise and interference report */
-  //                     if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
-  //                           // TODO: Fill in the actual noise and interference report for this cell
-  //                           Protocol__FlexNoiseInterferenceReport *ni_report;
-  //                           ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
-  //                           if(ni_report == NULL)
-  //                             goto error;
-  //                           protocol__flex_noise_interference_report__init(ni_report);
-  //                           // Current frame and subframe number
-  //                           ni_report->sfn_sf = flexran_get_sfn_sf(enb_id);
-  //                           ni_report->has_sfn_sf = 1;
-  //                           //TODO:Received interference power in dbm
-  //                           ni_report->rip = 0;
-  //                           ni_report->has_rip = 1;
-  //                           //TODO:Thermal noise power in dbm
-  //                           ni_report->tnp = 0;
-  //                           ni_report->has_tnp = 1;
-
-  //                           ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
-  //                           ni_report->has_p0_nominal_pucch = 1;
-  //                           cell_report[i]->noise_inter_report = ni_report;
-  //                           cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
-  //                     }
-  //           }
-            
-
-      
-            
-  // }
 
   return 0;
 
  error:
 
-  for (int i = 0; i < report_config->nr_ue; i++){
-
-      if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL){
-          for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
-
-             free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
-        }
-        free(ue_report[i]->rrc_measurements->neigh_meas);
+  for (int i = 0; i < report_config->nr_ue; i++) {
+    if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL) {
+      for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
+        free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
       }
+    free(ue_report[i]->rrc_measurements->neigh_meas);
+    }
   }
 
   if (cell_report != NULL)
-        free(cell_report);
+    free(cell_report);
   if (ue_report != NULL)
-        free(ue_report);
+    free(ue_report);
 
   return -1;
 }
@@ -540,8 +525,9 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
 {
   for (int i = 0; i < reply->n_ue_report; i++){
-    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas){
-      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
+    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas) {
+      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
+        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
         free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
         free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
       }

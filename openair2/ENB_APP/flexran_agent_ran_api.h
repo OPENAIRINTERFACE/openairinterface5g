@@ -510,22 +510,32 @@ float flexran_get_rrc_pcell_rsrq(mid_t mod_id, rnti_t rnti);
 /* Get RRC neighbouring measurement */
 int flexran_get_rrc_num_ncell(mid_t mod_id, rnti_t rnti);
 
-/* Get physical cell id */
+/* Get neighbouring physical cell id */
 long flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi info cell id */
+uint32_t flexran_get_rrc_neigh_cgi_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi info tac */
+uint32_t flexran_get_rrc_neigh_cgi_tac(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get the number of neighbouring cgi mnc */
+uint32_t flexran_get_rrc_neigh_cgi_num_mnc(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get the number of neighbouring cgi mcc */
+uint32_t flexran_get_rrc_neigh_cgi_num_mcc(mid_t mod_id, rnti_t rnti, long cell_id);
+
+/* Get neighbouring cgi mnc */
+uint32_t flexran_get_rrc_neigh_cgi_mnc(mid_t mod_id, rnti_t rnti, long cell_id, int mnc_id);
+
+/* Get neighbouring cgi mcc */
+uint32_t flexran_get_rrc_neigh_cgi_mcc(mid_t mod_id, rnti_t rnti, long cell_id, int mcc_id);
 
 /* Get RSRP of neighbouring Cell */
 float flexran_get_rrc_neigh_rsrp(mid_t mod_id, rnti_t rnti, long cell_id);
 
 /* Get RSRQ of neighbouring Cell */
 float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id);
-
-/*Get MCC PLMN identity neighbouring Cell*/
-/* currently not implemented
-int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, rnti_t rnti, int cell_id); */
-
-/*Get MNC PLMN identity neighbouring Cell*/
-/* currently not implemented
-int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
 
 /* Get number of PLMNs that is broadcasted in SIB1 */
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);
