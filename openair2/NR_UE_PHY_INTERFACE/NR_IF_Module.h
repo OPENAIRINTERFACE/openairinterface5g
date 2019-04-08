@@ -34,6 +34,7 @@
 #define __NR_IF_MODULE_H__
 
 #include "platform_types.h"
+#include <openair1/PHY/thread_NR_UE.h>
 #include "fapi_nr_ue_interface.h"
 
 
@@ -64,6 +65,7 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
+    UE_nr_rxtx_proc_t * proc;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
@@ -209,7 +211,7 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq);
    \param ssb_index       SSB index within 0 - (L_ssb-1) corresponding to 38.331 ch.13 parameter i
    \param ssb_length      corresponding to L1 parameter L_ssb 
    \param cell_id         cell id */
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
+int handle_bcch_bch(UE_nr_rxtx_proc_t *proc, module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
 
 //  TODO check
 /**\brief handle BCCH-DL-SCH message from dl_indication

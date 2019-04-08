@@ -138,13 +138,9 @@ PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
 
 {
   PHY_VARS_NR_UE *ue;
-
-  if (frame_parms!=(NR_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
-    ue = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
-    memset(ue,0,sizeof(PHY_VARS_NR_UE));
-    memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
-  } else ue = PHY_vars_UE_g[UE_id][0];
-
+  ue = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+  memset(ue,0,sizeof(PHY_VARS_NR_UE));
+  memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
   // initialize all signal buffers
@@ -160,6 +156,7 @@ PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
  */
 
 typedef struct syncData_s {
+  UE_nr_rxtx_proc_t *proc;
   PHY_VARS_NR_UE *UE;
 } syncData_t;
 
@@ -167,18 +164,13 @@ static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
   int i, hw_slot_offset;
   PHY_VARS_NR_UE *UE = syncD->UE;
-  int current_band = 0;
-  int current_offset = 0;
   sync_mode_t sync_mode = pbch;
   int CC_id = UE->CC_id;
   int freq_offset=0;
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-    int ind;
-
     get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
-    
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
            downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],
            oai_exit, openair0_cfg[0].rx_num_channels);
@@ -197,7 +189,6 @@ static void UE_synch(void *arg) {
 
     sync_mode = pbch;
   } else {
-    current_band=0;
     LOG_E(PHY,"Fixme!\n");
     /*
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
@@ -245,11 +236,10 @@ static void UE_synch(void *arg) {
 
       break;
     */
-    
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
-      if (nr_initial_sync( UE, UE->mode ) == 0) {
+      if (nr_initial_sync( syncD->proc, UE, UE->mode ) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
@@ -374,10 +364,14 @@ void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
     NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
     UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
-    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
+    UE_mac->scheduled_response.ul_config = NULL;
+    UE_mac->scheduled_response.tx_request = NULL;
+    UE_mac->scheduled_response.module_id = UE->Mod_id;
+    UE_mac->scheduled_response.CC_id     = 0;
+    UE_mac->scheduled_response.frame = proc->frame_rx;
+    UE_mac->scheduled_response.slot  = proc->nr_tti_rx;
     nr_ue_scheduled_response(&UE_mac->scheduled_response);
     //write_output("uerxdata_frame.m", "uerxdata_frame", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_frame, 1, 1);
-    printf("Processing slot %d\n",proc->nr_tti_rx);
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
@@ -548,10 +542,6 @@ void *UE_thread(void *arg) {
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
-  bool syncRunning=false;
-  notifiedFIFO_elt_t *syncMsg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
-  syncData_t *syncD=(syncData_t *)NotifiedFifoData(syncMsg);
-  syncD->UE=UE;
   int nbSlotProcessing=0;
   int thread_idx=0;
   notifiedFIFO_elt_t *processingMsg[RX_NB_TH];
@@ -562,8 +552,13 @@ void *UE_thread(void *arg) {
     tmp->UE=UE;
   }
 
+  bool syncRunning=false;
+  notifiedFIFO_elt_t *syncMsg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
+  syncData_t *syncD=(syncData_t *)NotifiedFifoData(syncMsg);
+  syncD->UE=UE;
+  syncD->proc=&((processingData_t *)NotifiedFifoData(processingMsg[0]))->proc;
   const int nb_slot_frame = 10*UE->frame_parms.slots_per_subframe;
-  int absolute_slot=-1;
+  int absolute_slot, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   while (!oai_exit) {
     if (!syncD->UE->is_synchronized) {
@@ -572,11 +567,14 @@ void *UE_thread(void *arg) {
 
         if (res) {
           syncRunning=false;
-        } else
+        } else {
           trashFrame(UE, &timestamp);
+          trashed_frames++;
+        }
       } else {
         readFrame(UE, &timestamp);
         pushTpool(Tpool, syncMsg);
+        trashed_frames=0;
         syncRunning=true;
       }
 
@@ -588,7 +586,6 @@ void *UE_thread(void *arg) {
       syncInFrame(UE, &timestamp);
       UE->rx_offset=0;
       UE->time_sync_cell=0;
-      //printf("first stream frame rx %d\n",UE->proc.proc_rxtx[0].frame_rx);
       // read in first symbol
       AssertFatal (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0 ==
                    UE->rfdevice.trx_read_func(&UE->rfdevice,
@@ -596,12 +593,21 @@ void *UE_thread(void *arg) {
                                               (void **)UE->common_vars.rxdata,
                                               UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                               UE->frame_parms.nb_antennas_rx),"");
+      // we have the decoded frame index in the return of the synch process
+      // and we shifted above to the first slot of next frame
+      // the synch thread proc context is hard linked to regular processing thread context, thread id  = 0
+      UE_nr_rxtx_proc_t *proc=&(((processingData_t *)NotifiedFifoData(processingMsg[0]))->proc);
+      // shift the frame index with all the frames we trashed meanwhile we perform the synch search
+      proc->decoded_frame_rx=(proc->decoded_frame_rx + trashed_frames) % MAX_FRAME_NUMBER;
+      decoded_frame_rx=proc->decoded_frame_rx;
+      // we do ++ first in the regular processing, so it will be 0;
+      absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
 
     absolute_slot++;
     thread_idx = absolute_slot % RX_NB_TH;
-    int slot_nr=absolute_slot % nb_slot_frame;
+    int slot_nr = absolute_slot % nb_slot_frame;
     UE_nr_rxtx_proc_t *proc=&(((processingData_t *)NotifiedFifoData(processingMsg[thread_idx]))->proc);
     // update thread index for received subframe
     proc->nr_tti_rx= slot_nr;
@@ -611,6 +617,7 @@ void *UE_thread(void *arg) {
     proc->subframe_tx=proc->nr_tti_rx;
     proc->frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
     proc->frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
+    proc->decoded_frame_rx=-1;
     LOG_D(PHY,"Process slot %d thread Idx %d \n", slot_nr, thread_idx);
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -671,20 +678,36 @@ void *UE_thread(void *arg) {
     proc->timestamp_tx = timestamp+
                          (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
+    notifiedFIFO_elt_t *res;
 
     if (getenv("RFSIMULATOR")) {
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
-      while (!tryPullTpool(&nf, Tpool)) {
-        nbSlotProcessing--;
+      // We must receive one message, that proves the slot processing is done
+      while ((res=tryPullTpool(&nf, Tpool)) == NULL)
         usleep(200);
-      }
+
+      nbSlotProcessing--;
+      processingData_t *tmp=(processingData_t *)res->msgData;
+
+      if (tmp->proc.decoded_frame_rx != -1)
+        decoded_frame_rx=tmp->proc.decoded_frame_rx;
     }
 
-    while (nbSlotProcessing >= RX_NB_TH && !tryPullTpool(&nf, Tpool)) {
+    while (nbSlotProcessing >= RX_NB_TH && (res=tryPullTpool(&nf, Tpool)) != NULL ) {
       nbSlotProcessing--;
+      processingData_t *tmp=(processingData_t *)res->msgData;
+
+      if (tmp->proc.decoded_frame_rx != -1)
+        decoded_frame_rx=tmp->proc.decoded_frame_rx;
+
       usleep(200);
     }
+
+    if (  decoded_frame_rx != proc->frame_rx &&
+          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != proc->frame_rx )
+      LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
+            decoded_frame_rx,  proc->frame_rx);
 
     pushTpool(Tpool, processingMsg[thread_idx]);
   } // while !oai_exit
@@ -704,23 +727,29 @@ void init_UE(int nb_inst) {
   struct sched_param sched;
   sched.sched_priority = sched_get_priority_max(SCHED_RR)-1;
   pthread_attr_setschedparam(&attr, &sched);
-  
+
   for (inst=0; inst < nb_inst; inst++) {
-    //    UE->rfdevice.type      = NONE_DEV;
-    //PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
-    LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
-    PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
     AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
     nr_l3_init_ue();
     nr_l2_init_ue();
-    mac_inst = get_mac_inst(0);
+    mac_inst = get_mac_inst(inst);
     mac_inst->if_module = UE->if_inst;
-    UE->if_inst->scheduled_response = nr_ue_scheduled_response;
-    UE->if_inst->phy_config_request = nr_ue_phy_config_request;
+
+    // Initial bandwidth part configuration -- full carrier bandwidth
+    mac_inst->initial_bwp_dl.bwp_id = 0;
+    mac_inst->initial_bwp_dl.location = 0;
+    mac_inst->initial_bwp_dl.scs = UE->frame_parms.subcarrier_spacing;
+    mac_inst->initial_bwp_dl.N_RB = UE->frame_parms.N_RB_DL;
+    mac_inst->initial_bwp_dl.cyclic_prefix = UE->frame_parms.Ncp;
+    
+    mac_inst->initial_bwp_ul.bwp_id = 0;
+    mac_inst->initial_bwp_ul.location = 0;
+    mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
+    mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
+    mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
+        
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
-    //init_UE_threads(inst);
-    //UE = PHY_vars_UE_g[inst][0];
     AssertFatal(0 == pthread_create(&threads[inst],
                                     &attr,
                                     UE_thread,

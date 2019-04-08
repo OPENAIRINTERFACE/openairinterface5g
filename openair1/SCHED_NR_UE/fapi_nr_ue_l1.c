@@ -55,7 +55,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
-    NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
+    NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
     NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
     PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
         
@@ -106,32 +106,24 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	  uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
 	  dlsch0->current_harq_pid = current_harq_pid;
 	  dlsch0->active = 1;
+	  dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
                     
 	  //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
                     
-	  NR_DL_UE_HARQ_t dlsch0_harq = *(dlsch0->harq_processes[current_harq_pid]);
+	  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
                     
-	  //dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
-                    
-	  dlsch0_harq.nb_rb = dlsch_config_pdu->number_rbs;
-	  dlsch0_harq.start_rb = dlsch_config_pdu->start_rb;
-	  dlsch0_harq.nb_symbols = dlsch_config_pdu->number_symbols;
-	  dlsch0_harq.start_symbol = dlsch_config_pdu->start_symbol;
-	  dlsch0_harq.mcs = dlsch_config_pdu->mcs;
-	  dlsch0_harq.DCINdi = dlsch_config_pdu->ndi;
-	  dlsch0_harq.rvidx = dlsch_config_pdu->rv;
+	  dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
+	  dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
+	  dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
+	  dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+	  dlsch0_harq->mcs = dlsch_config_pdu->mcs;
+	  dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
+	  dlsch0_harq->rvidx = dlsch_config_pdu->rv;
 	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-	  dlsch0_harq.harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-	  dlsch0_harq.harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-	  printf(">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq.mcs);
-	  //for (int j = 0 ; j<1000; j++) printf("\nk = %d",j);
-
-#if 0
-	  dlsch0->harq_processes[current_harq_pid]->mcs = dlsch_config_pdu->mcs;
-	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-	  //pdlsch0->rnti             = rnti;
-#endif
+	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+	  printf(">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
 	}
       }
     }else{
@@ -251,7 +243,7 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
     }
   }
     
-
+  
 
   return 0;
 }

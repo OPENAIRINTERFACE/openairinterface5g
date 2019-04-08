@@ -119,6 +119,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                                   format_found_t *format_found,
                                   uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
 
+/*
 int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,
 					    int frame,
@@ -139,7 +140,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint16_t n_RB_DLBWP,
 					    uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
 					    NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
-
+*/
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
@@ -2824,7 +2825,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-  ret = nr_rx_pbch(ue, proc->subframe_rx,
+  ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
@@ -3150,7 +3151,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 #endif
 
     ue->dci_ind.number_of_dcis = dci_cnt;
-    ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
 
     for (int i=0; i<dci_cnt; i++) {
       /*
@@ -3178,12 +3178,41 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         }
         if ((dci_alloc_rx[i].format == format1_1)){ // This format not implemented at a first time. FIXME
         }
-        NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
-        #ifdef NR_PDCCH_SCHED_DEBUG
-            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_generate_ue_ul_dlsch_params_from_dci with eNB_id=%d dci_cnt=%d\n",
-                    eNB_id,
-                    dci_cnt);
-       #endif
+
+
+	uint8_t status=0;
+
+	LOG_D(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",dci_alloc_rx[i].format,dci_alloc_rx[i].rnti,dci_alloc_rx[i].dci_length,dci_alloc_rx[i].dci_pdu[0],dci_alloc_rx[i].dci_pdu[1]);
+
+	memset(&ue->dci_ind.dci_list[i].dci,0,sizeof(fapi_nr_dci_pdu_rel15_t));
+
+	ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
+	ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+	ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
+	ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
+	
+	status = nr_extract_dci_info(ue,
+				     eNB_id,
+				     ue->frame_parms.frame_type,
+				     dci_alloc_rx[i].dci_length,
+				     dci_alloc_rx[i].rnti,
+				     dci_alloc_rx[i].dci_pdu,
+				     &ue->dci_ind.dci_list[i].dci,
+				     dci_fields_sizes_cnt[i],
+				     dci_alloc_rx[i].format,
+				     nr_tti_rx,
+				     pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+				     pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+				     crc_scrambled_values);
+
+	if(status == 0) {
+	  LOG_W(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> bad DCI %d !!! \n",dci_alloc_rx[i].format);
+	  return(-1);
+	}
+	
+	LOG_D(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> Ending function nr_extract_dci_info()\n");
+
+  /*
        nr_generate_ue_ul_dlsch_params_from_dci(ue,
 					       eNB_id,
 					       frame_rx,
@@ -3204,18 +3233,22 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 					       pdcch_vars2->n_RB_BWP[nb_searchspace_active],
 					       crc_scrambled_values,
 					       &nr_dci_info_extracted);
+  */
 
-       ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
-       ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
-       ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
-       ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
-       memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
         
       } // end for loop dci_cnt
 
-    //  TODO: check where should we send up this message.
-    //ue->if_inst->dl_indication(&ue->dl_indication);
-
+    // fill dl_indication message
+    ue->dl_indication.module_id = ue->Mod_id;
+    ue->dl_indication.cc_id = ue->CC_id;
+    ue->dl_indication.gNB_index = eNB_id;
+    ue->dl_indication.frame = frame_rx;
+    ue->dl_indication.slot = nr_tti_rx;
+    ue->dl_indication.rx_ind = NULL; //no data, only dci for now
+    ue->dl_indication.dci_ind = &ue->dci_ind; 
+    
+    //  send to mac
+    ue->if_inst->dl_indication(&ue->dl_indication);
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_rx_pdcch_stats);
@@ -3563,54 +3596,40 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   memcpy(harq_ack_dest, current_harq_ack, sizeof(nr_harq_status_t));
   }*/
 
-void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1, int s0, int s1) {
+void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
 
   int nr_tti_rx = proc->nr_tti_rx;
   int m;
-  int harq_pid;
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
 
   if (dlsch0->active == 0)
     return;
 
-  for (m=s0;m<=s1;m++) {
+  if (dlsch0 && (!dlsch1))  {
+    int harq_pid = dlsch0->current_harq_pid;
+    uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
+    uint16_t pdsch_nb_rb =  dlsch0->harq_processes[harq_pid]->nb_rb;
+    uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
+    uint16_t s1 =  dlsch0->harq_processes[harq_pid]->nb_symbols;
 
-    if (dlsch0 && (!dlsch1))  {
-      harq_pid = dlsch0->current_harq_pid;
-      LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d Symbol %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,m);
+    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
 
-      if ((pdsch==PDSCH) &&
-          (ue->transmission_mode[eNB_id] == 5) &&
-          (dlsch0->harq_processes[harq_pid]->dl_power_off==0) &&
-          (ue->use_ia_receiver ==1)) {
-        dual_stream_UE = 1;
-        eNB_id_i = ue->n_connected_eNB;
-        i_mod =  dlsch0->harq_processes[harq_pid]->Qm;
+    for (m=s0;m<=s1;m++) {
 
-      }
-      else if((pdsch==PDSCH) && (ue->transmission_mode[eNB_id]==3))
-	{
-          dual_stream_UE = rx_IC_dual_stream;
-          eNB_id_i       = eNB_id;
-          i_mod          = 0;
-	}
-      else {
-        dual_stream_UE = 0;
-        eNB_id_i = eNB_id+1;
-        i_mod = 0;
-      }
+      if (m==s0)
+	nr_pdsch_channel_estimation(ue,
+				    0 /*eNB_id*/,
+				    nr_tti_rx,
+				    0 /*p*/,
+				    m,
+				    ue->frame_parms.first_carrier_offset+pdsch_start_rb*12,
+				    pdsch_nb_rb);
+      
 
-      //TM7 UE specific channel estimation here!!!
-      if (ue->transmission_mode[eNB_id]==7) {
-        if (ue->frame_parms.Ncp==0) {
-          //if ((m==3) || (m==6) || (m==9) || (m==12))
-	  //LOG_D(PHY,"[UE %d] dlsch->active in nr_tti_rx %d => %d, l=%d\n",phy_vars_ue->Mod_id,nr_tti_rx,phy_vars_ue->dlsch_ue[eNB_id][0]->active, l);
-	  //lte_dl_bf_channel_estimation(ue,eNB_id,0,nr_tti_rx*2+(m>6?1:0),5,m);
-        } else {
-          LOG_E(PHY,"[UE %d]Beamforming channel estimation not supported yet for TM7 extented CP.\n",ue->Mod_id);
-        }
-      }
+      dual_stream_UE = 0;
+      eNB_id_i = eNB_id+1;
+      i_mod = 0;
 
       if ((m==s0) && (m<3))
 	first_symbol_flag = 1;
@@ -4320,9 +4339,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
   */
 
+  uint8_t coreset_start=0, coreset_start_set=0;
+  uint16_t coreset_count = 0;
+  uint64_t coreset_freq_dom  = pdcch_vars->coreset[0].frequencyDomainResources;
+  for (int i = 0; i < 45; i++) {
+    if (((coreset_freq_dom & 0x1FFFFFFFFFFF) >> (44-i)) & 0x1) {
+      if (!coreset_start_set) {
+        coreset_start = i;
+        coreset_start_set = 1;
+      }
+      coreset_count++;
+    }
+  }
+  uint16_t coreset_nb_rb = 6 * coreset_count;
+  uint16_t coreset_start_rb = 6 * coreset_start;
+
 #ifdef NR_PDCCH_SCHED
   nr_gold_pdcch(ue,0, 2);
-  
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
@@ -4335,8 +4368,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		l,
 		nr_tti_rx,
 		0,
-		0,
-		NR_PDCCH_EST);
+		0);
+
+    nr_pdcch_channel_estimation(ue,0,
+				nr_tti_rx,
+				l,
+				ue->frame_parms.first_carrier_offset+coreset_start_rb*12,
+				coreset_nb_rb);
+
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
@@ -4379,8 +4419,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		  m,  //to be updated from higher layer
 		  nr_tti_rx,
 		  0,
-		  0,
-		  NR_PDSCH_EST);
+		  0);
       
       //printf("phy procedure pdsch start measurement\n"); 
       nr_ue_measurement_procedures(m,ue,proc,eNB_id,(nr_tti_rx<<1),mode);
@@ -4403,12 +4442,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   PDSCH,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
-			   NULL,
-			   nb_symb_pdcch, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   (nb_symb_sch+nb_symb_pdcch-1)); //ue->frame_parms.symbols_per_tti>>1,
+			   NULL);
 
     /*
-    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0][0],ue->frame_parms.N_RB_DL*12*14,1,1);
+    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
+    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
     write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],ue->frame_parms.N_RB_DL*12*14,1,1);
     write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
     */
@@ -4424,9 +4464,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   SI_PDSCH,
 			   ue->dlsch_SI[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
@@ -4438,9 +4477,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   P_PDSCH,
 			   ue->dlsch_p[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
@@ -4452,9 +4490,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   eNB_id,
 			   RA_PDSCH,
 			   ue->dlsch_ra[eNB_id],
-			   NULL,
-			   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			   ue->frame_parms.symbols_per_tti>>1);
+			   NULL);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
@@ -4472,8 +4509,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		    (ue->symbol_offset+i), //mu=1 case B
 		    nr_tti_rx,
 		    0,
-		    0,
-		    NR_PBCH_EST);
+		    0);
 
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
@@ -4553,9 +4589,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   SI_PDSCH,
 			   ue->dlsch_SI[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,
@@ -4576,9 +4610,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   P_PDSCH,
 			   ue->dlsch_p[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
 
     /*ue_dlsch_procedures(ue,
@@ -4599,9 +4631,7 @@ start_meas(&ue->generic_stat);
 			   eNB_id,
 			   RA_PDSCH,
 			   ue->dlsch_ra[eNB_id],
-			   NULL,
-			   1+(ue->frame_parms.symbols_per_tti>>1),
-			   ue->frame_parms.symbols_per_tti-1);
+			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,

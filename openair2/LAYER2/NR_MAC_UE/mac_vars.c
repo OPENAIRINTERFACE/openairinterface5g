@@ -90,7 +90,7 @@ const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f
 
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
-
+/*
  #define mu_pusch 1
 // definition table j Table 6.1.2.1.1-4
  #define j ((mu_pusch==3)?3:(mu_pusch==2)?2:1)
@@ -132,3 +132,4 @@ const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
   {0,4,7},  // row index 15
   {0,8,4}   // row index 16
   };
+*/
