@@ -349,7 +349,7 @@ static const struct net_device_ops ue_ip_netdev_ops = {
   .ndo_set_mac_address    = ue_ip_set_mac_address,
   .ndo_set_config         = ue_ip_set_config,
   .ndo_do_ioctl           = NULL,
-#if RHEL_RELEASE_CODE>=1797
+#if (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1797)
   .extended.ndo_change_mtu         = ue_ip_change_mtu,
 #else
   .ndo_change_mtu   = ue_ip_change_mtu,
