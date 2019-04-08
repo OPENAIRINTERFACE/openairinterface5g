@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
   int slot = 0;
   int **txdata;
   int32_t **txdataF;
-  double **r_re, **r_im;
+  int16_t **r_re, **r_im;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
   int ap;
   int tx_offset;
   int sample_offsetF;
-  int txlev;
+  double txlev;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -393,17 +393,14 @@ int main(int argc, char **argv) {
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
   //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
-  r_re   = malloc(2 * sizeof(double *));
-  r_im   = malloc(2 * sizeof(double *));
-  txdata = malloc(2 * sizeof(int *   ));
+  r_re   = malloc(2 * sizeof(int16_t *));
+  r_im   = malloc(2 * sizeof(int16_t *));
 
   for (i = 0; i < 2; i++) {
-    r_re[i] = malloc(frame_length_complex_samples * sizeof(double));
-    bzero(r_re[i], frame_length_complex_samples * sizeof(double));
-    r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
-    bzero(r_im[i], frame_length_complex_samples * sizeof(double));
-    txdata[i] = malloc(frame_length_complex_samples * sizeof(int));
-    bzero(r_re[i], frame_length_complex_samples * sizeof(int)); // [hna] r_re should be txdata
+    r_re[i] = malloc(frame_length_complex_samples * sizeof(int16_t));
+    bzero(r_re[i], frame_length_complex_samples * sizeof(int16_t));
+    r_im[i] = malloc(frame_length_complex_samples * sizeof(int16_t));
+    bzero(r_im[i], frame_length_complex_samples * sizeof(int16_t));
   }
 
   //configure UE
@@ -618,7 +615,7 @@ int main(int argc, char **argv) {
   txdataF = UE->common_vars.txdataF;
   amp = AMP;
 
-  start_rb = 10;
+  start_rb = 0;
   start_sc = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
 
   if (start_sc >= frame_parms->ofdm_symbol_size)
@@ -666,7 +663,6 @@ int main(int argc, char **argv) {
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 
-
           #ifdef DEBUG_PUSCH_MAPPING
             printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
             m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
@@ -675,6 +671,7 @@ int main(int argc, char **argv) {
 
           m++;
         }
+
         if (++k >= frame_parms->ofdm_symbol_size)
           k -= frame_parms->ofdm_symbol_size;
       }
@@ -689,6 +686,7 @@ int main(int argc, char **argv) {
   ///////////
 
   tx_offset = slot*frame_parms->samples_per_slot;
+  txdata = UE->common_vars.txdata;
 
   for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
       if (frame_parms->Ncp == 1) { // extended cyclic prefix
@@ -711,13 +709,15 @@ int main(int argc, char **argv) {
 
   for (i=0; i<frame_length_complex_samples; i++) {
     for (ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
-      r_re[ap][i] = ((double)(((short *)txdata[ap]))[(i<<1)]);
-      r_im[ap][i] = ((double)(((short *)txdata[ap]))[(i<<1)+1]);
+      r_re[ap][i] = ((int16_t *)txdata[ap])[(i<<1)];
+      r_im[ap][i] = ((int16_t *)txdata[ap])[(i<<1)+1];
     }
   }
 
-  txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+  txlev = (double) signal_energy(&txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+  txlev = txlev/512.0; // output of signal_energy is fixed point representation
 
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -742,8 +742,8 @@ int main(int argc, char **argv) {
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (short) ((r_re[ap][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (short) ((r_im[ap][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (r_re[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*512.0)); // convert to fixed point
+          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (r_im[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*512.0));
         }
       }
 
@@ -762,13 +762,13 @@ int main(int argc, char **argv) {
         bit_index = i & 0x1f;
 
         if ((bit_index == 0) && (i != 0)) {
-        	scrambling_index++;
+          scrambling_index++;
         }
 
         if(((scrambled_output[0][scrambling_index] >> bit_index) & 1) == 0)
             modulated_input[i] = 1.0;     ///sqrt(2);  //QPSK
         else
-        	modulated_input[i] = -1.0;    ///sqrt(2);
+          modulated_input[i] = -1.0;    ///sqrt(2);
 
 ////////////////////////////////////////////
 
@@ -812,11 +812,11 @@ int main(int argc, char **argv) {
       uint32_t llr_offset   = 0;
 
       for(symbol = sch_sym_start; symbol < 14; symbol++) {
-      	
-      	if (symbol == 2)  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
-	      nb_re = nb_rb*6;
+
+        if (symbol == 2)  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
+        nb_re = nb_rb*6;
         else
-	      nb_re = nb_rb*12;
+        nb_re = nb_rb*12;
 
         nr_ulsch_compute_llr(&ulsch_ue[0]->d_mod[d_mod_offset],
                              gNB->pusch_vars[UE_id]->ul_ch_mag,
@@ -864,9 +864,9 @@ int main(int argc, char **argv) {
         if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) || 
            ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
         {
-        	if(errors_scrambling == 0)
-        		printf("First bit in error = %d\n",i);
-        	errors_scrambling++;
+          if(errors_scrambling == 0)
+            printf("First bit in error = %d\n",i);
+          errors_scrambling++;
         }
 
         estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
@@ -933,12 +933,10 @@ int main(int argc, char **argv) {
   for (i = 0; i < 2; i++) {
     free(r_re[i]);
     free(r_im[i]);
-    free(txdata[i]);
   }
 
   free(r_re);
   free(r_im);
-  free(txdata);
 
   if (output_fd)
     fclose(output_fd);
@@ -948,4 +946,3 @@ int main(int argc, char **argv) {
 
   return (n_errors);
 }
-
