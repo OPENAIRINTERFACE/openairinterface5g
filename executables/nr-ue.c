@@ -442,7 +442,7 @@ void readFrames(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
 
   for(int x=0; x<20; x++) {  // two frames for initial sync
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-      rxp[i] = ((void *)&UE->common_vars.rxdata_is[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
+      rxp[i] = ((void *)&UE->common_vars.rxdata[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
 
     AssertFatal( UE->frame_parms.samples_per_subframe ==
                  UE->rfdevice.trx_read_func(&UE->rfdevice,

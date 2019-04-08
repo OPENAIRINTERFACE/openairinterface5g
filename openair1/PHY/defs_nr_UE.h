@@ -303,13 +303,8 @@ typedef struct {
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
+  /// - second index: sample [0..2*FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
-
-  /// \brief Holds the received data in time domain for initial sync.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: sample [0..2*FRAME_LENGTH_COMPLEX_SAMPLES+...[
-  int32_t **rxdata_is;
 
   NR_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
 

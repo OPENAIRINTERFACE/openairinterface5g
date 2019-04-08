@@ -587,15 +587,15 @@ int main(int argc, char **argv)
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
-	  ((short*) UE->common_vars.rxdata_is[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*) UE->common_vars.rxdata_is[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata_is[0],frame_parms->samples_per_frame,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_frame,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata_is[1],frame_parms->samples_per_frame,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
       }
 
       if (UE->is_synchronized == 0) {
@@ -605,7 +605,6 @@ int main(int argc, char **argv)
 	if (ret<0) n_errors++;
       }
       else {
-        UE->common_vars.rxdata = UE->common_vars.rxdata_is;
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb

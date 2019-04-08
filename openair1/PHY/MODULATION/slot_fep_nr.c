@@ -46,14 +46,11 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned char aa;
   unsigned int nb_prefix_samples;
   unsigned int nb_prefix_samples0;
-  int **rxdata = NULL;
   if (ue->is_synchronized) {
-    rxdata = common_vars->rxdata;
     nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
     nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   }
   else {
-    rxdata = common_vars->rxdata_is;
     nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
     nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   }
@@ -149,13 +146,13 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     if (symbol==0) {
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
-        memcpy((short*) &(rxdata[aa][frame_length_samples]),
-               (short*) &(rxdata[aa][0]),
+        memcpy((short*) &common_vars->rxdata[aa][frame_length_samples],
+               (short*) &common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
 
       if ((rx_offset&7)!=0) {  // if input to dft is not 256-bit aligned, issue for size 6,15 and 25 PRBs
         memcpy((void *)tmp_dft_in,
-               (void *) &(rxdata[aa][rx_offset % frame_length_samples]),
+               (void *) &common_vars->rxdata[aa][rx_offset % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
@@ -164,7 +161,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
           start_meas(&ue->rx_dft_stats);
 #endif
 
-        dft((int16_t *) &(rxdata[aa][(rx_offset) % frame_length_samples]),
+        dft((int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
@@ -174,8 +171,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol;
       //                  + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
-        memcpy((void *) &(rxdata[aa][frame_length_samples]),
-               (void *) &(rxdata[aa][0]),
+        memcpy((void *) &common_vars->rxdata[aa][frame_length_samples],
+               (void *) &common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
 #if UE_TIMING_TRACE
       start_meas(&ue->rx_dft_stats);
@@ -183,13 +180,13 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
       if ((rx_offset&7)!=0) {  // if input to dft is not 128-bit aligned, issue for size 6 and 15 PRBs
         memcpy((void *)tmp_dft_in,
-               (void *) &(rxdata[aa][(rx_offset) % frame_length_samples]),
+               (void *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 
-        dft((int16_t *) &(rxdata[aa][(rx_offset) % frame_length_samples]),
+        dft((int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE

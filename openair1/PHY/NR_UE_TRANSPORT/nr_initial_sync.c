@@ -269,10 +269,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 
 	for(int n=start; n<end; n++){  	
 	  for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-		re = ((double)(((short *)ue->common_vars.rxdata_is[ar]))[2*n]);
-		im = ((double)(((short *)ue->common_vars.rxdata_is[ar]))[2*n+1]);
-		((short *)ue->common_vars.rxdata_is[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
-		((short *)ue->common_vars.rxdata_is[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
+		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
 	  }
 	}
     }
@@ -286,7 +286,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
     /* symbol number are from beginning of SS/PBCH blocks as below:  */
     /*    Signal            PSS  PBCH  SSS  PBCH                     */
     /*    symbol number      0     1    2    3                       */
-    /* time samples in buffer rxdata_is are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
+    /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
     /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
       for(int i=0; i<4;i++)
@@ -436,13 +436,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 
     // do a measurement on the best guess of the PSS
     //for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-    //  rx_power += signal_energy(&ue->common_vars.rxdata_is[aarx][sync_pos2],
+    //  rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
 	//			frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 
     /*
     // do a measurement on the full frame
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-      rx_power += signal_energy(&ue->common_vars.rxdata_is[aarx][0],
+      rx_power += signal_energy(&ue->common_vars.rxdata[aarx][0],
 				frame_parms->samples_per_subframe*10);
     */
 

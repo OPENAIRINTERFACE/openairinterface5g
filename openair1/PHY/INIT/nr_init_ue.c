@@ -710,15 +710,13 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
 
     // init RX buffers
-    common_vars->rxdata_is= (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
     common_vars->rxdata   = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         common_vars->common_vars_rx_data_per_thread[th_id].rxdataF  = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
     }
 
     for (i=0; i<fp->nb_antennas_rx; i++) {
-      common_vars->rxdata_is[i] = (int32_t*) malloc16_clear( (fp->samples_per_frame*2+2048)*sizeof(int32_t) );
-      common_vars->rxdata[i] = (int32_t*) malloc16_clear( (fp->samples_per_frame+2048)*sizeof(int32_t) );
+      common_vars->rxdata[i] = (int32_t*) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
           common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
       }
