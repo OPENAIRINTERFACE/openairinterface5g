@@ -1921,7 +1921,7 @@ int RCconfig_S1(
 
               default: {
                 LOG_E(S1AP, "Default I-DRX value in conf file is invalid (%i). Should be 32, 64, 128 or 256. \
-                           Default DRX set to 32 in MME configuration\n",
+                         Default DRX set to 32 in MME configuration\n",
                       ccparams_lte.pcch_defaultPagingCycle);
                 S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
               }
