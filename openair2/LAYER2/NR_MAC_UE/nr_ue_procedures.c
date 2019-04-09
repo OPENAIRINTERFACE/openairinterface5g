@@ -35,6 +35,7 @@
 #include "RRC/NR_UE/rrc_proto.h"
 #include "assertions.h"
 #include "PHY/defs_nr_UE.h"
+#include "common/utils/LOG/log.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -203,7 +204,7 @@ int8_t nr_ue_decode_mib(
 	void 		*pduP,
     uint16_t    cell_id ){
 
-    printf("[L2][MAC] decode mib\n");
+    LOG_I(MAC,"[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -234,16 +235,16 @@ int8_t nr_ue_decode_mib(
 	    }
 
 #ifdef DEBUG_MIB
-		printf("system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-		printf("system frame number(with LSB): %d\n", (int)frame);
-		printf("subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-		printf("ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
-		printf("dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-		printf("pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
-		printf("cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
-		printf("intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-		printf("half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-		printf("ssb index(extra bits):         %d\n", (int)ssb_index);
+		LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
+		LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
+		LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
+		LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+		LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
+		LOG_I(MAC,"pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
+		LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
+		LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
+		LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+		LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
 
 	    subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
@@ -272,7 +273,7 @@ int8_t nr_ue_decode_mib(
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
-        //printf("<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
+        //LOG_I(MAC,"<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
         //mac->mib->pdcch_ConfigSIB1,index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
 
         //  type0-pdcch coreset
@@ -316,7 +317,7 @@ int8_t nr_ue_decode_mib(
                     num_rbs     = table_38213_13_4_c2[index_4msb];
                     num_symbols = table_38213_13_4_c3[index_4msb];
                     rb_offset   = table_38213_13_4_c4[index_4msb];
-                    printf("<<<<<<<<<index_4msb %d num_rbs %d num_symb %d rb_offset %d\n",index_4msb,num_rbs,num_symbols,rb_offset );
+                    LOG_I(MAC,"<<<<<<<<<index_4msb %d num_rbs %d num_symb %d rb_offset %d\n",index_4msb,num_rbs,num_symbols,rb_offset );
                 }else if(min_channel_bw & bw_40MHz){
                     AssertFatal(index_4msb < 10, "38.213 Table 13-6 4 MSB out of range\n");
                     mac->type0_pdcch_ss_mux_pattern = 1;
@@ -403,7 +404,7 @@ int8_t nr_ue_decode_mib(
             mask = mask >> 1;
             mask = mask | 0x100000000000;
         }
-        //printf(">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
+        //LOG_I(MAC,">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
         mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
         mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
 
@@ -666,7 +667,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;	//	to be set
 
-	printf("nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
+	LOG_I(MAC,"nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
 	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);  
 	*/   
@@ -1289,7 +1290,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     const uint16_t n_RB_DLBWP = mac->initial_bwp_dl.N_RB;
     const uint16_t n_RB_ULBWP = mac->initial_bwp_ul.N_RB;
 
-    printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
+    LOG_I(MAC,"nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
 
     switch(dci_format){
         case format0_0:
@@ -1746,18 +1747,18 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
         /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
             dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
 
-            printf("\n>>> (nr_ue_procedures.c) rnti=%d dl_config->number_pdus=%d\n",
+            LOG_D(MAC,"(nr_ue_procedures.c) rnti=%d dl_config->number_pdus=%d\n",
                     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
                     dl_config->number_pdus);
-            printf(">>> (nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
+            LOG_D(MAC,"(nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
                     dci->freq_dom_resource_assignment_DL,
                     dlsch_config_pdu_1_0->number_rbs,
                     dlsch_config_pdu_1_0->start_rb);
-            printf(">>> (nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
+            LOG_D(MAC,"(nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
                     dci->time_dom_resource_assignment,
                     dlsch_config_pdu_1_0->number_symbols,
                     dlsch_config_pdu_1_0->start_symbol);
-            printf(">>> (nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
+            LOG_D(MAC,"(nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
                   dlsch_config_pdu_1_0->vrb_to_prb_mapping,
                   dlsch_config_pdu_1_0->mcs,
                   dlsch_config_pdu_1_0->ndi,
@@ -1772,7 +1773,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
 	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
 	    
-            printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
+            LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
             dl_config->number_pdus = dl_config->number_pdus + 1;
             break;
@@ -1959,7 +1960,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
 	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
 	    
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-            printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
+            LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
             dl_config->number_pdus = dl_config->number_pdus + 1;
 

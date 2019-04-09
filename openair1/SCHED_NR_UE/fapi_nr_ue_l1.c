@@ -123,7 +123,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
 	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
 	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-	  printf(">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
+	  LOG_D(MAC,">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
 	}
       }
     }else{
@@ -212,17 +212,17 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   if(phy_config != NULL){
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
-      printf("[L1][IF module][PHY CONFIG]\n");
-      printf("subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
-      printf("ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
-      printf("dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
-      printf("pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
-      printf("cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
-      printf("intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
-      printf("system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
-      printf("ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
-      printf("half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
-      printf("-------------------------------\n");
+      LOG_I(MAC,"[L1][IF module][PHY CONFIG]\n");
+      LOG_I(MAC,"subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
+      LOG_I(MAC,"ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
+      LOG_I(MAC,"dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
+      LOG_I(MAC,"pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
+      LOG_I(MAC,"cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
+      LOG_I(MAC,"intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
+      LOG_I(MAC,"system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
+      LOG_I(MAC,"ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
+      LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
+      LOG_I(MAC,"-------------------------------\n");
 
     }
         

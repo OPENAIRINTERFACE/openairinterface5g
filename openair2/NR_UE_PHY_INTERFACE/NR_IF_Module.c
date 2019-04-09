@@ -65,7 +65,7 @@ int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, 
 //  L2 Abstraction Layer
 int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
-  printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
+  //printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
   return nr_ue_process_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
 }
@@ -143,9 +143,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   mac->scheduled_response.slot = dl_info->slot;
 
   if(dl_info->dci_ind != NULL){
-    printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
+    LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
     for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
-      printf(">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
+      LOG_I(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
 
       ret_mask |= (handle_dci(
@@ -205,7 +205,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   }
 
   if(dl_info->rx_ind != NULL){
-    printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
+    LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND]\n");
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
