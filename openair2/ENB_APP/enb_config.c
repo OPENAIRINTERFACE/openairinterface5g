@@ -1395,7 +1395,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             if  (strcmp(ccparams_lte.drx_shortDrx_Cycle, "") == 0 || ccparams_lte.drx_shortDrx_ShortCycleTimer == 0) {
               if  (strcmp(ccparams_lte.drx_shortDrx_Cycle, "") != 0 || ccparams_lte.drx_shortDrx_ShortCycleTimer != 0) {
                 AssertFatal (0,
-                "Failed to parse eNB configuration file %s, enb %d incoherent values \"%s\" -  \"%d\" for drx_shortDrx_Cycle or  drx_shortDrx_ShortCycleTimer choice !\n",
+                "Failed to parse eNB configuration file %s, enb %d incoherent values \"%s\" -  \"%d\" for drx_shortDrx_Cycle or drx_shortDrx_ShortCycleTimer choice !\n",
                 RC.config_file_name, i, ccparams_lte.drx_shortDrx_Cycle, ccparams_lte.drx_shortDrx_ShortCycleTimer);
               } else {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = -1;
