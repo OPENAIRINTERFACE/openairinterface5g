@@ -168,7 +168,6 @@ int setInterfaceParameter(char *interfaceName, char *settingAddress, int operati
   }
 
   close(sock_fd);
-  //    printf("Set OK!\n");
   return 0;
 }
 
@@ -225,7 +224,9 @@ int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *br
 
   //  if(!returnValue)
   //  returnValue=set_gateway(interfaceName, broadcastAddress);
-  bringInterfaceUp(interfaceName, 1);
+  if(!returnValue)
+    returnValue = bringInterfaceUp(interfaceName, 1);
+
   return returnValue;
 }
 
@@ -252,7 +253,16 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
   if(!returnValue)
     returnValue= setInterfaceParameter(interfaceName, broadcastAddress,SIOCSIFBRDADDR);
 
-  bringInterfaceUp(interfaceName, 1);
+  if(!returnValue)
+    bringInterfaceUp(interfaceName, 1);
+
+  if(!returnValue)
+    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+          interfaceName, ipAddress, netMask, broadcastAddress);
+  else
+    LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
+          interfaceName, ipAddress, netMask, broadcastAddress);
+
   return returnValue;
 }
 
