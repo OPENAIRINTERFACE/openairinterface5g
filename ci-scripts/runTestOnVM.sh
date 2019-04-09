@@ -90,7 +90,7 @@ function start_basic_sim_enb {
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
     sleep 10
     rm $1
 }
@@ -108,7 +108,7 @@ function start_basic_sim_ue {
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
 
     local i="0"
@@ -116,7 +116,7 @@ function start_basic_sim_ue {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1`
         if [ $CONNECTED -eq 1 ]
         then
             i="100"
@@ -134,40 +134,63 @@ function start_basic_sim_ue {
 }
 
 function get_ue_ip_addr {
-    echo "ifconfig oaitun_ue1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
-    UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
-    echo "Test UE IP Address is : $UE_IP_ADDR"
+    local LOC_IF_ID=$3
+    echo "ifconfig oaitun_ue${LOC_IF_ID} | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    UE_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1`
+    echo "Test UE${LOC_IF_ID} IP Address is : $UE_IP_ADDR"
     rm $1
 }
 
 function get_enb_noS1_ip_addr {
     echo "ifconfig oaitun_enb1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
-    ENB_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
-    echo "Test eNB IP Address is : $UE_IP_ADDR"
+    ENB_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1`
+    echo "Test eNB IP Address is : $ENB_IP_ADDR"
     rm $1
 }
 
 function ping_ue_ip_addr {
+    local LOC_FG_OR_BG=$5
     echo "echo \"COMMAND IS: ping -c 20 $3\" > $4" > $1
     echo "echo \"ping -c 20 $3\"" >> $1
-    echo "ping -c 20 $UE_IP_ADDR | tee -a $4" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    if [ $LOC_FG_OR_BG -eq 0 ]
+    then
+        echo "ping -c 20 $UE_IP_ADDR >> $4" >> $1
+        echo "tail -3 $4" >> $1
+    else
+        echo "nohup ping -c 20 $UE_IP_ADDR >> $4 &" >> $1
+    fi
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
 
 function ping_epc_ip_addr {
-    echo "echo \"COMMAND IS: ping -I oaitun_ue1 -c 20 $3\" > $4" > $1
-    echo "echo \"ping -I oaitun_ue1 -c 20 $3\"" >> $1
-    echo "ping -I oaitun_ue1 -c 20 $3 | tee -a $4" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    local LOC_IF_ID=$5
+    local LOC_FG_OR_BG=$6
+    echo "echo \"COMMAND IS: ping -I oaitun_ue${LOC_IF_ID} -c 20 $3\" > $4" > $1
+    echo "echo \"ping -I oaitun_ue${LOC_IF_ID} -c 20 $3\"" >> $1
+    if [ $LOC_FG_OR_BG -eq 0 ]
+    then
+        echo "ping -I oaitun_ue${LOC_IF_ID} -c 20 $3 >> $4" >> $1
+        echo "tail -3 $4" >> $1
+    else
+        echo "nohup ping -I oaitun_ue${LOC_IF_ID} -c 20 $3 >> $4 &" >> $1
+    fi
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
 
 function ping_enb_ip_addr {
+    local LOC_FG_OR_BG=$5
     echo "echo \"COMMAND IS: ping -I oaitun_enb1 -c 20 $3\" > $4" > $1
     echo "echo \"ping -I oaitun_enb1 -c 20 $3\"" >> $1
-    echo "ping -I oaitun_enb1 -c 20 $3 | tee -a $4" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    if [ $LOC_FG_OR_BG -eq 0 ]
+    then
+        echo "ping -I oaitun_enb1 -c 20 $3 >> $4" >> $1
+        echo "tail -3 $4" >> $1
+    else
+        echo "nohup ping -I oaitun_enb1 -c 20 $3 >> $4 &" >> $1
+    fi
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
 
@@ -187,8 +210,15 @@ function check_ping_result {
             then
                 echo "got all ping packets"
             else
-                echo "got NOT all ping packets"
-                PING_STATUS=-1
+                LOC_NB_PINGS=$[$2-1]
+                ALL_PACKET_RECEIVED=`egrep -c "$LOC_NB_PINGS received" $LOC_PING_FILE`
+                if [ $ALL_PACKET_RECEIVED -eq 1 ]
+                then
+                    echo "got almost all ping packets"
+                else
+                    echo "got NOT all ping packets"
+                    PING_STATUS=-1
+                fi
             fi
         fi
     else
@@ -203,17 +233,17 @@ function iperf_dl {
     echo "echo \"iperf -u -s -i 1\"" > $1
     echo "echo \"COMMAND IS: iperf -u -s -i 1\" > tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt" > $1
     echo "nohup iperf -u -s -i 1 >> tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt &" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
 
     echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $3
     echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > ${BASE_LOG_FILE}_client.txt" > $3
     echo "iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a ${BASE_LOG_FILE}_client.txt" >> $3
-    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$4 < $3
     rm -f $3
 
     echo "killall --signal SIGKILL iperf" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
 }
 
@@ -223,17 +253,17 @@ function iperf_ul {
     echo "echo \"iperf -u -s -i 1\"" > $3
     echo "echo \"COMMAND IS: iperf -u -s -i 1\" > ${BASE_LOG_FILE}_server.txt" > $3
     echo "nohup iperf -u -s -i 1 >> ${BASE_LOG_FILE}_server.txt &" >> $3
-    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$4 < $3
     rm $3
 
     echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $1
     echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" > $1
     echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 
     echo "killall --signal SIGKILL iperf" >> $3
-    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$4 < $3
     rm $3
 }
 
@@ -319,7 +349,7 @@ function terminate_enb_ue_basic_sim {
     fi
     echo "echo \"ps -aux | grep softmodem\"" >> $1
     echo "ps -aux | grep softmodem | grep -v grep" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
 
@@ -335,7 +365,7 @@ function recover_core_dump {
         echo "sudo rm core" >> $1
         echo "rm ci-lte-basic-sim.conf" >> $1
         echo "sync" >> $1
-        ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/basic_simulator/enb/basic-simulator-enb-core-${TC}.bz2 $4
         rm -f $1
     fi
@@ -360,8 +390,6 @@ function full_basic_sim_destroy {
         echo "############################################################"
         uvt-kvm destroy $VM_NAME
         ssh-keygen -R $VM_IP_ADDR
-        uvt-kvm destroy $EPC_VM_NAME
-        ssh-keygen -R $EPC_VM_IP_ADDR
         if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
         then
             uvt-kvm destroy $FLEXRAN_CTL_VM_NAME
@@ -415,7 +443,7 @@ function install_epc_on_vm {
     if [ $LTEBOX -eq 1 ]
     then
         echo "ls -ls /opt/ltebox/tools/start_ltebox" > $LOC_EPC_VM_CMDS
-        RESPONSE=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
+        RESPONSE=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
         NB_EXES=`echo $RESPONSE | grep -c ltebox`
         if [ $NB_EXES -eq 1 ]; then LTE_BOX_TO_INSTALL=0; fi
     fi
@@ -459,7 +487,7 @@ function install_epc_on_vm {
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$LOC_EPC_VM_IP_ADDR#' gw.conf" >> $LOC_EPC_VM_CMDS
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$LOC_EPC_VM_IP_ADDR#' mme.conf" >> $LOC_EPC_VM_CMDS
 
-        ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
         rm -f $LOC_EPC_VM_CMDS
     fi
 }
@@ -481,7 +509,7 @@ function add_user_to_epc_lists {
         echo "sudo cp /tmp/subscriber.data subscriber.data" >> $LOC_EPC_VM_CMDS
         echo "sudo cp /tmp/profile.data profile.data" >> $LOC_EPC_VM_CMDS
 
-        ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
         rm -f $LOC_EPC_VM_CMDS
     fi
 }
@@ -506,7 +534,7 @@ function start_epc {
         echo "echo \"sudo ./start_ltebox\"" >> $LOC_EPC_VM_CMDS
         echo "nohup sudo ./start_ltebox > /home/ubuntu/ltebox.txt" >> $LOC_EPC_VM_CMDS
 
-        ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
         rm -f $LOC_EPC_VM_CMDS
 
         i="0"
@@ -514,7 +542,7 @@ function start_epc {
         while [ $i -lt 10 ]
         do
             sleep 2
-            CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
+            CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
             if [ $CONNECTED -eq 1 ]
             then
                 i="100"
@@ -544,7 +572,7 @@ function retrieve_real_epc_ip_addr {
     then
         # in our configuration file, we are using pool 5
         echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $LOC_EPC_VM_CMDS
-        REAL_EPC_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
+        REAL_EPC_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
         echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
         rm $LOC_EPC_VM_CMDS
     fi
@@ -561,7 +589,7 @@ function terminate_epc {
         echo "sudo daemon --name=simulated_hss --stop" >> $1
         echo "echo \"sudo killall --signal SIGKILL hss_sim\"" >> $1
         echo "sudo killall --signal SIGKILL hss_sim" >> $1
-        ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
         rm $1
     fi
 }
@@ -571,7 +599,7 @@ function start_flexran_ctrl {
     echo "if [ -f cmake_targets/log/flexran_ctl_run.log ]; then rm -f cmake_targets/log/flexran_ctl_run.log cmake_targets/log/flexran_ctl_query*.log; fi" >> $1
     echo "echo \" sudo build/rt_controller -c log_config/basic_log\"" >> $1
     echo "nohup sudo build/rt_controller -c log_config/basic_log > cmake_targets/log/flexran_ctl_run.log 2>&1 &" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
     sleep 10
 }
@@ -579,7 +607,7 @@ function start_flexran_ctrl {
 function stop_flexran_ctrl {
     echo "echo \"sudo killall --signal SIGKILL rt_controller\"" > $1
     echo "sudo killall --signal SIGKILL rt_controller" > $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
     sleep 2
 }
@@ -591,7 +619,7 @@ function query_flexran_ctrl_status {
     echo "echo \"LOG_NAME: $LOC_MESSAGE\" >> cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
     echo "echo \"------------------------------------------------------------\" >> cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
     echo "curl http://localhost:9999/stats | jq '.' | tee -a cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
 }
 
@@ -612,7 +640,7 @@ function build_ue_on_separate_folder {
     echo "sudo chmod 666 /etc/iproute2/rt_tables" >> $1
     echo "source init_nas_s1 UE" >> $1
     echo "ifconfig" >> $1
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
 
@@ -649,7 +677,7 @@ function start_l2_sim_enb {
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
 
     local i="0"
@@ -657,7 +685,7 @@ function start_l2_sim_enb {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1`
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1`
         if [ $CONNECTED -ne 0 ]
         then
             i="100"
@@ -666,13 +694,38 @@ function start_l2_sim_enb {
         fi
     done
     rm $1
+    ENB_SYNC=1
     if [ $i -lt 50 ]
     then
         ENB_SYNC=0
         echo "L2-SIM eNB is NOT sync'ed: process still alive?"
     else
-        ENB_SYNC=1
         echo "L2-SIM eNB is sync'ed: waiting for UE(s) to connect"
+    fi
+    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+    then
+        echo "ifconfig oaitun_enb1 | egrep -c \"inet addr\"" > $1
+        # Checking oaitun_enb1 interface has now an IP address
+        i="0"
+        while [ $i -lt 10 ]
+        do
+            CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1`
+            if [ $CONNECTED -eq 1 ]
+            then
+                i="100"
+            else
+                i=$[$i+1]
+                sleep 5
+            fi
+        done
+        rm $1
+        if [ $i -lt 50 ]
+        then
+            UE_SYNC=0
+            echo "L2-SIM eNB oaitun_enb1 is DOWN or NOT CONFIGURED"
+        else
+            echo "L2-SIM eNB oaitun_enb1 is UP and CONFIGURED"
+        fi
     fi
     sleep 10
 }
@@ -701,7 +754,7 @@ function add_ue_l2_sim_ue {
         echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
     fi
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
 }
 
@@ -732,7 +785,7 @@ function start_l2_sim_ue {
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
 
     local i="0"
@@ -740,7 +793,7 @@ function start_l2_sim_ue {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
         then
             i="100"
@@ -749,39 +802,52 @@ function start_l2_sim_ue {
         fi
     done
     rm $1
+    UE_SYNC=1
     if [ $i -lt 50 ]
     then
         UE_SYNC=0
         echo "L2-SIM UE is NOT sync'ed w/ eNB"
         return
     else
-        UE_SYNC=1
         echo "L2-SIM UE is sync'ed w/ eNB"
     fi
-    # Checking oaitun_ue1 interface has now an IP address
-    i="0"
-    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
-    while [ $i -lt 10 ]
+    local max_interfaces_to_check=1
+    if [ $LOC_S1_CONFIGURATION -eq 0 ]; then max_interfaces_to_check=$LOC_NB_UES; fi
+    local j="1"
+    while [ $j -le $max_interfaces_to_check ]
     do
-        sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
-        if [ $CONNECTED -eq 1 ]
+        echo "ifconfig oaitun_ue${j} | egrep -c \"inet addr\"" > $1
+        # Checking oaitun_ue1 interface has now an IP address
+        i="0"
+        while [ $i -lt 10 ]
+        do
+            CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
+            if [ $CONNECTED -eq 1 ]
+            then
+                i="100"
+            else
+                i=$[$i+1]
+                sleep 5
+            fi
+        done
+        rm $1
+        if [ $i -lt 50 ]
         then
-            i="100"
+            UE_SYNC=0
+            echo "L2-SIM UE oaitun_ue${j} is DOWN or NOT CONFIGURED"
         else
-            i=$[$i+1]
+            echo "L2-SIM UE oaitun_ue${j} is UP and CONFIGURED"
         fi
+        j=$[$j+1]
     done
-    rm $1
-    if [ $i -lt 50 ]
-    then
-        UE_SYNC=0
-        echo "L2-SIM UE oaitun_ue1 is NOT sync'ed w/ EPC"
-    else
-        UE_SYNC=1
-        echo "L2-SIM UE oaitun_ue1 is sync'ed w/ EPC"
-    fi
     sleep 10
+    # for debug
+    if [ $LOC_S1_CONFIGURATION -eq 1 ]
+    then
+        echo "ifconfig" > $1
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+        rm $1
+    fi
 }
 
 function full_l2_sim_destroy {
@@ -794,22 +860,163 @@ function full_l2_sim_destroy {
         ssh-keygen -R $ENB_VM_IP_ADDR
         uvt-kvm destroy $UE_VM_NAME
         ssh-keygen -R $UE_VM_IP_ADDR
-        uvt-kvm destroy $EPC_VM_NAME
-        ssh-keygen -R $EPC_VM_IP_ADDR
     fi
 }
+
+function start_rf_sim_enb {
+    local LOC_ENB_VM_IP_ADDR=$2
+    local LOC_EPC_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_NB_RBS=$5
+    local LOC_CONF_FILE=$6
+    # 1 is with S1 and 0 without S1 aka noS1
+    local LOC_S1_CONFIGURATION=$7
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"export RFSIMULATOR=enb\"" >> $1
+    echo "export RFSIMULATOR=enb" >> $1
+    echo "echo \"source oaienv\"" >> $1
+    echo "source oaienv" >> $1
+    echo "cd ci-scripts/conf_files/" >> $1
+    echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_ENB_VM_IP_ADDR#' -e 's#CI_UE_IP_ADDR#$LOC_UE_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
+    echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+    then
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+    else
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim\" > ./my-lte-softmodem-run.sh " >> $1
+    fi
+    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
+    echo "cat ./my-lte-softmodem-run.sh" >> $1
+    echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
+    rm $1
+
+    local i="0"
+    echo "egrep -c \"got sync\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1`
+        if [ $CONNECTED -ne 0 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        ENB_SYNC=0
+        echo "RF-SIM eNB is NOT sync'ed: process still alive?"
+    else
+        ENB_SYNC=1
+        echo "RF-SIM eNB is sync'ed: waiting for UE(s) to connect"
+    fi
+    sleep 10
+}
+
+#start_rf_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG
+function start_rf_sim_ue {
+    local LOC_UE_VM_IP_ADDR=$2
+    local LOC_ENB_VM_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_PRB=$5
+    local LOC_FREQUENCY=$6
+    # 1 is with S1 and 0 without S1 aka noS1
+    local LOC_S1_CONFIGURATION=$7
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"export RFSIMULATOR=${LOC_ENB_VM_IP_ADDR}\"" >> $1
+    echo "export RFSIMULATOR=${LOC_ENB_VM_IP_ADDR}" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    if [ $LOC_S1_CONFIGURATION -eq 0 ]
+    then
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --rfsim --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+    else
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --rfsim\" > ./my-lte-softmodem-run.sh " >> $1
+    fi
+    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
+    echo "cat ./my-lte-softmodem-run.sh" >> $1
+    echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+    rm $1
+
+    local i="0"
+    echo "egrep -c \"got sync\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+        echo "RF-SIM UE is NOT sync'ed w/ eNB"
+        return
+    else
+        UE_SYNC=1
+        echo "RF-SIM UE is sync'ed w/ eNB"
+    fi
+    return
+    # Checking oaitun_ue1 interface has now an IP address
+    i="0"
+    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+        echo "RF-SIM UE oaitun_ue1 is NOT sync'ed w/ EPC"
+    else
+        UE_SYNC=1
+        echo "RF-SIM UE oaitun_ue1 is sync'ed w/ EPC"
+    fi
+    sleep 10
+}
+
 
 function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
     echo "############################################################"
-    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-l2-sim.* ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
     then
-        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#"`
+        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#" -e "s#rf-sim#enb-ethernet#"`
         ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
         echo "ENB_VM_NAME         = $ENB_VM_NAME"
         echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
-        UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#ue-ethernet#"`
+        UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#ue-ethernet#" -e "s#rf-sim#ue-ethernet#"`
         UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
         echo "UE_VM_NAME          = $UE_VM_NAME"
         echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
@@ -820,7 +1027,7 @@ function run_test_on_vm {
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 
-    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-l2-sim.* ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
     then
         echo "############################################################"
         echo "Waiting for ENB VM to be started"
@@ -874,7 +1081,7 @@ function run_test_on_vm {
         echo "cd log" >> $VM_CMDS
         echo "zip -r -qq tmp.zip *.* 0*" >> $VM_CMDS
 
-        ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
 
         echo "############################################################"
         echo "Creating a tmp folder to store results and artifacts"
@@ -1020,13 +1227,13 @@ function run_test_on_vm {
                   STATUS=-1
                   return
               fi
-              get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+              get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
 
               echo "############################################################"
               echo "Pinging the UE"
               echo "############################################################"
               PING_LOG_FILE=${TMODE}_${BW}MHz_ping_ue.txt
-              ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+              ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
               scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
               check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
@@ -1138,7 +1345,7 @@ function run_test_on_vm {
                 return
             fi
             query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 03_enb_ue_connected
-            get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+            get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
 
             sleep 30
             echo "############################################################"
@@ -1180,6 +1387,109 @@ function run_test_on_vm {
         fi
     fi
 
+    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
+    then
+        if [ -d $ARCHIVES_LOC ]
+        then
+            rm -Rf $ARCHIVES_LOC
+        fi
+        mkdir --parents $ARCHIVES_LOC
+
+        # Creating a VM for EPC and installing SW
+        EPC_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#epc#"`
+        EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
+        LTEBOX=0
+        install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
+        EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+
+        #EPC_CONFIGS=("wS1" "noS1")
+        #TRANS_MODES=("fdd" "tdd")
+        #BW_CASES=(05 10 20)
+        EPC_CONFIGS=("noS1")
+        TRANS_MODES=("fdd")
+        BW_CASES=(05)
+        for CN_CONFIG in ${EPC_CONFIGS[@]}
+        do
+          if [[ $CN_CONFIG =~ .*wS1.* ]]
+          then
+              echo "############################################################"
+              echo "Start EPC for the wS1 configuration"
+              echo "############################################################"
+              start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+
+              # Retrieve EPC real IP address
+              retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+              S1_NOS1_CFG=1
+              continue
+          else
+              #echo "############################################################"
+              #echo "Terminate EPC"
+              #echo "############################################################"
+              #terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+
+              echo "############################################################"
+              echo "Running now in a no-S1 configuration"
+              echo "############################################################"
+              S1_NOS1_CFG=0
+          fi
+          for TMODE in ${TRANS_MODES[@]}
+          do
+              if [[ $TMODE =~ .*fdd.* ]]
+              then
+                  CONF_FILE=enb.band7.tm1.50PRB.usrpb210.conf
+                  FREQUENCY=2680
+              else
+                  CONF_FILE=enb.band40.tm1.50PRB.FairScheduler.usrpb210.conf
+                  FREQUENCY=2350
+              fi
+              for BW in ${BW_CASES[@]}
+              do
+                  if [[ $BW =~ .*05.* ]]; then PRB=25; fi
+                  if [[ $BW =~ .*10.* ]]; then PRB=50; fi
+                  if [[ $BW =~ .*20.* ]]; then PRB=100; fi
+
+                  echo "############################################################"
+                  echo "${CN_CONFIG} : Starting the eNB in ${TMODE}-${BW}MHz mode"
+                  echo "############################################################"
+                  CURRENT_ENB_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_enb.log
+                  start_rf_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
+
+                  echo "############################################################"
+                  echo "${CN_CONFIG} : Starting the UE"
+                  echo "############################################################"
+                  CURRENT_UE_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_ue.log
+                  start_rf_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG
+                  if [ $UE_SYNC -eq 0 ]
+                  then
+                      echo "Problem w/ eNB and UE not syncing"
+                      terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+                      terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
+                      scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+                      scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+                      if [ $S1_NOS1_CFG -eq 1 ]
+                      then
+                          terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                      fi
+                      echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                      STATUS=-1
+                      return
+                  fi
+
+                  sleep 30
+
+                  echo "############################################################"
+                  echo "${CN_CONFIG} : Terminate enb/ue simulators"
+                  echo "############################################################"
+                  terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+                  terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
+                  scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+                  scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+
+              done
+          done
+        done
+    fi
+
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-l2-sim.* ]]
     then
         PING_STATUS=0
@@ -1194,7 +1504,7 @@ function run_test_on_vm {
         #build_ue_on_separate_folder $VM_CMDS $VM_IP_ADDR
 
         # Creating a VM for EPC and installing SW
-        EPC_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#l2-epc#"`
+        EPC_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#epc#"`
         EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
         LTEBOX=0
         install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
@@ -1272,44 +1582,101 @@ function run_test_on_vm {
 
                 if [ $S1_NOS1_CFG -eq 1 ]
                 then
-                    get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR
+                    get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR 1
 
                     echo "############################################################"
                     echo "${CN_CONFIG} : Pinging the EPC from UE"
                     echo "############################################################"
                     PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc.log
-                    ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
+                    ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE 1 0
                     scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
                 else
-                    get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR
                     get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
 
                     echo "############################################################"
                     echo "${CN_CONFIG} : Pinging the eNB from UE"
                     echo "############################################################"
-                    PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_enb.log
-                    ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE
-                    scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_enb_seq_from_ue${j}.log
+                        ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE ${j} 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_enb_para_from_ue${j}.log
+                            ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_IP_ADDR $PING_LOG_FILE ${j} 1
+                            j=$[$j+1]
+                        done
+                        sleep 25
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_enb_para_from_ue${j}.log
+                            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                            tail -3 $ARCHIVES_LOC/$PING_LOG_FILE
+                            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                            j=$[$j+1]
+                        done
+                    fi
                 fi
-                check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
                 if [ $S1_NOS1_CFG -eq 1 ]
                 then
                     echo "############################################################"
-                    echo "${CN_CONFIG} : Pinging the UE from EPC"
+                    echo "${CN_CONFIG} : Pinging the UE(s) from EPC"
                     echo "############################################################"
                     PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_ue.log
-                    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+                    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
                     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
                 else
                     echo "############################################################"
-                    echo "${CN_CONFIG} : Pinging the UE from eNB"
+                    echo "${CN_CONFIG} : Pinging the UE(s) from eNB"
                     echo "############################################################"
-                    PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_ue.log
-                    ping_enb_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
-                    scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                        PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_enb_seq_ue${j}.log
+                        ping_enb_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_enb_para_ue${j}.log
+                            ping_enb_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 1
+                            j=$[$j+1]
+                        done
+                        sleep 25
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_ue${j}.log
+                            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                            tail -3 $ARCHIVES_LOC/$PING_LOG_FILE
+                            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                            j=$[$j+1]
+                        done
+                    fi
                 fi
-                check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
                 echo "############################################################"
                 echo "${CN_CONFIG} : Terminate enb/ue simulators"

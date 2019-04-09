@@ -44,6 +44,7 @@ function variant_usage {
     echo " # non-OSA Build Variants"
     echo "    --variant flexran-rtc  OR -v10"
     echo " # OpenAirInterface Test Variants"
+    echo "    --variant rf-sim       OR -v21"
     echo "    --variant l2-sim       OR -v22"
 }
 
@@ -302,6 +303,13 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
+    -v21)
+    VM_NAME=ci-rf-sim
+    ARCHIVES_LOC=rf_sim
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
     -v22)
     VM_NAME=ci-l2-sim
     ARCHIVES_LOC=l2_sim
@@ -375,6 +383,12 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="cmake . && make -j2"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        rf-sim)
+        VM_NAME=ci-rf-sim
+        ARCHIVES_LOC=rf_sim
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         l2-sim)

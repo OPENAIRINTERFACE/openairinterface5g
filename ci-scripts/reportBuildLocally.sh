@@ -615,9 +615,9 @@ function report_build {
     summary_table_row "RF Simulator - Release 14" ./archives/ue_eth/rfsimulator.Rel14.txt "Built target rfsimulator" ./ue_eth_row5.html
     summary_table_row "TCP OAI Bridge - Release 14" ./archives/ue_eth/tcp_bridge_oai.Rel14.txt "Built target tcp_bridge_oai" ./ue_eth_row6.html
     summary_table_row "Conf 2 UE Data - Release 14" ./archives/ue_eth/conf2uedata.Rel14.txt "Built target conf2uedata" ./ue_eth_row7.html
-    summary_table_row "UE IP - Release 14" ./archives/ue_eth/ue_ip.Rel14.txt "Built target ue_ip" ./ue_eth_row7.html
-    summary_table_row "UE IP - Release 14" ./archives/ue_eth/ue_ip.Rel14.txt "Built target ue_ip" ./ue_eth_row7.html
-    summary_table_row "USIM - Release 14" ./archives/ue_eth/usim.Rel14.txt "Built target usim" ./ue_eth_row7.html
+    summary_table_row "NVRAM - Release 14" ./archives/ue_eth/nvram.Rel14.txt "Built target nvram" ./ue_eth_row8.html
+    summary_table_row "UE IP - Release 14" ./archives/ue_eth/ue_ip.Rel14.txt "Built target ue_ip" ./ue_eth_row9.html
+    summary_table_row "USIM - Release 14" ./archives/ue_eth/usim.Rel14.txt "Built target usim" ./ue_eth_row9a.html
     summary_table_footer
 
     if [ -e ./archives/red_hat ]
