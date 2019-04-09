@@ -259,7 +259,14 @@ uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
 *********************************************************************/
 
 uint16_t get_dmrs_freq_idx_ul(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
-  uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
+
+  uint16_t dmrs_idx;
+
+  if (dmrs_type == pusch_dmrs_type1)
+    dmrs_idx = ((n<<2)+(k_prime<<1)+delta);
+  else
+    dmrs_idx = (6*n+k_prime+delta);
+
   return dmrs_idx;
 }
 

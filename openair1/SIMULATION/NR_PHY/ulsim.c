@@ -168,6 +168,7 @@ int main(int argc, char **argv) {
 
   cpuf = get_cpu_freq_GHz();
 
+
   if (load_configmodule(argc, argv) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
@@ -590,7 +591,7 @@ int main(int argc, char **argv) {
   mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
 
   l0 = get_l0_ul(mapping_type, 2);
-  nr_modulation(pusch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+  nr_modulation(pusch_dmrs[l0][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 
   ///////////
@@ -605,6 +606,7 @@ int main(int argc, char **argv) {
                    harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
+
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
