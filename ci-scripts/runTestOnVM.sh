@@ -154,7 +154,7 @@ function ping_ue_ip_addr {
     echo "echo \"ping -c 20 $3\"" >> $1
     if [ $LOC_FG_OR_BG -eq 0 ]
     then
-        echo "ping -c 20 $UE_IP_ADDR >> $4" >> $1
+        echo "ping -c 20 $UE_IP_ADDR >> $4 2>&1" >> $1
         echo "tail -3 $4" >> $1
     else
         echo "nohup ping -c 20 $UE_IP_ADDR >> $4 &" >> $1
@@ -170,7 +170,7 @@ function ping_epc_ip_addr {
     echo "echo \"ping -I oaitun_ue${LOC_IF_ID} -c 20 $3\"" >> $1
     if [ $LOC_FG_OR_BG -eq 0 ]
     then
-        echo "ping -I oaitun_ue${LOC_IF_ID} -c 20 $3 >> $4" >> $1
+        echo "ping -I oaitun_ue${LOC_IF_ID} -c 20 $3 >> $4 2>&1" >> $1
         echo "tail -3 $4" >> $1
     else
         echo "nohup ping -I oaitun_ue${LOC_IF_ID} -c 20 $3 >> $4 &" >> $1
@@ -185,7 +185,7 @@ function ping_enb_ip_addr {
     echo "echo \"ping -I oaitun_enb1 -c 20 $3\"" >> $1
     if [ $LOC_FG_OR_BG -eq 0 ]
     then
-        echo "ping -I oaitun_enb1 -c 20 $3 >> $4" >> $1
+        echo "ping -I oaitun_enb1 -c 20 $3 >> $4 2>&1" >> $1
         echo "tail -3 $4" >> $1
     else
         echo "nohup ping -I oaitun_enb1 -c 20 $3 >> $4 &" >> $1
@@ -238,7 +238,8 @@ function iperf_dl {
 
     echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $3
     echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > ${BASE_LOG_FILE}_client.txt" > $3
-    echo "iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a ${BASE_LOG_FILE}_client.txt" >> $3
+    echo "iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 >> ${BASE_LOG_FILE}_client.txt" >> $3
+    echo "tail -3 ${BASE_LOG_FILE}_client.txt | grep -v grams" >> $3
     ssh -T -o StrictHostKeyChecking=no ubuntu@$4 < $3
     rm -f $3
 
@@ -258,13 +259,62 @@ function iperf_ul {
 
     echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $1
     echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" > $1
-    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" >> $1
+    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 >> /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" >> $1
+    echo "tail -3 /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt | grep -v grams" >> $1
     ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 
     echo "killall --signal SIGKILL iperf" >> $3
     ssh -T -o StrictHostKeyChecking=no ubuntu@$4 < $3
     rm $3
+}
+
+# In DL: iperf server should be on UE side
+#                     -B oaitun_ue{j}-IP-Addr
+#        iperf client should be on EPC (S1) or eNB (noS1) side
+#                     -c oaitun_ue{j}-IP-Addr -B oaitun_enb1-IP-Addr (in noS1)
+# In UL: iperf server should be on EPC (S1) or eNB (noS1) side
+#                     -B oaitun_enb1-IP-Addr
+#        iperf client should be on UE side
+#                     -c oaitun_enb1-IP-Addr -B oaitun_ue{j}-IP-Addr (in noS1)
+function generic_iperf {
+    local LOC_ISERVER_CMD=$1
+    local LOC_ISERVER_IP=$2
+    local LOC_ISERVER_BOND_IP=$3
+    local LOC_ICLIENT_CMD=$4
+    local LOC_ICLIENT_IP=$5
+    local LOC_ICLIENT_BOND_IP=$6
+    local LOC_REQ_BANDWIDTH=$7
+    local LOC_BASE_LOG_FILE=$8
+    local LOC_PORT_ID=$[$9+5001]
+    local LOC_FG_OR_BG=${10}
+    # Starting Iperf Server
+    echo "iperf -B ${LOC_ISERVER_BOND_IP} -u -s -i 1 -fm -p ${LOC_PORT_ID}"
+    echo "nohup iperf -B ${LOC_ISERVER_BOND_IP} -u -s -i 1 -fm -p ${LOC_PORT_ID} > ${LOC_BASE_LOG_FILE}_server.txt 2>&1 &" > ${LOC_ISERVER_CMD}
+    ssh -T -o StrictHostKeyChecking=no ubuntu@${LOC_ISERVER_IP} < ${LOC_ISERVER_CMD}
+    rm ${LOC_ISERVER_CMD}
+
+    # Starting Iperf Client
+    echo "iperf -c ${LOC_ISERVER_BOND_IP} -u -t 30 -b ${LOC_REQ_BANDWIDTH}M -i 1 -fm -B ${LOC_ICLIENT_BOND_IP} -p ${LOC_PORT_ID}"
+    echo "echo \"COMMAND IS: iperf -c ${LOC_ISERVER_BOND_IP} -u -t 30 -b ${LOC_REQ_BANDWIDTH}M -i 1 -fm -B ${LOC_ICLIENT_BOND_IP} -p ${LOC_PORT_ID}\" > ${LOC_BASE_LOG_FILE}_client.txt" > ${LOC_ICLIENT_CMD}
+    if [ $LOC_FG_OR_BG -eq 0 ]
+    then
+        echo "iperf -c ${LOC_ISERVER_BOND_IP} -u -t 30 -b ${LOC_REQ_BANDWIDTH}M -i 1 -fm -B ${LOC_ICLIENT_BOND_IP} -p ${LOC_PORT_ID} >> ${LOC_BASE_LOG_FILE}_client.txt 2>&1" >> ${LOC_ICLIENT_CMD}
+        echo "tail -3 ${LOC_BASE_LOG_FILE}_client.txt | grep -v datagram" >> ${LOC_ICLIENT_CMD}
+    else
+        echo "nohup iperf -c ${LOC_ISERVER_BOND_IP} -u -t 30 -b ${LOC_REQ_BANDWIDTH}M -i 1 -fm -B ${LOC_ICLIENT_BOND_IP} -p ${LOC_PORT_ID} >> ${LOC_BASE_LOG_FILE}_client.txt 2>&1 &" >> ${LOC_ICLIENT_CMD}
+    fi
+    ssh -T -o StrictHostKeyChecking=no ubuntu@${LOC_ICLIENT_IP} < ${LOC_ICLIENT_CMD}
+    rm -f ${LOC_ICLIENT_CMD}
+
+    # Stopping Iperf Server
+    if [ $LOC_FG_OR_BG -eq 0 ]
+    then
+        echo "killall --signal SIGKILL iperf"
+        echo "killall --signal SIGKILL iperf" > ${LOC_ISERVER_CMD}
+        ssh -T -o StrictHostKeyChecking=no ubuntu@${LOC_ISERVER_IP} < ${LOC_ISERVER_CMD}
+        rm ${LOC_ISERVER_CMD}
+    fi
 }
 
 function check_iperf {
@@ -281,6 +331,7 @@ function check_iperf {
         if [ $FILE_COMPLETE -eq 0 ]
         then
             IPERF_STATUS=-1
+            echo "File Report not found"
         else
             local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
             if [ $LOC_IS_DL -eq 1 ] && [ $LOC_IS_BASIC_SIM -eq 1 ]
@@ -289,6 +340,7 @@ function check_iperf {
                 then
                     echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                 else
+                    echo "got LESS than requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                     IPERF_STATUS=-1
                 fi
             else
@@ -301,12 +353,14 @@ function check_iperf {
                         echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
                     fi
                 else
+                    echo "not basic-sim got LESS than requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                     IPERF_STATUS=-1
                 fi
             fi
         fi
     else
         IPERF_STATUS=-1
+        echo "File not found"
     fi
 }
 
@@ -1585,7 +1639,7 @@ function run_test_on_vm {
                     get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR 1
 
                     echo "############################################################"
-                    echo "${CN_CONFIG} : Pinging the EPC from UE"
+                    echo "${CN_CONFIG} : Pinging the EPC from UE(s)"
                     echo "############################################################"
                     PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc.log
                     ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE 1 0
@@ -1595,7 +1649,7 @@ function run_test_on_vm {
                     get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
 
                     echo "############################################################"
-                    echo "${CN_CONFIG} : Pinging the eNB from UE"
+                    echo "${CN_CONFIG} : Pinging the eNB from UE(s)"
                     echo "############################################################"
                     echo " --- Sequentially ---"
                     local j="1"
@@ -1669,10 +1723,104 @@ function run_test_on_vm {
                         j="1"
                         while [ $j -le $INT_NB_UES ]
                         do
-                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_ue${j}.log
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_enb_para_ue${j}.log
                             scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
                             tail -3 $ARCHIVES_LOC/$PING_LOG_FILE
                             check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                            j=$[$j+1]
+                        done
+                    fi
+                fi
+
+                if [ $S1_NOS1_CFG -eq 0 ]
+                then
+                    get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
+                    echo "############################################################"
+                    echo "${CN_CONFIG} : iperf DL -- UE is server and eNB is client"
+                    echo "############################################################"
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_dl_seq_ue${j}
+                        get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                        THROUGHPUT=3
+                        generic_iperf $UE_VM_CMDS $UE_VM_IP_ADDR $UE_IP_ADDR $ENB_VM_CMDS $ENB_VM_IP_ADDR $ENB_IP_ADDR $THROUGHPUT $IPERF_LOG_FILE $j 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_server.txt $ARCHIVES_LOC
+                        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_client.txt $ARCHIVES_LOC
+                        check_iperf $ARCHIVES_LOC/$IPERF_LOG_FILE $THROUGHPUT
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_dl_para_ue${j}
+                            THROUGHPUT=1
+                            get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                            generic_iperf $UE_VM_CMDS $UE_VM_IP_ADDR $UE_IP_ADDR $ENB_VM_CMDS $ENB_VM_IP_ADDR $ENB_IP_ADDR $THROUGHPUT $IPERF_LOG_FILE $j 1
+                            j=$[$j+1]
+                        done
+                        sleep 35
+                        echo "killall --signal SIGKILL iperf"
+                        echo "killall --signal SIGKILL iperf" > $UE_VM_CMDS
+                        ssh -T -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR < $UE_VM_CMDS
+                        rm $UE_VM_CMDS
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_dl_para_ue${j}
+                            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_server.txt $ARCHIVES_LOC
+                            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_client.txt $ARCHIVES_LOC
+                            tail -3 $ARCHIVES_LOC/${IPERF_LOG_FILE}_client.txt | grep -v datagram
+                            check_iperf $ARCHIVES_LOC/$IPERF_LOG_FILE $THROUGHPUT
+                            j=$[$j+1]
+                        done
+                    fi
+
+                    echo "############################################################"
+                    echo "${CN_CONFIG} : iperf UL -- eNB is server and UE is client"
+                    echo "############################################################"
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_ul_seq_ue${j}
+                        THROUGHPUT=2
+                        get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                        generic_iperf $ENB_VM_CMDS $ENB_VM_IP_ADDR $ENB_IP_ADDR $UE_VM_CMDS $UE_VM_IP_ADDR $UE_IP_ADDR $THROUGHPUT $IPERF_LOG_FILE $j 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_server.txt $ARCHIVES_LOC
+                        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_client.txt $ARCHIVES_LOC
+                        check_iperf $ARCHIVES_LOC/$IPERF_LOG_FILE $THROUGHPUT
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_ul_para_ue${j}
+                            THROUGHPUT=1
+                            get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                            generic_iperf $ENB_VM_CMDS $ENB_VM_IP_ADDR $ENB_IP_ADDR $UE_VM_CMDS $UE_VM_IP_ADDR $UE_IP_ADDR $THROUGHPUT $IPERF_LOG_FILE $j 1
+                            j=$[$j+1]
+                        done
+                        sleep 35
+                        echo "killall --signal SIGKILL iperf"
+                        echo "killall --signal SIGKILL iperf" > $UE_VM_CMDS
+                        ssh -T -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR < $UE_VM_CMDS
+                        rm $UE_VM_CMDS
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            IPERF_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_ul_para_ue${j}
+                            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_server.txt $ARCHIVES_LOC
+                            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_client.txt $ARCHIVES_LOC
+                            tail -3 $ARCHIVES_LOC/${IPERF_LOG_FILE}_client.txt | grep -v datagram
+                            check_iperf $ARCHIVES_LOC/$IPERF_LOG_FILE $THROUGHPUT
                             j=$[$j+1]
                         done
                     fi
@@ -1698,6 +1846,7 @@ function run_test_on_vm {
         echo "############################################################"
 
         if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
+        if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $STATUS -eq 0 ]
         then
             echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
