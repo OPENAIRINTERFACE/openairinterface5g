@@ -513,6 +513,9 @@ int flexran_get_rrc_num_ncell(mid_t mod_id, rnti_t rnti);
 /* Get neighbouring physical cell id */
 long flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
 
+/* Get neighbouring cgi */
+int flexran_get_rrc_neigh_cgi(mid_t mod_id, rnti_t rnti, long cell_id);
+
 /* Get neighbouring cgi info cell id */
 uint32_t flexran_get_rrc_neigh_cgi_cell_id(mid_t mod_id, rnti_t rnti, long cell_id);
 
@@ -520,10 +523,10 @@ uint32_t flexran_get_rrc_neigh_cgi_cell_id(mid_t mod_id, rnti_t rnti, long cell_
 uint32_t flexran_get_rrc_neigh_cgi_tac(mid_t mod_id, rnti_t rnti, long cell_id);
 
 /* Get the number of neighbouring cgi mnc */
-uint32_t flexran_get_rrc_neigh_cgi_num_mnc(mid_t mod_id, rnti_t rnti, long cell_id);
+int flexran_get_rrc_neigh_cgi_num_mnc(mid_t mod_id, rnti_t rnti, long cell_id);
 
 /* Get the number of neighbouring cgi mcc */
-uint32_t flexran_get_rrc_neigh_cgi_num_mcc(mid_t mod_id, rnti_t rnti, long cell_id);
+int flexran_get_rrc_neigh_cgi_num_mcc(mid_t mod_id, rnti_t rnti, long cell_id);
 
 /* Get neighbouring cgi mnc */
 uint32_t flexran_get_rrc_neigh_cgi_mnc(mid_t mod_id, rnti_t rnti, long cell_id, int mnc_id);
