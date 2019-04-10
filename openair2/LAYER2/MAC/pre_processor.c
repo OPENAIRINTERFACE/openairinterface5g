@@ -458,27 +458,28 @@ void decode_slice_positioning(module_id_t Mod_idP,
   }
 }
 
-
-// This function sorts the UE in order their dlsch buffer and CQI
-void
-sort_UEs(module_id_t Mod_idP,
-         int slice_idx,
-         int frameP,
-         sub_frame_t subframeP)
+//-----------------------------------------------------------------------------
+/*
+ * This function sorts the UEs in order, depending on their dlsch buffer and CQI
+ */
+void sort_UEs(module_id_t Mod_idP,
+              int slice_idx,
+              int frameP,
+              sub_frame_t subframeP)
+//-----------------------------------------------------------------------------
 {
-  int i;
   int list[MAX_MOBILES_PER_ENB];
   int list_size = 0;
   struct sort_ue_dl_params params = {Mod_idP, frameP, subframeP, slice_idx};
-  UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
+  UE_list_t *UE_list = &(RC.mac[Mod_idP]->UE_list);
   UE_sched_ctrl *UE_scheduling_control = NULL;
 
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
 
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[i]);
 
+    /* Check CDRX configuration and if UE is in active time for this subframe */
     if (UE_scheduling_control->cdrx_configured == TRUE) {
-
       if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
         continue;
       }
@@ -496,8 +497,9 @@ sort_UEs(module_id_t Mod_idP,
   qsort_r(list, list_size, sizeof(int), ue_dl_compare, &params);
 
   if (list_size) {
-    for (i = 0; i < list_size - 1; ++i)
+    for (int i = 0; i < list_size - 1; ++i) {
       UE_list->next[list[i]] = list[i + 1];
+    }
 
     UE_list->next[list[list_size - 1]] = -1;
     UE_list->head = list[0];
@@ -1992,26 +1994,29 @@ static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
   return 0;
 }
 
-void
-sort_ue_ul(module_id_t module_idP,
-           int slice_idx,
-           int frameP,
-           sub_frame_t subframeP,
-           rnti_t *rntiTable)
+//-----------------------------------------------------------------------------
+/*
+ * This function sorts the UEs in order, depending on their ulsch buffer and CQI
+ */
+void sort_ue_ul(module_id_t module_idP,
+                int slice_idx,
+                int frameP,
+                sub_frame_t subframeP,
+                rnti_t *rntiTable)
+//-----------------------------------------------------------------------------
 {
-  int i;
   int list[MAX_MOBILES_PER_ENB];
   int list_size = 0;
   struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
   UE_sched_ctrl *UE_scheduling_control = NULL;
 
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
 
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[i]);
 
+    /* Check CDRX configuration and if UE is in active time for this subframe */
     if (UE_scheduling_control->cdrx_configured == TRUE) {
-
       if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
         continue;
       }
@@ -2029,13 +2034,16 @@ sort_ue_ul(module_id_t module_idP,
 
   qsort_r(list, list_size, sizeof(int), ue_ul_compare, &params);
 
-  if (list_size) {                          // At mimimum one list element
-    for (i = 0; i < list_size - 1; i++)
+  if (list_size) { // At mimimum one list element
+    
+    for (int i = 0; i < list_size - 1; i++) {
       UE_list->next_ul[list[i]] = list[i + 1];
+    }
 
     UE_list->next_ul[list[list_size - 1]] = -1;
     UE_list->head_ul = list[0];
-  } else {                                  // No element
+
+  } else { // No element
     UE_list->head_ul = -1;
   }
 }

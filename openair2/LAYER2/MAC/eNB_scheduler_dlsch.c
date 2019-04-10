@@ -457,6 +457,9 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 }
 
 //------------------------------------------------------------------------------
+/*
+* Schedule the DLSCH
+*/
 void
 schedule_ue_spec(module_id_t module_idP,
                  int slice_idxP,
@@ -564,14 +567,13 @@ schedule_ue_spec(module_id_t module_idP,
     }
   }
 
-  //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2;
 
   for (CC_id = 0, eNB_stats = &eNB->eNB_stats[0]; CC_id < nb_mac_CC; CC_id++, eNB_stats++) {
     dl_Bandwidth = cc[CC_id].mib->message.dl_Bandwidth;
     N_RB_DL[CC_id] = to_prb(dl_Bandwidth);
-    min_rb_unit[CC_id] = get_min_rb_unit(module_idP,
-                                         CC_id);
+    min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
+
     // get number of PRBs less those used by common channels
     total_nb_available_rb[CC_id] = N_RB_DL[CC_id];
 
@@ -602,14 +604,6 @@ schedule_ue_spec(module_id_t module_idP,
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
-
-  //RC.mac[module_idP]->slice_info.slice_counter--;
-  // Do the multiplexing and actual allocation only when all slices have been pre-processed.
-  //if (RC.mac[module_idP]->slice_info.slice_counter > 0) {
-  //stop_meas(&eNB->schedule_dlsch);
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
-  //return;
-  //}
 
   if (RC.mac[module_idP]->slice_info.interslice_share_active) {
     dlsch_scheduler_interslice_multiplexing(module_idP,
@@ -776,7 +770,6 @@ schedule_ue_spec(module_id_t module_idP,
 
       /* Process retransmission  */
       if (round_DL != 8) {
-      //if (round_DL > 0) {
         // get freq_allocation
         nb_rb = ue_template->nb_rb[harq_pid];
         TBS = get_TBS_DL(ue_template->oldmcs1[harq_pid],
@@ -785,28 +778,12 @@ schedule_ue_spec(module_id_t module_idP,
         if (nb_rb <= nb_available_rb) {
           /* CDRX */
           ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
-          /*
-          LOG_W(MAC, "HELLO : round!=8 UE_id = %d, frame = %d; subframe = %d; CC_id %d, harq_pid = %d , RTT_timer = %d,%d,%d,%d,%d,%d,%d,%d\n",
-                UE_id,
-                frameP,
-                subframeP,
-                CC_id,
-                harq_pid,
-                ue_sched_ctrl->harq_rtt_timer[CC_id][0],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][1],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][2],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][3],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][4],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][5],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][6],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][7]);
-          */
 
           if (ue_sched_ctrl->cdrx_configured) {
             ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-            /* May be a problem with drx_retransmission_timer[harq_pid]. Here the timer is reset not stop.
-            * Can create a problem with several CC_id with the same UE??
-            */
+            /* 
+             * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
+             */
             if (harq_pid == 0) {
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
             }
@@ -850,14 +827,6 @@ schedule_ue_spec(module_id_t module_idP,
           }
 
           nb_available_rb -= nb_rb;
-          /*
-          eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
-          eNB->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctrl->dl_pow_off[CC_id];
-
-          for(j = 0; j < N_RBG[CC_id]; ++j) {
-            eNB->mu_mimo_mode[UE_id].rballoc_sub[j] = ue_template->rballoc_subband[harq_pid][j];
-          }
-          */
 
           switch (get_tmode(module_idP, CC_id, UE_id)) {
             case 1:
@@ -1283,6 +1252,7 @@ schedule_ue_spec(module_id_t module_idP,
               header_length_total += header_length_last;
               num_sdus++;
               ue_sched_ctrl->uplane_inactivity_timer = 0;
+
               // reset RRC inactivity timer after uplane activity
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
 
@@ -1607,28 +1577,12 @@ schedule_ue_spec(module_id_t module_idP,
 
             /* CDRX */
             ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
-            /*
-            LOG_W(MAC, "HELLO : round=8, UE_id = %d, frame = %d; subframe = %d ; CC_id %d, harq_pid = %d , RTT_timer = %d,%d,%d,%d,%d,%d,%d,%d\n",
-                UE_id,
-                frameP,
-                subframeP,
-                CC_id,
-                harq_pid,
-                ue_sched_ctrl->harq_rtt_timer[CC_id][0],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][1],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][2],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][3],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][4],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][5],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][6],
-                ue_sched_ctrl->harq_rtt_timer[CC_id][7]);
-            */
 
             if (ue_sched_ctrl->cdrx_configured) {
               ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
               ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-              /* May be a problem with drx_retransmission_timer[harq_pid]. Here the timer is reset not stop.
-               * Can create a problem with several CC_id with the same UE??
+              /* 
+               * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
                */
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
               if (harq_pid == 0) {
@@ -2048,13 +2002,6 @@ schedule_ue_spec_br(module_id_t module_idP,
 
     if (rrc_status < RRC_CONNECTED) {
       continue;
-    }
-
-    /* CDRX LTE-M */
-    if (ue_sched_ctl->cdrx_configured == TRUE) {
-      if ((ue_sched_ctl->bypass_cdrx == FALSE) && (ue_sched_ctl->in_active_time == FALSE)) {
-        continue;
-      }
     }
 
     round_DL = ue_sched_ctl->round[CC_id][harq_pid];

@@ -235,8 +235,11 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_scheduling_control->cdrx_configured == TRUE) {
         /* Synchronous UL HARQ */
         UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
-        /* In case of asynchronous UL HARQ process restart here relevant RTT timer
-         * Stop corresponding CDRX ULRetransmission timer
+        /* 
+         * The NACK is programmed in n+4 subframes, so UE will have drxRetransmission running.
+         * Setting ul_synchronous_harq_timer = 5 will trigger drxRetransmission timer.
+         * Note: in case of asynchronous UL HARQ process restart here relevant RTT timer.
+         * Start corresponding CDRX ULRetransmission timer.
          */
       }
 
@@ -897,6 +900,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
               /* Reset RRC inactivity timer after uplane activity */
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], current_rnti);
+
               if (ue_contextP != NULL) {
                 ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
               } else {
@@ -936,9 +940,12 @@ rx_sdu(const module_id_t enb_mod_idP,
     if (UE_scheduling_control->cdrx_configured == TRUE) {
       /* Synchronous UL HARQ */
       UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
-      /* Note: in case of asynchronous UL HARQ process restart here relevant RTT timer
-      * Stop corresponding CDRX ULRetransmission timer
-      */
+      /* 
+       * The ACK is programmed in n+4 subframes, so UE will have drxRetransmission running.
+       * Setting ul_synchronous_harq_timer = 5 will trigger drxRetransmission timer.
+       * Note: in case of asynchronous UL HARQ process restart here relevant RTT timer
+       * Stop corresponding CDRX ULRetransmission timer
+       */
     }
   }
 
@@ -1418,7 +1425,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
-  /* ULSCH preprocessor: set UE_template->
+  /* 
+   * ULSCH preprocessor: set UE_template->
    * pre_allocated_nb_rb_ul[slice_idx]
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
@@ -1434,6 +1442,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
       continue;
     }
+    
     if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
 
     // don't schedule if Msg5 is not received yet
@@ -2040,14 +2049,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
       continue;
     }
 
-    /* CDRX LTE-M */
-    UE_sched_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
-    if (UE_sched_ctrl->cdrx_configured == TRUE) {
-      if ((UE_sched_ctrl->bypass_cdrx == FALSE) && (UE_sched_ctrl->in_active_time == FALSE)) {
-        continue;
-      }
-    }
-
     /* Loop over all active UL CC_ids for this UE */
     for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
       /* This is the actual CC_id in the list */
@@ -2147,13 +2148,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
         /* New transmission */
         if (round_UL == 0) {
-
-          /* CDRX LTE-M */
-          if (UE_sched_ctrl->cdrx_configured == TRUE) {
-            UE_sched_ctrl->drx_inactivity_timer = 1; // reset drx inactivity timer when new transmission
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_sched_ctrl->drx_inactivity_timer);
-          }
-
           ndi = 1 - UE_template->oldNDI_UL[harq_pid];
 
           UE_template->oldNDI_UL[harq_pid] = ndi;

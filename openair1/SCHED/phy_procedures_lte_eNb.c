@@ -1619,7 +1619,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
 
 //-----------------------------------------------------------------------------
 /*
- * Release the harq if its round is >= 'after_rounds'
+ * Release the harq process if its round is >= 'after_rounds'
  */
 static void do_release_harq(PHY_VARS_eNB *eNB,
                             int UE_id,
@@ -1682,26 +1682,6 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
         T_INT(harq_pid));
     }
 #endif
-
-    /*
-    LOG_I(PHY, "UE_id = %d; Frame %d, subframe %d: Releasing harq %d for UE %x, CC_id = %d; HARQ RTT Timer = %d,%d,%d,%d,%d,%d,%d,%d, drx-ReTX = %d, cdrx-configured = %d\n",
-          UE_id_mac,
-          frame,
-          subframe,
-          harq_pid,
-          dlsch0->rnti,
-          eNB->CC_id,
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][0],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][1],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][2],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][3],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][4],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][5],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][6],
-          UE_scheduling_control->harq_rtt_timer[eNB->CC_id][7],
-          UE_scheduling_control->drx_retransmission_timer[harq_pid],
-          UE_scheduling_control->cdrx_configured);
-    */
 
     if (dlsch0_harq->round >= after_rounds) {
       dlsch0_harq->status = SCH_IDLE;
@@ -1766,7 +1746,8 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
 }
 
 static void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subframe,uint16_t mask, int is_ack) {
-  /* Maximum number of DL transmissions = 4.
+  /* 
+   * Maximum number of DL transmissions = 4.
    * TODO: get the value from configuration.
    * If is_ack is true then we release immediately. The value -1 can be used for that.
    */

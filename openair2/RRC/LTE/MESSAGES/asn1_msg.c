@@ -3546,9 +3546,12 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t*        const 
 #endif
 
 //------------------------------------------------------------------------------
-uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctxt_pP,
-					 uint8_t                            *buffer,
-					 uint8_t                             Transaction_id,
+/*
+ * Copy the different Information Elements in the RRC structure
+ */
+uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+					 uint8_t                                *buffer,
+					 uint8_t                                 Transaction_id,
 					 LTE_SRB_ToAddModList_t                 *SRB_list,
 					 LTE_DRB_ToAddModList_t                 *DRB_list,
 					 LTE_DRB_ToReleaseList_t                *DRB_list2,
@@ -3561,7 +3564,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
 					 LTE_MAC_MainConfig_t                   *mac_MainConfig,
 					 LTE_MeasGapConfig_t                    *measGapConfig,
 					 LTE_MobilityControlInfo_t              *mobilityInfo,
-                                         LTE_SecurityConfigHO_t                 *securityConfigHO,
+                     LTE_SecurityConfigHO_t                 *securityConfigHO,
 					 struct LTE_MeasConfig__speedStatePars  *speedStatePars,
 					 LTE_RSRP_Range_t                       *rsrp,
 					 LTE_C_RNTI_t                           *cba_rnti,
@@ -3570,7 +3573,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
 					 LTE_SL_CommConfig_r12_t                *sl_CommConfig,
 					 LTE_SL_DiscConfig_r12_t                *sl_DiscConfig
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-					 , LTE_SCellToAddMod_r10_t  *SCell_config
+					 , LTE_SCellToAddMod_r10_t              *SCell_config
 #endif
 					 )
 //------------------------------------------------------------------------------
@@ -3582,7 +3585,8 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
   dl_dcch_msg.message.present           = LTE_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
-  // RRCConnectionReconfiguration
+  
+  /* RRC Connection Reconfiguration */
   rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfiguration->criticalExtensions.present = LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.present = LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;
