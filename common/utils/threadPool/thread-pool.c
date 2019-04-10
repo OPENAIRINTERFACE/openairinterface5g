@@ -151,6 +151,9 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 
 #ifdef TEST_THREAD_POOL
 
+void exit_function(const char *file, const char *function, const int line, const char *s) {
+}
+
 struct testData {
   int id;
   char txt[30];

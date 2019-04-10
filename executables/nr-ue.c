@@ -530,6 +530,7 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
     //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
     return 1;
   }
+
   return 0;
 }
 
@@ -605,6 +606,10 @@ void *UE_thread(void *arg) {
       decoded_frame_rx=proc->decoded_frame_rx;
       // we do ++ first in the regular processing, so it will be 0;
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
+
+      while (tryPullTpool(&nf, Tpool) != NULL) {
+      };
+
       continue;
     }
 
@@ -683,28 +688,15 @@ void *UE_thread(void *arg) {
                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
     notifiedFIFO_elt_t *res;
 
-    if (getenv("RFSIMULATOR")) {
-      // FixMe: Wait previous thread is done, because race conditions seems too bad
-      // in case of actual RF board, the overlap between threads mitigate the issue
-      // We must receive one message, that proves the slot processing is done
-      while ((res=tryPullTpool(&nf, Tpool)) == NULL)
-        usleep(200);
-
-      nbSlotProcessing--;
-      processingData_t *tmp=(processingData_t *)res->msgData;
-
-      if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=tmp->proc.decoded_frame_rx;
-    }
-
     while (nbSlotProcessing >= RX_NB_TH ) {
       if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
-	nbSlotProcessing--;
-	processingData_t *tmp=(processingData_t *)res->msgData;
-	
-	if (tmp->proc.decoded_frame_rx != -1)
-	  decoded_frame_rx=tmp->proc.decoded_frame_rx;
+        nbSlotProcessing--;
+        processingData_t *tmp=(processingData_t *)res->msgData;
+
+        if (tmp->proc.decoded_frame_rx != -1)
+          decoded_frame_rx=tmp->proc.decoded_frame_rx;
       }
+
       usleep(200);
     }
 
@@ -712,8 +704,21 @@ void *UE_thread(void *arg) {
           ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != proc->frame_rx )
       LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx,  proc->frame_rx);
+
     nbSlotProcessing++;
+    processingMsg[thread_idx]->key=slot_nr;
     pushTpool(Tpool, processingMsg[thread_idx]);
+
+    if (getenv("RFSIMULATOR")) {
+      // FixMe: Wait previous thread is done, because race conditions seems too bad
+      // in case of actual RF board, the overlap between threads mitigate the issue
+      // We must receive one message, that proves the slot processing is done
+      res=pullTpool(&nf, Tpool);
+      nbSlotProcessing--;
+      processingData_t *tmp=(processingData_t *)res->msgData;
+      if (tmp->proc.decoded_frame_rx != -1)
+        decoded_frame_rx=tmp->proc.decoded_frame_rx;
+    }
   } // while !oai_exit
 
   return NULL;
@@ -739,20 +744,17 @@ void init_UE(int nb_inst) {
     nr_l2_init_ue();
     mac_inst = get_mac_inst(inst);
     mac_inst->if_module = UE->if_inst;
-
     // Initial bandwidth part configuration -- full carrier bandwidth
     mac_inst->initial_bwp_dl.bwp_id = 0;
     mac_inst->initial_bwp_dl.location = 0;
     mac_inst->initial_bwp_dl.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_dl.N_RB = UE->frame_parms.N_RB_DL;
     mac_inst->initial_bwp_dl.cyclic_prefix = UE->frame_parms.Ncp;
-    
     mac_inst->initial_bwp_ul.bwp_id = 0;
     mac_inst->initial_bwp_ul.location = 0;
     mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
-        
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     AssertFatal(0 == pthread_create(&threads[inst],
                                     &attr,
