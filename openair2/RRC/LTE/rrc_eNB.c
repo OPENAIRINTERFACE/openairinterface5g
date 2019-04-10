@@ -2983,22 +2983,48 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
-  if (rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) { // CDRX can be only configured in case of FDD (09/04/19)
+  /* CDRX Configuration */
+  // Need to check if UE is a BR UE
+  rnti_t rnti = ue_context_pP->ue_id_rnti
+  module_id_t module_id = ctxt_pP->module_id
+  int UE_id = find_UE_id(module_id, rnti);
+  struct eNB_MAC_INST_s mac = RC.mac[module_id];
+  UE_list_t UE_list = &(mac->UE_list);
+
+  LOG_W(RRC, "Check equality rnti = %d/%d/%d and UE_id = %d/%d/%d and PCCID = %d/%d\n",
+        ue_context_pP->ue_id_rnti,
+        ctxt_pP->rnti,
+        ue_context_pP->ue_context.rnti,
+        ue_context_pP->ue_context.ue_initial_id,
+        find_UE_id(module_id, rnti),
+        ue_context_pP->local_uid,
+        UE_PCCID(module_idP, UE_id),
+        ue_context_pP->ue_context.primaryCC_id);
+
+  if (UE_id != -1) {
+    if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
+       (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
+    // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
+    
     LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
     /* Process the IE drx_Config */
     if (cc_id < MAX_NUM_CCs) {
-      mac_MainConfig->drx_Config = do_DrxConfig(ctxt_pP->module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+      mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
     } else {
       LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
     }
 
     /* Set timers and thresholds values in local MAC context of UE */
-    eNB_Config_Local_DRX(ctxt_pP->module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
+    eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
 
     LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
 
-  } else { // CDRX not implemented for TDD (09/04/19)
+    } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
+      mac_MainConfig->drx_Config = NULL;
+    }
+  } else { // UE_id invalid
+    LOG_E(RRC, "Invalid UE_id found!\n");
     mac_MainConfig->drx_Config = NULL;
   }
 
