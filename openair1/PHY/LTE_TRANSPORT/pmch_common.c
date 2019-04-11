@@ -85,7 +85,7 @@ int is_fembms_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *fr
            break;
        }
     } else { //Then regular MBSFN FeMBMS subframe
-                return(0);
+                return(1);
     }
   }
   return(0);
