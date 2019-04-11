@@ -480,7 +480,7 @@ void sort_UEs(module_id_t Mod_idP,
 
     /* Check CDRX configuration and if UE is in active time for this subframe */
     if (UE_scheduling_control->cdrx_configured == TRUE) {
-      if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
+      if (UE_scheduling_control->in_active_time == FALSE) {
         continue;
       }
     }
@@ -2017,7 +2017,7 @@ void sort_ue_ul(module_id_t module_idP,
 
     /* Check CDRX configuration and if UE is in active time for this subframe */
     if (UE_scheduling_control->cdrx_configured == TRUE) {
-      if ((UE_scheduling_control->bypass_cdrx == FALSE) && (UE_scheduling_control->in_active_time == FALSE)) {
+      if (UE_scheduling_control->in_active_time == FALSE) {
         continue;
       }
     }

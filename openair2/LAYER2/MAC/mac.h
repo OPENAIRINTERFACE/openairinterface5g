@@ -1013,11 +1013,11 @@ typedef struct {
     /// is TRUE if the following drx parameters are configured for UE
     boolean_t cdrx_configured;
     /* 
-     * if TRUE, the scheduler should bypass in_active_time and consider the UE as active
-     * This can be needed, especially during the RRC configuration process, when the context is
+     * if TRUE, the eNB has configured the CDRX locally, but is waiting for the UE to acknowledge 
+     * the activation. This is needed, during the RRC configuration process, when the context is
      * configured on the eNB side, but not yet on the UE side...
      */
-    boolean_t bypass_cdrx;
+    boolean_t cdrx_waiting_ack;
     /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
     boolean_t in_active_time;
     /// OnDurationTimer

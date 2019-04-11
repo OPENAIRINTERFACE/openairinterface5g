@@ -1059,8 +1059,8 @@ void eNB_Config_Local_DRX(
   }
 
   /* Modify scheduling control structure according to DRX configuration: doesn't support every configurations! */
-  UE_scheduling_control->cdrx_configured = TRUE;
-  UE_scheduling_control->bypass_cdrx = TRUE; // set to true first, waiting for the UE to configure CDRX on its side
+  UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when ACK is received
+  UE_scheduling_control->cdrx_waiting_ack = TRUE; // set to true first, waiting for the UE to configure CDRX on its side
   UE_scheduling_control->in_active_time = FALSE;
 
   UE_scheduling_control->on_duration_timer = 0;

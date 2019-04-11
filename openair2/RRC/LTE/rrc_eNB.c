@@ -5474,9 +5474,14 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
 
-  /* CDRX: activated because acknowledged */
+  /* CDRX: activated if ack was expected */
   int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
-  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac].bypass_cdrx = FALSE;
+  UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac])
+  
+  if (UE_scheduling_control.cdrx_waiting_ack) == TRUE {
+    UE_scheduling_control.cdrx_waiting_ack = FALSE;
+    UE_scheduling_control.cdrx_configured = TRUE;
+  }
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
