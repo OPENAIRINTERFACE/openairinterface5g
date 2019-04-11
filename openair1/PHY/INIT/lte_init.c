@@ -483,6 +483,10 @@ void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
   }
 
   lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
+#endif
 }
 
 

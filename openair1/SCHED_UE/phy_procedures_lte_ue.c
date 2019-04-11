@@ -2819,7 +2819,11 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 }
 
 
-void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abstraction_flag) {
+void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abstraction_flag
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+, uint8_t fembms_flag
+#endif
+) {
   int subframe_rx = proc->subframe_rx;
   int frame_rx = proc->frame_rx;
   int pmch_mcs=-1;
@@ -2851,30 +2855,72 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Programming PMCH demodulation for mcs %d\n",ue->Mod_id,frame_rx,subframe_rx,pmch_mcs);
       fill_UE_dlsch_MCH(ue,pmch_mcs,1,0,0);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      if(fembms_flag /*subframe_rx == 3 || subframe_rx == 2*/){
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_MBSFN_KHZ_1DOT25, VCD_FUNCTION_IN);
+	slot_fep_mbsfn_khz_1dot25(ue,subframe_rx,0);	
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_MBSFN_KHZ_1DOT25, VCD_FUNCTION_OUT);
+      }
+      else{
+#endif
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_MBSFN, VCD_FUNCTION_IN);
       for (l=2; l<12; l++) {
         slot_fep_mbsfn(ue,
                        l,
                        subframe_rx,
                        0,0);//ue->rx_offset,0);
       }
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_MBSFN, VCD_FUNCTION_OUT);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      }
+#endif
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      if(fembms_flag /*subframe_rx == 3 || subframe_rx == 2*/){
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PMCH_KHZ_1DOT25, VCD_FUNCTION_IN);
+	rx_pmch_khz_1dot25(ue,0,subframe_rx,pmch_mcs);
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PMCH_KHZ_1DOT25, VCD_FUNCTION_OUT);
+
+      }
+      else{
+#endif
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PMCH, VCD_FUNCTION_IN);
       for (l=2; l<12; l++) {
         rx_pmch(ue,
                 0,
                 subframe_rx,
                 l);
       }
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PMCH, VCD_FUNCTION_OUT);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      }
+#endif
 
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PMCH_DECODING, VCD_FUNCTION_IN);
       ue->dlsch_MCH[0]->harq_processes[0]->Qm = get_Qm(pmch_mcs);
-      ue->dlsch_MCH[0]->harq_processes[0]->G = get_G(&ue->frame_parms,
-          ue->dlsch_MCH[0]->harq_processes[0]->nb_rb,
-          ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
-          ue->dlsch_MCH[0]->harq_processes[0]->Qm,
-          1,
-          2,
-          frame_rx,
-          subframe_rx,
-          0);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      if(fembms_flag /*subframe_rx == 3 || subframe_rx == 2*/)
+      	ue->dlsch_MCH[0]->harq_processes[0]->G = get_G_khz_1dot25(&ue->frame_parms,
+	   	ue->dlsch_MCH[0]->harq_processes[0]->nb_rb,
+          	ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
+          	ue->dlsch_MCH[0]->harq_processes[0]->Qm,
+          	1,
+          	2,
+          	frame_rx,
+          	subframe_rx,
+          	0);
+      else
+#endif
+      	ue->dlsch_MCH[0]->harq_processes[0]->G = get_G(&ue->frame_parms,
+          	ue->dlsch_MCH[0]->harq_processes[0]->nb_rb,
+          	ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
+          	ue->dlsch_MCH[0]->harq_processes[0]->Qm,
+          	1,
+          	2,
+          	frame_rx,
+          	subframe_rx,
+          	0);
+
       dlsch_unscrambling(&ue->frame_parms,1,ue->dlsch_MCH[0],
                          ue->dlsch_MCH[0]->harq_processes[0]->G,
                          ue->pdsch_vars_MCH[0]->llr[0],0,subframe_rx<<1);
@@ -2893,6 +2939,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
                            subframe_rx,
                            0,
                            0,1);
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PMCH_DECODING, VCD_FUNCTION_OUT);
 
       if (mcch_active == 1)
         ue->dlsch_mcch_trials[sync_area][0]++;
@@ -2905,7 +2952,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
         else
           ue->dlsch_mtch_errors[sync_area][0]++;
 
-        LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error (%d,%d), not passing to L2 (TBS %d, iter %d,G %d)\n",
+        LOG_E(PHY,"[UE %d] Frame %d, subframe %d: PMCH in error (%d,%d), not passing to L2 (TBS %d, iter %d,G %d)\n",
               ue->Mod_id,
               frame_rx,subframe_rx,
               ue->dlsch_mcch_errors[sync_area][0],
@@ -2914,6 +2961,10 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
               ue->dlsch_MCH[0]->max_turbo_iterations,
               ue->dlsch_MCH[0]->harq_processes[0]->G);
         // dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,subframe_rx);
+	//if(subframe_rx == 3){
+        //dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,subframe_rx);
+        //exit_fun("nothing to add");
+        //}
 
         if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
           for (int i=0; i<ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3; i++) {
@@ -2927,6 +2978,15 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
         //  mac_xface->macphy_exit("Why are we exiting here?");
       } else { // decoding successful
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+        LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH OK (%d,%d), passing to L2 (TBS %d, iter %d,G %d)\n",
+              ue->Mod_id,
+              frame_rx,subframe_rx,
+              ue->dlsch_mcch_errors[sync_area][0],
+              ue->dlsch_mtch_errors[sync_area][0],
+              ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
+              ue->dlsch_MCH[0]->max_turbo_iterations,
+              ue->dlsch_MCH[0]->harq_processes[0]->G);
+
         ue_send_mch_sdu(ue->Mod_id,
                         CC_id,
                         frame_rx,
@@ -3414,7 +3474,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 
           case SI_PDSCH:
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            if(subframe_rx == 0 /*&& fembms_flag*/) { //TODO MBMS //Just check SI at subframe 0 for FeMBMS
+            if(subframe_rx == 0) { 
                ue_decode_si_mbms(ue->Mod_id,
                          CC_id,
                          frame_rx,
@@ -4319,13 +4379,22 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
   // start timers
   if ( LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
-    LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
+    LOG_I(PHY," ****** start RX-Chain for AbsSubframe->0 %d.%d ******  \n", frame_rx%1024, subframe_rx);
   }
 
   if(LOG_DEBUGFLAG(UE_TIMING)) {
     start_meas(&ue->phy_proc_rx[ue->current_thread_id[subframe_rx]]);
     start_meas(&ue->ue_front_end_stat[ue->current_thread_id[subframe_rx]]);
   }
+
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  if(is_fembms_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms)){
+	ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag,1);
+	return 0;
+  }else{ // this gets closed at end
+#endif
+
 
   pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
 
@@ -4430,7 +4499,11 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
   // If this is PMCH, call procedures, do channel estimation for first symbol of next DL subframe and return
   if (pmch_flag == 1) {
-    ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag);
+    ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+,0
+#endif
+);
     int next_subframe_rx = (1+subframe_rx)%10;
 
     if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL) {
@@ -4718,6 +4791,10 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                         abstraction_flag);
     ue->dlsch_ra[eNB_id]->active = 0;
   }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  } // This commes from feMBMS subframe filtering !
+#endif
 
   // duplicate harq structure
   uint8_t          current_harq_pid        = ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid;

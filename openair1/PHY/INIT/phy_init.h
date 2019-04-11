@@ -147,7 +147,6 @@ void phy_config_sib1_ue(module_id_t   Mod_id,
                         uint8_t          SIwindowsize,
                         uint16_t           SIperiod);
 
-
 /*!
   \fn void phy_config_sib2_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
