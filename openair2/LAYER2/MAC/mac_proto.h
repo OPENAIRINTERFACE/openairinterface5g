@@ -1100,6 +1100,12 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  ,const uint32_t * const sourceL2Id
 			  ,const uint32_t * const destinationL2Id
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
+#endif
 			  );
 
 

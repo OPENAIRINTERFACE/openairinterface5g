@@ -143,6 +143,12 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   ,const uint32_t * const sourceL2Id
   ,const uint32_t * const destinationL2Id
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
+#endif
 		      )
 {
 
@@ -573,6 +579,16 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     UE_mac_inst[Mod_idP].mcch_status = 1;
   }
 #endif
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  if(nonMBSFN_SubframeConfig!=NULL) {
+    	LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
+	  Mod_idP);
+	phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0,	
+					nonMBSFN_SubframeConfig);
+  }
+#endif
+
 #ifdef CBA
 
   if (cba_rnti) {

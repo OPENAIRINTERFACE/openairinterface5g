@@ -403,13 +403,25 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t SIB1systemInfoValueTag_MBMS;
+  uint32_t SIStatus_MBMS;
+  uint32_t SIcnt_MBMS;
+#endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+#endif
+
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
   uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
+#endif
   unsigned short UE_index;
   uint32_t T300_active;
   uint32_t T300_cnt;
@@ -754,11 +766,22 @@ typedef struct UE_RRC_INST_s {
   uint8_t sizeof_SI[NB_CNX_UE];
   uint8_t SIB1Status[NB_CNX_UE];
   uint8_t SIStatus[NB_CNX_UE];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t *SIB1_MBMS[NB_CNX_UE];
+  uint8_t sizeof_SIB1_MBMS[NB_CNX_UE];
+  uint8_t *SI_MBMS[NB_CNX_UE];
+  uint8_t sizeof_SI_MBMS[NB_CNX_UE];
+  uint8_t SIB1Status_MBMS[NB_CNX_UE];
+  uint8_t SIStatus_MBMS[NB_CNX_UE];
+#endif
   LTE_SystemInformationBlockType1_t *sib1[NB_CNX_UE];
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS[NB_CNX_UE];
 #endif
   LTE_SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformation_MBMS_r14_t *si_MBMS[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
+#endif
   LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   LTE_SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   LTE_SystemInformationBlockType4_t *sib4[NB_CNX_UE];

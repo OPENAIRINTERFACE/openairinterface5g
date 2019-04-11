@@ -198,7 +198,27 @@ void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_A
 
   lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
 
+  
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  lte_gold_mbsfn_khz_1dot25(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table,fp->Nid_cell_mbsfn);
+#endif
+
 }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
+                        uint8_t eNB_id,
+                        struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig){
+  PHY_VARS_UE *ue        = PHY_vars_UE_g[Mod_id][CC_id];
+  LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
+  if (nonMBSFN_SubframeConfig != NULL) {
+    fp->NonMBSFN_config_flag = 0;
+    fp->NonMBSFN_config.radioframeAllocationPeriod=nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
+    fp->NonMBSFN_config.radioframeAllocationOffset=nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
+    fp->NonMBSFN_config.non_mbsfn_SubframeConfig=(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]>>7);
+  }
+}
+#endif
 
 
 /*

@@ -435,7 +435,8 @@ typedef struct {
 /*!\brief DTCH DRB1  logical channel */
 #define DTCH 3			// LCID
 /*!\brief MCCH logical channel */
-#define MCCH 4
+//#define MCCH 4
+#define MCCH 62
 /*!\brief MTCH logical channel */
 #define MTCH 1
 // DLSCH LCHAN ID
