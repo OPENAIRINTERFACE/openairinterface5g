@@ -153,7 +153,8 @@ void mch_extract_rbs_khz_1dot25(int **rxdataF,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       for (i=0,j=0; i<frame_parms->N_RB_DL*72; i++) {
                 if( ((i-offset)%6) != 0 ){
-                        rxdataF_ext[aarx][j+0] = rxdataF[aarx][i+4344 +0];
+                        //rxdataF_ext[aarx][j+0] = rxdataF[aarx][i+4344 +0];
+                        rxdataF_ext[aarx][j+0] = rxdataF[aarx][i+frame_parms->first_carrier_offset_khz_1dot25 +0];
                         rxdataF_ext[aarx][(frame_parms->N_RB_DL*60)+j+0] = rxdataF[aarx][i+1+0]; //DC
                         dl_ch_estimates_ext[aarx][j+0] = dl_ch_estimates[aarx][i+0];
                         dl_ch_estimates_ext[aarx][(frame_parms->N_RB_DL*60)+j+0] = dl_ch_estimates[aarx][i+(frame_parms->N_RB_DL*72)+0];
@@ -1445,12 +1446,6 @@ int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
   LTE_UE_DLSCH_t   **dlsch        = &ue->dlsch_MCH[eNB_id]; 
   int avgs,aarx; 
  
-  //int mcs=2; 
- 
-  uint32_t Nsoft = 1827072; 
-  ue->dlsch_MCH[0]  = new_ue_dlsch(1,8,Nsoft,MAX_TURBO_ITERATIONS_MBSFN,25,0); 
- 
- 
      
   mch_extract_rbs_khz_1dot25(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF, 
                   common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id], 
@@ -1460,13 +1455,11 @@ int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
                   subframe, 
                   frame_parms); 
  
-  //if((subframe&0x1)==0){ 
-          mch_channel_level_khz_1dot25(pdsch_vars[eNB_id]->dl_ch_estimates_ext, 
+  mch_channel_level_khz_1dot25(pdsch_vars[eNB_id]->dl_ch_estimates_ext, 
                       frame_parms, 
                       avg_pmch, 
                       /*symbol,*/ 
                       frame_parms->N_RB_DL); 
-  //} 
  
   avgs = 0; 
  
@@ -1494,7 +1487,6 @@ int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
                            pdsch_vars[eNB_id]->log2_maxh);
 
   if (frame_parms->nb_antennas_rx > 1){
-        getchar();
     mch_detection_mrc_khz_1dot25(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
