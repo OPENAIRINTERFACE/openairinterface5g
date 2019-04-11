@@ -1807,8 +1807,13 @@ class SSHConnection():
 			iClientPasswd = self.eNBPassword
 		# Starting the iperf server
 		self.open(iServerIPAddr, iServerUser, iServerPasswd)
+		# args SHALL be "-c client -u any"
+		# -c 10.0.1.2 -u -b 1M -t 30 -i 1 -fm -B 10.0.1.1
+		# -B 10.0.1.1 -u -s -i 1 -fm
+		server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
+		server_options = server_options.replace('-c','-B')
 		self.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo $USER; nohup iperf -u -s -i 1 > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
+		self.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
 		time.sleep(0.5)
 		self.close()
 
