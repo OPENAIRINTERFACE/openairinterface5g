@@ -632,12 +632,26 @@ typedef struct {
   uint8_t threequarter_fs;
   /// Size of FFT
   uint16_t ofdm_symbol_size;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// Size of FFT
+  uint16_t ofdm_symbol_size_khz_1dot25;
+#endif
   /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples;
   /// Number of prefix samples in first symbol of slot
   uint16_t nb_prefix_samples0;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+ /// Number of prefix samples in all but first symbol of slot
+  uint16_t nb_prefix_samples_khz_1dot25;
+  /// Number of prefix samples in first symbol of slot
+  uint16_t nb_prefix_samples0_khz_1dot25;
+#endif
   /// Carrier offset in FFT buffer for first RE in PRB0
   uint16_t first_carrier_offset;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// Carrier offset in FFT buffer for first RE in PRB0 (FeMBMS
+  uint16_t first_carrier_offset_khz_1dot25;
+#endif
   /// Number of samples in a subframe
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
