@@ -2991,16 +2991,6 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   eNB_MAC_INST *mac = RC.mac[module_id];
   UE_list_t *UE_list = &(mac->UE_list);
 
-  LOG_W(RRC, "Check equality rnti = %d/%d/%d and UE_id = %d/%d/%d and PCCID = %d/%d\n",
-        ue_context_pP->ue_id_rnti,
-        ctxt_pP->rnti,
-        ue_context_pP->ue_context.rnti,
-        ue_context_pP->ue_context.ue_initial_id,
-        find_UE_id(module_id, rnti),
-        ue_context_pP->local_uid,
-        UE_PCCID(module_id, UE_id),
-        ue_context_pP->ue_context.primaryCC_id);
-
   if (UE_id != -1) {
     if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
        (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
@@ -5481,6 +5471,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
     UE_scheduling_control->cdrx_waiting_ack = FALSE;
     UE_scheduling_control->cdrx_configured = TRUE;
+    LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
   }
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
