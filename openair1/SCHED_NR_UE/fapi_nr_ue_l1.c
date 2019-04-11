@@ -123,7 +123,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
 	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
 	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+	  dlsch0_harq->Nl=1;
+	  dlsch0_harq->status = ACTIVE;
 	  LOG_D(MAC,">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
+
 	}
       }
     }else{

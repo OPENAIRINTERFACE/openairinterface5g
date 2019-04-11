@@ -3784,9 +3784,10 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  // to be updated by higher layer
-  uint8_t nb_re_dmrs = 6;
-  uint16_t length_dmrs = 1;
+  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
+  uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
+  uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
 
   if (dlsch0==NULL)
@@ -3794,6 +3795,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
   harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
+  nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -3908,7 +3910,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   nb_symb_sch,
 			   nr_tti_rx,
 			   harq_pid,
-			   pdsch==PDSCH?1:0,//proc->decoder_switch,
+			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       //printf("start cW0 dlsch decoding\n");
 #endif
@@ -4324,11 +4326,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   int l,l2;
   int pilot1;
-
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
-  uint16_t nb_symb_sch = 9; // to be updated by higher layer
+  NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
+  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+  uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   uint8_t dci_cnt = 0;
   

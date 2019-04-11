@@ -1087,7 +1087,7 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(
     start_RB = riv%n_RB_DLBWP;
     // if (l_RB - 1)  > floor (n_RB_DLBWP/2) we need to recalculate them using the following lines
     tmp_RIV = n_RB_DLBWP * (l_RB - 1) + start_RB;
-    if (tmp_RIV != riv) { // then (l_RB - 1)  > floor (n_RB_DLBWP/2) and we need to recalculate l_RB and start_RB
+    if ((tmp_RIV != riv) || ((start_RB+l_RB)>n_RB_DLBWP)) { // then (l_RB - 1)  > floor (n_RB_DLBWP/2) and we need to recalculate l_RB and start_RB
       l_RB = n_RB_DLBWP - l_RB + 2;
       start_RB = n_RB_DLBWP - start_RB - 1;
     }
