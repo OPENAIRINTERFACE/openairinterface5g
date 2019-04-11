@@ -357,7 +357,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
                      subframe,
                      dlsch_harq->pdsch_start,
                      dlsch,
-                     dlsch1);
+                     dlsch->ue_type==0 ? dlsch1 : (LTE_eNB_DLSCH_t *)NULL);
     stop_meas(&eNB->dlsch_modulation_stats);
   }
 
