@@ -716,7 +716,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  txlev = (double) signal_energy(&txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+  txlev = (double) signal_energy_amp_shift(&txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
   txlev = txlev/512.0; // output of signal_energy is fixed point representation
