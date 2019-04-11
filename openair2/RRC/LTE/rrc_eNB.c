@@ -1306,18 +1306,18 @@ rrc_eNB_generate_RRCConnectionReestablishment(
   carrier = &(RC.rrc[ctxt_pP->module_id]->carrier[CC_id]);
   ue_context = &(ue_context_pP->ue_context);
 
-  carrier->Srb0.Tx_buffer.payload_size = do_RRCConnectionReestablishment(ctxt_pP,
+  ue_context->Srb0.Tx_buffer.payload_size = do_RRCConnectionReestablishment(ctxt_pP,
                                                                          ue_context_pP,
                                                                          CC_id,
-                                                                         (uint8_t *) carrier->Srb0.Tx_buffer.Payload,
+                                                                         (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
                                                                          (uint8_t) carrier->p_eNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
                                                                          rrc_eNB_get_next_transaction_identifier(module_id),
                                                                          SRB_configList,
                                                                          &(ue_context->physicalConfigDedicated));
 
   LOG_DUMPMSG(RRC, DEBUG_RRC,
-              (char *)(carrier->Srb0.Tx_buffer.Payload),
-              carrier->Srb0.Tx_buffer.payload_size,
+              (char *)(ue_context->Srb0.Tx_buffer.Payload),
+              ue_context->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReestablishment \n");
 
   /* Configure SRB1 for UE */
@@ -1388,16 +1388,16 @@ rrc_eNB_generate_RRCConnectionReestablishment(
 
   MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
                      MSC_RRC_UE,
-                     carrier->Srb0.Tx_buffer.Header,
-                     carrier->Srb0.Tx_buffer.payload_size,
+                     ue_context->Srb0.Tx_buffer.Header,
+                     ue_context->Srb0.Tx_buffer.payload_size,
                      MSC_AS_TIME_FMT" LTE_RRCConnectionReestablishment UE %x size %u",
                      MSC_AS_TIME_ARGS(ctxt_pP),
                      ue_context->rnti,
-                     carrier->Srb0.Tx_buffer.payload_size);
+                     ue_context->Srb0.Tx_buffer.payload_size);
 
   LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishment (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        carrier->Srb0.Tx_buffer.payload_size);
+        ue_context->Srb0.Tx_buffer.payload_size);
 
   UE_id = find_UE_id(module_id, rnti);
 
@@ -2985,11 +2985,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   /* CDRX Configuration */
   // Need to check if UE is a BR UE
-  rnti_t rnti = ue_context_pP->ue_id_rnti
-  module_id_t module_id = ctxt_pP->module_id
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
   int UE_id = find_UE_id(module_id, rnti);
-  struct eNB_MAC_INST_s mac = RC.mac[module_id];
-  UE_list_t UE_list = &(mac->UE_list);
+  eNB_MAC_INST *mac = RC.mac[module_id];
+  UE_list_t *UE_list = &(mac->UE_list);
 
   LOG_W(RRC, "Check equality rnti = %d/%d/%d and UE_id = %d/%d/%d and PCCID = %d/%d\n",
         ue_context_pP->ue_id_rnti,
@@ -2998,7 +2998,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
         ue_context_pP->ue_context.ue_initial_id,
         find_UE_id(module_id, rnti),
         ue_context_pP->local_uid,
-        UE_PCCID(module_idP, UE_id),
+        UE_PCCID(module_id, UE_id),
         ue_context_pP->ue_context.primaryCC_id);
 
   if (UE_id != -1) {
@@ -5460,7 +5460,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 i, drb_id;
+  int                                 drb_id;
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
   uint8_t                            *kRRCenc = NULL;
@@ -5476,11 +5476,11 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 
   /* CDRX: activated if ack was expected */
   int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
-  UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac])
+  UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
   
-  if (UE_scheduling_control.cdrx_waiting_ack) == TRUE {
-    UE_scheduling_control.cdrx_waiting_ack = FALSE;
-    UE_scheduling_control.cdrx_configured = TRUE;
+  if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+    UE_scheduling_control->cdrx_waiting_ack = FALSE;
+    UE_scheduling_control->cdrx_configured = TRUE;
   }
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
@@ -5489,7 +5489,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     T_INT(ctxt_pP->subframe),
     T_INT(ctxt_pP->rnti));
 
-#if defined(ENABLE_SECURITY)
   /* Derive the keys from kenb */
   if (DRB_configList != NULL) {
     derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
