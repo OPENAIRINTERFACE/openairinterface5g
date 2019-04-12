@@ -493,9 +493,9 @@ int main(int argc, char **argv) {
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;
-	//unsigned char *estimated_output = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	unsigned char *estimated_output_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	unsigned char *test_input_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char *estimated_output;
+	unsigned char *estimated_output_bit;
+	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -514,7 +514,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
-	//estimated_output = harq_process->b;
+	estimated_output = harq_process->b;
 
 #ifdef DEBUG_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);

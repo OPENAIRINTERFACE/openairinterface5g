@@ -36,8 +36,6 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "openair1/PHY/LTE_TRANSPORT/transport_proto.h"
-#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
@@ -337,7 +335,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
-      //int spf = get_spf(cfg);
+      int spf = get_spf(cfg);
   
       if (((frameP&127) == 0) && (slotP == 0)) {
         LOG_I(MAC,

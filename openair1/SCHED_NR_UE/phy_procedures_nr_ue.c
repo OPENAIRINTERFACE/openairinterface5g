@@ -2814,8 +2814,8 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   //uint8_t pbch_phase;
   int ret = 0;
   uint16_t frame_tx;
-  //static uint8_t first_run = 1;
-  //uint8_t pbch_trials = 0;
+  static uint8_t first_run = 1;
+  uint8_t pbch_trials = 0;
 
   DevAssert(ue);
 
@@ -2908,10 +2908,9 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
 
 #ifdef NR_PDCCH_SCHED
 
-int nr_ue_pdcch_procedures(uint8_t eNB_id,
-						   PHY_VARS_NR_UE *ue,
-						   UE_nr_rxtx_proc_t *proc)
+int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc)
 {
+
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
 #ifdef NR_PDCCH_SCHED_DEBUG
   printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_ue_pdcch_procedures() \n");
@@ -2959,10 +2958,10 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
   #endif
 
   // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
-  //int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
+  int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
   unsigned int dci_cnt=0;
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
-  //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {{0}};
+  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {{0}};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
   //  uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
@@ -2989,7 +2988,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
      * To be implemented LATER !!!
      */
     //int _offset,_index,_M;
-    //int searchSpace_id                              = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceId;
+    int searchSpace_id                              = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceId;
 
 
     #ifdef NR_PDCCH_SCHED_DEBUG
@@ -3002,16 +3001,16 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
       // the searchSpace indicates that we need to monitor PDCCH in current nr_tti_rx
       // get the parameters describing the current SEARCHSPACE
       // the CORESET id applicable to the current SearchSpace
-      //int searchSpace_coreset_id                      = pdcch_vars2->searchSpace[nb_searchspace_active].controlResourceSetId;
+      int searchSpace_coreset_id                      = pdcch_vars2->searchSpace[nb_searchspace_active].controlResourceSetId;
       // FIXME this variable is a bit string (14 bits) identifying every OFDM symbol in a slot.
       // at the moment we will not take into consideration this variable and we will consider that the OFDM symbol offset is always the first OFDM in a symbol
       uint16_t symbol_within_slot_mon                 = pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSymbolWithinSlot;
       // get the remaining parameters describing the current SEARCHSPACE:     // FIXME! To be defined where we get this information from
-      //NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L1         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel1;
-      //NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L2         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel2;
-      //NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L4         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel4;
-      //NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L8         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel8;
-      //NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L16        = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel16;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L1         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel1;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L2         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel2;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L4         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel4;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L8         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel8;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L16        = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel16;
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
       //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
@@ -3781,7 +3780,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
-  //int CC_id = ue->CC_id;
+  int CC_id = ue->CC_id;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
@@ -4318,11 +4317,11 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 
 
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
-						   UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
-						   uint8_t do_pdcch_flag,
-						   runmode_t mode)
-{
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
+			   uint8_t do_pdcch_flag,runmode_t mode) {
+
+
+
   int l,l2;
   int pilot1;
 

@@ -42,12 +42,11 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-//#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
-#include "SCHED_NR/fapi_nr_l1.h"
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -57,11 +56,6 @@
 
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
-
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
-#include "RRC/NR/MESSAGES/asn1_msg.h"
 
 
 PHY_VARS_gNB *gNB;
@@ -126,40 +120,41 @@ int main(int argc, char **argv)
 {
 
   char c;
-  int i,aa;
+
+  int i,l,aa;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  //double iqim = 0.0;
-  //unsigned char pbch_pdu[6];
+  double iqim = 0.0;
+  unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
   //int result;
-  //  int freq_offset, subframe_offset;
+  int freq_offset;
+  //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors=0;
-  //int n_errors2=0,n_alamouti=0;
+  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
-  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  //char input_val_str[50],input_val_str2[50];
+  char input_val_str[50],input_val_str2[50];
 
-  //uint8_t frame_mod4, num_pdcch_symbols = 0;
+  uint8_t frame_mod4,num_pdcch_symbols = 0;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  //double pbch_sinr;
-  //int pbch_tx_ant;
+  double pbch_sinr;
+  int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
   uint64_t ssb_pattern = 0x01;
@@ -681,8 +676,8 @@ int main(int argc, char **argv)
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    //n_errors2 = 0;
-    //n_alamouti = 0;
+    n_errors2 = 0;
+    n_alamouti = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 
