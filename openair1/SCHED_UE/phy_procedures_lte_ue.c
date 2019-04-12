@@ -4423,20 +4423,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
   pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
 
-#define FeMBMS_TMP
-#ifdef FeMBMS_TMP
-  if (pmch_flag == 1) {
-	if( subframe_rx == 3  || subframe_rx == 2){
-    		ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag,(subframe_rx == 3  || subframe_rx == 2));
-		LOG_D(PHY,"SKIP\n");
-		return 0;
-	}
-  }
-  //LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
-#endif
-
-
-
   if (do_pdcch_flag) {
     // deactivate reception until we scan pdcch
     if (ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0])
