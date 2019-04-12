@@ -142,6 +142,10 @@ int main(int argc, char *argv[]) {
 
   if (polarMessageType == 0) { //PBCH
   } else if (polarMessageType == 1) { //DCI
+    if (aggregation_level != 16 && aggregation_level!=8 && aggregation_level != 4 && aggregation_level !=2 && aggregation_level !=1) {
+      printf("Illegal aggregation level %d\n",aggregation_level);
+      exit(-1);
+    }
     coderLength = 108*aggregation_level; 
   } else if (polarMessageType == -1) { //UCI
     printf("UCI testing not supported yet\n");
