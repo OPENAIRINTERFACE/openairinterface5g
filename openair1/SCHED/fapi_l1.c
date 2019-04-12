@@ -270,7 +270,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     dlsch0_harq     = dlsch0->harq_processes[0];
     dlsch0_harq->pdu                    = sdu;
 
-    if (proc->frame_tx < 200) LOG_D(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
+    LOG_D(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
 
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;

@@ -242,11 +242,11 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch->harq_processes[harq_pid];
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
-  if (dlsch->rnti == 0x02) {//frame < 200) {
-    LOG_D(PHY,
-          "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
+  if (dlsch->rnti != 0xffff) {//frame < 200) {
+   LOG_D(PHY,
+         "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH (type %d) with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
           eNB->Mod_id, dlsch->rnti,harq_pid,
-          frame, subframe, dlsch_harq->TBS/8, dlsch_harq->pdsch_start,
+          frame, subframe, dlsch->ue_type,dlsch_harq->TBS/8, dlsch_harq->pdsch_start,
           get_G(fp,
                 dlsch_harq->nb_rb,
                 dlsch_harq->rb_alloc,
