@@ -245,13 +245,6 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   else
     fp->Lmax = 64;
 
-  // Initial bandwidth part configuration -- full carrier bandwidth
-  fp->initial_bwp_dl.bwp_id = 0;
-  fp->initial_bwp_dl.scs = fp->subcarrier_spacing;
-  fp->initial_bwp_dl.location = 0;
-  fp->initial_bwp_dl.N_RB = fp->N_RB_DL;
-  fp->initial_bwp_dl.cyclic_prefix = fp->Ncp;
-  fp->initial_bwp_dl.ofdm_symbol_size = fp->ofdm_symbol_size;
 
   return 0;
 }
@@ -293,12 +286,6 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->samples_per_frame_wCP=%d\n",fp->samples_per_frame_wCP);
   LOG_I(PHY,"fp->samples_per_subframe=%d\n",fp->samples_per_subframe);
   LOG_I(PHY,"fp->samples_per_frame=%d\n",fp->samples_per_frame);
-  LOG_I(PHY,"fp->initial_bwp_dl.bwp_id=%d\n",fp->initial_bwp_dl.bwp_id);
-  LOG_I(PHY,"fp->initial_bwp_dl.scs=%d\n",fp->initial_bwp_dl.scs);
-  LOG_I(PHY,"fp->initial_bwp_dl.N_RB=%d\n",fp->initial_bwp_dl.N_RB);
-  LOG_I(PHY,"fp->initial_bwp_dl.cyclic_prefix=%d\n",fp->initial_bwp_dl.cyclic_prefix);
-  LOG_I(PHY,"fp->initial_bwp_dl.location=%d\n",fp->initial_bwp_dl.location);
-  LOG_I(PHY,"fp->initial_bwp_dl.ofdm_symbol_size=%d\n",fp->initial_bwp_dl.ofdm_symbol_size);
 }
 
 

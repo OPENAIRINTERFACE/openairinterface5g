@@ -34,6 +34,7 @@
 #include "mac_proto.h"
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
+#include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 #include <stdio.h>
 
@@ -42,9 +43,10 @@
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(UE_nr_rxtx_proc_t *proc, module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
 
-  return nr_ue_decode_mib( module_id,
+  return nr_ue_decode_mib( proc,
+		           module_id,
 			   cc_id,
 			   gNB_index,
 			   additional_bits,
@@ -63,7 +65,7 @@ int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, 
 //  L2 Abstraction Layer
 int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
-  printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
+  //printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
   return nr_ue_process_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
 }
@@ -126,16 +128,26 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
-  //  clean up scheduled_response structure
-
+  dl_config->number_pdus = 0;
+  ul_config->number_pdus = 0;
+  //hook up pointers
+  mac->scheduled_response.dl_config = dl_config;
+  mac->scheduled_response.ul_config = ul_config;
+  mac->scheduled_response.tx_request = &mac->tx_request;
+  mac->scheduled_response.module_id = dl_info->module_id;
+  mac->scheduled_response.CC_id = dl_info->cc_id;
+  mac->scheduled_response.frame = dl_info->frame;
+  mac->scheduled_response.slot = dl_info->slot;
 
   if(dl_info->dci_ind != NULL){
-    printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
+    LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
     for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
-      printf(">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
+      LOG_I(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
-      /*
+
       ret_mask |= (handle_dci(
 			      dl_info->module_id,
 			      dl_info->cc_id,
@@ -143,7 +155,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 			      dci, 
 			      (dl_info->dci_ind->dci_list+i)->rnti, 
 			      (dl_info->dci_ind->dci_list+i)->dci_format)) << FAPI_NR_DCI_IND;
-      */
+
 
       /*switch((dl_info->dci_ind->dci_list+i)->dci_type){
 	case FAPI_NR_DCI_TYPE_0_0:
@@ -193,11 +205,12 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   }
 
   if(dl_info->rx_ind != NULL){
-    printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
+    LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND]\n");
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
-	ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+	ret_mask |= (handle_bcch_bch( dl_info->proc,
+				     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
@@ -244,8 +257,8 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->cc_mask=0;
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
-    nr_ue_if_module_inst[module_id]->phy_config_request = NULL;
-    nr_ue_if_module_inst[module_id]->scheduled_response = NULL;
+    nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
+    nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
   }
@@ -264,6 +277,7 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   
   fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+  NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
   
   //  Type0 PDCCH search space
   dl_config->number_pdus =  1;
@@ -305,7 +319,7 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
 
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = UE_mac->initial_bwp_dl.N_RB;
 
   
   return 0;

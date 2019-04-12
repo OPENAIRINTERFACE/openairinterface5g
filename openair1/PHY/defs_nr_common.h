@@ -161,8 +161,6 @@ typedef struct NR_BWP_PARMS {
   uint8_t location;
   /// Bandwidth in PRB
   uint16_t N_RB;
-  /// Size of FFT/IFFT
-  uint16_t ofdm_symbol_size;
   /// Cyclic prefix
   uint8_t cyclic_prefix;
   /// RBG params
@@ -314,10 +312,6 @@ typedef struct NR_DL_FRAME_PARMS {
   uint64_t L_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
-
-   //BWP params
-  NR_BWP_PARMS initial_bwp_dl;
-  NR_BWP_PARMS initial_bwp_ul;
 
 } NR_DL_FRAME_PARMS;
 

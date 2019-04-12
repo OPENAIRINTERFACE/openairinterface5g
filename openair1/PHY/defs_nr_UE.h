@@ -157,109 +157,6 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
-#include "NR_IF_Module.h"
-
-/// Context data structure for RX/TX portion of subframe processing
-typedef struct {
-  /// index of the current UE RX/TX proc
-  int                  proc_id;
-  /// Component Carrier index
-  uint8_t              CC_id;
-  /// timestamp transmitted to HW
-  openair0_timestamp timestamp_tx;
-  //#ifdef UE_NR_PHY_DEMO
-  /// NR TTI index within subframe_tx [0 .. ttis_per_subframe - 1] to act upon for transmission
-  int nr_tti_tx;
-  /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
-  int nr_tti_rx;
-  //#endif
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for reception
-  int frame_rx;
-  /// \brief Instance count for RXn-TXnp4 processing thread.
-  /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt_rxtx;
-  /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread_rxtx;
-  /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr_rxtx;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond_rxtx;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_rxtx;
-  /// scheduling parameters for RXn-TXnp4 thread
-  struct sched_param sched_param_rxtx;
-
-  /// internal This variable is protected by ref mutex_fep_slot1.
-  //int instance_cnt_slot0_dl_processing;
-  int instance_cnt_slot1_dl_processing;
-  /// pthread descriptor fep_slot1 thread
-  //pthread_t pthread_slot0_dl_processing;
-  pthread_t pthread_slot1_dl_processing;
-  /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_slot1_dl_processing;
-  /// condition variable for UE fep_slot1 thread;
-  //pthread_cond_t cond_slot0_dl_processing;
-  pthread_cond_t cond_slot1_dl_processing;
-  /// mutex for UE synch thread
-  //pthread_mutex_t mutex_slot0_dl_processing;
-  pthread_mutex_t mutex_slot1_dl_processing;
-  //int instance_cnt_slot0_dl_processing;
-  int instance_cnt_dlsch_td;
-  /// pthread descriptor fep_slot1 thread
-  //pthread_t pthread_slot0_dl_processing;
-  pthread_t pthread_dlsch_td;
-  /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_dlsch_td;
-  /// condition variable for UE fep_slot1 thread;
-  //pthread_cond_t cond_slot0_dl_processing;
-  pthread_cond_t cond_dlsch_td;
-  /// mutex for UE synch thread
-  //pthread_mutex_t mutex_slot0_dl_processing;
-  pthread_mutex_t mutex_dlsch_td;
-  //
-  uint8_t chan_est_pilot0_slot1_available;
-  uint8_t chan_est_slot1_available;
-  uint8_t llr_slot1_available;
-  uint8_t dci_slot0_available;
-  uint8_t first_symbol_available;
-  uint8_t decoder_thread_available;
-  uint8_t decoder_main_available;
-  uint8_t decoder_switch;
-  int counter_decoder;
-  uint8_t channel_level;
-  int eNB_id;
-  int harq_pid;
-  int llr8_flag;
-  /// scheduling parameters for fep_slot1 thread
-  struct sched_param sched_param_fep_slot1;
-
-  int sub_frame_start;
-  int sub_frame_step;
-  unsigned long long gotIQs;
-  uint8_t decoder_thread_available1;
-  int instance_cnt_dlsch_td1;
-  /// pthread descriptor fep_slot1 thread
-  //pthread_t pthread_slot0_dl_processing;
-  pthread_t pthread_dlsch_td1;
-  /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_dlsch_td1;
-  /// condition variable for UE fep_slot1 thread;
-  //pthread_cond_t cond_slot0_dl_processing;
-  pthread_cond_t cond_dlsch_td1;
-  /// mutex for UE synch thread
-  //pthread_mutex_t mutex_slot0_dl_processing;
-  pthread_mutex_t mutex_dlsch_td1;
-  int dci_err_cnt;
-} UE_nr_rxtx_proc_t;
 
 /// Context data structure for eNB subframe processing
 typedef struct {
@@ -378,17 +275,6 @@ typedef struct {
   /// - second index: symbol [0..28*ofdm_symbol_size[
   int32_t **rxdataF;
 
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates[7];
-
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time[7];
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
@@ -438,6 +324,10 @@ typedef struct {
   /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - fourth index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp1[8][8];
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -489,6 +379,8 @@ typedef struct {
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
   int16_t *llr[2];
+  /// Pointers to layer llr vectors (4 layers).
+  int16_t *layer_llr[4];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
   /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
@@ -830,6 +722,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp;
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
+  /// \brief Hold the channel estimates in time domain (used for tracking).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..2*ofdm_symbol_size[
+  int32_t **dl_ch_estimates_time;
   /// \brief Pointers to extracted channel estimates of PDCCH symbols.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -897,6 +797,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **rxdataF_comp;
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
   /// \brief Pointers to downlink channel estimates in frequency-domain extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
@@ -955,6 +859,9 @@ typedef struct UE_NR_SCAN_INFO_s {
   /// 10 frequency offsets (kHz) corresponding to best amplitudes, with respect do minimum DL frequency in the band
   int32_t freq_offset_Hz[3][10];
 } UE_NR_SCAN_INFO_t;
+
+
+#include "NR_IF_Module.h"
 
 /// Top-level PHY Data Structure for UE
 typedef struct {
@@ -1015,7 +922,7 @@ typedef struct {
   /// UE FAPI DCI request
   nr_dcireq_t dcireq;
 
-  // CHECK if we need those as they are also included in dl_indictation
+  // pointers to the next 2 strcutres are also included in dl_indictation
   /// UE FAPI indication for DLSCH reception
   fapi_nr_rx_indication_t rx_ind;
   /// UE FAPI indication for DCI reception

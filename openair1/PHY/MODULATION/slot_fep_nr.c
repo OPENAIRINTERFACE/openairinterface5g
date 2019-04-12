@@ -35,16 +35,14 @@
 #endif*/
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
-		unsigned char l,
+		unsigned char symbol,
 		unsigned char Ns,
 		int sample_offset,
-		int no_prefix,
-		NR_CHANNEL_EST_t channel)
+		int no_prefix)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
   unsigned char aa;
-  unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples;
   unsigned int nb_prefix_samples0;
   if (ue->is_synchronized) {
@@ -60,19 +58,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   //int i;
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
-  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns]][0];
-  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;//+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
-  uint16_t nb_rb_coreset = 0;
-  uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;//+516;
-  uint16_t nb_rb_pdsch = 50;
-  uint8_t p=0;
-  uint8_t l0 = pdcch_vars->coreset[0].duration;
-  uint64_t coreset_freq_dom  = pdcch_vars->coreset[0].frequencyDomainResources;
-  for (int i = 0; i < 45; i++) {
-    if (((coreset_freq_dom & 0x1FFFFFFFFFFF) >> i) & 0x1) nb_rb_coreset++;
-  }
-  nb_rb_coreset = 6 * nb_rb_coreset; 
-  //printf("corset duration %d nb_rb_coreset %d\n", l0, nb_rb_coreset);
+
 
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
@@ -146,7 +132,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
           nb_prefix_samples,nb_prefix_samples0,slot_offset,sample_offset,rx_offset,frame_length_samples);
 #endif
 
-    if (l==0) {
+    if (symbol==0) {
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((short *)&common_vars->rxdata[aa][frame_length_samples],
@@ -171,7 +157,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
       }
     } else {
-      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +
+      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol;// +
       //                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
@@ -204,68 +190,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
         //  if (ue->frame <100)
         printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol,rx_offset);
     #endif
-  }
-
-  if (ue->perfect_ce == 0) {
-
-  switch(channel){
-  case NR_PBCH_EST:
-  break;
-
-  case NR_PDCCH_EST:
-
-#ifdef DEBUG_FEP
-    printf("PDCCH Channel estimation aatx %d, slot %d, symbol %d start_sc %d\n",aa,Ns,l,coreset_start_subcarrier);
-#endif
-#if UE_TIMING_TRACE
-    start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-    nr_pdcch_channel_estimation(ue,0,
-				Ns,
-				l,
-				symbol,
-				coreset_start_subcarrier,
-				nb_rb_coreset);
-#if UE_TIMING_TRACE
-    stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-    
-    break;
-    
-  case NR_PDSCH_EST:
-#ifdef DEBUG_FEP
-    printf("Channel estimation aatx %d, slot %d, symbol %d\n",aa,Ns,l);
-#endif
-#if UE_TIMING_TRACE
-    start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-
-  ue->frame_parms.nushift =  (p>>1)&1;;
-
-    if (symbol ==l0)
-    nr_pdsch_channel_estimation(ue,0,
-				Ns,
-				p,
-				l,
-				symbol,
-				bwp_start_subcarrier,
-				nb_rb_pdsch);
-				
-#if UE_TIMING_TRACE
-    stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-    
-    break;
-    
-  case NR_SSS_EST:
-  break;
-
-  default:
-    LOG_E(PHY,"[UE][FATAL] Unknown channel format %d\n",channel);
-    return(-1);
-    break;
-  }
-
   }
 
 #ifdef DEBUG_FEP

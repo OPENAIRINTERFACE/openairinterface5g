@@ -92,7 +92,7 @@ static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg)
   if (nf->outF == NULL)
     nf->outF = msg;
 
-  if (nf->inF)
+  if (nf->inF != NULL)
     nf->inF->next = msg;
 
   nf->inF = msg;
@@ -103,7 +103,7 @@ static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg)
 static inline  notifiedFIFO_elt_t *pullNotifiedFIFO(notifiedFIFO_t *nf) {
   mutexlock(nf->lockF);
 
-  while(!nf->outF)
+  while(nf->outF == NULL)
     condwait(nf->notifF, nf->lockF);
 
   notifiedFIFO_elt_t *ret=nf->outF;
@@ -124,8 +124,12 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
 
   notifiedFIFO_elt_t *ret=nf->outF;
 
-  if (ret!=NULL)
+  if (ret!=NULL) {
+    if (nf->outF==nf->outF->next)
+      LOG_E(TMR,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+
     nf->outF=nf->outF->next;
+  }
 
   if (nf->outF==NULL)
     nf->inF=NULL;
