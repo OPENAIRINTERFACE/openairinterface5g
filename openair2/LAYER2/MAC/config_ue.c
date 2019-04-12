@@ -20,15 +20,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file config.c
- * \brief UE and eNB configuration performed by RRC or as a consequence of RRC procedures
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+
+/*! \file config_ue.c
+ * \brief UE configuration performed by RRC or as a consequence of RRC procedures / This includes FeMBMS UE procedures
+ * \author  Navid Nikaein, Raymond Knopp and Javier Morgade
+ * \date 2010 - 2014 / 2019
  * \version 0.1
- * \email: navid.nikaein@eurecom.fr
+ * \email: navid.nikaein@eurecom.fr, javier.morgade@ieee.org
  * @ingroup _mac
 
  */
+
 
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"

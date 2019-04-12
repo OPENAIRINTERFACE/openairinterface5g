@@ -19,6 +19,18 @@
  *      contact@openairinterface.org
  */
 
+/*! \file PHY/LTE_UE_TRANSPORT/pmch_ue.c
+* \brief This includes routines for decoding the UE FeMBMS/PMCH physical/multicast/transport channel 3GPP TS 36.211 version 14.2.0 Release 14 Sections 6.5/6.10.2
+* \author J. Morgade
+* \date 2019
+* \version 0.1
+* \company Vicomtech
+* \email: javier.morgade@ieee.org
+* \note
+* \warning
+*/
+
+
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"

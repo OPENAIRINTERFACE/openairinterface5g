@@ -20,12 +20,12 @@
  */
 
 /*! \file phy_procedures_lte_ue.c
- * \brief Implementation of UE procedures from 36.213 LTE specifications
- * \author R. Knopp, F. Kaltenberger, N. Nikaein
+ * \brief Implementation of UE procedures from 36.213 LTE specifications / This includes FeMBMS UE procedures from 36.213 v14.2.0 specification
+ * \author R. Knopp, F. Kaltenberger, N. Nikaein, J. Morgade
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr, javier.morgade@ieee.org
  * \note
  * \warning
  */

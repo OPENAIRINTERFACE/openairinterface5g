@@ -19,14 +19,14 @@
  *      contact@openairinterface.org
  */
 
-/*! \file ue_procedures.c
- * \brief procedures related to UE
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
 
+/*! \file asn1_msg.c
+ * \brief primitives to build the asn1 messages / primitives to build FeMBMS asn1  messages
+ * \author Raymond Knopp, Navid Nikaein and Javier Morgade
+ * \date 2011 / 2019
+ * \version 1.0
+ * \company Eurecom
+ * \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr javier.morgade@ieee.org
  */
 
 #ifdef EXMIMO
