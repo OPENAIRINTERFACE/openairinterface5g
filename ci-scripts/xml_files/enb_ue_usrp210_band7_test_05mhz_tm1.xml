@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-05-tm1</htmlTabRef>
-	<htmlTabName>Test-05MHz-TM1</htmlTabName>
+	<htmlTabRef>test-05-tm1-nos1-tunnel</htmlTabRef>
+	<htmlTabName>Test-05MHz-TM1-noS1-tunnel</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  030101 000001 090101 000002 040501 040502 000001 040601 040641 040642 000001 090109 030201
@@ -61,7 +61,7 @@
         <testCase id="090101">
                 <class>Initialize_OAI_UE</class>
                 <desc>Initialize OAI UE (FDD/Band7/5MHz)</desc>
-                <Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 120 --ue-txgain 0 --ue-max-power 0 --ue-scan-carrier --noS1</Initialize_OAI_UE_args>
+                <Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 120 --ue-txgain 0 --ue-max-power 0 --ue-scan-carrier --nokrnmod 1 --noS1</Initialize_OAI_UE_args>
         </testCase>
 
         <testCase id="090109">
@@ -79,7 +79,7 @@
         <testCase id="040502">
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)(from OAI UE to eNB)</desc>
-                <ping_args>-I oip1 -c 20 10.0.1.1</ping_args>
+                <ping_args>-I oaitun_ue1 -c 20 10.0.1.1</ping_args>
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
 
