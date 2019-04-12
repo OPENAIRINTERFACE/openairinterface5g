@@ -19,16 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_procedures_lte_ue.c
- * \brief Implementation of UE procedures from 36.213 LTE specifications / This includes FeMBMS UE procedures from 36.213 v14.2.0 specification
- * \author R. Knopp, F. Kaltenberger, N. Nikaein, J. Morgade
- * \date 2011
- * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr, javier.morgade@ieee.org
- * \note
- * \warning
- */
+ /*! \file phy_procedures_lte_ue.c
+  * \brief Implementation of UE procedures from 36.213 LTE specifications / This includes FeMBMS UE procedures from 36.213 v14.2.0 specification
+  * \author R. Knopp, F. Kaltenberger, N. Nikaein, J. Morgade
+  * \date 2011
+  * \version 0.1
+  * \company Eurecom
+  * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr, javier.morgad
+e@ieee.org
+  * \note
+  * \warning
+  */
 
 #define _GNU_SOURCE
 
@@ -2364,7 +2365,19 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
   for (pbch_trials=0; pbch_trials<4; pbch_trials++) {
     //for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
     //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-    pbch_tx_ant = rx_pbch(&ue->common_vars,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+	if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms)){
+    	 	pbch_tx_ant = rx_pbch(&ue->common_vars,
+                          ue->pbch_vars[eNB_id],
+                          &ue->frame_parms,
+                          eNB_id,
+                          ue->frame_parms.nb_antenna_ports_eNB==1?SISO:ALAMOUTI,
+                          ue->high_speed_flag,
+                          pbch_phase);
+
+	}else
+#endif
+    		pbch_tx_ant = rx_pbch(&ue->common_vars,
                           ue->pbch_vars[eNB_id],
                           &ue->frame_parms,
                           eNB_id,
@@ -2400,10 +2413,22 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
       return;
     }
 
+
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
-    frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
-    frame_tx += ((int)(ue->pbch_vars[eNB_id]->decoded_output[1]&0xfc));
-    frame_tx += pbch_phase;
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms)){
+		frame_tx  = (int)((ue->pbch_vars[eNB_id]->decoded_output[2]&31)<<1);
+		frame_tx += ue->pbch_vars[eNB_id]->decoded_output[1]>>7;
+		frame_tx +=4*pbch_phase;	
+	}else{
+#endif
+    		frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
+    		frame_tx += ((int)(ue->pbch_vars[eNB_id]->decoded_output[1]&0xfc));
+    		frame_tx += pbch_phase;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+	}
+#endif
 
     if (ue->mac_enabled==1) {
       dl_phy_sync_success(ue->Mod_id,frame_rx,eNB_id,
@@ -4397,6 +4422,20 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
 
 
   pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
+
+#define FeMBMS_TMP
+#ifdef FeMBMS_TMP
+  if (pmch_flag == 1) {
+	if( subframe_rx == 3  || subframe_rx == 2){
+    		ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag,(subframe_rx == 3  || subframe_rx == 2));
+		LOG_D(PHY,"SKIP\n");
+		return 0;
+	}
+  }
+  //LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
+#endif
+
+
 
   if (do_pdcch_flag) {
     // deactivate reception until we scan pdcch
