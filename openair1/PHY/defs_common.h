@@ -633,6 +633,9 @@ typedef struct {
   /// Size of FFT
   uint16_t ofdm_symbol_size;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t FeMBMS_active;
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Size of FFT
   uint16_t ofdm_symbol_size_khz_1dot25;
 #endif

@@ -35,6 +35,10 @@
 
 uint8_t get_mi(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
 {
+  // for FeMBMS
+  if(frame_parms->FeMBMS_active!=0){
+	return(0);
+  }
 
   // for FDD
   if (frame_parms->frame_type == FDD)
