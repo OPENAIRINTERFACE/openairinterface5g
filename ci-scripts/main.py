@@ -487,13 +487,13 @@ class SSHConnection():
 		# do not reset board twice in IF4.5 case
 		result = re.search('rru|enb', str(config_file))
 		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 10)
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
-				self.command('echo ' + self.eNBPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 5)
+				self.command('echo ' + self.eNBPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 15)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -599,13 +599,13 @@ class SSHConnection():
 				sys.exit(1)
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
-		self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 10)
 		result = re.search('type: b200', str(self.ssh.before))
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
-			self.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 			# Reloading FGPA bin firmware
-			self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 15)
 		else:
 			logging.debug('Did not find any B2xx device')
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
@@ -2758,7 +2758,7 @@ class SSHConnection():
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 5)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 15)
 		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		if result is not None:
 			self.UsrpBoard = result.group('usrp_board')
