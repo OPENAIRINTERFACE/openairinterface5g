@@ -53,10 +53,12 @@ void config_nr_mib(int Mod_idP,
 
 void config_common(int Mod_idP,
                    int CC_idP,
+				   int Nid_cell,
                    int nr_bandP,
+				   uint64_t ssb_pattern,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
-                  );
+				   );
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
@@ -88,6 +90,10 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
+
+void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP);
 
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,

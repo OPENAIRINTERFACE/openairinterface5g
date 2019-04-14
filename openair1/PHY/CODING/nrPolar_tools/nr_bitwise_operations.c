@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+/*!\file PHY/CODING/nrPolar_tools/nr_bitwise_operations.c
+ * \brief
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
+*/
+
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 void nr_bit2byte_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
@@ -29,7 +40,8 @@ void nr_bit2byte_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
 		}
 	}
 
-	for (int j = 0; j < arraySize - ((arrayInd-1) * 32); j++) out[j + ((arrayInd-1) * 32)] = (in[(arrayInd-1)] >> j) & 1;
+	for (int j = 0; j < arraySize - ((arrayInd-1) * 32); j++)
+		out[j + ((arrayInd-1) * 32)] = (in[(arrayInd-1)] >> j) & 1;
 }
 
 void nr_byte2bit_uint8_32(uint8_t *in, uint16_t arraySize, uint32_t *out) {
@@ -41,18 +53,5 @@ void nr_byte2bit_uint8_32(uint8_t *in, uint16_t arraySize, uint32_t *out) {
 			out[i]<<=1;
 		}
 		out[i]|=in[(i*32)];
-	}
-}
-
-void nr_crc_bit2bit_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
-	out[0]=0xff;
-	out[1]=0xff;
-	out[2]=0xff;
-	uint8_t arrayInd = ceil(arraySize / 32.0);
-	for (int i = 0; i < arrayInd; i++) {
-		out[3+i*4] = ((in[i] & (0x0000000f))<<4) | ((in[i] & (0x000000f0))>>4);
-		out[4+i*4] = (((in[i] & (0x00000f00))<<4) | ((in[i] & (0x0000f000))>>4))>>8;
-		out[5+i*4] = (((in[i] & (0x000f0000))<<4) | ((in[i] & (0x00f00000))>>4))>>16;
-		out[6+i*4] = (((in[i] & (0x0f000000))<<4) | ((in[i] & (0xf0000000))>>4))>>24;
 	}
 }

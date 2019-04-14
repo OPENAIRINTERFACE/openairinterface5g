@@ -42,11 +42,13 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-//#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+//openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h
 
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "SCHED_NR/fapi_nr_l1.h"
+#include "SCHED_NR_UE/defs.h"
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -58,6 +60,7 @@
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 //#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 //#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 
@@ -515,7 +518,7 @@ int main(int argc, char **argv)
   gNB_mac = RC.nrmac[0];
 
   config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
-  config_nr_mib(0,0,1,kHz30,0,0,0,0);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);

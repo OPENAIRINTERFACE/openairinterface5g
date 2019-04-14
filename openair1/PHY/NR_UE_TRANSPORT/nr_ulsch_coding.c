@@ -39,6 +39,7 @@
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 
 
 
@@ -92,7 +93,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, u
 {
 
   NR_UE_ULSCH_t *ulsch;
-  unsigned char exit_flag = 0,i,j,r;
+  unsigned char exit_flag = 0,i,r;
   unsigned char bw_scaling =1;
 
   switch (N_RB_UL) {
@@ -211,7 +212,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t Tbslbrm; 
   uint8_t nb_re_dmrs; 
   uint16_t length_dmrs;
-  int i;
   float Coderate;
 
 ///////////

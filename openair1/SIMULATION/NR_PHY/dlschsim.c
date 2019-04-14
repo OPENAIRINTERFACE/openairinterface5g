@@ -494,7 +494,7 @@ int main(int argc, char **argv) {
 	unsigned char *test_input_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned int errors_bit = 0;
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];

@@ -387,20 +387,20 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       
           // Note: This should not be done in the MAC!
           for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            LTE_eNB_ULSCH_t *ulsch = RC.gNB[module_idP][CC_id]->ulsch[ii];       
+        	  NR_gNB_ULSCH_t *ulsch = RC.gNB[module_idP][CC_id]->ulsch[ii][0];
             if((ulsch != NULL) && (ulsch->rnti == rnti)){
               LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
-              clean_eNb_ulsch(ulsch);
+              clean_gNB_ulsch(ulsch);
             }
           }
 
           for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
-            if((dlsch != NULL) && (dlsch->rnti == rnti)){
-              LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
-	      LOG_E(PHY,"Calling with wrong paramter type\n");
-              clean_eNb_dlsch(dlsch);
-            }
+        	  NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
+        	  if((dlsch != NULL) && (dlsch->rnti == rnti)){
+        		  LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
+        		  LOG_E(PHY,"Calling with wrong parameter type\n");
+        		  clean_gNB_dlsch(dlsch);
+        	  }
           }
     
           for(int j = 0; j < 10; j++){

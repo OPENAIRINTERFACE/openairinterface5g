@@ -127,16 +127,12 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG_SMALLBLOCKTEST
 			printf("[smallblocktest] Input = 0x%x, Output = 0x%x, DecoderOutput = 0x%x\n", testInput, encoderOutput, estimatedOutput);
 			for (int i=0;i<32;i++)
-				printf("[smallblocktest] Input[%d] = %d, Output[%d] = %d, Mask[%d] = %d\n", i, (testInput>>i)&1, i, (estimatedOutput>>i)&1, i, (mask>>i)&1);
+				printf("[smallblocktest] Input[%d] = %d, Output[%d] = %d, codingDifference[%d]=%d, Mask[%d] = %d\n", i, (testInput>>i)&1, i, (estimatedOutput>>i)&1, i, (codingDifference>>i)&1, i, (mask>>i)&1);
 #endif
 
 			//Error Calculation
 			estimatedOutput &= mask;
 			codingDifference = ((uint32_t)estimatedOutput) ^ testInput; // Count the # of 1's in codingDifference by Brian Kernighan’s algorithm.
-
-			//for (int i=0;i<32;i++)
-				//printf("[smallblocktest] Input[%d] = %d, Output[%d] = %d, codingDifference[%d]=%d, Mask[%d] = %d, bitError = %d\n", i, (testInput>>i)&1, i, (estimatedOutput>>i)&1, i, (codingDifference>>i)&1, i, (mask>>i)&1, nBitError);
-
 
 			for (nBitError = 0; codingDifference; nBitError++)
 				codingDifference &= codingDifference - 1;

@@ -2511,7 +2511,9 @@ add_executable(polartest
 target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 
-add_executable(smallblocktest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c)
+add_executable(smallblocktest
+  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
+  ${OPENAIR_DIR}/common/utils/backtrace.c)
 target_link_libraries(smallblocktest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 add_executable(ldpctest  

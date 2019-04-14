@@ -1120,16 +1120,15 @@
     <testCase id="015107">
       <class>execution</class>
       <desc>shortblocktest Test cases. (Test1: 3 bits),
-      (Test2: 6 bits)
-      (Test3: 7 bits)
-      (Test4: 11 bits)
-      </desc>
+      (Test2: 6 bits),
+      (Test3: 7 bits),
+      (Test4: 11 bits)</desc>
       <main_exec> $OPENAIR_DIR/targets/bin/smallblocktest.Rel15</main_exec>
-      <main_exec_args>-l 3
-      -l 6
-      -l 7
-      -l 11</main_exec_args>
-      <tags>smallblocktest.test1 smallblocktest.test2 smallblocktest.test3 smallblocktest.test3</tags>
+      <main_exec_args>-l 3 -s -4 -d 1 -i 10000
+      -l 6 -s -4 -d 1 -i 10000
+      -l 7 -s -4 -d 1 -i 10000
+      -l 11 -s -4 -d 1 -i 10000</main_exec_args>
+      <tags>smallblocktest.test1 smallblocktest.test2 smallblocktest.test3 smallblocktest.test4</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

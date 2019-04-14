@@ -48,7 +48,7 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 		int16_t Rhat[NR_SMALL_BLOCK_CODED_BITS] = {0}, Rhatabs[NR_SMALL_BLOCK_CODED_BITS] = {0};
 		uint16_t maxVal;
 		uint8_t maxInd = 0;
-                int jmax = (1<<(len-1));
+		uint8_t jmax = (1<<(len-1));
 		for (int j = 0; j < jmax; ++j)
 			for (int k = 0; k < NR_SMALL_BLOCK_CODED_BITS; ++k)
 				Rhat[j] += in[k] * hadamard32InterleavedTransposed[j][k];

@@ -96,6 +96,8 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
+void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+
 int nr_dlsch_encoding(unsigned char *a,
                      uint8_t subframe,
                      NR_gNB_DLSCH_t *dlsch,

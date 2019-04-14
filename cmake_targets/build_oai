@@ -80,8 +80,6 @@ function print_help() {
 This program installs OpenAirInterface Software
 You should have ubuntu 16.xx or 18.04 updated
 Options
--h
-   This help
 -c | --clean
    Erase all files to make a rebuild from start
 -C | --clean-all

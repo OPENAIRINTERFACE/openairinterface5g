@@ -21,11 +21,11 @@
 
 /*!\file PHY/CODING/nrPolar_tools/nr_polar_defs.h
  * \brief
- * \author Turker Yilmaz
+ * \author Raymond Knopp, Turker Yilmaz
  * \date 2018
  * \version 0.1
  * \company EURECOM
- * \email turker.yilmaz@eurecom.fr
+ * \email raymond.knopp@eurecom.fr, turker.yilmaz@eurecom.fr
  * \note
  * \warning
 */
@@ -105,7 +105,7 @@ struct nrPolar_params {
   int16_t *Q_PC_N;
   uint8_t *information_bit_pattern;
   uint16_t *channel_interleaver_pattern;
-  uint32_t crc_polynomial;
+  //uint32_t crc_polynomial;
 
   uint8_t **crc_generator_matrix; //G_P
   uint8_t **G_N;
@@ -116,7 +116,6 @@ struct nrPolar_params {
   uint64_t cprime_tab1[32][256];
   uint64_t B_tab0[32][256];
   uint64_t B_tab1[32][256];
-  uint32_t *crc256Table;
   uint8_t **extended_crc_generator_matrix;
   //lowercase: bits, Uppercase: Bits stored in bytes
   //polar_encoder vectors
@@ -151,7 +150,7 @@ void polar_encoder_fast(uint64_t *A,
                         t_nrPolar_params *polarParams);
 
 int8_t polar_decoder(double *input,
-                     uint8_t *output,
+					 uint32_t *output,
                      t_nrPolar_params *polarParams,
                      uint8_t listSize,
                      uint8_t pathMetricAppr);
@@ -166,15 +165,6 @@ int8_t polar_decoder_aPriori(double *input,
                              uint8_t listSize,
                              uint8_t pathMetricAppr,
                              double *aPrioriPayload);
-
-int8_t polar_decoder_aPriori_timing(double *input,
-                                    uint32_t *output,
-                                    t_nrPolar_params *polarParams,
-                                    uint8_t listSize,
-                                    uint8_t pathMetricAppr,
-                                    double *aPrioriPayload,
-                                    double cpuFreqGHz,
-                                    FILE *logFile);
 
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
@@ -192,9 +182,9 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams);
 
 void nr_polar_print_polarParams(t_nrPolar_params *polarParams);
 
-t_nrPolar_params *nr_polar_params ( int8_t messageType,
-                                    uint16_t messageLength,
-                                    uint8_t aggregation_level);
+t_nrPolar_params *nr_polar_params (int8_t messageType,
+                                   uint16_t messageLength,
+                                   uint8_t aggregation_level);
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level);
 
@@ -256,16 +246,18 @@ void nr_polar_info_bit_extraction(uint8_t *input,
                                   uint16_t size);
 
 void nr_bit2byte_uint32_8(uint32_t *in,
-                            uint16_t arraySize,
-                            uint8_t *out);
+                          uint16_t arraySize,
+                          uint8_t *out);
 
 void nr_byte2bit_uint8_32(uint8_t *in,
-                            uint16_t arraySize,
-                            uint32_t *out);
+                          uint16_t arraySize,
+                          uint32_t *out);
 
-void nr_crc_bit2bit_uint32_8(uint32_t *in,
-                               uint16_t arraySize,
-                               uint8_t *out);
+uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
+
+uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
+
+uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
 
 void nr_polar_bit_insertion(uint8_t *input,
                             uint8_t *output,
@@ -370,12 +362,6 @@ void updateCrcChecksum2(uint8_t **crcChecksum,
                         uint32_t i2,
                         uint8_t len);
 
-uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
-
-uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
-
-uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
-
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
                                         uint8_t *output,
@@ -385,12 +371,10 @@ static inline void nr_polar_interleaver(uint8_t *input,
 }
 
 static inline void nr_polar_deinterleaver(uint8_t *input,
-    uint8_t *output,
-    uint16_t *pattern,
-    uint16_t size) {
-  for (int i=0; i<size; i++) {
-    output[pattern[i]]=input[i];
-  }
+										  uint8_t *output,
+										  uint16_t *pattern,
+										  uint16_t size) {
+	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
 }
 
 #endif
