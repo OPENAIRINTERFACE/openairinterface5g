@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
 		case 'f':
 			write_output_file = 1;
@@ -314,6 +314,10 @@ int main(int argc, char **argv) {
 				printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
 
 			break;
+
+		case 'L':
+		  loglvl = atoi(optarg);
+		  break;
 
 		case 'm':
 			Imcs = atoi(optarg);
@@ -489,9 +493,9 @@ int main(int argc, char **argv) {
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;
-	//unsigned char *estimated_output = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	unsigned char *estimated_output_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	unsigned char *test_input_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char *estimated_output;
+	unsigned char *estimated_output_bit;
+	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -510,7 +514,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
-	//estimated_output = harq_process->b;
+	estimated_output = harq_process->b;
 
 #ifdef DEBUG_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);

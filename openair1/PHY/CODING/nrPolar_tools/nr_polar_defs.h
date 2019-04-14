@@ -59,6 +59,8 @@ static const uint8_t nr_polar_subblock_interleaver_pattern[32] = {0,1,2,4,3,5,6,
 #define Nmax 1024
 #define nmax 10
 
+#define uint128_t __uint128_t
+
 typedef struct decoder_node_t_s {
   struct decoder_node_t_s *left;
   struct decoder_node_t_s *right;

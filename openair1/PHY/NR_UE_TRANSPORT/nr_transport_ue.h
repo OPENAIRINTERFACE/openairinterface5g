@@ -277,7 +277,7 @@ typedef struct {
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// LDPC processing buffers

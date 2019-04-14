@@ -82,10 +82,10 @@ typedef struct {
 #define DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH    0x34
 #define DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH    0x35
 #define DL_SCH_LCID_APERIODIC_CSI_TRI_STATE_SUBSEL 0x36
-#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0x37
-#define DL_SCH_LCID_DUPLICATION_ACT                0x38
-#define DL_SCH_LCID_SCell_ACT_4_OCT                0x39
-#define DL_SCH_LCID_SCell_ACT_1_OCT                0x3A
+#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0X37 
+#define DL_SCH_LCID_DUPLICATION_ACT                0X38
+#define DL_SCH_LCID_SCell_ACT_4_OCT                0X39
+#define DL_SCH_LCID_SCell_ACT_1_OCT                0X3A
 #define DL_SCH_LCID_L_DRX                          0x3B
 #define DL_SCH_LCID_DRX                            0x3C
 #define DL_SCH_LCID_TA_COMMAND                     0x3D

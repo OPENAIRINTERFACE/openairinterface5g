@@ -88,7 +88,7 @@ uint32_t nr_polar_output_length(uint16_t K,
   if (n>n_2) n=n_2;
   if (n<n_min) n=n_min;
 
-  /*  printf("nr_polar_output_length: K %d, E %d, n %d (n_max %d,n_min %d, n_1 %d,n_2 %d)\n",
+  /*printf("nr_polar_output_length: K %d, E %d, n %d (n_max %d,n_min %d, n_1 %d,n_2 %d)\n",
 	 K,E,n,n_max,n_min,n_1,n_2);
 	 exit(-1);*/
   return ((uint32_t) pow(2.0,n)); //=polar_code_output_length

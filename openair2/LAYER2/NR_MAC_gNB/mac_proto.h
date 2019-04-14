@@ -36,29 +36,13 @@
 
 void mac_top_init_gNB(void);
 
-uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
-
-uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
-
-void config_nr_mib(int Mod_idP,
-                int CC_idP,
-                int p_gNBP,
-                int subCarrierSpacingCommon,
-                uint32_t ssb_SubcarrierOffset,
-                int dmrs_TypeA_Position,
-                uint32_t pdcch_ConfigSIB1,
-                int cellBarred,
-                int intraFreqReselection
-                );
-
 void config_common(int Mod_idP,
                    int CC_idP,
 				   int Nid_cell,
                    int nr_bandP,
 				   uint64_t ssb_pattern,
                    uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-				   );
+                   uint32_t dl_BandwidthP);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
@@ -135,5 +119,15 @@ void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *c
 uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
+
+void config_nr_mib(int Mod_idP, 
+                int CC_idP,
+                int p_gNBP,
+                int subCarrierSpacingCommon, 
+                uint32_t ssb_SubcarrierOffset,
+                int dmrs_TypeA_Position,
+                uint32_t pdcch_ConfigSIB1,
+                int cellBarred,
+                int intraFreqReselection);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

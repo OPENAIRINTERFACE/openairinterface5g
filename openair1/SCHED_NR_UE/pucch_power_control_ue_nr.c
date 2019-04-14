@@ -34,8 +34,6 @@
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
 #include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
 
-int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
-
 /**************** defines **************************************/
 
 /**************** variables **************************************/
@@ -149,7 +147,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_pro
     }
   }
 
-  //int l = 0;
+  int l = 0;
   int k2;
 
   if (power_config->twoPUCCH_PC_AdjustmentStates > 1) {

@@ -43,16 +43,17 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-//openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h
 
 #include "SCHED_NR/sched_nr.h"
-#include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "SCHED_NR_UE/defs.h"
+#include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
@@ -86,7 +87,7 @@ int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
-int8_t dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
+int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
@@ -120,46 +121,47 @@ void config_common(int Mod_idP,
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
-short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 
 int main(int argc, char **argv)
 {
 
   char c;
-  int i,aa;
+
+  int i,l,aa;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  //double iqim = 0.0;
-  //unsigned char pbch_pdu[6];
+  double iqim = 0.0;
+  unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
   //int result;
-  //  int freq_offset, subframe_offset;
+  int freq_offset;
+  //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors=0;
-  //int n_errors2=0,n_alamouti=0;
+  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
-  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  //char input_val_str[50],input_val_str2[50];
+  char input_val_str[50],input_val_str2[50];
 
-  //uint8_t frame_mod4, num_pdcch_symbols = 0;
+  uint8_t frame_mod4,num_pdcch_symbols = 0;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  //double pbch_sinr;
-  //int pbch_tx_ant;
+  double pbch_sinr;
+  int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
   uint64_t ssb_pattern = 0x01;
@@ -532,7 +534,7 @@ int main(int argc, char **argv)
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   
 
-  //mac->if_module = nr_ue_if_module_init(0);
+  UE_mac->if_module = nr_ue_if_module_init(0);
 
   
   // generate signal
@@ -619,11 +621,19 @@ int main(int argc, char **argv)
   carrier.sizeof_MIB = do_MIB_NR(&carrier,0,ssb_SubcarrierOffset,pdcch_ConfigSIB1,30,2);
 
   nr_rrc_mac_config_req_ue(0,0,0,carrier.mib.message.choice.mib,NULL,NULL,NULL);
-  fapi_nr_dl_config_request_t dl_config; 
+
+  // Initial bandwidth part configuration -- full carrier bandwidth
+  UE_mac->initial_bwp_dl.bwp_id = 0;
+  UE_mac->initial_bwp_dl.location = 0;
+  UE_mac->initial_bwp_dl.scs = UE->frame_parms.subcarrier_spacing;
+  UE_mac->initial_bwp_dl.N_RB = UE->frame_parms.N_RB_DL;
+  UE_mac->initial_bwp_dl.cyclic_prefix = UE->frame_parms.Ncp;
+  
+  fapi_nr_dl_config_request_t *dl_config = &UE_mac->dl_config_request; 
   //  Type0 PDCCH search space
-  dl_config.number_pdus =  1;
-  dl_config.dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	//	to be set
+  dl_config->number_pdus =  1;
+  dl_config->dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	
   
   uint64_t mask = 0x0;
   uint16_t num_rbs=24;
@@ -634,16 +644,16 @@ int main(int argc, char **argv)
     mask = mask >> 1;
     mask = mask | 0x100000000000;
   }
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.frequency_domain_resource = mask;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.frequency_domain_resource = mask;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 0;   //  L 38.211 7.3.2.2
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 0;  //  R 38.211 7.3.2.2
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 0;   //  L 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 0;  //  R 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
@@ -652,21 +662,29 @@ int main(int argc, char **argv)
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;
   
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[0] = table_38213_10_1_1_c2[0];
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[1] = table_38213_10_1_1_c2[1];
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
 
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = N_RB_DL;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = N_RB_DL;
+
+  UE_mac->scheduled_response.dl_config = dl_config;
+  UE_mac->scheduled_response.ul_config = NULL;
+  UE_mac->scheduled_response.tx_request = NULL;
+  UE_mac->scheduled_response.module_id = 0;
+  UE_mac->scheduled_response.CC_id = 0;
+  UE_mac->scheduled_response.frame = frame;
+  UE_mac->scheduled_response.slot = slot;
 
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    //n_errors2 = 0;
-    //n_alamouti = 0;
+    n_errors2 = 0;
+    n_alamouti = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 
@@ -692,7 +710,8 @@ int main(int argc, char **argv)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
       if (UE->is_synchronized == 0) {
-	ret = nr_initial_sync(UE, normal_txrx);
+	UE_nr_rxtx_proc_t proc={0};
+	ret = nr_initial_sync(&proc, UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
@@ -703,7 +722,6 @@ int main(int argc, char **argv)
 	UE_proc.nr_tti_rx= slot;
 	UE_proc.subframe_rx = slot;
 	
-	UE_mac->scheduled_response.dl_config = &dl_config;
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
 	printf("Running phy procedures UE RX %d.%d\n",frame,slot);

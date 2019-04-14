@@ -36,6 +36,7 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "assertions.h"
+#include <stdint.h>"
 
 //input  [a_31 a_30 ... a_0]
 //output [f_31 f_30 ... f_0] [f_63 f_62 ... f_32] ...
