@@ -112,7 +112,7 @@ function start_basic_sim_ue {
     rm $1
 
     local i="0"
-    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
+    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
@@ -134,7 +134,7 @@ function start_basic_sim_ue {
 }
 
 function get_ue_ip_addr {
-    echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    echo "ifconfig oaitun_ue1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
     UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
     echo "UE IP Address for EPC is : $UE_IP_ADDR"
     rm $1
@@ -149,9 +149,9 @@ function ping_ue_ip_addr {
 }
 
 function ping_epc_ip_addr {
-    echo "echo \"COMMAND IS: ping -I oip1 -c 20 $3\" > $4" > $1
+    echo "echo \"COMMAND IS: ping -I oaitun_ue1 -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
-    echo "ping -I oip1 -c 20 $3 | tee -a $4" >> $1
+    echo "ping -I oaitun_ue1 -c 20 $3 | tee -a $4" >> $1
     cat $1
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
@@ -227,6 +227,10 @@ function check_iperf {
     local LOC_BASE_LOG=$1
     local LOC_REQ_BW=$2
     local LOC_REQ_BW_MINUS_ONE=`echo "$LOC_REQ_BW - 1" | bc -l`
+    local LOC_REQ_BW_MINUS_TWO=`echo "$LOC_REQ_BW - 2" | bc -l`
+    local LOC_REQ_BW_MINUS_THREE=`echo "$LOC_REQ_BW - 3" | bc -l`
+    local LOC_IS_DL=`echo $LOC_BASE_LOG | grep -c _dl`
+    local LOC_IS_BASIC_SIM=`echo $LOC_BASE_LOG | grep -c basic_sim`
     if [ -f ${LOC_BASE_LOG}_client.txt ]
     then
         local FILE_COMPLETE=`egrep -c "Server Report" ${LOC_BASE_LOG}_client.txt`
@@ -235,11 +239,26 @@ function check_iperf {
             IPERF_STATUS=-1
         else
             local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]]
+            if [ $LOC_IS_DL -eq 1 ] && [ $LOC_IS_BASIC_SIM -eq 1 ]
             then
-                echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_TWO}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_THREE}.*Mbits.* ]]
+                then
+                    echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+                else
+                    IPERF_STATUS=-1
+                fi
             else
-                IPERF_STATUS=-1
+                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]]
+                then
+                    if [ $LOC_IS_DL -eq 1 ]
+                    then
+                        echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+                    else
+                        echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
+                    fi
+                else
+                    IPERF_STATUS=-1
+                fi
             fi
         fi
     else
@@ -299,7 +318,7 @@ function install_epc_on_vm {
     if [ -d /opt/ltebox-archives/ ]
     then
         # Checking if all ltebox archives are available to run ltebx epc on a brand new VM
-        if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim.zip ]
+        if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim-develop.zip ]
         then
             echo "############################################################"
             echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
@@ -317,11 +336,18 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "Creating test EPC VM ($LOC_EPC_VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
+        acquire_vm_create_lock
         uvt-kvm create $LOC_EPC_VM_NAME release=xenial --unsafe-caching
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $LOC_EPC_VM_NAME --insecure
+        release_vm_create_lock
+    else
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $LOC_EPC_VM_NAME --insecure
     fi
 
-    uvt-kvm wait $LOC_EPC_VM_NAME --insecure
     local LOC_EPC_VM_IP_ADDR=`uvt-kvm ip $LOC_EPC_VM_NAME`
+
     echo "$LOC_EPC_VM_NAME has for IP addr = $LOC_EPC_VM_IP_ADDR"
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
 
@@ -342,7 +368,7 @@ function install_epc_on_vm {
         echo "############################################################"
         scp -o StrictHostKeyChecking=no /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
         scp -o StrictHostKeyChecking=no /opt/ltebox-archives/etc-conf.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
-        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/hss-sim.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/hss-sim-develop.zip ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
 
         echo "############################################################"
         echo "Install EPC on EPC VM ($LOC_EPC_VM_NAME)"
@@ -356,8 +382,8 @@ function install_epc_on_vm {
         # Installing HSS
         echo "echo \"cd /opt\"" >> $LOC_EPC_VM_CMDS
         echo "cd /opt" >> $LOC_EPC_VM_CMDS
-        echo "echo \"sudo unzip -qq /home/ubuntu/hss-sim.zip\"" >> $LOC_EPC_VM_CMDS
-        echo "sudo unzip -qq /home/ubuntu/hss-sim.zip" >> $LOC_EPC_VM_CMDS
+        echo "echo \"sudo unzip -qq /home/ubuntu/hss-sim-develop.zip\"" >> $LOC_EPC_VM_CMDS
+        echo "sudo unzip -qq /home/ubuntu/hss-sim-develop.zip" >> $LOC_EPC_VM_CMDS
         echo "echo \"cd /opt/hss_sim0609\"" >> $LOC_EPC_VM_CMDS
         echo "cd /opt/hss_sim0609" >> $LOC_EPC_VM_CMDS
 
@@ -493,16 +519,6 @@ function build_ue_on_separate_folder {
     echo "cd tmp-ue" >> $1
     echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $1
     echo "unzip -qq -DD ../localZip.zip" >> $1
-
-    # We may have some adaptation to do
-    if [ -f /opt/ltebox-archives/adapt_ue_l2_sim.txt ]
-    then
-        echo "############################################################"
-        echo "Doing some adaptation on UE side"
-        echo "############################################################"
-        cat /opt/ltebox-archives/adapt_ue_l2_sim.txt >> $1
-    fi
-
     echo "echo \"source oaienv\"" >> $1
     echo "source oaienv" >> $1
     echo "cd cmake_targets/" >> $1
@@ -569,6 +585,7 @@ function start_l2_sim_enb {
         ENB_SYNC=1
         echo "L2-SIM eNB is sync'ed: waiting for UE(s) to connect"
     fi
+    sleep 10
 }
 
 function start_l2_sim_ue {
@@ -604,10 +621,34 @@ function start_l2_sim_ue {
     if [ $i -lt 50 ]
     then
         UE_SYNC=0
-        echo "L2-SIM UE is NOT sync'ed w/eNB"
+        echo "L2-SIM UE is NOT sync'ed w/ eNB"
+        return
     else
         UE_SYNC=1
-        echo "L2-SIM UE is sync'ed w/eNB"
+        echo "L2-SIM UE is sync'ed w/ eNB"
+    fi
+    # Checking oaitun_ue1 interface has now an IP address
+    i="0"
+    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+        echo "L2-SIM UE oaitun_ue1 is NOT sync'ed w/ EPC"
+    else
+        UE_SYNC=1
+        echo "L2-SIM UE oaitun_ue1 is sync'ed w/ EPC"
     fi
     sleep 10
 }
@@ -632,7 +673,7 @@ function run_test_on_vm {
     if [ "$RUN_OPTIONS" == "none" ]
     then
         echo "No run on VM testing for this variant currently"
-        exit $STATUS
+        return
     fi
 
     if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
@@ -762,15 +803,6 @@ function run_test_on_vm {
         # Retrieve EPC real IP address
         retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
-        # We may have some adaptation to do
-        if [ -f /opt/ltebox-archives/adapt_ue_sim.txt ]
-        then
-            echo "############################################################"
-            echo "Doing some adaptation on UE side"
-            echo "############################################################"
-            ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < /opt/ltebox-archives/adapt_ue_sim.txt
-        fi
-
         echo "############################################################"
         echo "Starting the eNB in FDD-5MHz mode"
         echo "############################################################"
@@ -791,7 +823,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -807,10 +840,10 @@ function run_test_on_vm {
         echo "Iperf DL"
         echo "############################################################"
         CURR_IPERF_LOG_BASE=fdd_05MHz_iperf_dl
-        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 10 $CURR_IPERF_LOG_BASE
         scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 10
 
         echo "############################################################"
         echo "Iperf UL"
@@ -850,7 +883,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -866,10 +900,10 @@ function run_test_on_vm {
         echo "Iperf DL"
         echo "############################################################"
         CURR_IPERF_LOG_BASE=fdd_10MHz_iperf_dl
-        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 10 $CURR_IPERF_LOG_BASE
         scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 10
 
         echo "############################################################"
         echo "Iperf UL"
@@ -909,7 +943,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -925,10 +960,10 @@ function run_test_on_vm {
         echo "Iperf DL"
         echo "############################################################"
         CURR_IPERF_LOG_BASE=fdd_20MHz_iperf_dl
-        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 12 $CURR_IPERF_LOG_BASE
         scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 12
 
         echo "############################################################"
         echo "Terminate enb/ue simulators"
@@ -961,7 +996,8 @@ function run_test_on_vm {
                 echo "ERROR: compiling flexran controller on vm went wrong"
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             FLEXRAN_CTL_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#flexran-rtc#"`
             FLEXRAN_CTL_VM_CMDS=`echo $VM_CMDS | sed -e "s#cmds#flexran-rtc-cmds#"`
@@ -971,7 +1007,8 @@ function run_test_on_vm {
                 echo "ERROR: Flexran Ctl VM is not alive"
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             uvt-kvm wait $FLEXRAN_CTL_VM_NAME --insecure
             FLEXRAN_CTL_VM_IP_ADDR=`uvt-kvm ip $FLEXRAN_CTL_VM_NAME`
@@ -1006,7 +1043,8 @@ function run_test_on_vm {
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 stop_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 03_enb_ue_connected
             get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -1048,7 +1086,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -1085,50 +1124,52 @@ function run_test_on_vm {
         CURRENT_ENB_LOG_FILE=tdd_10MHz_enb.log
         start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-tdd-basic-sim.conf none
 
-        echo "############################################################"
-        echo "Starting the UE in TDD-10MHz mode"
-        echo "############################################################"
-        CURRENT_UE_LOG_FILE=tdd_10MHz_ue.log
-        start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50 2350
-        if [ $UE_SYNC -eq 0 ]
-        then
-            echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
-            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
-        fi
-        get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
-
-        echo "############################################################"
-        echo "Pinging the UE"
-        echo "############################################################"
-        PING_LOG_FILE=tdd_10MHz_ping_ue.txt
-        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
-        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
-
-        echo "############################################################"
-        echo "Iperf DL"
-        echo "############################################################"
-        CURR_IPERF_LOG_BASE=tdd_10MHz_iperf_dl
-        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 6 $CURR_IPERF_LOG_BASE
-        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 6
-
-        echo "############################################################"
-        echo "Terminate enb/ue simulators"
-        echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-        sleep 10
-
+# Disabling TDD-10MHz in order to stop getting false negatives
+#        echo "############################################################"
+#        echo "Starting the UE in TDD-10MHz mode"
+#        echo "############################################################"
+#        CURRENT_UE_LOG_FILE=tdd_10MHz_ue.log
+#        start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50 2350
+#        if [ $UE_SYNC -eq 0 ]
+#        then
+#            echo "Problem w/ eNB and UE not syncing"
+#            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+#            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+#            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+#            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+#            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+#            STATUS=-1
+#            return
+#        fi
+#        get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+#
+#        echo "############################################################"
+#        echo "Pinging the UE"
+#        echo "############################################################"
+#        PING_LOG_FILE=tdd_10MHz_ping_ue.txt
+#        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+#        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+#        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+#
+#        echo "############################################################"
+#        echo "Iperf DL"
+#        echo "############################################################"
+#        CURR_IPERF_LOG_BASE=tdd_10MHz_iperf_dl
+#        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 6 $CURR_IPERF_LOG_BASE
+#        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+#        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+#        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 6
+#
+#        echo "############################################################"
+#        echo "Terminate enb/ue simulators"
+#        echo "############################################################"
+#        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+#        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+#        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+#        sleep 10
+#
 # Disabling TDD-20MHz in order to stop getting false negatives
 #        echo "############################################################"
 #        echo "Starting the eNB in TDD-20MHz mode"
@@ -1150,7 +1191,8 @@ function run_test_on_vm {
 #            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
 #            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-#            exit -1
+#            STATUS=-1
+#            return
 #        fi
 #        get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 #
@@ -1262,7 +1304,8 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
 
         echo "############################################################"

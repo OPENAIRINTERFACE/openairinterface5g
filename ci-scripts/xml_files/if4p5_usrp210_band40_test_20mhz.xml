@@ -37,7 +37,7 @@
 		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
-	
+
 	<testCase id="030125">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RCC (TDD/Band40/20MHz/info)</desc>

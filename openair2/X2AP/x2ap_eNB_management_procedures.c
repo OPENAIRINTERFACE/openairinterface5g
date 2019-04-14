@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_management_procedures.c
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -38,7 +45,7 @@
 #  define X2AP_eNB_LIST_OUT(x, args...) X2AP_DEBUG("[eNB]%*s"x"\n", 4*indent, "", ##args)
 #else
 #  define X2AP_eNB_LIST_OUT(x, args...)
-#endif 
+#endif
 
 static int                  indent = 0;
 
@@ -116,7 +123,7 @@ printf("---------------------------------------------\n");
 }
 
 struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
-				     int32_t assoc_id, 
+				     int32_t assoc_id,
 				     uint16_t cnx_id)
 {
   struct x2ap_eNB_data_s  temp;
@@ -162,8 +169,7 @@ x2ap_eNB_instance_t *x2ap_eNB_get_instance(instance_t instance)
   return NULL;
 }
 
-
-/// utility functions 
+/// utility functions
 
 void x2ap_dump_eNB (x2ap_eNB_data_t  * eNB_ref);
 
@@ -172,9 +178,9 @@ x2ap_dump_eNB_list (void) {
    x2ap_eNB_instance_t *inst = NULL;
    struct x2ap_eNB_data_s *found = NULL;
    struct x2ap_eNB_data_s temp;
-  
+
    memset(&temp, 0, sizeof(struct x2ap_eNB_data_s));
-   
+
   STAILQ_FOREACH (inst, &x2ap_eNB_internal_data.x2ap_eNB_instances_head,  x2ap_eNB_entries) {
     found = RB_FIND(x2ap_enb_map, &inst->x2ap_enb_head, &temp);
     x2ap_dump_eNB (found);
@@ -186,12 +192,12 @@ void x2ap_dump_eNB (x2ap_eNB_data_t  * eNB_ref) {
   if (eNB_ref == NULL) {
     return;
   }
-  
+
   X2AP_eNB_LIST_OUT ("");
   X2AP_eNB_LIST_OUT ("eNB name:          %s", eNB_ref->eNB_name == NULL ? "not present" : eNB_ref->eNB_name);
   X2AP_eNB_LIST_OUT ("eNB STATE:         %07x", eNB_ref->state);
   X2AP_eNB_LIST_OUT ("eNB ID:            %07x", eNB_ref->eNB_id);
-  indent++; 
+  indent++;
   X2AP_eNB_LIST_OUT ("SCTP cnx id:     %d", eNB_ref->cnx_id);
   X2AP_eNB_LIST_OUT ("SCTP assoc id:     %d", eNB_ref->assoc_id);
   X2AP_eNB_LIST_OUT ("SCTP instreams:    %d", eNB_ref->in_streams);
@@ -199,6 +205,22 @@ void x2ap_dump_eNB (x2ap_eNB_data_t  * eNB_ref) {
   indent--;
 }
 
+x2ap_eNB_data_t  * x2ap_is_eNB_pci_in_list (const uint32_t pci)
+{
+  x2ap_eNB_instance_t    *inst;
+  struct x2ap_eNB_data_s *elm;
+
+  STAILQ_FOREACH(inst, &x2ap_eNB_internal_data.x2ap_eNB_instances_head, x2ap_eNB_entries) {
+    RB_FOREACH(elm, x2ap_enb_map, &inst->x2ap_enb_head) {
+      for (int i = 0; i<elm->num_cc; i++) {
+        if (elm->Nid_cell[i] == pci) {
+          return elm;
+        }
+      }
+    }
+  }
+  return NULL;
+}
 
 x2ap_eNB_data_t  * x2ap_is_eNB_id_in_list (const uint32_t eNB_id)
 {
@@ -233,4 +255,3 @@ x2ap_eNB_data_t  * x2ap_is_eNB_assoc_id_in_list (const uint32_t sctp_assoc_id)
   }
   return NULL;
 }
-

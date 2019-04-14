@@ -130,6 +130,8 @@ void        check_free_mem_block (mem_block_t * leP);
 #    define MEM_MNGT_MB12_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*4096
 // 262144
 #    define MEM_MNGT_MB12_NB_BLOCKS     32 * MEM_SCALE
+//#    define MEM_MNGT_MB12_NB_BLOCKS     4096 * MEM_SCALE
+
 #    define MEM_MNGT_POOL_ID12          12
 
 

@@ -65,7 +65,7 @@
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
           rLC_Pp->rb_id
 
-#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %"PRIx16" %s %02u]"
+#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02u]"
 #define PROTOCOL_RLC_AM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
         CTXT_Pp->rnti,\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
@@ -79,13 +79,13 @@
 	  if (pmtl_rc != 0){\
         if (pmtl_rc == EBUSY) {\
           MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                       "0 "PROTOCOL_RLC_AM_MSC_FMT" Warning try lock %s busy",\
+                       "0 " PROTOCOL_RLC_AM_MSC_FMT " Warning try lock %s busy",\
                        PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
                        #mUTEX);\
           pthread_mutex_lock(mUTEX);\
         } else {\
             MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-            		"0 "PROTOCOL_RLC_AM_MSC_FMT" Error try lock %s %d",\
+                    "0 " PROTOCOL_RLC_AM_MSC_FMT " Error try lock %s %d",\
                     PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
                     #mUTEX, pmtl_rc);\
         }\

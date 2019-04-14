@@ -145,6 +145,7 @@ extern "C" {
 #define DEBUG_CTRLSOCKET   (1<<10)
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
+#define DEBUG_RLC          (1<<13)
 #define UE_TIMING          (1<<20)
 
 
@@ -162,6 +163,7 @@ extern "C" {
     {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
+    {"RLC",         DEBUG_RLC},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -196,13 +198,13 @@ typedef enum {
   NAS,
   PERF,
   OIP,
-  CLI,
   MSC,
   OCM,
   UDP_,
   GTPU,
   SPGW,
   S1AP,
+  F1AP,
   SCTP,
   HW,
   OSA,
@@ -213,9 +215,13 @@ typedef enum {
   TMR,
   USIM,
   LOCALIZE,
+  PROTO_AGENT,
+  F1U,
   X2AP,
   LOADER,
   ASN,
+  NFAPI_VNF,
+  NFAPI_PNF,
   MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
@@ -284,6 +290,7 @@ extern "C" {
 int  logInit (void);
 int isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
 int  set_log(int component, int level);
 void set_glog(int level);
@@ -345,6 +352,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
   }
 
 #define LOG_OPTIONS_IDX   2
+
+
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro
@@ -361,9 +370,9 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
 #    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0)
 #    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0)
+#    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
-#    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
 /* bitmask dependant macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 

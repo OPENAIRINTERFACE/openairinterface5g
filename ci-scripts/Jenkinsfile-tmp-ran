@@ -115,8 +115,10 @@ pipeline {
                     } else {
                         String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                         for (xmlFile in myXmlTestSuite) {
-                            mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
-                            echo "Test XML file         :   ${xmlFile}"
+                            if (fileExists("ci-scripts/" + xmlFile)) {
+                                mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                                echo "Test XML file         :   ${xmlFile}"
+                            }
                         }
                     }
                     // If not present picking a default Stage Name
@@ -191,6 +193,13 @@ pipeline {
 
                     if (allParametersPresent) {
                         echo "All parameters are present"
+                        if (eNB_AllowMergeRequestProcess) {
+                            sh "git fetch"
+                            sh "./ci-scripts/doGitLabMerge.sh --src-branch ${eNB_Branch} --src-commit ${eNB_CommitID} --target-branch ${eNB_TargetBranch} --target-commit latest"
+                        } else {
+                            sh "git fetch"
+                            sh "git checkout -f ${eNB_CommitID}"
+                        }
                     } else {
                         echo "Some parameters are missing"
                         sh "./ci-scripts/fail.sh"
@@ -211,12 +220,14 @@ pipeline {
                             sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
                             String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                             for (xmlFile in myXmlTestSuite) {
+                            if (fileExists(xmlFile)) {
                                 try {
                                     sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
                                 }
+                            }
                             }
                             sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
                         }

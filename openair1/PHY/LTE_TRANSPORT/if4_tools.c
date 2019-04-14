@@ -145,40 +145,38 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     if (packet_type == IF4p5_PULFFT) {
 
       for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {
-        for (int antenna_id=0;antenna_id<ru->nb_rx;antenna_id++) {
+	uint32_t *rx0 = (uint32_t*) &rxdataF[0][blockoffsetF];
+	uint32_t *rx1 = (uint32_t*) &rxdataF[0][slotoffsetF];
 
-	   uint32_t *rx0 = (uint32_t*) &rxdataF[antenna_id][blockoffsetF];
-	   uint32_t *rx1 = (uint32_t*) &rxdataF[antenna_id][slotoffsetF];
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
 
-	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
-	   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
+	start_meas(&ru->compression);
 
-	   start_meas(&ru->compression);
+	for (element_id=0; element_id<db_halflength; element_id+=8) {
+	  i = (uint16_t*) &rx0[element_id];
 
-	   for (element_id=0; element_id<db_halflength; element_id+=8) {
-	     i = (uint16_t*) &rx0[element_id];
-             d = (uint16_t*) &data_block[element_id];
-             d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
-             d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
-             d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
-             d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
-             d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
-             d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
-             d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
-             d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
+          d = (uint16_t*) &data_block[element_id];
+          d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
+          d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
+          d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
+          d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
+          d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
+          d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
+          d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
+          d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
 
-             i = (uint16_t*) &rx1[element_id];
-             d = (uint16_t*) &data_block[element_id+db_halflength];
-             d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
-             d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
-             d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
-             d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
-             d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
-             d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
-             d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
-             d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
+          i = (uint16_t*) &rx1[element_id];
+          d = (uint16_t*) &data_block[element_id+db_halflength];
+          d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
+          d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
+          d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
+          d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
+          d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
+          d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
+          d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
+          d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
 
-          }
         }
         stop_meas(&ru->compression);
         //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	

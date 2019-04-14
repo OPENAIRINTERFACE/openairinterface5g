@@ -790,9 +790,9 @@ int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
 	goto error;
       }
       // Check what key needs to be set
-      if (mac_agent_registered[mod_id]) {
+      if (flexran_agent_get_mac_xface(mod_id)) {
 	LOG_D(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
-	param = dlsym(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib,
+	param = dlsym(flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib,
 		      (char *) event.data.scalar.value);
 	if (param == NULL) {
 	  goto error;
@@ -845,9 +845,9 @@ int parse_ul_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
   goto error;
       }
       // Check what key needs to be set
-      if (mac_agent_registered[mod_id]) {
+      if (flexran_agent_get_mac_xface(mod_id)) {
   LOG_D(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
-  param = dlsym(agent_mac_xface[mod_id]->ul_scheduler_loaded_lib,
+        param = dlsym(flexran_agent_get_mac_xface(mod_id)->ul_scheduler_loaded_lib,
           (char *) event.data.scalar.value);
   if (param == NULL) {
     goto error;
@@ -891,11 +891,11 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   LOG_I(FLEXRAN_AGENT, "Loading function: %s\n", function_name);
   void *loaded_scheduler = dlsym(lib, function_name);
   if (loaded_scheduler) {
-    if (mac_agent_registered[mod_id]) {
-      if (agent_mac_xface[mod_id]->dl_scheduler_loaded_lib != NULL) {
-	dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
+    if (flexran_agent_get_mac_xface(mod_id)) {
+      if (flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib != NULL) {
+        dlclose(flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib);
       }
-      agent_mac_xface[mod_id]->dl_scheduler_loaded_lib = lib;
+      flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib = lib;
       LOG_I(FLEXRAN_AGENT, "New DL UE scheduler: %s\n", function_name);
     }
   } else {

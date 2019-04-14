@@ -139,6 +139,14 @@ function report_test {
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./test_simulator_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Commit Message</td>" >> ./test_simulator_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
+        fi
     fi
     if [ $MR_TRIG -eq 1 ]
     then
@@ -150,6 +158,14 @@ function report_test {
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./test_simulator_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Commit Message</td>" >> ./test_simulator_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
+        fi
         echo "      <tr>" >> ./test_simulator_results.html
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./test_simulator_results.html
         echo "        <td>$TARGET_BRANCH</td>" >> ./test_simulator_results.html
@@ -361,7 +377,7 @@ function report_test {
                         fi
                         PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
                         PERF_INT=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.0f", $0}'`
-                        if [[ $PERF_INT -lt 90 ]]
+                        if [[ $PERF_INT -lt 70 ]]
                         then
                             echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                         else

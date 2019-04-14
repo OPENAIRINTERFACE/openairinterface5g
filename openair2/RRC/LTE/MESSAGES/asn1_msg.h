@@ -64,18 +64,30 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 @param phich_duration PHICH duration parameter
 @param frame radio frame number
 @return size of encoded bit stream in bytes*/
-uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame);
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+	       , uint32_t schedulingInfoSIB1
+#endif
+	       );
 
 /**
 \brief Generate configuration for SIB1 (eNB).
 @param carrier pointer to Carrier information
 @param Mod_id Instance of eNB
 @param Component carrier Component carrier to configure
-@param configuration Pointer Configuration Request structure
+@param configuration Pointer Configuration Request structure  
+@param br_flag Do for BL/CE UE configuration
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+                , BOOLEAN_t brOption
+#endif
+#if defined(ENABLE_ITTI)
+                ,RrcConfigurationReq *configuration
+#endif
                );
+
 
 /**
 \brief Generate a default configuration for SIB2/SIB3 in one System Information PDU (eNB).
@@ -90,6 +102,9 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigu
 
 uint8_t do_SIB23(uint8_t Mod_id,
                  int CC_id
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+		 , BOOLEAN_t brOption
+#endif
 #if defined(ENABLE_ITTI)
   , RrcConfigurationReq *configuration
 #endif
@@ -152,7 +167,47 @@ do_RRCConnectionSetup(
   LTE_SRB_ToAddModList_t             **SRB_configList,
   struct LTE_PhysicalConfigDedicated **physicalConfigDedicated
 );
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+uint8_t
+do_RRCConnectionSetup_BR(
+	const protocol_ctxt_t*     const ctxt_pP,
+	rrc_eNB_ue_context_t*      const ue_context_pP,
+	int                              CC_id,
+	uint8_t*                   const buffer,
+	const uint8_t                    transmission_mode,
+	const uint8_t                    Transaction_id,
+	LTE_SRB_ToAddModList_t**             SRB_configList,
+	struct LTE_PhysicalConfigDedicated** physicalConfigDedicated
+);
+#endif
 
+
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+uint16_t
+do_RRCConnectionReconfiguration_BR(
+                   const protocol_ctxt_t*        const ctxt_pP,
+                   uint8_t                            *buffer,
+                   uint8_t                             Transaction_id,
+                   LTE_SRB_ToAddModList_t                 *SRB_list,
+                   LTE_DRB_ToAddModList_t                 *DRB_list,
+                   LTE_DRB_ToReleaseList_t                *DRB_list2,
+                   struct LTE_SPS_Config                  *sps_Config,
+                   struct LTE_PhysicalConfigDedicated     *physicalConfigDedicated,
+                   LTE_MeasObjectToAddModList_t           *MeasObj_list,
+                   LTE_ReportConfigToAddModList_t         *ReportConfig_list,
+                   LTE_QuantityConfig_t                   *quantityConfig,
+                   LTE_MeasIdToAddModList_t               *MeasId_list,
+                   LTE_MAC_MainConfig_t                   *mac_MainConfig,
+                   LTE_MeasGapConfig_t                    *measGapConfig,
+                   LTE_MobilityControlInfo_t              *mobilityInfo,
+                   struct LTE_MeasConfig__speedStatePars  *speedStatePars,
+                   LTE_RSRP_Range_t                       *rsrp,
+                   LTE_C_RNTI_t                           *cba_rnti,
+                   struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList,
+                   LTE_SCellToAddMod_r10_t  *SCell_config
+                   );
+#endif
 /**
 \brief Generate an RRCConnectionReconfiguration DL-DCCH-Message (eNB).  This routine configures SRBToAddMod (SRB2) and one DRBToAddMod
 (DRB3).  PhysicalConfigDedicated is not updated.
@@ -192,6 +247,7 @@ do_RRCConnectionReconfiguration(
   LTE_MAC_MainConfig_t                   *mac_MainConfig,
   LTE_MeasGapConfig_t                    *measGapConfig,
   LTE_MobilityControlInfo_t              *mobilityInfo,
+  LTE_SecurityConfigHO_t                 *securityConfigHO,
   struct LTE_MeasConfig__speedStatePars  *speedStatePars,
   LTE_RSRP_Range_t                       *rsrp,
   LTE_C_RNTI_t                           *cba_rnti,
@@ -281,6 +337,10 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
 uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+int do_HandoverPreparation(char *ho_buf, int ho_size, LTE_UE_EUTRA_Capability_t *ue_eutra_cap, int rrc_size);
+
+int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size);
 
 OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
 

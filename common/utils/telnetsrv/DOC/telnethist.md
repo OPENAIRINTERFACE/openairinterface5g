@@ -40,5 +40,5 @@ softmodem>
 
 ```
 
-[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver home](telnetsrv.md)
 [oai telnetserver usage home](telnetusage.md)

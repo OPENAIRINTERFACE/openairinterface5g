@@ -39,6 +39,8 @@
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_lte.h"
+
+#include "ENB_APP/enb_config.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "flexran_agent_defs.h"
 
@@ -49,7 +51,11 @@
 #include "gtpv1u_eNB_defs.h"
 
 #include "PHY/defs_L1_NB_IoT.h"
+
 #include "RRC/LTE/defs_NB_IoT.h"
+
+
+
 typedef struct {
   /// RAN context config file name
   char *config_file_name;

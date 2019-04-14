@@ -39,10 +39,8 @@
 #include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
 #include "platform_types.h"
-
-#if defined(ENABLE_USE_MME)
 # include "s1ap_eNB.h"
-#endif
+
 
 #ifdef __cplusplus
 extern "C"
@@ -135,8 +133,7 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  * \enddot
  */
 
-enum
-{
+enum {
   STATE_START_OCG,    /*!< \brief initiate OCG */
   STATE_GET_OPT,    /*!< \brief get options of OCG command */
   STATE_DETECT_FILE,    /*!< \brief detect the configuration file in folder USER_XML_FOLDER */
@@ -571,7 +568,7 @@ typedef struct {
 } Layer;
 
 typedef struct {
-  char * level;
+  char *level;
   char *verbosity;
   int interval;
 } Log_Emu;
@@ -598,8 +595,8 @@ typedef struct {
   Log_Emu log_emu;
   Packet_Trace packet_trace;
   Seed seed;
-  char * curve;
-  char * background_stats;
+  char *curve;
+  char *background_stats;
   // CLI tags are in Info
   //char g_log_level[20];
 } Emulation_Config;
@@ -677,7 +674,7 @@ typedef struct {
   unsigned char cba_group_active;
   unsigned char cba_backoff;
   unsigned char handover_active;
-  char * otg_traffic;
+  char *otg_traffic;
   unsigned char otg_bg_traffic_enabled;
   unsigned char omg_model_rn;
   unsigned char omg_model_enb;
@@ -705,7 +702,7 @@ typedef struct {
   node_function_t node_function[MAX_NUM_CCs];
   node_timing_t node_timing[MAX_NUM_CCs];
   unsigned char frame_type[MAX_NUM_CCs]; //! LTE frame type (TDD=1, FDD=0). \note this should be converted to \ref lte_frame_type_t (header file reorganization needed)
-  char * frame_type_name[MAX_NUM_CCs];
+  char *frame_type_name[MAX_NUM_CCs];
   unsigned char tdd_config[MAX_NUM_CCs];
   unsigned char tdd_config_S[MAX_NUM_CCs];
   unsigned char extended_prefix_flag[MAX_NUM_CCs];
@@ -713,10 +710,7 @@ typedef struct {
   unsigned char transmission_mode[MAX_NUM_CCs];
   int max_predefined_traffic_config_index;
   int max_customized_traffic_config_index;
-
-#if defined(ENABLE_USE_MME)
   s1ap_eNB_config_t s1ap_config;
-#endif
 
   /* Per-Slot ISR
    * Interval between two ISR = 500usec

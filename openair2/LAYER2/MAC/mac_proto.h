@@ -113,6 +113,12 @@ void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
 			 unsigned char sched_subframe,
 			 uint16_t * first_rb);
 
+void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
+			      frame_t       frameP,
+			      sub_frame_t   subframeP,
+			      unsigned char sched_subframeP,
+			      int          *emtc_active);
+
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
 @param frame Frame index
@@ -133,7 +139,9 @@ void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 
 void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
-
+void schedule_ue_spec_br(module_id_t   module_idP,
+			 frame_t       frameP,
+			 sub_frame_t   subframeP);
 void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
@@ -433,7 +441,7 @@ void init_ue_sched_info(void);
 void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id,
 		       sub_frame_t subframe, UE_ULSCH_STATUS status);
 void add_ue_dlsch_info(module_id_t module_idP, int CC_id, int UE_id,
-		       sub_frame_t subframe, UE_DLSCH_STATUS status);
+		                   sub_frame_t subframe, UE_DLSCH_STATUS status, rnti_t rnti);
 int find_UE_id(module_id_t module_idP, rnti_t rnti);
 int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t UE_RNTI(module_id_t module_idP, int UE_id);
@@ -444,7 +452,7 @@ uint8_t get_aggregation(uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 
-void init_CCE_table(int module_idP, int CC_idP);
+void init_CCE_table(int *CCE_table);
 
 int get_nCCE_offset(int *CCE_table,
 		    const unsigned char L,
@@ -726,7 +734,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int fr
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
-void sort_ue_ul(module_id_t module_idP, int frameP, sub_frame_t subframeP);
+void sort_ue_ul(module_id_t module_idP, int slice_idx, int frameP, sub_frame_t subframeP, rnti_t *rntiTable);
 void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
@@ -1202,7 +1210,6 @@ void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 void fill_nfapi_harq_information(module_id_t module_idP,
 				 int CC_idP,
 				 uint16_t rntiP,
-				 uint16_t absSFP,
 				 nfapi_ul_config_harq_information *
 				 harq_information, uint8_t cce_idxP);
 
@@ -1214,9 +1221,10 @@ void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 				       sub_frame_t subframeP);
 
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
-			       int CC_idP,
-			       uint16_t rntiP,
-			       uint16_t absSFP, uint8_t cce_idxP);
+							int CC_idP,
+							uint16_t rntiP,
+							uint16_t absSFP,
+							uint8_t cce_idxP);
 
 void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t * dl_config_pdu,
 			  uint8_t aggregation_level,

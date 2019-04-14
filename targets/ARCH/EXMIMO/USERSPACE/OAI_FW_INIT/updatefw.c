@@ -211,22 +211,25 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
   int nbread;
   unsigned int secnb = 0;
 
+  if(p_elfimage == NULL) {
+    fprintf(stderr, "%s %d:Error, firmware file not opened\n",__FILE__,__LINE__);
+  }
   for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
     get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
 
     if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, section_name)) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
-        printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
+        printf("Info: ok, found section %s (as section nb. %u)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
 
       /* Check that section size is a multiple of 4 bytes. */
       if (elf_Shdr.sh_size % 4) {
-        fprintf(stderr, "Error: section %s has a non-multiple-of-4-bytes size (%d).\n",
-                SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
+        fprintf(stderr, "Error: section %s has a non-multiple-of-4-bytes size (%lu).\n",
+                SecNameStnTable + elf_Shdr.sh_name, (unsigned long)elf_Shdr.sh_size);
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS) {
-        printf("Info: ok, section %s has size %d bytes (multiple of 4 bytes).\n",
-               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
+        printf("Info: ok, section %s has size %lu bytes (multiple of 4 bytes).\n",
+               SecNameStnTable + elf_Shdr.sh_name, (unsigned long)elf_Shdr.sh_size);
       }
 
       /* Dynamically allocate a chunk of memory to store the section into. */
@@ -245,13 +248,13 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
       }
 
       if (!section_content) {
-        fprintf(stderr, "Error: could not dynamically allocate %d bytes for section %s.\n",
-                elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
+        fprintf(stderr, "Error: could not dynamically allocate %lu bytes for section %s.\n",
+                (unsigned long)elf_Shdr.sh_size, (SecNameStnTable + elf_Shdr.sh_name));
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-        printf("Info: ok, dynamically allocated a %d bytes buffer for section %s.\n",
-               elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
+        printf("Info: ok, dynamically allocated a %lu bytes buffer for section %s.\n",
+               (unsigned long)elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
       }
 
       /* Position the file cursor at the begining of proper section. */
@@ -260,13 +263,13 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
       nbread = fread(section_content, elf_Shdr.sh_size, 1, p_elfimage);
 
       if (nbread != 1) {
-        fprintf(stderr, "Error: could not read %d bytes from ELF file into dynamic buffer.\n", elf_Shdr.sh_size);
+        fprintf(stderr, "Error: could not read %lu bytes from ELF file into dynamic buffer.\n", (unsigned long)elf_Shdr.sh_size);
         free(section_content);
         fclose(p_elfimage);
         exit(-1);
       } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
-        printf("Info: ok, copied content of section %s into dynamic buffer (%d bytes copied).\n",
-               SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
+        printf("Info: ok, copied content of section %s into dynamic buffer (%lu bytes copied).\n",
+               SecNameStnTable + elf_Shdr.sh_name, (unsigned long)elf_Shdr.sh_size);
       }
 
       /* Open the special device file. */
@@ -324,12 +327,15 @@ void find_and_clear_section_bss(unsigned int verboselevel) {
   int ifile;
   unsigned int secnb = 0;
 
+  if(p_elfimage == NULL) {
+    fprintf(stderr, "%s %d:Error, firmware file not opened\n",__FILE__,__LINE__);
+  }
   for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
     get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
 
     if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, ".bss")) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
-        printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
+        printf("Info: ok, found section %s (as section nb. %u)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
 
       /* Open the special device file. */
       if (!pflag) {
@@ -491,6 +497,10 @@ int main(int argc, char** argv) {
 
   /* Open firmware file in READ_ONLY mode. */
   filename = p_str_fwn;
+  if (filename == NULL) {
+     fprintf(stderr, "%s %d: No filename specified\n", __FILE__, __LINE__);
+     exit(-1);
+  }
   p_elfimage = fopen(filename, READ_FILE_MODE);
 
   if (p_elfimage == NULL) {
@@ -505,6 +515,7 @@ int main(int argc, char** argv) {
   /* Get informations from header file */
   if (!(get_elf_header(&elf_Ehdr, p_elfimage))) {
     fprintf(stderr, "Error : file doesn't match expected format.\n");
+    fclose(p_elfimage);
     exit(-1);
   }
 
@@ -522,9 +533,10 @@ int main(int argc, char** argv) {
 
   /* copy the string table into global variable */
   if (StringSec_size > MAX_SIZE_STRING_TABLE) {
-    fprintf(stderr, "Error: section name string table too big (%d > %d);"
+    fprintf(stderr, "Error: section name string table too big (%ld > %d);"
             " increase max. allowed value in source code and recompile\n",
             StringSec_size, MAX_SIZE_STRING_TABLE);
+    fclose(p_elfimage);
     exit(-1);
   }
 
@@ -626,7 +638,7 @@ int main(int argc, char** argv) {
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #5 (Jump to firmware/set stack-pointer).\n");
 
   if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
-    printf("Info: Firmware entry point = 0x%08x, setting stack pointer = 0x%08x.\n", elf_Ehdr.e_entry, stackpointer);
+    printf("Info: Firmware entry point = 0x%08x, setting stack pointer = 0x%08x.\n", (unsigned int)elf_Ehdr.e_entry, stackpointer);
 
   /* Open the special device file. */
   if (!pflag) {

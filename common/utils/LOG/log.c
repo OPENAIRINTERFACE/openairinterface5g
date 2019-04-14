@@ -219,7 +219,6 @@ void  log_getconfig(log_t *g_log) {
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_debug[sizeof(log_maskmap)/sizeof(mapping)];
   paramdef_t logparams_dump[sizeof(log_maskmap)/sizeof(mapping)];
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
 
   if (ret <0) {
@@ -304,9 +303,9 @@ void  log_getconfig(log_t *g_log) {
     logparams_dump[i].numelt      = 0;
   }
 
-  config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
-  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
-  config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
+  config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
+  config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
+  config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX);
 
   /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {
@@ -386,7 +385,6 @@ int logInit (void) {
   register_log_component("OCG","",OCG);
   register_log_component("PERF","",PERF);
   register_log_component("OIP","",OIP);
-  register_log_component("CLI","",CLI);
   register_log_component("MSC","log",MSC);
   register_log_component("OCM","log",OCM);
   register_log_component("HW","",HW);
@@ -395,20 +393,25 @@ int logInit (void) {
   register_log_component("mRAL","",RAL_UE);
   register_log_component("ENB_APP","log",ENB_APP);
   register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT);
+  register_log_component("PROTO_AGENT","log",PROTO_AGENT);
   register_log_component("TMR","",TMR);
   register_log_component("USIM","txt",USIM);
   register_log_component("SIM","txt",SIM);
+  /* following log component are used for the localization*/
   /* following log component are used for the localization*/
   register_log_component("LOCALIZE","log",LOCALIZE);
   register_log_component("NAS","log",NAS);
   register_log_component("UDP","",UDP_);
   register_log_component("GTPV1U","",GTPU);
   register_log_component("S1AP","",S1AP);
+  register_log_component("F1AP","",F1AP);
   register_log_component("X2AP","",X2AP);
   register_log_component("SCTP","",SCTP);
   register_log_component("X2AP","",X2AP);
   register_log_component("LOADER","log",LOADER);
   register_log_component("ASN","log",ASN);
+  register_log_component("NFAPI_PNF","log",NFAPI_PNF);
+  register_log_component("NFAPI_VNF","log",NFAPI_VNF);
 
   for (int i=0 ; log_level_names[i].name != NULL ; i++)
     g_log->level2string[i]           = toupper(log_level_names[i].name[0]); // uppercased first letter of level name
@@ -439,7 +442,7 @@ char *log_getthreadname(char *threadname, int bufsize) {
 
 static int log_header(char *log_buffer, int buffsize, int comp, int level,const char *format) {
   char threadname[PR_SET_NAME];
-  return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s%s",
+  return  snprintf(log_buffer, buffsize, "%s%s[%s]%c %s %s%s",
                    log_level_highlight_end[level],
                    ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
                    g_log->log_component[comp].name,
@@ -453,9 +456,15 @@ void logRecord_mt(const char *file, const char *func, int line, int comp, int le
   char log_buffer[MAX_LOG_TOTAL];
   va_list args;
   va_start(args, format);
-  log_header(log_buffer,MAX_LOG_TOTAL ,comp, level,format);
+  log_header(log_buffer,MAX_LOG_TOTAL,comp, level,format);
   g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer, args);
   va_end(args);
+}
+
+void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args ) {
+  char log_buffer[MAX_LOG_TOTAL];
+  log_header(log_buffer,MAX_LOG_TOTAL,comp, level,format);
+  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer, args);
 }
 
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... ) {
@@ -475,7 +484,7 @@ void log_dump(int component, void *buffer, int buffsize,int datatype, const char
 
   if (wbuf != NULL) {
     va_start(args, format);
-    int pos=log_header(wbuf,MAX_LOG_TOTAL ,component, OAILOG_INFO,"");
+    int pos=log_header(wbuf,MAX_LOG_TOTAL,component, OAILOG_INFO,"");
     int pos2=vsprintf(wbuf+pos,format, args);
     pos=pos+pos2;
     va_end(args);

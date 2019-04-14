@@ -32,7 +32,7 @@ extern uint32_t g_log_level;
     {                                                                   \
       char _logStr[1024];                                               \
       snprintf(_logStr, 1024, __VA_ARGS__);                             \
-      printf("NWGTPv2U-APP  %s - %s <%s,%u>\n", gLogLevelStr[_logLevel], _logStr, basename(__FILE__), __LINE__);\
+      printf("NWGTPv2U-APP  %s - %s <%s,%d>\n", gLogLevelStr[_logLevel], _logStr, basename(__FILE__), __LINE__);\
     }                                                                   \
   } while(0)
 

@@ -8,7 +8,8 @@
    5. [eNB RRC Layer](#enb-rrc-layer)
    6. [eNB X2AP](#enb-x2ap)
    7. [eNB Advanced Features](#enb-advanced-features)
-2. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
+2. [OpenAirInterface Functional Split](#openairinterface-functional-split)
+3. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
    1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
    2.  [LTE UE MAC Layer](#lte-ue-mac-layer)
    3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
@@ -123,10 +124,28 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
 
  - X2 Setup Request
  - X2 Setup Response 
+ - X2 Setup Failure
+ - Handover Request 
+ - Handover Request Acknowledge
+ - UE Context Release
+ - X2 timers (t_reloc_prep, tx2_reloc_overall)
+ - Handover Cancel
 
 ## eNB Advanced Features ##
 
 **To be completed**
+
+# OpenAirInterface Functional Split #
+
+-  RCC: Radio-Cloud Center
+-  RAU: Radio-Access Unit
+-  RRU: Remote Radio-Unit
+
+![Functional Split Architecture](./oai_lte_enb_func_split_arch.png)
+
+-  IF4.5 / IF5 : similar to IEEE P1914.1
+-  FAPI (IF2)  : specified by Small Cell Forum (open-nFAPI implementation)
+-  IF1         : F1 in 3GPP Release 15 (not implemented yet)
 
 # OpenAirInterface UE Feature Set #
 
@@ -169,3 +188,17 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 - System Information decoding
 - RRC connection establishment
+
+## LTE UE NAS Layer ##
+
+The NAS layer is based on **3GPP 24.301** and implements the following functions:
+
+- EMM attach/detach, authentication, tracking area update, and more
+- ESM default/dedicated bearer, PDN connectivity, and more
+
+[oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
+
+[oai softmodem build procedure](BUILD.md)
+
+[running the oai softmodem ](RUNMODEM.md)
+

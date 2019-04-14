@@ -35,13 +35,11 @@
 
 void output_log_mem(void);
 #define _Assert_Exit_                           \
-{                                               \
     fprintf(stderr, "\nExiting execution\n");   \
     display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
     exit(EXIT_FAILURE);                         \
-}
 
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \

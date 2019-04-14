@@ -4,15 +4,15 @@ The oai telnet server is implemented in a shared library to be loaded by the [oa
 
 Currently the telnet server only supports one user connection. The same dedicated thread is used to wait for a user connection and process the input received from this connection.
 
-The telnet server provides an API which can be used by any oai component to add new CLI commands to the server. A pre-defined  command can be used to get or set a list of variables. 
+The telnet server provides an API which can be used by any oai component to add new CLI commands to the server. A pre-defined  command can be used to get or set a list of variables.
 
 
- 
+
 # telnet server source files
 
 telnet server source files are located in [common/utils/telnetsrv](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv)
 
-1. [telnetsrv.c](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv/telnetsrv.c) contains the telnet server implementation, including the implementation of the telnet CLI command. 
+1. [telnetsrv.c](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv/telnetsrv.c) contains the telnet server implementation, including the implementation of the telnet CLI command.
 1.  [telnetsrv.h](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv/telnetsrv.h) is the telnet server include file containing both private and public data type definitions. It also contains API prototypes for functions that are used to register a new command in the server.
 1.  `telnetsrv\_\<XXX\>.c`: implementation of \<XXX\> CLI command which are delivered with the telnet server.
 1.  `telnetsrv\_\<XXX\>.h`: include file for the implementation of XXX CLI command. Usually included only in the corresponding `.c`file

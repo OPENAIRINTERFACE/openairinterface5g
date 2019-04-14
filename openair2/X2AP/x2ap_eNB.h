@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB.h
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -38,6 +45,8 @@ int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
                         uint32_t enb_port_for_X2C);
 
 void *x2ap_task(void *arg);
+
+int is_x2ap_enabled(void);
 
 #endif /* X2AP_H_ */
 

@@ -195,7 +195,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
 
   // Initialization
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    dlsch_ue_max_num[CC_id] = (uint16_t)RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
+    dlsch_ue_max_num[CC_id] = (uint16_t)RC.rrc[module_idP]->configuration.radioresourceconfig[CC_id].ue_multiple_max;
     // save origin DL PDU number
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
     saved_dlsch_dci[CC_id] = DL_req->number_pdu;
@@ -295,7 +295,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -418,7 +419,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -541,7 +543,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -810,7 +813,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
   unsigned char ta_len = 0;
   unsigned char sdu_lcids[NB_RB_MAX], lcid, offset, num_sdus = 0;
   uint16_t nb_rb, nb_rb_temp, nb_available_rb;
-  uint16_t TBS, j, sdu_lengths[NB_RB_MAX], rnti, padding = 0, post_padding = 0;
+  uint16_t TBS, j, sdu_lengths[NB_RB_MAX], padding = 0, post_padding = 0;
+  rnti_t rnti = 0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char round = 0;
   unsigned char harq_pid = 0;
@@ -837,6 +841,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 #ifdef DEBUG_eNB_SCHEDULER
   int k;
 #endif
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -1013,7 +1018,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       }
 
-      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;  //cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+      //eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
       // store stats
       //UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->dl_cqi;
@@ -1215,8 +1220,11 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           }
 
           add_ue_dlsch_info(module_idP,
-                            CC_id, UE_id, subframeP,
-                            S_DL_SCHEDULED);
+                            CC_id,
+                            UE_id,
+                            subframeP,
+                            S_DL_SCHEDULED,
+                            rnti);
           //eNB_UE_stats->dlsch_trials[round]++;
           UE_list->eNB_UE_stats[CC_id][UE_id].
           num_retransmission += 1;
@@ -1444,7 +1452,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                             MBMS_FLAG_NO,
                                             lcid,
                                             TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                             , 0, 0
 #endif
                                            );
@@ -1465,7 +1473,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                       lcid,
                                       TBS,  //not used
                                       (char *)&dlsch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                       , 0, 0
 #endif
                                                       );
@@ -1678,10 +1686,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
           if (opt_enabled == 1) {
             trace_pdu(DIRECTION_DOWNLINK, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                      TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP,UE_id),
+                      TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP, UE_id),
                       eNB->frame, eNB->subframe,0,0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-                  module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
+                  module_idP, CC_id, frameP, UE_RNTI(module_idP, UE_id), TBS);
           }
 
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
@@ -1691,7 +1699,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_SCHEDULED);
+                            S_DL_SCHEDULED,
+                            rnti);
           // store stats
           eNB->eNB_stats[CC_id].dlsch_bytes_tx+=sdu_length_total;
           eNB->eNB_stats[CC_id].dlsch_pdus_tx+=1;
@@ -1972,7 +1981,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     //save ulsch dci number
     saved_ulsch_dci[CC_id] = eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_dci;
     // maximum multiplicity number
-    ulsch_ue_max_num[CC_id] =RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
+    ulsch_ue_max_num[CC_id] =RC.rrc[module_idP]->configuration.radioresourceconfig[CC_id].ue_multiple_max;
     cc_id_flag[CC_id] = 0;
     ue_first_num[CC_id] = 0;
     ul_inactivity_num[CC_id] = 0;
@@ -2583,7 +2592,7 @@ schedule_ulsch_fairRR(module_id_t module_idP, frame_t frameP,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
             0,//tdd_mapindex
-            frameP); //Nf
+            frameP); //Nf --> shouldn't it be sched_frame ???
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].nb_rb = 6;
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].UE_id = -1;
       ulsch_ue_select[CC_id].ue_num++;

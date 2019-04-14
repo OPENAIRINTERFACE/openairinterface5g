@@ -21,7 +21,7 @@
 
 # Author: laurent THOMAS, Lionel GAUTHIER
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.0)
 
 #############################################
 # Base directories, compatible with legacy OAI building
@@ -169,13 +169,13 @@ endif()
 set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ")
 # add autotools definitions that were maybe used!
+set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
+	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
 )
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D${MKVER}"
 )
-add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 
 #########################
@@ -227,7 +227,6 @@ add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_CO
 add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
 
-
 # Debug related options
 #########################################
 add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
@@ -250,7 +249,7 @@ add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
 add_boolean_option(DISABLE_LOG_X       False "Deactivate all LOG_* macros")
 add_boolean_option(USRP_REC_PLAY       False "Enable USRP record playback mode")
-add_boolean_option(UE_NAS_USE_TUN      False "Enable UE NAS TUN device instead of ue_ip.ko")
+#add_boolean_option(UE_NAS_USE_TUN      False "Enable UE NAS TUN device instead of ue_ip.ko")
 add_boolean_option(BASIC_SIMULATOR     False "Has to be True when building the basic simulator, False otherwise")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
@@ -382,7 +381,7 @@ file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 add_custom_target (
   s1ap_flag ALL
   ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-  DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" 
+  DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
 )
 
 add_library(S1AP_LIB
@@ -469,15 +468,62 @@ add_library(X2AP_ENB
   ${X2AP_DIR}/x2ap_eNB_itti_messaging.c
   ${X2AP_DIR}/x2ap_eNB_management_procedures.c
   ${X2AP_DIR}/x2ap_eNB_generate_messages.c
+  ${X2AP_DIR}/x2ap_ids.c
+  ${X2AP_DIR}/x2ap_timers.c
  )
 add_dependencies(X2AP_ENB rrc_flag x2_flag)
+
+# F1AP
+##############
+add_list1_option(F1AP_RELEASE R15 "F1AP ASN.1 grammar version" R15)
+set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
+if (${F1AP_RELEASE} STREQUAL "R15")
+  make_version(F1AP_VERSION 15 2 1)
+  set (ASN1RELDIR R15.2.1)
+endif(${F1AP_RELEASE} STREQUAL "R15")
+add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
+set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
+set(F1AP_ASN_FILES
+  ${F1AP_ASN_DIR}/F1AP-CommonDataTypes.asn
+  ${F1AP_ASN_DIR}/F1AP-Constants.asn
+  ${F1AP_ASN_DIR}/F1AP-PDU-Descriptions.asn
+  ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn
+  ${F1AP_ASN_DIR}/F1AP-IEs.asn
+  ${F1AP_ASN_DIR}/F1AP-Containers.asn
+  )
+
+set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
+message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${F1AP_ASN_GENERATED_C_DIR}
+                COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
+
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "asn1c: error")
+endif (NOT ${ret} STREQUAL 0)
+
+file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
+add_library(F1AP_LIB
+  ${F1AP_ASN_GENERATED_C_FILES}
+)
+
+include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
+include_directories ("${F1AP_DIR}")
+
+file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
+add_library(F1AP
+  ${F1AP_C_FILES}
+)
 
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR" "OAI_SIMU")
+
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 #NOKIA config enhancement
@@ -585,6 +631,8 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
+add_library(rfsimulator MODULE ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c)
+
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
@@ -595,7 +643,6 @@ Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
 ##############################################################
-add_boolean_option(ENABLE_SECURITY         True  "Enable LTE integrity and ciphering between RRC UE and eNB")
 add_boolean_option(ENABLE_USE_MME          True  "eNB connected to MME (INTERFACE S1-C), not standalone eNB")
 add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
 add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the default bearer")
@@ -617,7 +664,12 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 
-########################
+#############################################################################
+# Flag for UE compilation to avoid issues in common eNB/UE PDCP/RLC functions
+#############################################################################
+
+add_boolean_option(UETARGET                 False         "set UE as target for compiler")
+
 # Include order
 ##########################
 add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
@@ -693,10 +745,10 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 ##########################
 # PDCP LAYER OPTIONS
 ##########################
-add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
-add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
-add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
-add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
+#add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
+#add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
+#add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
+#add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
 
 ##########################
 # RRC LAYER OPTIONS
@@ -743,6 +795,8 @@ include_directories("${NFAPI_DIR}/sim_common/inc")
 include_directories("${NFAPI_DIR}/pnf_sim/inc")
 include_directories("${OPENAIR1_DIR}")
 include_directories("${OPENAIR2_DIR}")
+include_directories("${OPENAIR3_DIR}/NAS/TOOLS")
+include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0")
@@ -765,19 +819,21 @@ include_directories("${OPENAIR3_DIR}/SECU")
 include_directories("${OPENAIR3_DIR}/SCTP")
 include_directories("${OPENAIR3_DIR}/S1AP")
 include_directories("${OPENAIR2_DIR}/X2AP")
+include_directories("${OPENAIR2_DIR}/F1AP")
 include_directories("${OPENAIR3_DIR}/UDP")
 include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
-include_directories("${OPENAIR2_DIR}/ENB_APP")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
+include_directories("${OPENAIR2_DIR}/LAYER2/PROTO_AGENT")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
@@ -819,7 +875,7 @@ set(FLPT_MSG_FILES
   ${FLPT_MSG_DIR}/control_delegation.proto
   )
 
-set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
+set(FLPT_C_DIR ${protobuf_generated_dir}/FLPT_${FLPTDIR})
 #message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
 execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
 file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
@@ -862,6 +918,7 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_timer.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY/flexran_agent_phy.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
@@ -887,6 +944,63 @@ MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
 
 #set(PROTOBUF_LIB "protobuf") #for Cpp
 
+# set the version of protobuf messages, V3 not supported yet
+add_list1_option(FSPT_VERSION V2 "FSPT MSG  protobuf  grammar version" V2 V3)
+
+if (${FSPT_VERSION} STREQUAL "V2")
+  set (FSPTDIR V2)
+elseif (${FSPT_VERSION} STREQUAL "V3")
+  set (FSPTDIR V3)
+endif(${FSPT_VERSION} STREQUAL "V2")
+
+set(FSPT_MSG_DIR ${OPENAIR_DIR}/targets/COMMON/MESSAGES/${FSPTDIR} )
+set(FSPT_MSG_FILES
+  ${FSPT_MSG_DIR}/flexsplit.proto
+  )
+
+set(FSPT_C_DIR ${protobuf_generated_dir}/FSPT_${FSPTDIR})
+message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_DIR=${FSPT_MSG_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
+execute_process(COMMAND ${protoc_call} ${FSPT_C_DIR} ${FSPT_MSG_DIR} ${FSPT_MSG_FILES})
+file(GLOB FSPT_source ${FSPT_C_DIR}/*.c)
+set(FSPT_OAI_generated
+  ${FSPT_C_DIR}/flexsplit.pb-c.c
+  )
+
+file(GLOB fspt_h ${FSPT_C_DIR}/*.h)
+set(fspt_h ${fspt_h} )
+
+add_library(FSPT_MSG
+  ${FSPT_OAI_generated}
+  ${FSPT_source}
+  )
+set(FSPT_MSG_LIB FSPT_MSG)
+message("fspt c dir is : ${FSPT_C_DIR}")
+include_directories (${FSPT_C_DIR})
+
+#  add_library(ASYNC_IF
+#    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+#    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+#    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+#    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
+#    )
+#  set(ASYNC_IF_LIB ASYNC_IF)
+#  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
+add_library(PROTO_AGENT
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+  )
+set(PROTO_AGENT_LIB PROTO_AGENT)
+include_directories(${OPENAIR2_DIR}/LAYER2/PROTO_AGENT)
+
+
+
+set(PROTOBUF_LIB "protobuf-c")
+
+#set(PROTOBUF_LIB "protobuf") #for Cpp
 
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/hashtable/hashtable.c
@@ -909,7 +1023,7 @@ set(UTIL_SRC
   ${OPENAIR_DIR}/common/utils/LOG/log.c
 #  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
-  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
+  #${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_create_dir.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_detect_file.c
@@ -1286,7 +1400,7 @@ set(L2_SRC
   ${RLC_DIR}/rlc.c
   ${RLC_DIR}/rlc_rrc.c
   ${RLC_DIR}/rlc_mpls.c
-  ${RRC_DIR}/rrc_UE.c
+#  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
   ${RRC_DIR}/rrc_eNB_S1AP.c
   ${RRC_DIR}/rrc_eNB_UE_context.c
@@ -1374,6 +1488,8 @@ set (MAC_SRC_UE
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config_SL.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config_eMTC.c
   ${OPENAIR2_DIR}/ENB_APP/RRC_config_tools.c
   )
 
@@ -1951,6 +2067,8 @@ add_executable(lte-softmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
@@ -1968,10 +2086,38 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
+  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
+
+add_executable(cu_test
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/cu_test.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+  ${T_SOURCE}
+)
+target_link_libraries(cu_test
+  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
+)
+
+add_executable(du_test
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/du_test.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+  ${T_SOURCE}
+)
+target_link_libraries(du_test
+  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
+)
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
@@ -1996,26 +2142,29 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${GTPU_need_ITTI}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
+
 add_dependencies(lte-softmodem-nos1 rrc_flag s1ap_flag x2_flag)
+
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2  ${RAL_LIB} ${ITTI_LIB}
-  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
+  RRC_LIB F1AP F1AP_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  -Wl,--end-group z dl )
+  -Wl,--end-group z dl)
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
-
 # lte-uesoftmodem is  UE implementation
 #######################################
 
@@ -2030,6 +2179,8 @@ add_executable(lte-uesoftmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
@@ -2046,7 +2197,7 @@ add_executable(lte-uesoftmodem
 add_dependencies(lte-uesoftmodem rrc_flag s1ap_flag x2_flag)
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP F1AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2074,6 +2225,7 @@ add_executable(lte-uesoftmodem-nos1
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE}
@@ -2084,18 +2236,18 @@ add_executable(lte-uesoftmodem-nos1
   )
 
 add_dependencies(lte-uesoftmodem-nos1 rrc_flag s1ap_flag x2_flag)
+
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${RAL_LIB} ${ITTI_LIB}
-  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP F1AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  -Wl,--end-group z dl )
+  -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
-
 # USIM process
 #################
 #add_executable(usim
@@ -2150,7 +2302,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
   target_link_libraries (${myExe}
 
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
-    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB} dl 
+    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB} dl
     )
 endforeach(myExe)
 
@@ -2163,7 +2315,7 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 add_executable(test_epc_play_scenario
@@ -2182,7 +2334,7 @@ add_executable(test_epc_play_scenario
   )
 target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
 target_link_libraries (test_epc_play_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB X2AP_ENB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB X2AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 
@@ -2216,15 +2368,15 @@ if (${T_TRACER})
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
-        pdcchsim pucchsim prachsim syncsim ulsim
+        pdcchsim pucchsim prachsim syncsim ulsim cu_test du_test
         #all "add_library" definitions
-        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB
+        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP_LIB F1AP
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
-        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
-        coding)
+        SECU_CN SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY L2 default_sched
+        remote_sched RAL CN_UTILS GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS
+        LFDS7 SIMU OPENAIR0_LIB PHY_MEX coding)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()

@@ -634,7 +634,6 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
 }
 
-
 static inline int64_t abs64(int64_t x)
 {
   return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)
@@ -720,4 +719,5 @@ int ru_sync_time(RU_t *ru,
 
 
 }
+
 
