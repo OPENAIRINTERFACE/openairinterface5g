@@ -32,11 +32,6 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-//#include "PHY/LTE_TRANSPORT/transport_proto.h"
-//#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h
-#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "SCHED/sched_eNB.h"
-#include "SCHED/sched_common.h"
 #include "SCHED_NR/sched_nr.h"
 #include "nfapi_nr_interface.h"
 
