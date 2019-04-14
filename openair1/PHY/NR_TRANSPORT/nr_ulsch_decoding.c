@@ -232,8 +232,8 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
 			  ulsch->harq_processes[i]->Z=0;
 			  /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
 			  //int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
-			  ulsch->harq_processes[i]->E;
-			  ulsch->harq_processes[i]->G;
+			  ulsch->harq_processes[i]->E=0;
+			  ulsch->harq_processes[i]->G=0;
 
 
 			  ulsch->harq_processes[i]->n_DMRS=0;
@@ -303,7 +303,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   int16_t z [68*384];
   int8_t l [68*384];
-  int16_t inv_d [68*384];
+  //int16_t inv_d [68*384];
   uint8_t kc;
   uint8_t Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;

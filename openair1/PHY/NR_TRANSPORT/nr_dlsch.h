@@ -67,6 +67,11 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out);
 
+void nr_modulation(uint32_t *in,
+                   uint16_t length,
+                   nr_mod_t modulation_type,
+                   int16_t *out);
+
 void nr_pdsch_codeword_modulation(uint32_t *in,
                          uint8_t  Qm,
                          uint32_t length,
