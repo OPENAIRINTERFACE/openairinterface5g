@@ -93,6 +93,7 @@ class SSHConnection():
 		self.EPCPassword = ''
 		self.EPCSourceCodePath = ''
 		self.EPCType = ''
+		self.EPC_PcapFileName = ''
 		self.ADBIPAddress = ''
 		self.ADBUserName = ''
 		self.ADBPassword = ''
@@ -457,8 +458,9 @@ class SSHConnection():
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
-				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/enb_' + self.testCase_id + '_s1log.pcap', '\$', 5)
-				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/enb_' + self.testCase_id + '_s1log.pcap > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+				self.EPC_PcapFileName = 'enb_' + self.testCase_id + '_s1log.pcap'
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/'+ self.EPC_PcapFileName, '\$', 5)
+				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/' + self.EPC_PcapFileName ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.close()
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
@@ -534,12 +536,14 @@ class SSHConnection():
 					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 					self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+					if self.EPC_PcapFileName != '':
+						self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + self.EPC_PcapFileName, '\$', 5)
 					self.close()
 					time.sleep(1)
-					pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
-					copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-					if (copyin_res == 0):
-						self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+					if self.EPC_PcapFileName != '':
+						copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
+						if (copyin_res == 0):
+							self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.EPC_PcapFileName, self.eNBSourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
@@ -2447,10 +2451,11 @@ class SSHConnection():
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
-			pcap_log_file = self.eNBLogFile.replace('.log', '_s1log.pcap')
-			self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + pcap_log_file, '\$', 5)
-			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-			self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+			if self.EPC_PcapFileName != '':
+				self.EPC_PcapFileName = 'enb_' + self.testCase_id + '_s1log.pcap'
+				self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + self.EPC_PcapFileName, '\$', 5)
+				self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
+				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.EPC_PcapFileName,, self.eNBSourceCodePath + '/cmake_targets/.')
 			self.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
