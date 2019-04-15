@@ -1007,7 +1007,7 @@ typedef struct {
     uint8_t ul_synchronous_harq_timer[NFAPI_CC_MAX][8];  // These timers are used for UL synchronous HARQ processes
 
     /* C-DRX related timers */
-    /* Note: only valid for FDD when this comment is written (11-01-19)*/
+    /* Note: only valid for FDD and LTE UE when this comment is written (11-01-19)*/
     /// is TRUE if the cqi mask feature is activated by RRC configuration
     boolean_t cqi_mask_boolean;
     /// is TRUE if the following drx parameters are configured for UE
@@ -1018,6 +1018,13 @@ typedef struct {
      * configured on the eNB side, but not yet on the UE side...
      */
     boolean_t cdrx_waiting_ack;
+    /*
+     * Is set when a ULSCH scheduling is done and run until the first corresponding transmission is done (4 subframes). 
+     * When set, SR cannot be set for the UE. This allows OAI to avoid concidering a SR as uncompleted if the UE sends
+     * a SR just after a periodic DCI0 ULSCH scheduling. Without CDRX there is no problem, but with CDRX this case would
+     * create a lost in timers synchronization.
+     */ 
+    uint8_t dci0_ongoing_timer;
     /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
     boolean_t in_active_time;
     /// OnDurationTimer

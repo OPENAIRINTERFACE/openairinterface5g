@@ -1653,6 +1653,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           if (UE_sched_ctrl_ptr->cdrx_configured) {
             UE_sched_ctrl_ptr->drx_inactivity_timer = 1; // reset drx inactivity timer when new transmission
             VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_sched_ctrl_ptr->drx_inactivity_timer);
+            UE_sched_ctrl_ptr->dci0_ongoing_timer = 1; // when set the UE_template_ptr->ul_SR cannot be set to 1, 
+                                                       // see definition for more information
           }
 
           if (UE_template_ptr->pre_allocated_rb_table_index_ul >= 0) {

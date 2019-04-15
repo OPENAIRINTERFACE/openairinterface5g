@@ -790,13 +790,22 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             active_time_condition = 1;
           } else if ((UE_scheduling_control->on_duration_timer > 0) && (active_time_condition == 0)) {
             active_time_condition = 3;
-          } else if ((UE_scheduling_control->drx_inactivity_timer > 0) && (active_time_condition == 0)) {
+          } else if ((UE_scheduling_control->drx_inactivity_timer > 1) && (active_time_condition == 0)) {
             active_time_condition = 4;
           }
 
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_ACTIVE_TIME_CONDITION, (unsigned long) active_time_condition);
         }
         /* END VCD */
+
+        /* DCI0 ongoing timer */
+        if (UE_scheduling_control->dci0_ongoing_timer > 1) {
+            UE_scheduling_control->dci0_ongoing_timer++;
+
+            if (UE_scheduling_control->dci0_ongoing_timer > 3) {
+                UE_scheduling_control->dci0_ongoing_timer = 0;
+            }
+        }
 
       } else { // else: CDRX not configured
         /* Note: (UL) HARQ RTT timers processing is done here and can be used by other features than CDRX */

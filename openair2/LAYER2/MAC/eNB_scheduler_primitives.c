@@ -4948,21 +4948,35 @@ SR_indication(module_id_t mod_idP,
     T_INT(rntiP));
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  UE_sched_ctrl *UE_scheduling_ctrl = NULL;
 
   if (UE_id != -1) {
-    if (mac_eNB_get_rrc_status(mod_idP, UE_RNTI(mod_idP, UE_id)) <  RRC_CONNECTED) {
-      LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",
+    UE_scheduling_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
+
+    if ((UE_scheduling_ctrl->cdrx_configured == TRUE) && (UE_scheduling_ctrl->dci0_ongoing_timer > 0)) {
+      LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d.  \
+                  The SR is not set do to ongoing DCI0 with CDRX activated\n",
             mod_idP,
             rntiP,
             frameP,
             subframeP,
             UE_id,
-            cc_idP);
+            cc_idP);)
+    } else {
+      if (mac_eNB_get_rrc_status(mod_idP, UE_RNTI(mod_idP, UE_id)) <  RRC_CONNECTED) {
+        LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",
+              mod_idP,
+              rntiP,
+              frameP,
+              subframeP,
+              UE_id,
+              cc_idP);
+      }
+      UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
+      UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 1);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 0);
     }
-    UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
-    UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 1);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 0);
   } else {
     LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d (unknown UE_id) on CC_id %d\n",
           mod_idP,
@@ -4972,6 +4986,7 @@ SR_indication(module_id_t mod_idP,
           UE_id,
           cc_idP);
   }
+  
   return;
 }
 
