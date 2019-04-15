@@ -1044,7 +1044,7 @@ void eNB_Config_Local_DRX(
 
   /* Check drx_Configuration */
   if (drx_Configuration == NULL) {
-    LOG_E(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+    LOG_I(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
 
     UE_scheduling_control->cdrx_configured = FALSE;
     return;

@@ -241,6 +241,9 @@ rx_sdu(const module_id_t enb_mod_idP,
          * Note: in case of asynchronous UL HARQ process restart here relevant RTT timer.
          * Start corresponding CDRX ULRetransmission timer.
          */
+
+        unsigned long active_time_condition = 10;
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_ACTIVE_TIME_CONDITION, (unsigned long) active_time_condition);
       }
 
       first_rb = UE_template_ptr->first_rb_ul[harq_pid];

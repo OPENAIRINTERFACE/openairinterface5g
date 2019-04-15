@@ -799,11 +799,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         /* END VCD */
 
         /* DCI0 ongoing timer */
-        if (UE_scheduling_control->dci0_ongoing_timer > 1) {
-            UE_scheduling_control->dci0_ongoing_timer++;
-
-            if (UE_scheduling_control->dci0_ongoing_timer > 3) {
-                UE_scheduling_control->dci0_ongoing_timer = 0;
+        if (UE_scheduling_control->dci0_ongoing_timer > 0) {
+            if (UE_scheduling_control->dci0_ongoing_timer > 7) {
+              UE_scheduling_control->dci0_ongoing_timer = 0;
+            } else {
+              UE_scheduling_control->dci0_ongoing_timer++;
             }
         }
 
