@@ -60,8 +60,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[(i<<1)];
-      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[1+(i<<1)];
+      Re = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
+      Im = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 

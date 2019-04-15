@@ -275,17 +275,6 @@ typedef struct {
   /// - second index: symbol [0..28*ofdm_symbol_size[
   int32_t **rxdataF;
 
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates[7];
-
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time[7];
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
@@ -335,6 +324,10 @@ typedef struct {
   /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - fourth index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp1[8][8];
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -386,6 +379,8 @@ typedef struct {
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
   int16_t *llr[2];
+  /// Pointers to layer llr vectors (4 layers).
+  int16_t *layer_llr[4];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
   /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
@@ -727,6 +722,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp;
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
+  /// \brief Hold the channel estimates in time domain (used for tracking).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..2*ofdm_symbol_size[
+  int32_t **dl_ch_estimates_time;
   /// \brief Pointers to extracted channel estimates of PDCCH symbols.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -794,6 +797,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **rxdataF_comp;
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates;
   /// \brief Pointers to downlink channel estimates in frequency-domain extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
@@ -917,7 +924,7 @@ typedef struct {
   /// UE FAPI DCI request
   nr_dcireq_t dcireq;
 
-  // CHECK if we need those as they are also included in dl_indictation
+  // pointers to the next 2 strcutres are also included in dl_indictation
   /// UE FAPI indication for DLSCH reception
   fapi_nr_rx_indication_t rx_ind;
   /// UE FAPI indication for DCI reception

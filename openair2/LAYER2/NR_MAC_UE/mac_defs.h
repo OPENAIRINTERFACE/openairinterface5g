@@ -57,6 +57,8 @@
 #include "fapi_nr_ue_interface.h"
 #include "NR_IF_Module.h"
 
+#include "PHY/defs_nr_common.h"
+
 #define NB_NR_UE_MAC_INST 1
 
 typedef enum {
@@ -64,44 +66,42 @@ typedef enum {
     SFN_C_MOD_2_EQ_1
 } SFN_C_TYPE;
 
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
-    
-    ////  MAC config
-    NR_DRX_Config_t    	            *drx_Config;
-    NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
-    NR_BSR_Config_t    	            *bsr_Config;
-    NR_TAG_Config_t		            *tag_Config;
-    NR_PHR_Config_t		            *phr_Config;
-    NR_RNTI_Value_t 	            *cs_RNTI;
-	NR_MIB_t 			            *mib;
+  
+  ////  MAC config
+  NR_DRX_Config_t    	          *drx_Config;
+  NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
+  NR_BSR_Config_t    	          *bsr_Config;
+  NR_TAG_Config_t	          *tag_Config;
+  NR_PHR_Config_t	          *phr_Config;
+  NR_RNTI_Value_t 	          *cs_RNTI;
+  NR_MIB_t 	                  *mib;
+  
+  ///     Type0-PDCCH seach space
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
+  uint32_t type0_pdcch_ss_mux_pattern;
+  SFN_C_TYPE type0_pdcch_ss_sfn_c;
+  uint32_t type0_pdcch_ss_n_c;
+  uint32_t type0_pdcch_consecutive_slots;
+  
+  ///     Random access parameter
+  uint16_t ra_rnti;
 
-    ///     Type0-PDCCH seach space
-    fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
-    uint32_t type0_pdcch_ss_mux_pattern;
-    SFN_C_TYPE type0_pdcch_ss_sfn_c;
-    uint32_t type0_pdcch_ss_n_c;
-    uint32_t type0_pdcch_consecutive_slots;
+   //BWP params
+  NR_BWP_PARMS initial_bwp_dl;
+  NR_BWP_PARMS initial_bwp_ul;
 
-    ///     Random access parameter
-    uint16_t ra_rnti;
+  ////	FAPI-like interface message
+  fapi_nr_tx_request_t tx_request;
+  fapi_nr_ul_config_request_t ul_config_request;
+  fapi_nr_dl_config_request_t dl_config_request;
 
-
-	////	FAPI-like interface message
-	fapi_nr_tx_request_t tx_request;
-	fapi_nr_ul_config_request_t ul_config_request;
-	fapi_nr_dl_config_request_t dl_config_request;
-
-
-
-	///     Interface module instances
-	nr_ue_if_module_t *if_module;
-	nr_scheduled_response_t	scheduled_response;
-	nr_phy_config_t phy_config;
-
-
-
-
+  ///     Interface module instances
+  nr_ue_if_module_t       *if_module;
+  nr_scheduled_response_t scheduled_response;
+  nr_phy_config_t         phy_config;
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {

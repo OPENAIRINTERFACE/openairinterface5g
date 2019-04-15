@@ -615,9 +615,10 @@ int main(int argc, char **argv)
 	  	      i%frame_parms->symbols_per_slot,
 		      ssb_slot,
 		      0,
-		      0,
-		      NR_PBCH_EST);
+		      0);
+
           nr_pbch_channel_estimation(UE,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+
         }
 	UE_nr_rxtx_proc_t proc={0};
 
