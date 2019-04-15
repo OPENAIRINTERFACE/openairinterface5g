@@ -1058,15 +1058,15 @@ schedule_ulsch(module_id_t module_idP,
   eNB_MAC_INST *mac = NULL;
   slice_info_t *sli = NULL;
   COMMON_channels_t *cc = NULL;
+  int sched_subframe;
+  int sched_frame;
+
   /* Init */
   mac = RC.mac[module_idP];
   sli = &(mac->slice_info);
   memset(first_rb, 0, NFAPI_CC_MAX * sizeof(uint16_t));
   start_meas(&(mac->schedule_ulsch));
-  /* Second setup step */
-  int sched_subframe = 0;
-  int sched_frame = 0;
-  /* Second init step */
+
   sched_subframe = (subframeP + 4) % 10;
   sched_frame = frameP;
   cc = mac->common_channels;
@@ -1163,6 +1163,7 @@ schedule_ulsch(module_id_t module_idP,
 
   if (sched_subframe < subframeP) {
     sched_frame++;
+    sched_frame %= 1024;
   }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -1173,11 +1174,16 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-    first_rb[CC_id] = 1;  // leave out first RB for PUCCH
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     first_rb[CC_id] = (emtc_active[CC_id] == 1) ? 7 : 1;
 #else
-    first_rb[CC_id] = 1;
+    /* Note: the size of PUCCH is arbitrary, to be done properly. */
+    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
+    case 25:  first_rb[CC_id] = 1; break; // leave out first RB for PUCCH
+    case 50:  first_rb[CC_id] = 2; break; // leave out first RB for PUCCH
+    case 100: first_rb[CC_id] = 3; break; // leave out first RB for PUCCH
+    default: LOG_E(MAC, "nb RBs not handled, todo.\n"); exit(1);
+    }
 #endif
     RA_t *ra_ptr = cc->ra;
 
@@ -1288,6 +1294,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
   if (sched_subframeP < subframeP) {
     sched_frame++;
+    sched_frame %= 1024;
   }
 
   /* NFAPI struct init */
@@ -1302,6 +1309,21 @@ schedule_ulsch_rnti(module_id_t module_idP,
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     n_rb_ul_tab[CC_id] = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
+    /* HACK: let's remove the PUCCH from available RBs
+     * we suppose PUCCH size is:
+     * - for 25 RBs: 1 RB (top and bottom of ressource grid)
+     * - for 50:     2 RBs
+     * - for 100:    3 RBs
+     * This is totally arbitrary and might even be wrong.
+     * We suppose 'first_rb[]' has been correctly populated by the caller,
+     * so we only remove the top part of the resource grid.
+     */
+    switch (n_rb_ul_tab[CC_id]) {
+    case 25:  n_rb_ul_tab[CC_id] -= 1; break;
+    case 50:  n_rb_ul_tab[CC_id] -= 2; break;
+    case 100: n_rb_ul_tab[CC_id] -= 3; break;
+    default: LOG_E(MAC, "RBs setting not handled. Todo.\n"); exit(1);
+    }
     UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
@@ -1310,7 +1332,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_subframeP, first_rb);
+  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
@@ -1350,32 +1372,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
       /* This is the actual CC_id in the list */
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
 
-      /* Be sure that there are some free RBs */
-      if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id] - 1) {
-        LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-              module_idP,
-              frameP,
-              subframeP,
-              UE_id,
-              rnti,
-              CC_id);
-        continue;
-      }
-
-      /* Should format_flag be 2 in CCE_allocation_infeasible??? */
-      /* This test seems to be way too long, can we provide an optimization? */
-      if (CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
-        LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: not enough CCE\n",
-              module_idP,
-              frameP,
-              subframeP,
-              UE_id,
-              rnti,
-              CC_id);
-        continue;
-      }
-
-      /* UE is active and can be scheduled, setting up struct */
       UE_template_ptr = &(UE_list->UE_template[CC_id][UE_id]);
       UE_sched_ctrl_ptr = &(UE_list->UE_sched_ctrl[UE_id]);
       harq_pid = subframe2harqpid(&cc[CC_id], sched_frame, sched_subframeP);
@@ -1404,7 +1400,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
        * If there is information on bsr of DCCH, DTCH or if there is UL_SR,
        * or if there is a packet to retransmit, or we want to schedule a periodic feedback
        */
-      /* Shouldn't this test be done earlier?? */
       if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0 || round_index > 0) {
         LOG_D(MAC, "[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
               module_idP,
@@ -1421,98 +1416,125 @@ schedule_ulsch_rnti(module_id_t module_idP,
         // reset the scheduling request
         UE_template_ptr->ul_SR = 0;
         status = mac_eNB_get_rrc_status(module_idP, rnti);
-        cqi_req = 0;
-
-        /* Handle the aperiodic CQI report */
-        /* These aperiodic reports behave as periodic ones... */
-        if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
-          if (UE_sched_ctrl_ptr->cqi_received == 0) {
-            if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-              cqi_req = 0;
-            } else {
-              cqi_req = 1;
-
-              /* TDD: to be safe, do not ask CQI in special Subframes:36.213/7.2.3 CQI definition */
-              if (cc[CC_id].tdd_Config) {
-                switch (cc[CC_id].tdd_Config->subframeAssignment) {
-                  case 1:
-                    if(subframeP == 1 || subframeP == 6) {
-                      cqi_req=0;
-                    }
-
-                    break;
-
-                  case 3:
-                    if(subframeP == 1) {
-                      cqi_req=0;
-                    }
-
-                    break;
-
-                  default:
-                    LOG_E(MAC," TDD config not supported\n");
-                    break;
-                }
-              }
-
-              if(cqi_req == 1) {
-                UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
-              }
-            }
-          } else {
-            UE_sched_ctrl_ptr->cqi_req_flag = 0;
-            UE_sched_ctrl_ptr->cqi_received = 0;
-            UE_sched_ctrl_ptr->cqi_req_timer = 0;
-          }
-        }
-
-        /* Power control */
-        /*
-         * Compute the expected ULSCH RX power (for the stats)
-         * This is the normalized RX power and this should be constant (regardless of mcs)
-         * Is not in dBm, unit from nfapi, converting to dBm
-         * ToDo: Noise power hard coded to 30
-         */
-        normalized_rx_power = ((5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10) + 30;
-        target_rx_power = (mac->puSch10xSnr / 10) + 30;
-        /*
-         * This assumes accumulated tpc
-         * Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
-         */
-        framex10psubframe = (UE_template_ptr->pusch_tpc_tx_frame * 10) + UE_template_ptr->pusch_tpc_tx_subframe;
-
-        if (((framex10psubframe + 10) <= (frameP * 10 + subframeP)) || // normal case
-            ((framex10psubframe > (frameP * 10 + subframeP)) && (((10240 - framex10psubframe + frameP * 10 + subframeP) >= 10)))) { //frame wrap-around
-          UE_template_ptr->pusch_tpc_tx_frame = frameP;
-          UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
-
-          if (normalized_rx_power > (target_rx_power + 4)) {
-            tpc = 0; // -1
-            tpc_accumulated--;
-          } else if (normalized_rx_power < (target_rx_power - 4)) {
-            tpc = 2; // +1
-            tpc_accumulated++;
-          } else {
-            tpc = 1; // 0
-          }
-        } else {
-          tpc = 1; // 0
-        }
-
-        if (tpc != 1) {
-          LOG_D(MAC, "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
-                module_idP,
-                frameP,
-                subframeP,
-                harq_pid,
-                tpc,
-                tpc_accumulated,
-                normalized_rx_power,
-                target_rx_power);
-        }
 
         /* New transmission */
         if (round_index == 0) {
+          /* Be sure that there are some free RBs */
+          if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id]) {
+            LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+              module_idP,
+              frameP,
+              subframeP,
+              UE_id,
+              rnti,
+              CC_id);
+
+            continue;
+          }
+
+          /* Should format_flag be 2 in CCE_allocation_infeasible??? */
+          /* This test seems to be way too long, can we provide an optimization? */
+          if (CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
+            LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: not enough CCE\n",
+              module_idP,
+              frameP,
+              subframeP,
+              UE_id,
+              rnti,
+              CC_id);
+
+            continue;
+          }
+
+          /* Handle the aperiodic CQI report */
+          cqi_req = 0;
+
+          if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
+            if (UE_sched_ctrl_ptr->cqi_received == 0) {
+              if (NFAPI_MODE != NFAPI_MONOLITHIC) {
+                cqi_req = 0;
+              } else {
+                cqi_req = 1;
+
+                /* TDD: to be safe, do not ask CQI in special Subframes:36.213/7.2.3 CQI definition */
+                if (cc[CC_id].tdd_Config) {
+                  switch (cc[CC_id].tdd_Config->subframeAssignment) {
+                    case 1:
+                      if(subframeP == 1 || subframeP == 6) {
+                        cqi_req=0;
+                      }
+                      break;
+
+                    case 3:
+                      if(subframeP == 1) {
+                        cqi_req=0;
+                      }
+                      break;
+
+                    default:
+                      LOG_E(MAC," TDD config not supported\n");
+                      break;
+                  }
+                }
+
+                if(cqi_req == 1) {
+                  UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
+                }
+              }
+            } else {
+              UE_sched_ctrl_ptr->cqi_req_flag = 0;
+              UE_sched_ctrl_ptr->cqi_received = 0;
+              UE_sched_ctrl_ptr->cqi_req_timer = 0;
+            }
+          }
+
+          /* Power control */
+          /*
+           * Compute the expected ULSCH RX power (for the stats)
+           * This is the normalized RX power and this should be constant (regardless of mcs)
+           * Is not in dBm, unit from nfapi, converting to dBm
+           * ToDo: Noise power hard coded to 30
+           */
+          normalized_rx_power = ((5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10) + 30;
+          target_rx_power = (mac->puSch10xSnr / 10) + 30;
+
+          /*
+           * This assumes accumulated tpc
+           * Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
+           */
+          framex10psubframe = (UE_template_ptr->pusch_tpc_tx_frame * 10) + UE_template_ptr->pusch_tpc_tx_subframe;
+
+          if (((framex10psubframe + 10) <= (frameP * 10 + subframeP)) || // normal case
+              ((framex10psubframe > (frameP * 10 + subframeP)) && (((10240 - framex10psubframe + frameP * 10 + subframeP) >= 10)))) { //frame wrap-around
+
+            UE_template_ptr->pusch_tpc_tx_frame = frameP;
+            UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
+
+            if (normalized_rx_power > (target_rx_power + 4)) {
+              tpc = 0; // -1
+              tpc_accumulated--;
+            } else if (normalized_rx_power < (target_rx_power - 4)) {
+              tpc = 2; // +1
+              tpc_accumulated++;
+            } else {
+              tpc = 1; // 0
+            }
+          } else {
+            tpc = 1; // 0
+          }
+
+          if (tpc != 1) {
+            LOG_D(MAC, "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+              module_idP,
+              frameP,
+              subframeP,
+              harq_pid,
+              tpc,
+              tpc_accumulated,
+              normalized_rx_power,
+              target_rx_power);
+          }
+
           ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
           UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
           UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power = normalized_rx_power;
@@ -1553,6 +1575,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
           /* Store information for possible retransmission */
           UE_template_ptr->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
           UE_template_ptr->first_rb_ul[harq_pid] = first_rb_slice[CC_id];
+          UE_template_ptr->cqi_req[harq_pid] = cqi_req;
           UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
 
           if (UE_id == UE_list->head) {
@@ -1711,8 +1734,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
             T_INT(subframeP),
             T_INT(harq_pid),
             T_INT(UE_template_ptr->mcs_UL[harq_pid]),
-            T_INT(first_rb_slice[CC_id]),
-            T_INT(rb_table[rb_table_index]),
+            T_INT(UE_template_ptr->first_rb_ul[harq_pid]),
+            T_INT(UE_template_ptr->nb_rb_ul[harq_pid]),
             T_INT(round_index));
           /* Add UL_config PDUs */
           LOG_D(MAC, "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
@@ -1725,6 +1748,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
                 sched_subframeP);
           ul_req_index = 0;
           dlsch_flag = 0;
+          cqi_req = UE_template_ptr->cqi_req[harq_pid];
 
           for(ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
             if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
@@ -1801,15 +1825,28 @@ schedule_ulsch_rnti(module_id_t module_idP,
           ul_req_tmp->sfn_sf = sched_frame<<4|sched_subframeP;
           ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
           LOG_D(MAC, "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d cqi_req %d\n",
-                harq_pid,
-                frameP,
-                subframeP,
-                UE_id,
-                rnti,
-                sched_frame,
-                sched_subframeP,
-                cqi_req);
-        }  // end of round > 0
+            harq_pid,
+            frameP,
+            subframeP,
+            UE_id,
+            rnti,
+            sched_frame,
+            sched_subframeP,
+            cqi_req);
+
+          /* HACK: RBs used by retransmission have to be reserved.
+           * The current mechanism uses the notion of 'first_rb', so
+           * we skip all RBs below the ones retransmitted. This is
+           * not correct. Imagine only RB 23 is retransmitted, then all
+           * RBs < 23 will be marked unusable for new transmissions (case where round == 0).
+           * Note also that this code works only if the preprocessor orders
+           * UEs with retransmission with higher priority than UEs with new
+           * transmission.
+           * All this should be cleaned up properly.
+           */
+          if (first_rb_slice[CC_id] < UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid])
+            first_rb_slice[CC_id] = UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid];
+        }  // end of round > 0 
       }  // UE_is_to_be_scheduled
     }  // loop over all active CC_ids
   }  // loop over UE_ids
