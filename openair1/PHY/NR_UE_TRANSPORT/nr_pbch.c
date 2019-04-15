@@ -460,7 +460,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (symbol=1; symbol<4; symbol++) {
 
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF,
-                    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_id],
+                    nr_ue_pbch_vars->dl_ch_estimates,
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
                     symbol,
