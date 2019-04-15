@@ -248,7 +248,7 @@ pipeline {
                     post {
                         success {
                             script {
-                                termStatusArray[termUE] = true
+                                termStatusArray[termOAIUE] = true
                             }
                         }
                     }
