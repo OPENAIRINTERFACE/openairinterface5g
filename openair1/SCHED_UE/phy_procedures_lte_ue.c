@@ -1517,15 +1517,19 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK = ack_status_cw0 + ack_status_cw1;
       }
 
+      if (ue->ulsch[eNB_id]->o_ACK[0]) {
+        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
+      } else {
+        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
+      }
+
       if ( LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
         if(ue->ulsch[eNB_id]->o_ACK[0]) {
           LOG_I(PHY,"PUSCH ACK\n");
-          T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
-            T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
         } else {
           LOG_I(PHY,"PUSCH NACK\n");
-          T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
-            T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
         }
 
         LOG_I(PHY,"[UE  %d][PDSCH %x] AbsSubFrame %d.%d Generating ACK (%d,%d) for %d bits on PUSCH\n",
@@ -2035,14 +2039,12 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
         }
       }
 
-      if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
-        if(pucch_payload[0]) {
-          T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
-            T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
-        } else {
-          T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
-            T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
-        }
+      if (pucch_payload[0]) {
+        T(T_UE_PHY_DLSCH_UE_ACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
+      } else {
+        T(T_UE_PHY_DLSCH_UE_NACK, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx), T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti),
+          T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->current_harq_pid));
       }
 
       generate_pucch1x(ue->common_vars.txdataF,
@@ -2739,18 +2741,21 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
                                              CBA_RNTI,
                                              eNB_id,
                                              0)==0)) {
+        int harq_pid = subframe2harq_pid(&ue->frame_parms,
+                                         pdcch_alloc2ul_frame(&ue->frame_parms,proc->frame_rx,proc->subframe_rx),
+                                         pdcch_alloc2ul_subframe(&ue->frame_parms,proc->subframe_rx));
+        T(T_UE_PHY_ULSCH_UE_DCI, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
+          T_INT(dci_alloc_rx[i].rnti),
+          T_INT(harq_pid),
+          T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->mcs),
+          T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->round),
+          T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->first_rb),
+          T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb),
+          T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS));
         if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
           LOG_USEDINLOG_VAR(int8_t,harq_pid) = subframe2harq_pid(&ue->frame_parms,
                                                pdcch_alloc2ul_frame(&ue->frame_parms,proc->frame_rx,proc->subframe_rx),
                                                pdcch_alloc2ul_subframe(&ue->frame_parms,proc->subframe_rx));
-          T(T_UE_PHY_ULSCH_UE_DCI, T_INT(eNB_id), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx),
-            T_INT(dci_alloc_rx[i].rnti),
-            T_INT(harq_pid),
-            T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->mcs),
-            T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->round),
-            T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->first_rb),
-            T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->nb_rb),
-            T_INT(ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS));
           LOG_D(PHY,"[UE  %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
         }
       }

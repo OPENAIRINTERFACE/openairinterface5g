@@ -528,7 +528,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
 
     dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
+    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:
@@ -1750,6 +1750,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   if (dlsch0->rnti != rel13->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
     dlsch0_harq->round = 0;
     dlsch0->harq_mask =0;
+    printf("*********************** rnti %x => %x, pos %d\n",rel13->rnti,dlsch0->rnti,UE_id);
   }
   if ((dlsch0->harq_mask & (1 << rel13->harq_process)) > 0) {
     if ((rel13->new_data_indicator != dlsch0_harq->ndi)||(dci_alloc->ra_flag==1))
@@ -1768,7 +1769,8 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][1];
     else if (rel13->tpc == 1)  //N1A_PRB=3, get TBS from table using mcs and nb_rb=3
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];
-    LOG_D(PHY,"TBS = %d(%d)\n",dlsch0_harq->TBS,dlsch0_harq->mcs);
+    else AssertFatal(1==0,"Don't know how to set TBS (TPC %d)\n",rel13->tpc);
+    LOG_D(PHY,"fill_mdci_and_dlsch : TBS = %d(%d) %p, %x\n",dlsch0_harq->TBS,dlsch0_harq->mcs,dlsch0,rel13->rnti);
   }
   dlsch0->active = 1;
   dlsch0->harq_mask |= (1 << rel13->harq_process);
