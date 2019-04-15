@@ -106,6 +106,7 @@ class SSHConnection():
 		self.eNB_instance = ''
 		self.eNBOptions = ''
 		self.rruOptions = ''
+		self.rruLogFile = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -481,11 +482,11 @@ class SSHConnection():
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		rruCheck = False
-		result = re.search('rru', str(config_file))
+		result = re.search('rru|du', str(config_file))
 		if result is not None:
 			rruCheck = True
 		# do not reset board twice in IF4.5 case
-		result = re.search('rru|enb', str(config_file))
+		result = re.search('rru|enb|du', str(config_file))
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 10)
 			result = re.search('type: b200', str(self.ssh.before))
@@ -509,6 +510,9 @@ class SSHConnection():
 			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
 			if extra_options != '':
 				self.eNBOptions = extra_options
+		result = re.search('rru|du', str(config_file))
+		if result is not None:
+			self.rruLogFile = 'enb_' + self.testCase_id + '.log'
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -538,11 +542,11 @@ class SSHConnection():
 						self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
-				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
 				if rruCheck:
 					result = re.search('wait RUs', str(self.ssh.before))
 				else:
-					result = re.search('got sync', str(self.ssh.before))
+					result = re.search('got sync|Starting F1AP at CU', str(self.ssh.before))
 				if result is None:
 					time.sleep(6)
 				else:
@@ -1995,6 +1999,28 @@ class SSHConnection():
 					logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
 					if logStatus < 0:
 						result = logStatus
+					self.eNBLogFile = ''
+			return result
+
+	def CheckOAIUEProcessExist(self, initialize_OAI_UE_flag):
+		multi_jobs = []
+		status_queue = SimpleQueue()
+		if initialize_OAI_UE_flag == False:
+			p = Process(target = SSH.CheckOAIUEProcess, args = (status_queue,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+
+		if (status_queue.empty()):
+			return -15
+		else:
+			result = 0
+			while (not status_queue.empty()):
+				status = status_queue.get()
+				if (status < 0):
+					result = status
 			if result == OAI_UE_PROCESS_FAILED:
 				fileCheck = re.search('ue_', str(self.UELogFile))
 				if fileCheck is not None:
@@ -2094,7 +2120,6 @@ class SSHConnection():
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
-		rrcSetupRequest = 0
 		rrcSetupComplete = 0
 		rrcReleaseRequest = 0
 		rrcReconfigRequest = 0
@@ -2137,9 +2162,6 @@ class SSHConnection():
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
-			result = re.search('Generating LTE_RRCConnectionSetup', str(line))
-			if result is not None:
-				rrcSetupRequest += 1
 			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
@@ -2177,6 +2199,7 @@ class SSHConnection():
 			if result is not None:
 				rachCanceledProcedure += 1
 		enb_log_file.close()
+		logging.debug('   File analysis completed')
 		if uciStatMsgCount > 0:
 			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -2189,11 +2212,8 @@ class SSHConnection():
 			statMsg = 'eNB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
-		if rrcSetupRequest > 0 or rrcSetupComplete > 0:
-			rrcMsg = 'eNB requested ' + str(rrcSetupRequest) + ' RRC Connection Setup(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
-			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
+		if rrcSetupComplete > 0:
+			rrcMsg = 'eNB completed ' + str(rrcSetupComplete) + ' RRC Connection Setup(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReleaseRequest > 0:
@@ -2450,23 +2470,32 @@ class SSHConnection():
 			self.eNBLogFile = ''
 		else:
 			result = re.search('enb_', str(self.eNBLogFile))
+			analyzeFile = False
 			if result is not None:
-				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+				analyzeFile = True
+				fileToAnalyze = str(self.eNBLogFile)
+				self.eNBLogFile = ''
+			else:
+				result = re.search('enb_', str(self.rruLogFile))
+				if result is not None:
+					analyzeFile = True
+					fileToAnalyze = str(self.rruLogFile)
+					self.rruLogFile = ''
+			if analyzeFile:
+				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
-					self.eNBLogFile = ''
 					return
 				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
-				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
+				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 				else:
 					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-				self.eNBLogFile = ''
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
