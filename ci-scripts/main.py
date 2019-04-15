@@ -141,9 +141,9 @@ class SSHConnection():
 		self.UEPassword = ''
 		self.UE_instance = ''
 		self.UESourceCodePath = ''
+		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
-		self.eNBOsVersion = ''
 
 	def open(self, ipaddress, username, password):
 		count = 0
