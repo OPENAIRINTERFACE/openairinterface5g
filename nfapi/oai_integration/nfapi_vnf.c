@@ -904,10 +904,10 @@ void vnf_start_thread(void *ptr) {
 }
 
 static vnf_info vnf;
-extern uint8_t nfapi_mode;
+
 /*------------------------------------------------------------------------------*/
 void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
-  nfapi_mode = 2;
+  nfapi_setmode(NFAPI_MODE_VNF);
   memset(&vnf, 0, sizeof(vnf));
   memset(vnf.p7_vnfs, 0, sizeof(vnf.p7_vnfs));
   vnf.p7_vnfs[0].timing_window = 32;
