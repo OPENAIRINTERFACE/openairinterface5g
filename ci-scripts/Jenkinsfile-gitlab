@@ -391,44 +391,13 @@ pipeline {
                 stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-Mono-FDD-Band7") {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-Mono-FDD-Band7") {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-FDD-Band7-B210', 'Test-Mono-FDD-Band7')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-FDD-Band7-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-FDD-Band7-B210')
                             }
                         }
                         failure {
@@ -441,44 +410,13 @@ pipeline {
                 stage ("Test MONOLITHIC - TDD - Band 40 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-Mono-TDD-Band40") {
-                                    build job: 'eNB-CI-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-Mono-TDD-Band40") {
-                                    build job: 'eNB-CI-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-TDD-Band40-B210', 'Test-Mono-TDD-Band40')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-TDD-Band40-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-TDD-Band40-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-TDD-Band40-B210')
                             }
                         }
                         failure {
@@ -491,44 +429,13 @@ pipeline {
                 stage ("Test IF4p5 - FDD - Band 7 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-IF4p5-FDD-Band7") {
-                                    build job: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-IF4p5-FDD-Band7") {
-                                    build job: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-IF4p5-FDD-Band7-B210', 'Test-IF4p5-FDD-Band7')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.  The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-IF4p5-FDD-Band7-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-IF4p5-FDD-Band7-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-IF4p5-FDD-Band7-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-FDD-Band7-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-IF4p5-FDD-Band7-B210')
                             }
                         }
                         failure {
@@ -541,44 +448,13 @@ pipeline {
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-IF4p5-TDD-Band40") {
-                                    build job: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-IF4p5-TDD-Band40") {
-                                    build job: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-IF4p5-TDD-Band40-B210', 'Test-IF4p5-TDD-Band40')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-IF4p5-TDD-Band40-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-IF4p5-TDD-Band40-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-IF4p5-TDD-Band40-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-TDD-Band40-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-IF4p5-TDD-Band40-B210')
                             }
                         }
                         failure {
@@ -591,44 +467,13 @@ pipeline {
                 stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-Mono-FDD-Band13") {
-                                    build job: 'eNB-CI-MONO-FDD-Band13-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-Mono-FDD-Band13") {
-                                    build job: 'eNB-CI-MONO-FDD-Band13-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-MONO-FDD-Band13-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-MONO-FDD-Band13-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-MONO-FDD-Band13-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-MONO-FDD-Band13-B210')
                             }
                         }
                         failure {
@@ -638,47 +483,19 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test OAI UE Sniffing - FDD - Band 20 - B200") {
+                stage ("Test OAI UE - FDD - Bands 20/7 - B200") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                //gitlabCommitStatus(name: "Test-OAI-UE-FDD-Band20") {
-                                    build job: 'UE-CI-FDD-Band20-B200',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                //}
-                            } else {
-                                //gitlabCommitStatus(name: "Test-OAI-UE-FDD-Band20") {
-                                    build job: 'UE-CI-FDD-Band20-B200',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                //}
-                            }
+                            triggerSlaveJobNoGitLab ('UE-CI-FDD-Band20-B200')
+                            // calling a second job sequentially
+                            triggerSlaveJob ('eNB-UE-CI-MONO-FDD-Band7-B200', 'Test-eNB-OAI-UE-FDD-Band7')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-UE-CI-FDD-Band20-B200.html')) {
-                                    copyArtifacts(projectName: 'UE-CI-FDD-Band20-B200',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-UE-CI-FDD-Band20-B200.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-UE-CI-FDD-Band20-B200.html"
-                                        archiveArtifacts artifacts: 'test_results-UE-CI-FDD-Band20-B200.html'
-                                    }
-                                }
+                                finalizeSlaveJob('UE-CI-FDD-Band20-B200')
+                                finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
                             }
                         }
                         failure {
@@ -763,6 +580,69 @@ OAI CI Team''',
                     sendSocialMediaMessage('ci-enb', 'danger', message)
                 }
             }
+        }
+    }
+}
+
+// ----  Slave Job functions
+
+def triggerSlaveJob (jobName, gitlabStatusName) {
+    if ("MERGE".equals(env.gitlabActionType)) {
+        gitlabCommitStatus(name: gitlabStatusName) {
+            build job: jobName,
+                parameters: [
+                    string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                    string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                    string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                    booleanParam(name: 'eNB_mergeRequest', value: true),
+                    string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+                ]
+        }
+    } else {
+        gitlabCommitStatus(name: gitlabStatusName) {
+            build job: jobName,
+                parameters: [
+                    string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                    string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                    string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                    booleanParam(name: 'eNB_mergeRequest', value: false)
+                ]
+       }
+    }
+}
+
+def triggerSlaveJobNoGitLab (jobName) {
+    if ("MERGE".equals(env.gitlabActionType)) {
+        build job: jobName,
+            parameters: [
+                string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                booleanParam(name: 'eNB_mergeRequest', value: true),
+                string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+            ]
+    } else {
+        build job: jobName,
+            parameters: [
+                string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                booleanParam(name: 'eNB_mergeRequest', value: false)
+            ]
+    }
+}
+
+def finalizeSlaveJob(jobName) {
+    // In case of any non-success, we are retrieving the HTML report of the last completed
+    // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
+    fileName = "test_results-${jobName}.html"
+    if (!fileExists(fileName)) {
+        copyArtifacts(projectName: jobName,
+            filter: 'test_results*.html',
+            selector: lastCompleted())
+        if (fileExists(fileName)) {
+            sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' ${fileName}"
+            archiveArtifacts artifacts: fileName
         }
     }
 }
