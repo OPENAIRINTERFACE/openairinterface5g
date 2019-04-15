@@ -48,7 +48,7 @@
 #include "PHY/defs_eNB.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -139,7 +139,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
   void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #endif
 
-extern uint8_t nfapi_mode;
+
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
@@ -160,7 +160,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
     return -1;
   }
 
-  if (nfapi_mode == 1) {
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     uint16_t frame = proc->frame_rx;
     uint16_t subframe = proc->subframe_rx;
@@ -188,7 +188,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
     }
   }
 
-  if (nfapi_mode == 1 && eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0) {
+  if (NFAPI_MODE==NFAPI_MODE_PNF && eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0) {
     LOG_E(PHY, "eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0");
     return 0;
   }
@@ -208,14 +208,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   release_UE_in_freeList(eNB->Mod_id);
 
   // UE-specific RX processing for subframe n
-  if (nfapi_mode == 0 || nfapi_mode == 1) {
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     phy_procedures_eNB_uespec_RX(eNB, proc);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, 1 );
 #if defined(PRE_SCD_THREAD)
 
-  if (nfapi_mode == 2) {
+  if (NFAPI_MODE==NFAPI_MODE_VNF) {
     new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     // L2-emulator can work only one eNB.
@@ -365,7 +365,7 @@ static void *L1_thread( void *param ) {
   L1_rxtx_proc_t *proc;
 
   // Working
-  if(nfapi_mode ==2) {
+  if(NFAPI_MODE==NFAPI_MODE_VNF) {
     proc = (L1_rxtx_proc_t *)param;
   } else {
     L1_proc_t *eNB_proc  = (L1_proc_t *)param;
@@ -406,7 +406,7 @@ static void *L1_thread( void *param ) {
 
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
 
-    if (nfapi_mode!=2) {
+    if (NFAPI_MODE!=NFAPI_MODE_VNF) {
       if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB);
       else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)     wakeup_txfh(proc,eNB);
     }
@@ -908,10 +908,10 @@ void init_eNB_proc(int inst) {
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
       pthread_create( &L1_proc->pthread, attr0, L1_thread, proc );
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread_tx, proc);
-    } else if (nfapi_mode == 2) { // this is neccesary in VNF or L2 FAPI simulator.
+    } else if (NFAPI_MODE==NFAPI_MODE_VNF) { // this is neccesary in VNF or L2 FAPI simulator.
       // Original Code from Fujitsu w/ old structure/field name
       //pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       //pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
@@ -974,7 +974,7 @@ void kill_eNB_proc(int inst) {
 
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
 
-    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
       pthread_mutex_lock(&L1_proc->mutex);
       L1_proc->instance_cnt = 0;
       pthread_cond_signal(&L1_proc->cond);
@@ -1006,7 +1006,7 @@ void kill_eNB_proc(int inst) {
     LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
 
-    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
       LOG_I(PHY, "Joining L1_proc mutex/cond\n");
       pthread_join( L1_proc->pthread, (void **)&status );
       LOG_I(PHY, "Joining L1_proc_tx mutex/cond\n");

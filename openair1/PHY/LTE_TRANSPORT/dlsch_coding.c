@@ -571,6 +571,8 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
   unsigned int L,C,B;
   B = dlsch->harq_processes[dlsch->harq_ids[frame%2][subframe]]->B;
 
+  LOG_D(PHY,"B %d, harq_pid %d\n",B,dlsch->harq_ids[frame%2][subframe]);
+
   if(B<=6144) {
     L=0;
     C=1;
@@ -703,7 +705,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
-    printf("encoding thinks this is a new packet for harq_pid %d (%p) \n",harq_pid,dlsch->harq_processes[harq_pid]->b);
+    printf("encoding thinks this is a new packet for harq_pid %d (%p), A %d \n",harq_pid,dlsch,A);
 #endif
     /*
     int i;

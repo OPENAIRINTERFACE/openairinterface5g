@@ -676,6 +676,9 @@ typedef struct {
   /// Number of Allocated RBs for UL after scheduling
   uint16_t first_rb_ul[8]; // num_max_harq
 
+  /// Is CQI requested for UL after scheduling 1st transmission
+  uint8_t cqi_req[8];         // num_max_harq
+
   /// Cyclic shift for DMRS after scheduling
   uint16_t cshift[8]; // num_max_harq
 
