@@ -175,8 +175,17 @@ int8_t polar_decoder_dci(double *input,
                          uint8_t pathMetricAppr,
                          uint16_t n_RNTI);
 
-void generic_polar_decoder(const t_nrPolar_params *,
-                           decoder_node_t *);
+void generic_polar_decoder(const t_nrPolar_params *pp,
+						   decoder_node_t *node);
+
+void applyFtoleft(const t_nrPolar_params *pp,
+				  decoder_node_t *node);
+
+void applyGtoright(const t_nrPolar_params *pp,
+				   decoder_node_t *node);
+
+void computeBeta(const t_nrPolar_params *pp,
+				 decoder_node_t *node);
 
 void build_decoder_tree(t_nrPolar_params *pp);
 void build_polar_tables(t_nrPolar_params *polarParams);

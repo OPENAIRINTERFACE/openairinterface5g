@@ -48,6 +48,7 @@
 #include "pdcp.h"
 
 #include "openair1/PHY/defs_gNB.h"
+#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 
 //Agent-related headers
 #include "flexran_agent_extern.h"

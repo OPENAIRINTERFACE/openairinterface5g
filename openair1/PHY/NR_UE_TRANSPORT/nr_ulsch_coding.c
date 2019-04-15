@@ -204,8 +204,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 
-  uint16_t Kr,r,r_offset,Kr_bytes;
-  uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
+  uint16_t Kr,r,r_offset;
+  //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG;
   uint32_t E;
   uint8_t Ilbrm; 
@@ -311,8 +311,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     }
 
     Kr = harq_process->K;
+#ifdef DEBUG_DLSCH_CODING
+    uint16_t Kr_bytes;
     Kr_bytes = Kr>>3;
-
+#endif
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -325,7 +327,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     //start_meas(te_stats);
     for (r=0; r<harq_process->C; r++) {
-      d_tmp[r] = &harq_process->d[r][0];
+      //d_tmp[r] = &harq_process->d[r][0];
       //channel_input[r] = &harq_process->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
       printf("Encoder: B %d F %d \n",harq_process->B, harq_process->F);
@@ -357,7 +359,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
-    //write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
 #ifdef DEBUG_DLSCH_CODING
       write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
       write_output("ulsch_enc_output0.m","enc0",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,4);

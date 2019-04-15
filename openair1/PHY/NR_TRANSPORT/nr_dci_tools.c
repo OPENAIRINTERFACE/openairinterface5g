@@ -64,8 +64,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   }
 
   if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-    AssertFatal((N_reg%(bsize*R))==0, "CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %us, bsize %d R %d)\n",
-    N_reg, bsize, R);
+    AssertFatal((N_reg%(bsize*R))==0,"CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %us, bsize %d R %d)\n",N_reg, bsize, R);
     C = N_reg/(bsize*R);
   }
 

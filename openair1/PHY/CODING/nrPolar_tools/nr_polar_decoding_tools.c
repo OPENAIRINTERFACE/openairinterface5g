@@ -97,12 +97,12 @@ void updatePathMetric(double *pathMetric,
 					  uint8_t approximation)
 {
 	if (approximation) { //eq. (12)
-		for (uint8_t i=0; i<listSize; i++) {
+		for (uint8_t i=0; i<2*listSize; i++) {
 			if ((2*bitValue) != ( 1 - copysign(1.0,llr[row][0][i]) )) pathMetric[i] += fabs(llr[row][0][i]);
 		}
 	} else { //eq. (11b)
 		int8_t multiplier = (2*bitValue) - 1;
-		for (uint8_t i=0; i<listSize; i++) pathMetric[i] += log ( 1 + exp(multiplier*llr[row][0][i]) ) ;
+		for (uint8_t i=0; i<2*listSize; i++) pathMetric[i] += log ( 1 + exp(multiplier*llr[row][0][i]) ) ;
 	}
 }
 
@@ -267,7 +267,7 @@ void build_decoder_tree(t_nrPolar_params *polarParams)
 #define _mm_subs_pi16(a,b) vsub_s16(a,b)
 #endif
 
-void applyFtoleft(t_nrPolar_params *pp, decoder_node_t *node) {
+void applyFtoleft(const t_nrPolar_params *pp, decoder_node_t *node) {
   int16_t *alpha_v=node->alpha;
   int16_t *alpha_l=node->left->alpha;
   int16_t *betal = node->left->beta;
@@ -390,7 +390,7 @@ void applyFtoleft(t_nrPolar_params *pp, decoder_node_t *node) {
   }
 }
 
-void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
+void applyGtoright(const t_nrPolar_params *pp,decoder_node_t *node) {
 
   int16_t *alpha_v=node->alpha;
   int16_t *alpha_r=node->right->alpha;
@@ -461,7 +461,7 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
 
 int16_t all1[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
-void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
+void computeBeta(const t_nrPolar_params *pp,decoder_node_t *node) {
 
   int16_t *betav = node->beta;
   int16_t *betal = node->left->beta;

@@ -990,7 +990,7 @@ void nr_uci_encoding(uint64_t payload,
   // A is the payload size, to be provided in function call
   uint8_t A = nr_bit;
   // L is the CRC size
-  uint8_t L;
+  //uint8_t L;
   // E is the rate matching output sequence length as given in TS 38.212 subclause 6.3.1.4.1
   uint16_t E=0,E_init;
 
@@ -1047,7 +1047,7 @@ void nr_uci_encoding(uint64_t payload,
   }
 
   *M_bit = E;
-  int I_seg;
+  //int I_seg;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t\t [nr_uci_encoding] start function with fmt=%d, encoding A=%d bits into M_bit=%d (where nrofSymbols=%d,nrofPRB=%d)\n",fmt,A,*M_bit,nrofSymbols,nrofPRB);
 #endif
@@ -1057,19 +1057,19 @@ void nr_uci_encoding(uint64_t payload,
     // CRC bits are not attached, and coding small block lengths (subclause 5.3.3)
   } else if (A>=12) {
     // procedure in subclause 6.3.1.2.1 (UCI encoded by Polar code -> subclause 6.3.1.3.1)
-    if ((A>=360 && E>=1088)||(A>=1013)) {
+    /*if ((A>=360 && E>=1088)||(A>=1013)) {
       I_seg = 1;
     } else {
       I_seg = 0;
-    }
+    }*/
 
-    if (A>=20) {
+    /*if (A>=20) {
       // parity bits (subclause 5.2.1) computed by setting L=11 and using generator polynomial gCRC11(D) (subclause 5.1)
       L=11;
     } else if (A<=19) {
       // parity bits (subclause 5.2.1) computed by setting L=6  and using generator polynomial gCRC6(D)  (subclause 5.1)
       L=6;
-    }
+    }*/
 
     // code block segmentation and CRC attachment is performed according to subclause 5.2.1
     // polar coding subclause 5.3.1

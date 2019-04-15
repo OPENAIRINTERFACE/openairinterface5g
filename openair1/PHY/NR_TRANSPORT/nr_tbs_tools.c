@@ -112,12 +112,9 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
   uint8_t rnti_type = params_rel15.rnti_type;
-  uint8_t dci_format = params_rel15.dci_format;
-  uint8_t ss_type = params_rel15.search_space_type;
   uint8_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
   (config.pdsch_config.x_overhead.value);
   uint8_t N_PRB_DMRS = (config.pdsch_config.dmrs_type.value == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
-  uint8_t mcs_table = config.pdsch_config.mcs_table.value;
   uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
   uint8_t Imcs = dlsch_rel15->mcs_idx;
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
@@ -126,7 +123,11 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   uint16_t N_RE, Ninfo, Ninfo_prime, C, TBS=0, R;
   uint8_t table_idx, Qm, n, scale;
 
-  table_idx = 1; //get_table_idx(mcs_table, dci_format, rnti_type, ss_type);
+  /*uint8_t mcs_table = config.pdsch_config.mcs_table.value;
+  uint8_t ss_type = params_rel15.search_space_type;
+  uint8_t dci_format = params_rel15.dci_format;
+  get_table_idx(mcs_table, dci_format, rnti_type, ss_type);*/
+  table_idx = 1;
   scale = ((table_idx==2)&&((Imcs==20)||(Imcs==26)))?11:10;
   
   N_RE = min(156, N_RE_prime)*dlsch_rel15->n_prb;
