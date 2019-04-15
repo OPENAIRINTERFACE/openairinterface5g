@@ -44,6 +44,7 @@ function variant_usage {
     echo " # non-OSA Build Variants"
     echo "    --variant flexran-rtc  OR -v10"
     echo " # OpenAirInterface Test Variants"
+    echo "    --variant l1-sim       OR -v20"
     echo "    --variant rf-sim       OR -v21"
     echo "    --variant l2-sim       OR -v22"
 }
@@ -303,6 +304,13 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
+    -v20)
+    VM_NAME=ci-l1-sim
+    ARCHIVES_LOC=l1_sim
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
     -v21)
     VM_NAME=ci-rf-sim
     ARCHIVES_LOC=rf_sim
@@ -383,6 +391,12 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="cmake . && make -j2"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        l1-sim)
+        VM_NAME=ci-l1-sim
+        ARCHIVES_LOC=l1_sim
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         rf-sim)
@@ -589,6 +603,24 @@ then
 fi
 if [ $TEST_CMD -eq 1 ]
 then
+    # Comment out or delete the following lines if you want to run L1-simulator in your branch and/or merge request
+    if [[ $VM_NAME =~ .*-l1-sim.* ]]
+    then
+        echo "Currently L1-Simulator Testing is not implemented / enabled"
+        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
+        echo "STATUS seems OK"
+        exit $STATUS
+    fi
+    # end to comment out for L1-simulator
+    # Comment out or delete the following lines if you want to run RF-simulator in your branch and/or merge request
+    if [[ $VM_NAME =~ .*-rf-sim.* ]]
+    then
+        echo "Currently RF-Simulator Testing is not implemented / enabled"
+        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
+        echo "STATUS seems OK"
+        exit $STATUS
+    fi
+    # end to comment out for RF-simulator
     ARCHIVES_LOC=${ARCHIVES_LOC}/test
     run_test_on_vm
 fi

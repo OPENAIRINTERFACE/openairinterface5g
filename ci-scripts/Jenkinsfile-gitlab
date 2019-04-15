@@ -371,6 +371,36 @@ pipeline {
                                 }
                             }
                         }
+                        stage ("Test L1 simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test L1-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l1-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ("Test RF simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test RF-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         stage ("Test L2 simulator") {
                             steps {
                                 script {

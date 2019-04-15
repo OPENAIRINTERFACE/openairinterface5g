@@ -1474,6 +1474,8 @@ function run_test_on_vm {
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
     then
+        PING_STATUS=0
+        IPERF_STATUS=0
         if [ -d $ARCHIVES_LOC ]
         then
             rm -Rf $ARCHIVES_LOC
