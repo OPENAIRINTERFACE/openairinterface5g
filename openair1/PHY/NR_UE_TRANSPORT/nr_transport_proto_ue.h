@@ -1069,6 +1069,10 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out);
 
+void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch,
+                         NR_DL_FRAME_PARMS *frame_parms,
+                         int harq_pid);
+
 
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,

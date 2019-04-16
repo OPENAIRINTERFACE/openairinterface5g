@@ -30,9 +30,19 @@
 * \warning
 */
 #include <stdint.h>
+#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/assertions.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/defs_nr_common.h"
+#include "PHY/TOOLS/tools_defs.h"
+
+//#define DEBUG_SCFDMA
+
+#ifdef DEBUG_SCFDMA
+
+  FILE *debug_scfdma;
+
+#endif
 
 
 
@@ -72,5 +82,102 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
       *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
+
+}
+
+
+void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch, NR_DL_FRAME_PARMS *frame_parms, int harq_pid){
+
+  NR_UL_UE_HARQ_t *harq_process;
+  int16_t x[8192] = {0}; // 8192 is the maximum number of fft bins
+  uint32_t *dmod;
+  int sc, pusch_symb, pusch_sc;
+  int symb, k, l, num_mod_symb;
+
+  harq_process = ulsch->harq_processes[harq_pid];
+
+#ifdef DEBUG_SCFDMA
+  debug_scfdma = fopen("debug_scfdma.txt","w");
+#endif
+
+  dmod = ulsch->d_mod;
+  pusch_symb = ulsch->Nsymb_pusch;
+  pusch_sc = ulsch->Nsc_pusch;
+  num_mod_symb = harq_process->num_of_mod_symbols;
+
+  void (*dft)(int16_t *,int16_t *, int);
+
+  switch (frame_parms->ofdm_symbol_size) {
+  case 128:
+    dft = dft128;
+    break;
+
+  case 256:
+    dft = dft256;
+    break;
+
+  case 512:
+    dft = dft512;
+    break;
+
+  case 1024:
+    dft = dft1024;
+    break;
+
+  case 1536:
+    dft = dft1536;
+    break;
+
+  case 2048:
+    dft = dft2048;
+    break;
+
+  case 4096:
+    dft = dft4096;
+    break;
+
+  case 8192:
+    dft = dft8192;
+    break;
+
+  default:
+    dft = dft512;
+    break;
+  }
+
+  k = 0;
+  symb = 0;
+
+  for(l = 0; l < pusch_symb; l++){
+
+    for (sc = 0; sc < pusch_sc; sc++){
+
+      x[sc*2] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2])>>15:0;
+      x[sc*2 + 1] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2 + 1])>>15:0;
+
+  #ifdef DEBUG_SCFDMA
+      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2, x[sc*2] );
+      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2 + 1, x[sc*2 + 1] );
+  #endif
+
+      symb++;
+
+    }
+
+
+    dft(x, (int16_t *)&ulsch->y[l*pusch_sc], 1);
+
+  }
+
+#ifdef DEBUG_SCFDMA
+
+  for (symb = 0; symb < num_mod_symb; symb++)
+  {
+    fprintf(debug_scfdma, "ulsch->y[%d] = %d\n", symb*2, ((int16_t *)ulsch->y)[symb*2] );
+    fprintf(debug_scfdma, "ulsch->y[%d] = %d\n", symb*2 + 1, ((int16_t *)ulsch->y)[symb*2 + 1] );
+  }
+
+  fclose(debug_scfdma);
+#endif
 
 }

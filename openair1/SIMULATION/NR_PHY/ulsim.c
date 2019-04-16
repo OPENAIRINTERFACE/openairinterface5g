@@ -507,6 +507,8 @@ int main(int argc, char **argv) {
     ulsch_ue[cwd]->nb_re_dmrs = nb_re_dmrs;
     ulsch_ue[cwd]->length_dmrs =  length_dmrs;
     ulsch_ue[cwd]->rnti = n_rnti;
+    ulsch_ue[cwd]->Nsc_pusch = nb_rb*NR_NB_SC_PER_RB;
+    ulsch_ue[cwd]->Nsymb_pusch = nb_symb_sch;
     ///////////
     ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -571,6 +573,8 @@ int main(int argc, char **argv) {
                   available_bits,
                   mod_order,
                   (int16_t *)ulsch_ue[cwd]->d_mod);
+
+    pusch_transform_precoding(ulsch_ue[cwd], frame_parms, harq_pid);
 
     ///////////
     ////////////////////////////////////////////////////////////////////////

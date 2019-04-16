@@ -138,10 +138,6 @@ typedef struct {
   uint32_t sumKr;
   /// Number of "Filler" bits
   uint32_t F;
-  /// Msc_initial, Initial number of subcarriers for ULSCH
-  uint16_t Msc_initial;
-  /// Nsymb_initial, Initial number of symbols for ULSCH
-  uint8_t Nsymb_initial;
   /// n_DMRS  for cyclic shift of DMRS
   uint8_t n_DMRS;
   /// n_DMRS2 for cyclic shift of DMRS
@@ -165,6 +161,8 @@ typedef struct {
 typedef struct {
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
+  /// Nsc_pusch, number of allocated subcarriers for ULSCH
+  uint16_t Nsc_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
   /// DMRS length
@@ -204,9 +202,9 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
-  /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
-  int32_t z[MAX_NUM_NR_RE];
+  uint32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
+  /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
+  uint32_t y[MAX_NUM_NR_RE];
   /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
