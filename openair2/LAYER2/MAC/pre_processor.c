@@ -56,6 +56,13 @@ extern RAN_CONTEXT_t RC;
 
 //#define ICIC 0
 
+void
+sort_ue_ul(module_id_t module_idP,
+           int slice_idx,
+           int sched_frameP,
+           sub_frame_t sched_subframeP,
+           rnti_t *rntiTable);
+
 /* this function checks that get_eNB_UE_stats returns
  * a non-NULL pointer for all the active CCs of an UE
  */
@@ -264,7 +271,7 @@ assign_rbs_required(module_id_t Mod_id,
 // This function scans all CC_ids for a particular UE to find the maximum round index of its HARQ processes
 int
 maxround(module_id_t Mod_id, uint16_t rnti, int frame,
-         sub_frame_t subframe, uint8_t ul_flag) {
+         sub_frame_t subframe) {
   uint8_t round, round_max = 0, UE_id;
   int CC_id, harq_pid;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
@@ -275,6 +282,28 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
     UE_id = find_UE_id(Mod_id, rnti);
     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame,subframe);
     round = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
+
+    if (round > round_max) {
+      round_max = round;
+    }
+  }
+
+  return round_max;
+}
+
+int
+maxround_ul(module_id_t Mod_id, uint16_t rnti, int sched_frame,
+         sub_frame_t sched_subframe) {
+  uint8_t round, round_max = 0, UE_id;
+  int CC_id, harq_pid;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  COMMON_channels_t *cc;
+
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
+    cc = &RC.mac[Mod_id]->common_channels[CC_id];
+    UE_id = find_UE_id(Mod_id, rnti);
+    harq_pid = subframe2harqpid(cc, sched_frame, sched_subframe);
+    round = UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid];
 
     if (round > round_max) {
       round_max = round;
@@ -332,10 +361,10 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params) {
   int UE_id2 = *(const int *) _b;
   int rnti1 = UE_RNTI(params->Mod_idP, UE_id1);
   int pCC_id1 = UE_PCCID(params->Mod_idP, UE_id1);
-  int round1 = maxround(params->Mod_idP, rnti1, params->frameP, params->subframeP, 1);
+  int round1 = maxround(params->Mod_idP, rnti1, params->frameP, params->subframeP);
   int rnti2 = UE_RNTI(params->Mod_idP, UE_id2);
   int pCC_id2 = UE_PCCID(params->Mod_idP, UE_id2);
-  int round2 = maxround(params->Mod_idP, rnti2, params->frameP, params->subframeP, 1);
+  int round2 = maxround(params->Mod_idP, rnti2, params->frameP, params->subframeP);
   int cqi1 = maxcqi(params->Mod_idP, UE_id1);
   int cqi2 = maxcqi(params->Mod_idP, UE_id2);
   long lcgid1 = min_lcgidpriority(params->Mod_idP, UE_id1);
@@ -1638,6 +1667,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int slice_idx,
                                    int frameP,
                                    sub_frame_t subframeP,
+                                   int sched_frameP,
                                    unsigned char sched_subframeP,
                                    uint16_t *first_rb) {
   int UE_id;
@@ -1659,7 +1689,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
   // sort ues
   LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
-   sort_ue_ul(module_idP, slice_idx, frameP, subframeP, rntiTable);
+   sort_ue_ul(module_idP, slice_idx, sched_frameP, sched_subframeP, rntiTable);
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
   LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
   assign_max_mcs_min_rb(module_idP, slice_idx, frameP, subframeP, first_rb);
@@ -1753,12 +1783,12 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
       UE_template = &UE_list->UE_template[CC_id][UE_id];
-      harq_pid = subframe2harqpid(&eNB->common_channels[CC_id],
-                                  frameP, sched_subframeP);
+      harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],
+                                  sched_frameP, sched_subframeP);
 
       //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
-      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id] > 0) {
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0) {
         nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
       } else {
         nb_allocated_rbs[CC_id][UE_id] =
@@ -1937,8 +1967,8 @@ assign_max_mcs_min_rb(module_id_t module_idP,
 
 struct sort_ue_ul_params {
   int module_idP;
-  int frameP;
-  int subframeP;
+  int sched_frameP;
+  int sched_subframeP;
 };
 
 static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
@@ -1948,12 +1978,12 @@ static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
   int UE_id2 = *(const int *) _b;
   int rnti1 = UE_RNTI(params->module_idP, UE_id1);
   int pCCid1 = UE_PCCID(params->module_idP, UE_id1);
-  int round1 = maxround(params->module_idP, rnti1, params->frameP,
-                        params->subframeP, 1);
+  int round1 = maxround_ul(params->module_idP, rnti1, params->sched_frameP,
+                           params->sched_subframeP);
   int rnti2 = UE_RNTI(params->module_idP, UE_id2);
   int pCCid2 = UE_PCCID(params->module_idP, UE_id2);
-  int round2 = maxround(params->module_idP, rnti2, params->frameP,
-                        params->subframeP, 1);
+  int round2 = maxround_ul(params->module_idP, rnti2, params->sched_frameP,
+                           params->sched_subframeP);
 
   if (round1 > round2)
     return -1;
@@ -2000,14 +2030,14 @@ static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
  */
 void sort_ue_ul(module_id_t module_idP,
                 int slice_idx,
-                int frameP,
-                sub_frame_t subframeP,
+                int sched_frameP,
+                sub_frame_t sched_subframeP,
                 rnti_t *rntiTable)
 //-----------------------------------------------------------------------------
 {
   int list[MAX_MOBILES_PER_ENB];
   int list_size = 0;
-  struct sort_ue_ul_params params = { module_idP, frameP, subframeP };
+  struct sort_ue_ul_params params = { module_idP, sched_frameP, sched_subframeP };
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
   UE_sched_ctrl *UE_scheduling_control = NULL;
 

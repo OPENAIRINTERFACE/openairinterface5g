@@ -70,7 +70,6 @@ DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 UE_NAS_USE_TUN="False"
-UETARGET="False"
 BASIC_SIMULATOR=0
 trap handle_ctrl_c INT
 
@@ -219,7 +218,6 @@ function main() {
 	    shift;;
        --UE)
             UE=1
-            UETARGET="True"
             echo_info "Will compile UE"
             shift;;
        --mu)
@@ -549,9 +547,6 @@ function main() {
     echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
     echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
     echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"        >>  $cmake_file
-    if [ "$UE" = 1 ] ; then
-       echo "set (UETARGET $UETARGET )"                   >> $cmake_file
-    fi
     if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
      echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
      echo "set (LINUX True )"              >>  $cmake_file
@@ -945,7 +940,6 @@ function main() {
     echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"         >>  $cmake_file
     echo "set (LINUX True )"                          >>  $cmake_file
     echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
-    echo "set (UETARGET True )"                       >>  $cmake_file
     echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
 #    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file

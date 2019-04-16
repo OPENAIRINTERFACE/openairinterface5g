@@ -35,6 +35,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
@@ -64,7 +65,7 @@
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
-extern uint8_t nfapi_mode;
+
 
 //------------------------------------------------------------------------------
 void
@@ -155,6 +156,7 @@ generate_dlsch_header(unsigned char *mac_header,
     } else {
       first_element = 1;
     }
+
     mac_header_ptr->R = 0;
     mac_header_ptr->E = 0;
     mac_header_ptr->LCID = DRX_CMD;
@@ -168,6 +170,7 @@ generate_dlsch_header(unsigned char *mac_header,
     } else {
       first_element = 1;
     }
+
     mac_header_ptr->R = 0;
     mac_header_ptr->E = 0;
     mac_header_ptr->LCID = TIMING_ADV_CMD;
@@ -435,25 +438,15 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 // changes to pre-processor for eMTC
 //------------------------------------------------------------------------------
 
-void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned int *narrowBandindex){
-    LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
-
-    AssertFatal(pue_template->physicalConfigDedicated !=NULL, "no RRC physical configuration for this UE ") ;
-    AssertFatal(pue_template->physicalConfigDedicated->ext4 !=NULL, "no RRC physical configuration for this UE ") ;
-
-    AssertFatal(pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.count > 0 ,"epdcch config list is empty") ;
-
-    epdcch_setconfig_r11 = pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
-
-    AssertFatal(epdcch_setconfig_r11->ext2 !=NULL && epdcch_setconfig_r11->ext2->mpdcch_config_r13 !=NULL," mpdcch config not found")  ;
-
-*maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13  ;
-
-    *narrowBandindex = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13  ;
-
-
-
-
+void  getRepetition(UE_TEMPLATE *pue_template,unsigned int *maxRep, unsigned int *narrowBandindex) {
+  LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
+  AssertFatal(pue_template->physicalConfigDedicated !=NULL, "no RRC physical configuration for this UE ") ;
+  AssertFatal(pue_template->physicalConfigDedicated->ext4 !=NULL, "no RRC physical configuration for this UE ") ;
+  AssertFatal(pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.count > 0,"epdcch config list is empty") ;
+  epdcch_setconfig_r11 = pue_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0] ;
+  AssertFatal(epdcch_setconfig_r11->ext2 !=NULL && epdcch_setconfig_r11->ext2->mpdcch_config_r13 !=NULL," mpdcch config not found")  ;
+  *maxRep = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13  ;
+  *narrowBandindex = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13  ;
 }
 
 //------------------------------------------------------------------------------
@@ -513,7 +506,6 @@ schedule_ue_spec(module_id_t module_idP,
   rrc_eNB_ue_context_t *ue_contextP = NULL;
   int nb_mac_CC = RC.nb_mac_CC[module_idP];
   long dl_Bandwidth;
-
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,
                                           VCD_FUNCTION_IN);
@@ -655,14 +647,14 @@ schedule_ue_spec(module_id_t module_idP,
           case 2:
           case 7:
             aggregation = get_aggregation(get_bw_index(module_idP,
-                                                       CC_id),
+                                          CC_id),
                                           ue_sched_ctrl->dl_cqi[CC_id],
                                           format1);
             break;
 
           case 3:
             aggregation = get_aggregation(get_bw_index(module_idP,
-                                                       CC_id),
+                                          CC_id),
                                           ue_sched_ctrl->dl_cqi[CC_id],
                                           format2A);
             break;
@@ -740,7 +732,7 @@ schedule_ue_spec(module_id_t module_idP,
                 (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
                 eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
-      if (nfapi_mode) {
+      if (NFAPI_MODE != NFAPI_MONOLITHIC) {
         eNB_UE_stats->dlsch_mcs1 = 10; // cqi_to_mcs[ue_sched_ctrl->dl_cqi[CC_id]];
       } else { // this operation is also done in the preprocessor
         eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,
@@ -817,11 +809,12 @@ schedule_ue_spec(module_id_t module_idP,
                   LOG_W(MAC, "WARN: rballoc_subband not free for retrans?\n");
 
                 ue_template->rballoc_subband[harq_pid][j] = ue_sched_ctrl->rballoc_sub_UE[CC_id][j];
-
                 nb_rb_temp -= min_rb_unit[CC_id];
+
                 if ((j == N_RBG[CC_id] - 1) && (N_RB_DL[CC_id] == 25 || N_RB_DL[CC_id] == 50))
                   nb_rb_temp++;
               }
+
               j++;
             }
           }
@@ -911,7 +904,6 @@ schedule_ue_spec(module_id_t module_idP,
                                         cc[CC_id].p_eNB == 1 ? 1 : 2,    // transmission mode
                                         0,    //number of PRBs treated as one subband, not used here
                                         0);   // number of beamforming vectors, not used here
-
                 LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",
                       eNB->pdu_index[CC_id],
                       round_DL);
@@ -966,6 +958,7 @@ schedule_ue_spec(module_id_t module_idP,
           if (ta_update != 31) {
             ue_sched_ctrl->ta_timer = 20;
           }
+
           /* reset ta_update */
           ue_sched_ctrl->ta_update = 31;
         } else {
@@ -1012,7 +1005,7 @@ schedule_ue_spec(module_id_t module_idP,
                                               , 0
                                               , 0
 #endif
-                                              );
+                                             );
             pthread_mutex_lock(&rrc_release_freelist);
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
@@ -1105,10 +1098,12 @@ schedule_ue_spec(module_id_t module_idP,
                   module_idP,
                   CC_id,
                   sdu_lengths[0]);
+
             for (j = 0; j < sdu_lengths[0]; ++j) {
               LOG_T(MAC, "%x ",
                     dlsch_buffer[j]);
             }
+
             LOG_T(MAC, "\n");
 #endif
           }
@@ -1129,7 +1124,7 @@ schedule_ue_spec(module_id_t module_idP,
                                           , 0
                                           , 0
 #endif
-                                          );
+                                         );
           // DCCH SDU
           sdu_lengths[num_sdus] = 0;
 
@@ -1138,18 +1133,18 @@ schedule_ue_spec(module_id_t module_idP,
                   module_idP, frameP, CC_id,
                   TBS - ta_len - header_length_total - sdu_length_total - 3);
             sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP,
-                                                      rnti,
-                                                      module_idP,
-                                                      frameP,
-                                                      ENB_FLAG_YES,
-                                                      MBMS_FLAG_NO, DCCH + 1,
-                                                      TBS, //not used
-                                                      (char *) &dlsch_buffer[sdu_length_total]
+                                     rnti,
+                                     module_idP,
+                                     frameP,
+                                     ENB_FLAG_YES,
+                                     MBMS_FLAG_NO, DCCH + 1,
+                                     TBS, //not used
+                                     (char *) &dlsch_buffer[sdu_length_total]
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                                      , 0
-                                                      , 0
+                                     , 0
+                                     , 0
 #endif
-                                                      );
+                                                     );
             T(T_ENB_MAC_UE_DL_SDU,
               T_INT(module_idP),
               T_INT(CC_id),
@@ -1173,10 +1168,12 @@ schedule_ue_spec(module_id_t module_idP,
                   module_idP,
                   CC_id,
                   sdu_lengths[num_sdus]);
+
             for (j = 0; j < sdu_lengths[num_sdus]; ++j) {
               LOG_T(MAC, "%x ",
                     dlsch_buffer[j]);
             }
+
             LOG_T(MAC, "\n");
 #endif
           }
@@ -1206,7 +1203,7 @@ schedule_ue_spec(module_id_t module_idP,
                                             , 0
                                             , 0
 #endif
-                                            );
+                                           );
 
             if (rlc_status.bytes_in_buffer > 0) {
               LOG_D(MAC, "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
@@ -1216,19 +1213,19 @@ schedule_ue_spec(module_id_t module_idP,
                     lcid,
                     header_length_total);
               sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                                                       rnti,
-                                                       module_idP,
-                                                       frameP,
-                                                       ENB_FLAG_YES,
-                                                       MBMS_FLAG_NO,
-                                                       lcid,
-                                                       TBS, //not used
-                                                       (char *) &dlsch_buffer[sdu_length_total]
+                                      rnti,
+                                      module_idP,
+                                      frameP,
+                                      ENB_FLAG_YES,
+                                      MBMS_FLAG_NO,
+                                      lcid,
+                                      TBS, //not used
+                                      (char *) &dlsch_buffer[sdu_length_total]
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                                       , 0
-                                                       , 0
+                                      , 0
+                                      , 0
 #endif
-                                                       );
+                                                      );
               T(T_ENB_MAC_UE_DL_SDU,
                 T_INT(module_idP),
                 T_INT(CC_id),
@@ -1400,10 +1397,12 @@ schedule_ue_spec(module_id_t module_idP,
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER
           LOG_T(MAC, "[eNB %d] First 16 bytes of DLSCH : \n");
+
           for (i = 0; i < 16; i++) {
             LOG_T(MAC, "%x.",
                   dlsch_buffer[i]);
           }
+
           LOG_T(MAC, "\n");
 #endif
           // cycle through SDUs and place in dlsch_buffer
@@ -1527,7 +1526,7 @@ schedule_ue_spec(module_id_t module_idP,
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level =
             get_aggregation(get_bw_index(module_idP,
-                                        CC_id),
+                                         CC_id),
                             ue_sched_ctrl->dl_cqi[CC_id],
                             format1);
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
@@ -1629,12 +1628,11 @@ schedule_ue_spec(module_id_t module_idP,
                                     cc[CC_id].p_eNB == 1 ? 1 : 2, // transmission mode
                                     0,  //number of PRBs treated as one subband, not used here
                                     0); // number of beamforming vectors, not used here
-
             eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
-                                                          (frameP * 10) + subframeP,
-                                                          TBS,
-                                                          eNB->pdu_index[CC_id],
-                                                          dlsch_pdu->payload[0]);
+                                        (frameP * 10) + subframeP,
+                                        TBS,
+                                        eNB->pdu_index[CC_id],
+                                        dlsch_pdu->payload[0]);
             LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",
                   eNB->pdu_index[CC_id]);
             eNB->pdu_index[CC_id]++;
@@ -1839,6 +1837,7 @@ dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
       }
     }
   }
+
   return;
 }
 
@@ -1879,12 +1878,12 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
  */
 void
 schedule_ue_spec_br(module_id_t module_idP,
-		    frame_t       frameP,
-		                sub_frame_t subframeP) 
-//------------------------------------------------------------------------------        
+                    frame_t       frameP,
+                    sub_frame_t subframeP)
+//------------------------------------------------------------------------------
 {
   int CC_id = 0;
-  int UE_id = -1; 
+  int UE_id = -1;
   int rvseq[4] = {0,2,3,1};
   int mcs = 0;
   int round_DL = 0;
@@ -1899,13 +1898,11 @@ schedule_ue_spec_br(module_id_t module_idP,
   uint16_t padding = 0;
   uint16_t post_padding = 0;
   uint16_t                       sdu_length_total = 0;
-
   mac_rlc_status_resp_t rlc_status;
   rrc_eNB_ue_context_t *ue_contextP = NULL;
-
   unsigned char header_len_dcch = 0;
   unsigned char header_len_dcch_tmp = 0;
-  unsigned char header_len_dtch = 0; 
+  unsigned char header_len_dtch = 0;
   unsigned char header_len_dtch_tmp = 0;
   unsigned char header_len_dtch_last = 0;
   unsigned char ta_len = 0;
@@ -1913,19 +1910,16 @@ schedule_ue_spec_br(module_id_t module_idP,
   unsigned char lcid = 0;
   unsigned char  offset,num_sdus=0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_list_t *UE_list = &mac->UE_list;
   UE_TEMPLATE *UE_template = NULL;
   UE_sched_ctrl *ue_sched_ctl = NULL;
-
   nfapi_dl_config_request_pdu_t *dl_config_pdu = NULL;
   nfapi_ul_config_request_pdu_t *ul_config_pdu = NULL;
   nfapi_tx_request_pdu_t *TX_req = NULL;
   nfapi_dl_config_request_body_t *dl_req = NULL;
   nfapi_ul_config_request_body_t *ul_req = NULL;
-
   struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
   struct LTE_PUCCH_ConfigCommon_v1310 *ext4_pucch = NULL;
   LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
@@ -1934,7 +1928,6 @@ schedule_ue_spec_br(module_id_t module_idP,
   int             n1pucchan[4] = { 0, 0, 0, 0 };
   uint32_t        ackNAK_absSF;
   int             first_rb;
-
   dl_req = &(mac->DL_req[CC_id].dl_config_request_body);
   dl_config_pdu = &(dl_req->dl_config_pdu_list[dl_req->number_pdu]);
 
@@ -1952,39 +1945,40 @@ schedule_ue_spec_br(module_id_t module_idP,
     ext4_pucch = cc[CC_id].radioResourceConfigCommon_BR->ext4->pucch_ConfigCommon_v1310;
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
     pucch_N1PUCCH_AN_InfoList_r13 = ext4_pucch->n1PUCCH_AN_InfoList_r13;
-
     AssertFatal (prach_ParametersListCE_r13 != NULL, "prach_ParametersListCE_r13 is null\n");
     AssertFatal (pucch_N1PUCCH_AN_InfoList_r13 != NULL, "pucch_N1PUCCH_AN_InfoList_r13 is null\n");
     /* Check to verify CE-Level compatibility in SIB2_BR */
     AssertFatal (prach_ParametersListCE_r13->list.count == pucch_N1PUCCH_AN_InfoList_r13->list.count, "prach_ParametersListCE_r13->list.count!= pucch_N1PUCCH_AN_InfoList_r13->list.count\n");
 
     switch (prach_ParametersListCE_r13->list.count) {
-    case 4:
-      n1pucchan[3] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[3];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level3 shouldn't be NULL\n");
-      pucchreps[3] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13);
+      case 4:
+        n1pucchan[3] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[3];
+        AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level3 shouldn't be NULL\n");
+        pucchreps[3] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13);
 
-    case 3:
-      n1pucchan[2] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[2];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level2 shouldn't be NULL\n");
-      pucchreps[2] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13);
-    case 2:
-      n1pucchan[1] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[1];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level1 shouldn't be NULL\n");
-      pucchreps[1] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13);
-    case 1:
-      n1pucchan[0] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[0];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level0 shouldn't be NULL\n");
-      pucchreps[0] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13);
-      break;
-    default:
-      AssertFatal (1 == 0, "Illegal count for prach_ParametersListCE_r13 %d\n", prach_ParametersListCE_r13->list.count);
+      case 3:
+        n1pucchan[2] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[2];
+        AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level2 shouldn't be NULL\n");
+        pucchreps[2] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13);
+
+      case 2:
+        n1pucchan[1] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[1];
+        AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level1 shouldn't be NULL\n");
+        pucchreps[1] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13);
+
+      case 1:
+        n1pucchan[0] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[0];
+        AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level0 shouldn't be NULL\n");
+        pucchreps[0] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13);
+        break;
+
+      default:
+        AssertFatal (1 == 0, "Illegal count for prach_ParametersListCE_r13 %d\n", prach_ParametersListCE_r13->list.count);
     }
   }
 
   for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     int harq_pid = 0;
-
     rnti = UE_RNTI(module_idP, UE_id);
 
     if (rnti==NOT_A_RNTI) {
@@ -2005,26 +1999,23 @@ schedule_ue_spec_br(module_id_t module_idP,
     }
 
     round_DL = ue_sched_ctl->round[CC_id][harq_pid];
-
     AssertFatal (UE_template->physicalConfigDedicated != NULL, "UE_template->physicalConfigDedicated is null\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4 != NULL, "UE_template->physicalConfigDedicated->ext4 is null\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11 != NULL, "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11 is null\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present == LTE_EPDCCH_Config_r11__config_r11_PR_setup,
-		 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present != setup\n");
+                 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present != setup\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 != NULL,
-		 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = NULL\n");
-
+                 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = NULL\n");
     LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0];
-
     AssertFatal(epdcch_setconfig_r11 != NULL, "epdcch_setconfig_r11 is null\n");
     AssertFatal(epdcch_setconfig_r11->ext2 != NULL, "epdcch_setconfig_r11->ext2 is null\n");
     AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13 != NULL, "epdcch_setconfig_r11->ext2->mpdcch_config_r13 is null");
     AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13 != NULL, "epdcch_setconfig_r11->ext2->mpdcch_config_r13 is null");
-    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->present == LTE_EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup, 
-		"epdcch_setconfig_r11->ext2->mpdcch_config_r13->present is not setup\n");
+    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->present == LTE_EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup,
+                "epdcch_setconfig_r11->ext2->mpdcch_config_r13->present is not setup\n");
     AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 != NULL, "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 is null");
-    AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
-		"epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
+    AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup,
+                "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
 
     /* Simple scheduler for 1 repetition, 1 HARQ */
     if (subframeP == 5) { // MPDCCH
@@ -2032,21 +2023,21 @@ schedule_ue_spec_br(module_id_t module_idP,
 
       if (round_DL == 8) {
         rlc_status.bytes_in_buffer = 0;
-
         /* Now check RLC information to compute number of required RBs */
-        
         /* Get maximum TBS size for RLC request */
         TBS = get_TBS_DL(9,6);
-        
+
         /* Check first for RLC data on DCCH */
-        
+
         /* Add the length for all the control elements (timing adv, drx, etc) : header + payload */
 
         if (ue_sched_ctl->ta_timer == 0) {
           ta_update = ue_sched_ctl->ta_update;
+
           /* If we send TA then set timer to not send it for a while */
           if (ta_update != 31)
             ue_sched_ctl->ta_timer = 20;
+
           /* Reset ta_update */
           ue_sched_ctl->ta_update = 31;
         } else {
@@ -2054,60 +2045,53 @@ schedule_ue_spec_br(module_id_t module_idP,
         }
 
         ta_len = (ta_update != 31) ? 2 : 0;
-
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
         if (TBS - ta_len-header_len_dcch > 0 ) {
           LOG_D(MAC, "Calling mac_rlc_status_ind for DCCH\n");
-          
           rlc_status = mac_rlc_status_ind(module_idP,
-					  rnti,
-					  module_idP,
-					  frameP,
-					  subframeP,
-					  ENB_FLAG_YES,
-					  MBMS_FLAG_NO,
-					  DCCH,
+                                          rnti,
+                                          module_idP,
+                                          frameP,
+                                          subframeP,
+                                          ENB_FLAG_YES,
+                                          MBMS_FLAG_NO,
+                                          DCCH,
                                           (TBS-ta_len-header_len_dcch),
                                           0,
                                           0); // transport block set size
-
           sdu_lengths[0] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
             LOG_D(MAC, "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-					      module_idP,
+                  module_idP,
                   frameP,
                   CC_id,
                   TBS-header_len_dcch);
-
             sdu_lengths[0] = mac_rlc_data_req(module_idP,
-					      rnti,
-					      module_idP,
-					      frameP,
-					      ENB_FLAG_YES,
-					      MBMS_FLAG_NO,
-					      DCCH,
-					      TBS, //not used
+                                              rnti,
+                                              module_idP,
+                                              frameP,
+                                              ENB_FLAG_YES,
+                                              MBMS_FLAG_NO,
+                                              DCCH,
+                                              TBS, //not used
                                               (char *)&dlsch_buffer[0],
                                               0,
                                               0);
-
-            T(T_ENB_MAC_UE_DL_SDU, 
-              T_INT(module_idP), 
-              T_INT(CC_id), 
-              T_INT(rnti), 
-              T_INT(frameP), 
+            T(T_ENB_MAC_UE_DL_SDU,
+              T_INT(module_idP),
+              T_INT(CC_id),
+              T_INT(rnti),
+              T_INT(frameP),
               T_INT(subframeP),
-              T_INT(harq_pid), 
-              T_INT(DCCH), 
+              T_INT(harq_pid),
+              T_INT(DCCH),
               T_INT(sdu_lengths[0]));
-
             LOG_D(MAC,"[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",
                   module_idP,
                   CC_id,
                   sdu_lengths[0]);
-
             sdu_length_total = sdu_lengths[0];
             sdu_lcids[0] = DCCH;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH]+=1;
@@ -2122,192 +2106,183 @@ schedule_ue_spec_br(module_id_t module_idP,
         /* Check for DCCH1 and update header information (assume 2 byte sub-header) */
         if (TBS - ta_len-header_len_dcch - sdu_length_total > 0) {
           rlc_status = mac_rlc_status_ind(module_idP,
-					  rnti,
-					  module_idP,
-					  frameP,
-					  subframeP,
-					  ENB_FLAG_YES,
-					  MBMS_FLAG_NO,
+                                          rnti,
+                                          module_idP,
+                                          frameP,
+                                          subframeP,
+                                          ENB_FLAG_YES,
+                                          MBMS_FLAG_NO,
                                           DCCH + 1,
                                           (TBS-ta_len-header_len_dcch-sdu_length_total),
-                                          0, 
+                                          0,
                                           0); // transport block set size less allocations for timing advance and DCCH SDU
-	        
-	  sdu_lengths[num_sdus] = 0;
+          sdu_lengths[num_sdus] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) {
             LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-						      module_idP,
+                  module_idP,
                   frameP,
                   CC_id,
                   TBS-header_len_dcch - sdu_length_total);
-
             sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP,
-						      rnti,
-						      module_idP,
-						      frameP,
-						      ENB_FLAG_YES,
-						      MBMS_FLAG_NO,
-						      DCCH+1,
-						      TBS, //not used
-                                                      (char *)&dlsch_buffer[sdu_length_total],
-                                                      0, 
-                                                      0);
-
-            T(T_ENB_MAC_UE_DL_SDU, 
-              T_INT(module_idP), 
-              T_INT(CC_id), 
-              T_INT(rnti), 
-              T_INT(frameP), 
+                                     rnti,
+                                     module_idP,
+                                     frameP,
+                                     ENB_FLAG_YES,
+                                     MBMS_FLAG_NO,
+                                     DCCH+1,
+                                     TBS, //not used
+                                     (char *)&dlsch_buffer[sdu_length_total],
+                                     0,
+                                     0);
+            T(T_ENB_MAC_UE_DL_SDU,
+              T_INT(module_idP),
+              T_INT(CC_id),
+              T_INT(rnti),
+              T_INT(frameP),
               T_INT(subframeP),
-              T_INT(harq_pid), 
-              T_INT(DCCH+1), 
+              T_INT(harq_pid),
+              T_INT(DCCH+1),
               T_INT(sdu_lengths[num_sdus]));
-
             sdu_lcids[num_sdus] = DCCH1;
             sdu_length_total += sdu_lengths[num_sdus];
             header_len_dcch += 2;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH1] += 1;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH1] += sdu_lengths[num_sdus];
-	    num_sdus++;
-	  }
+            num_sdus++;
+          }
         }
 
-      /* Assume the max dtch header size, and adjust it later */
-      header_len_dtch = 0;
-      header_len_dtch_last = 0; // the header length of the last mac sdu
-      
-      /* lcid has to be sorted before the actual allocation (similar struct as ue_list) */
-      for (lcid = NB_RB_MAX-1; lcid >= DTCH ; lcid--){
-        /* TBD: check if the lcid is active */        
-        header_len_dtch += 3; 
-        header_len_dtch_last = 3;
+        /* Assume the max dtch header size, and adjust it later */
+        header_len_dtch = 0;
+        header_len_dtch_last = 0; // the header length of the last mac sdu
 
-	  LOG_D(MAC,"[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
-              module_idP,
-              frameP,
-              lcid,
-              TBS,
-              TBS - ta_len-header_len_dcch - sdu_length_total - header_len_dtch);
+        /* lcid has to be sorted before the actual allocation (similar struct as ue_list) */
+        for (lcid = NB_RB_MAX-1; lcid >= DTCH ; lcid--) {
+          /* TBD: check if the lcid is active */
+          header_len_dtch += 3;
+          header_len_dtch_last = 3;
+          LOG_D(MAC,"[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
+                module_idP,
+                frameP,
+                lcid,
+                TBS,
+                TBS - ta_len-header_len_dcch - sdu_length_total - header_len_dtch);
 
-        if (TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch > 0) { // NN: > 2 ?
-	    rlc_status = mac_rlc_status_ind(module_idP,
-					    rnti,
-					    module_idP,
-					    frameP,
-					    subframeP,
-					    ENB_FLAG_YES,
-					    MBMS_FLAG_NO,
-					    lcid,
-                                          TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch,
-                                          0,
-                                          0);
+          if (TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch > 0) { // NN: > 2 ?
+            rlc_status = mac_rlc_status_ind(module_idP,
+                                            rnti,
+                                            module_idP,
+                                            frameP,
+                                            subframeP,
+                                            ENB_FLAG_YES,
+                                            MBMS_FLAG_NO,
+                                            lcid,
+                                            TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch,
+                                            0,
+                                            0);
 
-	    if (rlc_status.bytes_in_buffer > 0) {
-            /* RRC inactivity LTE-M */
-            /* Reset RRC inactivity timer after uplane activity */
-            ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
+            if (rlc_status.bytes_in_buffer > 0) {
+              /* RRC inactivity LTE-M */
+              /* Reset RRC inactivity timer after uplane activity */
+              ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
 
-            if (ue_contextP != NULL) {
-              ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
-            } else {
-              LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
-                    module_idP,
-                    CC_id,
-                    rnti);
-            }
-            
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+              if (ue_contextP != NULL) {
+                ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+              } else {
+                LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
                       module_idP,
-                      frameP,
-                      TBS - header_len_dcch - sdu_length_total - header_len_dtch,
-                      lcid, 
-                      header_len_dtch);
+                      CC_id,
+                      rnti);
+              }
 
-	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-						       rnti,
-						       module_idP,
-						       frameP,
-						       ENB_FLAG_YES,
-						       MBMS_FLAG_NO,
-						       lcid,
-						       TBS,	//not used
-                                                    (char*) &dlsch_buffer[sdu_length_total],
-                                                    0,
-                                                    0);
+              LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+                    module_idP,
+                    frameP,
+                    TBS - header_len_dcch - sdu_length_total - header_len_dtch,
+                    lcid,
+                    header_len_dtch);
+              sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+                                      rnti,
+                                      module_idP,
+                                      frameP,
+                                      ENB_FLAG_YES,
+                                      MBMS_FLAG_NO,
+                                      lcid,
+                                      TBS, //not used
+                                      (char *) &dlsch_buffer[sdu_length_total],
+                                      0,
+                                      0);
+              T(T_ENB_MAC_UE_DL_SDU,
+                T_INT(module_idP),
+                T_INT(CC_id),
+                T_INT(rnti),
+                T_INT(frameP),
+                T_INT(subframeP),
+                T_INT(harq_pid),
+                T_INT(lcid),
+                T_INT(sdu_lengths[num_sdus]));
+              LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
+                    module_idP,
+                    sdu_lengths[num_sdus],
+                    lcid);
+              sdu_lcids[num_sdus] = lcid;
+              sdu_length_total += sdu_lengths[num_sdus];
 
-            T(T_ENB_MAC_UE_DL_SDU, 
-              T_INT(module_idP), 
-              T_INT(CC_id), 
-              T_INT(rnti), 
-              T_INT(frameP), 
-              T_INT(subframeP),
-              T_INT(harq_pid), 
-              T_INT(lcid), 
-              T_INT(sdu_lengths[num_sdus]));
+              if (sdu_lengths[num_sdus] < 128) {
+                header_len_dtch--;
+                header_len_dtch_last--;
+              }
 
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
-                  module_idP,
-                  sdu_lengths[num_sdus],
-                  lcid);
-
-	      sdu_lcids[num_sdus] = lcid;
-	      sdu_length_total += sdu_lengths[num_sdus];
-
-	      if (sdu_lengths[num_sdus] < 128) {
-		header_len_dtch--;
-		header_len_dtch_last--;
-	      }
-
-	      num_sdus++;
-          } else { // no data for this LCID
+              num_sdus++;
+            } else { // no data for this LCID
+              header_len_dtch -= 3;
+            }
+          } else { // no TBS left
             header_len_dtch -= 3;
-	    }
-        } else { // no TBS left
-          header_len_dtch -= 3;
-	    break;
-	  }
-      } // for loop LCID
+            break;
+          }
+        } // for loop LCID
 
-    if (header_len_dtch == 0) {
-      header_len_dtch_last = 0;
-	}
+        if (header_len_dtch == 0) {
+          header_len_dtch_last = 0;
+        }
 
-    /* There is at least one SDU  */
-    if ((sdu_length_total + header_len_dcch + header_len_dtch) > 0) {
-      /* Now compute number of required RBs for total sdu length */
-      /* Assume RAH format 2 */
-      /* Adjust  header lengths */
-	  header_len_dcch_tmp = header_len_dcch;
-	  header_len_dtch_tmp = header_len_dtch;
-      
-      if (header_len_dtch == 0) {
-        header_len_dcch = (header_len_dcch > 0) ? 1 : 0; // remove length field
-	  } else {
-        header_len_dtch_last -= 1; // now use it to find how many bytes has to be removed for the last MAC SDU 
-        header_len_dtch = (header_len_dtch > 0) ? header_len_dtch - header_len_dtch_last : header_len_dtch; // remove length field for the last SDU
-	  }
+        /* There is at least one SDU  */
+        if ((sdu_length_total + header_len_dcch + header_len_dtch) > 0) {
+          /* Now compute number of required RBs for total sdu length */
+          /* Assume RAH format 2 */
+          /* Adjust  header lengths */
+          header_len_dcch_tmp = header_len_dcch;
+          header_len_dtch_tmp = header_len_dtch;
+
+          if (header_len_dtch == 0) {
+            header_len_dcch = (header_len_dcch > 0) ? 1 : 0; // remove length field
+          } else {
+            header_len_dtch_last -= 1; // now use it to find how many bytes has to be removed for the last MAC SDU
+            header_len_dtch = (header_len_dtch > 0) ? header_len_dtch - header_len_dtch_last : header_len_dtch; // remove length field for the last SDU
+          }
 
           mcs = 9;
 
-      /* Decrease mcs until TBS falls below required length */
+          /* Decrease mcs until TBS falls below required length */
           while ((TBS > (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) && (mcs>0)) {
             mcs--;
             TBS = get_TBS_DL(mcs,6);
           }
 
-      /* If we have decreased too much or we don't have enough RBs, increase MCS */
+          /* If we have decreased too much or we don't have enough RBs, increase MCS */
           while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len)) {
             mcs++;
             TBS = get_TBS_DL(mcs,6);
           }
 
-      LOG_D(MAC, "[eNB %d] CC_id %d Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
-            module_idP,
-            CC_id,
-            mcs,
-            TBS,
-            6);
+          LOG_D(MAC, "[eNB %d] CC_id %d Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
+                module_idP,
+                CC_id,
+                mcs,
+                TBS,
+                6);
 
           if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2) {
             padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len);
@@ -2315,17 +2290,17 @@ schedule_ue_spec_br(module_id_t module_idP,
           } else {
             padding = 0;
 
-        /* Adjust the header len */
-        if (header_len_dtch == 0) {
+            /* Adjust the header len */
+            if (header_len_dtch == 0) {
               header_len_dcch = header_len_dcch_tmp;
-        } else { // if ((header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
+            } else { // if ((header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
               header_len_dtch = header_len_dtch_tmp;
             }
 
-        post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len; // 1 is for the postpadding header
+            post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len; // 1 is for the postpadding header
           }
 
-          offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+          offset = generate_dlsch_header((unsigned char *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                                          num_sdus,              //num_sdus
                                          sdu_lengths,  //
                                          sdu_lcids,
@@ -2335,188 +2310,175 @@ schedule_ue_spec_br(module_id_t module_idP,
                                          padding,
                                          post_padding);
 
-
           if (ta_update != 31) {
-        LOG_D(MAC,"[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
-              module_idP,
-              frameP, 
-              UE_id, 
-              CC_id, 
-              sdu_length_total,
-              num_sdus,
-              sdu_lengths[0],
-              sdu_lcids[0],
-              offset,
-              ta_update,
-              padding,
-              post_padding,
-              mcs,
-              TBS,
-              6,
-              header_len_dcch,
-              header_len_dtch);
-	  }
+            LOG_D(MAC,
+                  "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
+                  module_idP,
+                  frameP,
+                  UE_id,
+                  CC_id,
+                  sdu_length_total,
+                  num_sdus,
+                  sdu_lengths[0],
+                  sdu_lcids[0],
+                  offset,
+                  ta_update,
+                  padding,
+                  post_padding,
+                  mcs,
+                  TBS,
+                  6,
+                  header_len_dcch,
+                  header_len_dtch);
+          }
 
-      /* Cycle through SDUs and place in dlsch_buffer */
-      memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
+          /* Cycle through SDUs and place in dlsch_buffer */
+          memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
 
-      /* Fill remainder of DLSCH with random data */
-      for (j = 0; j < (TBS - sdu_length_total - offset); j++) {
-        UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = (char)(taus()&0xff);
+          /* Fill remainder of DLSCH with random data */
+          for (j = 0; j < (TBS - sdu_length_total - offset); j++) {
+            UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = (char)(taus()&0xff);
           }
 
           if (opt_enabled == 1) {
-        trace_pdu(1, 
-                  (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                  TBS, 
-                  module_idP, 
-                  3, 
-                  UE_RNTI(module_idP,UE_id),
-                  mac->frame, 
-                  mac->subframe,
-                  0,
-                  0);
-
+            trace_pdu(1,
+                      (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                      TBS,
+                      module_idP,
+                      3,
+                      UE_RNTI(module_idP,UE_id),
+                      mac->frame,
+                      mac->subframe,
+                      0,
+                      0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-              module_idP, 
-              CC_id, 
-              frameP, 
-              UE_RNTI(module_idP, UE_id), 
-              TBS);
+                  module_idP,
+                  CC_id,
+                  frameP,
+                  UE_RNTI(module_idP, UE_id),
+                  TBS);
           }
 
-      T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, 
-        T_INT(module_idP), 
-        T_INT(CC_id), 
-        T_INT(rnti), 
-        T_INT(frameP), 
-        T_INT(subframeP),
-        T_INT(harq_pid), 
-        T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
-
-	    /* Do PUCCH power control */
-      /* This is the normalized RX power */
+          T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
+            T_INT(module_idP),
+            T_INT(CC_id),
+            T_INT(rnti),
+            T_INT(frameP),
+            T_INT(subframeP),
+            T_INT(harq_pid),
+            T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
+          /* Do PUCCH power control */
+          /* This is the normalized RX power */
           /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-	    normalized_rx_power = (5 * ue_sched_ctl->pucch1_snr[CC_id]-640) / 10 + 30;
-	    target_rx_power = mac->puCch10xSnr / 10 + 30;
+          normalized_rx_power = (5 * ue_sched_ctl->pucch1_snr[CC_id]-640) / 10 + 30;
+          target_rx_power = mac->puCch10xSnr / 10 + 30;
+          /* This assumes accumulated tpc */
+          /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
+          int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame * 10 + UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
 
-      /* This assumes accumulated tpc */
-	    /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
-	    int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame * 10 + UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
-      
-      if (((framex10psubframe + 10) <= (frameP * 10 + subframeP)) || // normal case
-	        ((framex10psubframe > (frameP * 10 + subframeP)) && 
-            (((10240 - framex10psubframe +frameP * 10 + subframeP) >= 10)))) { // frame wrap-around
-	    if (ue_sched_ctl->pucch1_cqi_update[CC_id] == 1) {
-	      ue_sched_ctl->pucch1_cqi_update[CC_id] = 0;
+          if (((framex10psubframe + 10) <= (frameP * 10 + subframeP)) || // normal case
+              ((framex10psubframe > (frameP * 10 + subframeP)) &&
+               (((10240 - framex10psubframe +frameP * 10 + subframeP) >= 10)))) { // frame wrap-around
+            if (ue_sched_ctl->pucch1_cqi_update[CC_id] == 1) {
+              ue_sched_ctl->pucch1_cqi_update[CC_id] = 0;
+              UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
+              UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
-          UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
-          UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
+              if (normalized_rx_power > (target_rx_power + 4)) {
+                tpc = 0; //-1
+              } else if (normalized_rx_power<(target_rx_power - 4)) {
+                tpc = 2; //+1
+              } else {
+                tpc = 1; //0
+              }
 
-          if (normalized_rx_power > (target_rx_power + 4)) {
-		tpc = 0; //-1
-          } else if (normalized_rx_power<(target_rx_power - 4)) {
-		tpc = 2; //+1
-	      } else {
-		tpc = 1; //0
-	      }
+              LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
+                    module_idP,
+                    frameP,
+                    subframeP,
+                    harq_pid,
+                    tpc,
+                    normalized_rx_power,
+                    target_rx_power);
+            } else { // Po_PUCCH has been updated
+              tpc = 1; // 0
+            }
+          } else { // time to do TPC update
+            tpc = 1; //0
+          }
 
-	      LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
-                module_idP,
-                frameP, 
-                subframeP,
-                harq_pid,
-                tpc,
-                normalized_rx_power,
-                target_rx_power);
-        } else { // Po_PUCCH has been updated 
-	        tpc = 1; // 0
-        }
-	    } else { // time to do TPC update 
-	    tpc = 1; //0
-	  }
-
-	  // Toggle NDI in first round
-      UE_template->oldNDI[harq_pid] = 1 - UE_template->oldNDI[harq_pid];
-	  ue_sched_ctl->round[CC_id][harq_pid] = 0;
-      round_DL = 0;
-	  } // if ((sdu_length_total + header_len_dcch + header_len_dtch) > 0)
-	}
-
-    if (round_DL < 8) {
-      /* Fill in MDPDCCH */
-	memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
-
-	dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE;
-	dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_mpdcch_pdu));
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_template->rach_resource_type > 1) ? 11 : 10;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13-1;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = epdcch_setconfig_r11->transmissionType_r11;
-
-      AssertFatal(UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 != NULL,
-		    "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 is null\n");
-
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = *UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 4; // t-CRNTI
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = rnti;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_template->rach_resource_type < 3) ? 1 : 2;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | ((epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13-1)<<5);
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = mcs;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 4 for now
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = rvseq[round_DL&3];
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator = UE_template->oldNDI[harq_pid];
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi_length = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi_flag = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_resource_offset = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_subframe_repetition_number = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 3;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index_length = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.allocate_prach_flag = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.preamble_index = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.prach_mask_index = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.starting_ce_level = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.srs_request = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.antenna_ports_and_scrambling_identity_flag = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.antenna_ports_and_scrambling_identity = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.frequency_hopping_enabled_flag = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.paging_direct_indication_differentiation_flag = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.direct_indication = 0;
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.total_dci_length_including_padding = 0;        // this is not needed by OAI L1, but should be filled in
-	dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports = 1;
-	dl_req->number_pdu++;
-	UE_template->mcs[harq_pid] = dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs;
+          // Toggle NDI in first round
+          UE_template->oldNDI[harq_pid] = 1 - UE_template->oldNDI[harq_pid];
+          ue_sched_ctl->round[CC_id][harq_pid] = 0;
+          round_DL = 0;
+        } // if ((sdu_length_total + header_len_dcch + header_len_dtch) > 0)
       }
-  } else if ((subframeP == 7) && (round_DL < 8)) { // DLSCH
-    LOG_D(MAC, "DLSCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
 
-	  int             absSF = (frameP * 10) + subframeP;
-
-	  /* Have to check that MPDCCH was generated */
-	  LOG_D(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
-	        module_idP, 
-          CC_id, 
-          frameP, 
-          subframeP, 
-          UE_template->rach_resource_type - 1,
-          rnti);
-	  
-	  first_rb = narrowband_to_first_rb(&cc[CC_id], epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 - 1);
-
-	  dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-	  
-	  memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
-    
+      if (round_DL < 8) {
+        /* Fill in MDPDCCH */
+        memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
+        dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE;
+        dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_mpdcch_pdu));
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (UE_template->rach_resource_type > 1) ? 11 : 10;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13-1;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = epdcch_setconfig_r11->transmissionType_r11;
+        AssertFatal(UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 != NULL,
+                    "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 is null\n");
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = *UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 4; // t-CRNTI
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = rnti;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (UE_template->rach_resource_type < 3) ? 1 : 2;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | ((epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13-1)<<5);
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = mcs;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 4 for now
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = rvseq[round_DL&3];
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator = UE_template->oldNDI[harq_pid];
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi_length = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi_flag = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_resource_offset = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_subframe_repetition_number = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 3;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index_length = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.allocate_prach_flag = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.preamble_index = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.prach_mask_index = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.starting_ce_level = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.srs_request = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.antenna_ports_and_scrambling_identity_flag = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.antenna_ports_and_scrambling_identity = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.frequency_hopping_enabled_flag = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.paging_direct_indication_differentiation_flag = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.direct_indication = 0;
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.total_dci_length_including_padding = 0;        // this is not needed by OAI L1, but should be filled in
+        dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports = 1;
+        dl_req->number_pdu++;
+        UE_template->mcs[harq_pid] = dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs;
+      }
+    } else if ((subframeP == 7) && (round_DL < 8)) { // DLSCH
+      LOG_D(MAC, "DLSCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
+      int             absSF = (frameP * 10) + subframeP;
+      /* Have to check that MPDCCH was generated */
+      LOG_D(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
+            module_idP,
+            CC_id,
+            frameP,
+            subframeP,
+            UE_template->rach_resource_type - 1,
+            rnti);
+      first_rb = narrowband_to_first_rb(&cc[CC_id], epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 - 1);
+      dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+      memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
       dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_dlsch_pdu));
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = mac->pdu_index[CC_id];
@@ -2547,21 +2509,18 @@ schedule_ue_spec_br(module_id_t module_idP,
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io = (10 * frameP) + subframeP;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
       dl_req->number_pdu++;
-
       // DL request
       mac->TX_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
       TX_req = &mac->TX_req[CC_id].tx_request_body.tx_pdu_list[mac->TX_req[CC_id].tx_request_body.number_of_pdus];
-    TX_req->pdu_length = get_TBS_DL(UE_template->mcs[harq_pid], 6);
+      TX_req->pdu_length = get_TBS_DL(UE_template->mcs[harq_pid], 6);
       TX_req->pdu_index = mac->pdu_index[CC_id]++;
       TX_req->num_segments = 1;
       TX_req->segments[0].segment_length = TX_req->pdu_length;
       TX_req->segments[0].segment_data = mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0];
       mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-
       ackNAK_absSF = absSF + 4;
       ul_req = &mac->UL_req_tmp[CC_id][ackNAK_absSF % 10].ul_config_request_body;
       ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE;
       ul_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_ul_config_uci_harq_pdu));
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.handle = 0;      // don't know how to use this
@@ -2572,47 +2531,45 @@ schedule_ue_spec_br(module_id_t module_idP,
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.repetition_number = 0;
 
       if (cc[CC_id].tdd_Config == NULL) {    // FDD case
-	ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 = n1pucchan[UE_template->rach_resource_type - 1];
-	// NOTE: How to fill in the rest of the n_pucch_1_0 information 213 Section 10.1.2.1 in the general case
-	// = N_ECCE_q + Delta_ARO + n1pucchan[ce_level]
-	// higher in the MPDCCH configuration, N_ECCE_q is hard-coded to 0, and harq resource offset to 0 =>
-	// Delta_ARO = 0 from Table 10.1.2.1-1
-	ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.harq_size = 1; // 1-bit ACK/NAK
-	ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.number_of_pucch_resources = 1;
+        ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 = n1pucchan[UE_template->rach_resource_type - 1];
+        // NOTE: How to fill in the rest of the n_pucch_1_0 information 213 Section 10.1.2.1 in the general case
+        // = N_ECCE_q + Delta_ARO + n1pucchan[ce_level]
+        // higher in the MPDCCH configuration, N_ECCE_q is hard-coded to 0, and harq resource offset to 0 =>
+        // Delta_ARO = 0 from Table 10.1.2.1-1
+        ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.harq_size = 1; // 1-bit ACK/NAK
+        ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel9_fdd.number_of_pucch_resources = 1;
       } else {
-	AssertFatal (1 == 0, "PUCCH configuration for ACK/NAK not handled yet for TDD BL/CE case\n");
+        AssertFatal (1 == 0, "PUCCH configuration for ACK/NAK not handled yet for TDD BL/CE case\n");
       }
 
       ul_req->number_of_pdus++;
-      
-      T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, 
-        T_INT (module_idP), 
-        T_INT (CC_id), 
-        T_INT (rnti), 
-        T_INT (frameP), 
+      T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
+        T_INT (module_idP),
+        T_INT (CC_id),
+        T_INT (rnti),
+        T_INT (frameP),
         T_INT (subframeP),
-	      T_INT (0 /* harq_pid always 0? */ ), 
+        T_INT (0 /* harq_pid always 0? */ ),
         T_BUFFER (&mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TX_req->pdu_length));
 
       if (opt_enabled == 1) {
-        trace_pdu(1, 
-                  (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0], 
-                  TX_req->pdu_length, 
-                  UE_id, 
-                  3, 
-                  rnti, 
-                  frameP, 
-                  subframeP, 
-                  0, 
+        trace_pdu(1,
+                  (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0],
+                  TX_req->pdu_length,
+                  UE_id,
+                  3,
+                  rnti,
+                  frameP,
+                  subframeP,
+                  0,
                   0);
-
-        LOG_D(OPT, "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n", 
-              module_idP, 
-              CC_id, 
-              frameP, 
-              rnti, 
+        LOG_D(OPT, "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n",
+              module_idP,
+              CC_id,
+              frameP,
+              rnti,
               TX_req->pdu_length);
-    }
+      }
     } // end else if ((subframeP == 7) && (round_DL < 8))
   } // end loop on UE_id
 }
@@ -2644,7 +2601,6 @@ fill_DLSCH_dci(module_id_t module_idP,
   COMMON_channels_t *cc;
   eNB_DLSCH_INFO *dlsch_info;
   UE_TEMPLATE *ue_template;
-
   start_meas(&eNB->fill_DLSCH_dci);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,
                                           VCD_FUNCTION_IN);
@@ -2692,17 +2648,17 @@ fill_DLSCH_dci(module_id_t module_idP,
               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti &&
               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format != 1) {
             dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = allocate_prbs_sub(nb_rb,
-                                                                                                N_RB_DL,
-                                                                                                N_RBG,
-                                                                                                rballoc_sub);
+                N_RB_DL,
+                N_RBG,
+                rballoc_sub);
             dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type = 0;
           } else if (dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE &&
                      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == rnti &&
                      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type == 0) {
             dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding = allocate_prbs_sub(nb_rb,
-                                                                                              N_RB_DL,
-                                                                                              N_RBG,
-                                                                                              rballoc_sub);
+                N_RB_DL,
+                N_RBG,
+                rballoc_sub);
           }
         }
       }
@@ -2778,11 +2734,13 @@ update_ul_dci(module_id_t module_idP,
     nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[CC_idP][subframe];
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[0];
     int limit = HI_DCI0_req->hi_dci0_request_body.number_of_dci + HI_DCI0_req->hi_dci0_request_body.number_of_hi;
+
     for (int i = 0; i < limit; i++, hi_dci0_pdu++) {
       if (hi_dci0_pdu->pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE && hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti == rntiP)
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index = (daiP - 1) & 3;
     }
   }
+
   return;
 }
 
@@ -2859,8 +2817,7 @@ set_ue_dai(sub_frame_t subframeP,
 void
 schedule_PCH(module_id_t module_idP,
              frame_t frameP,
-             sub_frame_t subframeP)
-{
+             sub_frame_t subframeP) {
   /* DCI:format 1A/1C P-RNTI:0xFFFE */
   /* PDU:eNB_rrc_inst[Mod_idP].common_channels[CC_id].PCCH_pdu.payload */
   uint16_t pcch_sdu_length;
@@ -2894,7 +2851,6 @@ schedule_PCH(module_id_t module_idP,
   uint8_t Lcrbs = 0;
   uint16_t rb_bit = 168;    /* RB bit number value is unsure */
 #endif
-
   start_meas(&eNB->schedule_pch);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
@@ -2905,6 +2861,7 @@ schedule_PCH(module_id_t module_idP,
 
     for (uint16_t i = 0; i < MAX_MOBILES_PER_ENB; i++) {
       ue_pf_po = &UE_PF_PO[CC_id][i];
+
       if (ue_pf_po->enable_flag != TRUE) {
         continue;
       }
@@ -2934,8 +2891,8 @@ schedule_PCH(module_id_t module_idP,
               CC_id,
               i,
               pcch_sdu_length);
-
 #ifdef FORMAT1C
+
         //NO SIB
         if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
             (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
@@ -3130,8 +3087,8 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 1;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_rb_dl,
-                                                                                       first_rb,
-                                                                                       4);
+            first_rb,
+            4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
@@ -3154,7 +3111,6 @@ schedule_PCH(module_id_t module_idP,
           dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
           eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
           eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-
           dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
           memset((void *)dl_config_pdu,
                  0,
@@ -3166,13 +3122,13 @@ schedule_PCH(module_id_t module_idP,
 #ifdef FORMAT1C
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 3;   // format 1C
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(n_vrb_dl / n_rb_step,
-                                                                                                  first_rb / n_rb_step,
-                                                                                                  Lcrbs / n_rb_step);
+              first_rb / n_rb_step,
+              Lcrbs / n_rb_step);
 #else
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(n_rb_dl,
-                                                                                                  first_rb,
-                                                                                                  4);
+              first_rb,
+              4);
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
 #endif
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
@@ -3270,8 +3226,7 @@ schedule_PCH(module_id_t module_idP,
 static int
 slice_priority_compare(const void *_a,
                        const void *_b,
-                       void *_c)
-{
+                       void *_c) {
   const int slice_id1 = *(const int *) _a;
   const int slice_id2 = *(const int *) _b;
   const module_id_t Mod_id = *(int *)  _c;
@@ -3286,10 +3241,10 @@ slice_priority_compare(const void *_a,
 
 void
 slice_priority_sort(module_id_t Mod_id,
-                    int slice_list[MAX_NUM_SLICES])
-{
+                    int slice_list[MAX_NUM_SLICES]) {
   int i;
   int n_dl = RC.mac[Mod_id]->slice_info.n_dl;
+
   for (i = 0; i < n_dl; i++) {
     slice_list[i] = i;
   }

@@ -50,7 +50,7 @@ Description Defines functions used to handle EPS bearer contexts.
 #include "system.h"
 #include "assertions.h"
 #include "pdcp.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -59,7 +59,6 @@ Description Defines functions used to handle EPS bearer contexts.
   #include "openairinterface5g_limits.h"
   extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
-extern uint8_t  nfapi_mode;
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -268,7 +267,7 @@ int esm_ebr_context_create(
                 strcpy(broadcast, ipv4_addr);
               }
 
-              if(nfapi_mode ==3) {
+              if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
                 // this is for L2 FAPI simulator.
                 // change for multiple UE's like 256UEs.
                 // if it's made too many tables , OS may crush so we use one table.

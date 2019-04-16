@@ -36,6 +36,7 @@
 
 #include "LAYER2/MAC/mac_proto.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
@@ -391,8 +392,7 @@ schedule_SR (module_id_t module_idP,
         sr.sr_information_rel10.number_of_pucch_resources = 1;
         sr.sr_information_rel10.pucch_index_p1            = *UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020->sr_PUCCH_ResourceIndexP1_r10;
 
-        LOG_D(MAC, "REL10 PUCCH INDEX P1:%d \n",
-              sr.sr_information_rel10.pucch_index_p1);
+        LOG_D(MAC, "REL10 PUCCH INDEX P1:%d \n", sr.sr_information_rel10.pucch_index_p1);
 
       } else
 #endif
@@ -400,8 +400,7 @@ schedule_SR (module_id_t module_idP,
         sr.sr_information_rel8.tl.tag      = NFAPI_UL_CONFIG_REQUEST_SR_INFORMATION_REL8_TAG;
         sr.sr_information_rel8.pucch_index = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
 
-        LOG_D(MAC, "REL8 PUCCH INDEX:%d\n",
-              sr.sr_information_rel8.pucch_index);
+        LOG_D(MAC, "REL8 PUCCH INDEX:%d\n", sr.sr_information_rel8.pucch_index);
       }
 
       /* If there is already an HARQ pdu, convert to SR_HARQ */
@@ -425,8 +424,6 @@ schedule_SR (module_id_t module_idP,
     }  // for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++)
   }  // for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
 }
-
-extern uint8_t nfapi_mode;
 
 void
 check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
@@ -504,6 +501,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
                                subframeP,
                                rnti);
       }
+
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
     }
@@ -519,14 +517,13 @@ clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
   nfapi_tx_request_t             *TX_req = &eNB->TX_req[0];
   eNB->pdu_index[CC_idP] = 0;
 
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
+  if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MONOLITHIC) { // monolithic or PNF
     DL_req[CC_idP].dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
     DL_req[CC_idP].dl_config_request_body.number_dci                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
     DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
     DL_req[CC_idP].sfn_sf                                                     = subframeP + (frameP<<4);
-
     HI_DCI0_req->hi_dci0_request_body.sfnsf                                   = subframeP + (frameP<<4);
     HI_DCI0_req->hi_dci0_request_body.number_of_dci                           = 0;
     UL_req[CC_idP].ul_config_request_body.number_of_pdus                      = 0;
@@ -593,7 +590,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     cc[CC_id].mcch_active = 0;
 #endif
-
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
   }
 
@@ -928,7 +924,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   rrc_rx_tx(&ctxt, CC_id);
 
 #endif
-
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {

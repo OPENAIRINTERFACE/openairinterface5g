@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "debug.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_pnf_interface.h"
 #include "nfapi.h"
 #include "nfapi_pnf.h"
@@ -76,7 +77,7 @@ extern void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame, int subfra
 extern void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
 extern void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t *sdu);
 
-extern uint8_t  nfapi_mode;
+
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
 
@@ -485,7 +486,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   // to keep only the necessary just to keep the nfapi FSM rolling by sending a dummy response.
   LTE_DL_FRAME_PARMS *fp;
 
-  if (nfapi_mode!=3) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
     fp = &eNB->frame_parms;
   } else {
@@ -647,7 +648,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     num_tlv++;
   }
 
-  if(nfapi_mode!=3) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     printf("[PNF] CONFIG_REQUEST[num_tlv:%d] TLVs processed:%d\n", req->num_tlv, num_tlv);
     printf("[PNF] Simulating PHY CONFIG - DJP\n");
     PHY_Config_t phy_config;
@@ -672,7 +673,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   nfapi_pnf_config_resp(config, &nfapi_resp);
   printf("[PNF] Sent NFAPI_CONFIG_RESPONSE phy_id:%d\n", phy_info->id);
 
-  if(nfapi_mode ==3)
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF)
     free(fp);
 
   return 0;
@@ -1023,7 +1024,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->tx_req = &pnf_phy_tx_req;
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
 
-  if (nfapi_mode==3) {
+  if (NFAPI_MODE==NFAPI_UE_STUB_PNF) {
     p7_config->dl_config_req = &memcpy_dl_config_req;
     p7_config->ul_config_req = &memcpy_ul_config_req;
     p7_config->hi_dci0_req = &memcpy_hi_dci0_req;
@@ -1080,7 +1081,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   //phy_init_RU(RC.ru[0]);
   printf("[PNF] About to call init_eNB_afterRU()\n");
 
-  if (nfapi_mode != 3) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     init_eNB_afterRU();
   }
 
@@ -1364,8 +1365,8 @@ void *pnf_start_thread(void *ptr) {
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) {
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
 
-  if(nfapi_mode!=3) {
-    nfapi_mode = 1;  // PNF!
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+    nfapi_setmode(NFAPI_PNF);  // PNF!
   }
 
   nfapi_pnf_config_t *config = nfapi_pnf_config_create();
