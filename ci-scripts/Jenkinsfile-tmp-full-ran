@@ -289,7 +289,7 @@ pipeline {
                             sh "python3 ci-scripts/main.py --mode=LogCollectOAIUE --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath}"
 
                             echo '\u2705 \u001B[32mLog Transfer (OAI UE - Run)\u001B[0m'
-                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${UE_Username}@${params.UE_IPAddress}:${UE_SourceCodePath}/cmake_targets/ue.log.zip ./ue.log.${env.BUILD_ID}.zip || true"
+                            sh "sshpass -p \'${UE_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${UE_Username}@${params.UE_IPAddress}:${UE_SourceCodePath}/cmake_targets/ue.log.zip ./ue.log.${env.BUILD_ID}.zip || true"
                         }
                         script {
                             if(fileExists("ue.log.${env.BUILD_ID}.zip")) {
