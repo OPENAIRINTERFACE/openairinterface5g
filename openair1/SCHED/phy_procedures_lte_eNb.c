@@ -40,6 +40,8 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+#include "openair2/LAYER2/MAC/mac_proto.h"
+
 #include "assertions.h"
 #include "msc.h"
 
