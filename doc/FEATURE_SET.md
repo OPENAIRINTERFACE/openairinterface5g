@@ -18,7 +18,7 @@
 
 # OpenAirInterface Block diagram #
 
-![Block Diagram](./oai_enb_block_diagram.png)
+![Block Diagram](./images/oai_enb_block_diagram.png)
 
 # OpenAirInterface eNB Feature Set #
 
@@ -141,7 +141,7 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
 -  RAU: Radio-Access Unit
 -  RRU: Remote Radio-Unit
 
-![Functional Split Architecture](./oai_lte_enb_func_split_arch.png)
+![Functional Split Architecture](./images/oai_lte_enb_func_split_arch.png)
 
 -  IF4.5 / IF5 : similar to IEEE P1914.1
 -  FAPI (IF2)  : specified by Small Cell Forum (open-nFAPI implementation)
