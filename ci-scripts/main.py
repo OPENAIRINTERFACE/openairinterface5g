@@ -1246,8 +1246,9 @@ class SSHConnection():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		initialize_eNB_flag = False
-		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		check_eNB = True
+		check_OAI_UE = False
+		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			self.CreateHtmlTabFooter(False)
@@ -3731,7 +3732,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			SSH.ShowTestID()
 			GetParametersFromXML(action)
 			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE':
 				if (SSH.ADBIPAddress != 'none'):
 					terminate_ue_flag = False
 					SSH.GetAllUEDevices(terminate_ue_flag)
