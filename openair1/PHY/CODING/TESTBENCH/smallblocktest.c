@@ -29,13 +29,14 @@ int main(int argc, char *argv[]) {
 	reset_meas(&timeDecoder);
 	randominit(0);
 
-	int arguments, iterations = 1000, matlabDebug = 0, messageLength = 11;
+	int arguments, iterations = 1000, messageLength = 11;
+	//int matlabDebug = 0;
 	uint32_t testInput, encoderOutput, codingDifference, nBitError=0, blockErrorState = 0, blockErrorCumulative=0, bitErrorCumulative=0;
 	uint16_t estimatedOutput;
 	double SNRstart = -20.0, SNRstop = 5.0, SNRinc= 0.5; //dB
 	double SNR, SNR_lin, sigma;
 	double modulatedInput[NR_SMALL_BLOCK_CODED_BITS], channelOutput[NR_SMALL_BLOCK_CODED_BITS];
-	int16_t channelOutput_int16[NR_SMALL_BLOCK_CODED_BITS];
+	//int16_t channelOutput_int16[NR_SMALL_BLOCK_CODED_BITS];
 	int8_t channelOutput_int8[NR_SMALL_BLOCK_CODED_BITS];
 	unsigned char qbits=8;
 
@@ -62,10 +63,10 @@ int main(int argc, char *argv[]) {
 			iterations = atoi(optarg);
 			break;
 
-		case 'm':
+		/*case 'm':
 			matlabDebug = 1;
 			//#define DEBUG_POLAR_MATLAB
-			break;
+			break;*/
 
 		case 'g':
 			iterations = 1;
@@ -75,7 +76,8 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case 'h':
-			printf("./smallblocktest -s SNRstart -d SNRinc -f SNRstop -l messageLength -i iterations -m Matlab Debug\n");
+			//printf("./smallblocktest -s SNRstart -d SNRinc -f SNRstop -l messageLength -i iterations -m Matlab Debug\n");
+			printf("./smallblocktest -s SNRstart -d SNRinc -f SNRstop -l messageLength -i iterations\n");
 			exit(-1);
 
 		default:

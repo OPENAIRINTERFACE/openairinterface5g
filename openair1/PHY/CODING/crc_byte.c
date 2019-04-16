@@ -228,7 +228,7 @@ crc8 (unsigned char * inptr, int bitlen)
 int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
 {
   uint32_t crc=0,oldcrc=0;
-  uint8_t crc_len,temp;
+  uint8_t crc_len=0;
 
   switch (crc_type) {
   case CRC24_A:

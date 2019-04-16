@@ -46,7 +46,6 @@
 //#include "SIMULATION/TOOLS/sim.h"
 
 #define NR_POLAR_DECODER_LISTSIZE 8 //uint8_t
-#define NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
 
 #define NR_POLAR_AGGREGATION_LEVEL_1_PRIME 149 //uint16_t
 #define NR_POLAR_AGGREGATION_LEVEL_2_PRIME 151 //uint16_t
@@ -154,25 +153,16 @@ void polar_encoder_fast(uint64_t *A,
 int8_t polar_decoder(double *input,
 					 uint32_t *output,
                      t_nrPolar_params *polarParams,
-                     uint8_t listSize,
-                     uint8_t pathMetricAppr);
+                     uint8_t listSize);
 
 uint32_t polar_decoder_int16(int16_t *input,
                              uint64_t *out,
                              const t_nrPolar_params *polarParams);
 
-int8_t polar_decoder_aPriori(double *input,
-                             uint32_t *output,
-                             t_nrPolar_params *polarParams,
-                             uint8_t listSize,
-                             uint8_t pathMetricAppr,
-                             double *aPrioriPayload);
-
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
                          t_nrPolar_params *polarParams,
                          uint8_t listSize,
-                         uint8_t pathMetricAppr,
                          uint16_t n_RNTI);
 
 void generic_polar_decoder(const t_nrPolar_params *pp,
@@ -330,8 +320,7 @@ void updateLLR(double ***llr,
                uint16_t row,
                uint16_t col,
                uint16_t xlen,
-               uint8_t ylen,
-               uint8_t approximation);
+               uint8_t ylen);
 
 void updateBit(uint8_t ***bit,
                uint8_t **bitU,
@@ -345,21 +334,18 @@ void updatePathMetric(double *pathMetric,
                       double ***llr,
                       uint8_t listSize,
                       uint8_t bitValue,
-                      uint16_t row,
-                      uint8_t approximation);
+                      uint16_t row);
 
 void updatePathMetric2(double *pathMetric,
                        double ***llr,
                        uint8_t listSize,
-                       uint16_t row,
-                       uint8_t approximation);
+                       uint16_t row);
 
 void computeLLR(double ***llr,
                 uint16_t row,
                 uint16_t col,
                 uint8_t i,
-                uint16_t offset,
-                uint8_t approximation);
+                uint16_t offset);
 
 void updateCrcChecksum(uint8_t **crcChecksum,
                        uint8_t **crcGen,

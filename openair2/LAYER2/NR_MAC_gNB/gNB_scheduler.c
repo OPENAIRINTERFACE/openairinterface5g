@@ -336,7 +336,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
-      int spf = get_spf(cfg);
+      //int spf = get_spf(cfg);
   
       if (((frameP&127) == 0) && (slotP == 0)) {
         LOG_I(MAC,

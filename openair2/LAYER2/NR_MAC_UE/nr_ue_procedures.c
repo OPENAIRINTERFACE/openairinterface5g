@@ -65,11 +65,16 @@ uint8_t table_9_2_2_1[16][8]={
 {1,0, 14,4, 0,3,6,9},
 {1,0, 14,26,0,3,0,0}
 };
-int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len){
-
+int8_t nr_ue_process_dlsch(module_id_t module_id,
+		                   int cc_id,
+						   uint8_t gNB_index,
+						   fapi_nr_dci_indication_t *dci_ind,
+						   void *pduP,
+						   uint32_t pdu_len)
+{
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
-    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    //fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     nr_phy_config_t *phy_config = &mac->phy_config;
 
     //ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
@@ -1149,7 +1154,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,4,7},  // row index 15
   {0,8,4}   // row index 16
   };
-  uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  /*uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
   {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?6:5},   // row index 1
   {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
   {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
@@ -1166,8 +1171,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,2,4},  // row index 14
   {0,4,6},  // row index 15
   {0,8,4}   // row index 16
-  };
-  uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  };*/
+  /*uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
   {0,2,2},  // row index 1
   {0,4,2},  // row index 2
   {0,6,2},  // row index 3
@@ -1184,8 +1189,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
   {1,2,4},  // row index 15
   {0,0,0}   // row index 16
-  };
-  uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  };*/
+  /*uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
   {0,2,2},  // row index 1
   {0,4,2},  // row index 2
   {0,6,2},  // row index 3
@@ -1202,7 +1207,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
   {0,0,6},  // row index 15
   {0,2,6}   // row index 16
-  };
+  };*/
   uint8_t mu_pusch = 1;
   // definition table j Table 6.1.2.1.1-4
   uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
@@ -1224,7 +1229,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {j+3,0,14}, // row index 15
   {j+3,0,10}  // row index 16
   };
-  uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  /*uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
   {j,  0,8},  // row index 1
   {j,  0,12}, // row index 2
   {j,  0,10}, // row index 3
@@ -1241,7 +1246,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   {j,  8,4},  // row index 14
   {j+3,0,8},  // row index 15
   {j+3,0,10}  // row index 16
-  };
+  };*/
 
 /*
  * TS 38.214 subclause 5.1.2.1 Resource allocation in time domain (downlink)

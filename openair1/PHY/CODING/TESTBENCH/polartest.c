@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
   int16_t nBitError = 0; // -1 = Decoding failed (All list entries have failed the CRC checks).
   uint32_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
   uint16_t testLength = NR_POLAR_PBCH_PAYLOAD_BITS, coderLength = NR_POLAR_PBCH_E;
-  uint16_t blockErrorCumulative=0, bitErrorCumulative=0, aPrioriLength=0;
+  uint16_t blockErrorCumulative=0, bitErrorCumulative=0;
   double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
-  uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0, logFlag = 0, aPrioriFlag=0;
+  uint8_t aggregation_level = 8, decoderListSize = 8, logFlag = 0;
   uint16_t rnti=0;
 
   while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:p:hqgFL:k:")) != -1)
@@ -59,12 +59,6 @@ int main(int argc, char *argv[]) {
     case 'l':
       decoderListSize = (uint8_t) atoi(optarg);
       break;
-
-    case 'a':
-    	pathMetricAppr = (uint8_t) atoi(optarg);
-    	break;
-
-
 
     case 'q':
     	decoder_int16 = 1;
@@ -97,19 +91,10 @@ int main(int argc, char *argv[]) {
     	}
     	break;
 
-    case 'p':
-    	aPrioriLength = (uint8_t) atoi(optarg);
-    	if (aPrioriLength > testLength){
-    		printf("A priori information(%d) cannot be larger than test length(%d)\n",aPrioriLength, testLength);
-    		exit(-1);
-    	}
-    	aPrioriFlag = 1;
-    	break;
-
     case 'h':
       printf("./polartest\nOptions\n-h Print this help\n-s SNRstart (dB)\n-d SNRinc (dB)\n-f SNRstop (dB)\n-m [0=PBCH|1=DCI|2=UCI]\n"
-             "-i Number of iterations\n-l decoderListSize\n-a pathMetricAppr\n-q Flag for optimized coders usage\n-F Flag for test results logging\n"
-    		 "-L aggregation level (for DCI)\n-k packet_length (bits) for DCI/UCI\n-p (Only for PBCH for now) A priori information length used in polar decoder\n");
+             "-i Number of iterations\n-l decoderListSize\n-q Flag for optimized coders usage\n-F Flag for test results logging\n"
+    		 "-L aggregation level (for DCI)\n-k packet_length (bits) for DCI/UCI\n");
       exit(-1);
       break;
 
@@ -148,9 +133,9 @@ int main(int argc, char *argv[]) {
 if (logFlag){
 	time (&currentTime);
 #ifdef DEBUG_POLAR_TIMING
-  sprintf(fileName,"%s/TIMING_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
+  sprintf(fileName,"%s/TIMING_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
 #else
-  sprintf(fileName,"%s/_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
+  sprintf(fileName,"%s/_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
 #endif
   strftime(currentTimeInfo, 25, "_%Y-%m-%d-%H-%M-%S.csv", localtime(&currentTime));
   strcat(fileName,currentTimeInfo);
@@ -183,11 +168,6 @@ if (logFlag){
   double modulatedInput[coderLength]; //channel input
   double channelOutput[coderLength];  //add noise
   int16_t channelOutput_int16[coderLength];
-
-  //A priori knowledge about the payload is assumed according to "aPrioriFlag".
-  double aPrioriArray[testLength];
-  uint8_t testInputByte[testLength];
-  uint16_t aPrioriInd[aPrioriLength];
 
   t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level);
 
@@ -224,7 +204,7 @@ if (logFlag){
 		  modulated_input[i]=(-1)/sqrt(2);
 	  channel_output[i] = modulated_input[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
   }
-  decoderState = polar_decoder_dci(channel_output, dci_est, currentPtrDCI, NR_POLAR_DECODER_LISTSIZE, NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION, rnti);
+  decoderState = polar_decoder_dci(channel_output, dci_est, currentPtrDCI, NR_POLAR_DECODER_LISTSIZE, rnti);
   printf("dci_est: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n", dci_est[0], dci_est[1], dci_est[2], dci_est[3]);
   free(encoder_outputByte);
   free(channel_output);
@@ -245,22 +225,10 @@ if (logFlag){
 			  }
 			  testInput[i] |= ( ((uint32_t) (rand()%2)) &1);
 		  }
-		  //Generate random a priori information in "aPrioriArray", if "aPrioriFlag" is set.
-		  if (aPrioriFlag){
-			  nr_bit2byte_uint32_8(testInput, testLength, testInputByte);
-			  for (int i=0; i<testLength; i++){
-				  aPrioriArray[i] = NAN;
-			  }
-			  for (int i=0; i<aPrioriLength; i++){
-				  aPrioriInd[i]=(rand()%(testLength));
-				  aPrioriArray[aPrioriInd[i]]=testInputByte[aPrioriInd[i]];
-			  }
-		  }
 
 #ifdef DEBUG_POLARTEST
 		  //testInput[0] = 0x360f8a5c;
 		  printf("testInput: [0]->0x%08x\n", testInput[0]);
-		  for (int i=0; i<32; i++) printf("testInput:%d-testInputByte:%d-aPrioriArray:%f\n",(testInput[0]>>i)&1, testInputByte[i], aPrioriArray[i]);
 #endif
 		  int len_mod64=currentPtr->payloadBits&63;
 		  ((uint64_t *)testInput)[currentPtr->payloadBits/64]&=((((uint64_t)1)<<len_mod64)-1);
@@ -307,26 +275,15 @@ if (logFlag){
     	  decoderState = polar_decoder_int16(channelOutput_int16, (uint64_t *)estimatedOutput, currentPtr);
       } else { //0 --> PBCH, 1 --> DCI, -1 --> UCI
     	  if (polarMessageType == 0) {
-    		  if (aPrioriFlag) {
-    			  decoderState = polar_decoder_aPriori(channelOutput,
-    					  	  	  	  	  	  	  	   estimatedOutput,
-													   currentPtr,
-													   decoderListSize,
-													   NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
-													   aPrioriArray);
-    		  } else {
-    			  decoderState = polar_decoder(channelOutput,
-    					  	  	  	  	  	   estimatedOutput,
-											   currentPtr,
-											   decoderListSize,
-											   NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);
-    		  }
+    		  decoderState = polar_decoder(channelOutput,
+    				                       estimatedOutput,
+										   currentPtr,
+										   decoderListSize);
     	  } else if (polarMessageType == 1) {
     		  decoderState = polar_decoder_dci(channelOutput,
     				  	  	  	  	  	  	   estimatedOutput,
 											   currentPtr,
 											   decoderListSize,
-											   NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
 											   rnti);
     	  }
       }
@@ -379,8 +336,8 @@ if (logFlag){
     }
 
     //Calculate error statistics for the SNR.
-    printf("[ListSize=%d, Appr=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
-           decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
+    printf("[ListSize=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
+           decoderListSize, SNR, ((double)blockErrorCumulative/iterations),
            ((double)bitErrorCumulative / (iterations*testLength)),
            (double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
     //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);

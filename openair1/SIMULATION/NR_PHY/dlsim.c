@@ -128,45 +128,46 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa;
+  int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim = 0.0;
-  unsigned char pbch_pdu[6];
+  //double iqim = 0.0;
+  //unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
-  uint8_t write_output_file=0;
+  //uint8_t write_output_file=0;
   //int result;
-  int freq_offset;
+  //int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
+  int trial,n_trials=1,n_errors=0;
+  //int n_errors2, n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
-  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
-  uint8_t extended_prefix_flag=0;
-  int8_t interf1=-21,interf2=-21;
+  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  //uint8_t extended_prefix_flag=0;
+  //int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  char input_val_str[50],input_val_str2[50];
+  //char input_val_str[50],input_val_str2[50];
 
-  uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //uint8_t frame_mod4,num_pdcch_symbols = 0;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  double pbch_sinr;
-  int pbch_tx_ant;
+  //double pbch_sinr;
+  //int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
   uint64_t ssb_pattern = 0x01;
 
-  unsigned char frame_type = 0;
+  //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
   int frame=0,slot=1;
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
 
   while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
-    case 'f':
+    /*case 'f':
       write_output_file=1;
       output_fd = fopen(optarg,"w");
 
@@ -207,12 +208,11 @@ int main(int argc, char **argv)
         printf("Error opening %s\n",optarg);
         exit(-1);
       }
+      break;*/
 
-      break;
-
-    case 'd':
+    /*case 'd':
       frame_type = 1;
-      break;
+      break;*/
 
     case 'g':
       switch((char)*optarg) {
@@ -251,13 +251,13 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'i':
+    /*case 'i':
       interf1=atoi(optarg);
       break;
 
     case 'j':
       interf2=atoi(optarg);
-      break;
+      break;*/
 
     case 'n':
       n_trials = atoi(optarg);
@@ -279,9 +279,9 @@ int main(int argc, char **argv)
       Td= atof(optarg);
       break;
       */
-    case 'p':
+    /*case 'p':
       extended_prefix_flag=1;
-      break;
+      break;*/
 
       /*
       case 'r':
@@ -368,8 +368,8 @@ int main(int argc, char **argv)
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
              argv[0]);
       printf("-h This message\n");
-      printf("-p Use extended prefix mode\n");
-      printf("-d Use TDD\n");
+      //printf("-p Use extended prefix mode\n");
+      //printf("-d Use TDD\n");
       printf("-n Number of frames to simulate\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
@@ -378,15 +378,15 @@ int main(int argc, char **argv)
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-      printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //    printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-      printf("-f Output filename (.txt format) for Pe/SNR results\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       exit (-1);
       break;
@@ -683,8 +683,8 @@ int main(int argc, char **argv)
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    n_errors2 = 0;
-    n_alamouti = 0;
+    //n_errors2 = 0;
+    //n_alamouti = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 
@@ -777,6 +777,3 @@ int main(int argc, char **argv)
   return(n_errors);
 
 }
-
-
-
