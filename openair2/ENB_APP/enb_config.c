@@ -54,13 +54,8 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
-<<<<<<< HEAD
-
-#define RRC_INACTIVITY_THRESH 0 // set to '0' to deactivate (in ms)
-=======
 #include "proto_agent.h"
 #define RRC_INACTIVITY_THRESH 0
->>>>>>> develop
 
 extern uint16_t sf_ahead;
 extern void set_parallel_conf(char *parallel_conf);
@@ -1144,7 +1139,6 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   break;
               }
 
-<<<<<<< HEAD
             if (strcmp(ccparams_lte.pcch_nB, "fourT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_fourT;
             }
@@ -1452,25 +1446,6 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (cycleNb > 0 && (offsetMaxLimit % cycleNb != 0 || cycleNb == offsetMaxLimit)) {
-=======
-              if (strcmp(ccparams_lte.pcch_nB, "fourT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_fourT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "twoT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_twoT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "oneT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "halfT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_halfT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "quarterT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_quarterT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "oneEighthT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneEighthT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "oneSixteenthT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneSixteenthT;
-              } else if (strcmp(ccparams_lte.pcch_nB, "oneThirtySecondT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneThirtySecondT;
-              } else
->>>>>>> develop
                 AssertFatal (0,
                 "Failed to parse eNB configuration file %s, enb %d incompatible (not multiple) values \"%d\" -  \"%d\" for drx_shortDrx_Cycle and drx_longDrx_CycleStartOffset choice !\n",
                 RC.config_file_name, i, cycleNb, offsetMaxLimit);
@@ -1485,17 +1460,10 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
             }
 
-<<<<<<< HEAD
             switch (ccparams_lte.bcch_modificationPeriodCoeff) {
               case 2:
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n2;
                 break;
-=======
-              switch (ccparams_lte.bcch_modificationPeriodCoeff) {
-                case 2:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n2;
-                  break;
->>>>>>> develop
 
                 case 4:
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n4;
