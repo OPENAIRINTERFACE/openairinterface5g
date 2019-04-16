@@ -4954,7 +4954,7 @@ SR_indication(module_id_t mod_idP,
     UE_scheduling_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
 
     if ((UE_scheduling_ctrl->cdrx_configured == TRUE) && 
-        (UE_scheduling_ctrl->dci0_ongoing_timer > 4)  &&
+        (UE_scheduling_ctrl->dci0_ongoing_timer > 0)  &&
         (UE_scheduling_ctrl->dci0_ongoing_timer < 8)) {
       LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d.  \
                   The SR is not set do to ongoing DCI0 with CDRX activated\n",
