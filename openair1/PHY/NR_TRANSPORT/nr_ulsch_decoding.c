@@ -291,7 +291,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id+1][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &harq_process->ulsch_pdu.ulsch_pdu_rel15;
   

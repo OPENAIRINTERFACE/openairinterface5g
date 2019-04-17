@@ -33,6 +33,49 @@
 #include "PHY/defs_nr_common.h"
 
 
+/** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+    - RB extraction (signal and channel estimates)
+    - channel compensation (matched filtering)
+    - RE extraction (dmrs)
+    - antenna combining (MRC, Alamouti, cycling)
+    - LLR computation
+    This function supports TM1, 2, 3, 5, and 6.
+    @param ue Pointer to PHY variables
+    @param UE_id id of current UE
+    @param frame Frame number
+    @param nr_tti_rx TTI number
+    @param symbol Symbol on which to act (within-in nr_TTI_rx)
+    @param first_symbol_flag set to 1 on first ULSCH symbol
+*/
+int nr_rx_ulsch(PHY_VARS_gNB *gNB,
+                uint8_t UE_id,
+                uint32_t frame,
+                uint8_t nr_tti_rx,
+                unsigned char symbol,
+                unsigned char first_symbol_flag,
+                unsigned char harq_pid);
+
+
+/** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
+    @param rxdataF pointer to the received frequency domain signal
+    @param rxdataF_ext pointer to the extracted frequency domain signal
+    @param rb_alloc RB allocation map (used for Resource Allocation Type 0 in NR)
+    @param symbol Symbol on which to act (within-in nr_TTI_rx)
+    @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
+    @param nb_pusch_rb The number of RBs allocated (used for Resource Allocation Type 1 in NR)
+    @param frame_parms, Pointer to frame descriptor structure
+
+*/
+unsigned short nr_ulsch_extract_rbs_single(int **rxdataF,
+                                           int **rxdataF_ext,
+                                           uint32_t rxdataF_ext_offset,
+                                           // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
+                                           unsigned char symbol,
+                                           unsigned short start_rb,
+                                           unsigned short nb_pusch_rb,
+                                           NR_DL_FRAME_PARMS *frame_parms);
+
+
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
     @param rxdataF_comp Compensated channel output
     @param ulsch_llr llr output
@@ -43,6 +86,7 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
                        int16_t *ulsch_llr,                          
                        uint32_t nb_re,
                        uint8_t  symbol);
+
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream 16 QAM received waveforms.
     @param rxdataF_comp Compensated channel output
@@ -56,6 +100,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
                         int16_t  *ulsch_llr,
                         uint32_t nb_re,
                         uint8_t  symbol);
+
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream 64 QAM received waveforms.
     @param rxdataF_comp Compensated channel output

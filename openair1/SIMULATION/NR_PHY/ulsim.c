@@ -50,6 +50,8 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SCHED_NR/sched_nr.h"
+#include "PHY/TOOLS/tools_defs.h"
+
 //#include "PHY/MODULATION/modulation_common.h"
 //#include "common/config/config_load_configmodule.h"
 //#include "UTIL/LISTS/list.h"
@@ -145,7 +147,7 @@ int main(int argc, char **argv) {
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
+  uint16_t N_RB_DL = 217, N_RB_UL = 217, mu = 1;
   //unsigned char frame_type = 0;
   int frame = 0, subframe = 0;
   int frame_length_complex_samples;
@@ -154,7 +156,6 @@ int main(int argc, char **argv) {
   unsigned char qbits = 8;
   int ret;
   int loglvl = OAILOG_WARNING;
-  float target_error_rate = 0.01;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 14 - nb_symb_sch;
@@ -440,14 +441,14 @@ int main(int argc, char **argv) {
   unsigned char mod_order;
   uint8_t Nl    = 1;
   uint8_t rvidx = 0;
-  uint8_t UE_id = 1;
+  uint8_t UE_id = 0;
   uint8_t cwd;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
   uint32_t ***pusch_dmrs;
 
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0]; // "+1" because first element in ulsch is for RA
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[0][eNB_id];
@@ -481,6 +482,7 @@ int main(int argc, char **argv) {
   unsigned int errors_bit_uncoded;
   unsigned int errors_bit;
   uint8_t  bit_index;
+  uint32_t error_extraction;
   uint32_t errors_scrambling;
   uint32_t scrambling_index;
   uint8_t symbol;
@@ -621,7 +623,7 @@ int main(int argc, char **argv) {
   txdataF = UE->common_vars.txdataF;
   amp = AMP;
 
-  start_rb = 0;
+  start_rb = 90;
   start_sc = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
 
   if (start_sc >= frame_parms->ofdm_symbol_size)
@@ -742,14 +744,15 @@ int main(int argc, char **argv) {
     for (trial = 0; trial < n_trials; trial++) {
 
       errors_bit_uncoded = 0;
+      error_extraction   = 0;
       errors_scrambling  = 0;
       errors_bit         = 0;
       scrambling_index   = 0;
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (r_re[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*512.0)); // convert to fixed point
-          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (r_im[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*512.0));
+          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (r_re[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*(double)amp)); // convert to fixed point
+          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (r_im[ap][i] + (int16_t)(sqrt(sigma2/2)*gaussdouble(0.0,1.0)*(double)amp));
         }
       }
 
@@ -808,23 +811,111 @@ int main(int argc, char **argv) {
 #endif
       
 
-      //----------------------------------------------------------
-      //-------------------- LLRs computation --------------------
-      //----------------------------------------------------------
+      
+      uint32_t nb_re, nb_rb_per_antenna;
+      uint32_t rxdataF_ext_offset = 0; // [hna] should be a member in the NR_gNB_PUSCH struct
+      uint32_t rxdata_offset      = 0;
+      uint32_t d_mod_offset       = 0;
+      uint32_t llr_offset         = 0; // [hna] should be a member in the NR_gNB_PUSCH struct
+      uint32_t start_re = frame_parms->first_carrier_offset + (start_rb * NR_NB_SC_PER_RB);
+      uint8_t  sch_sym_start = NR_SYMBOLS_PER_SLOT - nb_symb_sch;
 
-      int sch_sym_start   = NR_SYMBOLS_PER_SLOT-nb_symb_sch;
-      uint32_t nb_re;
-      uint32_t d_mod_offset = 0;
-      uint32_t llr_offset   = 0;
+      void (*dft)(int16_t *,int16_t *, int);
 
-      for(symbol = sch_sym_start; symbol < 14; symbol++) {
+      switch (frame_parms->ofdm_symbol_size) {
+        case 128:
+          dft = dft128;
+          break;
+      
+        case 256:
+          dft = dft256;
+          break;
+      
+        case 512:
+          dft = dft512;
+          break;
+      
+        case 1024:
+          dft = dft1024;
+          break;
+      
+        case 1536:
+          dft = dft1536;
+          break;
+      
+        case 2048:
+          dft = dft2048;
+          break;
+      
+        case 4096:
+          dft = dft4096;
+          break;
+      
+        case 8192:
+          dft = dft8192;
+          break;
+      
+        default:
+          dft = dft512;
+          break;
+      }
 
-        if (symbol == 2)  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
-        nb_re = nb_rb*6;
+
+      for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
+
+      	//----------------------------------------------------------
+        //-------------------------- DFT ---------------------------
+        //----------------------------------------------------------
+
+        if(symbol == 0)
+        	rxdata_offset = frame_parms->nb_prefix_samples0;
         else
-        nb_re = nb_rb*12;
+        	rxdata_offset = frame_parms->nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples));
 
-        nr_ulsch_compute_llr(&ulsch_ue[0]->d_mod[d_mod_offset],
+        dft((int16_t *)&gNB->common_vars.rxdata[0][rxdata_offset],
+            (int16_t *)&gNB->common_vars.rxdataF[0][symbol*frame_parms->ofdm_symbol_size],1);
+        ////////////////////////////////////////////////////////////
+
+        // [hna] start RBs extraction and llr_computation starting from sch_sym_start
+        if(symbol < sch_sym_start)
+        	continue;
+            	
+      	if (symbol == 2)  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
+	      nb_re = nb_rb*6;
+        else
+	      nb_re = nb_rb*12;
+        
+
+        //----------------------------------------------------------
+        //--------------------- RBs extraction ---------------------
+        //----------------------------------------------------------
+
+        nb_rb_per_antenna = nr_ulsch_extract_rbs_single(UE->common_vars.txdataF,
+                                                        gNB->pusch_vars[UE_id]->rxdataF_ext,
+                                                        rxdataF_ext_offset,
+                                                        // rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
+                                                        symbol,
+                                                        start_rb,
+                                                        nb_rb,
+                                                        frame_parms) ;
+
+        for(i = 0; i < nb_re; i++)
+        {
+          if(symbol != 2)
+          	if(gNB->pusch_vars[UE_id]->rxdataF_ext[0][rxdataF_ext_offset + i] != UE->common_vars.txdataF[0][(symbol*frame_parms->ofdm_symbol_size) + ((i+start_re) % frame_parms->ofdm_symbol_size)])
+          		error_extraction++;
+        }
+
+        rxdataF_ext_offset = rxdataF_ext_offset +  nb_re;
+
+        ////////////////////////////////////////////////////////////
+
+
+        //----------------------------------------------------------
+        //-------------------- LLRs computation --------------------
+        //----------------------------------------------------------
+
+        nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_ext[0][d_mod_offset],
                              gNB->pusch_vars[UE_id]->ul_ch_mag,
                              gNB->pusch_vars[UE_id]->ul_ch_magb,
                              &gNB->pusch_vars[UE_id]->llr[llr_offset],
@@ -833,12 +924,12 @@ int main(int argc, char **argv) {
                              rel15_ul->Qm);
 
         d_mod_offset = d_mod_offset +  nb_re;                 // [hna] d_mod is incremented by  nb_re
-        llr_offset   = llr_offset   + (nb_re * rel15_ul->Qm); // [hna] llr   is incremented by (nb_re*mod_order) because each RE has (mod_order) coded bit (i.e LLRs)
+        llr_offset   = llr_offset   + (nb_re * rel15_ul->Qm); // [hna] llr   is incremented by (nb_re*mod_order) because each RE has (mod_order) coded bits (i.e LLRs)
+
+        ////////////////////////////////////////////////////////////
       }
-
-      ////////////////////////////////////////////////////////////
       
-
+      
       //----------------------------------------------------------
       //------------------- ULSCH unscrambling -------------------
       //----------------------------------------------------------
@@ -904,7 +995,7 @@ int main(int argc, char **argv) {
            (float) n_false_positive / (float) n_trials);
     printf("*****************************************\n");
 
-    if ((float) n_errors / (float) n_trials < target_error_rate) {
+    if (errors_bit == 0) {
       printf("PUSCH test OK\n");
       break;
     }
@@ -923,7 +1014,7 @@ int main(int argc, char **argv) {
 
     printf("gNB ulsch[%d][%d]\n",UE_id, i);
 
-    free_gNB_ulsch(gNB->ulsch[UE_id][i]);
+    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]); // "+1" because first element in ulsch is for RA
 
     for (sf = 0; sf < 2; sf++) {
 
@@ -943,6 +1034,7 @@ int main(int argc, char **argv) {
 
   free(r_re);
   free(r_im);
+  free(txdata);
 
   if (output_fd)
     fclose(output_fd);

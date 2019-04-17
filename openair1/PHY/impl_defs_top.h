@@ -245,7 +245,7 @@
 #ifdef BIT8_TX
 #define AMP_SHIFT 7
 #else
-#define AMP_SHIFT 9
+#define AMP_SHIFT 10 // [hna] was 9, but 9 doesn't work in case of mod_order = 6 (problem due to IFFT/FFT)
 #endif
 
 #define AMP ((1)<<AMP_SHIFT)
