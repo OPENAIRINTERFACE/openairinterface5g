@@ -164,10 +164,12 @@ static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
   int i, hw_slot_offset;
   PHY_VARS_NR_UE *UE = syncD->UE;
+  UE_nr_rxtx_proc_t *proc = syncD->proc;
   sync_mode_t sync_mode = pbch;
   int CC_id = UE->CC_id;
   int freq_offset=0;
   UE->is_synchronized = 0;
+  proc->nr_tti_rx = 0;
 
   if (UE->UE_scan == 0) {
     get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
