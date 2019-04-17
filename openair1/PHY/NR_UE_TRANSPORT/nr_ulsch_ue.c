@@ -89,7 +89,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch, NR_DL_FRAME_PARMS *frame_parms, int harq_pid){
 
   NR_UL_UE_HARQ_t *harq_process;
-  int16_t x[8192] = {0}; // 8192 is the maximum number of fft bins
+  int x[8192]__attribute__ ((aligned (32))); // 8192 is the maximum number of fft bins
   uint32_t *dmod;
   int sc, pusch_symb, pusch_sc;
   int symb, k, l, num_mod_symb;
@@ -152,12 +152,12 @@ void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch, NR_DL_FRAME_PARMS *frame_pa
 
     for (sc = 0; sc < pusch_sc; sc++){
 
-      x[sc*2] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2])>>15:0;
-      x[sc*2 + 1] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2 + 1])>>15:0;
+      ((int16_t *)x)[sc*2] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2])>>15:0;
+      ((int16_t *)x)[sc*2 + 1] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2 + 1])>>15:0;
 
   #ifdef DEBUG_SCFDMA
-      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2, x[sc*2] );
-      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2 + 1, x[sc*2 + 1] );
+      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2, ((int16_t *)x)[sc*2] );
+      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2 + 1, ((int16_t *)x)[sc*2 + 1] );
   #endif
 
       symb++;
@@ -165,7 +165,7 @@ void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch, NR_DL_FRAME_PARMS *frame_pa
     }
 
 
-    dft(x, (int16_t *)&ulsch->y[l*pusch_sc], 1);
+    dft((int16_t *)x, (int16_t *)&ulsch->y[l*pusch_sc], 1);
 
   }
 
