@@ -115,7 +115,7 @@ void handle_cqi(UL_IND_t *UL_info) {
 
 void handle_harq(UL_IND_t *UL_info) {
   if (NFAPI_MODE == NFAPI_MODE_PNF && UL_info->harq_ind.harq_indication_body.number_of_harqs > 0) { // PNF
-    LOG_E(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
+    //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
     int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
 
     if (retval != 0) {
@@ -125,7 +125,6 @@ void handle_harq(UL_IND_t *UL_info) {
     UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
 
   } else {
-    LOG_E(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Received by VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
     for (int i=0; i < UL_info->harq_ind.harq_indication_body.number_of_harqs; i++)
       harq_indication(UL_info->module_id,
                       UL_info->CC_id,
