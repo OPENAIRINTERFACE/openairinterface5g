@@ -2569,12 +2569,4 @@ void read_config_and_init(void) {
     memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
-
-  if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
-    pdcp_layer_init();
-
-    if ( NODE_IS_CU(RC.rrc[0]->node_type) ) {
-      pdcp_set_rlc_funcptr((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req, (pdcp_data_ind_func_t)proto_agent_send_pdcp_data_ind);
-    }
-  }
 }

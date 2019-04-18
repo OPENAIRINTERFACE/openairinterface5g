@@ -2175,9 +2175,6 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
       netlink_init();
     }
   }
-
-  /* default interface with rlc (will be modified if CU) */
-  pdcp_set_rlc_funcptr((send_rlc_data_req_func_t)rlc_data_req, (pdcp_data_ind_func_t) pdcp_data_ind);
   return pdcp_params.optmask ;
 }
 

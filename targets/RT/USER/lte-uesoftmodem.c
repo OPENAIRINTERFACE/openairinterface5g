@@ -659,6 +659,21 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
+void init_pdcp(void) {
+  uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
+
+  if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+  }
+
+  if (IS_SOFTMODEM_NOKRNMOD)
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+
+  pdcp_module_init(pdcp_initmask);
+  pdcp_set_rlc_funcptr((send_rlc_data_req_func_t)rlc_data_req,
+                       (pdcp_data_ind_func_t) pdcp_data_ind);
+}
+
 int main( int argc, char **argv ) {
 #if defined (XFORMS)
   void *status;
@@ -734,16 +749,9 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
-  uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1 )? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF) ) {
-    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
-  }
+  init_pdcp();
 
-  if ( IS_SOFTMODEM_NOKRNMOD)
-    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
-
-  pdcp_module_init( pdcp_initmask );
   //TTN for D2D
   printf ("RRC control socket\n");
   rrc_control_socket_init();
