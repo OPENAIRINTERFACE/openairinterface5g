@@ -540,6 +540,36 @@ float flexran_get_rrc_neigh_rsrp(mid_t mod_id, rnti_t rnti, long cell_id);
 /* Get RSRQ of neighbouring Cell */
 float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id);
 
+/* Get ofp offset */
+long flexran_get_rrc_ofp(mid_t mod_id, rnti_t rnti);
+
+/* Get ofn offset */
+long flexran_get_rrc_ofn(mid_t mod_id, rnti_t rnti);
+
+/* Get ocp offset */
+long flexran_get_rrc_ocp(mid_t mod_id, rnti_t rnti);
+
+/* Get ocn offset */
+long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti);
+
+/* Get Periodic Event max reported cells */
+long flexran_get_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event hysteresis */
+long flexran_get_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event time to trigger */
+long flexran_get_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event max reported cells */
+long flexran_get_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event a3 offset */
+long flexran_get_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti);
+
+/* Get A3 Event report on leave */
+int flexran_get_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti);
+
 /* Get number of PLMNs that is broadcasted in SIB1 */
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);
 

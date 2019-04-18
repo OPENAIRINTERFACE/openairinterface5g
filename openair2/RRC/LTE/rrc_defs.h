@@ -477,6 +477,71 @@ typedef struct HANDOVER_INFO_s {
   int x2_id;   /* X2AP UE ID in the target eNB */
 } HANDOVER_INFO;
 
+typedef struct PER_EVENT_s {
+  long maxReportCells;
+} PER_EVENT_t;
+
+typedef struct A1_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A1_EVENT_t;
+
+typedef struct A2_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A2_EVENT_t;
+
+typedef struct A3_EVENT_s {
+  long a3_offset;
+  int reportOnLeave;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A3_EVENT_t;
+
+
+typedef struct A4_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A4_EVENT_t;
+
+typedef struct A5_EVENT_s {
+  long threshold_RSRP_1;
+  long threshold_RSRP_2;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A5_EVENT_t;
+
+typedef struct EVENTS_s {
+  PER_EVENT_t *per_event;
+
+  A1_EVENT_t *a1_event;
+
+  A2_EVENT_t *a2_event;
+
+  A3_EVENT_t *a3_event;
+
+  A4_EVENT_t *a4_event;
+
+  A5_EVENT_t *a5_event;
+} EVENTS_t;
+
+typedef struct MEASUREMENT_INFO_s {
+  //TODO: Extend to multiple meas objects for OFP/OFN offsets
+  long  offsetFreq;
+  //TODO: extend to multiple cells for OCP/OCN offsets
+  long cellIndividualOffset;
+  EVENTS_t *events;
+} MEASUREMENT_INFO;
+
+
 #define RRC_HEADER_SIZE_MAX 64
 #define RRC_BUFFER_SIZE_MAX 1024
 typedef struct {
@@ -559,6 +624,7 @@ typedef struct eNB_RRC_UE_s {
   SRB_INFO_TABLE_ENTRY               Srb2;
   LTE_MeasConfig_t                  *measConfig;
   HANDOVER_INFO                     *handover_info;
+  MEASUREMENT_INFO                  *measurement_info;
   LTE_MeasResults_t                 *measResults;
   LTE_MobilityControlInfo_t         *mobilityInfo;
 
