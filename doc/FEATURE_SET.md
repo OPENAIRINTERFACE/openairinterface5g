@@ -72,6 +72,7 @@ The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support
 - RLC interface (AM, UM)
 - UL power control
 - Link adaptation
+- Connected DRX (CDRX) support for FDD LTE UE. Compatible with R13 from 3GPP. Support for Cat-M1 UE comming soon.  
 
 ## eNB RLC Layer ##
 
