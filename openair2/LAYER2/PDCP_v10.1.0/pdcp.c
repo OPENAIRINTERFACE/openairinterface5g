@@ -2140,9 +2140,11 @@ pdcp_data_ind_func_t get_pdcp_data_ind_func() {
   return pdcp_params.pdcp_data_ind_func;
 }
 
-void pdcp_set_rlc_funcptr(send_rlc_data_req_func_t send_rlc_data_req,
-                          pdcp_data_ind_func_t pdcp_data_ind) {
+void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req) {
   pdcp_params.send_rlc_data_req_func = send_rlc_data_req;
+}
+
+void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind) {
   pdcp_params.pdcp_data_ind_func = pdcp_data_ind;
 }
 
