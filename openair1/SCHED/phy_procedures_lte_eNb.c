@@ -1498,36 +1498,15 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
   LTE_eNB_DLSCH_t *dlsch1 = NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = NULL;
   LTE_DL_eNB_HARQ_t *dlsch1_harq = NULL;
-  int UE_id_mac = -1;
   int harq_pid;
   int subframe_tx;
   int frame_tx;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
-  UE_list_t *UE_list = NULL;
 
   AssertFatal(UE_id != -1, "No existing dlsch context\n");
   AssertFatal(UE_id < NUMBER_OF_UE_MAX, "Returned UE_id %d >= %d (NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
-
-  if (RC.mac != NULL) { /* dlsim does not use RC.mac context */
-    UE_list = &(RC.mac[eNB->Mod_id]->UE_list);
-
-    /* Replicate "find_UE_id" from openair2/LAYER2/MAC/mac_proto.h */
-    for (int UE_id_temp = 0; UE_id_temp < MAX_MOBILES_PER_ENB; UE_id_temp++) {
-      if (UE_list->active[UE_id_temp] == TRUE) {
-        if (UE_list->UE_template[UE_list->pCC_id[UE_id_temp]][UE_id_temp].rnti == dlsch0->rnti) {
-          UE_id_mac = UE_id_temp;
-          break;
-        }
-      }
-    }
-
-    if (UE_id_mac != -1) {
-      UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id_mac]);
-    }
-  }
 
   if (eNB->frame_parms.frame_type == FDD) {
     subframe_tx = (subframe + 6) % 10;
@@ -1568,11 +1547,6 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
     if (dlsch0_harq->round >= after_rounds) {
       dlsch0_harq->status = SCH_IDLE;
       dlsch0->harq_mask &= ~(1 << harq_pid);
-
-      if (UE_scheduling_control != NULL) {
-        /* CDRX: PUCCH gives an ACK or no more repetitions, so reset corresponding HARQ RTT */
-        UE_scheduling_control->harq_rtt_timer[eNB->CC_id][harq_pid] = 0;
-      }
     }
 
   } else {

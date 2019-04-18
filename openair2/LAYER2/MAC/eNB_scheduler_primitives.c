@@ -4153,18 +4153,25 @@ extract_harq(module_id_t mod_idP,
           if (pdu[0] == 1) {  // ACK
             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+
+            /* CDRX: PUCCH gives an ACK, so reset corresponding HARQ RTT */
+            sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
+
           } else if (pdu[0] == 2 || pdu[0] == 4) {  // NAK (treat DTX as NAK)
             sched_ctl->round[CC_idP][harq_pid]++; // increment round
 
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
               sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+
+              /* CDRX: PUCCH gives an NACK and max number of repetitions reached so reset corresponding HARQ RTT */
+              sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
             }
 
             if (sched_ctl->round[CC_idP][harq_pid] == 8) {
               for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
                 if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)) {
-                  //Msg NACK num to MAC ,remove UE
+                  // Msg NACK num to MAC ,remove UE
                   // add UE info to freeList
                   LOG_I(RRC, "put UE %x into freeList\n",
                         rnti);
@@ -4183,6 +4190,9 @@ extract_harq(module_id_t mod_idP,
           if (num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[CC_idP][harq_pid] == 1 && pdu[0] == 1 && pdu[1] == 1) {
             sched_ctl->round[CC_idP][harq_pid] = 8;
             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+
+            /* CDRX: PUCCH gives an ACK, so reset corresponding HARQ RTT */
+            sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
           }
 
           if ((num_ack_nak == 2)
@@ -4194,6 +4204,9 @@ extract_harq(module_id_t mod_idP,
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
               sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+
+              /* CDRX: PUCCH gives an NACK and max number of repetitions reached so reset corresponding HARQ RTT */
+              sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
             }
           } else if (((num_ack_nak == 2)
                       && (sched_ctl->round[CC_idP][harq_pid] < 8)
@@ -4209,6 +4222,9 @@ extract_harq(module_id_t mod_idP,
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
               sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;  /* TODO: do we have to set it to 0? */
+
+              /* CDRX: PUCCH gives an NACK and max number of repetitions reached so reset corresponding HARQ RTT */
+              sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
             }
           } else if ((num_ack_nak == 2)
                      && (sched_ctl->round[CC_idP][harq_pid] < 8)
@@ -4219,6 +4235,9 @@ extract_harq(module_id_t mod_idP,
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
               sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+
+              /* CDRX: PUCCH gives an NACK and max number of repetitions reached so reset corresponding HARQ RTT */
+              sched_ctl->harq_rtt_timer[CC_idP][harq_pid] = 0;
             }
           } else
             AssertFatal(1 == 0, "Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
