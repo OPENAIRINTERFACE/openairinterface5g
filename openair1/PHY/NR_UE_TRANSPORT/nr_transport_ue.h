@@ -232,6 +232,8 @@ typedef struct {
   uint16_t rnti;
   /// RNTI type
   uint8_t rnti_type;
+  /// Cell ID
+  int     Nid_cell;
   /// f_PUSCH parameter for PUSCH power control
   int16_t f_pusch;
   /// Po_PUSCH - target output power for PUSCH
