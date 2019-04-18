@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI CI Virtual-Machine-based Main Script</font></b>
+      <b><font size = "5">OAI CI Virtual-Machine-based Test Environment: the Main Script</font></b>
     </td>
   </tr>
 </table>
