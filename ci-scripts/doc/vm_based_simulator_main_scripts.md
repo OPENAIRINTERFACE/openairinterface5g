@@ -81,7 +81,7 @@ There are many more variables.
 
 ---
 
-Next step: [how to create one or several VM instances](vm_based_simulator_create)
+Next step: [how to create one or several VM instances](./vm_based_simulator_create.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

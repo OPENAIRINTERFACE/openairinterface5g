@@ -79,7 +79,7 @@ See [section](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/ci/enb-mast
 
 ---
 
-Next step: [the main scripts](vm_based_simulator_main_scripts)
+Next step: [the main scripts](./vm_based_simulator_main_scripts.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

@@ -105,7 +105,7 @@ Finally, typically I never use the `create` command. I use directly the build co
 
 ---
 
-Next step: [how to build an OAI variant](vm_based_simulator_build)
+Next step: [how to build an OAI variant](./vm_based_simulator_build.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

@@ -117,7 +117,7 @@ This last file (/etc/apt/apt.conf.d/01proxy) is very important since it is teste
 
 ---
 
-We can now switch to the next step: [how to deal with oai sources](./vm_based_simulator_sources)
+We can now switch to the next step: [how to deal with oai sources](./vm_based_simulator_sources.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

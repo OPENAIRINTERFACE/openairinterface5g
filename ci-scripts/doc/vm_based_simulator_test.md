@@ -254,7 +254,7 @@ $ ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-dev
 ```
 ---
 
-Final step: [how to properly destroy all VM instances](vm_based_simulator_destroy)
+Final step: [how to properly destroy all VM instances](./vm_based_simulator_destroy.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

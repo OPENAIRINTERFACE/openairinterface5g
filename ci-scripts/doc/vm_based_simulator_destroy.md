@@ -67,5 +67,5 @@ $ ./ci-scripts/oai-ci-vm-tool destroy --job-name raphael --build-id 1
 
 ---
 
-You can go back to the [CI dev main page](./ci_dev_home)
+You can go back to the [CI dev main page](./ci_dev_home.md)
 

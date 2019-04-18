@@ -256,7 +256,7 @@ Here the `--keep-vm-alive` option is used to keep the VM alive and performs some
 
 ---
 
-Next step: [how the build is checked](vm_based_simulator_check_build)
+Next step: [how the build is checked](./vm_based_simulator_check_build.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

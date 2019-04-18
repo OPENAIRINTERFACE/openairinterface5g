@@ -38,7 +38,7 @@ Source file concerned: `ci-scripts/waitBuildOnVM.sh`
 
 ---
 
-Next step: [how to test a function](vm_based_simulator_test)
+Next step: [how to test a function](./vm_based_simulator_test.md)
 
-You can also go back to the [CI dev main page](./ci_dev_home)
+You can also go back to the [CI dev main page](./ci_dev_home.md)
 

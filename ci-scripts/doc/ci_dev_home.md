@@ -14,14 +14,14 @@
 
 VM-based RF-Less Environment:
 
-*  [How to setup your test env](vm_based_simulator_env)
-*  [How to deal with OAI source files](vm_based_simulator_sources)
-*  [The main script](vm_based_simulator_main_scripts)
-*  [How to create one or several VM instances](vm_based_simulator_create)
-*  [How to build an OAI variant](vm_based_simulator_build)
-*  [How the build is checked](vm_based_simulator_check_build)
-*  [How to test an OAI variant](vm_based_simulator_test)
-*  [How to destroy all VM instances](vm_based_simulator_destroy)
+*  [How to setup your test env](./vm_based_simulator_env.md)
+*  [How to deal with OAI source files](./vm_based_simulator_sources.md)
+*  [The main script](./vm_based_simulator_main_scripts.md)
+*  [How to create one or several VM instances](./vm_based_simulator_create.md)
+*  [How to build an OAI variant](./vm_based_simulator_build.md)
+*  [How the build is checked](./vm_based_simulator_check_build.md)
+*  [How to test an OAI variant](./vm_based_simulator_test.md)
+*  [How to destroy all VM instances](./vm_based_simulator_destroy.md)
 
 Currently missing documentation:
 *  How to generate a build report

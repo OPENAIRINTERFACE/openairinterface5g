@@ -58,8 +58,11 @@ TDD UL: 5 MHz, 25 PRBS/ MCS **XX**   | 2.0 Mbit/s          | TM1: 1.66 Mbits/s  
 TDD UL: 10 MHz, 50 PRBS/ MCS **XX**  | 2.0 Mbit/s          | TM1: 1.89 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | 3.0 Mbit/s          | TM1: 2.70 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 
-- Number of supported UEs: 16 by default, up to 256 when compiling with dedicated compile flag
-                           Was tested with 40 COTS-UE
+### Number of supported UEs ###
+
+* 16 by default
+* up to 256 when compiling with dedicated compile flag
+* was tested with 40 COTS-UE
 
 ## eNB MAC Layer ##
 
