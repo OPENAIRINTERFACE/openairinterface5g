@@ -1503,7 +1503,7 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
   int subframe_tx;
   int frame_tx;
   UE_sched_ctrl *UE_scheduling_control = NULL;
-  UE_list_t *UE_list = NULL
+  UE_list_t *UE_list = NULL;
 
   AssertFatal(UE_id != -1, "No existing dlsch context\n");
   AssertFatal(UE_id < NUMBER_OF_UE_MAX, "Returned UE_id %d >= %d (NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
