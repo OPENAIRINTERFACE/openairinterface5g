@@ -961,6 +961,7 @@ int main( int argc, char **argv )
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
   }
+  openair0_cfg[0].threequarter_fs = threequarter_fs;
 
 
 #if T_TRACER
