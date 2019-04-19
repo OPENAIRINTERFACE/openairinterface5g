@@ -759,14 +759,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
   proc->subframe_phy_tx  = (proc->subframe_rx+(sf_ahead-1))%10;
   proc->frame_phy_tx     = (proc->subframe_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-#else
-  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #endif
-  //proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  //proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  //proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
         ru->idx,
         0,
@@ -1197,7 +1190,7 @@ void do_ru_synch(RU_t *ru) {
 void wakeup_L1s(RU_t *ru) {
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
-  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d (%d.%d)\n",ru->num_eNB,ru->idx, ru->proc.frame_rx,ru->proc.subframe_rx);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
@@ -1484,7 +1477,6 @@ static void *ru_thread_tx( void *param ) {
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   //wait_sync("ru_thread_tx");
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
-  printf( "ru_thread_tx ready\n");
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());
@@ -1494,6 +1486,8 @@ static void *ru_thread_tx( void *param ) {
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+
+    LOG_D(PHY,"ru_thread_tx: TX in %d.%d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
 
     if (oai_exit) break;
 
@@ -1509,7 +1503,7 @@ static void *ru_thread_tx( void *param ) {
 
       if (ru->fh_north_out) ru->fh_north_out(ru);
     }
-
+    LOG_D(PHY,"ru_thread_tx: releasing RU TX in %d.%d\n",proc->frame_tx,proc->subframe_tx);
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
 
     for(int i = 0; i<ru->num_eNB; i++) {
@@ -1536,6 +1530,7 @@ static void *ru_thread_tx( void *param ) {
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
 
+        LOG_D(PHY,"ru_thread_tx: Signaling RU TX done in %d.%d\n",proc->frame_tx,proc->subframe_tx);
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
@@ -1943,31 +1938,30 @@ static void *eNB_thread_phy_tx( void *param ) {
 
     LOG_D(PHY,"Running eNB phy tx procedures\n");
 
-    if(ru->num_eNB == 1) {
-      L1_proc.subframe_tx = proc->subframe_phy_tx;
-      L1_proc.frame_tx = proc->frame_phy_tx;
-      phy_procedures_eNB_TX(eNB_list[0], &L1_proc, 1);
-      phy_tx_txdataF_end = 1;
+    AssertFatal(ru->num_eNB == 1, "handle multiple L1 case\n");
+    L1_proc.subframe_tx = proc->subframe_phy_tx;
+    L1_proc.frame_tx = proc->frame_phy_tx;
+    phy_procedures_eNB_TX(eNB_list[0], &L1_proc, 1);
+    phy_tx_txdataF_end = 1;
 
-      if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0) {
-        LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);
-        exit_fun( "error locking mutex_rf_tx" );
-      }
-
-      if (ru->proc.instance_cnt_rf_tx==-1) {
-        ++ru->proc.instance_cnt_rf_tx;
-        ru->proc.frame_tx = proc->frame_phy_tx;
-        ru->proc.subframe_tx = proc->subframe_phy_tx;
-        ru->proc.timestamp_tx = proc->timestamp_phy_tx;
-        // the thread can now be woken up
-        AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
-      } else {
-        LOG_E(PHY,"rf tx thread busy, skipping\n");
-        late_control=STATE_BURST_TERMINATE;
-      }
-
-      pthread_mutex_unlock( &ru->proc.mutex_rf_tx );
+    if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0) {
+      LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);
+      exit_fun( "error locking mutex_rf_tx" );
     }
+
+    if (ru->proc.instance_cnt_rf_tx==-1) {
+      ++ru->proc.instance_cnt_rf_tx;
+      ru->proc.frame_tx = proc->frame_phy_tx;
+      ru->proc.subframe_tx = proc->subframe_phy_tx;
+      ru->proc.timestamp_tx = proc->timestamp_phy_tx;
+      // the thread can now be woken up
+      AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
+    } else {
+      LOG_E(PHY,"rf tx thread busy, skipping\n");
+      late_control=STATE_BURST_TERMINATE;
+    }
+
+    pthread_mutex_unlock( &ru->proc.mutex_rf_tx );
 
     if (release_thread(&proc->mutex_phy_tx,&proc->instance_cnt_phy_tx,"eNB_thread_phy_tx") < 0) break;
 
@@ -2668,6 +2662,8 @@ void init_RU(char *rf_config_file) {
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
 
+    ru->wakeup_L1_sleeptime = 2000;
+    ru->wakeup_L1_sleep_cnt_max  = 3;
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
 

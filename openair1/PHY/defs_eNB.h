@@ -403,7 +403,10 @@ typedef struct RU_t_s{
   RU_proc_t            proc;
   /// stats thread pthread descriptor
   pthread_t            ru_stats_thread;
-
+  /// sleep time in us for delaying L1 wakeup 
+  int wakeup_L1_sleeptime;
+  /// maximum number of sleeps
+  int wakeup_L1_sleep_cnt_max;
 } RU_t;
 
 

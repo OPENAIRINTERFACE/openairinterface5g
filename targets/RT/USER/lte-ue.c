@@ -890,7 +890,7 @@ void ue_stub_rx_handler(unsigned int num_bytes, char *rx_buffer) {
   switch (((UE_tport_header_t *)rx_buffer)->packet_type) {
     case TTI_SYNC:
       emulator_absSF = ((UE_tport_header_t *)rx_buffer)->absSF;
-      wakeup_thread(&UE->timer_mutex,&UE->timer_cond,&UE->instance_cnt_timer,"timer_thread");
+      wakeup_thread(&UE->timer_mutex,&UE->timer_cond,&UE->instance_cnt_timer,"timer_thread",100,1);
       break;
 
     case SLSCH:
@@ -1736,7 +1736,7 @@ void *UE_thread(void *arg) {
               LOG_E(PHY,"Missed real time\n");
               continue;
             } else {
-              LOG_E(PHY,"System error\n");
+              LOG_E(PHY,"System error %s\n",strerror(errno));
               abort();
             }
           }
