@@ -535,7 +535,9 @@ class SSHConnection():
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
+		else:
 			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
@@ -1281,6 +1283,7 @@ class SSHConnection():
 				htmlOptions = 'N/A'
 			self.close()
 		else:
+			passStatus = True
 			htmlOptions = 'N/A'
 
 		if (status_queue.empty()):

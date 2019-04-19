@@ -27,8 +27,9 @@
 	<TestCaseRequestedList>
  040101
  030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
- 050102
  030102 000010 040301 040502 000011 040302 000001 000012 040303 000002 000013 040503 040401 040201 030201
+ 050102
+ 030102 000020 040301 040504 000021 040302 000001 000022 040303 000002 040504 000023 040401 040201 030201
  050202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -41,8 +42,8 @@
 
         <testCase id="000002">
                 <class>IdleSleep</class>
-                <desc>Waiting for 5 seconds</desc>
-                <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+                <desc>Waiting for 10 seconds</desc>
+                <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
         </testCase>
 
         <testCase id="000010">
@@ -69,6 +70,30 @@
 		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
         </testCase>
 
+        <testCase id="000020">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status before attachment</desc>
+		<expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
+        </testCase>
+
+        <testCase id="000021">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status before data disabling</desc>
+		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
+        </testCase>
+
+        <testCase id="000022">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status after data disabling</desc>
+		<expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
+        </testCase>
+
+        <testCase id="000023">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status after data re-enabling</desc>
+		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
+        </testCase>
+
         <testCase id="050102">
                 <class>Initialize_FlexranCtrl</class>
                 <desc>Starting Flexran Controller</desc>
@@ -86,6 +111,12 @@
 	</testCase>
 
 	<testCase id="030102">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030103">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
@@ -141,6 +172,20 @@
         </testCase>
 
         <testCase id="040503">
+                <class>Ping</class>
+                <desc>ping (5MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040504">
+                <class>Ping</class>
+                <desc>ping (5MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040505">
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
