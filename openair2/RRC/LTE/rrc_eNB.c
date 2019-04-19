@@ -977,6 +977,24 @@ rrc_eNB_free_mem_UE_context(
     ue_context_pP->ue_context.handover_info = NULL;
   }
 
+  if (ue_context_pP->ue_context.measurement_info->events->a3_event) {
+    /* TODO: be sure free is enough here (check memory leaks) */
+    free(ue_context_pP->ue_context.measurement_info->events->a3_event);
+    ue_context_pP->ue_context.measurement_info->events->a3_event = NULL;
+  }
+
+  if (ue_context_pP->ue_context.measurement_info->events) {
+    /* TODO: be sure free is enough here (check memory leaks) */
+    free(ue_context_pP->ue_context.measurement_info->events);
+    ue_context_pP->ue_context.measurement_info->events = NULL;
+  }
+
+  if (ue_context_pP->ue_context.measurement_info) {
+    /* TODO: be sure free is enough here (check memory leaks) */
+    free(ue_context_pP->ue_context.measurement_info);
+    ue_context_pP->ue_context.measurement_info = NULL;
+  }
+
   //SRB_INFO                           SI;
   //SRB_INFO                           Srb0;
   //SRB_INFO_TABLE_ENTRY               Srb1;
@@ -3302,6 +3320,19 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   //  }
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+
+  if (!ue_context_pP->ue_context.measurement_info) {
+    ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
+  }
+
+  //TODO: Assign proper values
+  ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+
+  if (!ue_context_pP->ue_context.measurement_info->events) {
+    ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
+  }
+
   // Report Configurations for periodical, A1-A5 events
   ReportConfig_list = CALLOC(1, sizeof(*ReportConfig_list));
   ReportConfig_per = CALLOC(1, sizeof(*ReportConfig_per));
@@ -3416,6 +3447,18 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+
+  /* A3 event update */
+  if (!ue_context_pP->ue_context.measurement_info->events->a3_event) {
+      ue_context_pP->ue_context.measurement_info->events->a3_event = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events->a3_event)));
+  }
+
+  ue_context_pP->ue_context.measurement_info->events->a3_event->a3_offset = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->reportOnLeave = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->hysteresis = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
+
   rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
   *rsrp = 20;
   Sparams = CALLOC(1, sizeof(*Sparams));
@@ -5287,6 +5330,19 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   //}
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+
+  if (!ue_context_pP->ue_context.measurement_info) {
+    ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
+  }
+
+  //TODO: Assign proper values
+  ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+
+  if (!ue_context_pP->ue_context.measurement_info->events) {
+    ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
+  }
+
   // Report Configurations for periodical, A1-A5 events
   ReportConfig_list = CALLOC(1, sizeof(*ReportConfig_list));
   ReportConfig_per = CALLOC(1, sizeof(*ReportConfig_per));
@@ -5401,6 +5457,18 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
   //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+
+  /* A3 event update */
+  if (!ue_context_pP->ue_context.measurement_info->events->a3_event) {
+      ue_context_pP->ue_context.measurement_info->events->a3_event = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events->a3_event)));
+  }
+
+  ue_context_pP->ue_context.measurement_info->events->a3_event->a3_offset = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->reportOnLeave = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.reportOnLeave;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->hysteresis = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
+  ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
+
   rsrp = CALLOC(1, sizeof(RSRP_Range_t));
   *rsrp = 20;
   Sparams = CALLOC(1, sizeof(*Sparams));
