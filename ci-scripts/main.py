@@ -1134,7 +1134,7 @@ class SSHConnection():
 			logging.debug('\u001B[1mUE (' + device_id + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
 			for ueipaddress in self.UEIPAddresses:
 				if ueipaddress == UE_IPAddress:
-					logging.debug('\u001B[1mUE (' + device_id + ') IP Address ' + UE_IPAddress + 'has been existed!' + '\u001B[0m')
+					logging.debug('\u001B[1mUE (' + device_id + ') IP Address ' + UE_IPAddress + ': has already been allocated to another device !' + '\u001B[0m')
 					ue_ip_status -= 1
 					continue
 			self.UEIPAddresses.append(UE_IPAddress)
@@ -1323,6 +1323,7 @@ class SSHConnection():
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			self.AutoTerminateUEandeNB()
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		multi_jobs = []
