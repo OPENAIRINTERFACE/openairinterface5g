@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-20</htmlTabRef>
-	<htmlTabName>Test-20MHz</htmlTabName>
+	<htmlTabRef>test-if4p5-20</htmlTabRef>
+	<htmlTabName>Test-IF4.5-20MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  040101

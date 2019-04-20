@@ -672,8 +672,10 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		    mcs = 7;
 		} else if (bcch_sdu_length <= 49) {
 		    mcs = 8;
-		}
-
+		} else if (bcch_sdu_length <= 59) {
+                    mcs = 9;
+                } 
+                else AssertFatal(1==0,"Cannot Assign mcs for bcch_sdu_length %d (max mcs 9)\n",bcch_sdu_length);
 
 		dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 		memset((void *) dl_config_pdu, 0,

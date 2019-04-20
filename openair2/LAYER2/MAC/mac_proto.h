@@ -711,8 +711,6 @@ int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
 void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
 
-int maxround(module_id_t Mod_id, uint16_t rnti, int frame,
-	     sub_frame_t subframe, uint8_t ul_flag);
 void swap_UEs(UE_list_t * listP, int nodeiP, int nodejP, int ul_flag);
 int prev(UE_list_t * listP, int nodeP, int ul_flag);
 void dump_ue_list(UE_list_t * listP, int ul_flag);
@@ -730,11 +728,11 @@ void set_ul_DAI(int module_idP,
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int frameP,
 				   sub_frame_t subframeP,
+                                   int sched_frameP,
                                    unsigned char sched_subframeP,
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
-void sort_ue_ul(module_id_t module_idP, int slice_idx, int frameP, sub_frame_t subframeP, rnti_t *rntiTable);
 void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,

@@ -471,6 +471,10 @@ typedef struct RU_t_s{
   int16_t *dmrssync;
   /// OTA synchronization correlator output
   uint64_t *dmrs_corr;
+  /// sleep time in us for delaying L1 wakeup 
+  int wakeup_L1_sleeptime;
+  /// maximum number of sleeps
+  int wakeup_L1_sleep_cnt_max;
 } RU_t;
 
 

@@ -55,7 +55,7 @@
 
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "dummy_functions.c"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/config/config_load_configmodule.h"
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -81,7 +81,7 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
-int nfapi_mode = 0;
+
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);

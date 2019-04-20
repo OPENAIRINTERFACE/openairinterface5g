@@ -664,12 +664,7 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 
-#############################################################################
-# Flag for UE compilation to avoid issues in common eNB/UE PDCP/RLC functions
-#############################################################################
-
-add_boolean_option(UETARGET                 False         "set UE as target for compiler")
-
+########################
 # Include order
 ##########################
 add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
@@ -2298,6 +2293,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${T_SOURCE}
     ${CONFIG_SOURCES}
     ${SHLIB_LOADER_SOURCES}
+    ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe}
 

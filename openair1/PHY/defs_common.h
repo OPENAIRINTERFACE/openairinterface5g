@@ -1052,15 +1052,42 @@ static inline void wait_sync(char *thread_name) {
   fflush(stderr);
 }
 
-static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name, int sleeptime,int sleep_cnt_max) {
   int rc;
+  int sleep_cnt=0;
+
   if ((rc = pthread_mutex_lock(mutex)) != 0) {
     LOG_E(PHY, "wakeup_thread(): error locking mutex for %s (%d %s, %p)\n",
         name, rc, strerror(rc), (void *)mutex);
     exit_fun("nothing to add");
     return(-1);
   }
+  while (*instance_cnt == 0) {
+    if ((rc = pthread_mutex_unlock(mutex)) != 0) {
+       LOG_E(PHY, "wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n",
+          name, rc, strerror(rc), (void *)mutex);
+      exit_fun("nothing to add");
+      return(-1);
+    }
+    sleep_cnt++;
+    if (sleep_cnt>sleep_cnt_max) return(-1);
+    usleep(sleeptime);
+    if ((rc = pthread_mutex_lock(mutex)) != 0) {
+      LOG_E(PHY, "wakeup_thread(): error locking mutex for %s (%d %s, %p)\n",
+          name, rc, strerror(rc), (void *)mutex);
+      exit_fun("nothing to add");
+      return(-1);
+    }
+  }
   *instance_cnt = *instance_cnt + 1;
+
+  if ((rc = pthread_mutex_unlock(mutex)) != 0) {
+    LOG_E(PHY, "wakeup_thread(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+
   // the thread can now be woken up
   if (pthread_cond_signal(cond) != 0) {
     LOG_E( PHY, "ERROR pthread_cond_signal\n");

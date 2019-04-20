@@ -66,7 +66,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "common/config/config_load_configmodule.h"
 #include "PHY/INIT/phy_init.h"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 
 void feptx_ofdm(RU_t *ru);
 void feptx_prec(RU_t *ru);
@@ -471,7 +471,7 @@ int n_users = 1;
 int subframe=7;
 int num_common_dci=0,num_ue_spec_dci=0,num_dci=0,num_pdcch_symbols=1;
 uint16_t n_rnti=0x1234;
-int nfapi_mode=0;
+
 int abstx=0;
 int Nid_cell=0;
 int N_RB_DL=25;

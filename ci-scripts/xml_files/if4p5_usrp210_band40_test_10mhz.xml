@@ -96,7 +96,7 @@
 		<class>Iperf</class>
 		<desc>iperf (10MHz - UL/2Mbps/UDP)(30 sec)(single-ue)</desc>
 		<iperf_args>-u -b 2M -t 30 -i 1 -R</iperf_args>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>60</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
