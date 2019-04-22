@@ -869,7 +869,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
              pllr_symbol_cw0);
-  
+  */  
   switch (dlsch0_harq->Qm) {
     case 2 :
       if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {

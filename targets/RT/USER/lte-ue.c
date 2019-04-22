@@ -1731,12 +1731,12 @@ void *UE_thread(void *arg) {
             tv.tv_sec=INT_MAX;
 
           // operate on thread sf mod 2
-          if (pthread_mutex_timedlock(&proc->mutex_rxtx, &tv) !=0) {
+          if ((errno = pthread_mutex_timedlock(&proc->mutex_rxtx, &tv)) !=0) {
             if ( errno == ETIMEDOUT) {
               LOG_E(PHY,"Missed real time\n");
               continue;
             } else {
-              LOG_E(PHY,"System error %s\n",strerror(errno));
+              LOG_E(PHY,"System error %s (%d)\n",strerror(errno),errno);
               abort();
             }
           }

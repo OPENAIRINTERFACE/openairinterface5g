@@ -405,6 +405,8 @@ static void get_options(void) {
 
   int dumpframe=0;
   int timingadv;
+  uint8_t nfapi_mode;
+  int simL1flag ;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);

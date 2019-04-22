@@ -624,28 +624,29 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   if (ru->fh_north_asynch_in == NULL) {
 #ifdef PHY_TX_THREAD
-  proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
-  proc->subframe_phy_tx  = (proc->subframe_rx+(sf_ahead-1))%10;
-  proc->frame_phy_tx     = (proc->subframe_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
+    proc->subframe_phy_tx  = (proc->subframe_rx+(sf_ahead-1))%10;
+    proc->frame_phy_tx     = (proc->subframe_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #endif
-  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
-        ru->idx,
-        0,
-        (unsigned long long int)proc->timestamp_rx,
-        (int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
-
-  LOG_D(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
-	ru->idx, 
-	0, 
-	(unsigned long long int)proc->timestamp_rx,
-	(int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
-  // dump VCD output for first RU in list
-  if (ru == RC.ru[0]) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-    if (ru->fh_north_asynch_in == NULL) {
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+	  ru->idx,
+	  0,
+	  (unsigned long long int)proc->timestamp_rx,
+	  (int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
+    
+    LOG_D(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+	  ru->idx, 
+	  0, 
+	  (unsigned long long int)proc->timestamp_rx,
+	  (int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
+    // dump VCD output for first RU in list
+    if (ru == RC.ru[0]) {
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
+      if (ru->fh_north_asynch_in == NULL) {
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+      }
     }
   }
 

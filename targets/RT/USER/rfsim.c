@@ -63,7 +63,7 @@ sim_t sim;
 
 void init_ru_devices(void);
 
-void init_RU(const char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
+void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 
 void *rfsim_top(void *n_frames);
 

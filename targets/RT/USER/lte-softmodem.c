@@ -707,20 +707,20 @@ int main( int argc, char **argv ) {
 #ifdef XFORMS
     int UE_id;
     printf("XFORMS\n");
-
+    
     if (get_softmodem_params()->do_forms==1) {
       fl_initialize (&argc, argv, NULL, 0, 0);
       form_stats_l2 = create_form_stats_form();
       fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
       form_stats = create_form_stats_form();
       fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-
+      
       for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
         for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
           form_enb[CC_id][UE_id] = create_lte_phy_scope_enb();
           sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
           fl_show_form (form_enb[CC_id][UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
+	  
           if (otg_enabled) {
             fl_set_button(form_enb[CC_id][UE_id]->button_0,1);
             fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic ON");
@@ -730,91 +730,93 @@ int main( int argc, char **argv ) {
           }
         } // CC_id
       } // UE_id
-
+      
       ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-
+      
       if (ret == 0)
         pthread_setname_np( forms_thread, "xforms" );
-
+      
       printf("Scope thread created, ret=%d\n",ret);
     }
-
+    
 #endif
+    
     rt_sleep_ns(10*100000000ULL);
-
+    
     if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
       LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
       pthread_cond_init(&sync_cond,NULL);
       pthread_mutex_init(&sync_mutex, NULL);
     }
-
+    
     if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
 #if defined(PRE_SCD_THREAD)
       init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
       wait_nfapi_init("main?");
     }
-
+    
     LOG_I(ENB_APP,"START MAIN THREADS\n");
     // start the main threads
     number_of_cards = 1;
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-
+    
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
-
+    
     printf("wait_eNBs()\n");
     wait_eNBs();
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-
+    
     // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
     // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
     // some initialization is necessary and init_ru_vnf do this.
     if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
       printf("Initializing RU threads\n");
       init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
-
+      
       for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
         RC.ru[ru_id]->rf_map.card=0;
         RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
       }
-
+      
       config_sync_var=0;
-
-    if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
-      wait_nfapi_init("main?");
+      
+      if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
+	wait_nfapi_init("main?");
+      }
+      
+      printf("wait RUs\n");
+      fflush(stdout);
+      fflush(stderr);
+      wait_RUs();
+      LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
+      // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
+      printf("ALL RUs ready - init eNBs\n");
+      
+      if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
+	LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
+	init_eNB_afterRU();
+      } else {
+	LOG_I(ENB_APP,"NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+      }
+      
+      LOG_UI(ENB_APP,"ALL RUs ready - ALL eNBs ready\n");
+      // connect the TX/RX buffers
+      sleep(1); /* wait for thread activation */
+      LOG_I(ENB_APP,"Sending sync to all threads\n");
+      pthread_mutex_lock(&sync_mutex);
+      sync_var=0;
+      pthread_cond_broadcast(&sync_cond);
+      pthread_mutex_unlock(&sync_mutex);
+      config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
     }
-
-    printf("wait RUs\n");
-    fflush(stdout);
-    fflush(stderr);
-    wait_RUs();
-    LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
-    // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
-    printf("ALL RUs ready - init eNBs\n");
-
-    if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
-      LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
-      init_eNB_afterRU();
-    } else {
-      LOG_I(ENB_APP,"NFAPI mode - DO NOT call init_eNB_afterRU()\n");
-    }
-
-    LOG_UI(ENB_APP,"ALL RUs ready - ALL eNBs ready\n");
-    // connect the TX/RX buffers
-    sleep(1); /* wait for thread activation */
-    LOG_I(ENB_APP,"Sending sync to all threads\n");
-    pthread_mutex_lock(&sync_mutex);
-    sync_var=0;
-    pthread_cond_broadcast(&sync_cond);
-    pthread_mutex_unlock(&sync_mutex);
-    config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-    // wait for end of program
+  // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
   itti_wait_tasks_end();
@@ -879,7 +881,7 @@ int main( int argc, char **argv ) {
       }
     }
   }
-  
+     
   terminate_opt();
   logClean();
   printf("Bye.\n");
