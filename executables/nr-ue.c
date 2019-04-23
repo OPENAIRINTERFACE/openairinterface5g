@@ -125,6 +125,34 @@ extern double cpuf;
 #define DAQ_PERIOD      66667ULL
 #define FIFO_PRIORITY   40
 
+
+void init_thread(int core, char *name) {
+  pthread_setname_np(pthread_self(),name);
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
+  if (core >0)
+    CPU_SET(core, &cpuset);
+
+  AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset), "");
+  struct sched_param sp;
+  sp.sched_priority = FIFO_PRIORITY;
+  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
+              "Can't set thread priority, Are you root?\n");
+  /* Check the actual affinity mask assigned to the thread */
+  cpu_set_t *cset=CPU_ALLOC(CPU_SETSIZE);
+
+  if (0 == pthread_getaffinity_np(pthread_self(), CPU_ALLOC_SIZE(CPU_SETSIZE), cset)) {
+    char txt[512]= {0};
+
+    for (int j = 0; j < CPU_SETSIZE; j++)
+      if (CPU_ISSET(j, cset))
+        sprintf(txt+strlen(txt), " %d ", j);
+
+    printf("CPU Affinity of thread %s is %s\n", name, txt);
+  }
+}
+
 typedef enum {
   pss=0,
   pbch=1,
@@ -535,6 +563,7 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
 }
 
 void *UE_thread(void *arg) {
+  init_thread(1, "IQ samples");
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
   openair0_timestamp timestamp;

@@ -27,22 +27,15 @@
 #define sample_t uint32_t // 2*16 bits complex number
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
-#define MAGICeNB 0xA5A5A5A5A5A5A5A5
-#define MAGICUE  0x5A5A5A5A5A5A5A5A
 
-typedef struct {
-  uint64_t magic;
-  uint32_t size;
-  uint32_t nbAnt;
-  uint64_t timestamp;
-} transferHeader;
+#define sample_t uint32_t // 2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
   bool alreadyRead;
   uint64_t lastReceivedTS;
   bool headerMode;
-  transferHeader th;
+  samplesBlockHeader_t th;
   char *transferPtr;
   uint64_t remainToTransfer;
   char *circularBufEnd;
@@ -55,6 +48,7 @@ typedef struct {
   uint64_t typeStamp;
   uint64_t initialAhead;
   char *ip;
+  int saveIQfile;
   buffer_t buf[FD_SETSIZE];
 } rfsimulator_state_t;
 
@@ -65,7 +59,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ptr->conn_sock=sock;
   ptr->headerMode=true;
   ptr->transferPtr=(char *)&ptr->th;
-  ptr->remainToTransfer=sizeof(transferHeader);
+  ptr->remainToTransfer=sizeof(samplesBlockHeader_t);
   int sendbuff=1000*1000*10;
   AssertFatal ( setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sendbuff, sizeof(sendbuff)) == 0, "");
   struct epoll_event ev= {0};
@@ -87,7 +81,7 @@ void socketError(rfsimulator_state_t *bridge, int sock) {
     LOG_W(HW,"Lost socket \n");
     removeCirBuf(bridge, sock);
 
-    if (bridge->typeStamp==MAGICUE)
+    if (bridge->typeStamp==UE_MAGICDL_FDD)
       exit(1);
   }
 }
@@ -120,6 +114,11 @@ void setblocking(int sock, enum blocking_t active) {
 static bool flushInput(rfsimulator_state_t *t);
 
 void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
+  if (t->saveIQfile != -1) {
+    if (write(t->saveIQfile, _buf, count) != count )
+      LOG_E(HW,"write in save iq file failed (%s)\n",strerror(errno));
+  }
+
   char *buf = _buf;
   int l;
   setblocking(fd, notBlocking);
@@ -145,7 +144,7 @@ void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
 
 int server_start(openair0_device *device) {
   rfsimulator_state_t *t = (rfsimulator_state_t *) device->priv;
-  t->typeStamp=MAGICeNB;
+  t->typeStamp=ENB_MAGICDL_FDD;
   AssertFatal((t->listen_sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0, "");
   int enable = 1;
   AssertFatal(setsockopt(t->listen_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == 0, "");
@@ -168,7 +167,7 @@ sin_addr:
 
 int start_ue(openair0_device *device) {
   rfsimulator_state_t *t = device->priv;
-  t->typeStamp=MAGICUE;
+  t->typeStamp=UE_MAGICDL_FDD;
   int sock;
   AssertFatal((sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0, "");
   struct sockaddr_in addr = {
@@ -207,7 +206,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
     buffer_t *ptr=&t->buf[i];
 
     if (ptr->conn_sock >= 0 ) {
-      transferHeader header= {t->typeStamp, nsamps, nbAnt, timestamp};
+      samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(ptr->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
 
@@ -290,8 +289,8 @@ static bool flushInput(rfsimulator_state_t *t) {
 
       // check the header and start block transfer
       if ( b->headerMode==true && b->remainToTransfer==0) {
-        AssertFatal( (t->typeStamp == MAGICUE  && b->th.magic==MAGICeNB) ||
-                     (t->typeStamp == MAGICeNB && b->th.magic==MAGICUE), "Socket Error in protocol");
+        AssertFatal( (t->typeStamp == UE_MAGICDL_FDD  && b->th.magic==ENB_MAGICDL_FDD) ||
+                     (t->typeStamp == ENB_MAGICDL_FDD && b->th.magic==UE_MAGICDL_FDD), "Socket Error in protocol");
         b->headerMode=false;
         b->alreadyRead=true;
 
@@ -322,7 +321,7 @@ static bool flushInput(rfsimulator_state_t *t) {
 
           b->headerMode=true;
           b->transferPtr=(char *)&b->th;
-          b->remainToTransfer=sizeof(transferHeader);
+          b->remainToTransfer=sizeof(samplesBlockHeader_t);
           b->th.magic=-1;
         }
       }
@@ -447,10 +446,22 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   }
 
   rfsimulator->typeStamp = strncasecmp(rfsimulator->ip,"enb",3) == 0 ?
-                           MAGICeNB:
-                           MAGICUE;
-  LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == MAGICeNB ? "eNB" : "UE");
-  device->trx_start_func       = rfsimulator->typeStamp == MAGICeNB ?
+                           ENB_MAGICDL_FDD:
+                           UE_MAGICDL_FDD;
+  LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL_FDD ? "eNB" : "UE");
+  char *saveF;
+
+  if ((saveF=getenv("saveIQfile")) != NULL) {
+    rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
+
+    if ( rfsimulator->saveIQfile != -1 )
+      LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
+    else
+      LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
+  } else
+    rfsimulator->saveIQfile = -1;
+
+  device->trx_start_func       = rfsimulator->typeStamp == ENB_MAGICDL_FDD ?
                                  server_start :
                                  start_ue;
   device->trx_get_stats_func   = rfsimulator_get_stats;

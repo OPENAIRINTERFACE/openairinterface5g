@@ -2155,6 +2155,24 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 #################################
 # add executables for operation
 #################################
+add_library(minimal_lib
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/config/config_userapi.c
+  ${OPENAIR_DIR}/common/config/config_load_configmodule.c
+  ${OPENAIR_DIR}/common/config/config_cmdline.c
+  ${OPENAIR_DIR}/common/utils/minimal_stub.c
+  )
+target_link_libraries(minimal_lib pthread dl)
+
+add_executable(replay_node
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/stored_node.c
+  )
+target_link_libraries (replay_node minimal_lib)
+
+add_executable(measurement_display
+  ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
+target_link_libraries (measurement_display minimal_lib)
 
 # lte-softmodem is both eNB and UE implementation
 ###################################################
