@@ -1586,15 +1586,15 @@ long flexran_get_rrc_ocp(mid_t mod_id, rnti_t rnti) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->cellIndividualOffset;
+  return ue_context_p->ue_context.measurement_info->cellIndividualOffset[0];
 }
 
-long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti) {
+long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id) {
   if (!rrc_is_present(mod_id)) return -1;
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->cellIndividualOffset;
+  return ue_context_p->ue_context.measurement_info->cellIndividualOffset[cell_id+1];
 }
 
 /* Periodic event */

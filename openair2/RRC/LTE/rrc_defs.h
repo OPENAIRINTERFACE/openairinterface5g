@@ -61,6 +61,8 @@
 
 #define MAX_PAYLOAD 1024 /* maximum payload size*/
 
+#define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
+
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -537,7 +539,7 @@ typedef struct MEASUREMENT_INFO_s {
   //TODO: Extend to multiple meas objects for OFP/OFN offsets
   long  offsetFreq;
   //TODO: extend to multiple cells for OCP/OCN offsets
-  long cellIndividualOffset;
+  long cellIndividualOffset[MAX_NUM_NEIGH_CELLs+1];
   EVENTS_t *events;
 } MEASUREMENT_INFO;
 
@@ -821,6 +823,11 @@ typedef struct eNB_RRC_INST_s {
 
   /// NR cell id
   uint64_t nr_cellid;
+
+  // Neighborouring cells id
+  int num_neigh_cells;
+  int num_neigh_cells_cc[MAX_NUM_CCs];
+  uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;

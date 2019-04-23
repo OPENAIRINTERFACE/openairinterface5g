@@ -2942,8 +2942,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   LTE_RSRP_Range_t                       *rsrp                             = NULL;
   struct LTE_MeasConfig__speedStatePars  *Sparams                          = NULL;
   LTE_QuantityConfig_t                   *quantityConfig                   = NULL;
-  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList 
-    *dedicatedInfoNASList = NULL;
+  LTE_CellsToAddMod_t                    *CellToAdd                        = NULL;
+  LTE_CellsToAddModList_t                *CellsToAddModList                = NULL;
+  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
   LTE_DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
   
   /* For no gcc warnings */
@@ -3306,20 +3307,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  //  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-  //    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  //  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-  //
-  //  // Add adjacent cell lists (6 per eNB)
-  //  for (i = 0; i < 6; i++) {
-  //    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
-  //    CellToAdd->cellIndex = i + 1;
-  //    CellToAdd->physCellId = get_adjacent_cell_id(ctxt_pP->module_id, i);
-  //    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
-  //    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
-  //  }
-  ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
-  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
 
   if (!ue_context_pP->ue_context.measurement_info) {
     ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
@@ -3327,7 +3317,20 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   //TODO: Assign proper values
   ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
-  ue_context_pP->ue_context.measurement_info->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = 0;
+
+  /* TODO: Extend to multiple carriers */
+  // Add adjacent cell lists (max 6 per eNB)
+  for (i = 0; i < RC.rrc[ctxt_pP->module_id]->num_neigh_cells; i++) {
+    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
+    CellToAdd->cellIndex = i + 1;
+    CellToAdd->physCellId = RC.rrc[ctxt_pP->module_id]->neigh_cells_id[i][0];//get_adjacent_cell_id(ctxt_pP->module_id, i);
+    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+    ue_context_pP->ue_context.measurement_info->cellIndividualOffset[i+1] = CellToAdd->cellIndividualOffset;
+    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
+  }
+  ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
+  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
 
   if (!ue_context_pP->ue_context.measurement_info->events) {
     ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
@@ -4398,6 +4401,50 @@ rrc_eNB_generate_HandoverPreparationInformation(
   *_size = ho_size;
 }
 
+void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m) {
+
+  RC.rrc[mod_id]->num_neigh_cells ++;
+
+  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
+     LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+     return;
+  }
+
+  if (m->num_cc > MAX_NUM_CCs) {
+     LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+     return;
+  }
+
+  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+
+  for (int i=0; i<m->num_cc; i++) {
+    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
+  }
+
+}
+
+void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m) {
+
+  RC.rrc[mod_id]->num_neigh_cells ++;
+
+  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
+     LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+     return;
+  }
+
+  if (m->num_cc > MAX_NUM_CCs) {
+     LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+     return;
+  }
+
+  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+
+  for (int i=0; i<m->num_cc; i++) {
+    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
+  }
+
+}
+
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m) {
   struct rrc_eNB_ue_context_s        *ue_context_target_p = NULL;
   /* TODO: get proper UE rnti */
@@ -4705,8 +4752,8 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   LTE_QuantityConfig_t               *quantityConfig                   = NULL;
   LTE_MobilityControlInfo_t          *mobilityInfo                     = NULL;
   LTE_SecurityConfigHO_t             *securityConfigHO                 = NULL;
-  //CellsToAddMod_t                    *CellToAdd                        = NULL;
-  //CellsToAddModList_t                *CellsToAddModList                = NULL;
+  LTE_CellsToAddMod_t                *CellToAdd                        = NULL;
+  LTE_CellsToAddModList_t            *CellsToAddModList                = NULL;
   struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
   LTE_DedicatedInfoNAS_t             *dedicatedInfoNas                 = NULL;
   /* for no gcc warnings */
@@ -5297,7 +5344,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   MeasId5->measObjectId = 1;
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
-  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
+  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
   // Add one EUTRA Measurement Object
   MeasObj_list = CALLOC(1, sizeof(*MeasObj_list));
   memset((void *)MeasObj_list, 0, sizeof(*MeasObj_list));
@@ -5317,19 +5364,9 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  //MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-  //(CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  //CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-  // Add adjacent cell lists (6 per eNB)
-  //for (i = 0; i < 6; i++) {
-  //CellToAdd = (CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
-  //CellToAdd->cellIndex = 1;//i + 1;
-  //CellToAdd->physCellId = 1;//get_adjacent_cell_id(ctxt_pP->module_id, i);
-  //CellToAdd->cellIndividualOffset = Q_OffsetRange_dB0;
-  //ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
-  //}
-  ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
-  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
 
   if (!ue_context_pP->ue_context.measurement_info) {
     ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
@@ -5337,7 +5374,20 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
 
   //TODO: Assign proper values
   ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
-  ue_context_pP->ue_context.measurement_info->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = 0;
+
+  /* TODO: Extend to multiple carriers */
+  // Add adjacent cell lists (max 6 per eNB)
+  for (i = 0; i < RC.rrc[ctxt_pP->module_id]->num_neigh_cells; i++) {
+    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
+    CellToAdd->cellIndex = i + 1;
+    CellToAdd->physCellId = RC.rrc[ctxt_pP->module_id]->neigh_cells_id[i][0];//get_adjacent_cell_id(ctxt_pP->module_id, i);
+    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+    ue_context_pP->ue_context.measurement_info->cellIndividualOffset[i+1] = CellToAdd->cellIndividualOffset;
+    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
+  }
+  ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
+  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
 
   if (!ue_context_pP->ue_context.measurement_info->events) {
     ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
@@ -8289,6 +8339,14 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case S1AP_PATH_SWITCH_REQ_ACK:
       LOG_I(RRC, "[eNB %d] received path switch ack %s\n", instance, msg_name_p);
       rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK(msg_p, msg_name_p, instance);
+      break;
+
+    case X2AP_SETUP_REQ:
+      rrc_eNB_process_x2_setup_request(instance, &X2AP_SETUP_REQ(msg_p));
+      break;
+
+    case X2AP_SETUP_RESP:
+      rrc_eNB_process_x2_setup_response(instance, &X2AP_SETUP_RESP(msg_p));
       break;
 
     case X2AP_HANDOVER_REQ:

@@ -357,6 +357,9 @@ void *rrc_enb_task(void *args_p);
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
 
+void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m);
+
+void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m);
 
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m);
 

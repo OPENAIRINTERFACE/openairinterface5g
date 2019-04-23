@@ -550,7 +550,7 @@ long flexran_get_rrc_ofn(mid_t mod_id, rnti_t rnti);
 long flexran_get_rrc_ocp(mid_t mod_id, rnti_t rnti);
 
 /* Get ocn offset */
-long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti);
+long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id);
 
 /* Get Periodic Event max reported cells */
 long flexran_get_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti);
