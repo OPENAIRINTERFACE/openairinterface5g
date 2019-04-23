@@ -629,27 +629,88 @@ class SSHConnection():
 		# Launch UE with the modified config file
 		self.command('echo "ulimit -c unlimited && ./lte-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + self.UEPassword + ' | sudo -S -E daemon --inherit --unsafe --name=ue' + str(self.UE_instance) + '_daemon --chdir=' + self.UESourceCodePath + '/cmake_targets/lte_build_oai/build -o ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
-		time.sleep(6)
-		self.command('cd ../..', '\$', 5)
-		doLoop = True
-		loopCounter = 10
-		while (doLoop):
-			loopCounter = loopCounter - 1
-			if (loopCounter == 0):
-				sys.exit(1)
-			else:
+
+		# We are now looping several times to hope we really sync w/ an eNB
+		doOutterLoop = True
+		outterLoopCounter = 5
+		gotSyncStatus = True
+		fullSyncStatus = True
+		while (doOutterLoop):
+			self.command('cd ' + self.UESourceCodePath + '/cmake_targets/lte_build_oai/build', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S -E daemon --inherit --unsafe --name=ue' + str(self.UE_instance) + '_daemon --chdir=' + self.UESourceCodePath + '/cmake_targets/lte_build_oai/build -o ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+			time.sleep(6)
+			self.command('cd ../..', '\$', 5)
+			doLoop = True
+			loopCounter = 10
+			gotSyncStatus = True
+			# the 'got sync' message is for the UE threads synchronization
+			while (doLoop):
+				loopCounter = loopCounter - 1
+				if (loopCounter == 0):
+					# Here should never occur
+					logging.error('"got sync" message never showed!')
+					gotSyncStatus = False
+					doLoop = False
+					continue
 				self.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
 				result = re.search('got sync', str(self.ssh.before))
 				if result is None:
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-					logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+					logging.debug('Found "got sync" message!')
+			if gotSyncStatus == False:
+				# we certainly need to stop the lte-uesoftmodem process if it is still running!
+				self.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
+				result = re.search('lte-uesoftmodem', str(self.ssh.before))
+				if result is not None:
+					self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
+					time.sleep(3)
+			# We are now checking if sync w/ eNB DOES NOT OCCUR
+			# Usually during the cell synchronization stage, the UE returns with No cell synchronization message
+			doLoop = True
+			loopCounter = 10
+			while (doLoop):
+				loopCounter = loopCounter - 1
+				if (loopCounter == 0):
+					# Here we do have a great chance that the UE did cell-sync w/ eNB
+					doLoop = False
+					doOutterLoop = False
+					fullSyncStatus = True
+					continue
+				self.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				result = re.search('No cell synchronization found', str(self.ssh.before))
+				if result is None:
+					time.sleep(6)
+				else:
+					doLoop = False
+					fullSyncStatus = False
+					logging.debug('Found: "No cell synchronization" message! --> try again')
+					time.sleep(6)
+					self.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
+					result = re.search('lte-uesoftmodem', str(self.ssh.before))
+					if result is not None:
+						self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
+			outterLoopCounter = outterLoopCounter - 1
+			if (outterLoopCounter == 0):
+				doOutterLoop = False
+
+		if fullSyncStatus and gotSyncStatus:
+			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+			if result is None:
+				self.command('ifconfig oaitun_ue1', '\$', 4)
+				result = re.search('inet addr', str(self.ssh.before))
+				if result is not None:
+					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+				else:
+					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+
 		self.close()
+		# For the moment we are always OK!!!
+		self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+		logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 
 	def checkDevTTYisUnlocked(self):
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
