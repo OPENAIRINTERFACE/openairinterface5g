@@ -19,9 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs_UE.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/defs_gNB.h"
 #include "modulation_UE.h"
+#include "nr_modulation.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
@@ -198,3 +199,72 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
+
+int nr_slot_fep_ul(PHY_VARS_gNB *gNB,
+                   unsigned char symbol,
+                   unsigned char Ns,
+                   int sample_offset,
+                   int no_prefix)
+{
+  unsigned char aa;
+  uint32_t slot_offset;
+  uint32_t rxdata_offset;
+
+  NR_DL_FRAME_PARMS *frame_parms  = &gNB->frame_parms;
+  unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
+  unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
+  
+  void (*dft)(int16_t *,int16_t *, int);
+
+  switch (frame_parms->ofdm_symbol_size) {
+    case 128:
+      dft = dft128;
+      break;
+
+    case 256:
+      dft = dft256;
+      break;
+
+    case 512:
+      dft = dft512;
+      break;
+
+    case 1024:
+      dft = dft1024;
+      break;
+
+    case 1536:
+      dft = dft1536;
+      break;
+
+    case 2048:
+      dft = dft2048;
+      break;
+
+    case 4096:
+      dft = dft4096;
+      break;
+
+    case 8192:
+      dft = dft8192;
+      break;
+
+    default:
+      dft = dft512;
+      break;
+  }
+  
+  slot_offset   = Ns * frame_parms->samples_per_slot;
+
+  for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+    if(symbol == 0)
+      rxdata_offset = slot_offset + nb_prefix_samples0 - SOFFSET;
+    else
+      rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
+
+    dft((int16_t *)&gNB->common_vars.rxdata[0][rxdata_offset],
+        (int16_t *)&gNB->common_vars.rxdataF[0][symbol * frame_parms->ofdm_symbol_size], 1);
+  }
+
+  return(0);
+}

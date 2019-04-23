@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_sch_dmrs.c
+/*! \file PHY/NR_TRANSPORT/nr_sch_dmrs.h
 * \brief
 * \author
 * \date

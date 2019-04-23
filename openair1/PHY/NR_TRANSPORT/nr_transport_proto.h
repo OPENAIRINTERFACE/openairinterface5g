@@ -32,7 +32,6 @@
 
 #include "PHY/defs_nr_common.h"
 
-
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
@@ -45,15 +44,14 @@
     @param frame Frame number
     @param nr_tti_rx TTI number
     @param symbol Symbol on which to act (within-in nr_TTI_rx)
-    @param first_symbol_flag set to 1 on first ULSCH symbol
+    @param harq_pid HARQ process ID
 */
-int nr_rx_ulsch(PHY_VARS_gNB *gNB,
-                uint8_t UE_id,
-                uint32_t frame,
-                uint8_t nr_tti_rx,
-                unsigned char symbol,
-                unsigned char first_symbol_flag,
-                unsigned char harq_pid);
+void nr_rx_pusch(PHY_VARS_gNB *gNB,
+                 uint8_t UE_id,
+                 uint32_t frame,
+                 uint8_t nr_tti_rx,
+                 unsigned char symbol,
+                 unsigned char harq_pid);
 
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
@@ -62,18 +60,18 @@ int nr_rx_ulsch(PHY_VARS_gNB *gNB,
     @param rb_alloc RB allocation map (used for Resource Allocation Type 0 in NR)
     @param symbol Symbol on which to act (within-in nr_TTI_rx)
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
-    @param nb_pusch_rb The number of RBs allocated (used for Resource Allocation Type 1 in NR)
+    @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
 
 */
-unsigned short nr_ulsch_extract_rbs_single(int **rxdataF,
-                                           int **rxdataF_ext,
-                                           uint32_t rxdataF_ext_offset,
-                                           // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
-                                           unsigned char symbol,
-                                           unsigned short start_rb,
-                                           unsigned short nb_pusch_rb,
-                                           NR_DL_FRAME_PARMS *frame_parms);
+void nr_ulsch_extract_rbs_single(int **rxdataF,
+                                 int **rxdataF_ext,
+                                 uint32_t rxdataF_ext_offset,
+                                 // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
+                                 unsigned char symbol,
+                                 unsigned short start_rb,
+                                 unsigned short nb_rb_pusch,
+                                 NR_DL_FRAME_PARMS *frame_parms);
 
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.

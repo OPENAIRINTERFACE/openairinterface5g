@@ -546,7 +546,7 @@ int main(int argc, char **argv) {
 #endif
 
       ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms,
-                              frame, nb_symb_sch, subframe, harq_pid, is_crnti, llr8_flag);
+                              frame, nb_symb_sch, subframe, harq_pid, is_crnti);
 
       if (ret > ulsch_gNB->max_ldpc_iterations)
         n_errors++;

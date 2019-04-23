@@ -116,7 +116,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
   nb_re >>= 2;  // length in quad words (4 REs)
   nb_re += (len_mod4 == 0 ? 0 : 1);
 
-  temp_channel = _mm_set1_epi16((int16_t)((QAM64_n1 * one_over_sqrt_2)>>15));
+  temp_channel = _mm_set1_epi16((int16_t)((QAM16_n1 * one_over_sqrt_2)>>15));
   
   for (i=0; i<nb_re; i++) {
 
@@ -151,16 +151,16 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
     xmm0 = vabsq_s16(rxF[i]);
     xmm0 = vqsubq_s16((*(__m128i*)&ones[0]),xmm0);
 
-    llr16[0] = vgetq_lane_s16(rxF[i],0);
-    llr16[1] = vgetq_lane_s16(rxF[i],1);
-    llr16[2] = vgetq_lane_s16(xmm0,0);
-    llr16[3] = vgetq_lane_s16(xmm0,1);
-    llr16[4] = vgetq_lane_s16(rxF[i],2);
-    llr16[5] = vgetq_lane_s16(rxF[i],3);
-    llr16[6] = vgetq_lane_s16(xmm0,2);
-    llr16[7] = vgetq_lane_s16(xmm0,3);
-    llr16[8] = vgetq_lane_s16(rxF[i],4);
-    llr16[9] = vgetq_lane_s16(rxF[i],5);
+    llr16[0]  = vgetq_lane_s16(rxF[i],0);
+    llr16[1]  = vgetq_lane_s16(rxF[i],1);
+    llr16[2]  = vgetq_lane_s16(xmm0,0);
+    llr16[3]  = vgetq_lane_s16(xmm0,1);
+    llr16[4]  = vgetq_lane_s16(rxF[i],2);
+    llr16[5]  = vgetq_lane_s16(rxF[i],3);
+    llr16[6]  = vgetq_lane_s16(xmm0,2);
+    llr16[7]  = vgetq_lane_s16(xmm0,3);
+    llr16[8]  = vgetq_lane_s16(rxF[i],4);
+    llr16[9]  = vgetq_lane_s16(rxF[i],5);
     llr16[10] = vgetq_lane_s16(xmm0,4);
     llr16[11] = vgetq_lane_s16(xmm0,5);
     llr16[12] = vgetq_lane_s16(rxF[i],6);
@@ -218,9 +218,9 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 // #endif
 // -------------------------------------------------------------------------
 
-  len_mod4 =nb_re&3;
-  nb_re=nb_re>>2;  // length in quad words (4 REs)
-  nb_re+=((len_mod4==0)?0:1);
+  len_mod4 = nb_re&3;
+  nb_re    = nb_re>>2;  // length in quad words (4 REs)
+  nb_re   += ((len_mod4 == 0) ? 0 : 1);
   
 
   temp_channel[0] = _mm_set1_epi16((int16_t)((QAM64_n1 * one_over_sqrt_2)>>15));

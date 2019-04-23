@@ -278,13 +278,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint16_t nb_symb_sch,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
-                           uint8_t is_crnti,
-                           uint8_t llr8_flag)
+                           uint8_t is_crnti)
 {
 
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
+  uint32_t nb_rb;
   int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
@@ -306,7 +306,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t  kc;
   uint8_t  Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;
-  uint16_t nb_rb       = 30; //to update
   uint8_t  nb_re_dmrs  = 6;
   uint16_t length_dmrs = 1;
   double   Coderate    = 0.0;
@@ -341,7 +340,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations;
 
-  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm,nfapi_ulsch_pdu_rel15->n_layers);
+  // harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm,nfapi_ulsch_pdu_rel15->n_layers);
   G = harq_process->G;
 
   LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nfapi_ulsch_pdu_rel15->mcs, nfapi_ulsch_pdu_rel15->n_layers, nb_symb_sch,nb_rb);

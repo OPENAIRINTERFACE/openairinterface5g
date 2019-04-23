@@ -694,7 +694,6 @@ typedef struct {
     uint8_t Qm;
     uint8_t ndi;
     uint8_t rv;
-    uint8_t harq_process_nbr;
     int8_t accumulated_delta_PUSCH;
     int8_t absolute_delta_PUSCH;
     uint8_t n_layers;

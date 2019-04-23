@@ -452,10 +452,14 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
         gNB->dlsch[i][j]->rnti=0;
         LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
       }*/
+    }
+  }
 
-      ///////////////////////// Initializing gNB ULSCH /////////////////////////
-      LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+  for (i=0; i<NUMBER_OF_NR_UE_MAX; i++) {
 
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+
+    for (j=0; j<2; j++) {
       // ULSCH for RA
       if(i==0) {
         gNB->ulsch[i][j] = new_gNB_ulsch(5, fp->N_RB_UL, 0);
@@ -487,7 +491,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_D(PHY,"gNB %d.%d : RA %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_ra);
   gNB->rx_total_gain_dB=130;
 
-  for(i=0; i<NUMBER_OF_UE_MAX; i++)
+  for(i=0; i<NUMBER_OF_NR_UE_MAX; i++)
     gNB->mu_mimo_mode[i].dl_pow_off = 2;
 
   gNB->check_for_total_transmissions = 0;

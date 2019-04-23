@@ -363,6 +363,8 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **rxdataF_ext2;
+  /// \brief Offset for calculating the index of rxdataF_ext for the current symbol
+  uint32_t rxdataF_ext_offset;
   /// \brief Hold the channel estimates in time domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..4*ofdm_symbol_size[

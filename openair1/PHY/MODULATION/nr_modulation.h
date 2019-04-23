@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include "PHY/defs_nr_common.h"
+#include "PHY/defs_gNB.h"
 
 #define DMRS_MOD_ORDER 2
 
@@ -50,5 +51,21 @@ void nr_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
                          uint16_t n_symbs,
                          int16_t **tx_layers);
+
+
+/*!
+\brief This function implements the OFDM front end processor on reception (FEP)
+\param phy_vars_ue Pointer to PHY variables
+\param symbol symbol within slot (0..12/14)
+\param Ns Slot number (0..19)
+\param sample_offset offset within rxdata (points to beginning of subframe)
+\param no_prefix if 1 prefix is removed by HW
+*/
+
+int nr_slot_fep_ul(PHY_VARS_gNB *phy_vars_gNB,
+                   unsigned char symbol,
+                   unsigned char Ns,
+                   int sample_offset,
+                   int no_prefix);
 
 #endif

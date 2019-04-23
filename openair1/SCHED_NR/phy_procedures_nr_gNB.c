@@ -23,7 +23,9 @@
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
@@ -31,7 +33,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
-
+#include "PHY/MODULATION/nr_modulation.h"
 #include "T.h"
 
 #include "assertions.h"
@@ -199,4 +201,68 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
+}
+
+
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id, uint8_t harq_pid) {
+  
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
+  uint8_t ret;
+  int Nid_cell = 0;     // shouldn't be a local variable
+
+  //----------------------------------------------------------
+  //------------------- ULSCH unscrambling -------------------
+  //----------------------------------------------------------
+
+  nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr, gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->G, 0, Nid_cell, rel15_ul->rnti);
+
+  ////////////////////////////////////////////////////////////
+      
+
+  //----------------------------------------------------------
+  //--------------------- ULSCH decoding ---------------------
+  //----------------------------------------------------------
+
+  ret = nr_ulsch_decoding(gNB, UE_id, gNB->pusch_vars[UE_id]->llr, frame_parms, proc->frame_rx,
+                          rel15_ul->ulsch_pdu_rel15.number_symbols, proc->slot_rx, harq_pid, 0);
+        
+  // if (ret > ulsch_gNB->max_ldpc_iterations)
+  //   n_errors++;
+
+}
+
+
+void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
+
+  uint8_t symbol;
+
+  for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
+        nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
+      }
+
+}
+
+
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end) {
+  
+  uint8_t UE_id;
+  uint8_t symbol;
+  uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
+                        //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
+
+  for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
+    
+    
+
+    for(symbol = symbol_start; symbol < symbol_end; symbol++) {
+
+          nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
+
+    }
+      
+    nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
+        
+  }
+
 }
