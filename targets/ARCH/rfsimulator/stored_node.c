@@ -22,7 +22,7 @@ void fullwrite(int fd, void *_buf, int count) {
       } else {
         AssertFatal(false,"Lost socket\n");
       }
-
+    } else {
       count -= l;
       buf += l;
     }

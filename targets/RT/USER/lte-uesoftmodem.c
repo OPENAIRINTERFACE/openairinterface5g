@@ -431,6 +431,7 @@ static void *scope_thread(void *arg) {
 		   PHY_vars_UE_g[0][0],
 		   0,
 		   0,7);
+       usleep(10000);
 
   //  printf("%s",stats_buffer);
     }
