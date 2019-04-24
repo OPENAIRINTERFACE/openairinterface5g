@@ -1597,6 +1597,22 @@ long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id) {
   return ue_context_p->ue_context.measurement_info->cellIndividualOffset[cell_id+1];
 }
 
+long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  return ue_context_p->ue_context.measurement_info->filterCoefficientRSRP;
+}
+
+long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  return ue_context_p->ue_context.measurement_info->filterCoefficientRSRQ;
+}
+
 /* Periodic event */
 
 long flexran_get_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti) {

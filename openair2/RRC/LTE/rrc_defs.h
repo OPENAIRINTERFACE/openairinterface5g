@@ -538,8 +538,10 @@ typedef struct EVENTS_s {
 typedef struct MEASUREMENT_INFO_s {
   //TODO: Extend to multiple meas objects for OFP/OFN offsets
   long  offsetFreq;
-  //TODO: extend to multiple cells for OCP/OCN offsets
+  //TODO: extend to multiple carriers for OCP/OCN offsets
   long cellIndividualOffset[MAX_NUM_NEIGH_CELLs+1];
+  long filterCoefficientRSRP;
+  long filterCoefficientRSRQ;
   EVENTS_t *events;
 } MEASUREMENT_INFO;
 

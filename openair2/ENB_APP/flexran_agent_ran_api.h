@@ -570,6 +570,12 @@ long flexran_get_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti);
 /* Get A3 Event report on leave */
 int flexran_get_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti);
 
+/* Get filter coefficient for rsrp */
+long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti);
+
+/* Get filter coefficient for rsrq */
+long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti);
+
 /* Get number of PLMNs that is broadcasted in SIB1 */
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);
 

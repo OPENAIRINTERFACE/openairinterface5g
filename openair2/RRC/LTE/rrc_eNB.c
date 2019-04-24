@@ -977,20 +977,16 @@ rrc_eNB_free_mem_UE_context(
     ue_context_pP->ue_context.handover_info = NULL;
   }
 
-  if (ue_context_pP->ue_context.measurement_info->events->a3_event) {
-    /* TODO: be sure free is enough here (check memory leaks) */
-    free(ue_context_pP->ue_context.measurement_info->events->a3_event);
-    ue_context_pP->ue_context.measurement_info->events->a3_event = NULL;
-  }
-
-  if (ue_context_pP->ue_context.measurement_info->events) {
-    /* TODO: be sure free is enough here (check memory leaks) */
-    free(ue_context_pP->ue_context.measurement_info->events);
-    ue_context_pP->ue_context.measurement_info->events = NULL;
-  }
-
   if (ue_context_pP->ue_context.measurement_info) {
     /* TODO: be sure free is enough here (check memory leaks) */
+    if (ue_context_pP->ue_context.measurement_info->events) {
+      if (ue_context_pP->ue_context.measurement_info->events->a3_event) {
+        free(ue_context_pP->ue_context.measurement_info->events->a3_event);
+        ue_context_pP->ue_context.measurement_info->events->a3_event = NULL;
+      }
+      free(ue_context_pP->ue_context.measurement_info->events);
+      ue_context_pP->ue_context.measurement_info->events = NULL;
+    }
     free(ue_context_pP->ue_context.measurement_info);
     ue_context_pP->ue_context.measurement_info = NULL;
   }
@@ -3486,6 +3482,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
 
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRP = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP;
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRQ = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ;
+
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -5542,6 +5541,10 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
+
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRP = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP;
+  ue_context_pP->ue_context.measurement_info->filterCoefficientRSRQ = *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ;
+
   /* mobilityinfo  */
   mobilityInfo = ue_context_pP->ue_context.mobilityInfo;
 
