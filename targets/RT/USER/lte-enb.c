@@ -476,7 +476,6 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 }
 
 int wakeup_txfh(L1_rxtx_proc_t *proc,int frame_tx,int subframe_tx,uint64_t timestamp_tx,PHY_VARS_eNB *eNB) {
-  RU_t *ru;
   RU_proc_t *ru_proc;
   LTE_DL_FRAME_PARMS *fp; 
 
@@ -587,7 +586,6 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   
   LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->subframe_rx);
   
-  int i;
   struct timespec wait;
   int sleep_cnt=0;
   

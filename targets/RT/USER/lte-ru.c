@@ -18,10 +18,10 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-/*! \file lte-enb.c
- * \brief Top-level threads for eNodeB
+/*! \file lte-ru.c
+ * \brief Top-level threads for RU entity
  * \author R. Knopp, F. Kaltenberger, Navid Nikaein
- * \date 2018
+ * \date 2019
  * \version 0.1
  * \company Eurecom
  * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
@@ -67,6 +67,7 @@
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/INIT/phy_init.h"
 
 #include "LAYER2/MAC/mac.h"
@@ -1011,14 +1012,12 @@ void do_ru_synch(RU_t *ru) {
   int32_t dummy_rx[ru->nb_rx][fp->samples_per_tti] __attribute__((aligned(32)));
   int rxs;
   int ic;
-  RRU_CONFIG_msg_t rru_config_msg;
 
   // initialize the synchronization buffer to the common_vars.rxdata
   for (int i=0; i<ru->nb_rx; i++)
     rxp[i] = &ru->common.rxdata[i][0];
 
   double temp_freq1 = ru->rfdevice.openair0_cfg->rx_freq[0];
-  double temp_freq2 = ru->rfdevice.openair0_cfg->tx_freq[0];
 
   for (i=0; i<4; i++) {
     ru->rfdevice.openair0_cfg->rx_freq[i] = ru->rfdevice.openair0_cfg->tx_freq[i];
@@ -1086,7 +1085,6 @@ void wakeup_L1s(RU_t *ru) {
 
   PHY_VARS_eNB *eNB=eNB_list[0];
   L1_proc_t *proc      = &eNB->proc;
-  RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
   LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
@@ -1530,7 +1528,6 @@ void *ru_thread_tx( void *param ) {
 }
 
 void *ru_thread( void *param ) {
-  static int ru_thread_status;
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
@@ -1551,17 +1548,17 @@ void *ru_thread( void *param ) {
   pthread_setname_np( pthread_self(),"ru thread");
   LOG_I(PHY,"thread ru created id=%ld\n", syscall(__NR_gettid));
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
-
+  
   if(get_softmodem_params()->emulate_rf) {
     fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(&ru->frame_parms,1);
     phy_init_RU(ru);
-
+    
     if (setup_RU_buffers(ru)!=0) {
       printf("Exiting, cannot initialize RU Buffers\n");
       exit(-1);
     }
-
+    
     LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
     pthread_mutex_lock(&RC.ru_mutex);
     RC.ru_mask &= ~(1<<ru->idx);
@@ -1599,29 +1596,29 @@ void *ru_thread( void *param ) {
     
     
   }
-
+  
   pthread_mutex_lock(&proc->mutex_FH1);
   proc->instance_cnt_FH1 = 0;
   pthread_mutex_unlock(&proc->mutex_FH1);
   pthread_cond_signal(&proc->cond_FH1);
 
   while (!oai_exit) {
-
+    
     if (ru->if_south != LOCAL_RF && ru->is_slave==1) {
-   	 ru->wait_cnt = 100;
+      ru->wait_cnt = 100;
     }
     else { 
-         ru->wait_cnt = 0;
-	 ru->wait_check = 0;
+      ru->wait_cnt = 0;
+      ru->wait_check = 0;
     }
-
-
+    
+    
     // wait to be woken up
     if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
     }
     else wait_sync("ru_thread");
-
+    
     if(!(get_softmodem_params()->emulate_rf)) {
       if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
       else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN || ru->state == RU_CHECK_SYNC,"ru %d state = %s != RU_SYNC or RU_RUN or RU_CHECK_SYNC\n",ru->idx,ru_states[ru->state]); 
@@ -1635,21 +1632,21 @@ void *ru_thread( void *param ) {
     }
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
-
+    
     if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
       pthread_mutex_lock(&proc->mutex_asynch_rxtx);
       proc->instance_cnt_asynch_rxtx=0;
       pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
       pthread_cond_signal(&proc->cond_asynch_rxtx);
     } else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
-
+    
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
-
+    
     LOG_D(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) {
-
+      
       // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
       // They are set on the first rx/tx in the underly FH routines.
       if (subframe==9) {
@@ -1659,11 +1656,11 @@ void *ru_thread( void *param ) {
       } else {
         subframe++;
       }
-
+      
       // synchronization on input FH interface, acquire signals/data and block
       if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
-
+      
 #ifdef PHY_TX_THREAD
       if(first_phy_tx == 0)
 	{ 
@@ -1704,14 +1701,14 @@ void *ru_thread( void *param ) {
         break;
       }
       if (oai_exit == 1) break;
-
+      
       if (ru->wait_cnt > 0) {
-
+	
         ru->wait_cnt--;
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
-
+	
         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
-        // Send RRU_frame adjust
+	  // Send RRU_frame adjust
           RRU_CONFIG_msg_t rru_config_msg;
           rru_config_msg.type = RRU_frame_resynch;
           rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
@@ -1724,37 +1721,36 @@ void *ru_thread( void *param ) {
         wakeup_L1s(ru);
       }
       else {
-
+	
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
-
+	
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
           LOG_D(PHY,"Waking up prach for %d.%d\n",proc->frame_rx,proc->subframe_rx);
           wakeup_prach_ru(ru);
         }
-
-
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-        else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) {
+	
+	
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1))
           wakeup_prach_ru_br(ru);
-
 #endif
-
-        // adjust for timing offset between RU
-        if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
-
-        // At this point, all information for subframe has been received on FH interface
-        // If this proc is to provide synchronization, do so
-        wakeup_slaves(proc);
-
+	
+	// adjust for timing offset between RU
+	if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
+	
+	// At this point, all information for subframe has been received on FH interface
+	// If this proc is to provide synchronization, do so
+	wakeup_slaves(proc);
+	
         // do RX front-end processing (frequency-shift, dft) if needed
 	if (ru->feprx) ru->feprx(ru);
-
+	
         // wakeup all eNB processes waiting for this RU
 	pthread_mutex_lock(&proc->mutex_eNBs);
 	if (proc->instance_cnt_eNBs==0) proc->instance_cnt_eNBs--;
 	pthread_mutex_unlock(&proc->mutex_eNBs);
-
+	
 #if defined(PRE_SCD_THREAD)
 	new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
 	dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
@@ -1782,28 +1778,28 @@ void *ru_thread( void *param ) {
 	  exit_fun("error unlocking mutex_pre_scd");
 	}
 #endif
-    // wakeup all eNB processes waiting for this RU
-    if (ru->num_eNB>0) wakeup_L1s(ru);
-
+	// wakeup all eNB processes waiting for this RU
+	if (ru->num_eNB>0) wakeup_L1s(ru);
+	
 #ifndef PHY_TX_THREAD
-
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0) {
-      // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
-
-      // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-
-      if(!(get_softmodem_params()->emulate_rf)) {
-        // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-        
-        if ((ru->fh_north_out) && (ru->state!=RU_CHECK_SYNC)) ru->fh_north_out(ru);
-      }
-
-      proc->emulate_rf_busy = 0;
-    }
-
+	
+	if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0) {
+	  // do TX front-end processing if needed (precoding and/or IDFTs)
+	  if (ru->feptx_prec) ru->feptx_prec(ru);
+	  
+	  // do OFDM if needed
+	  if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+	  
+	  if(!(get_softmodem_params()->emulate_rf)) {
+	    // do outgoing fronthaul (south) if needed
+	    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+	    
+	    if ((ru->fh_north_out) && (ru->state!=RU_CHECK_SYNC)) ru->fh_north_out(ru);
+	  }
+	  
+	  proc->emulate_rf_busy = 0;
+	}
+	
 #else
 	struct timespec time_req, time_rem;
 	time_req.tv_sec = 0;
@@ -1817,9 +1813,9 @@ void *ru_thread( void *param ) {
       } // else wait_cnt == 0
     } // ru->state = RU_RUN
   } // while !oai_exit
-
+  
   printf( "Exiting ru_thread \n");
-
+  
   if (!(get_softmodem_params()->emulate_rf)) {
     if (ru->stop_rf != NULL) {
       if (ru->stop_rf(ru) != 0)
@@ -1827,7 +1823,7 @@ void *ru_thread( void *param ) {
       else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
     }
   }
-
+  
   return NULL;
 
 }
@@ -2618,8 +2614,8 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->openair0_cfg.time_source = time_source;
 //    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     if (ru->generate_dmrs_sync == 1) {
-    	generate_ul_ref_sigs();
-        ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
+      generate_ul_ref_sigs();
+      ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
     }
     ru->wakeup_L1_sleeptime = 2000;
     ru->wakeup_L1_sleep_cnt_max  = 3;

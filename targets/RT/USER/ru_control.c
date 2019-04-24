@@ -1,36 +1,27 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
- 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
-/*! \file lte-ru.c
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+/*! \file ru_control.c
  * \brief Top-level threads for RU entity
  * \author R. Knopp, F. Kaltenberger, Navid Nikaein
- * \date 2012
+ * \date 2018
  * \version 0.1
  * \company Eurecom
  * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
@@ -100,6 +91,10 @@ int attach_rru(RU_t *ru);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
 
 void* ru_thread_control( void* param );
+
+extern void reset_proc(RU_t *ru);
+extern int setup_RU_buffers(RU_t *ru);
+
 
 extern void  phy_init_RU(RU_t*);
 
@@ -494,7 +489,7 @@ void configure_rru(int idx,
   fill_rf_config(ru,ru->rf_config_file);
 
 
-//  phy_init_RU(ru);
+  //  phy_init_RU(ru);
 
 }
 
@@ -506,14 +501,13 @@ void* ru_thread_control( void* param ) {
   RU_proc_t          *proc    = &ru->proc;
   RRU_CONFIG_msg_t   rru_config_msg;
   ssize_t	     msg_len;
-  int                len, ret;
-
+  int                len;
 
   // Start IF device if any
   if (ru->start_if) {
     LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
     AssertFatal(
-	ru->start_if(ru,NULL) 	== 0, "Could not start the IF device\n");
+		ru->start_if(ru,NULL) 	== 0, "Could not start the IF device\n");
 
     if (ru->if_south != LOCAL_RF) wait_eNBs();
   }
@@ -597,16 +591,10 @@ void* ru_thread_control( void* param ) {
 					 
 		//if (ru->is_slave == 1) lte_sync_time_init(&ru->frame_parms);
 
-		if (ru->rfdevice.is_init != 1){
-			ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-		}
-
+		if (ru->rfdevice.is_init != 1) openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
 		
 		if (ru->rfdevice.trx_config_func) AssertFatal((ru->rfdevice.trx_config_func(&ru->rfdevice,&ru->openair0_cfg)==0), 
 							      "Failed to configure RF device for RU %d\n",ru->idx);
-
-
-
 
 		if (setup_RU_buffers(ru)!=0) {
 		  printf("Exiting, cannot initialize RU Buffers\n");
@@ -714,10 +702,10 @@ void* ru_thread_control( void* param ) {
             case RRU_frame_resynch: //RRU
               if (ru->if_south != LOCAL_RF) LOG_E(PHY,"Received RRU frame resynch message, should not happen in RAU\n");
               else {
-                 LOG_I(PHY,"Received RRU_frame_resynch command\n");
-                 ru->cmd = RU_FRAME_RESYNCH;
-                 ru->cmdval = ((uint16_t*)&rru_config_msg.msg[0])[0];
-                 LOG_I(PHY,"Received Frame Resynch message with value %d\n",ru->cmdval);
+		LOG_I(PHY,"Received RRU_frame_resynch command\n");
+		ru->cmd = RU_FRAME_RESYNCH;
+		ru->cmdval = ((uint16_t*)&rru_config_msg.msg[0])[0];
+		LOG_I(PHY,"Received Frame Resynch message with value %d\n",ru->cmdval);
               }
               break;
 

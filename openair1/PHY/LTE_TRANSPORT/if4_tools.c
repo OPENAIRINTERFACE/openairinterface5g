@@ -247,7 +247,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
                (void *)rxF,
                PRACH_BLOCK_SIZE_BYTES);
       }
-      if (frame == 0) LOG_D(PHY,"signal energy prach %d\n",dB_fixed(signal_energy(rxF,839)));
+      if (frame == 0) LOG_D(PHY,"signal energy prach %d\n",dB_fixed(signal_energy((int*)rxF,839)));
     }
     if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );
     if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
@@ -385,7 +385,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 
     int16_t *rxF;
     for (int antenna_id=0;antenna_id<ru->nb_rx;antenna_id++) { 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (*packet_type > IF4p5_PRACH)
         rxF = &prach_rxsigF_br[*packet_type - IF4p5_PRACH - 1][antenna_id][0];
       else 
