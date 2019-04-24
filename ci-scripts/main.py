@@ -888,24 +888,28 @@ class SSHConnection():
 			if ping_status < 0:
 				message = 'Ping with UE (' + str(moduleIPAddr) + ') crashed due to TIMEOUT!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
 			rtt_min = result.group('rtt_min')
@@ -1176,6 +1180,18 @@ class SSHConnection():
 			sys.exit('Insufficient Parameter')
 		ue_ip_status = 0
 		self.UEIPAddresses = []
+		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
+			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
+				Usage()
+				sys.exit('Insufficient Parameter')
+			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			self.command('ifconfig oaitun_ue1', '\$', 4)
+			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
+			UE_IPAddress = result.group('ueipaddress')
+			logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
+			self.UEIPAddresses.append(UE_IPAddress)
+			self.close()
+			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		for device_id in self.UEDevices:
 			count = 0
@@ -1221,24 +1237,28 @@ class SSHConnection():
 			if ping_status < 0:
 				message = 'Ping with UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			rtt_min = result.group('rtt_min')
@@ -1375,15 +1395,20 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
-		check_OAI_UE = False
+		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
+			check_OAI_UE = True
+		else:
+			check_OAI_UE = False
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+			self.AutoTerminateUEandeNB()
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			self.AutoTerminateUEandeNB()
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		multi_jobs = []
@@ -1724,8 +1749,12 @@ class SSHConnection():
 		self.close()
 
 		# Launch iperf client on UE
-		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+		if (device_id == 'OAI-UE'):
+			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			self.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
+		else:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
@@ -1737,12 +1766,16 @@ class SSHConnection():
 		time.sleep(0.5)
 
 		self.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-		iperf_status = self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		if (device_id == 'OAI-UE'):
+			iperf_status = self.command('iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + ' -B ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		else:
+			iperf_status = self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 		# TIMEOUT Case
 		if iperf_status < 0:
 			self.close()
 			message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
 			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			self.close()
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 			return
 		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
@@ -1759,6 +1792,10 @@ class SSHConnection():
 				os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
 			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+		# in case of OAI-UE 
+		if (device_id == 'OAI-UE'):
+			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
+			self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
@@ -1767,43 +1804,60 @@ class SSHConnection():
 				return
 			useIperf3 = False
 			udpIperf = True
-			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
-			self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
-			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			# Checking if iperf / iperf3 are installed
-			self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
-			result = re.search('iperf3', str(self.ssh.before))
-			if result is None:
-				result = re.search('iperf', str(self.ssh.before))
+			if (device_id != 'OAI-UE'):
+				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+				# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
+				self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
+				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+				# Checking if iperf / iperf3 are installed
+				self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
+				result = re.search('iperf3', str(self.ssh.before))
 				if result is None:
-					message = 'Neither iperf nor iperf3 installed on UE!'
-					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
-					return
-			else:
-				useIperf3 = True
+					result = re.search('iperf', str(self.ssh.before))
+					if result is None:
+						message = 'Neither iperf nor iperf3 installed on UE!'
+						logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+						self.close()
+						self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+						return
+				else:
+					useIperf3 = True
+				self.close()
 			# in case of iperf, UL has its own function
 			if (not useIperf3):
 				result = re.search('-R', str(self.iperf_args))
 				if result is not None:
-					self.close()
 					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num, statusQueue)
 					return
 
-			if (useIperf3):
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
-			else:
+			# Launch the IPERF server on the UE side for DL
+			if (device_id == 'OAI-UE'):
+				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+				self.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 				self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				result = re.search('-u', str(self.iperf_args))
 				if result is None:
-					self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+					self.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
 					udpIperf = False
 				else:
-					self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+					self.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
+			else:
+				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+				if (useIperf3):
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
+				else:
+					self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+					result = re.search('-u', str(self.iperf_args))
+					if result is None:
+						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+						udpIperf = False
+					else:
+						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 			time.sleep(0.5)
 			self.close()
 
+			# Launch the IPERF client on the EPC side for DL
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			iperf_time = self.Iperf_ComputeTime()
@@ -1832,19 +1886,36 @@ class SSHConnection():
 				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 			self.close()
 
-			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
-			result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
-			if result is not None:
-				pid_iperf = result.group('pid')
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+			# Kill the IPERF server that runs in background
+			if (device_id == 'OAI-UE'):
+				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+				self.command('killall iperf', '\$', 5)
+			else:
+				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+				result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
+				if result is not None:
+					pid_iperf = result.group('pid')
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
 			self.close()
+			# if the client report is absent, try to analyze the server log file
 			if (clientStatus == -1):
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				self.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				if (device_id == 'OAI-UE'):
+					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				else:
+					self.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+
+			# in case of OAI UE: 
+			if (device_id == 'OAI-UE'):
+				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
+					pass
+				else:
+					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+					self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -1958,7 +2029,10 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
-		check_OAI_UE = False
+		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
+			check_OAI_UE = True
+		else:
+			check_OAI_UE = False
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
