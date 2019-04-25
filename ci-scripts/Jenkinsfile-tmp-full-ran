@@ -334,6 +334,60 @@ pipeline {
                         }
                     }
                 }
+                stage('Log Collection (SPGW)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (SPGW)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (SPGW)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("spgw.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "spgw.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (MME)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (MME)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (MME)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("mme.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "mme.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (HSS)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (HSS)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (HSS)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("hss.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "hss.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
             }
         }
     }
