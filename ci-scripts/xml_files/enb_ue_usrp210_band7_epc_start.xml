@@ -21,29 +21,27 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>test-10mhz-orange</htmlTabRef>
-        <htmlTabName>Test-10Mhz-Orange</htmlTabName>
-        <htmlTabIcon>tasks</htmlTabIcon>	
+	<htmlTabRef>epc-start</htmlTabRef>
+	<htmlTabName>EPC-Start</htmlTabName>
+	<htmlTabIcon>log-in</htmlTabIcon>
 	<TestCaseRequestedList>
-090110 000001 090109
+ 050101 060101 070101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="090110">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE -- sniffing Orange frequency</desc>
-		<Initialize_OAI_UE_args>-C 816000000 -r 50 --ue-rxgain 135 --ue-scan-carrier --no-L2-connect --nokrnmod 1</Initialize_OAI_UE_args>
+        <testCase id="050101">
+		<class>Initialize_HSS</class>
+		<desc>Initialize HSS</desc>
+        </testCase>
+
+	<testCase id="060101">
+		<class>Initialize_MME</class>
+		<desc>Initialize MME</desc>
 	</testCase>
 
-	<testCase id="000001">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
-	</testCase>
-
-	<testCase id="090109">
-		<class>Terminate_OAI_UE</class>
-		<desc>Terminate OAI UE</desc>
+	<testCase id="070101">
+		<class>Initialize_SPGW</class>
+		<desc>Initialize SPGW</desc>
 	</testCase>
 
 </testCaseList>

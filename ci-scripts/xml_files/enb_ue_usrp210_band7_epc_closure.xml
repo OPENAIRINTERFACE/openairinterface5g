@@ -21,29 +21,28 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>test-10mhz-orange</htmlTabRef>
-        <htmlTabName>Test-10Mhz-Orange</htmlTabName>
-        <htmlTabIcon>tasks</htmlTabIcon>	
+	<htmlTabRef>epc-closure</htmlTabRef>
+	<htmlTabName>EPC-Closure</htmlTabName>
+	<htmlTabIcon>log-out</htmlTabIcon>
 	<TestCaseRequestedList>
-090110 000001 090109
+ 050201 060201 070201
 	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+	<TestCaseExclusionList>
+	</TestCaseExclusionList>
 
-	<testCase id="090110">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE -- sniffing Orange frequency</desc>
-		<Initialize_OAI_UE_args>-C 816000000 -r 50 --ue-rxgain 135 --ue-scan-carrier --no-L2-connect --nokrnmod 1</Initialize_OAI_UE_args>
+	<testCase id="050201">
+		<class>Terminate_HSS</class>
+		<desc>Terminate HSS</desc>
 	</testCase>
 
-	<testCase id="000001">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
+	<testCase id="060201">
+		<class>Terminate_MME</class>
+		<desc>Terminate MME</desc>
 	</testCase>
 
-	<testCase id="090109">
-		<class>Terminate_OAI_UE</class>
-		<desc>Terminate OAI UE</desc>
+	<testCase id="070201">
+		<class>Terminate_SPGW</class>
+		<desc>Terminate SPGW</desc>
 	</testCase>
 
 </testCaseList>
