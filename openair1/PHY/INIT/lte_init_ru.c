@@ -22,6 +22,7 @@
 #include "phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/phy_extern.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "LTE_RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"

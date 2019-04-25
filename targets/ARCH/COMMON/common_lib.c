@@ -127,9 +127,6 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   return ret;
 }
 
-int openair0_check_device_loaded(){
-	return dlopen(OAI_RF_LIBNAME, RTLD_NOLOAD);
-}
 
 
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
