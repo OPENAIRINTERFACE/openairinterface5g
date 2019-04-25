@@ -71,6 +71,15 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 	       );
 
 /**
+\brief Generate configuration structure for DRX_Config
+@param Mod_id Instance of eNB
+@param CC_id Id of component to configure
+@param configuration Pointer Configuration Request structure
+@param UEcap Pointer Configuration UE capablities
+@return DRX_Config structure pointer or NULL => error */
+LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *configuration, LTE_UE_EUTRA_Capability_t *UEcap);
+
+/**
 \brief Generate configuration for SIB1 (eNB).
 @param carrier pointer to Carrier information
 @param Mod_id Instance of eNB

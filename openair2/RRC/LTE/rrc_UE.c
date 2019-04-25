@@ -140,9 +140,9 @@ static uint8_t check_trigger_meas_event(
   LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, long a3_offset, LTE_TimeToTrigger_t ttt);
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
-uint8_t rrc_ue_generate_SidelinkUEInformation( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,LTE_SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq,
-    SL_TRIGGER_t mode);
+  static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+  uint8_t rrc_ue_generate_SidelinkUEInformation( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,LTE_SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq,
+  SL_TRIGGER_t mode);
 #endif
 
 

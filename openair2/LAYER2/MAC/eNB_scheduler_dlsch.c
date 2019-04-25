@@ -450,6 +450,9 @@ void  getRepetition(UE_TEMPLATE *pue_template,unsigned int *maxRep, unsigned int
 }
 
 //------------------------------------------------------------------------------
+/*
+* Schedule the DLSCH
+*/
 void
 schedule_ue_spec(module_id_t module_idP,
                  int slice_idxP,
@@ -470,7 +473,7 @@ schedule_ue_spec(module_id_t module_idP,
   int TBS, j, padding = 0, post_padding = 0;
   rnti_t rnti;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  int round = 0;
+  int round_DL = 0;
   int harq_pid = 0;
   uint16_t release_num;
   uint8_t ra_ii;
@@ -556,14 +559,13 @@ schedule_ue_spec(module_id_t module_idP,
     }
   }
 
-  //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2;
 
   for (CC_id = 0, eNB_stats = &eNB->eNB_stats[0]; CC_id < nb_mac_CC; CC_id++, eNB_stats++) {
     dl_Bandwidth = cc[CC_id].mib->message.dl_Bandwidth;
     N_RB_DL[CC_id] = to_prb(dl_Bandwidth);
-    min_rb_unit[CC_id] = get_min_rb_unit(module_idP,
-                                         CC_id);
+    min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
+
     // get number of PRBs less those used by common channels
     total_nb_available_rb[CC_id] = N_RB_DL[CC_id];
 
@@ -595,14 +597,6 @@ schedule_ue_spec(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
 
-  //RC.mac[module_idP]->slice_info.slice_counter--;
-  // Do the multiplexing and actual allocation only when all slices have been pre-processed.
-  //if (RC.mac[module_idP]->slice_info.slice_counter > 0) {
-  //stop_meas(&eNB->schedule_dlsch);
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
-  //return;
-  //}
-
   if (RC.mac[module_idP]->slice_info.interslice_share_active) {
     dlsch_scheduler_interslice_multiplexing(module_idP,
                                             frameP,
@@ -628,12 +622,15 @@ schedule_ue_spec(module_id_t module_idP,
       LOG_D(MAC, "doing schedule_ue_spec for CC_id %d UE %d\n",
             CC_id,
             UE_id);
+
       continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP, UE_id);
       ue_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
       ue_template = &UE_list->UE_template[CC_id][UE_id];
 
-      if (ue_template->rach_resource_type > 0) continue_flag = 1;
+      if (ue_template->rach_resource_type > 0) {
+        continue_flag = 1;
+      }
 
       if (&(UE_list->eNB_UE_stats[CC_id][UE_id]) == NULL) {
         LOG_D(MAC, "[eNB] Cannot find eNB_UE_stats\n");
@@ -714,11 +711,11 @@ schedule_ue_spec(module_id_t module_idP,
       harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,
                                              frameP,
                                              subframeP);
-      round = ue_sched_ctrl->round[CC_id][harq_pid];
+      round_DL = ue_sched_ctrl->round[CC_id][harq_pid];
       eNB_UE_stats->crnti = rnti;
       eNB_UE_stats->rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
       eNB_UE_stats->harq_pid = harq_pid;
-      eNB_UE_stats->harq_round = round;
+      eNB_UE_stats->harq_round = round_DL;
 
       if (eNB_UE_stats->rrc_status < RRC_CONNECTED) {
         LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n",
@@ -752,24 +749,38 @@ schedule_ue_spec(module_id_t module_idP,
 
       LOG_D(MAC, "[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n",
             module_idP,
-            frameP, UE_id,
+            frameP,
+            UE_id,
             CC_id,
             rnti,
             harq_pid,
-            round,
+            round_DL,
             nb_available_rb,
             ue_sched_ctrl->dl_cqi[CC_id],
             eNB_UE_stats->dlsch_mcs1,
             eNB_UE_stats->rrc_status);
 
-      /* process retransmission  */
-      if (round != 8) {
+      /* Process retransmission  */
+      if (round_DL != 8) {
         // get freq_allocation
         nb_rb = ue_template->nb_rb[harq_pid];
         TBS = get_TBS_DL(ue_template->oldmcs1[harq_pid],
                          nb_rb);
 
         if (nb_rb <= nb_available_rb) {
+          /* CDRX */
+          ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
+
+          if (ue_sched_ctrl->cdrx_configured) {
+            ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
+            /* 
+             * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
+             */
+            if (harq_pid == 0) {
+              VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
+            }
+          }
+
           if (cc[CC_id].tdd_Config != NULL) {
             ue_template->DAI++;
             update_ul_dci(module_idP,
@@ -809,14 +820,6 @@ schedule_ue_spec(module_id_t module_idP,
           }
 
           nb_available_rb -= nb_rb;
-          /*
-          eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
-          eNB->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctrl->dl_pow_off[CC_id];
-
-          for(j = 0; j < N_RBG[CC_id]; ++j) {
-            eNB->mu_mimo_mode[UE_id].rballoc_sub[j] = ue_template->rballoc_subband[harq_pid][j];
-          }
-          */
 
           switch (get_tmode(module_idP, CC_id, UE_id)) {
             case 1:
@@ -845,7 +848,7 @@ schedule_ue_spec(module_id_t module_idP,
               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1; // Don't adjust power when retransmitting
               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ue_template->oldNDI[harq_pid];
               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = ue_template->oldmcs1[harq_pid];
-              dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = round & 3;
+              dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = round_DL & 3;
 
               // TDD
               if (cc[CC_id].tdd_Config != NULL) {
@@ -854,7 +857,7 @@ schedule_ue_spec(module_id_t module_idP,
                       module_idP,
                       CC_id,
                       harq_pid,
-                      round,
+                      round_DL,
                       ue_template->DAI - 1,
                       ue_template->oldmcs1[harq_pid]);
               } else {
@@ -862,7 +865,7 @@ schedule_ue_spec(module_id_t module_idP,
                       module_idP,
                       CC_id,
                       harq_pid,
-                      round,
+                      round_DL,
                       ue_template->oldmcs1[harq_pid]);
               }
 
@@ -886,7 +889,7 @@ schedule_ue_spec(module_id_t module_idP,
                                         0,    // virtual_resource_block_assignment_flag, unused here
                                         0,    // resource_block_coding, to be filled in later
                                         getQm(ue_template->oldmcs1[harq_pid]),
-                                        round & 3, // redundancy version
+                                        round_DL & 3, // redundancy version
                                         1,    // transport blocks
                                         0,    // transport block to codeword swap flag
                                         cc[CC_id].p_eNB == 1 ? 0 : 1,    // transmission_scheme
@@ -903,7 +906,7 @@ schedule_ue_spec(module_id_t module_idP,
                                         0);   // number of beamforming vectors, not used here
                 LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",
                       eNB->pdu_index[CC_id],
-                      round);
+                      round_DL);
                 program_dlsch_acknak(module_idP,
                                      CC_id,
                                      UE_id,
@@ -938,7 +941,8 @@ schedule_ue_spec(module_id_t module_idP,
                 CC_id,
                 UE_id);
         }
-      } else {    /* This is a potentially new SDU opportunity */
+      } else {
+        /* This is a potentially new SDU opportunity */
         rlc_status.bytes_in_buffer = 0;
         // Now check RLC information to compute number of required RBs
         // get maximum TBS size for RLC request
@@ -1245,6 +1249,7 @@ schedule_ue_spec(module_id_t module_idP,
               header_length_total += header_length_last;
               num_sdus++;
               ue_sched_ctrl->uplane_inactivity_timer = 0;
+
               // reset RRC inactivity timer after uplane activity
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
 
@@ -1262,7 +1267,7 @@ schedule_ue_spec(module_id_t module_idP,
           }
         }
 
-        /* last header does not have length field */
+        /* Last header does not have length field */
         if (header_length_total) {
           header_length_total -= header_length_last;
           header_length_total++;
@@ -1568,6 +1573,22 @@ schedule_ue_spec(module_id_t module_idP,
             dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
             eNB->DL_req[CC_id].sfn_sf = frameP << 4 | subframeP;
             eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
+
+            /* CDRX */
+            ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
+
+            if (ue_sched_ctrl->cdrx_configured) {
+              ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
+              ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
+              /* 
+               * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
+               */
+              VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
+              if (harq_pid == 0) {
+                VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
+              }
+            }
+
             // Toggle NDI for next time
             LOG_D(MAC, "CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
                   CC_id,

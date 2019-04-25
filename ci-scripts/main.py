@@ -2137,6 +2137,7 @@ class SSHConnection():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		cdrxActivationMessageCount = 0
 		self.htmleNBFailureMsg = ''
 		for line in enb_log_file.readlines():
 			if self.rruOptions != '':
@@ -2188,6 +2189,9 @@ class SSHConnection():
 			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
 			if result is not None:
 				rrcReestablishReject += 1
+			result = re.search('CDRX configuration activated after RRC Connection', str(line))
+			if result is not None:
+				cdrxActivationMessageCount += 1
 			result = re.search('uci->stat', str(line))
 			if result is not None:
 				uciStatMsgCount += 1
@@ -2240,6 +2244,10 @@ class SSHConnection():
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if cdrxActivationMessageCount > 0:
+			rrcMsg = 'eNB activated the CDRX Configuration for ' + str(cdrxActivationMessageCount) + ' time(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rachCanceledProcedure > 0:

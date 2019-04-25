@@ -114,26 +114,25 @@ void handle_cqi(UL_IND_t *UL_info) {
 }
 
 void handle_harq(UL_IND_t *UL_info) {
-  int i;
-
-  if (NFAPI_MODE == NFAPI_MODE_PNF && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) { // PNF
+  if (NFAPI_MODE == NFAPI_MODE_PNF && UL_info->harq_ind.harq_indication_body.number_of_harqs > 0) { // PNF
     //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
     int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
 
-    if (retval!=0) {
+    if (retval != 0) {
       LOG_E(PHY, "Failed to encode NFAPI HARQ_IND retval:%d\n", retval);
     }
 
     UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
+
   } else {
-    for (i=0; i<UL_info->harq_ind.harq_indication_body.number_of_harqs; i++)
+    for (int i=0; i < UL_info->harq_ind.harq_indication_body.number_of_harqs; i++)
       harq_indication(UL_info->module_id,
                       UL_info->CC_id,
                       NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
                       NFAPI_SFNSF2SF(UL_info->harq_ind.sfn_sf),
                       &UL_info->harq_ind.harq_indication_body.harq_pdu_list[i]);
 
-    UL_info->harq_ind.harq_indication_body.number_of_harqs=0;
+    UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
   }
 }
 
