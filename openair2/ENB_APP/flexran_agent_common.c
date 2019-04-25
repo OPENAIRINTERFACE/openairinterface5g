@@ -298,7 +298,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
       free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
     if (reply->cell_config[i]->mbsfn_subframe_config_rfperiod)
       free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
-    if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
+    if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc)
       free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
 
     if (reply->cell_config[i]->si_config) {
