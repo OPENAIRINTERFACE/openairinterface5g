@@ -1,10 +1,22 @@
-# The OpenAirInterface repository
+<table style="border-collapse: collapse; border: none;">
+  <tr style="border-collapse: collapse; border: none;">
+    <td style="border-collapse: collapse; border: none;">
+      <a href="http://www.openairinterface.org/">
+         <img src="./images/oai_final_logo.png" alt="" border=3 height=50 width=150>
+         </img>
+      </a>
+    </td>
+    <td style="border-collapse: collapse; border: none; vertical-align: center;">
+      <b><font size = "5">The OpenAirInterface repository: the sources</font></b>
+    </td>
+  </tr>
+</table>
 
 The OpenAirInterface software can be obtained from our gitLab
 server. You will need a git client to get the sources. The repository
 is currently used for main developments.
 
-## Prerequisite
+# Prerequisites
 
 You need to install the subversion/git using the following commands:
 
@@ -13,17 +25,23 @@ sudo apt-get update
 sudo apt-get install subversion git
 ```
 
-## Using EURECOM Gitlab
+# Using EURECOM Gitlab
 
 The [openairinterface5g repository](https://gitlab.eurecom.fr/oai/openairinterface5g.git)
 holds the source code for (eNB RAN + UE RAN).
 
 For legal issues (licenses), the core network (EPC) source code is now moved away from
-the above openairinterface5g git repository. This EPC code is now splitted into two git
-projects ([openair-cn](https://gitlab.eurecom.fr/oai/openair-cn.git) with apache license
-and [xtables-addons-oai](https://gitlab.eurecom.fr/oai/xtables-addons-oai.git) with GPL license).
+the above openairinterface5g git repository.
 
-Configure git with your name/email address (only important if you are developer and want to checkin code to Git):
+*  A very old version of the EPC is located under the same GitLab Eurecom server (splitted into 2 Git repos):
+   *  [openair-cn](https://gitlab.eurecom.fr/oai/openair-cn.git) with apache license
+   *  [xtables-addons-oai](https://gitlab.eurecom.fr/oai/xtables-addons-oai.git) with GPL license
+   *  **These repositories are no more maintained.**
+*  A more recent version is available under our GitHub domain:
+   *  [OAI GitHub openair-cn](https://github.com/OPENAIRINTERFACE/openair-cn)
+   *  Check its wiki pages for more details
+
+Configure git with your name/email address (only important if you are developer and want to contribute/push code to Git Repository):
 
 ```shell
 git config --global user.name "Your Name"
@@ -42,42 +60,30 @@ echo -n | openssl s_client -showcerts -connect gitlab.eurecom.fr:443 2>/dev/null
 git config --global http.sslverify false
 ```
 
-### In order to checkout the Git repository (for OAI Users without login to gitlab server)
+## In order to clone the Git repository (for OAI Users without login to gitlab server)
 
-Checkout RAN repository (eNB RAN + UE RAN):
+Cloning RAN repository (eNB RAN + UE RAN):
 
 ```shell
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
 ```
 
-Checkout EPC (Core Network) repository:
+## In order to contribute to the Git RAN repository (for OAI Developers/admins with login to gitlab server)
 
-```shell
-git clone https://gitlab.eurecom.fr/oai/openair-cn.git
-```
-
-Optionally (openair-cn build script can install it for you):
-
-```shell
-git clone https://gitlab.eurecom.fr/oai/xtables-addons-oai.git
-```
-
-### In order to checkout the Git repository (for OAI Developers/admins with login to gitlab server)
-
-Please send email to {openair_tech (AT) eurecom (DOT) fr} to be added to the repository
+Please send email to [contact@openairinterface.org](mailto:contact@openairinterface.org) to be added to the repository
 as a developer (only important for users who want to commit code to the repository). If
-you do not have account on gitlab.eurecom.fr, please register yourself to gitlab.eurecom.fr.
+you do not have account on gitlab.eurecom.fr, please register yourself to gitlab.eurecom.fr and provide the identifiant in the email.
 
-* Checkout with using ssh keys:
+* Clone with using ssh keys:
    * You will need to put your ssh keys in https://gitlab.eurecom.fr/profile/keys
-     to access to the git repo. Once that is done, checkout the git repository using:
+     to access to the git repo. Once that is done, clone the git repository using:
    * `git clone git@gitlab.eurecom.fr:oai/openairinterface5g.git`
-* Checkout with user name/password prompt:
+* Clone with user name/password prompt:
    * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/openairinterface5g.git`
    * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/openair-cn.git`
    * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/xtables-addons-oai.git` (optional, openair-cn build script can do it for you)
 
-## Which branch to checkout?
+# Which branch to checkout?
 
 On the RAN side:
 
