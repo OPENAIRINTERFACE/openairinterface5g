@@ -52,10 +52,6 @@ extern boolean_t pdcp_data_ind(
 //#define TRACE_RLC_PAYLOAD 1
 #define DEBUG_RLC_DATA_REQ 1
 
-
-
-#include "proto_agent.h"
-
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
 //-----------------------------------------------------------------------------

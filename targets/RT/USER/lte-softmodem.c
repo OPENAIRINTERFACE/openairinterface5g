@@ -575,6 +575,25 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
+void init_pdcp(void) {
+  if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+        (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+    if (IS_SOFTMODEM_NOS1)
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+    pdcp_module_init(pdcp_initmask);
+
+    if (NODE_IS_CU(RC.rrc[0]->node_type)) {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    }
+  } else {
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }
+}
 
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
@@ -654,24 +673,19 @@ int main( int argc, char **argv ) {
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
 
   /* Read configuration */
-  if (RC.nb_inst > 0)
+  if (RC.nb_inst > 0) {
     read_config_and_init();
 
-  /* Start the agent. If it is turned off in the configuration, it won't start */
-  RCconfig_flexran();
+    /* Start the agent. If it is turned off in the configuration, it won't start */
+    RCconfig_flexran();
+    for (i = 0; i < RC.nb_inst; i++) {
+      flexran_agent_start(i);
+    }
 
-  for (i = 0; i < RC.nb_inst; i++) {
-    flexran_agent_start(i);
-  }
+    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
+     * for monolithic/F1 modes */
+    init_pdcp();
 
-  uint32_t pdcp_initmask = ( IS_SOFTMODEM_NOS1 )? ( PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
-
-  if ( IS_SOFTMODEM_NOS1)
-    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
-
-  pdcp_module_init(pdcp_initmask);
-
-  if (RC.nb_inst > 0)  {
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1);
@@ -683,7 +697,7 @@ int main( int argc, char **argv ) {
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
   } else {
-    printf("No ITTI, Initializing L1\n");
+    printf("RC.nb_inst = 0, Initializing L1\n");
     RCconfig_L1();
   }
 
