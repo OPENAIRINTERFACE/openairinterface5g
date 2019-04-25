@@ -705,7 +705,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
-    printf("encoding thinks this is a new packet for harq_pid %d (%p), A %d \n",harq_pid,dlsch,A);
+    printf("encoding thinks this is a new packet for harq_pid %d (%p), A %u \n",harq_pid,dlsch,A);
 #endif
     /*
     int i;

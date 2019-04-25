@@ -407,7 +407,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
                PRACH_BLOCK_SIZE_BYTES);
       }
     }
-    if (frame == 0) LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+    if (*frame == 0) LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
 	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
       for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
