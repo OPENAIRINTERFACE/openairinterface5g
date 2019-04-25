@@ -97,6 +97,8 @@ message flex_ue_config {
 	optional uint64 imsi = 30;
 	optional uint32 dl_slice_id = 31;
 	optional uint32 ul_slice_id = 32;
+  // Configuration about RRC measurements
+  optional flex_measurement_info info = 33;
 }
 
 message flex_lc_ue_config {
