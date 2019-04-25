@@ -25,7 +25,8 @@
         <htmlTabName>Test-10Mhz-Orange</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
 	<TestCaseRequestedList>
-090110 000001 090109
+ 090109
+ 090110 000001 090109
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
