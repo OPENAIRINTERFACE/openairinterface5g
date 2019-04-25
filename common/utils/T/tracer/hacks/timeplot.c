@@ -28,6 +28,7 @@ int bins[50];
 
 #define N 1000
 int data[N];
+long start = 100;
 
 void plot(void)
 {
@@ -45,7 +46,8 @@ void plot(void)
     if (data[i] < vmin) vmin = data[i];
     if (data[i] > vmax) vmax = data[i];
     vavg += data[i];
-    int ms2 = data[i]/binsize_ns;
+    int ms2 = (data[i] - start * 1000)/binsize_ns;
+    if (ms2 < 0) ms2 = 0;
     if (ms2 > 49) ms2 = 49;
     bins[ms2]++;
     if (bins[ms2] > max) max = bins[ms2];
@@ -55,7 +57,7 @@ void plot(void)
 
   GOTO(1,1);
   for (i = 0; i < 50; i++) {
-    double binend = (i+1) * binsize_ns / 1000.;
+    double binend = (i+1) * binsize_ns / 1000. + start;
     int k;
     int width = bins[i] * 70 / max;
     /* force at least width of 1 if some point is there */
@@ -68,11 +70,23 @@ void plot(void)
   printf("min %d ns    max %d ns    avg %ld ns\n", vmin, vmax, vavg);
 }
 
+void up(int x)
+{
+  start += 5;
+}
+
+void down(int x)
+{
+  start -= 5;
+}
+
 int main(void)
 {
   int i;
   int pos = 0;
   signal(SIGINT, sig);
+  signal(SIGUSR1, up);
+  signal(SIGUSR2, down);
   RESET();
   HIDE_CURSOR();
   while (!feof(stdin)) {

@@ -727,7 +727,6 @@ Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 ##############################################################
 
 add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
-add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the default bearer")
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
@@ -828,7 +827,7 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 ##########################
 # RRC LAYER OPTIONS
 ##########################
-add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, configure params are actually set in rrc_eNB.c:rrc_eNB_generate_defaultRRCConnectionReconfiguration(...)")
+add_boolean_option(RRC_DEFAULT_RAB_IS_AM       True   "set the RLC mode to AM for the default bearer, otherwise it is UM.")
 
 
 ##########################
@@ -1640,7 +1639,7 @@ set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
 set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 
-set(LTE_RLC_SRC
+set(RLC_ENB_V1
   ${RLC_AM_DIR}/rlc_am.c
   ${RLC_AM_DIR}/rlc_am_init.c
   ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
@@ -1670,6 +1669,17 @@ set(LTE_RLC_SRC
   ${RLC_DIR}/rlc_mpls.c
   )
 
+set(RLC_ENB_V2
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_oai_api.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/asn1_utils.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_ue_manager.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity_am.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity_um.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_pdu.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_sdu.c
+  )
+
 set(NR_RLC_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_rlc/asn1_utils.c
   ${OPENAIR2_DIR}/LAYER2/nr_rlc/nr_rlc_entity.c
@@ -1691,6 +1701,7 @@ set(L2_SRC
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
+  ${RLC_ENB_V2}
 #  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
   ${RRC_DIR}/rrc_eNB_endc.c
@@ -1704,7 +1715,7 @@ set(L2_SRC
   )
 
 set(L2_LTE_SRC
-  ${LTE_RLC_SRC}
+  ${RLC_ENB_V1}
   )
 
 set(L2_NR_SRC
@@ -1741,7 +1752,7 @@ set(LTE_NR_L2_SRC_UE
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
-  ${LTE_RLC_SRC}
+  ${RLC_ENB_V1}
   )
 
 set(NR_L2_SRC_UE
