@@ -3303,9 +3303,12 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+
+  if (RC.rrc[ctxt_pP->module_id]->num_neigh_cells > 0) {
+    MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+      (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+    CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+  }
 
   if (!ue_context_pP->ue_context.measurement_info) {
     ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
@@ -5363,9 +5366,12 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+
+  if (RC.rrc[ctxt_pP->module_id]->num_neigh_cells > 0) {
+    MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+      (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+    CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+  }
 
   if (!ue_context_pP->ue_context.measurement_info) {
     ue_context_pP->ue_context.measurement_info = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info)));
