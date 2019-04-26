@@ -553,6 +553,7 @@ typedef struct {
     uint16_t serving_num;
     UE_ULSCH_STATUS status;
 } eNB_ULSCH_INFO;
+
 /*! \brief temp struct for DLSCH sched */
 typedef struct {
     rnti_t rnti;
@@ -561,6 +562,7 @@ typedef struct {
     uint16_t serving_num;
     UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
+
 /*! \brief eNB overall statistics */
 typedef struct {
     /// num BCCH PDU per CC
@@ -635,6 +637,7 @@ typedef struct {
     int missed_deadlines;
 
 } eNB_STATS;
+
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
     /// CRNTI of UE
@@ -778,6 +781,7 @@ typedef struct {
 
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
+
 typedef struct {
     /// C-RNTI of UE
     rnti_t rnti;
@@ -998,6 +1002,62 @@ typedef struct {
     int32_t uplane_inactivity_timer;
     uint8_t crnti_reconfigurationcomplete_flag;
     uint8_t cqi_req_flag;
+
+    /* HARQ RRT Timers */
+    /// (UL) HARQ RTT timers, especially used for CDRX operations, one timer per cell per harq process (and per user)
+    uint8_t harq_rtt_timer[NFAPI_CC_MAX][8];
+    uint8_t ul_harq_rtt_timer[NFAPI_CC_MAX][8]; // Note: UL HARQ RTT timers are only for asynchronous HARQ processes
+    uint8_t ul_synchronous_harq_timer[NFAPI_CC_MAX][8];  // These timers are used for UL synchronous HARQ processes
+
+    /* C-DRX related timers */
+    /* Note: only valid for FDD and LTE UE when this comment is written (11-01-19)*/
+    /// is TRUE if the cqi mask feature is activated by RRC configuration
+    boolean_t cqi_mask_boolean;
+    /// is TRUE if the following drx parameters are configured for UE
+    boolean_t cdrx_configured;
+    /* 
+     * if TRUE, the eNB has configured the CDRX locally, but is waiting for the UE to acknowledge 
+     * the activation. This is needed, during the RRC configuration process, when the context is
+     * configured on the eNB side, but not yet on the UE side...
+     */
+    boolean_t cdrx_waiting_ack;
+    /*
+     * Is set when a ULSCH scheduling is done and run until the first corresponding transmission is done (4 subframes). 
+     * When set, SR cannot be set for the UE. This allows OAI to avoid concidering a SR as uncompleted if the UE sends
+     * a SR just after a periodic DCI0 ULSCH scheduling. Without CDRX there is no problem, but with CDRX this case would
+     * create a lost in timers synchronization.
+     */ 
+    uint8_t dci0_ongoing_timer;
+    /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
+    boolean_t in_active_time;
+    /// OnDurationTimer
+    uint16_t  on_duration_timer;
+    uint16_t  on_duration_timer_thres;
+    /// drx-InactivityTimer
+    uint16_t  drx_inactivity_timer;
+    uint16_t  drx_inactivity_timer_thres;
+    /// is TRUE if UE is currently in short DRX cycle
+    boolean_t in_short_drx_cycle;
+    /// drxShortCycleTimer int (1..16) (number of short DRX cycles duration before long DRX cycles)
+    uint8_t  drx_shortCycle_timer_value;
+    /// shortDRX-Cycle (duration of one short DRX cycle)
+    uint16_t   short_drx_cycle_duration;
+    /// DRX short cycle timer before switching to long DRX cycle = drx_shortCycle_timer_value * short_drx_cycle_duration
+    uint16_t  drx_shortCycle_timer;
+    uint16_t  drx_shortCycle_timer_thres;
+    /// is TRUE if UE is currently in long DRX cycle
+    boolean_t in_long_drx_cycle;
+    /// longDRX-CycleStartOffset (long DRX cycle timer)
+    uint16_t  drx_longCycle_timer;
+    uint16_t  drx_longCycle_timer_thres;
+    /// longDRX-CycleStartOffset (offset value)
+    uint16_t  drx_start_offset;
+    /// DRX retransmission timer, one per DL HARQ process
+    uint8_t   drx_retransmission_timer[8];
+    uint8_t   drx_retransmission_timer_thres[8];
+    /// DRX UL retransmission timer, one per UL HARQ process
+    /* Not implemented yet */
+    /* End of C-DRX related timers */
 } UE_sched_ctrl;
 
 /*! \brief eNB template for the Random access information */
@@ -1485,6 +1545,7 @@ typedef struct {
     int16_t bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 /*!\brief Top level UE MAC structure */
+
 typedef struct {
     uint16_t Node_id;
     /// RX frame counter

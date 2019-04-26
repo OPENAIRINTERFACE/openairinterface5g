@@ -722,17 +722,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
 		  ,uint8_t br_flag
 #endif
-		  )
+)
+//-----------------------------------------------------------------------------
 {
-
-
-  static int first_call=1;
-  LTE_eNB_COMMON *common_vars                        = &eNB->common_vars;
-  LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
-  //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
-
-  int8_t sigma2_dB                                   = max(eNB->measurements.n0_subband_power_tot_dB[0],
-                                                           eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
+  static int first_call = 1;
+  LTE_eNB_COMMON *common_vars = &eNB->common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  int8_t sigma2_dB = max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -770,7 +766,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   uint16_t Ret = 0;
   int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2];       //[Antenna][Symbol][Subcarrier][Complex]
   int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2];              //[Antenna][Symbol][Subcarrier][Complex]
-  double delta_theta[NB_ANTENNAS_RX][12];                      //[Antenna][Subcarrier][Complex]
+  double delta_theta[NB_ANTENNAS_RX][12];                       //[Antenna][Subcarrier][Complex]
   int16_t ChestValue[NB_ANTENNAS_RX][2][12][2];                 //[Antenna][Slot][Subcarrier][Complex]
   int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14][12][2];      //[Antenna][Symbol][Subcarrier][Complex]
   int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2];       //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
@@ -779,7 +775,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t Fmt3xDataAvgSym[2][12][2];                            //[Slot][Subcarrier][Complex]
   int16_t IFFTOutData_Fmt3[2][12][2];                           //[Slot][Subcarrier][Complex]
   int16_t b[48];                                                //[bit]
-  //int16_t IP_CsData_allavg[NB_ANTENNAS_RX][12][4][2];           //[Antenna][Symbol][Nouse Cyclic Shift][Complex]
   int16_t payload_entity = -1;
   int16_t Interpw;
   int16_t payload_max;

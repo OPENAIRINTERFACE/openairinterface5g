@@ -932,8 +932,9 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
       break;
     }
     RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[cc_idx][rachCEInfoIndex] = eMTCconfig->rar_HoppingConfig_r13;
+
     AssertFatal(eMTCconfig->rar_HoppingConfig_r13 == 0 || eMTCconfig->rar_HoppingConfig_r13 == 1,
-		"illegal rar_HoppingConfig_r13 %d\n",eMTCconfig->rar_HoppingConfig_r13);
+		            "illegal rar_HoppingConfig_r13 %d\n",eMTCconfig->rar_HoppingConfig_r13);
   } // end for loop (rach ce level info)
 
   char rsrpRangeListPath[MAX_OPTNAME_SIZE * 2];
@@ -1101,11 +1102,12 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
 
   /** PCCH CONFIG V1310 */
-
   RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[cc_idx] = TRUE;
   RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[cc_idx] = eMTCconfig->paging_narrowbands_r13;
   RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[cc_idx] = eMTCconfig->mpdcch_numrepetition_paging_r13;
-  AssertFatal (eMTCconfig->mpdcch_numrepetition_paging_r13 == 1 ||
+
+  AssertFatal (eMTCconfig->mpdcch_numrepetition_paging_r13 == 0 ||
+          eMTCconfig->mpdcch_numrepetition_paging_r13 == 1 ||
 	       eMTCconfig->mpdcch_numrepetition_paging_r13 == 2 ||
 	       eMTCconfig->mpdcch_numrepetition_paging_r13 == 4 ||
 	       eMTCconfig->mpdcch_numrepetition_paging_r13 == 8 ||
@@ -1116,7 +1118,6 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 	       eMTCconfig->mpdcch_numrepetition_paging_r13 == 256,
 	       "illegal mpdcch_numrepetition_paging_r13 %d\n",
 	       eMTCconfig->mpdcch_numrepetition_paging_r13);
-
 
   //                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[cc_idx] = CALLOC(1, sizeof(long));
   //                        if (!strcmp(nb_v1310, "one64thT")) {

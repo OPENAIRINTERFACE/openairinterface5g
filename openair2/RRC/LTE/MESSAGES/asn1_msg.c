@@ -317,6 +317,121 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
   return((enc_rval.encoded+7)/8);
 }
 
+//-----------------------------------------------------------------------------
+/*
+ * Generate the configuration structure for CDRX feature
+ */
+LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, 
+              int CC_id, 
+              RrcConfigurationReq *configuration, 
+              LTE_UE_EUTRA_Capability_t *UEcap)
+//-----------------------------------------------------------------------------
+{
+  LTE_DRX_Config_t *drxConfig = NULL;
+  BIT_STRING_t *featureGroupIndicators = NULL;
+  bool ueSupportCdrxShortFlag = false;
+  bool ueSupportCdrxLongFlag = false;
+
+  /* Check the UE capabilities for short and long CDRX cycles support */
+  if (UEcap) {
+    featureGroupIndicators = UEcap->featureGroupIndicators;
+    if (featureGroupIndicators) {
+      if (featureGroupIndicators->size > 1 || (featureGroupIndicators->size == 1 && featureGroupIndicators->bits_unused < 4)) {
+        ueSupportCdrxShortFlag = ((featureGroupIndicators->buf[0] & (uint8_t) 0x10) > 0);
+        ueSupportCdrxLongFlag = ((featureGroupIndicators->buf[0] & (uint8_t) 0x08) > 0);
+        LOG_I(RRC,"[do_DrxConfig] featureGroupIndicators->buf[0]: %x\n", featureGroupIndicators->buf[0]);
+      } else LOG_W(RRC,"[do_DrxConfig] Not enough featureGroupIndicators bits\n");
+    } else LOG_W(RRC,"[do_DrxConfig] No featureGroupIndicators pointer\n");
+  } else LOG_W(RRC,"[do_DrxConfig] No UEcap pointer\n");
+
+  if (configuration->radioresourceconfig[CC_id].drx_Config_present == LTE_DRX_Config_PR_NOTHING) {
+    return NULL;
+  }
+
+  drxConfig = (LTE_DRX_Config_t *) malloc(sizeof(LTE_DRX_Config_t));
+  if (drxConfig == NULL) return NULL;
+  memset(drxConfig, 0, sizeof(LTE_DRX_Config_t));
+
+  /* Long DRX cycle support is mandatory for CDRX activation */
+  if (!ueSupportCdrxLongFlag) {
+    drxConfig->present = LTE_DRX_Config_PR_release;
+  } else {
+    drxConfig->present = configuration->radioresourceconfig[CC_id].drx_Config_present;
+  }
+
+  if (drxConfig->present == LTE_DRX_Config_PR_release) {
+    drxConfig->choice.release = (NULL_t) 0;
+  } else {
+    drxConfig->choice.setup.onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
+    drxConfig->choice.setup.drx_InactivityTimer = configuration->radioresourceconfig[CC_id].drx_InactivityTimer;
+    drxConfig->choice.setup.drx_RetransmissionTimer = configuration->radioresourceconfig[CC_id].drx_RetransmissionTimer;
+    drxConfig->choice.setup.longDRX_CycleStartOffset.present = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset_present;
+    switch (drxConfig->choice.setup.longDRX_CycleStartOffset.present) {
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf10 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf20 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf32 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf40 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf64 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf80 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf128 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf160 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf256 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf320 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf512 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf640 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf1024 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf1280 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf2048 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560:
+        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf2560 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        break;
+      default:
+        break;
+    }
+
+    /* Short DRX cycle configuration */
+    if (!ueSupportCdrxShortFlag || configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer == 0) {
+      drxConfig->choice.setup.shortDRX = NULL;
+    } else {
+      drxConfig->choice.setup.shortDRX = MALLOC(sizeof(struct LTE_DRX_Config__setup__shortDRX));
+      memset(drxConfig->choice.setup.shortDRX, 0, sizeof(struct LTE_DRX_Config__setup__shortDRX));
+      drxConfig->choice.setup.shortDRX->shortDRX_Cycle = configuration->radioresourceconfig[CC_id].drx_shortDrx_Cycle;
+      drxConfig->choice.setup.shortDRX->drxShortCycleTimer = configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer;
+    }
+  }
+  
+  return drxConfig;
+}
 
 uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 		int Mod_id,int CC_id
@@ -911,7 +1026,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
-  int eMTC_configured=configuration->eMTC_configured;
+  int eMTC_configured = configuration->eMTC_configured;
   struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib18_part, *sib19_part, *sib21_part;
   LTE_SL_CommRxPoolList_r12_t *SL_CommRxPoolList; //for SIB18
   struct LTE_SL_CommResourcePool_r12 *SL_CommResourcePool; //for SIB18
@@ -2357,6 +2472,7 @@ do_RRCConnectionSetup(
   dl_ccch_msg.message.present           = LTE_DL_CCCH_MessageType_PR_c1;
   dl_ccch_msg.message.choice.c1.present = LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionSetup;
   rrcConnectionSetup          = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionSetup;
+  LTE_MAC_MainConfig_t *mac_MainConfig = NULL;
 
   // RRCConnectionSetup
   // Configure SRB1
@@ -2475,30 +2591,34 @@ do_RRCConnectionSetup(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[0]=0x22;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[1]=0x34+ue_context_pP->local_uid;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.bits_unused=0;
-  // CQI ReportConfig
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= LTE_CQI_ReportModeAperiodic_rm30;
-#else
-  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=LTE_CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
-#endif
-  physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
-  //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  LTE_CQI_ReportPeriodic_PR_release;
-  /*
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0;  // Icqi/pmi
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present = CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI;  // subband CQI
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k=4;
 
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex=NULL;
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI=0;
+  /* CQI ReportConfig */
+  // Aperiodic configuration
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CALLOC(1, sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = LTE_CQI_ReportModeAperiodic_rm30; // HLC CQI, no PMI
+#else
+  *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = LTE_CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
+#endif
+
+  physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB (int -1...6)
+
+  // Periodic configuration
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1, sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = LTE_CQI_ReportPeriodic_PR_release;
+  /*
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = CQI_ReportPeriodic_PR_setup;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0; // n2_pucch
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0; // Icqi/pmi
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present = CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI;  // subband CQI
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k = 4;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex = NULL;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI = 0;
   */
 
   //soundingRS-UL-ConfigDedicated
-  if (rrc->srs_enable[CC_id]==1) {
+  if (rrc->srs_enable[CC_id] == 1) {
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = LTE_SoundingRS_UL_ConfigDedicated_PR_setup;
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth =
       LTE_SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0;
@@ -2667,22 +2787,33 @@ do_RRCConnectionSetup(
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = CALLOC(1,sizeof(struct LTE_RadioResourceConfigDedicated__mac_MainConfig));
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig->present = LTE_RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
-  LTE_MAC_MainConfig_t *mac_MainConfig = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig->choice.explicitValue;
+
+  /* MAC MainConfig */
+  mac_MainConfig = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig->choice.explicitValue;
+
+  //* ul_SCH_Config *//
   mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
   long *maxHARQ_Tx = CALLOC(1, sizeof(long));
   *maxHARQ_Tx = LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
   long *periodicBSR_Timer = CALLOC(1, sizeof(long));
-  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64;
-  mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64; // LTE_PeriodicBSR_Timer_r12_infinity
+
+  mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx; // max number of UL HARQ transmission
   mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
-  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320;
+  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320; // LTE_RetxBSR_Timer_r12_sf5120  // regular BSR timer
   mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
+
+  //* timeAlignmentTimerDedicated *//
   mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
+
+  //* DRX Config *//
   mac_MainConfig->drx_Config = NULL;
+
+  //* PHR Config *//
   mac_MainConfig->phr_Config = CALLOC(1, sizeof(*mac_MainConfig->phr_Config));
   mac_MainConfig->phr_Config->present = LTE_MAC_MainConfig__phr_Config_PR_setup;
-  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
-  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_infinity
+  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;  // Value dB1 =1 dB, dB3 = 3 dB
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
@@ -2703,11 +2834,7 @@ do_RRCConnectionSetup(
 
   LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes) \n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-  //  FREEMEM(SRB_list);
-  //  free(SRB1_config);
-  //  free(SRB1_rlc_config);
-  //  free(SRB1_lchan_config);
-  //  free(SRB1_ul_SpecificParameters);
+
   return((enc_rval.encoded+7)/8);
 }
 
@@ -3422,9 +3549,12 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t*        const 
 #endif
 
 //------------------------------------------------------------------------------
-uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctxt_pP,
-					 uint8_t                            *buffer,
-					 uint8_t                             Transaction_id,
+/*
+ * Copy the different Information Elements in the RRC structure
+ */
+uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+					 uint8_t                                *buffer,
+					 uint8_t                                 Transaction_id,
 					 LTE_SRB_ToAddModList_t                 *SRB_list,
 					 LTE_DRB_ToAddModList_t                 *DRB_list,
 					 LTE_DRB_ToReleaseList_t                *DRB_list2,
@@ -3437,7 +3567,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
 					 LTE_MAC_MainConfig_t                   *mac_MainConfig,
 					 LTE_MeasGapConfig_t                    *measGapConfig,
 					 LTE_MobilityControlInfo_t              *mobilityInfo,
-                                         LTE_SecurityConfigHO_t                 *securityConfigHO,
+                     LTE_SecurityConfigHO_t                 *securityConfigHO,
 					 struct LTE_MeasConfig__speedStatePars  *speedStatePars,
 					 LTE_RSRP_Range_t                       *rsrp,
 					 LTE_C_RNTI_t                           *cba_rnti,
@@ -3446,7 +3576,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
 					 LTE_SL_CommConfig_r12_t                *sl_CommConfig,
 					 LTE_SL_DiscConfig_r12_t                *sl_DiscConfig
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-					 , LTE_SCellToAddMod_r10_t  *SCell_config
+					 , LTE_SCellToAddMod_r10_t              *SCell_config
 #endif
 					 )
 //------------------------------------------------------------------------------
@@ -3458,7 +3588,8 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
   dl_dcch_msg.message.present           = LTE_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
   rrcConnectionReconfiguration          = &dl_dcch_msg.message.choice.c1.choice.rrcConnectionReconfiguration;
-  // RRCConnectionReconfiguration
+  
+  /* RRC Connection Reconfiguration */
   rrcConnectionReconfiguration->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfiguration->criticalExtensions.present = LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.present = LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;

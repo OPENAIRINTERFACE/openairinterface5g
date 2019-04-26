@@ -329,7 +329,7 @@ typedef struct {
   uint8_t     subframe;
   /// corresponding UE RNTI
   uint16_t    rnti;
-  /// Type (SR,HARQ,CQI,HARQ_SR,HARQ_CQI,SR_CQI,HARQ_SR_CQI)
+  /// Type (SR, HARQ, CQI, HARQ_SR, HARQ_CQI, SR_CQI, HARQ_SR_CQI)
   UCI_type_t  type;
   /// SRS active flag
   uint8_t     srs_active;

@@ -1,21 +1,38 @@
-# OAI build procedures
+<table style="border-collapse: collapse; border: none;">
+  <tr style="border-collapse: collapse; border: none;">
+    <td style="border-collapse: collapse; border: none;">
+      <a href="http://www.openairinterface.org/">
+         <img src="./images/oai_final_logo.png" alt="" border=3 height=50 width=150>
+         </img>
+      </a>
+    </td>
+    <td style="border-collapse: collapse; border: none; vertical-align: center;">
+      <b><font size = "5">OAI Build Procedures</font></b>
+    </td>
+  </tr>
+</table>
 
-## soft modem Build script
+This page is valid on tags starting from **`2019.w09`**.
 
-oai EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-cn/wiki) , it is not described here. OAI UE and eNodeB sources can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md). Sources  come with a build script [build_oai](../cmake_targets/build_oai) located at the root of the `openairinterface5g/cmake_targets` directory. This script is developed to build the oai binaries (executables,shared libraries) for different hardware platforms, and use cases. 
+# Soft Modem Build Script
 
-the main oai binaries, which are tested by the Continuous Integration process are:
+oai EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-cn/wiki) , it is not described here.
 
-- The LTE UE: `lte-uesoftmodem`
+OAI UE and eNodeB sources can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
+
+Sources come with a build script [build_oai](../cmake_targets/build_oai) located at the root of the `openairinterface5g/cmake_targets` directory. This script is developed to build the oai binaries (executables,shared libraries) for different hardware platforms, and use cases. 
+
+The main oai binaries, which are tested by the Continuous Integration process are:
+
+-  The LTE UE: `lte-uesoftmodem`
 -  The LTE eNodeB: `lte-softmodem`
-- The PHY simulators: `dlsim` and `ulsim`
+-  The PHY simulators: `dlsim` and `ulsim`
 
 The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../cmake_targets/CMakeLists.txt), it is used as input by cmake to generate the makefiles.
 
 The oai softmodem supports many use cases, and new ones are regularly added. Most of them are accessible using the configuration file or the command line options and continuous effort is done to avoid introducing build options as it makes tests and usage more complicated than run-time options. The following functionalities, originally requiring a specific build are now accessible by configuration or command line options:
 
 - s1, noS1
-
 - all simulators, with exception of PHY simulators, which are distinct executables.
 
 
@@ -23,15 +40,13 @@ Calling the `build_oai` script with the -h option gives the list of all availabl
 
 [table]: BUILD.md	"`build_oai` options"
 
- at the end of this page to know the status of `buid_oai` options which are not described hereafter.
+At the end of this page to know the status of `buid_oai` options which are not described hereafter.
 
+# Building PHY Simulators
 
+Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
-## building PHY simulators
-
-detailed information about these simulators can be found  [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul
-
-## building UE and eNodeB executables
+# Building UE and eNodeB Executables
 
 After downloading the source files, a single build command can be used to get the binaries supporting all the oai softmodem use cases (UE and eNodeB):
 
@@ -42,34 +57,32 @@ cd ../cmake_targets/
 ./build_oai -I -w USRP --eNB --UE
 ```
 
-- The -I option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. 
-- The -w option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one,`liboai_usrpdevif.so` . USRP is the only hardware tested today in the Continuous Integration process.
-- --eNB is to build the `lte-softmodem` executable and all required shared libraries
-- --UE is to build the `lte-uesoftmodem` executable and all required shared libraries
+- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. 
+- The `-w` option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one,`liboai_usrpdevif.so` . USRP is the only hardware tested today in the Continuous Integration process.
+- `--eNB` is to build the `lte-softmodem` executable and all required shared libraries
+- `--UE` is to build the `lte-uesoftmodem` executable and all required shared libraries
 
 You can build the eNodeB and the UE separately, you may not need both of them depending on your oai usage.
 
 After completing the build, the binaries are available in the `cmake_targets/lte_build_oai/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel14 by default. It must be noticed that the option for building for a specific 3GPP release number is not tested by the CI and may be removed in the future. 
 
-## building optional binaries
+# Building Optional Binaries
 
-### Telnet server
+## Telnet Server
 
-​	The telnet server can be built  with the --build-telnet option, after building the softmodem or while building it.
+The telnet server can be built  with the --build-telnet option, after building the softmodem or while building it.
 
 `./build_oai -I -w USRP --eNB --UE --build-telnetsrv`
 
-​	or
+or
 
 `./build_oai  --build-telnetsrv`
 
-### USRP record player
+## USRP record player
 
-​	The USRP record player today needs a specific build. Work to make it available as a run time option is under consideration
+The USRP record player today needs a specific build. Work to make it available as a run time option is under consideration
 
-
-
-## `build_oai` options
+# `build_oai` options
 
 | Option                                                      | Status                                      | Description                                                  |
 | ----------------------------------------------------------- | ------------------------------------------- | :----------------------------------------------------------- |
