@@ -805,8 +805,10 @@ int main( int argc, char **argv ) {
     }
 
     printf("wait RUs\n");
+    // CI -- Flushing the std outputs for the previous marker to show on the eNB / RRU log file
     fflush(stdout);
     fflush(stderr);
+    // end of CI modifications
     wait_RUs();
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
@@ -832,6 +834,10 @@ int main( int argc, char **argv ) {
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
+  // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
+  fflush(stdout);
+  fflush(stderr);
+  // end of CI modifications
   //getchar();
   itti_wait_tasks_end();
   oai_exit=1;

@@ -560,6 +560,7 @@ class SSHConnection():
 						self.rruOptions = extra_options
 					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
 					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+					time.sleep(10)
 
 		self.close()
 
