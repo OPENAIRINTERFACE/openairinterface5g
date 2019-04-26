@@ -353,7 +353,7 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id,
   memset(drxConfig, 0, sizeof(LTE_DRX_Config_t));
 
   /* Long DRX cycle support is mandatory for CDRX activation */
-  if (!ueSupportCdrxLongFlag || configuration == NULL) {
+  if (!ueSupportCdrxLongFlag) {
     drxConfig->present = LTE_DRX_Config_PR_release;
   } else {
     drxConfig->present = configuration->radioresourceconfig[CC_id].drx_Config_present;

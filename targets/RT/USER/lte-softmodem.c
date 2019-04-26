@@ -611,7 +611,7 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
   void *status;
 #endif
-  int CC_id;
+  int CC_id = 0;
   int ru_id;
 #if defined (XFORMS)
   int ret;
