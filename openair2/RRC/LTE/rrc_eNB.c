@@ -2983,38 +2983,43 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
-  /* CDRX Configuration */
-  // Need to check if UE is a BR UE
-  rnti_t rnti = ue_context_pP->ue_id_rnti;
-  module_id_t module_id = ctxt_pP->module_id;
-  int UE_id = find_UE_id(module_id, rnti);
-  eNB_MAC_INST *mac = RC.mac[module_id];
-  UE_list_t *UE_list = &(mac->UE_list);
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    /* CDRX Configuration */
+    // Need to check if UE is a BR UE
+    rnti_t rnti = ue_context_pP->ue_id_rnti;
+    module_id_t module_id = ctxt_pP->module_id;
+    int UE_id = find_UE_id(module_id, rnti);
+    eNB_MAC_INST *mac = RC.mac[module_id];
+    UE_list_t *UE_list = &(mac->UE_list);
 
-  if (UE_id != -1) {
-    if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
-       (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-    // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-    
-    LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+    if (UE_id != -1) {
+      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
+        (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
+      // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
+      
+      LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-    /* Process the IE drx_Config */
-    if (cc_id < MAX_NUM_CCs) {
-      mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-    } else {
-      LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-    }
+      /* Process the IE drx_Config */
+      if (cc_id < MAX_NUM_CCs) {
+        mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+      } else {
+        LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
+      }
 
-    /* Set timers and thresholds values in local MAC context of UE */
-    eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
+      /* Set timers and thresholds values in local MAC context of UE */
+      eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
 
-    LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+      LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
 
-    } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
+      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
+        mac_MainConfig->drx_Config = NULL;
+      }
+    } else { // UE_id invalid
+      LOG_E(RRC, "Invalid UE_id found!\n");
       mac_MainConfig->drx_Config = NULL;
     }
-  } else { // UE_id invalid
-    LOG_E(RRC, "Invalid UE_id found!\n");
+  } else { // No CDRX with the CU/DU split in this version
+    LOG_E(RRC, "CU/DU split activated\n");
     mac_MainConfig->drx_Config = NULL;
   }
 
@@ -5464,15 +5469,17 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
 
-  /* CDRX: activated if ack was expected */
-  int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
-  UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
-  
-  if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
-    UE_scheduling_control->cdrx_waiting_ack = FALSE;
-    UE_scheduling_control->cdrx_configured = TRUE;
-    LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
-  }
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    /* CDRX: activated if ack was expected */
+    int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    
+    if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+      UE_scheduling_control->cdrx_waiting_ack = FALSE;
+      UE_scheduling_control->cdrx_configured = TRUE;
+      LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+    }
+  } // No CDRX with the CU/DU split in this version of the code
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
