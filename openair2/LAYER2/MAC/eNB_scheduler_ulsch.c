@@ -121,6 +121,9 @@ rx_sdu(const module_id_t enb_mod_idP,
   eNB_MAC_INST *mac = NULL;
   UE_list_t *UE_list = NULL;
   rrc_eNB_ue_context_t *ue_contextP = NULL;
+  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_TEMPLATE *UE_template_ptr = NULL;
+
   /* Init */
   current_rnti = rntiP;
   UE_id = find_UE_id(enb_mod_idP, current_rnti);
@@ -143,42 +146,47 @@ rx_sdu(const module_id_t enb_mod_idP,
   }
 
   if (UE_id != -1) {
+    UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+    UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+
     LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           enb_mod_idP,
           harq_pid,
           CC_idP,
           frameP,
           subframeP,
-          UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
+          UE_scheduling_control->round_UL[CC_idP][harq_pid],
           current_rnti,
           UE_id,
           ul_cqi);
-    AssertFatal(UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] < 8, "round >= 8\n");
+
+    AssertFatal(UE_scheduling_control->round_UL[CC_idP][harq_pid] < 8, "round >= 8\n");
 
     if (sduP != NULL) {
-      UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
-      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
-      UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
+      UE_scheduling_control->ul_inactivity_timer = 0;
+      UE_scheduling_control->ul_failure_timer = 0;
+      UE_scheduling_control->ul_scheduled &= (~(1 << harq_pid));
       /* Update with smoothing: 3/4 of old value and 1/4 of new.
        * This is the logic that was done in the function
        * lte_est_timing_advance_pusch, maybe it's not necessary?
        * maybe it's even not correct at all?
        */
-      UE_list->UE_sched_ctrl[UE_id].ta_update = (UE_list->UE_sched_ctrl[UE_id].ta_update * 3 + timing_advance) / 4;
-      UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP] = ul_cqi;
-      UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors = 0;
-      first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+      UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
+      UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      UE_scheduling_control->ul_consecutive_errors = 0;
 
-      if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
-        UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
+      first_rb = UE_template_ptr->first_rb_ul[harq_pid];
+
+      if (UE_scheduling_control->ul_out_of_sync > 0) {
+        UE_scheduling_control->ul_out_of_sync = 0;
         mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, current_rnti);
       }
 
       /* Update bytes to schedule */
-      UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes -= UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid];
+      UE_template_ptr->scheduled_ul_bytes -= UE_template_ptr->TBS_UL[harq_pid];
 
-      if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0) {
-        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
+      if (UE_template_ptr->scheduled_ul_bytes < 0) {
+        UE_template_ptr->scheduled_ul_bytes = 0;
       }
     } else {  // sduP == NULL => error
       LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x\n",
@@ -187,44 +195,58 @@ rx_sdu(const module_id_t enb_mod_idP,
             CC_idP,
             frameP,
             subframeP,
-            UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
+            UE_scheduling_control->round_UL[CC_idP][harq_pid],
             ul_cqi,
             UE_id,
             current_rnti);
 
       if (ul_cqi > 200) { // too high energy pattern
-        UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP] = ul_cqi;
+        UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
         LOG_W(MAC, "[MAC] Too high energy pattern\n");
       }
 
-      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
-        UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
-        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+      if (UE_scheduling_control->round_UL[CC_idP][harq_pid] == 3) {
+        UE_scheduling_control->ul_scheduled &= (~(1 << harq_pid));
+        UE_scheduling_control->round_UL[CC_idP][harq_pid] = 0;
 
-        if (UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors++ == 10) {
-          UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+        if (UE_scheduling_control->ul_consecutive_errors++ == 10) {
+          UE_scheduling_control->ul_failure_timer = 1;
         }
 
         /* Update scheduled bytes */
-        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes -= UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid];
+        UE_template_ptr->scheduled_ul_bytes -= UE_template_ptr->TBS_UL[harq_pid];
 
-        if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0) {
-          UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
+        if (UE_template_ptr->scheduled_ul_bytes < 0) {
+          UE_template_ptr->scheduled_ul_bytes = 0;
         }
 
         if (find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1) {
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
         }
       } else {
-        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+        UE_scheduling_control->round_UL[CC_idP][harq_pid]++;
       }
 
-      first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+      /* CDRX UL HARQ timers */
+      if (UE_scheduling_control->cdrx_configured == TRUE) {
+        /* Synchronous UL HARQ */
+        UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
+        /* 
+         * The NACK is programmed in n+4 subframes, so UE will have drxRetransmission running.
+         * Setting ul_synchronous_harq_timer = 5 will trigger drxRetransmission timer.
+         * Note: in case of asynchronous UL HARQ process restart here relevant RTT timer.
+         * Start corresponding CDRX ULRetransmission timer.
+         */
+      }
+
+      first_rb = UE_template_ptr->first_rb_ul[harq_pid];
+
       /* Program NACK for PHICH */
       LOG_D(MAC, "Programming PHICH NACK for rnti %x harq_pid %d (first_rb %d)\n",
             current_rnti,
             harq_pid,
             first_rb);
+
       nfapi_hi_dci0_request_t *hi_dci0_req = NULL;
       uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
       hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP + sf_ahead_dl) % 10];
@@ -238,9 +260,9 @@ rx_sdu(const module_id_t enb_mod_idP,
       hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
       hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 0;
       hi_dci0_req_body->number_of_hi++;
-      hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
+      hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP, subframeP, 0);
       hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
-      hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, sf_ahead_dl);
+      hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP, subframeP, sf_ahead_dl);
       hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
       return;
     }
@@ -279,7 +301,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
       } else {
-        // first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid]; // UE_id = -1 !!!!
+        // first_rb = UE_template_ptr->first_rb_ul[harq_pid]; // UE_id = -1 !!!!
         ra->msg3_round++;
         /* Prepare handling of retransmission */
         get_Msg3allocret(&mac->common_channels[CC_idP],
@@ -337,7 +359,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   mac->eNB_stats[CC_idP].total_ulsch_pdus_rx += 1;
 
   if (UE_id != -1) {
-    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+    UE_scheduling_control->round_UL[CC_idP][harq_pid] = 0;
   }
 
   /* Control element */
@@ -353,19 +375,20 @@ rx_sdu(const module_id_t enb_mod_idP,
     switch (rx_ces[i]) {  // implement and process PHR + CRNTI + BSR
       case POWER_HEADROOM:
         if (UE_id != -1) {
-          UE_list->UE_template[CC_idP][UE_id].phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_list->UE_template[CC_idP][UE_id].nb_rb_ul[harq_pid] - 1] / 100);
+          UE_template_ptr->phr_info = (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_template_ptr->nb_rb_ul[harq_pid] - 1] / 100);
 
-          if (UE_list->UE_template[CC_idP][UE_id].phr_info > 40) {
-            UE_list->UE_template[CC_idP][UE_id].phr_info = 40;
+          if (UE_template_ptr->phr_info > 40) {
+            UE_template_ptr->phr_info = 40;
           }
 
           LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received PHR PH = %d (db)\n",
                 enb_mod_idP,
                 CC_idP,
                 rx_ces[i],
-                UE_list->UE_template[CC_idP][UE_id].phr_info);
-          UE_list->UE_template[CC_idP][UE_id].phr_info_configured = 1;
-          UE_list->UE_sched_ctrl[UE_id].phr_received = 1;
+                UE_template_ptr->phr_info);
+
+          UE_template_ptr->phr_info_configured = 1;
+          UE_scheduling_control->phr_received = 1;
         }
 
         payload_ptr += sizeof(POWER_HEADROOM_CMD);
@@ -388,26 +411,39 @@ rx_sdu(const module_id_t enb_mod_idP,
         /* Receiving CRNTI means that the current rnti has to go away */
         if (old_UE_id != -1) {
           if (mac_eNB_get_rrc_status(enb_mod_idP,old_rnti) ==  RRC_HO_EXECUTION) {
-            LOG_I(MAC,
-                  "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Handover case\n",
-                  enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
+            LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Handover case\n",
+                  enb_mod_idP,
+                  frameP,
+                  subframeP,
+                  CC_idP,
+                  old_rnti,
+                  old_UE_id);
+
             UE_id = old_UE_id;
             current_rnti = old_rnti;
-            //clear timer
-            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
-            UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
-            UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
+            /* Clear timer */
+            UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+            UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
 
-            if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
-              UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
-              mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP,
-                                     subframeP, old_rnti);
+            UE_scheduling_control->uplane_inactivity_timer = 0;
+            UE_scheduling_control->ul_inactivity_timer = 0;
+            UE_scheduling_control->ul_failure_timer = 0;
+
+            if (UE_scheduling_control->ul_out_of_sync > 0) {
+              UE_scheduling_control->ul_out_of_sync = 0;
+              mac_eNB_rrc_ul_in_sync(enb_mod_idP,
+                                     CC_idP,
+                                     frameP,
+                                     subframeP,
+                                     old_rnti);
             }
-
-            UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
-            UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
+            UE_template_ptr->ul_SR = 1;
+            UE_scheduling_control->crnti_reconfigurationcomplete_flag = 1;
             UE_list->UE_template[UE_PCCID(enb_mod_idP, UE_id)][UE_id].configured = 1;
-            cancel_ra_proc(enb_mod_idP, CC_idP, frameP,current_rnti);
+            cancel_ra_proc(enb_mod_idP,
+                           CC_idP,
+                           frameP,
+                           current_rnti);
           } else {
             /* TODO: if the UE did random access (followed by a MAC uplink with
              * CRNTI) because none of its scheduling request was granted, then
@@ -451,19 +487,21 @@ rx_sdu(const module_id_t enb_mod_idP,
               ra->rnti = old_rnti;
               ra->crnti_rrc_mui = rrc_eNB_mui-1;
               ra->crnti_harq_pid = -1;
-              /* Clear timer */
-              UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
-              UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
-              UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
-              UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 
-              if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
-                UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
+              /* Clear timer */
+              UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+              UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+
+              UE_scheduling_control->uplane_inactivity_timer = 0;
+              UE_scheduling_control->ul_inactivity_timer = 0;
+              UE_scheduling_control->ul_failure_timer = 0;
+
+              if (UE_scheduling_control->ul_out_of_sync > 0) {
+                UE_scheduling_control->ul_out_of_sync = 0;
                 mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, old_rnti);
               }
-
-              UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
-              UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
+              UE_template_ptr->ul_SR = 1;
+              UE_scheduling_control->crnti_reconfigurationcomplete_flag = 1;
               // break;
             }
           }
@@ -491,20 +529,21 @@ rx_sdu(const module_id_t enb_mod_idP,
           bsr = payload_ptr[0] & 0x3f;
           lcgid_updated[lcgid] = 1;
           /* Update buffer info */
-          UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid] = BSR_TABLE[bsr];
-          UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3];
+          UE_template_ptr->ul_buffer_info[lcgid] = BSR_TABLE[bsr];
+          UE_template_ptr->estimated_ul_buffer =
+            UE_template_ptr->ul_buffer_info[LCGID0] +
+            UE_template_ptr->ul_buffer_info[LCGID1] +
+            UE_template_ptr->ul_buffer_info[LCGID2] +
+            UE_template_ptr->ul_buffer_info[LCGID3];
+
           RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = (payload_ptr[0] & 0x3f);
 
           if (UE_id == UE_list->head) {
             VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR, (payload_ptr[0] & 0x3f));
           }
 
-          if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0) {
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] = frameP;
+          if (UE_template_ptr->ul_buffer_creation_time[lcgid] == 0) {
+            UE_template_ptr->ul_buffer_creation_time[lcgid] = frameP;
           }
 
           if (mac_eNB_get_rrc_status(enb_mod_idP,UE_RNTI(enb_mod_idP, UE_id)) < RRC_CONNECTED) {
@@ -512,8 +551,8 @@ rx_sdu(const module_id_t enb_mod_idP,
                   enb_mod_idP,
                   CC_idP,
                   rx_ces[i],
-                  UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer,
-                  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]);
+                  UE_template_ptr->estimated_ul_buffer,
+                  UE_template_ptr->ul_buffer_info[lcgid]);
           }
         } else {
           /* Need error message */
@@ -533,23 +572,25 @@ rx_sdu(const module_id_t enb_mod_idP,
           lcgid_updated[LCGID2] = 1;
           lcgid_updated[LCGID3] = 1;
           /* Update buffer info */
-          UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] = BSR_TABLE[bsr0];
-          UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1] = BSR_TABLE[bsr1];
-          UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2] = BSR_TABLE[bsr2];
-          UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3] = BSR_TABLE[bsr3];
-          UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3];
+          UE_template_ptr->ul_buffer_info[LCGID0] = BSR_TABLE[bsr0];
+          UE_template_ptr->ul_buffer_info[LCGID1] = BSR_TABLE[bsr1];
+          UE_template_ptr->ul_buffer_info[LCGID2] = BSR_TABLE[bsr2];
+          UE_template_ptr->ul_buffer_info[LCGID3] = BSR_TABLE[bsr3];
+
+          UE_template_ptr->estimated_ul_buffer =
+            UE_template_ptr->ul_buffer_info[LCGID0] +
+            UE_template_ptr->ul_buffer_info[LCGID1] +
+            UE_template_ptr->ul_buffer_info[LCGID2] +
+            UE_template_ptr->ul_buffer_info[LCGID3];
+
           LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d: Received long BSR. Size is LCGID0 = %u LCGID1 = %u LCGID2 = %u LCGID3 = %u\n",
-                enb_mod_idP,
-                CC_idP,
-                rx_ces[i],
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0],
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1],
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2],
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3]);
+            enb_mod_idP,
+            CC_idP,
+            rx_ces[i],
+            UE_template_ptr->ul_buffer_info[LCGID0],
+            UE_template_ptr->ul_buffer_info[LCGID1],
+            UE_template_ptr->ul_buffer_info[LCGID2],
+            UE_template_ptr->ul_buffer_info[LCGID3]);
 
           if (crnti_rx == 1) {
             LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d: Received CRNTI.\n",
@@ -559,10 +600,10 @@ rx_sdu(const module_id_t enb_mod_idP,
           }
 
           for(int lcgid = 0; lcgid <= LCGID3; lcgid++) {
-            if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid] == 0) {
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] = 0;
-            } else if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0) {
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] = frameP;
+            if (UE_template_ptr->ul_buffer_info[lcgid] == 0) {
+              UE_template_ptr->ul_buffer_creation_time[lcgid] = 0;
+            } else if (UE_template_ptr->ul_buffer_creation_time[lcgid] == 0) {
+              UE_template_ptr->ul_buffer_creation_time[lcgid] = frameP;
             }
           }
         }
@@ -660,6 +701,9 @@ rx_sdu(const module_id_t enb_mod_idP,
                     frameP,
                     ra->rnti,
                     UE_id);
+
+              UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+              UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
             }
           } else {
             LOG_D(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %ld\n",
@@ -713,7 +757,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             ra->Msg4_subframe = (subframeP + 4) % 10;
           }
 
-          UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+          UE_scheduling_control->crnti_reconfigurationcomplete_flag = 0;
         } // if RA process is active
 
         break;
@@ -731,19 +775,19 @@ rx_sdu(const module_id_t enb_mod_idP,
 #endif
 
         if (UE_id != -1) {
-          if (lcgid_updated[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] == 0) {
+          if (lcgid_updated[UE_template_ptr->lcgidmap[rx_lcids[i]]] == 0) {
             /* Adjust buffer occupancy of the correponding logical channel group */
-            if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
+            if (UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] >= rx_lengths[i])
+              UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
             else
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
+              UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] = 0;
 
-            UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[0] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[1] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[2] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[3];
-            //UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer += UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer / 4;
+            UE_template_ptr->estimated_ul_buffer =
+              UE_template_ptr->ul_buffer_info[0] +
+              UE_template_ptr->ul_buffer_info[1] +
+              UE_template_ptr->ul_buffer_info[2] +
+              UE_template_ptr->ul_buffer_info[3];
+            //UE_template_ptr->estimated_ul_buffer += UE_template_ptr->estimated_ul_buffer / 4;
           }
 
           LOG_D(MAC,
@@ -789,21 +833,21 @@ rx_sdu(const module_id_t enb_mod_idP,
                   rx_lengths[i],
                   UE_id,
                   rx_lcids[i],
-                  UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]],
-                  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]]);
+                  UE_template_ptr->lcgidmap[rx_lcids[i]],
+                  UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]]);
 
-            if (lcgid_updated[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] == 0) {
-              if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] >= rx_lengths[i]) {
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
+            if (lcgid_updated[UE_template_ptr->lcgidmap[rx_lcids[i]]] == 0) {
+              if (UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] >= rx_lengths[i]) {
+                UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] -= rx_lengths[i];
               } else {
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
+                UE_template_ptr->ul_buffer_info[UE_template_ptr->lcgidmap[rx_lcids[i]]] = 0;
               }
 
-              UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[0] +
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[1] +
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[2] +
-                UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[3];
+              UE_template_ptr->estimated_ul_buffer =
+                UE_template_ptr->ul_buffer_info[0] +
+                UE_template_ptr->ul_buffer_info[1] +
+                UE_template_ptr->ul_buffer_info[2] +
+                UE_template_ptr->ul_buffer_info[3];
             }
 
             if ((rx_lengths[i] < SCH_PAYLOAD_SIZE_MAX) && (rx_lengths[i] > 0)) {  // MAX SIZE OF transport block
@@ -811,7 +855,8 @@ rx_sdu(const module_id_t enb_mod_idP,
               UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
               UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
               /* Clear uplane_inactivity_timer */
-              UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+              UE_scheduling_control->uplane_inactivity_timer = 0;
+
               /* Reset RRC inactivity timer after uplane activity */
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], current_rnti);
 
@@ -848,11 +893,26 @@ rx_sdu(const module_id_t enb_mod_idP,
     payload_ptr += rx_lengths[i];
   }
 
+  /* CDRX UL HARQ timers */
+  if (UE_id != -1) {
+    if (UE_scheduling_control->cdrx_configured == TRUE) {
+      /* Synchronous UL HARQ */
+      UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
+      /* 
+       * The ACK is programmed in n+4 subframes, so UE will have drxRetransmission running.
+       * Setting ul_synchronous_harq_timer = 5 will trigger drxRetransmission timer.
+       * Note: in case of asynchronous UL HARQ process restart here relevant RTT timer
+       * Stop corresponding CDRX ULRetransmission timer
+       */
+    }
+  }
+
   /* Program ACK for PHICH */
   LOG_D(MAC, "Programming PHICH ACK for rnti %x harq_pid %d (first_rb %d)\n",
         current_rnti,
         harq_pid,
         first_rb);
+
   nfapi_hi_dci0_request_t *hi_dci0_req;
   uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
   hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP+sf_ahead_dl)%10];
@@ -1246,15 +1306,15 @@ schedule_ulsch(module_id_t module_idP,
 
 //-----------------------------------------------------------------------------
 /*
- * Default scheduler for ULSCH (DCI0)
- */
+* Schedule the DCI0 for ULSCH
+*/
 void
-schedule_ulsch_rnti(module_id_t module_idP,
-                    int slice_idx,
-                    frame_t frameP,
-                    sub_frame_t subframeP,
+schedule_ulsch_rnti(module_id_t   module_idP,
+                    int           slice_idx,
+                    frame_t       frameP,
+                    sub_frame_t   subframeP,
                     unsigned char sched_subframeP,
-                    uint16_t *first_rb)
+                    uint16_t      *first_rb)
 //-----------------------------------------------------------------------------
 {
   rnti_t rnti = -1;
@@ -1328,7 +1388,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
     UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
-  /* ULSCH preprocessor: set UE_template->
+  /* 
+   * ULSCH preprocessor: set UE_template->
    * pre_allocated_nb_rb_ul[slice_idx]
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
@@ -1344,7 +1405,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
     if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
       continue;
     }
-
+    
     if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
 
     // don't schedule if Msg5 is not received yet
@@ -1398,7 +1459,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO, UE_template_ptr->estimated_ul_buffer);
 
       /*
-       * If there is information on bsr of DCCH, DTCH or if there is UL_SR,
+       * If there is information on BSR of DCCH, DTCH or if there is UL_SR,
        * or if there is a packet to retransmit, or we want to schedule a periodic feedback
        */
       if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0 || round_index > 0) {
@@ -1414,7 +1475,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
               UE_sched_ctrl_ptr->ul_inactivity_timer,
               UE_sched_ctrl_ptr->ul_failure_timer,
               UE_sched_ctrl_ptr->cqi_req_timer);
-        // reset the scheduling request
+
+        /* Reset the scheduling request */
         UE_template_ptr->ul_SR = 0;
         status = mac_eNB_get_rrc_status(module_idP, rnti);
 
@@ -1446,7 +1508,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
             continue;
           }
-
+          
           /* Handle the aperiodic CQI report */
           cqi_req = 0;
           LOG_D(MAC,"RRC Conenction status %d, cqi_timer %d\n",status,UE_sched_ctrl_ptr->cqi_req_timer);
@@ -1544,6 +1606,14 @@ schedule_ulsch_rnti(module_id_t module_idP,
           UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
           UE_template_ptr->mcs_UL[harq_pid] = cmin(UE_template_ptr->pre_assigned_mcs_ul, sli->ul[slice_idx].maxmcs);
           UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template_ptr->mcs_UL[harq_pid];
+
+          /* CDRX */
+          if (UE_sched_ctrl_ptr->cdrx_configured) {
+            UE_sched_ctrl_ptr->drx_inactivity_timer = 1; // reset drx inactivity timer when new transmission
+            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_sched_ctrl_ptr->drx_inactivity_timer);
+            UE_sched_ctrl_ptr->dci0_ongoing_timer = 1; // when set the UE_template_ptr->ul_SR cannot be set to 1, 
+                                                       // see definition for more information
+          }
 
           if (UE_template_ptr->pre_allocated_rb_table_index_ul >= 0) {
             rb_table_index = UE_template_ptr->pre_allocated_rb_table_index_ul;
@@ -1680,7 +1750,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
                                                  1,  // repetition_number
                                                  (frameP * 10) + subframeP);
           }
-
 #endif
 
           if (dlsch_flag == 1) {
@@ -1787,7 +1856,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
                                                0, // n_srs
                                                UE_template_ptr->TBS_UL[harq_pid]);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
           /* This is a BL/CE UE allocation */
           if (UE_template_ptr->rach_resource_type > 0) {
             fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
@@ -1796,7 +1864,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
                                                  1, // repetition_number
                                                  (frameP * 10) + subframeP);
           }
-
 #endif
 
           if(dlsch_flag == 1) {
@@ -1907,7 +1974,9 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     UE_template = &(UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id]);
 
     /* LTE-M device */
-    if (UE_template->rach_resource_type == 0) continue;
+    if (UE_template->rach_resource_type == 0) {
+      continue;
+    }
 
     /* Don't schedule if Msg4 is not received yet */
     if (UE_template->configured == FALSE) {

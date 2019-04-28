@@ -74,12 +74,12 @@ void wait_RUs(void)
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
   
-  
-  
   while (RC.ru_mask>0) {
     pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
   }
   
+  pthread_mutex_unlock(&RC.ru_mutex);
+
   // copy frame parameters from RU to UEs
   for (i=0;i<NB_UE_INST;i++) {
     sim.current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti + RC.ru[0]->frame_parms.ofdm_symbol_size + RC.ru[0]->frame_parms.nb_prefix_samples0;
@@ -101,12 +101,11 @@ void RCConfig_sim(void) {
 
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
 
-  //  AssertFatal(RC.config_file_name!=NULL,"configuration file is undefined\n");
-
   // Get num RU instances
   config_getlist( &RUParamList,NULL,0, NULL);
   RC.nb_RU     = RUParamList.numelt;
   
+  AssertFatal(RC.nb_RU>0,"we need at least 1 RU for simulation\n");
   printf("returned with %d rus\n",RC.nb_RU);
   
   init_RU(NULL,internal,internal,0);

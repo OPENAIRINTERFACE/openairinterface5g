@@ -412,8 +412,8 @@ int pdcp_fifo_flush_sdus                      ( const protocol_ctxt_t *const  ct
 int pdcp_fifo_read_input_sdus_remaining_bytes ( const protocol_ctxt_t *const  ctxt_pP);
 int pdcp_fifo_read_input_sdus                 ( const protocol_ctxt_t *const  ctxt_pP);
 void pdcp_fifo_read_input_sdus_from_otg       ( const protocol_ctxt_t *const  ctxt_pP);
-void pdcp_set_rlc_funcptr(send_rlc_data_req_func_t send_rlc_data_req,
-                          pdcp_data_ind_func_t pdcp_data_ind);
+void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req);
+void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind);
 pdcp_data_ind_func_t get_pdcp_data_ind_func(void);
 //-----------------------------------------------------------------------------
 

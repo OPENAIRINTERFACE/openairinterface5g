@@ -513,18 +513,36 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test OAI UE - FDD - Bands 20/7 - B200") {
+                stage ("Test OAI UE - FDD - Band 20 - B200") {
                     steps {
                         script {
                             triggerSlaveJobNoGitLab ('UE-CI-FDD-Band20-B200')
-                            // calling a second job sequentially
-                            triggerSlaveJob ('eNB-UE-CI-MONO-FDD-Band7-B200', 'Test-eNB-OAI-UE-FDD-Band7')
                         }
                     }
                     post {
                         always {
                             script {
                                 finalizeSlaveJob('UE-CI-FDD-Band20-B200')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI UE - OAI eNB - FDD - Band 7 - B200") {
+                    steps {
+                        script {
+                            // Delayed trigger on slave job, so it is always the last one to run
+                            sh "sleep 240"
+                            triggerSlaveJob ('eNB-UE-CI-MONO-FDD-Band7-B200', 'Test-eNB-OAI-UE-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
                                 finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
                             }
                         }
