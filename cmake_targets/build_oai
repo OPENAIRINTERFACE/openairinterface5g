@@ -110,7 +110,7 @@ Options
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, IRIS, None (Default)
+   USRP, BLADERF, ETHERNET, LMSSDR, IRIS, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -173,10 +173,9 @@ Options
    Generate virtual RF driver
    to use it, set the environement variable RFSIMULATOR to \"enb\" in the eNB and to the eNB IP address in the UEs
 Usage (first build):
- NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
+ NI/ETTUS B210  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
 Usage (Regular):
- Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
+ NI/ETTUS B210  + OAI ENB : ./build_oai --eNB -x -w USRP"
 }
 
 
@@ -241,9 +240,6 @@ function main() {
        -w | --hardware)
             # Use OAI_USRP  as the key word USRP is used inside UHD driver           
                 case "$2" in
-                    "EXMIMO")
-                        HW="EXMIMO"
-                        ;;
                     "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU")
                         HW="OAI_"$2
                         ;;
@@ -398,7 +394,7 @@ function main() {
   
   if [ "$eNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
-	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
+	  echo_fatal "Define a local radio head (e.g. -w USRP) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
@@ -411,14 +407,7 @@ function main() {
   echo_info "RF HW set to $HW" 
     # If the user doesn't specify the Linux scheduler to use, we set a value
     if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-      case "$HW" in
- 	  "EXMIMO")
-        DEADLINE_SCHEDULER_FLAG_USER="True"
-              ;;
- 	  *)
         DEADLINE_SCHEDULER_FLAG_USER="False"
-              ;;
-      esac
   fi
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
@@ -517,7 +506,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 
     # LTE softmodem compilation
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
@@ -687,28 +676,6 @@ function main() {
     done
   fi
 
-  # EXMIMO drivers & firmware loader
-  ###############
-  if [ "$HW" = "EXMIMO" ] ; then
-    
-    echo_info "Compiling Express MIMO 2 board drivers"
-    compilations \
-        $lte_build_dir openair_rf \
-        CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
-    compilations \
-	  $lte_build_dir updatefw \
-	  updatefw $dbin/updatefw
-    echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
-    make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
-    if [ -s $dbin/oarf_config_exmimo.oct ] ; then
-	echo_success "oarf tools compiled"
-    else
-	echo_error "oarf tools compilation failed"
-    fi
-    cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
-  fi
-
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
@@ -735,15 +702,7 @@ function main() {
 	  rm -f $dbin/liboai_device.so
 
 	  # link liboai_device.so with the selected RF device library
-	  if [ "$HW" == "EXMIMO" ] ; then
-	      compilations \
-                    $lte_build_dir oai_exmimodevif \
-		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
-
-	      ln -sf liboai_exmimodevif.so liboai_device.so
-	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
-	      echo_info "liboai_device.so is linked to EXMIMO device library"       
-	  elif [ "$HW" == "OAI_USRP" ] ; then
+	  if [ "$HW" == "OAI_USRP" ] ; then
               compilations \
                     $lte_build_dir oai_usrpdevif \
                   liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
