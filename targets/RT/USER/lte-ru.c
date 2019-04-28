@@ -927,6 +927,7 @@ void *ru_thread_prach( void *param ) {
                NULL,
                NULL,
                NULL,
+	       NULL,
                proc->frame_prach,
                0
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -965,6 +966,7 @@ void *ru_thread_prach_br( void *param ) {
              NULL,
              NULL,
              NULL,
+	     NULL,
              proc->frame_prach_br,
              0,
              1);
@@ -1135,18 +1137,18 @@ void wakeup_L1s(RU_t *ru) {
   //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
   
   if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) { // all RUs have provided their information so continue on and wakeup eNB top
-    LOG_D(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
-    LOG_D(PHY, "the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
-    LOG_D(PHY, "ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
+    LOG_D(PHY,"ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
+    LOG_D(PHY,"the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
+    LOG_D(PHY,"ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
     LOG_D(PHY,"Reseting mask frame %d, subframe %d, this is RU %d\n",ru->proc.frame_rx, ru->proc.subframe_rx, ru->idx);
     proc->RU_mask[ru->proc.subframe_rx] = 0;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_RU, proc->RU_mask[ru->proc.subframe_rx]);
     clock_gettime(CLOCK_MONOTONIC,&t);
     //stop_meas(&proc->ru_arrival_time);
-    AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
+    /*    AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
 		"Time difference for subframe %d (Frame %d) => %lu > 5ms, this is RU %d\n",
 		ru->proc.subframe_rx, ru->proc.frame_rx, t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec, ru->idx);
-    
+    */
     // VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
     //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
     AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");

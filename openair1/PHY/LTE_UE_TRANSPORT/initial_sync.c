@@ -465,6 +465,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     }
   }
 
+  ue->common_vars.freq_offset=0;
   /* Consider this is a false detection if the offset is > 1000 Hz */
   if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
   {
