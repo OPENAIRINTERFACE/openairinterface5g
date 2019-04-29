@@ -62,14 +62,6 @@
 int16_t dlsch_demod_shift = 0;
 int16_t interf_unaw_shift = 13;
 
-//#define DEBUG_HARQ
-
-//#define DEBUG_PHY 1
-//#define DEBUG_DLSCH_DEMOD 1
-
-//#define DISABLE_LOG_X
-
-// [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
 //inferference-free case
 unsigned char interf_unaw_shift_tm4_mcs[29]= {5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0,
@@ -379,13 +371,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",frame,subframe,slot,
-         symbol,ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction  %5.2f \n",frame,subframe,slot,symbol,
         ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
 #endif
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
@@ -412,13 +399,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
-#endif
-#if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -527,15 +508,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #endif
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,subframe,slot,symbol,first_symbol_flag,
-         ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,subframe,slot,symbol,first_symbol_flag,
         ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
-#endif
-#if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -758,16 +732,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,
-         ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d Channel Comp  %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,
         ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
-#endif
-  // MRC
-#if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -840,13 +806,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
-#endif
-#if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
   //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
@@ -1210,11 +1170,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
-#if DISABLE_LOG_X
-  printf("[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#else
   LOG_D(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
-#endif
 #endif
   // Please keep it: useful for debugging
 #if 0
@@ -1224,7 +1180,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
     if(1) {
 #if 1
-      LOG_M("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      LOG_M("rxdataF0.m", "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
       //LOG_M("rxdataF1.m"    , "rxdataF1",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
       LOG_M("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
       //LOG_M("dl_ch_estimates01.m", "dl_ch_estimates01",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0],14*frame_parms->ofdm_symbol_size,1,1);
@@ -4767,8 +4723,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
         dl_ch0+=12;
         rxF+=12;
-      }
-    else {  // Odd number of RBs
+      } else { // Odd number of RBs
       for (rb=0; rb<frame_parms->N_RB_DL>>1; rb++) {
 #ifdef DEBUG_DLSCH_DEMOD
         printf("dlch_ext %u\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
@@ -5811,8 +5766,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
         dl_ch0+=12;
         rxF+=12;
-      }
-    else {  // Odd number of RBs
+      } else { // Odd number of RBs
       for (rb=0; rb<frame_parms->N_RB_DL>>1; rb++) {
         skip_half=0;
 

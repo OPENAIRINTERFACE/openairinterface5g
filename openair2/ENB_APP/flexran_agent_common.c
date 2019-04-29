@@ -127,7 +127,6 @@ int flexran_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessa
   hello_msg->bs_id  = flexran_get_bs_id(mod_id);
   hello_msg->has_bs_id = 1;
   hello_msg->n_capabilities = flexran_get_capabilities(mod_id, &hello_msg->capabilities);
-
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
   if(*msg == NULL)
@@ -725,14 +724,20 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
     if(cell_conf == NULL)
       goto error;
-    for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++){
+
+    for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++) {
       cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
+
       if (!cell_conf[i]) goto error;
+
       protocol__flex_cell_config__init(cell_conf[i]);
+
       if (flexran_agent_get_phy_xface(mod_id))
         flexran_agent_fill_phy_cell_config(mod_id, i, cell_conf[i]);
+
       if (flexran_agent_get_rrc_xface(mod_id))
         flexran_agent_fill_rrc_cell_config(mod_id, i, cell_conf[i]);
+
       if (flexran_agent_get_mac_xface(mod_id))
         flexran_agent_fill_mac_cell_config(mod_id, i, cell_conf[i]);
 
@@ -804,10 +809,11 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
+
   if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-  //} else {
-  //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+    //} else {
+    //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
   }
 
   *msg = NULL;
