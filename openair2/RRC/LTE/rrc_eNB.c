@@ -7204,6 +7204,7 @@ rrc_eNB_decode_dcch(
             LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
           /*NN: revise the condition */
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
+          int flexran_agent_handover = 0;
           if (EPC_MODE_ENABLED) {
             if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
@@ -7240,6 +7241,8 @@ rrc_eNB_decode_dcch(
                 break;
               }
 
+              flexran_agent_handover = 1;
+              RC.rrc[ctxt_pP->module_id]->Nb_ue++;
               dedicated_DRB = 3;
               RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               ue_context_p->ue_context.Status = RRC_RECONFIGURED;
@@ -7272,7 +7275,7 @@ rrc_eNB_decode_dcch(
           if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
             flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                 ue_context_p->ue_id_rnti,
-                PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
+                flexran_agent_handover?PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED:PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
           }
         }
 
