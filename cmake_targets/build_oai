@@ -154,11 +154,12 @@ Options
    Build MSC tracing utility, specify --msc on command line to start it (eNB and UE)
 --usrp-recplay
    Build for I/Q record-playback modes
+
 Usage (first build):
- NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
+ NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB --install-system-files -w USRP
 Usage (Regular):
- Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
+ Eurecom EXMIMO + OAI ENB : ./build_oai --eNB  
+ NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -w USRP"
 }
 
 
