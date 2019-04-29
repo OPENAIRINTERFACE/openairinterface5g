@@ -1697,6 +1697,11 @@ uint8_t flexran_get_rrc_mnc_digit_length(mid_t mod_id, uint8_t index) {
   return RC.rrc[mod_id]->configuration.mnc_digit_length[index];
 }
 
+int flexran_get_rrc_num_adj_cells(mid_t mod_id) {
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->num_neigh_cells;
+}
+
 /**************************** SLICING ****************************/
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id)
 {

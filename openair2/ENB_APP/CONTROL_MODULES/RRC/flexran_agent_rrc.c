@@ -130,6 +130,18 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
   free(msg->ue_state_change_msg->header);
   if (msg->ue_state_change_msg->config->capabilities)
     free(msg->ue_state_change_msg->config->capabilities);
+  if (msg->ue_state_change_msg->config->info) {
+    if (msg->ue_state_change_msg->config->info->cell_individual_offset) {
+      free(msg->ue_state_change_msg->config->info->cell_individual_offset);
+    }
+    if (msg->ue_state_change_msg->config->info->event) {
+      if (msg->ue_state_change_msg->config->info->event->a3) {
+        free(msg->ue_state_change_msg->config->info->event->a3);
+      }
+      free(msg->ue_state_change_msg->config->info->event);
+    }
+    free(msg->ue_state_change_msg->config->info);
+  }
   free(msg->ue_state_change_msg->config);
   free(msg->ue_state_change_msg);
   free(msg);
@@ -442,58 +454,66 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
               Protocol__FlexEutraCgiMeasurements *cgi_meas;
               cgi_meas = malloc(sizeof(Protocol__FlexEutraCgiMeasurements));
 
-              protocol__flex_eutra_cgi_measurements__init(cgi_meas);
+              if (cgi_meas) {
+                protocol__flex_eutra_cgi_measurements__init(cgi_meas);
 
-              /* EUTRA Cell Global Identity (CGI) */
-              Protocol__FlexCellGlobalEutraId *cgi;
-              cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
+                cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, j);
+                cgi_meas->has_tracking_area_code = 1;
 
-              protocol__flex_cell_global_eutra_id__init(cgi);
+                /* EUTRA Cell Global Identity (CGI) */
+                Protocol__FlexCellGlobalEutraId *cgi;
+                cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
 
-              cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, j);
-              cgi->has_cell_id = 1;
+                if (cgi) {
+                  protocol__flex_cell_global_eutra_id__init(cgi);
 
-              cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, j);
-              cgi_meas->has_tracking_area_code = 1;
+                  cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, j);
+                  cgi->has_cell_id = 1;
 
-              /* PLMN for neighbouring cell */
-              Protocol__FlexPlmnIdentity *plmn_id;
-              plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
+                  /* PLMN for neighbouring cell */
+                  Protocol__FlexPlmnIdentity *plmn_id;
+                  plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
 
-              protocol__flex_plmn_identity__init(plmn_id);
+                  if (plmn_id) {
+                    protocol__flex_plmn_identity__init(plmn_id);
 
-              plmn_id->mcc = 0;
-              plmn_id->n_mcc = flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, j);
+                    plmn_id->mcc = 0;
+                    plmn_id->n_mcc = flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, j);
 
-              for (int m = 0; m < plmn_id->n_mcc; m++) {
-                plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, j, m);
+                    for (int m = 0; m < plmn_id->n_mcc; m++) {
+                      plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, j, m);
+                    }
+
+                    plmn_id->mnc = 0;
+                    plmn_id->n_mnc = flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, j);
+
+                    for (int m = 0; m < plmn_id->n_mnc; m++) {
+                      plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, j, m);
+                    }
+
+                    cgi->plmn_id = plmn_id;
+                  }
+                  cgi_meas->cgi = cgi;
+                }
+                eutra_meas[j]->cgi_meas = cgi_meas;
               }
-
-              plmn_id->mnc = 0;
-              plmn_id->n_mnc = flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, j);
-
-              for (int m = 0; m < plmn_id->n_mnc; m++) {
-                plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, j, m);
-              }
-
-              cgi->plmn_id = plmn_id;
-              cgi_meas->cgi = cgi;
-              eutra_meas[j]->cgi_meas = cgi_meas;
             }
 
             /*RSRP/RSRQ of the neighbouring cell */
             Protocol__FlexEutraRefSignalMeas *meas_result;
             meas_result = malloc(sizeof(Protocol__FlexEutraRefSignalMeas));
 
-            protocol__flex_eutra_ref_signal_meas__init(meas_result);
+            if (meas_result) {
+              protocol__flex_eutra_ref_signal_meas__init(meas_result);
 
-            meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, j);
-            meas_result->has_rsrp = 1;
+              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, j);
+              meas_result->has_rsrp = 1;
 
-            meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, j);
-            meas_result->has_rsrq = 1;
+              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, j);
+              meas_result->has_rsrq = 1;
 
-            eutra_meas[j]->meas_result = meas_result;
+              eutra_meas[j]->meas_result = meas_result;
+            }
           }
 
           neigh_meas->eutra_meas = eutra_meas;
@@ -531,8 +551,18 @@ int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
   for (int i = 0; i < reply->n_ue_report; i++){
     if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas) {
       for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
-        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
-        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+        if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas) {
+          if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi) {
+            if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->plmn_id) {
+              free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi->plmn_id);
+            }
+            free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi);
+          }
+          free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
+        }
+        if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result)  {
+          free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+        }
         free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
       }
       free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas);
@@ -641,6 +671,76 @@ void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
 
   ue_conf->has_extended_bsr_size = 1;
   ue_conf->extended_bsr_size = flexran_get_extended_bsr_size(mod_id, rnti);
+
+  Protocol__FlexMeasurementInfo *meas_info;
+  meas_info = malloc(sizeof(Protocol__FlexMeasurementInfo));
+
+  if (meas_info) {
+    protocol__flex_measurement_info__init(meas_info);
+
+    meas_info->has_offset_freq_serving = 1;
+    meas_info->offset_freq_serving = flexran_get_rrc_ofp(mod_id, rnti);
+
+    meas_info->has_offset_freq_neighbouring = 1;
+    meas_info->offset_freq_neighbouring = flexran_get_rrc_ofn(mod_id, rnti);
+
+    int num_adj_cells = flexran_get_rrc_num_adj_cells(mod_id);
+    meas_info->n_cell_individual_offset = num_adj_cells + 1;
+
+    int64_t *cell_individual_offset;
+    if (num_adj_cells > 0) {
+      cell_individual_offset = malloc(sizeof(int64_t)*(num_adj_cells+1));
+      if (cell_individual_offset) {
+        cell_individual_offset[0] = flexran_get_rrc_ocp(mod_id, rnti);
+        for (int i=0; i < num_adj_cells; i++) {
+          cell_individual_offset[i+1] = flexran_get_rrc_ocn(mod_id, rnti,i);
+        }
+        meas_info->cell_individual_offset = cell_individual_offset;
+      }
+    }
+    else {
+      cell_individual_offset = malloc(sizeof(int64_t));
+      if (cell_individual_offset) {
+        *cell_individual_offset = flexran_get_rrc_ocp(mod_id, rnti);
+        meas_info->cell_individual_offset = cell_individual_offset;
+      }
+    }
+
+    meas_info->has_filter_coefficient_rsrp = 1;
+    meas_info->filter_coefficient_rsrp = flexran_get_filter_coeff_rsrp(mod_id, rnti);
+
+    meas_info->has_filter_coefficient_rsrq = 1;
+    meas_info->filter_coefficient_rsrq = flexran_get_filter_coeff_rsrq(mod_id, rnti);
+
+    Protocol__FlexMeasurementEvent *event;
+    event = malloc(sizeof(Protocol__FlexMeasurementEvent));
+
+    if (event) {
+      protocol__flex_measurement_event__init(event);
+      Protocol__FlexA3Event *a3_event;
+      a3_event = malloc(sizeof(Protocol__FlexA3Event));
+      if (a3_event) {
+        protocol__flex_a3_event__init(a3_event);
+        a3_event->has_a3_offset = 1;
+        a3_event->a3_offset = flexran_get_rrc_a3_event_a3_offset(mod_id, rnti);
+
+        a3_event->has_report_on_leave = 1;
+        a3_event->report_on_leave = flexran_get_rrc_a3_event_reportOnLeave(mod_id, rnti);
+
+        a3_event->has_hysteresis = 1;
+        a3_event->hysteresis = flexran_get_rrc_a3_event_hysteresis(mod_id, rnti);
+
+        a3_event->has_time_to_trigger = 1;
+        a3_event->time_to_trigger = flexran_get_rrc_a3_event_timeToTrigger(mod_id, rnti);
+
+        a3_event->has_max_report_cells = 1;
+        a3_event->max_report_cells = flexran_get_rrc_a3_event_maxReportCells(mod_id, rnti);
+        event->a3 = a3_event;
+      }
+      meas_info->event = event;
+    }
+    ue_conf->info = meas_info;
+  }
 }
 
 int flexran_agent_register_rrc_xface(mid_t mod_id)
