@@ -180,7 +180,6 @@ static void *nr_feptx_thread(void *param) {
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
 
-  thread_top_init("nr_feptx_thread",0,870000,1000000,1000000);
 
   while (!oai_exit) {
 

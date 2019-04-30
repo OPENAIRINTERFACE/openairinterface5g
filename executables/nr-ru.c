@@ -777,7 +777,6 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
   int subframe=0, frame=0;
-  thread_top_init("ru_thread_asynch_rxtx",1,870000L,1000000L,1000000L);
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
   wait_sync("ru_thread_asynch_rxtx");
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
@@ -825,7 +824,6 @@ static void *ru_thread_prach( void *param ) {
   RU_proc_t *proc = (RU_proc_t *)&ru->proc;
   // set default return value
   ru_thread_prach_status = 0;
-  thread_top_init("ru_thread_prach",1,500000L,1000000L,20000000L);
 
   while (RC.ru_mask>0) {
     usleep(1e6);
@@ -1211,7 +1209,6 @@ static void *ru_thread_tx( void *param ) {
   int                i = 0;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-  thread_top_init("ru_thread_tx",1,400000,500000,500000);
   //CPU_SET(5, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   //wait_sync("ru_thread_tx");
@@ -1324,7 +1321,6 @@ static void *ru_thread( void *param ) {
   ru_thread_status = 0;
   // set default return value
   sprintf(threadname,"ru_thread %d",ru->idx);
-  thread_top_init(threadname,0,870000,1000000,1000000);
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
   if(emulate_rf) {
@@ -1507,7 +1503,6 @@ void *ru_thread_synch(void *arg) {
   static int ru_thread_synch_status;
 
 
-  thread_top_init("ru_thread_synch",0,5000000,10000000,10000000);
 
   wait_sync("ru_thread_synch");
 
@@ -1633,7 +1628,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_gNBs, NULL);
-  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT );
+  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
 
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
     threadCreate( &proc->pthread_FH1, ru_thread_tx, (void *)ru, "thread_FH1", -1, OAI_PRIORITY_RT );

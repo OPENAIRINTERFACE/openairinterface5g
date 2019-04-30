@@ -760,7 +760,7 @@ void init_UE(int nb_inst) {
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
-    threadCreate(&threads[inst], UE_thread, (void *)UE), "UEthread", -1, OAI_PRIORITY_RT);
+    threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
   }
 
   printf("UE threads created by %ld\n", gettid());

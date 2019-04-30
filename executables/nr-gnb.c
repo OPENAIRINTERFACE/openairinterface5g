@@ -272,7 +272,6 @@ static void *gNB_L1_thread_tx(void *param) {
   //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&gNB->proc.L1_proc == proc ? 0 : 1);
-  //thread_top_init(thread_name,1,470000,500000,500000);
 
   //wait_sync("tx_thread");
 
@@ -327,7 +326,6 @@ static void *gNB_L1_thread( void *param ) {
   // set default return value
   gNB_thread_rxtx_status = 0;
   sprintf(thread_name,"RXn_TXnp4_%d",&gNB->proc.L1_proc == proc ? 0 : 1);
-  //thread_top_init(thread_name,1,850000L,1000000L,2000000L);
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
@@ -651,7 +649,6 @@ static void* gNB_thread_prach( void* param ) {
  // set default return value
  gNB_thread_prach_status = 0;
 
- thread_top_init("gNB_thread_prach",1,500000L,1000000L,20000000L);
 
 
  while (!oai_exit) {

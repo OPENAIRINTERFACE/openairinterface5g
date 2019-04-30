@@ -299,6 +299,7 @@ static int trx_usrp_start(openair0_device *device) {
 
   if (u_sf_mode != 2) { // not replay mode
 #endif
+    uhd::set_thread_priority_safe(1.0);
     usrp_state_t *s = (usrp_state_t *)device->priv;
     // setup GPIO for TDD, GPIO(4) = ATR_RX
     //set data direction register (DDR) to output
@@ -1038,7 +1039,6 @@ extern "C" {
                 << use_mmap << std::endl;
     } else {
 #endif
-      uhd::set_thread_priority_safe(1.0);
       usrp_state_t *s = (usrp_state_t *)calloc(sizeof(usrp_state_t),1);
 
       if (openair0_cfg[0].clock_source==gpsdo)

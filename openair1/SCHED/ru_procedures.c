@@ -44,6 +44,7 @@
 
 
 #include "assertions.h"
+#include "common/utils/system.h"
 #include "msc.h"
 
 #include <time.h>
@@ -483,7 +484,7 @@ void init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
   pthread_mutex_init( &proc->mutex_feptx, NULL);
   pthread_cond_init( &proc->cond_feptx, NULL);
 
-  pthread_create(&proc->pthread_feptx, attr_feptx, feptx_thread, (void*)ru);
+  threadCreate(&proc->pthread_feptx, feptx_thread, (void*)ru, "feptx", -1, OAI_PRIORITY_RT);
 
 
 }
@@ -497,7 +498,7 @@ void init_fep_thread(RU_t *ru,pthread_attr_t *attr_fep) {
   pthread_mutex_init( &proc->mutex_fep, NULL);
   pthread_cond_init( &proc->cond_fep, NULL);
 
-  pthread_create(&proc->pthread_fep, attr_fep, fep_thread, (void*)ru);
+  threadCreate(&proc->pthread_fep, fep_thread, (void*)ru, "fep", -1, OAI_PRIORITY_RT);
 
 
 }

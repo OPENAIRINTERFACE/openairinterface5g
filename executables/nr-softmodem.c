@@ -1065,7 +1065,6 @@ int main( int argc, char **argv ) {
     } // UE_id
 
     threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-
     printf("Scope thread created, ret=%d\n",ret);
   }
 

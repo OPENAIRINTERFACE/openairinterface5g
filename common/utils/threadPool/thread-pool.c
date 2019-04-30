@@ -117,8 +117,9 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         pool->allthreads->pool=pool;
         //Configure the thread scheduler policy for Linux
         // set the thread name for debugging
-        sprintf(myThread->name,"Tpool_%d",myThread->coreID);
-        threadCreate(&pool->allthreads->threadID, one_thread, (void *)pool->allthreads, Tpool, myThread->name, myThread->coreID, OAI_PRIORITY_RT);
+        sprintf(pool->allthreads->name,"Tpool_%d",pool->allthreads->coreID);
+        threadCreate(&pool->allthreads->threadID, one_thread, (void *)pool->allthreads,
+                     pool->allthreads->name, pool->allthreads->coreID, OAI_PRIORITY_RT);
         pool->nbThreads++;
     }
 
