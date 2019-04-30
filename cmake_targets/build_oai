@@ -154,12 +154,6 @@ Options
    Build MSC tracing utility, specify --msc on command line to start it (eNB and UE)
 --usrp-recplay
    Build for I/Q record-playback modes
---basic-simulator
-   Generates a basic [1 UE + 1 eNB + no channel] simulator.
-   See targets/ARCH/tcp_bridge/README.tcp_bridge_oai for documentation.
---rfsimulator
-   Generate virtual RF driver
-   to use it, set the environement variable RFSIMULATOR to \"enb\" in the eNB and to the eNB IP address in the UEs
 Usage (first build):
  NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
 Usage (Regular):
@@ -479,9 +473,6 @@ function main() {
     mkdir -p $DIR/$lte_build_dir/build
     cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
-#    if [ "$NOS1" = "1" ] ; then
-#	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
-#    fi
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
