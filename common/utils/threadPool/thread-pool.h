@@ -11,6 +11,7 @@
 #include <sys/syscall.h>
 #include <assertions.h>
 #include <LOG/log.h>
+#include <common/utils/system.h>
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP

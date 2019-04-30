@@ -754,6 +754,7 @@ include_directories("${OPENAIR_BIN_DIR}")
 
 # Legacy exact order
 
+include_directories("${OPENAIR_DIR}/executables")
 include_directories("${OPENAIR2_DIR}/COMMON")
 include_directories("${OPENAIR2_DIR}/UTIL")
 include_directories("${OPENAIR2_DIR}/UTIL/LOG")
@@ -792,10 +793,7 @@ include_directories("${OPENAIR3_DIR}/S1AP")
 include_directories("${OPENAIR2_DIR}/X2AP")
 include_directories("${OPENAIR3_DIR}/UDP")
 include_directories("${OPENAIR3_DIR}/GTPV1-U")
-include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
-include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
-include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/GNB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
@@ -2107,7 +2105,7 @@ if (${XFORMS})
     ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
     )
   set(XFORMS_SOURCE_SOFTMODEM
-    ${OPENAIR_TARGETS}/RT/USER/stats.c
+	  ${OPENAIR_DIR}/executables/stats.c
     )
   set(XFORMS_LIBRARIES "forms")
 endif (${XFORMS})
@@ -2335,12 +2333,10 @@ add_executable(nr-softmodem
   ${nr_rrc_h}
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-gnb.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
+  ${OPENAIR_DIR}/executables/nr-gnb.c
+  ${OPENAIR_DIR}/executables/nr-ru.c
+  ${OPENAIR_DIR}/executables/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -2373,13 +2369,10 @@ add_executable(nr-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-gnb.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
+  ${OPENAIR_DIR}/executables/nr-gnb.c
+  ${OPENAIR_DIR}/executables/nr-ru.c
+  ${OPENAIR_DIR}/executables/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
@@ -2448,11 +2441,9 @@ add_executable(nr-uesoftmodem-nos1
   ${rrc_h}
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  #${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c

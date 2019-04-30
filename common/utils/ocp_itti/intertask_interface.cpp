@@ -8,6 +8,7 @@
 
 
 #include <intertask_interface.h>
+#include <common/utils/system.h>
 
 typedef struct timer_elm_s {
   timer_type_t      type;     ///< Timer type
@@ -280,22 +281,8 @@ extern "C" {
 
   int itti_create_task(task_id_t task_id, void *(*start_routine)(void *), void *args_p) {
     task_list_t *t=&tasks[task_id];
-    AssertFatal ( pthread_create (&t->thread, NULL, start_routine, args_p) ==0,
-                  "Thread creation for task %d failed!\n", task_id);
-    pthread_setname_np( t->thread, itti_get_task_name(task_id) );
+    threadCreate (&t->thread, start_routine, args_p, itti_get_task_name(task_id),-1,OAI_PRIORITY_RT);
     LOG_I(TMR,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
-#if 1 // BMC test RT prio
-    {
-      int policy;
-      struct sched_param sparam;
-      memset(&sparam, 0, sizeof(sparam));
-      sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-10;
-      policy = SCHED_FIFO ; 
-      if (pthread_setschedparam(t->thread, policy, &sparam) != 0) {
-	LOG_E(TMR,"task %s : Failed to set pthread priority\n",  itti_get_task_name(task_id) );
-      }
-    }
-#endif    
     return 0;
   }
 

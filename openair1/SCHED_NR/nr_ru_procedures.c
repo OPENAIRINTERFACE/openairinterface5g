@@ -205,7 +205,7 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
   pthread_mutex_init( &proc->mutex_feptx, NULL);
   pthread_cond_init( &proc->cond_feptx, NULL);
 
-  pthread_create(&proc->pthread_feptx, attr_feptx, nr_feptx_thread, (void*)ru);
+  threadCreate(&proc->pthread_feptx, nr_feptx_thread, (void*)ru, "feptx", -1, OAI_PRIORITY_RT);
 
 
 }

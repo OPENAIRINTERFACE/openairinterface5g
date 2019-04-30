@@ -84,6 +84,20 @@ unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{
 
 extern void print_shorts(char *s,int16_t *x);
 
+static void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
+                                        int **dl_ch_estimates_ext_i,
+                                        int **dl_ch_rho_ext,
+                                        unsigned char n_tx,
+                                        unsigned char n_rx,
+                                        unsigned char output_shift,
+                                        int length,
+                                        int start_point);
+
+static void nr_dlsch_layer_demapping(int16_t **llr_cw,
+                         uint8_t Nl,
+                                                 uint8_t mod_order,
+                         uint16_t length,
+                         int16_t **llr_layers);
 
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              PDSCH_t type,
@@ -112,7 +126,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   uint8_t slot = 0;
 #endif
 
-  unsigned char aatx,aarx;
+  unsigned char aatx=0,aarx=0;
 
   unsigned short nb_rb = 0, nb_re =0, round;
   int avgs = 0;// rb;
@@ -1120,6 +1134,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 	nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
 		  	  	  	  	   dlsch[0]->harq_processes[harq_pid]->Nl,
 						   dlsch[0]->harq_processes[harq_pid]->G,
+						   -1,
                            pdsch_vars[eNB_id]->layer_llr);
  }
 
@@ -2179,7 +2194,7 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
 
 }
 
-void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
+static void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
                                         int **dl_ch_estimates_ext_i,
                                         int **dl_ch_rho_ext,
                                         unsigned char n_tx,
@@ -2287,7 +2302,7 @@ void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
   __m128i *rxdataF_comp128_0, *rxdataF_comp128_1, *rxdataF_comp128_2, *rxdataF_comp128_3;
   __m128i *dl_ch_mag128_0, *dl_ch_mag128_1, *dl_ch_mag128_2, *dl_ch_mag128_3;
   __m128i *dl_ch_mag128_0b, *dl_ch_mag128_1b,  *dl_ch_mag128_2b,  *dl_ch_mag128_3b;
-  __m128i *rho128_0, *rho128_1, *rho128_2, *rho128_3;
+  __m128i *rho128_0, *rho128_1, *rho128_2=NULL, *rho128_3=NULL;
   __m128i *rho128_i0, *rho128_i1, *rho128_i2, *rho128_i3;
   int length_mod4 = 0;
   int length2;
@@ -2592,9 +2607,9 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
   //int prb_off,prb_off2;
   int skip_half=0,l;//sss_symb,pss_symb=0,nsymb
   int i,aarx;
-  int32_t *dl_ch0,*dl_ch0p,*dl_ch0_ext,*dl_ch1,*dl_ch1p,*dl_ch1_ext,*rxF,*rxF_ext;
+  int32_t *dl_ch0=NULL,*dl_ch0p=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1p=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
   int symbol_mod,pilots=0,j=0;
-  unsigned char *pmi_loc;
+  unsigned char *pmi_loc=NULL;
 
   pilots = (symbol==2) ? 1 : 0; //to updated from config
   k = frame_parms->first_carrier_offset + 516; //0
@@ -2673,7 +2688,7 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
   return(nb_rb/frame_parms->nb_antennas_rx);
 }
 
-void nr_dlsch_layer_demapping(int16_t **llr_cw,
+static void nr_dlsch_layer_demapping(int16_t **llr_cw,
                          uint8_t Nl,
 						 uint8_t mod_order,
                          uint16_t length,

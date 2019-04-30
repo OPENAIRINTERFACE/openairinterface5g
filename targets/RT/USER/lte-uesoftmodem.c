@@ -1005,7 +1005,7 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
   
   
   
-#ifndef DEADLINE_SCHEDULER
+#if 0 // #ifndef DEADLINE_SCHEDULER
   
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */

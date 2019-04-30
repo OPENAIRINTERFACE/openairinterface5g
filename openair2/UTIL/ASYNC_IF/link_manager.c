@@ -30,6 +30,7 @@
 
 #include "link_manager.h"
 #include "common/utils/LOG/log.h"
+#include <common/utils/system.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,41 +113,14 @@ link_manager_t *create_link_manager(
   ret->socket_link = link;
   ret->run = 1;
 
-  if (pthread_attr_init(&attr))
-    goto error;
-
-  // Make the async interface threads real-time
-  //#ifndef LOWLATENCY
-  struct sched_param sched_param_recv_thread;
-
-  sched_param_recv_thread.sched_priority = sched_get_priority_max(SCHED_RR) - 1;
-  pthread_attr_setschedparam(&attr, &sched_param_recv_thread);
-  pthread_attr_setschedpolicy(&attr, SCHED_RR);
-  //#endif
-
-  if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
-    goto error;
-
-  if (pthread_create(&t, &attr, link_manager_sender_thread, ret))
-    goto error;
+  threadCreate(&t, link_manager_sender_thread, ret, "flexranSender", -1, OAI_PRIORITY_RT_LOW);
   ret->sender = t;
 
-  if (pthread_create(&t, &attr, link_manager_receiver_thread, ret))
-    /* we should destroy the other thread here */
-    goto error;
+  threadCreate(&t, link_manager_receiver_thread, ret, "flexranReceiver", -1, OAI_PRIORITY_RT_LOW);
   ret->receiver = t;
-
-  if (pthread_attr_destroy(&attr))
-    /* to be clean we should destroy the threads at this point,
-     * even if in practice we never reach it */
-    goto error;
 
   return ret;
 
-error:
-  LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-  free(ret);
-  return NULL;
 }
 
 void destroy_link_manager(link_manager_t *manager)

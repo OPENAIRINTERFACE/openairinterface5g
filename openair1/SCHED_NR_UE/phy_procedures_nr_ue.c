@@ -2814,7 +2814,6 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   //uint8_t pbch_phase;
   int ret = 0;
   uint16_t frame_tx;
-  static uint8_t first_run = 1;
   uint8_t pbch_trials = 0;
 
   DevAssert(ue);

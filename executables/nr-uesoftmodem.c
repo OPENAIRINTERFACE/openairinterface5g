@@ -64,7 +64,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 #include "intertask_interface.h"
-#include "create_tasks.h"
 
 #include "PHY/INIT/phy_init.h"
 #include "system.h"
@@ -311,11 +310,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
 }
 
 static void *scope_thread(void *arg) {
-  struct sched_param sched_param;
-  sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
-  sched_setscheduler(0, SCHED_FIFO,&sched_param);
-  printf("Scope thread has priority %d\n",sched_param.sched_priority);
-  //wait the modem is runnign
   sleep(5);
 
   while (!oai_exit) {
@@ -343,12 +337,7 @@ void init_scope(void) {
     fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
     fl_set_button(form_ue[UE_id]->button_0,0);
     fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
-
-    printf("Scope thread created, ret=%d\n",ret);
+    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
   }
 
 #endif
@@ -763,6 +752,7 @@ int main( int argc, char **argv ) {
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
   init_scope();
   number_of_cards = 1;

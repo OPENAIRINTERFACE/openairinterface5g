@@ -160,27 +160,15 @@ int main(int argc, const char *argv[])
    */
   pthread_t user_mngr;
 
-  if (pthread_create (&user_mngr, &attr, _nas_user_mngr, &user_fd) != 0) {
-    LOG_TRACE (ERROR, "UE-MAIN   - "
-               "Failed to create the user management thread");
-    user_api_close (user_api_id);
-    network_api_close (network_fd);
-    exit (EXIT_FAILURE);
-  }
+  threadCreate (&user_mngr, , _nas_user_mngr, &user_fd, "UE-nas", -1, OAI_PRIORITY_RT_LOW) ;
 
   /*
    * Start thread use to manage the network connection endpoint
    */
   pthread_t network_mngr;
 
-  if (pthread_create (&network_mngr, &attr, _nas_network_mngr,
-                      &network_fd) != 0) {
-    LOG_TRACE (ERROR, "UE-MAIN   - "
-               "Failed to create the network management thread");
-    user_api_close (user_api_id);
-    network_api_close (network_fd);
-    exit (EXIT_FAILURE);
-  }
+  threadCreate (&network_mngr,  _nas_network_mngr,
+                      &network_fd, "UE-nas-mgr", -1, OAI_PRIORITY_RT_LOW) ;
 
   pthread_attr_destroy (&attr);
 

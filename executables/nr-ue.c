@@ -43,6 +43,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -123,35 +124,6 @@ extern double cpuf;
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
-#define FIFO_PRIORITY   40
-
-
-void init_thread(int core, char *name) {
-  pthread_setname_np(pthread_self(),name);
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-
-  if (core >0)
-    CPU_SET(core, &cpuset);
-
-  AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset), "");
-  struct sched_param sp;
-  sp.sched_priority = FIFO_PRIORITY;
-  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
-              "Can't set thread priority, Are you root?\n");
-  /* Check the actual affinity mask assigned to the thread */
-  cpu_set_t *cset=CPU_ALLOC(CPU_SETSIZE);
-
-  if (0 == pthread_getaffinity_np(pthread_self(), CPU_ALLOC_SIZE(CPU_SETSIZE), cset)) {
-    char txt[512]= {0};
-
-    for (int j = 0; j < CPU_SETSIZE; j++)
-      if (CPU_ISSET(j, cset))
-        sprintf(txt+strlen(txt), " %d ", j);
-
-    printf("CPU Affinity of thread %s is %s\n", name, txt);
-  }
-}
 
 typedef enum {
   pss=0,
@@ -403,7 +375,9 @@ void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
+    uint64_t a=rdtsc();
     phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    printf("phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //            printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
   }
@@ -563,7 +537,8 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
 }
 
 void *UE_thread(void *arg) {
-  init_thread(1, "IQ samples");
+  //this thread should be over the processing thread to keep in real time
+  threadTopInit("UE_IQ",1,OAI_PRIORITY_RT_MAX);
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
   openair0_timestamp timestamp;
@@ -770,10 +745,7 @@ void init_UE(int nb_inst) {
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&attr, SCHED_RR);
-  struct sched_param sched;
-  sched.sched_priority = sched_get_priority_max(SCHED_RR)-1;
-  pthread_attr_setschedparam(&attr, &sched);
+  pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
 
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
@@ -794,10 +766,7 @@ void init_UE(int nb_inst) {
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
-    AssertFatal(0 == pthread_create(&threads[inst],
-                                    &attr,
-                                    UE_thread,
-                                    (void *)UE), "");
+    threadCreate(&threads[inst], UE_thread, (void *)UE), "UEthread", -1, OAI_PRIORITY_RT);
   }
 
   printf("UE threads created by %ld\n", gettid());

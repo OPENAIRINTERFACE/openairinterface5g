@@ -28,13 +28,23 @@
  * separate process solves this problem.
  */
 
+#define _GNU_SOURCE
 #include "system.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
-
+#include <stdint.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+#include <pthread.h>
+#include <common/utils/assertions.h>
+#include <common/utils/LOG/log.h>
 #define MAX_COMMAND 4096
 
 static int command_pipe_read;
@@ -50,37 +60,37 @@ static int module_initialized = 0;
 /* util functions                                                   */
 /********************************************************************/
 
-static void lock_system(void)
-{
+static void lock_system(void) {
   if (pthread_mutex_lock(&lock) != 0) {
     printf("pthread_mutex_lock fails\n");
     abort();
   }
 }
 
-static void unlock_system(void)
-{
+static void unlock_system(void) {
   if (pthread_mutex_unlock(&lock) != 0) {
     printf("pthread_mutex_unlock fails\n");
     abort();
   }
 }
 
-static void write_pipe(int p, char *b, int size)
-{
+static void write_pipe(int p, char *b, int size) {
   while (size) {
     int ret = write(p, b, size);
+
     if (ret <= 0) exit(0);
+
     b += ret;
     size -= ret;
   }
 }
 
-static void read_pipe(int p, char *b, int size)
-{
+static void read_pipe(int p, char *b, int size) {
   while (size) {
     int ret = read(p, b, size);
+
     if (ret <= 0) exit(0);
+
     b += ret;
     size -= ret;
   }
@@ -95,14 +105,13 @@ static void read_pipe(int p, char *b, int size)
  * when the main process exits, because then a "read" on the pipe
  * will return 0, in which case "read_pipe" exits.
  */
-static void background_system_process(void)
-{
+static void background_system_process(void) {
   int len;
   int ret;
   char command[MAX_COMMAND+1];
 
   while (1) {
-    read_pipe(command_pipe_read, (char*)&len, sizeof(int));
+    read_pipe(command_pipe_read, (char *)&len, sizeof(int));
     read_pipe(command_pipe_read, command, len);
     ret = system(command);
     write_pipe(result_pipe_write, (char *)&ret, sizeof(int));
@@ -114,8 +123,7 @@ static void background_system_process(void)
 /*     return -1 on error, 0 on success                             */
 /********************************************************************/
 
-int background_system(char *command)
-{
+int background_system(char *command) {
   int res;
   int len;
 
@@ -125,18 +133,22 @@ int background_system(char *command)
   }
 
   len = strlen(command)+1;
+
   if (len > MAX_COMMAND) {
     printf("FATAL: command too long. Increase MAX_COMMAND (%d).\n", MAX_COMMAND);
     printf("command was: '%s'\n", command);
     abort();
   }
+
   /* only one command can run at a time, so let's lock/unlock */
   lock_system();
-  write_pipe(command_pipe_write, (char*)&len, sizeof(int));
+  write_pipe(command_pipe_write, (char *)&len, sizeof(int));
   write_pipe(command_pipe_write, command, len);
-  read_pipe(result_pipe_read, (char*)&res, sizeof(int));
+  read_pipe(result_pipe_read, (char *)&res, sizeof(int));
   unlock_system();
+
   if (res == -1 || !WIFEXITED(res) || WEXITSTATUS(res) != 0) return -1;
+
   return 0;
 }
 
@@ -146,17 +158,16 @@ int background_system(char *command)
 /*     to be called very early by the main processing               */
 /********************************************************************/
 
-void start_background_system(void)
-{
+void start_background_system(void) {
   int p[2];
   pid_t son;
-
   module_initialized = 1;
 
   if (pipe(p) == -1) {
     perror("pipe");
     exit(1);
   }
+
   command_pipe_read  = p[0];
   command_pipe_write = p[1];
 
@@ -164,10 +175,11 @@ void start_background_system(void)
     perror("pipe");
     exit(1);
   }
+
   result_pipe_read  = p[0];
   result_pipe_write = p[1];
-
   son = fork();
+
   if (son == -1) {
     perror("fork");
     exit(1);
@@ -181,6 +193,88 @@ void start_background_system(void)
 
   close(result_pipe_read);
   close(command_pipe_write);
-
   background_system_process();
+}
+
+void thread_top_init(char *thread_name,
+                     int affinity,
+                     uint64_t runtime,
+                     uint64_t deadline,
+                     uint64_t period) {
+#ifdef DEADLINE_SCHEDULER
+  struct sched_attr attr;
+  unsigned int flags = 0;
+  attr.size = sizeof(attr);
+  attr.sched_flags = 0;
+  attr.sched_nice = 0;
+  attr.sched_priority = 0;
+  attr.sched_policy   = SCHED_DEADLINE;
+  attr.sched_runtime  = runtime;
+  attr.sched_deadline = deadline;
+  attr.sched_period   = period;
+  
+  AssertFatal(sched_setattr(0, &attr, flags) == 0, "[SCHED] eNB tx thread: sched_setattr failed\n");
+	      
+#else
+#ifdef CPU_AFFINITY
+  /* Set affinity mask to include CPUs 2 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */  /* CPU 1 is reserved for all RX_TX threads */
+  /* Enable CPU Affinity only if number of CPUs > 2 */
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  if (affinity == 0) {
+    LOG_W(HW,"thread_top_init() called with affinity==0, but overruled by #ifdef CPU_AFFINITY\n");
+  } else if (get_nprocs() > 2) {
+    for (j = 2; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+    AssertFatal( pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
+  }
+#endif //CPU_AFFINITY
+  
+  struct sched_param sparam={0};
+  sparam.sched_priority = OAI_PRIORITY_RT;
+  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO , &sparam) == 0,"Error setting thread priority");
+  pthread_setname_np(pthread_self(), thread_name);
+#endif 
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+}
+
+void threadTopInit(const char* name, const int affinity, const int priority){
+struct sched_param sparam={0};
+  sparam.sched_priority = priority;
+  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO , &sparam) == 0,"Error setting thread priority");
+  pthread_setname_np(pthread_self(), name);
+  if (affinity != -1 ) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(affinity, &cpuset);
+    AssertFatal( pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
+  }
+}
+
+// Block CPU C-states deep sleep
+void configure_linux(void) {
+  int ret;
+  static int latency_target_fd=-1;
+  uint32_t latency_target_value=10; // in microseconds
+  if (latency_target_fd == -1) {
+    if ( (latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR)) != -1 ) {
+      ret = write(latency_target_fd, &latency_target_value, sizeof(latency_target_value));
+      if (ret == 0) {
+	printf("# error setting cpu_dma_latency to %d!: %s\n", latency_target_value, strerror(errno));
+	close(latency_target_fd);
+	latency_target_fd=-1;
+	return;
+      }
+    }
+  }
+  if (latency_target_fd != -1) 
+    LOG_I(HW,"# /dev/cpu_dma_latency set to %dus\n", latency_target_value);
+  else
+    LOG_E(HW,"Can't set /dev/cpu_dma_latency to %dus\n", latency_target_value);
+
+  // Set CPU frequency to it's maximum
+  if ( 0 != system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done"))
+	  LOG_W(HW,"Can't set cpu frequency\n");
+  
 }
