@@ -34,7 +34,7 @@
 	<testCase id="010101">
 		<class>Build_eNB</class>
 		<desc>Build eNB (USRP -- Ethernet Fronthaul)</desc>
-		<Build_eNB_args>-t ETHERNET -w USRP -c --eNB</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
 
         <testCase id="050101">
