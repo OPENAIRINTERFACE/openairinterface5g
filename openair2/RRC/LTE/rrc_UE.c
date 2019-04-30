@@ -5477,7 +5477,6 @@ rrc_ue_process_sidelink_radioResourceConfig(
 void rrc_control_socket_init(){
 
    struct sockaddr_in rrc_ctrl_socket_addr;
-   pthread_attr_t     attr;
    int optval; // flag value for setsockopt
    //int n; // message byte size
 
@@ -5506,7 +5505,6 @@ void rrc_control_socket_init(){
       exit(1);
    }
 
-   threadTopInit("RRC Control Socket",-1,OAI_PRIORITY_RT);
    pthread_t rrc_control_socket_thread;
 
    threadCreate(&rrc_control_socket_thread, rrc_control_socket_thread_fct, NULL, "RRC/ProSeApp", -1, OAI_PRIORITY_RT);

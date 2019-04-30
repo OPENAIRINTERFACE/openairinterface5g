@@ -394,7 +394,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
 }
 
 static void *scope_thread(void *arg) {
-  threadTopInit("scope",-1,OAI_PRIORITY_RT_LOW);
   int UE_id, CC_id;
   int ue_cnt=0;
 # ifdef ENABLE_XFORMS_WRITE_STATS
@@ -1065,10 +1064,7 @@ int main( int argc, char **argv ) {
       } // CC_id
     } // UE_id
 
-    ret = threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
+    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
 
     printf("Scope thread created, ret=%d\n",ret);
   }

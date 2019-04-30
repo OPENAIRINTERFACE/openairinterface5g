@@ -41,6 +41,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -196,7 +197,7 @@ static void *nr_feptx_thread(void *param) {
   return(NULL);
 }
 
-void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
+void nr_init_feptx_thread(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
 

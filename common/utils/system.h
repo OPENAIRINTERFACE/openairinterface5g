@@ -22,6 +22,7 @@
 #ifndef _SYSTEM_H_OAI_
 #define _SYSTEM_H_OAI_
 #include <stdint.h>
+#include <pthread.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

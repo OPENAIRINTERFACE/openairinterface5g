@@ -240,7 +240,7 @@ extern void set_function_spec_param(RU_t *ru);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
-extern void init_fep_thread(PHY_VARS_gNB *, pthread_attr_t *);
+extern void init_fep_thread(PHY_VARS_gNB *);
 
 void init_gNB_afterRU(void);
 

@@ -30,6 +30,7 @@
 
 #include "link_manager.h"
 #include "common/utils/LOG/log.h"
+#include <common/utils/assertions.h>
 #include <common/utils/system.h>
 
 #include <stdio.h>
@@ -104,9 +105,7 @@ link_manager_t *create_link_manager(
 
   LOG_D(MAC, "create new link manager\n");
 
-  ret = calloc(1, sizeof(link_manager_t));
-  if (ret == NULL)
-    goto error;
+  AssertFatal( (ret=calloc(1, sizeof(link_manager_t))) != NULL,"");
 
   ret->send_queue = send_queue;
   ret->receive_queue = receive_queue;

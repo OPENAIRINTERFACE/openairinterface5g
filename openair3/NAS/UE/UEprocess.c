@@ -150,11 +150,6 @@ int main(int argc, const char *argv[])
   (void) _nas_set_signal_handler (SIGINT, _nas_signal_handler);
   (void) _nas_set_signal_handler (SIGTERM, _nas_signal_handler);
 
-  pthread_attr_t attr;
-  pthread_attr_init (&attr);
-  pthread_attr_setscope (&attr, PTHREAD_SCOPE_SYSTEM);
-  pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
-
   /*
    * Start thread use to manage the user connection endpoint
    */
@@ -169,8 +164,6 @@ int main(int argc, const char *argv[])
 
   threadCreate (&network_mngr,  _nas_network_mngr,
                       &network_fd, "UE-nas-mgr", -1, OAI_PRIORITY_RT_LOW) ;
-
-  pthread_attr_destroy (&attr);
 
   /*
    * Suspend execution of the main process until all connection

@@ -45,7 +45,6 @@ extern int  oai_exit;
 extern char UE_flag;
 
 pthread_t       pdcp_thread;
-pthread_attr_t  pdcp_thread_attr;
 pthread_mutex_t pdcp_mutex;
 pthread_cond_t  pdcp_cond;
 int             pdcp_instance_cnt;

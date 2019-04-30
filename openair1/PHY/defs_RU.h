@@ -191,25 +191,6 @@ typedef struct RU_proc_t_s {
   int first_rx;
   /// flag to indicate first TX transmission
   int first_tx;
-  /// pthread attributes for RU FH processing thread
-  pthread_attr_t attr_FH;
-  pthread_attr_t attr_FH1;
-  /// pthread attributes for RU prach
-  pthread_attr_t attr_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  /// pthread attributes for RU prach BL/CE UEs
-  pthread_attr_t attr_prach_br;
-#endif
-  /// pthread attributes for RU synch thread
-  pthread_attr_t attr_synch;
-  /// pthread attributes for asynchronous RX thread
-  pthread_attr_t attr_asynch_rxtx;
-  /// pthread attributes for worker fep thread
-  pthread_attr_t attr_fep;
-  /// pthread attributes for worker feptx thread
-  pthread_attr_t attr_feptx;
-  /// pthread attributes for emulated RF
-  pthread_attr_t attr_emulateRF;
   /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
   struct sched_param sched_param_FH1;

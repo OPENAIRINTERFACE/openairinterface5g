@@ -604,7 +604,6 @@ static void *emulatedRF_thread(void *param) {
   struct timespec req = {0};
   req.tv_sec = 0;
   req.tv_nsec = (numerology>0)? ((microsec * 1000L)/numerology):(microsec * 1000L)*2;
-  threadTopInit("emulatedRF",-1,OAI_PRIORITY_RT_LOW);
   wait_sync("emulatedRF_thread");
 
   while(!oai_exit) {
@@ -1592,17 +1591,12 @@ extern void ru_fep_full_2thread(RU_t *ru);
 extern void nr_feptx_ofdm(RU_t *ru);
 extern void nr_feptx_ofdm_2thread(RU_t *ru);
 extern void feptx_prec(RU_t *ru);
-extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
-extern void init_nr_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+extern void init_fep_thread(RU_t *ru);
+extern void init_nr_feptx_thread(RU_t *ru);
 
 void init_RU_proc(RU_t *ru) {
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL, *attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL, *attr_emulateRF=NULL;// *attr_synch=NULL;
-  //pthread_attr_t *attr_fep=NULL;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  //pthread_attr_t *attr_prach_br=NULL;
-#endif
   char name[100];
 #ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
@@ -1639,21 +1633,6 @@ void init_RU_proc(RU_t *ru) {
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_gNBs, NULL);
-  pthread_attr_init( &proc->attr_FH);
-  pthread_attr_init( &proc->attr_FH1);
-  pthread_attr_init( &proc->attr_emulateRF);
-  pthread_attr_init( &proc->attr_prach);
-  pthread_attr_init( &proc->attr_synch);
-  pthread_attr_init( &proc->attr_asynch_rxtx);
-  pthread_attr_init( &proc->attr_fep);
-#ifndef DEADLINE_SCHEDULER
-  attr_FH        = &proc->attr_FH;
-  attr_FH1       = &proc->attr_FH1;
-  attr_emulateRF = &proc->attr_emulateRF;
-  attr_prach     = &proc->attr_prach;
-  //attr_synch     = &proc->attr_synch;
-  attr_asynch    = &proc->attr_asynch_rxtx;
-#endif
   threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT );
 
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
@@ -1679,9 +1658,9 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_nprocs()>=2) {
-    if (ru->feprx) init_fep_thread(ru,NULL);
+    if (ru->feprx) init_fep_thread(ru);
 
-    if (ru->feptx_ofdm) nr_init_feptx_thread(ru,NULL);
+    if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
   }
 
   if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
@@ -1769,11 +1748,6 @@ void kill_RU_proc(int inst) {
   pthread_cond_destroy(&proc->cond_asynch_rxtx);
   pthread_cond_destroy(&proc->cond_synch);
   pthread_cond_destroy(&proc->cond_gNBs);
-  pthread_attr_destroy(&proc->attr_FH);
-  pthread_attr_destroy(&proc->attr_prach);
-  pthread_attr_destroy(&proc->attr_synch);
-  pthread_attr_destroy(&proc->attr_asynch_rxtx);
-  pthread_attr_destroy(&proc->attr_fep);
 }
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {

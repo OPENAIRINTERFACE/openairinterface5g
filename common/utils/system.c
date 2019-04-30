@@ -239,17 +239,27 @@ void thread_top_init(char *thread_name,
   mlockall(MCL_CURRENT | MCL_FUTURE);
 }
 
-void threadTopInit(const char* name, const int affinity, const int priority){
-struct sched_param sparam={0};
+void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+  struct sched_param sparam={0};
   sparam.sched_priority = priority;
-  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO , &sparam) == 0,"Error setting thread priority");
-  pthread_setname_np(pthread_self(), name);
+  pthread_attr_setschedparam(&attr, &sparam);
+
+  pthread_create(t, &attr, func, param);
+
+  pthread_setname_np(*t, name);
   if (affinity != -1 ) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(affinity, &cpuset);
-    AssertFatal( pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
+    AssertFatal( pthread_setaffinity_np(*t, sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
   }
+
+  pthread_attr_destroy(&attr);
 }
 
 // Block CPU C-states deep sleep

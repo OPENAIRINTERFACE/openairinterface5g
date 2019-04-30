@@ -102,7 +102,6 @@ void *flexran_agent_task(void *args){
 }
 
 void *receive_thread(void *args) {
-  threadTopInit("flexran",-1,OAI_PRIORITY_RT_LOW);
 
   flexran_agent_info_t  *d = args;
   void                  *data;

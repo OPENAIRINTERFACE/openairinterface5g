@@ -538,7 +538,6 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
 
 void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
-  threadTopInit("UE_IQ",1,OAI_PRIORITY_RT_MAX);
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
   openair0_timestamp timestamp;
@@ -741,11 +740,6 @@ void init_UE(int nb_inst) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   pthread_t threads[nb_inst];
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
 
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];

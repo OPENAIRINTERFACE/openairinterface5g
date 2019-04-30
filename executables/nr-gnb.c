@@ -38,6 +38,8 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
+#include <common/utils/LOG/log.h>
+#include <common/utils/system.h>
 
 #include "PHY/types.h"
 
@@ -676,8 +678,8 @@ static void* gNB_thread_prach( void* param ) {
 }
 */
 
-extern void init_td_thread(PHY_VARS_gNB *, pthread_attr_t *);
-extern void init_te_thread(PHY_VARS_gNB *, pthread_attr_t *);
+extern void init_td_thread(PHY_VARS_gNB *);
+extern void init_te_thread(PHY_VARS_gNB *);
 
 void init_gNB_proc(int inst) {
   int i=0;
@@ -685,8 +687,6 @@ void init_gNB_proc(int inst) {
   PHY_VARS_gNB *gNB;
   gNB_L1_proc_t *proc;
   gNB_L1_rxtx_proc_t *L1_proc,*L1_proc_tx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL;
-  //*attr_prach=NULL;
   LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
 
   for (CC_id=0; CC_id<RC.nb_nr_CC[inst]; CC_id++) {
@@ -721,14 +721,6 @@ void init_gNB_proc(int inst) {
     pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
-    pthread_attr_init( &proc->attr_prach);
-    pthread_attr_init( &proc->attr_asynch_rxtx);
-    //    pthread_attr_init( &proc->attr_td);
-    //    pthread_attr_init( &proc->attr_te);
-    pthread_attr_init( &L1_proc->attr);
-    pthread_attr_init( &L1_proc_tx->attr);
-    attr0       = &L1_proc->attr;
-    attr1       = &L1_proc_tx->attr;
     LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
 
     if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
