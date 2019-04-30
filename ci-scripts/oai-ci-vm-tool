@@ -244,7 +244,7 @@ case $key in
     -v2)
     VM_NAME=ci-basic-sim
     ARCHIVES_LOC=basic_sim
-    LOG_PATTERN=basic_simulator
+    LOG_PATTERN=Rel14.txt
     NB_PATTERN_FILES=13
     BUILD_OPTIONS="--eNB --UE"
     VM_MEMORY=8192
@@ -339,7 +339,7 @@ case $key in
         basic-sim)
         VM_NAME=ci-basic-sim
         ARCHIVES_LOC=basic_sim
-        LOG_PATTERN=basic_simulator
+        LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=13
         BUILD_OPTIONS="--UE --eNB"
         VM_MEMORY=8192
