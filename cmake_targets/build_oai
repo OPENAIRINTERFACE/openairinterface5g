@@ -67,7 +67,7 @@ UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
-BASIC_SIMULATOR=0
+
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -107,11 +107,8 @@ Options
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, IRIS, None (Default)
+   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
--t | --transport protocol
-   ETHERNET , None
-   Adds this trasport protocol support in compilation
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -246,14 +243,6 @@ function main() {
                 esac
 		echo_info "Setting hardware to: $HW"
             shift 2;;
-	-t | --transport_protocol)
-            TP="$2" #"${i#*=}"
-	    if [ "$TP" != "ETHERNET" -a "$TP" != "None" ] ; then 
-		echo_fatal "Unknown TP type $TP will exit..."		
-	    else
-		echo_info "Setting transport protocol to: $TP"		
-	    fi
-            shift 2;;
        --phy_simulators)
             SIMUS_PHY=1
             echo_info "Will compile dlsim, ulsim, ..."
@@ -350,14 +339,6 @@ function main() {
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
-        --basic-simulator)
-            BASIC_SIMULATOR=1
-            echo_info "Compiling the basic simulator device"
-            shift 1;;
-	--rfsimulator)
-	    RFSIMULATOR=true
-	    echo_info "Compiling the RF simulator device"
-	    shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -377,7 +358,7 @@ function main() {
   
   if [ "$eNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
-	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
+	  echo_info "No local radio head and no transport protocol selected"
       fi
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
