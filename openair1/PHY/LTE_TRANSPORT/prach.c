@@ -590,8 +590,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         if (prach[0]!= NULL) LOG_M("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);
 
         LOG_M("prach_rx1.m","prach_rx1",prach[1],6144+792,1,1);
-        LOG_M("prach_rxF0.m","prach_rxF0",rxsigF[0],24576,1,1);
-        LOG_M("prach_rxF1.m","prach_rxF1",rxsigF[1],6144,1,1);
+        LOG_M("prach_rxF0.m","prach_rxF0",rxsigF[0],12288,1,1);
+        LOG_M("prach_rxF1.m","prach_rxF1",rxsigF[1],12288,1,1);
       }
 
       for (aa=0; aa<nb_rx; aa++) {
@@ -614,14 +614,14 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
           // compute energy and accumulate over receive antennas and repetitions for BR
           for (i=0; i<2048; i++)
-            prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>8;
+            prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>9;
         } else {
           idft256(prachF,prach_ifft_tmp,1);
           log2_ifft_size = 8;
 
           // compute energy and accumulate over receive antennas and repetitions for BR
           for (i=0; i<256; i++)
-            prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[(i<<1)] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>10;
+            prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[(i<<1)] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>9;
         }
 
         if (LOG_DUMPFLAG(PRACH)) {
@@ -689,6 +689,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
         LOG_M("Xu.m","xu",Xu,N_ZC,1,1);
         LOG_M("prach_ifft0.m","prach_t0",prach_ifft,1024,1,1);
+	exit(-1);
       } else {
         LOG_E(PHY,"Dumping prach (br_flag %d), k = %d (n_ra_prb %d)\n",br_flag,k,n_ra_prb);
         LOG_M("rxsigF_br.m","prach_rxF_br",&rxsigF[0][0],12288,1,1);

@@ -651,7 +651,7 @@ int main( int argc, char **argv ) {
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
   }
-  
+
   printf("wait_eNBs()\n");
   wait_eNBs();
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
