@@ -69,7 +69,7 @@
 
 #include "TOOLS/tools_defs.h"
 
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 #include "common/utils/LOG/log.h"
 
 #include "types.h"

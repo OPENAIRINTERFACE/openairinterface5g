@@ -42,7 +42,7 @@
 #include "rrc_types_NB_IoT.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 
 #include "COMMON/mac_rrc_primitives.h"
 

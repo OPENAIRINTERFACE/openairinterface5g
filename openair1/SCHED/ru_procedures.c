@@ -49,8 +49,6 @@
 
 #include <time.h>
 
-#include "targets/RT/USER/rt_wrapper.h"
-
 extern int oai_exit;
 
 
@@ -132,17 +130,8 @@ static void *feptx_thread(void *param) {
 
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
   
-  thread_top_init("feptx_thread",1,85000,120000,500000);
-  pthread_setname_np( pthread_self(),"feptx processing");
-  LOG_I(PHY,"thread feptx created id=%ld\n", syscall(__NR_gettid));
-  //CPU_SET(6, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //wait_sync("feptx_thread");
-
-  
+  LOG_I(PHY,"thread feptx created \n");
 
   while (!oai_exit) {
 
@@ -162,8 +151,6 @@ static void *feptx_thread(void *param) {
       printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
     }*/
   }
-
-
 
   return(NULL);
 }
@@ -438,16 +425,6 @@ static void *fep_thread(void *param) {
 
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
-
-  thread_top_init("fep_thread",1,100000,120000,5000000);
-  pthread_setname_np( pthread_self(),"fep processing");
-  LOG_I(PHY,"thread fep created id=%ld\n", syscall(__NR_gettid));
-
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  //CPU_SET(2, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //wait_sync("fep_thread");
 
   while (!oai_exit) {
 

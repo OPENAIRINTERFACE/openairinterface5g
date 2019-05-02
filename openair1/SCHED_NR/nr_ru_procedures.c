@@ -50,9 +50,6 @@
 #include "msc.h"
 
 #include <time.h>
-
-#include "targets/RT/USER/rt_wrapper.h"
-
 // RU OFDM Modulator gNodeB
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
