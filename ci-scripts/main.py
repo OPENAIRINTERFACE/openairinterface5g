@@ -1188,9 +1188,13 @@ class SSHConnection():
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			self.command('ifconfig oaitun_ue1', '\$', 4)
 			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
-			UE_IPAddress = result.group('ueipaddress')
-			logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
-			self.UEIPAddresses.append(UE_IPAddress)
+			if result is not None:
+				UE_IPAddress = result.group('ueipaddress')
+				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
+				self.UEIPAddresses.append(UE_IPAddress)
+			else:
+				logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
+				ue_ip_status -= 1
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
