@@ -462,7 +462,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     for (j=0; j<2; j++) {
       // ULSCH for RA
       if(i==0) {
-        gNB->ulsch[i][j] = new_gNB_ulsch(5, fp->N_RB_UL, 0);
+        gNB->ulsch[i][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
 
         if (!gNB->ulsch[i][j]) {
           LOG_E(PHY,"Can't get gNB ulsch structures\n");
@@ -471,7 +471,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
       }
 
       // ULSCH for data
-      gNB->ulsch[i+1][j] = new_gNB_ulsch(5, fp->N_RB_UL, 0);
+      gNB->ulsch[i+1][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
 
       if (!gNB->ulsch[i+1][j]) {
         LOG_E(PHY,"Can't get gNB ulsch structures\n");
