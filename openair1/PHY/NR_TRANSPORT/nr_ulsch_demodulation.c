@@ -14,9 +14,9 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  unsigned short nb_rb_pusch,
                                  NR_DL_FRAME_PARMS *frame_parms) 
 {
-  unsigned short start_re,re;
+  unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx, is_dmrs_symbol = 0;
-  uint32_t rxF_ext_index = 0, nb_re_pusch = 0;
+  uint32_t rxF_ext_index = 0;
 
   int16_t *rxF,*rxF_ext;
 
@@ -76,7 +76,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                               // rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
                               symbol,
                               rel15_ul->start_rb,
-                              nb_re,
+                              rel15_ul->number_rbs,
                               frame_parms);
     
   
