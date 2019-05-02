@@ -216,7 +216,6 @@ int main(int argc, char **argv) {
   int frame = 0;
   int frame_length_complex_samples;
   NR_DL_FRAME_PARMS *frame_parms;
-  int ret;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
@@ -227,7 +226,7 @@ int main(int argc, char **argv) {
   int ap;
   int tx_offset;
   double txlev;
-  int start_rb = 90;
+  int start_rb = 30;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -501,7 +500,6 @@ int main(int argc, char **argv) {
   ulsim_params.n_rnti = n_rnti;
 
   unsigned char harq_pid = 0;
-  uint8_t is_crnti = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t  nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
@@ -517,9 +515,6 @@ int main(int argc, char **argv) {
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
-  
-
-  printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
 
   // --------- setting rel15_ul parameters ----------
   rel15_ul->rnti                           = n_rnti;
@@ -576,6 +571,8 @@ int main(int argc, char **argv) {
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
   txlev = txlev/(double)AMP; // output of signal_energy is fixed point representation
+  
+  printf("\n");
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
@@ -610,20 +607,26 @@ int main(int argc, char **argv) {
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
 
-      for (i = 0; i < TBS; i++) {
+      for (i = 0; i < available_bits; i++) {
         
         if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) || 
            ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
         {
           if(errors_scrambling == 0)
-            printf("First bit in error = %d\n",i);
+            printf("First bit in error in unscrambling = %d\n",i);
           errors_scrambling++;
         }
+
+      }
+
+      for (i = 0; i < TBS; i++) {
 
         estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
         test_input_bit[i]       = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
         if (estimated_output_bit[i] != test_input_bit[i]) {
+          if(errors_bit == 0)
+            printf("First bit in error in decoding = %d\n",i);
           errors_bit++;
         }
         
@@ -641,17 +644,21 @@ int main(int argc, char **argv) {
         if (n_trials == 1)
           printf("errors_bit %d (trial %d)\n", errors_bit, trial);
       }
+      printf("\n");
     } // [hna] for (trial = 0; trial < n_trials; trial++)
     
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
            (float) n_false_positive / (float) n_trials);
     printf("*****************************************\n");
+    printf("\n");
 
     if (errors_bit == 0) {
       printf("PUSCH test OK\n");
+      printf("\n");
       break;
     }
+    printf("\n");
   } // [hna] for (SNR = snr0; SNR < snr1; SNR += snr_step)
 
 
@@ -665,7 +672,7 @@ int main(int argc, char **argv) {
 
     free_gNB_ulsch(gNB->ulsch[0][i]);
 
-    printf("gNB ulsch[%d][%d]\n",UE_id, i);
+    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
 
     free_gNB_ulsch(gNB->ulsch[UE_id+1][i]); // "+1" because first element in ulsch is for RA
 

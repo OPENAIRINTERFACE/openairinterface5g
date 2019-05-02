@@ -262,8 +262,8 @@ int nr_slot_fep_ul(PHY_VARS_gNB *gNB,
     else
       rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
 
-    dft((int16_t *)&gNB->common_vars.rxdata[0][rxdata_offset],
-        (int16_t *)&gNB->common_vars.rxdataF[0][symbol * frame_parms->ofdm_symbol_size], 1);
+    dft((int16_t *)&gNB->common_vars.rxdata[aa][rxdata_offset],
+        (int16_t *)&gNB->common_vars.rxdataF[aa][symbol * frame_parms->ofdm_symbol_size], 1);
   }
 
   return(0);
