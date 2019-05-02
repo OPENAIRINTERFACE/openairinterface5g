@@ -47,6 +47,63 @@
 
 #endif
 
+int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
+                             temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t *nr_ul_pdcch_params,
+                             uint8_t thread_id,
+                             int gNB_id,
+                             unsigned char harq_pid,
+                             unsigned char *test_input){
+
+  int N_PRB_oh, N_RE_prime, cwd_idx, length_dmrs, Nid_cell;
+  uint16_t n_rnti;
+
+  NR_UE_ULSCH_t *ulsch_ue;
+  NR_UL_UE_HARQ_t *harq_process_ul_ue;
+
+  length_dmrs = 1;
+  n_rnti = 0x1234;
+  Nid_cell = 0;
+
+  for (cwd_idx = 0; cwd_idx < nr_ul_pdcch_params->nb_codewords; cwd_idx++) {
+
+    ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_idx];
+    harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+
+    ulsch_ue->length_dmrs = length_dmrs;
+    ulsch_ue->rnti        = n_rnti;
+    ulsch_ue->Nid_cell    = Nid_cell;
+    ulsch_ue->Nsc_pusch   = nr_ul_pdcch_params->nb_rb*NR_NB_SC_PER_RB;
+    ulsch_ue->Nsymb_pusch = nr_ul_pdcch_params->n_symb;
+    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+
+
+    N_PRB_oh   = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+    N_RE_prime = NR_NB_SC_PER_RB*nr_ul_pdcch_params->n_symb - ulsch_ue->nb_re_dmrs - N_PRB_oh;
+
+    if (harq_process_ul_ue) {
+
+      harq_process_ul_ue->mcs                = nr_ul_pdcch_params->Imcs;
+      harq_process_ul_ue->Nl                 = nr_ul_pdcch_params->Nl;
+      harq_process_ul_ue->nb_rb              = nr_ul_pdcch_params->nb_rb;
+      harq_process_ul_ue->first_rb           = nr_ul_pdcch_params->first_rb;
+      harq_process_ul_ue->number_of_symbols  = nr_ul_pdcch_params->n_symb;
+      harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nr_ul_pdcch_params->nb_rb*nr_ul_pdcch_params->nb_codewords;
+      harq_process_ul_ue->rvidx              = nr_ul_pdcch_params->rvidx;
+      harq_process_ul_ue->a                  = test_input;
+      harq_process_ul_ue->TBS                = nr_compute_tbs(nr_ul_pdcch_params->Imcs,
+                                                              nr_ul_pdcch_params->nb_rb,
+                                                              nr_ul_pdcch_params->n_symb,
+                                                              ulsch_ue->nb_re_dmrs,
+                                                              length_dmrs,
+                                                              nr_ul_pdcch_params->Nl);
+
+    }
+
+  }
+
+  return 0;
+}
+
 
 
 void nr_pusch_codeword_scrambling(uint8_t *in,

@@ -64,21 +64,6 @@ RAN_CONTEXT_t RC;
 
 double cpuf;
 
-typedef struct ulsim_params_s {
-  uint16_t  Nid_cell;
-  uint8_t   nb_codewords;
-  uint8_t   Imcs;
-  uint16_t  nb_symb_sch;
-  int       eNB_id;
-  int       nb_rb;
-  int       first_rb;
-  uint8_t   length_dmrs;
-  uint8_t   Nl;
-  uint8_t   rvidx;
-  uint8_t   UE_id;
-  uint16_t  n_rnti;
-} ulsim_params_t;
-
 // dummy functions
 int nfapi_mode = 0;
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
@@ -112,56 +97,6 @@ NR_IF_Module_init(int Mod_id) {
   return (NULL);
 }
 
-int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
-                             ulsim_params_t *ulsim_params,
-                             uint8_t thread_id,
-                             unsigned char harq_pid,
-                             unsigned char *test_input){
-
-  int N_PRB_oh, N_RE_prime, cwd_idx;
-
-  NR_UE_ULSCH_t *ulsch_ue;
-  NR_UL_UE_HARQ_t *harq_process_ul_ue;
-
-  for (cwd_idx = 0;cwd_idx < 1;cwd_idx++){
-
-    ulsch_ue = UE->ulsch[thread_id][ulsim_params->eNB_id][cwd_idx];
-    harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-
-    ulsch_ue->length_dmrs = ulsim_params->length_dmrs;
-    ulsch_ue->rnti        = ulsim_params->n_rnti;
-    ulsch_ue->Nid_cell    = ulsim_params->Nid_cell;
-    ulsch_ue->Nsc_pusch   = ulsim_params->nb_rb*NR_NB_SC_PER_RB;
-    ulsch_ue->Nsymb_pusch = ulsim_params->nb_symb_sch;
-    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
-
-
-    N_PRB_oh   = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
-    N_RE_prime = NR_NB_SC_PER_RB*ulsim_params->nb_symb_sch - ulsch_ue->nb_re_dmrs - N_PRB_oh;
-
-    if (harq_process_ul_ue) {
-
-      harq_process_ul_ue->mcs                = ulsim_params->Imcs;
-      harq_process_ul_ue->Nl                 = ulsim_params->Nl;
-      harq_process_ul_ue->nb_rb              = ulsim_params->nb_rb;
-      harq_process_ul_ue->first_rb           = ulsim_params->first_rb;
-      harq_process_ul_ue->number_of_symbols  = ulsim_params->nb_symb_sch;
-      harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*ulsim_params->nb_rb*ulsim_params->nb_codewords;
-      harq_process_ul_ue->rvidx              = ulsim_params->rvidx;
-      harq_process_ul_ue->a                  = test_input;
-      harq_process_ul_ue->TBS                = nr_compute_tbs(ulsim_params->Imcs,
-                                                              ulsim_params->nb_rb,
-                                                              ulsim_params->nb_symb_sch,
-                                                              ulsch_ue->nb_re_dmrs,
-                                                              ulsim_params->length_dmrs,
-                                                              ulsim_params->Nl);
-
-    }
-
-  }
-
-  return 0;
-}
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   const char *msg = s == NULL ? "no comment" : s;
@@ -210,7 +145,6 @@ int main(int argc, char **argv) {
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-  ulsim_params_t ulsim_params;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   int frame = 0;
@@ -222,13 +156,18 @@ int main(int argc, char **argv) {
   int start_symbol = NR_SYMBOLS_PER_SLOT - nb_symb_sch;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
-  int eNB_id = 0;
+  int gNB_id = 0;
   int ap;
   int tx_offset;
   double txlev;
-  int start_rb = 30;
+  int start_rb = 90;
+  int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
+
 
   cpuf = get_cpu_freq_GHz();
+
+
+  temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t nr_ul_pdcch_params;
 
 
   if (load_configmodule(argc, argv) == 0) {
@@ -486,18 +425,13 @@ int main(int argc, char **argv) {
     }
   }
 
-  ulsim_params.Nid_cell = Nid_cell;
-  ulsim_params.nb_codewords = nb_codewords;
-  ulsim_params.Imcs = Imcs;
-  ulsim_params.nb_symb_sch = nb_symb_sch;
-  ulsim_params.eNB_id = eNB_id;
-  ulsim_params.nb_rb = nb_rb;
-  ulsim_params.first_rb = start_rb;
-  ulsim_params.length_dmrs = 1;
-  ulsim_params.Nl = 1;
-  ulsim_params.rvidx = 0;
-  ulsim_params.UE_id = 0;
-  ulsim_params.n_rnti = n_rnti;
+  nr_ul_pdcch_params.nb_codewords = nb_codewords;
+  nr_ul_pdcch_params.Imcs = Imcs;
+  nr_ul_pdcch_params.n_symb = nb_symb_sch;
+  nr_ul_pdcch_params.nb_rb = nb_rb;
+  nr_ul_pdcch_params.first_rb = start_rb;
+  nr_ul_pdcch_params.Nl = 1;
+  nr_ul_pdcch_params.rvidx = 0;
 
   unsigned char harq_pid = 0;
   unsigned int TBS = 8424;
@@ -508,9 +442,9 @@ int main(int argc, char **argv) {
 
   mod_order      = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, ulsim_params.Nl);
+  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nr_ul_pdcch_params.Nl);
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[ulsim_params.UE_id+1][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
   ulsch_gNB->harq_processes[harq_pid]->G = available_bits; // [hna] temp until length_dmrs and nb_re_dmrs are signaled
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   
@@ -524,8 +458,8 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
   rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
   rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
-  rel15_ul->ulsch_pdu_rel15.rv             = ulsim_params.rvidx;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = ulsim_params.Nl;
+  rel15_ul->ulsch_pdu_rel15.rv             = nr_ul_pdcch_params.rvidx;
+  rel15_ul->ulsch_pdu_rel15.n_layers       = nr_ul_pdcch_params.Nl;
   ///////////////////////////////////////////////////
 
   unsigned char *estimated_output_bit;
@@ -538,8 +472,6 @@ int main(int argc, char **argv) {
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 
-  int UE_id = ulsim_params.UE_id; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
-
   /////////////////////////phy_procedures_nr_ue_TX///////////////////////
   ///////////
 
@@ -547,8 +479,9 @@ int main(int argc, char **argv) {
     test_input[i] = (unsigned char) rand();
 
   generate_ue_ulsch_params(UE,
-                           &ulsim_params,
+                           &nr_ul_pdcch_params,
                            0,
+                           gNB_id,
                            harq_pid,
                            test_input);
 
@@ -556,15 +489,15 @@ int main(int argc, char **argv) {
                          harq_pid,
                          slot,
                          0,
-                         eNB_id);
+                         gNB_id);
 
   nr_ue_pusch_common_procedures(UE,
                                 slot,
-                                ulsim_params.Nl,
+                                nr_ul_pdcch_params.Nl,
                                 &UE->frame_parms);
 
-    ///////////
-    ////////////////////////////////////////////////////
+  ///////////
+  ////////////////////////////////////////////////////
   tx_offset = slot*frame_parms->samples_per_slot;
 
   txlev = (double) signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],

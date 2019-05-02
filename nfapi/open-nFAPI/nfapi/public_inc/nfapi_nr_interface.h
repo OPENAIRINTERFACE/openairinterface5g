@@ -561,6 +561,47 @@ typedef struct {
   nfapi_bf_vector_t   bf_vector;
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
+//--------------------------------------------------------//
+
+// This is a temp nfapi struct.
+// Once the specs for nfapi UL is ready we will update this struct
+
+typedef struct {
+  nfapi_tl_t tl;
+  uint16_t rnti;
+  uint8_t rnti_type;
+  uint8_t dci_format;
+  /// Number of CRB in BWP that this DCI configures
+  uint16_t n_RB_BWP;
+  uint8_t config_type;
+  uint8_t search_space_type;
+  uint8_t common_search_space_type;
+  uint8_t aggregation_level;
+  uint16_t nb_rb;
+  uint8_t n_symb;
+  int     Imcs;
+  int8_t  rb_offset;
+  int     first_rb;  // first rb for PUSCH TX
+  uint8_t nb_codewords;
+  uint8_t Nl;       // number of layers
+  uint8_t rvidx;
+  uint8_t cr_mapping_type;
+  uint8_t reg_bundle_size;
+  uint8_t interleaver_size;
+  uint8_t shift_index;
+  uint8_t mux_pattern;
+  uint8_t precoder_granularity;
+  uint8_t first_slot;
+  uint8_t first_symbol;
+  uint8_t nb_ss_sets_per_slot;
+  uint8_t nb_slots;
+  uint8_t sfn_mod2;
+  uint16_t scrambling_id;
+  nfapi_bf_vector_t   bf_vector;
+} temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t;
+
+//--------------------------------------------------------//
+
 typedef struct {
   nfapi_tl_t tl;
   uint16_t length;
