@@ -4,7 +4,6 @@
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 
 
-
 void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  int **rxdataF_ext,
                                  uint32_t rxdataF_ext_offset,
@@ -35,9 +34,8 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
 
       if ( (is_dmrs_symbol && ((re&1) != frame_parms->nushift))    ||    (is_dmrs_symbol == 0) ) { // [hna] (re&1) != frame_parms->nushift) assuming only dmrs type 1 and mapping type A
 
-        rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)] << 15) >> AMP_SHIFT;
-        rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)] << 15) >> AMP_SHIFT;
-        
+        rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
+        rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
         rxF_ext_index = rxF_ext_index + 2;
     	}
     }

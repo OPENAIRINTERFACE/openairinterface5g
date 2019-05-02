@@ -216,8 +216,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id,
   //----------------------------------------------------------
 
   nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr, gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->G, 0, Nid_cell, rel15_ul->rnti);
-
-  ////////////////////////////////////////////////////////////
       
 
   //----------------------------------------------------------

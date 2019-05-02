@@ -116,8 +116,8 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
   nb_re >>= 2;  // length in quad words (4 REs)
   nb_re += (len_mod4 == 0 ? 0 : 1);
 
-  temp_channel = _mm_set1_epi16((int16_t)((QAM16_n1 * one_over_sqrt_2)>>15));
-  
+  temp_channel = _mm_set1_epi16((QAM16_n1 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
+
   for (i=0; i<nb_re; i++) {
 
 #if defined(__x86_64__) || defined(__i386)
@@ -222,9 +222,8 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
   nb_re    = nb_re>>2;  // length in quad words (4 REs)
   nb_re   += ((len_mod4 == 0) ? 0 : 1);
   
-
-  temp_channel[0] = _mm_set1_epi16((int16_t)((QAM64_n1 * one_over_sqrt_2)>>15));
-  temp_channel[1] = _mm_set1_epi16((int16_t)((QAM64_n2 * one_over_sqrt_2)>>15));
+  temp_channel[0] = _mm_set1_epi16((QAM64_n1 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
+  temp_channel[1] = _mm_set1_epi16((QAM64_n2 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
 
   for (i=0; i<nb_re; i++) {
 
