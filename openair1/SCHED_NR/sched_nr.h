@@ -42,6 +42,9 @@ void nr_init_feptx_thread(RU_t *ru);
 void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols);
+void fep_full(RU_t *ru);
+void feptx_prec(RU_t *ru);
+int nr_phy_init_RU(RU_t *ru);
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
 				  nr_scs_e scs_common,

@@ -113,7 +113,6 @@ static int DEFENBS[] = {0};
 extern volatile int                    oai_exit;
 
 
-extern void  nr_phy_init_RU(RU_t *);
 extern void  nr_phy_free_RU(RU_t *);
 extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 
