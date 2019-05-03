@@ -238,8 +238,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       }
       if(nfapi_mode!=3)
         phy_config_harq_ue(Mod_idP, 0, eNB_index,
-			   UE_mac_inst[Mod_idP].
-			   scheduling_info.maxHARQ_Tx);
+			   UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
 
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =

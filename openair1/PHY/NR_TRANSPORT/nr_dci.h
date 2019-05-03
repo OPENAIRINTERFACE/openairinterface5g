@@ -25,8 +25,6 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 
-typedef unsigned __int128 uint128_t;
-
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
                          uint16_t N_RB,

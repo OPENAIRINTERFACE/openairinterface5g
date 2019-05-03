@@ -56,7 +56,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
-    NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+    //NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
     PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
         
     //        PUCCH_ConfigCommon_nr_t    *pucch_config_common = PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0];
@@ -188,11 +188,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH){
 	  // prach config pdu
 	  fapi_nr_ul_config_prach_pdu *prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-	  frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
+	  /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
 	  frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
 	  frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
 	  frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;
+	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
 	  prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
 	}
       }

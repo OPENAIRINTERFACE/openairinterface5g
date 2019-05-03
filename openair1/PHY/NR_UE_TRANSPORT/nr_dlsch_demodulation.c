@@ -1125,9 +1125,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   
  if (rx_type==rx_IC_dual_stream) {  
 	nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
-		  	  	  	  	   dlsch[0]->harq_processes[harq_pid]->Nl,
-						   dlsch[0]->harq_processes[harq_pid]->G,
-                           pdsch_vars[eNB_id]->layer_llr);
+						     dlsch[0]->harq_processes[harq_pid]->Nl,
+							 dlsch[0]->harq_processes[harq_pid]->Qm,
+							 dlsch[0]->harq_processes[harq_pid]->G,
+							 pdsch_vars[eNB_id]->layer_llr);
  }
 
 #if UE_TIMING_TRACE
@@ -2588,12 +2589,9 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
 
   int prb,nb_rb=0;
   unsigned short k;
-  //int prb_off,prb_off2;
-  int skip_half=0;//sss_symb,pss_symb=0,nsymb
   int i,aarx;
   int32_t *dl_ch0,*dl_ch0p,*dl_ch0_ext,*dl_ch1,*dl_ch1p,*dl_ch1_ext,*rxF,*rxF_ext;
-  int j=0;
-  unsigned char *pmi_loc;
+  int pilots=0,j=0;
 
   k = frame_parms->first_carrier_offset + 516; //0
 
@@ -2607,7 +2605,7 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
       dl_ch1     = &dl_ch_estimates[2+aarx][0];
     }
 
-    pmi_loc = pmi_ext;
+    //pmi_loc = pmi_ext;
 
     // pointers to extracted RX signals and channel estimates
     rxF_ext    = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
@@ -2615,13 +2613,13 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
     dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(nb_rb_pdsch*12)];
 
     for (prb=0; prb<frame_parms->N_RB_DL; prb++) {
-      skip_half=0;
+      //skip_half=0;
 
       if ((frame_parms->N_RB_DL&1) == 0) {  // even number of RBs
 
         // For second half of RBs skip DC carrier
         if (k>=frame_parms->ofdm_symbol_size) {
-          rxF       = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
+          rxF = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
           k=k-(frame_parms->ofdm_symbol_size);
         }
 
