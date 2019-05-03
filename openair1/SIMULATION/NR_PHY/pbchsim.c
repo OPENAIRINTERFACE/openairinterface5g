@@ -80,6 +80,7 @@ void exit_function(const char* file, const char* function, const int line,const 
 
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {

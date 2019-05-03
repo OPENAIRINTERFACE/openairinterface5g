@@ -104,6 +104,7 @@ void exit_function(const char *file, const char *function, const int line, const
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 char quantize(double D, double x, unsigned char B) {
   double qxd;

@@ -122,6 +122,7 @@ void config_common(int Mod_idP,
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
 short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {
