@@ -1113,6 +1113,7 @@ extern "C" {
       else
         s->usrp->set_clock_source("external");
 
+      
       if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
@@ -1325,6 +1326,7 @@ extern "C" {
         LOG_I(PHY,"  Actual TX gain: %f...\n", s->usrp->get_tx_gain(i));
         LOG_I(PHY,"  Actual TX bandwidth: %fM...\n", s->usrp->get_tx_bandwidth(i)/1e6);
         LOG_I(PHY,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
+	LOG_I(PHY,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
       }
 
       LOG_I(PHY,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());

@@ -400,7 +400,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	*dci_pdu  |= (((uint64_t)pdu_rel15->tpc>>(1-i))&1)<<(dci_alloc->size-pos++);
 
 
-      //      LOG_I(PHY, "DCI PDU: [0]->0x%08llx \t [1]->0x%08llx \t [2]->0x%08llx \t [3]->0x%08llx\n",
+      //      LOG_D(PHY, "DCI PDU: [0]->0x%08llx \t [1]->0x%08llx \t [2]->0x%08llx \t [3]->0x%08llx\n",
       //	    dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
 
