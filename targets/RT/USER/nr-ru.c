@@ -661,7 +661,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   old_ts = proc->timestamp_rx;
 
-  LOG_I(PHY,"Reading %d samples for slot %d (%p)\n",fp->samples_per_slot,*slot,rxp[0]);
+  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",fp->samples_per_slot,*slot,rxp[0]);
 
   if(emulate_rf){
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
@@ -701,15 +701,6 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   proc->tti_rx       = (proc->timestamp_rx / fp->samples_per_slot)%fp->slots_per_frame;
   // synchronize first reception to frame 0 subframe 0
 
-  proc->timestamp_tx = proc->timestamp_rx+(sl_ahead*fp->samples_per_slot);
-  proc->tti_tx  = (proc->tti_rx+sl_ahead)%fp->slots_per_frame;
-  proc->frame_tx     = (proc->tti_rx>(fp->slots_per_frame-1-sl_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-  
-  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
-	ru->idx, 
-	0, 
-	(unsigned long long int)proc->timestamp_rx,
-	(int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
 
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
@@ -807,7 +798,7 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
-    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
+    AssertFatal(txs ==  (siglen+sf_extension),"TX : Timeout (sent %d/%d)\n",txs, siglen);
 
   }
 }
@@ -1084,7 +1075,7 @@ static inline int wakeup_prach_ru(RU_t *ru) {
       ru->gNB_list[0]->proc.frame_prach = ru->proc.frame_rx;
       ru->gNB_list[0]->proc.slot_prach = ru->proc.tti_rx;
     }
-    LOG_I(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
+    LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
     // the thread can now be woken up
     AssertFatal(pthread_cond_signal(&ru->proc.cond_prach) == 0, "ERROR pthread_cond_signal for RU prach thread\n");
   }
@@ -1308,7 +1299,7 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-	LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
+	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
     if (oai_exit) break;
@@ -1414,7 +1405,7 @@ static void* ru_thread( void* param ) {
   sprintf(threadname,"ru_thread %d",ru->idx);
   thread_top_init(threadname,0,870000,1000000,1000000);
 
-  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
+  LOG_D(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
   if(emulate_rf){
     fill_rf_config(ru,ru->rf_config_file);
@@ -1505,7 +1496,7 @@ static void* ru_thread( void* param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-    LOG_I(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+    LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
         frame,slot,
         proc->frame_rx,proc->tti_rx,
         proc->frame_tx,proc->tti_tx,
@@ -1534,7 +1525,7 @@ static void* ru_thread( void* param ) {
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
 
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_eNB==0)
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_gNB==0)
     {
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);

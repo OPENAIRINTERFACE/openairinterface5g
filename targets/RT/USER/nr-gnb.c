@@ -143,7 +143,7 @@ extern double cpuf;
 void init_gNB(int,int);
 void stop_gNB(int nb_inst);
 
-int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB);
+int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx,PHY_VARS_gNB *gNB);
 int wakeup_tx(PHY_VARS_gNB *gNB);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
@@ -301,7 +301,6 @@ static void* gNB_L1_thread_tx(void* param) {
   
   while (!oai_exit) {
     
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 1 );
     if (oai_exit) break;    
@@ -319,6 +318,9 @@ static void* gNB_L1_thread_tx(void* param) {
     phy_procedures_gNB_TX(gNB, proc, 1);
 
     pthread_mutex_lock( &proc->mutex );
+    int slot_tx = proc->slot_tx;
+    int frame_tx    = proc->frame_tx;
+    uint64_t timestamp_tx = proc->timestamp_tx;
     proc->instance_cnt = -1;
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond) != 0) {
@@ -326,7 +328,8 @@ static void* gNB_L1_thread_tx(void* param) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex );
-    wakeup_txfh(proc,gNB);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
+    wakeup_txfh(proc,frame_tx,slot_tx,timestamp_tx,gNB);
   }
 
   return 0;
@@ -379,13 +382,10 @@ static void* gNB_L1_thread( void* param ) {
     if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT){
       phy_procedures_gNB_TX(gNB, proc, 1);
     }
+    if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB);
+    else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) wakeup_txfh(proc,proc->frame_tx,proc->slot_tx,proc->timestamp_tx,gNB);
+
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT){
-      wakeup_tx(gNB);
-    }
-    else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT){
-      wakeup_txfh(proc,gNB);
-    }
 
   } // while !oai_exit
 
@@ -446,7 +446,7 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct 
   }
 }
 
-int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
+int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx,PHY_VARS_gNB *gNB) {
 
   RU_t *ru;
   RU_proc_t *ru_proc;
@@ -481,11 +481,11 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
     }
 
     ru_proc->instance_cnt_gNBs = 0;
-    ru_proc->timestamp_tx = proc->timestamp_tx;
-    ru_proc->tti_tx       = proc->slot_tx;
-    ru_proc->frame_tx     = proc->frame_tx;
+    ru_proc->timestamp_tx = timestamp_tx;
+    ru_proc->tti_tx       = slot_tx;
+    ru_proc->frame_tx     = frame_tx;
 
-    LOG_I(PHY,"Signaling tx_thread_fh for %d.%d\n",ru_proc->frame_tx,ru_proc->tti_tx);  
+    LOG_D(PHY,"Signaling tx_thread_fh for %d.%d\n",ru_proc->frame_tx,ru_proc->tti_tx);  
     // the thread can now be woken up
     if (pthread_cond_signal(&ru_proc->cond_gNBs) != 0) {
       LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
@@ -607,7 +607,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->slot_tx  = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
-  LOG_I(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
+  LOG_D(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {

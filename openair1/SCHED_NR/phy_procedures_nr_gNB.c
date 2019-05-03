@@ -161,22 +161,25 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
 
   if (num_dci) {
-    LOG_I(PHY, "[gNB %d] Frame %d slot %d \
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, num_dci);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
     if (nfapi_mode == 0 || nfapi_mode == 1) {
       nr_generate_dci_top(gNB->pdcch_vars,
                           gNB->nr_gold_pdcch_dmrs[slot],
                           gNB->common_vars.txdataF[0],
                           AMP, *fp, *cfg);
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
       if (num_pdsch_rnti) {
-        LOG_I(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
+        LOG_D(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
         nr_generate_pdsch(*gNB->dlsch[0][0],
                           gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
                           AMP, slot, *fp, *cfg);
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
     }
   }
