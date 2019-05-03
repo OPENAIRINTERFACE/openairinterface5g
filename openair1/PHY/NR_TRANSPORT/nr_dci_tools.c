@@ -71,7 +71,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
 
   tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % CEILIDIV(N_cce,L));
 
-  LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
+  LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
     cce = &dci_alloc->cce_list[cce_idx];
     cce->cce_idx = tmp + cce_idx;
@@ -495,8 +495,8 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
     break;
   }
 
-  LOG_I(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-  LOG_I(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
+  LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
+  LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
 
   /// DLSCH struct
   memcpy((void*)&harq[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));

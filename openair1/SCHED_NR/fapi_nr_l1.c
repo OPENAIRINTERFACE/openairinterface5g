@@ -45,7 +45,7 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
   AssertFatal(dl_config_pdu->bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
               dl_config_pdu->bch_pdu_rel15.length);
 
-  LOG_I(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
+  LOG_D(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
   gNB->pbch_pdu[0] = sdu[2];
   gNB->pbch_pdu[1] = sdu[1];
   gNB->pbch_pdu[2] = sdu[0];
@@ -63,12 +63,12 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
   int idx                        = slot&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
 
-  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
   nr_fill_dci_and_dlsch(gNB,frame,slot,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu,&dl_config_dlsch_pdu->dlsch_pdu);
 
-  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 }
 
 
@@ -112,7 +112,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
-    printf("NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
         AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,

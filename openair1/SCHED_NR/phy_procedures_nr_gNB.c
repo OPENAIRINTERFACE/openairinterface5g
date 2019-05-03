@@ -161,7 +161,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
 
   if (num_dci) {
-    LOG_I(PHY, "[gNB %d] Frame %d slot %d \
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, num_dci);
 
     if (nfapi_mode == 0 || nfapi_mode == 1) {
@@ -171,7 +171,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           AMP, *fp, *cfg);
 
       if (num_pdsch_rnti) {
-        LOG_I(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
+        LOG_D(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
         nr_generate_pdsch(*gNB->dlsch[0][0],
                           gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],

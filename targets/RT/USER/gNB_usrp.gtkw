@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Tue Nov  6 14:54:14 2018
+[*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
+[*] Wed May  1 00:14:54 2019
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Tue Nov  6 14:50:45 2018"
-[dumpfile_size] 1894074
-[savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 1238454000
-[size] 1920 1018
-[pos] -159 -155
-*-20.848083 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile_mtime] "Wed May  1 00:10:57 2019"
+[dumpfile_size] 22152850
+[savefile] "/home/caracal/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 11537525000
+[size] 1859 841
+[pos] -1 -1
+*-19.848083 11540069031 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
@@ -46,7 +46,6 @@ variables.frame_number_TX1_gNB[63:0]
 variables.slot_number_TX1_gNB[63:0]
 @28
 functions.gNB_thread_rxtx1
-functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
 functions.phy_procedures_ru_feptx_ofdm0

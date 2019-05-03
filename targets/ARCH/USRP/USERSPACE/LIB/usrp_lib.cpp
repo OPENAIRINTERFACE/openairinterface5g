@@ -1095,6 +1095,7 @@ extern "C" {
         device->type=USRP_X300_DEV; //treat it as X300 for now
         usrp_master_clock = 122.88e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+        //args += ", send_buff_size=33554432";
       }
 
       if (device_adds[0].get("type") == "x300") {
