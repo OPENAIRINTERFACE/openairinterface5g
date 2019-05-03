@@ -683,7 +683,7 @@ install_asn1c_from_source(){
     # better to use a given commit than a branch in case the branch
     # is updated and requires modifications in the source of OAI
     #git checkout velichkov_s1ap_plus_option_group
-    git checkout d3aed06bb2bec7df1b5c6d0333f8c7dfc5993372
+    git checkout f12568d617dbf48497588f8e227d70388fa217c9
     autoreconf -iv
     ./configure
     make -j`nproc`
