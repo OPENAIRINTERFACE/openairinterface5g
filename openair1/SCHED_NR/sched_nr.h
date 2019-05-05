@@ -36,7 +36,7 @@
 
 nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot);
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
-void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int do_meas);
+void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx,int slot_tx, int do_meas);
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
 void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
 void nr_feptx_ofdm(RU_t *ru);

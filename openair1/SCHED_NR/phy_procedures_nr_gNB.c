@@ -130,11 +130,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 }
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
-                           gNB_L1_rxtx_proc_t *proc,
+                           int frame,int slot,
                            int do_meas) {
   int aa;
-  int frame=proc->frame_tx;
-  int slot=proc->slot_tx;
   uint8_t num_dci=0,num_pdsch_rnti;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;

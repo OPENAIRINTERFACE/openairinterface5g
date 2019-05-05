@@ -434,6 +434,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   if (u_sf_mode != 2) { // not replay mode
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
+
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
@@ -497,9 +498,9 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       for (int i=0; i<cc; i++)
         buff_ptrs.push_back(buff_tx[i]);
 
-      ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
+      ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,250e-6);
     } else
-      ret = (int)s->tx_stream->send(buff_tx[0], nsamps, s->tx_md,1e-3);
+      ret = (int)s->tx_stream->send(buff_tx[0], nsamps, s->tx_md,250e-6);
 
     if (ret != nsamps)
       LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
