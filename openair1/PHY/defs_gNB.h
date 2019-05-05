@@ -382,12 +382,14 @@ typedef struct {
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
 
-  /// \internal This variable is protected by \ref mutex_RUs.
+  /// \internal This variable is protected by \ref mutex_RUs_tx.
   int instance_cnt_RUs;
   /// condition variable for tx processing thread
   pthread_cond_t cond_RUs;
-  /// mutex for RXn-TXnp4 processing thread
+  /// mutex for L1 RXTX processing thread
   pthread_mutex_t mutex_RUs;
+  /// mutex for L1 TX FH synchronization
+  pthread_mutex_t mutex_RUs_tx;
 } gNB_L1_rxtx_proc_t;
 
 

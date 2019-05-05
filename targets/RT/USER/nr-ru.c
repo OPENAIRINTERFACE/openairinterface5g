@@ -1368,14 +1368,14 @@ static void* ru_thread_tx( void* param ) {
         gNB_proc->RU_mask_tx = 0;
         pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
 
-        pthread_mutex_lock( &L1_proc->mutex_RUs);
+        pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         L1_proc->instance_cnt_RUs = 0;
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
-          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB L1 TX thread\n");
           exit_fun( "ERROR pthread_cond_signal" );
         }
-        pthread_mutex_unlock( &L1_proc->mutex_RUs );
+        pthread_mutex_unlock( &L1_proc->mutex_RUs_tx );
       }
     }
   }

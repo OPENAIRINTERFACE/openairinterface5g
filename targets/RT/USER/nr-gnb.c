@@ -143,8 +143,8 @@ extern double cpuf;
 void init_gNB(int,int);
 void stop_gNB(int nb_inst);
 
-int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx,PHY_VARS_gNB *gNB);
-int wakeup_tx(PHY_VARS_gNB *gNB);
+int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx);
+int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_tx,uint64_t timestamp_tx);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 
@@ -159,7 +159,7 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 
-static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_name) {
+static inline int rxtx(PHY_VARS_gNB *gNB,int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -167,15 +167,11 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   if (nfapi_mode == 1) {
 
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
-    uint16_t frame = proc->frame_rx;
-    uint16_t slot  = proc->slot_rx;
 
     //add_subframe(&frame, &subframe, 4);
 
-    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
-    //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame, slot);
+    oai_subframe_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -184,14 +180,13 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
         gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles ||
         gNB->UL_INFO.cqi_ind.number_of_cqis
        ) {
-      LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d TX:%04d%d \n", 
+      LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d \n", 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rx_ind.sfn_sf),   gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.harq_ind.sfn_sf), gNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.crc_ind.sfn_sf),  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rach_ind.sfn_sf), gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
           gNB->UL_INFO.cqi_ind.number_of_cqis, 
-          proc->frame_rx, proc->slot_rx, 
-      proc->frame_tx, proc->slot_tx);
+          frame_rx, slot_rx); 
     }
   }
 
@@ -200,22 +195,22 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   // ****************************************
   // Common RX procedures subframe n
 
-  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->slot_tx));
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
-    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
+    wakeup_prach_gNB(gNB,NULL,frame_rx,slot_rx);
   }
 
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
-    phy_procedures_gNB_uespec_RX(gNB, proc, no_relay );
+    phy_procedures_gNB_uespec_RX(gNB, frame_rx,slot_rx, no_relay );
   }
 */
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
-  gNB->UL_INFO.frame     = proc->frame_rx;
-  gNB->UL_INFO.slot      = proc->slot_rx;
+  gNB->UL_INFO.frame     = frame_rx;
+  gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
 
@@ -232,76 +227,28 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   //if (wait_CCs(proc)<0) return(-1);
   
   if (oai_exit) return(-1);
-  if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD){
-    phy_procedures_gNB_TX(gNB, proc, 1);
-  }
+  if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
 
-  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->slot_rx, proc->frame_tx, proc->slot_tx);
+  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
-#if 0
-  LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
-      softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now,
-      TICK_TO_US(gNB->phy_proc),
-      TICK_TO_US(gNB->phy_proc_tx),
-      TICK_TO_US(gNB->phy_proc_rx),
-      TICK_TO_US(gNB->rx_prach),
-      TICK_TO_US(gNB->ofdm_mod_stats),
-      softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now);
-  LOG_D(PHY,
-    "dlsch[enc:%lld mod:%lld scr:%lld rm:%lld t:%lld i:%lld] rx_dft:%lld ",
-      TICK_TO_US(gNB->dlsch_encoding_stats),
-      TICK_TO_US(gNB->dlsch_modulation_stats),
-      TICK_TO_US(gNB->dlsch_scrambling_stats),
-      TICK_TO_US(gNB->dlsch_rate_matching_stats),
-      TICK_TO_US(gNB->dlsch_turbo_encoding_stats),
-      TICK_TO_US(gNB->dlsch_interleaving_stats),
-      TICK_TO_US(gNB->rx_dft_stats));
-
-  LOG_D(PHY," ulsch[ch:%lld freq:%lld dec:%lld demod:%lld ru:%lld ",
-      TICK_TO_US(gNB->ulsch_channel_estimation_stats),
-      TICK_TO_US(gNB->ulsch_freq_offset_estimation_stats),
-      TICK_TO_US(gNB->ulsch_decoding_stats),
-      TICK_TO_US(gNB->ulsch_demodulation_stats),
-      TICK_TO_US(gNB->ulsch_rate_unmatching_stats));
-
-  LOG_D(PHY, "td:%lld dei:%lld dem:%lld llr:%lld tci:%lld ",
-      TICK_TO_US(gNB->ulsch_turbo_decoding_stats),
-      TICK_TO_US(gNB->ulsch_deinterleaving_stats),
-      TICK_TO_US(gNB->ulsch_demultiplexing_stats),
-      TICK_TO_US(gNB->ulsch_llr_stats),
-      TICK_TO_US(gNB->ulsch_tc_init_stats));
-  LOG_D(PHY, "tca:%lld tcb:%lld tcg:%lld tce:%lld l1:%lld l2:%lld]\n\n", 
-      TICK_TO_US(gNB->ulsch_tc_alpha_stats),
-      TICK_TO_US(gNB->ulsch_tc_beta_stats),
-      TICK_TO_US(gNB->ulsch_tc_gamma_stats),
-      TICK_TO_US(gNB->ulsch_tc_ext_stats),
-      TICK_TO_US(gNB->ulsch_tc_intl1_stats),
-      TICK_TO_US(gNB->ulsch_tc_intl2_stats)
-      );
-#endif
   
   return(0);
 }
 
 static void* gNB_L1_thread_tx(void* param) {
 
-  PHY_VARS_gNB *gNB        = (PHY_VARS_gNB*)param;
-  gNB_L1_proc_t *gNB_proc  = &gNB->proc;
-  gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc_tx;
-  //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
+  PHY_VARS_gNB *gNB              = (PHY_VARS_gNB*)param;
+  gNB_L1_rxtx_proc_t *L1_proc_tx = &gNB->proc.L1_proc_tx;
 
   
   char thread_name[100];
-  sprintf(thread_name,"TXnp4_%d\n",&gNB->proc.L1_proc == proc ? 0 : 1);
-  //thread_top_init(thread_name,1,470000,500000,500000);
-  
-  //wait_sync("tx_thread");
+  sprintf(thread_name,"gNB_L1_thread_tx\n");
   
   while (!oai_exit) {
     
-    if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
+    if (wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 1 );
     if (oai_exit) break;    
     // *****************************************
@@ -309,27 +256,25 @@ static void* gNB_L1_thread_tx(void* param) {
     // run PHY TX procedures the one after the other for all CCs to avoid race conditions
     // (may be relaxed in the future for performance reasons)
     // *****************************************
-    
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,proc->slot_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX1_GNB,proc->slot_rx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,proc->frame_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_GNB,proc->frame_rx);
+    int      frame_tx = L1_proc_tx->frame_tx;
+    int      slot_tx = L1_proc_tx->slot_tx;
+    uint64_t timestamp_tx = L1_proc_tx->timestamp_tx;
 
-    phy_procedures_gNB_TX(gNB, proc, 1);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,frame_tx);
 
-    pthread_mutex_lock( &proc->mutex );
-    int slot_tx = proc->slot_tx;
-    int frame_tx    = proc->frame_tx;
-    uint64_t timestamp_tx = proc->timestamp_tx;
-    proc->instance_cnt = -1;
+    phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+
+    pthread_mutex_lock( &L1_proc_tx->mutex );
+    L1_proc_tx->instance_cnt = -1;
     // the thread can now be woken up
-    if (pthread_cond_signal(&proc->cond) != 0) {
-      LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
+    if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
+      LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for L1_threa_tx\n");
       exit_fun( "ERROR pthread_cond_signal" );
     }
-    pthread_mutex_unlock( &proc->mutex );
+    pthread_mutex_unlock( &L1_proc_tx->mutex );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
-    wakeup_txfh(proc,frame_tx,slot_tx,timestamp_tx,gNB);
+    wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
   }
 
   return 0;
@@ -346,8 +291,7 @@ static void* gNB_L1_thread( void* param ) {
   static int gNB_thread_rxtx_status;
   PHY_VARS_gNB *gNB        = (PHY_VARS_gNB*)param;
   gNB_L1_proc_t *gNB_proc  = &gNB->proc;
-  gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc;
-  //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
+  gNB_L1_rxtx_proc_t *L1_proc = &gNB_proc->L1_proc;
 
 
   char thread_name[100];
@@ -358,34 +302,37 @@ static void* gNB_L1_thread( void* param ) {
   gNB_thread_rxtx_status = 0;
 
 
-  sprintf(thread_name,"RXn_TXnp4_%d",&gNB->proc.L1_proc == proc ? 0 : 1);
-  //thread_top_init(thread_name,1,850000L,1000000L,2000000L);
+  sprintf(thread_name,"gNB_L1_thread");
 
   while (!oai_exit) {
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
-    if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
+    if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,proc->slot_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX0_GNB,proc->slot_rx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,proc->frame_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,proc->frame_rx);
+    int frame_rx          = L1_proc->frame_rx;
+    int slot_rx           = L1_proc->slot_rx;
+    int frame_tx          = L1_proc->frame_tx;
+    int slot_tx           = L1_proc->slot_tx;
+    uint64_t timestamp_tx = L1_proc->timestamp_tx;
+ 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX0_GNB,slot_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,frame_rx);
 
     if (oai_exit) break;
 
     if (gNB->CC_id==0)
     {
-      if (rxtx(gNB,proc,thread_name) < 0) break;
+      if (rxtx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,thread_name) < 0) break;
 
     }
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT){
-      phy_procedures_gNB_TX(gNB, proc, 1);
-    }
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB);
-    else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) wakeup_txfh(proc,proc->frame_tx,proc->slot_tx,proc->timestamp_tx,gNB);
+    if (release_thread(&L1_proc->mutex,&L1_proc->instance_cnt,thread_name)<0) break;
 
-    if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
+    if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)  wakeup_tx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,timestamp_tx);
+    else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) wakeup_txfh(gNB,L1_proc,frame_tx,slot_tx,timestamp_tx);
+
 
   } // while !oai_exit
 
@@ -439,14 +386,14 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct 
     L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
     L1_proc->slot_tx      = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
-    if (rxtx(gNB,L1_proc,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
+    if (rxtx(gNB,L1_proc->frame_rx,L1_proc->slot_rx,L1_proc->frame_tx,L1_proc->slot_tx,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
     ru_proc->tti_tx       = L1_proc->slot_tx;
     ru_proc->frame_tx     = L1_proc->frame_tx;
   }
 }
 
-int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx,PHY_VARS_gNB *gNB) {
+int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx) {
 
   RU_t *ru;
   RU_proc_t *ru_proc;
@@ -455,16 +402,17 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t times
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->slot_tx, proc->instance_cnt_RUs);
 
-  if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
+  if(wait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->slot_tx);
     return(-1);
   }
+
   pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
+
   gNB->proc.RU_mask_tx = 0;
   pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
-  if (release_thread(&proc->mutex_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
+  if (release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
 
   for(int i=0; i<gNB->num_RU; i++)
   {
@@ -499,12 +447,10 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t times
   return(0);
 }
 
-int wakeup_tx(PHY_VARS_gNB *gNB) {
+int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_tx,uint64_t timestamp_tx) {
 
-  gNB_L1_proc_t *proc=&gNB->proc;
 
-  gNB_L1_rxtx_proc_t *L1_proc_tx = &proc->L1_proc_tx;
-  gNB_L1_rxtx_proc_t *L1_proc    = &proc->L1_proc;
+  gNB_L1_rxtx_proc_t *L1_proc_tx = &gNB->proc.L1_proc_tx;
 
   
   struct timespec wait;
@@ -524,11 +470,11 @@ int wakeup_tx(PHY_VARS_gNB *gNB) {
   L1_proc_tx->instance_cnt = 0;
 
   
-  L1_proc_tx->slot_rx   = L1_proc->slot_rx;
-  L1_proc_tx->frame_rx      = L1_proc->frame_rx;
-  L1_proc_tx->slot_tx   = L1_proc->slot_tx;
-  L1_proc_tx->frame_tx      = L1_proc->frame_tx;
-  L1_proc_tx->timestamp_tx  = L1_proc->timestamp_tx;
+  L1_proc_tx->slot_rx       = slot_rx;
+  L1_proc_tx->frame_rx      = frame_rx;
+  L1_proc_tx->slot_tx       = slot_tx;
+  L1_proc_tx->frame_tx      = frame_tx;
+  L1_proc_tx->timestamp_tx  = timestamp_tx;
   
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
@@ -581,7 +527,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     usleep(100);
   }
   if (L1_proc->instance_cnt == 0) {
-    exit_fun( "TX thread busy" );
+    exit_fun( "RX thread busy" );
     return(-1);
   }
 
