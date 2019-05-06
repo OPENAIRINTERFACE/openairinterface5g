@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
-[*] Wed May  1 00:14:54 2019
+[*] Mon May  6 11:32:36 2019
 [*]
-[dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Wed May  1 00:10:57 2019"
-[dumpfile_size] 22152850
+[dumpfile] "/tmp/openair_dump_gNB40.vcd"
+[dumpfile_mtime] "Mon May  6 11:32:05 2019"
+[dumpfile_size] 803075
 [savefile] "/home/caracal/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 11537525000
-[size] 1859 841
+[timestart] 10835824000
+[size] 1920 859
 [pos] -1 -1
-*-19.848083 11540069031 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.848083 10838512202 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
-[sst_vpaned_height] 421
+[sst_vpaned_height] 197
 @28
 functions.trx_read
 functions.trx_write
@@ -30,8 +30,6 @@ variables.tti_number_TX0_RU[63:0]
 @28
 functions.mac_schedule_dlsch
 functions.macxface_eNB_dlsch_ulsch_scheduler
-functions.macxface_ue_scheduler
-functions.phy_eNB_ofdm_mod_l
 @24
 variables.frame_number_RX0_gNB[63:0]
 variables.slot_number_RX0_gNB[63:0]
@@ -46,6 +44,13 @@ variables.frame_number_TX1_gNB[63:0]
 variables.slot_number_TX1_gNB[63:0]
 @28
 functions.gNB_thread_rxtx1
+functions.phy_enb_pdcch_tx
+functions.phy_eNB_dlsch_encoding
+functions.phy_eNB_dlsch_encoding_w
+functions.generate_dlsch
+@421
+variables.frame_number_RX0_UE[63:0]
+@28
 functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
 functions.phy_procedures_ru_feptx_ofdm0

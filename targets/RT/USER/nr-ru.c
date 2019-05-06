@@ -791,7 +791,7 @@ void tx_rf(RU_t *ru) {
 				      txp,
 				      siglen+sf_extension,
 				      ru->nb_tx,
-				      flags);
+				      4);//flags);
     
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
 	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->tti_tx);
@@ -1370,6 +1370,8 @@ static void* ru_thread_tx( void* param ) {
 
         pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         L1_proc->instance_cnt_RUs = 0;
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
+
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB L1 TX thread\n");

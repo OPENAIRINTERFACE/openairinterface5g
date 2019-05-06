@@ -248,7 +248,8 @@ static void* gNB_L1_thread_tx(void* param) {
   
   while (!oai_exit) {
     
-    if (wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,thread_name)<0) break;
+    while (L1_proc_tx->instance_cnt==-1)
+       if (wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 1 );
     if (oai_exit) break;    
     // *****************************************
@@ -273,8 +274,8 @@ static void* gNB_L1_thread_tx(void* param) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &L1_proc_tx->mutex );
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
     wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
   }
 
   return 0;
@@ -398,22 +399,31 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   RU_t *ru;
   RU_proc_t *ru_proc;
 
-
+  int waitret;
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
+ 
 
-  if(wait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->slot_tx);
-    return(-1);
-  }
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
 
-  pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
+// note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
+  waitret=timedwait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh",500000); 
 
-  gNB->proc.RU_mask_tx = 0;
-  pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
+
   if (release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
+ 
+  if (waitret == ETIMEDOUT) {
+     LOG_W(PHY,"Dropping TX slot because FH is blocked more than 2 slot times (1000us)\n");
+
+     pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
+     gNB->proc.RU_mask_tx = 0;
+     pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
+
+     return(-1);
+  } 
   for(int i=0; i<gNB->num_RU; i++)
   {
     ru      = gNB->RU_list[i];
@@ -523,7 +533,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
 
   /* accept some delay in processing - up to 5ms */
   for (i = 0; i < fp->slots_per_frame && L1_proc->instance_cnt == 0; i++) {
-    LOG_W( PHY,"[gNB] SFN.SL %d.%d, gNB RXn-TXnp4 thread busy!! (i %d, cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, i,L1_proc->instance_cnt);
+    LOG_W( PHY,"[gNB] SFN.SL %d.%d, gNB L1 thread busy!! (i %d, cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, i,L1_proc->instance_cnt);
     usleep(100);
   }
   if (L1_proc->instance_cnt == 0) {
@@ -534,7 +544,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
+    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB L1 thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
     exit_fun( "error locking mutex" );
     return(-1);
   }
