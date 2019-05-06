@@ -236,8 +236,8 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
   uint8_t symbol;
 
   for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
-        nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
-      }
+    nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
+  }
 
 }
 
@@ -251,11 +251,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, u
 
   for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
     
-    
-
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
 
-          nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
+      nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
 
     }
       

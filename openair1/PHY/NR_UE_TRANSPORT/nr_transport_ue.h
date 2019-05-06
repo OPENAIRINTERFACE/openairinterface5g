@@ -204,7 +204,7 @@ typedef struct {
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
-  uint32_t y[MAX_NUM_NR_RE];
+  uint32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];

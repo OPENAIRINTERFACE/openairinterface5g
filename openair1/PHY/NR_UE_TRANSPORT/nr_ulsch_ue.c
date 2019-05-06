@@ -41,11 +41,6 @@
 
 //#define DEBUG_SCFDMA
 
-#ifdef DEBUG_SCFDMA
-
-  FILE *debug_scfdma;
-
-#endif
 
 int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
                              uint8_t thread_id,
@@ -152,105 +147,6 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 }
 
-
-void pusch_transform_precoding(NR_UE_ULSCH_t *ulsch, NR_DL_FRAME_PARMS *frame_parms, int harq_pid){
-
-  NR_UL_UE_HARQ_t *harq_process;
-  int x[8192]__attribute__ ((aligned (32))); // 8192 is the maximum number of fft bins
-  uint32_t *dmod;
-  int sc, pusch_symb, pusch_sc;
-  int symb, k, l, num_mod_symb;
-
-  harq_process = ulsch->harq_processes[harq_pid];
-
-#ifdef DEBUG_SCFDMA
-  debug_scfdma = fopen("debug_scfdma.txt","w");
-#endif
-
-  dmod = ulsch->d_mod;
-  pusch_symb = ulsch->Nsymb_pusch;
-  pusch_sc = ulsch->Nsc_pusch;
-  num_mod_symb = harq_process->num_of_mod_symbols;
-
-  void (*dft)(int16_t *,int16_t *, int);
-
-  switch (frame_parms->ofdm_symbol_size) {
-  case 128:
-    dft = dft128;
-    break;
-
-  case 256:
-    dft = dft256;
-    break;
-
-  case 512:
-    dft = dft512;
-    break;
-
-  case 1024:
-    dft = dft1024;
-    break;
-
-  case 1536:
-    dft = dft1536;
-    break;
-
-  case 2048:
-    dft = dft2048;
-    break;
-
-  case 4096:
-    dft = dft4096;
-    break;
-
-  case 8192:
-    dft = dft8192;
-    break;
-
-  default:
-    dft = dft512;
-    break;
-  }
-
-  k = 0;
-  symb = 0;
-
-  for(l = 0; l < pusch_symb; l++){
-
-    for (sc = 0; sc < pusch_sc; sc++){
-
-      ((int16_t *)x)[sc*2] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2])>>15:0;
-      ((int16_t *)x)[sc*2 + 1] = (symb<num_mod_symb)?(AMP*((int16_t *)dmod)[symb*2 + 1])>>15:0;
-
-  #ifdef DEBUG_SCFDMA
-      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2, ((int16_t *)x)[sc*2] );
-      fprintf(debug_scfdma, "x[%d] = %d\n", symb*2 + 1, ((int16_t *)x)[sc*2 + 1] );
-  #endif
-
-      symb++;
-
-    }
-
-
-    dft((int16_t *)x, (int16_t *)&ulsch->y[l*pusch_sc], 1);
-
-  }
-
-#ifdef DEBUG_SCFDMA
-
-  for (symb = 0; symb < num_mod_symb; symb++)
-  {
-    fprintf(debug_scfdma, "ulsch->y[%d] = %d\n", symb*2, ((int16_t *)ulsch->y)[symb*2] );
-    fprintf(debug_scfdma, "ulsch->y[%d] = %d\n", symb*2 + 1, ((int16_t *)ulsch->y)[symb*2 + 1] );
-  }
-
-  fclose(debug_scfdma);
-#endif
-
-}
-
-
-
 uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
@@ -327,7 +223,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                   mod_order,
                   (int16_t *)ulsch_ue->d_mod);
 
-    pusch_transform_precoding(ulsch_ue, frame_parms, harq_pid);
+    // pusch_transform_precoding(ulsch_ue, frame_parms, harq_pid);
 
     ///////////
     ////////////////////////////////////////////////////////////////////////
@@ -365,10 +261,45 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                    harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
-
+  
+  for (uint32_t i = 0; i < 2*available_bits/mod_order; i++)
+      tx_layers[0][i] = (tx_layers[0][i] * AMP) >> 15;
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
+
+
+  //////////////////////// ULSCH transform precoding ////////////////////////
+  ///////////
+
+  l_prime[0] = 0; // single symbol ap 0
+  uint8_t dmrs_symbol = l0+l_prime[0], l; // Assuming dmrs-AdditionalPosition = 0
+
+#ifdef NR_SC_FDMA
+  uint32_t nb_re_pusch, nb_re_dmrs_per_rb;
+  uint32_t y_offset = 0;
+
+  for (l = start_symbol; l < start_symbol + ulsch_ue->Nsymb_pusch; l++) {
+
+    if(l == dmrs_symbol)
+      nb_re_dmrs_per_rb = ulsch_ue->nb_re_dmrs; // [hna] ulsch_ue->nb_re_dmrs = 6 in this configuration
+    else
+      nb_re_dmrs_per_rb = 0;
+    
+    nb_re_pusch = harq_process_ul_ue->nb_rb * (NR_NB_SC_PER_RB - nb_re_dmrs_per_rb);
+
+    nr_dft(&ulsch_ue->y[y_offset], &((int32_t*)tx_layers[0])[y_offset], nb_re_pusch);
+
+    y_offset = y_offset + nb_re_pusch;
+  }
+#else
+  memcpy(ulsch_ue->y, tx_layers[0], (available_bits/mod_order)*sizeof(int32_t));
+#endif
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
+
+
 
   /////////////////////////ULSCH RE mapping/////////////////////////
   ///////////
@@ -387,10 +318,9 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     get_Wt(Wt, ap, dmrs_type);
     get_Wf(Wf, ap, dmrs_type);
     delta = get_delta(ap, dmrs_type);
-    l_prime[0] = 0; // single symbol ap 0
-    uint8_t dmrs_symbol = l0+l_prime[0]; // Assuming dmrs-AdditionalPosition = 0
+    
 
-    uint8_t k_prime=0, l;
+    uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
 
     for (l=start_symbol; l<start_symbol+ulsch_ue->Nsymb_pusch; l++) {
@@ -420,8 +350,8 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         else {
 
-          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (AMP * tx_layers[ap][m<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (AMP * tx_layers[ap][(m<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
 
           #ifdef DEBUG_PUSCH_MAPPING
             printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",

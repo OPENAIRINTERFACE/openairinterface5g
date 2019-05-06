@@ -120,3 +120,182 @@ void nr_layer_mapping(int16_t **mod_symbs,
   AssertFatal(0, "Invalid number of layers %d\n", n_layers);
   }
 }
+
+
+void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
+{
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i dft_in128[1][1200], dft_out128[1][1200];
+#elif defined(__arm__)
+  int16x8_t dft_in128[1][1200], dft_out128[1][1200];
+#endif
+  uint32_t *dft_in0 = (uint32_t*)dft_in128[0], *dft_out0 = (uint32_t*)dft_out128[0];
+
+  uint32_t i, ip;
+
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i norm128;
+#elif defined(__arm__)
+  int16x8_t norm128;
+#endif
+
+  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
+    dft_in0[ip] = d[i];
+  }
+
+  switch (Msc_PUSCH) {
+    case 12:
+      dft12((int16_t *)dft_in0, (int16_t *)dft_out0);
+
+#if defined(__x86_64__) || defined(__i386__)
+      norm128 = _mm_set1_epi16(9459);
+#elif defined(__arm__)
+      norm128 = vdupq_n_s16(9459);
+#endif
+      for (i=0; i<12; i++) {
+#if defined(__x86_64__) || defined(__i386__)
+        ((__m128i*)dft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out0)[i], norm128), 1);
+#elif defined(__arm__)
+        ((int16x8_t*)dft_out0)[i] = vqdmulhq_s16(((int16x8_t*)dft_out0)[i], norm128);
+#endif
+      }
+
+      break;
+
+    case 24:
+      dft24((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 36:
+      dft36((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 48:
+      dft48((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 60:
+      dft60((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 72:
+      dft72((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 96:
+      dft96((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 108:
+      dft108((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 120:
+      dft120((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 144:
+      dft144((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 180:
+      dft180((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 192:
+      dft192((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 216:
+      dft216((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 240:
+      dft240((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 288:
+      dft288((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 300:
+      dft300((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 324:
+      dft324((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 360:
+      dft360((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 384:
+      dft384((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 432:
+      dft432((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 480:
+      dft480((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 540:
+      dft540((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 576:
+      dft576((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 600:
+      dft600((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 648:
+      dft648((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 720:
+      dft720((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 768:
+      dft768((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 864:
+      dft864((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 900:
+      dft900((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 960:
+      dft960((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 972:
+      dft972((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1080:
+      dft1080((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1152:
+      dft1152((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+
+    case 1200:
+      dft1200((int16_t*)dft_in0, (int16_t*)dft_out0, 1);
+      break;
+  }
+
+  for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
+    z[i] = dft_out0[ip];
+  }
+}

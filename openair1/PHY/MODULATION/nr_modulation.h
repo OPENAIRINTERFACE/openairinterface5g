@@ -68,4 +68,12 @@ int nr_slot_fep_ul(PHY_VARS_gNB *phy_vars_gNB,
                    int sample_offset,
                    int no_prefix);
 
+/*!
+\brief This function implements the dft transform precoding in PUSCH
+\param z Pointer to output in frequnecy domain
+\param d Pointer to input in time domain
+\param Msc_PUSCH number of allocated data subcarriers
+*/
+void nr_dft(int32_t *z,int32_t *d, uint32_t Msc_PUSCH);
+
 #endif

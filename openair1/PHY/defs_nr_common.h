@@ -42,6 +42,11 @@
 #define nr_subframe_t lte_subframe_t
 #define nr_slot_t lte_subframe_t
 
+// [hna] This enables SC-FDMA transmission in Uplink. If disabled, then OFDMA is used in UPLINK.
+#ifndef NR_SC_FDMA
+#define NR_SC_FDMA
+#endif
+
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
 #define NR_MAX_NB_RB 275
