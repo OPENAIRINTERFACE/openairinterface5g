@@ -1057,7 +1057,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 /*! \brief Fill up NR_UE_ULSCH_t and NR_UL_UE_HARQ_t structs
   @param[in] UE, Pointer to PHY_VARS_NR_UE struct
-  @param[in] nr_ul_pdcch_params, pointer to temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t struct
   @param[in] thread_id, thread id
   @param[in] gNB_id, gNB id
   @param[in] harq_pid, harq id
@@ -1065,11 +1064,9 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 */
 
 int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
-                             temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t *nr_ul_pdcch_params,
                              uint8_t thread_id,
                              int gNB_id,
-                             unsigned char harq_pid,
-                             unsigned char *test_input);
+                             unsigned char harq_pid);
 
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
   @param[in] in, Pointer to input bits
@@ -1100,7 +1097,8 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id);
+                               int eNB_id,
+                               unsigned char *test_input);
 
 
 /** \brief This function does IFFT for PUSCH

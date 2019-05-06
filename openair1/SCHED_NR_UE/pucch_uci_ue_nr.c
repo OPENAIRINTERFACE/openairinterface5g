@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 #ifndef NO_RAT_NR
 
@@ -50,7 +51,9 @@
 
 #endif
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+
+
+//int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 /*
@@ -111,6 +114,11 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 
 //extern uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
 //extern uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
+
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
+
+    return 0;
+}
 
 /*******************************************************************
 *

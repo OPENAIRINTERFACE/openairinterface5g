@@ -30,6 +30,8 @@
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
 
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+
 #include "SIMULATION/TOOLS/sim.h"
 #include "SIMULATION/RF/rf.h"
 
@@ -49,6 +51,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR_UE/defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 
@@ -61,6 +64,8 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+
+
 
 double cpuf;
 
@@ -96,6 +101,8 @@ NR_IF_Module_t *
 NR_IF_Module_init(int Mod_id) {
   return (NULL);
 }
+
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
@@ -137,7 +144,7 @@ int main(int argc, char **argv) {
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
-  uint8_t n_tx = 1, n_rx = 1, nb_codewords = 1;
+  uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
   uint16_t Nid_cell = 0;
   channel_desc_t *gNB2UE;
@@ -167,7 +174,8 @@ int main(int argc, char **argv) {
   cpuf = get_cpu_freq_GHz();
 
 
-  temp_nfapi_nr_ul_config_pdcch_parameters_rel15_t nr_ul_pdcch_params;
+  fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
+  UE_nr_rxtx_proc_t UE_proc;
 
 
   if (load_configmodule(argc, argv) == 0) {
@@ -383,6 +391,9 @@ int main(int argc, char **argv) {
   gNB_proc.frame_rx = frame;
   gNB_proc.slot_rx  = slot;
 
+  UE_proc.nr_slot_tx = slot;
+  UE_proc.frame_tx = frame;
+
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -425,13 +436,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  nr_ul_pdcch_params.nb_codewords = nb_codewords;
-  nr_ul_pdcch_params.Imcs = Imcs;
-  nr_ul_pdcch_params.n_symb = nb_symb_sch;
-  nr_ul_pdcch_params.nb_rb = nb_rb;
-  nr_ul_pdcch_params.first_rb = start_rb;
-  nr_ul_pdcch_params.Nl = 1;
-  nr_ul_pdcch_params.rvidx = 0;
+  ul_dci_pdu = &UE->dci_ind.dci_list[0].dci;
+
+  ul_dci_pdu->mcs = Imcs;
+  ul_dci_pdu->rv = 0;
+  ul_dci_pdu->precod_nbr_layers = 1;
 
   unsigned char harq_pid = 0;
   unsigned int TBS = 8424;
@@ -442,7 +451,7 @@ int main(int argc, char **argv) {
 
   mod_order      = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nr_ul_pdcch_params.Nl);
+  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, ul_dci_pdu->precod_nbr_layers);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
   ulsch_gNB->harq_processes[harq_pid]->G = available_bits; // [hna] temp until length_dmrs and nb_re_dmrs are signaled
@@ -458,43 +467,22 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
   rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
   rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
-  rel15_ul->ulsch_pdu_rel15.rv             = nr_ul_pdcch_params.rvidx;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = nr_ul_pdcch_params.Nl;
+  rel15_ul->ulsch_pdu_rel15.rv             = 0;
+  rel15_ul->ulsch_pdu_rel15.n_layers       = ul_dci_pdu->precod_nbr_layers;
   ///////////////////////////////////////////////////
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
-  unsigned char *test_input;
   unsigned int errors_bit = 0;
   uint32_t errors_scrambling = 0;
 
-  test_input           = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 
   /////////////////////////phy_procedures_nr_ue_TX///////////////////////
   ///////////
 
-  for (i = 0; i < TBS / 8; i++)
-    test_input[i] = (unsigned char) rand();
-
-  generate_ue_ulsch_params(UE,
-                           &nr_ul_pdcch_params,
-                           0,
-                           gNB_id,
-                           harq_pid,
-                           test_input);
-
-  nr_ue_ulsch_procedures(UE,
-                         harq_pid,
-                         slot,
-                         0,
-                         gNB_id);
-
-  nr_ue_pusch_common_procedures(UE,
-                                slot,
-                                nr_ul_pdcch_params.Nl,
-                                &UE->frame_parms);
+  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
 
   ///////////
   ////////////////////////////////////////////////////
@@ -555,7 +543,7 @@ int main(int argc, char **argv) {
       for (i = 0; i < TBS; i++) {
 
         estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-        test_input_bit[i]       = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
+        test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
         if (estimated_output_bit[i] != test_input_bit[i]) {
           if(errors_bit == 0)
