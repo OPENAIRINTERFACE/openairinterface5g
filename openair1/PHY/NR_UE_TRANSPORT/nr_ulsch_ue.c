@@ -62,7 +62,7 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
   n_rnti = 0x1234;
   Nid_cell = 0;
   nb_rb = 50;
-  first_rb = 90;
+  first_rb = 30;
   Nsymb_pusch = 12;
   nb_codewords = (ul_dci_pdu->precod_nbr_layers>4)?2:1;
   //------------------------------------------------------------------------------//

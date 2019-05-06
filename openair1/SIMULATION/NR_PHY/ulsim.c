@@ -166,7 +166,8 @@ int main(int argc, char **argv) {
   int gNB_id = 0;
   int ap;
   int tx_offset;
-  double txlev;
+  double txlev_float;
+  int32_t txlev;
   int start_rb = 30;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
 
@@ -488,10 +489,12 @@ int main(int argc, char **argv) {
   ////////////////////////////////////////////////////
   tx_offset = slot*frame_parms->samples_per_slot;
 
-  txlev = (double) signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+  txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
-  txlev = txlev/(double)AMP; // output of signal_energy is fixed point representation
+  txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
+
+
   
   printf("\n");
 
@@ -501,9 +504,9 @@ int main(int argc, char **argv) {
     n_false_positive = 0;
 
     //AWGN
-    sigma_dB = 10*log10((double)txlev)-SNR;
+    sigma_dB = 10*log10(txlev_float)-SNR;
     sigma    = pow(10,sigma_dB/10);
-    
+
     for (trial = 0; trial < n_trials; trial++) {
 
       errors_scrambling  = 0;
@@ -511,10 +514,9 @@ int main(int argc, char **argv) {
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-
           // [hna] doesn't work with noise in case of mod_order = 6
-          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)]);// + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP)); // convert to fixed point
-          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]);// + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP));
+          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])+ (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
+          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1])+ (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
         }
       }
 
