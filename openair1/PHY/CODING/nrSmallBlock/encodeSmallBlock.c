@@ -19,10 +19,10 @@
  *      contact@openairinterface.org
  */
 
-/*!\file PHY/CODING/nrPolar_tools/nr_bitwise_operations.c
+/*!\file PHY/CODING/nrSmallBlock/encodeSmallBlock.c
  * \brief
  * \author Turker Yilmaz
- * \date 2018
+ * \date 2019
  * \version 0.1
  * \company EURECOM
  * \email turker.yilmaz@eurecom.fr
@@ -30,28 +30,15 @@
  * \warning
 */
 
-#include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
+#include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
 
-void nr_bit2byte_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
-	uint8_t arrayInd = ceil(arraySize / 32.0);
-	for (int i = 0; i < (arrayInd-1); i++) {
-		for (int j = 0; j < 32; j++) {
-			out[j+(i*32)] = (in[i] >> j) & 1;
-		}
-	}
+//input = [0 ... 0 c_K-1 ... c_2 c_1 c_0]
+//output = [d_31 d_30 ... d_2 d_1 d_0]
+uint32_t encodeSmallBlock(uint16_t *in, uint8_t len){
+	uint32_t out = 0;
+	  for (uint16_t i=0; i<len; i++)
+	    if ((*in & (1<<i)) > 0)
+	    	out^=nrSmallBlockBasis[i];
 
-	for (int j = 0; j < arraySize - ((arrayInd-1) * 32); j++)
-		out[j + ((arrayInd-1) * 32)] = (in[(arrayInd-1)] >> j) & 1;
-}
-
-void nr_byte2bit_uint8_32(uint8_t *in, uint16_t arraySize, uint32_t *out) {
-	uint8_t arrayInd = ceil(arraySize / 32.0);
-	for (int i = 0; i < arrayInd; i++) {
-		out[i]=0;
-		for (int j = 31; j > 0; j--) {
-			out[i]|=in[(i*32)+j];
-			out[i]<<=1;
-		}
-		out[i]|=in[(i*32)];
-	}
+	  return out;
 }

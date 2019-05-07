@@ -48,6 +48,7 @@
 #include "pdcp.h"
 
 #include "openair1/PHY/defs_gNB.h"
+#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 
 //Agent-related headers
 #include "flexran_agent_extern.h"
@@ -335,7 +336,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
-      int spf = get_spf(cfg);
+      //int spf = get_spf(cfg);
   
       if (((frameP&127) == 0) && (slotP == 0)) {
         LOG_I(MAC,
@@ -388,7 +389,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             NR_gNB_ULSCH_t *ulsch = RC.gNB[module_idP][CC_id]->ulsch[ii][0];       
             if((ulsch != NULL) && (ulsch->rnti == rnti)){
               LOG_W(MAC, "TODO: clean_eNb_ulsch UE %x \n", rnti);
-              //clean_eNb_ulsch(ulsch);
+              clean_gNB_ulsch(ulsch);
             }
           }
 
@@ -396,7 +397,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
             if((dlsch != NULL) && (dlsch->rnti == rnti)){
               LOG_W(MAC, "TODO: clean_eNb_dlsch UE %x \n", rnti);
-              //clean_eNb_dlsch(dlsch);
+              clean_gNB_dlsch(dlsch);
             }
           }
     

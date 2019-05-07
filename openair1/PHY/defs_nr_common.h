@@ -333,5 +333,4 @@ typedef struct nr_band_info_s {
   nr_bandentry_t band_info[100];
 } nr_band_info_t;
 
-
 #endif
