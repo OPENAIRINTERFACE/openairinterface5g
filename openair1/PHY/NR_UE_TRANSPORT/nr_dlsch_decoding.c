@@ -314,14 +314,14 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                     &harq_process->Z, // [hna] Z is Zc
                     &harq_process->F);
 
-    p_decParams->Z = harq_process->Z;
-
 #ifdef DEBUG_DLSCH_DECODING
-    printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
     if (!frame%100)
       printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
 #endif
   }
+
+  p_decParams->Z = harq_process->Z;
+  //printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
 
   Coderate = (float) A /(float) G;
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
