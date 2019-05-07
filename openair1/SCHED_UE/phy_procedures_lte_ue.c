@@ -2672,7 +2672,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
         LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Problem in DCI!\n",ue->Mod_id,frame_rx,subframe_rx);
         dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
       }
-    } else if ((dci_alloc_rx[i].rnti == SI_RNTI) &&
+    } else if ((dci_alloc_rx[i].rnti == SI_RNTI || dci_alloc_rx[i].rnti == 0xfff9) &&
                ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {
       if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
         LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
@@ -2681,7 +2681,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
       if (generate_ue_dlsch_params_from_dci(frame_rx,
                                             subframe_rx,
                                             (void *)&dci_alloc_rx[i].dci_pdu,
-                                            SI_RNTI,
+                                            dci_alloc_rx[i].rnti,//SI_RNTI (to enable MBMS dedicated SI-RNTI = 0xfff9
                                             dci_alloc_rx[i].format,
                                             ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id],
                                             ue->pdsch_vars_SI[eNB_id],
