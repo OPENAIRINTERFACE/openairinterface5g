@@ -1237,6 +1237,8 @@ int main( int argc, char **argv )
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+  fflush(stdout);
+  fflush(stderr);
   //getchar();
 
 #if defined(ENABLE_ITTI)
