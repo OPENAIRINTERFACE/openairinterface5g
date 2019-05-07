@@ -62,7 +62,7 @@
         <testCase id="090101">
                 <class>Initialize_OAI_UE</class>
                 <desc>Initialize OAI UE (FDD/Band7/5MHz)</desc>
-                <Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 120 --ue-txgain 0 --ue-max-power 0 --ue-scan-carrier --nokrnmod 1 --noS1</Initialize_OAI_UE_args>
+                <Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 100 --ue-txgain 0 --ue-max-power -5 --ue-scan-carrier --nokrnmod 1 --noS1</Initialize_OAI_UE_args>
         </testCase>
 
         <testCase id="090109">
