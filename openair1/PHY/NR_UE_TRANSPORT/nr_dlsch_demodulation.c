@@ -2589,9 +2589,8 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
 
   int prb,nb_rb=0;
   unsigned short k;
-  int i,aarx;
+  int i,j,aarx;
   int32_t *dl_ch0,*dl_ch0p,*dl_ch0_ext,*dl_ch1,*dl_ch1p,*dl_ch1_ext,*rxF,*rxF_ext;
-  int pilots=0,j=0;
 
   k = frame_parms->first_carrier_offset + 516; //0
 
