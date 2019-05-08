@@ -143,7 +143,6 @@ int main(int argc, char **argv) {
   unsigned char qbits = 8;
   int ret;
   int loglvl = OAILOG_WARNING;
-  float target_error_rate = 0.01;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
@@ -396,19 +395,19 @@ int main(int argc, char **argv) {
   }
 
   unsigned char harq_pid = 0;
-  uint8_t is_crnti = 0, llr8_flag = 0;
+  uint8_t is_crnti = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t nb_re_dmrs = 6;
-  uint16_t length_dmrs = 1;
+  uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
   uint16_t N_RE_prime;
   unsigned char mod_order;
   uint8_t Nl = 1;
   uint8_t rvidx = 0;
-  uint8_t UE_id = 1;
+  uint8_t UE_id = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
@@ -416,6 +415,7 @@ int main(int argc, char **argv) {
   mod_order = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+  printf("\n");
   printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
 
   /////////// setting rel15_ul parameters ///////////
@@ -425,6 +425,8 @@ int main(int argc, char **argv) {
   rel15_ul->mcs            = Imcs;
   rel15_ul->rv             = rvidx;
   rel15_ul->n_layers       = Nl;
+  rel15_ul->nb_re_dmrs     = nb_re_dmrs;
+  rel15_ul->length_dmrs    = length_dmrs;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -485,6 +487,8 @@ int main(int argc, char **argv) {
   if (input_fd == NULL) {
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
   }
+  
+  printf("\n");
 
   ///////////
   ////////////////////////////////////////////////////////////////////
@@ -518,7 +522,7 @@ int main(int argc, char **argv) {
 
         SNR_lin = pow(10, SNR / 10.0);
         sigma = 1.0 / sqrt(2 * SNR_lin);
-#if 1
+#if 0
         channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
                                                    modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
                                                    qbits);
@@ -539,7 +543,7 @@ int main(int argc, char **argv) {
       }
 
       printf("errors bits uncoded %u\n", errors_bit_uncoded);
-
+      printf("\n");
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);
@@ -568,6 +572,7 @@ int main(int argc, char **argv) {
         if (n_trials == 1)
           printf("errors_bit %d (trial %d)\n", errors_bit, trial);
       }
+      printf("\n");
     }
     
     printf("*****************************************\n");
@@ -575,11 +580,14 @@ int main(int argc, char **argv) {
            (float) n_errors / (float) n_trials,
            (float) n_false_positive / (float) n_trials);
     printf("*****************************************\n");
+    printf("\n");
 
-    if ((float) n_errors / (float) n_trials < target_error_rate) {
+    if (errors_bit == 0) {
       printf("PUSCH test OK\n");
+      printf("\n");
       break;
     }
+    printf("\n");
   }
 
   for (i = 0; i < 2; i++) {
@@ -592,9 +600,9 @@ int main(int argc, char **argv) {
 
     free_gNB_ulsch(gNB->ulsch[0][i]);
 
-    printf("gNB ulsch[%d][%d]\n",UE_id, i);
+    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
 
-    free_gNB_ulsch(gNB->ulsch[UE_id][i]);
+    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]);
 
     for (sf = 0; sf < 2; sf++) {
 

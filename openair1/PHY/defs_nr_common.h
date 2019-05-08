@@ -44,7 +44,7 @@
 
 // [hna] This enables SC-FDMA transmission in Uplink. If disabled, then OFDMA is used in UPLINK.
 #ifndef NR_SC_FDMA
-#define NR_SC_FDMA
+// #define NR_SC_FDMA
 #endif
 
 #define MAX_NUM_SUBCARRIER_SPACING 5

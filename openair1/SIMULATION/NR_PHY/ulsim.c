@@ -447,7 +447,7 @@ int main(int argc, char **argv) {
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t  nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
-  uint16_t length_dmrs = 1;
+  uint8_t length_dmrs = 1;
   unsigned char mod_order;
 
   mod_order      = nr_get_Qm(Imcs, 1);
@@ -455,7 +455,6 @@ int main(int argc, char **argv) {
   TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, ul_dci_pdu->precod_nbr_layers);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
-  ulsch_gNB->harq_processes[harq_pid]->G = available_bits; // [hna] temp until length_dmrs and nb_re_dmrs are signaled
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
@@ -466,6 +465,8 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
   rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
   rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
+  rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = nb_re_dmrs;
+  rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
   rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
   rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
   rel15_ul->ulsch_pdu_rel15.rv             = 0;
@@ -535,8 +536,10 @@ int main(int argc, char **argv) {
         if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) || 
            ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
         {
-          if(errors_scrambling == 0)
+          if(errors_scrambling == 0) {
+          	printf("\n");
             printf("First bit in error in unscrambling = %d\n",i);
+          }
           errors_scrambling++;
         }
 
@@ -559,13 +562,13 @@ int main(int argc, char **argv) {
 
       if (errors_scrambling > 0) {
         if (n_trials == 1)
-          printf("errors_scrambling %d (trial %d)\n", errors_scrambling, trial);
+          printf("errors_scrambling = %d (trial %d)\n", errors_scrambling, trial);
       }
 
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
-          printf("errors_bit %d (trial %d)\n", errors_bit, trial);
+          printf("errors_bit = %d (trial %d)\n", errors_bit, trial);
       }
       printf("\n");
     } // [hna] for (trial = 0; trial < n_trials; trial++)

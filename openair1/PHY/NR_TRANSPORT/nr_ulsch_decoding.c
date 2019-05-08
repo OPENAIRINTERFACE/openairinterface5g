@@ -284,7 +284,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint32_t nb_rb;
   int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
@@ -306,9 +305,17 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t  kc;
   uint8_t  Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;
-  uint8_t  nb_re_dmrs  = 6;
-  uint16_t length_dmrs = 1;
   double   Coderate    = 0.0;
+  
+  // ------------------------------------------------------------------
+  uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
+  uint16_t number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
+  uint8_t Qm              = nfapi_ulsch_pdu_rel15->Qm;
+  uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
+  uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
+  uint8_t nb_re_dmrs      = nfapi_ulsch_pdu_rel15->nb_re_dmrs;
+  uint8_t length_dmrs     = nfapi_ulsch_pdu_rel15->length_dmrs;
+  // ------------------------------------------------------------------
 
   uint32_t i,j;
 
@@ -331,19 +338,18 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     return(ulsch->max_ldpc_iterations);
   }
 
-  nb_rb = nfapi_ulsch_pdu_rel15->number_rbs;
-
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
-
-  harq_process->TBS = nr_compute_tbs(nfapi_ulsch_pdu_rel15->mcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->n_layers);
+  
+  harq_process->TBS = nr_compute_tbs(mcs, nb_rb, number_symbols, nb_re_dmrs, length_dmrs, n_layers);
 
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations;
+  
+  G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
 
-  // harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm,nfapi_ulsch_pdu_rel15->n_layers);
-  G = harq_process->G;
+  // G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers);
 
-  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nfapi_ulsch_pdu_rel15->mcs, nfapi_ulsch_pdu_rel15->n_layers, nb_symb_sch,nb_rb);
+  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
 
   if (harq_process->round == 0) {
 
@@ -441,7 +447,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, nfapi_ulsch_pdu_rel15->n_layers);
 
   for (r=0; r<harq_process->C; r++) {
-
     E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
 
 #if gNB_TIMING_TRACE
