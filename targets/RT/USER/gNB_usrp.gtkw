@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
-[*] Mon May  6 11:32:36 2019
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue May  7 21:21:14 2019
 [*]
 [dumpfile] "/tmp/openair_dump_gNB40.vcd"
-[dumpfile_mtime] "Mon May  6 11:32:05 2019"
-[dumpfile_size] 803075
-[savefile] "/home/caracal/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 10835824000
+[dumpfile_mtime] "Tue May  7 21:19:43 2019"
+[dumpfile_size] 18197199
+[savefile] "/home/belostome/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 8147990000
 [size] 1920 859
 [pos] -1 -1
-*-19.848083 10838512202 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.848083 8158741030 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
@@ -17,6 +17,10 @@
 @28
 functions.trx_read
 functions.trx_write
+@421
+variables.frame_number_TX0_UE[63:0]
+@420
+variables.frame_number_RX1_UE[63:0]
 @24
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
@@ -48,7 +52,7 @@ functions.phy_enb_pdcch_tx
 functions.phy_eNB_dlsch_encoding
 functions.phy_eNB_dlsch_encoding_w
 functions.generate_dlsch
-@421
+@420
 variables.frame_number_RX0_UE[63:0]
 @28
 functions.phy_procedures_ru_feprx0

@@ -1072,7 +1072,7 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
     return(-1);
   }
 
-  *instance_cnt=*instance_cnt-1;
+  *instance_cnt=-1;
 
   if (pthread_mutex_unlock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);

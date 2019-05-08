@@ -754,7 +754,7 @@ void tx_rf(RU_t *ru) {
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
     
-    int siglen=fp->samples_per_slot,flags=1;
+    int siglen=fp->samples_per_slot>>1,flags=1;
 
 /*    
     if (SF_type == SF_S) {
@@ -1280,20 +1280,13 @@ static void* ru_thread_tx( void* param ) {
   int                print_frame = 8;
   int                i = 0;
 
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
 
 
-  thread_top_init("ru_thread_tx",1,400000,500000,500000);
-
-  //CPU_SET(5, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //wait_sync("ru_thread_tx");
+  thread_top_init("ru_thread_tx",0,400000,500000,500000);
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   
 
-  printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
  
     if (oai_exit) break;   
@@ -1301,7 +1294,9 @@ static void* ru_thread_tx( void* param ) {
 
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
+
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+
     if (oai_exit) break;
   	       
 //printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->tti_tx);
@@ -1347,6 +1342,8 @@ static void* ru_thread_tx( void* param ) {
       }//if(proc->frame_tx == print_frame)
     }//else  emulate_rf
     release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_UE, proc->instance_cnt_gNBs);
+
     for(i = 0; i<ru->num_gNB; i++)
     {
       gNB       = ru->gNB_list[i];
