@@ -332,7 +332,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     //    dlsch->harq_processes[harq_pid]->b = a;
-    
+   
+    AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
+
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,

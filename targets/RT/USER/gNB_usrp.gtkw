@@ -1,11 +1,11 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Tue May  7 21:21:14 2019
+[*] Wed May  8 09:33:31 2019
 [*]
 [dumpfile] "/tmp/openair_dump_gNB40.vcd"
-[dumpfile_mtime] "Tue May  7 21:19:43 2019"
-[dumpfile_size] 18197199
-[savefile] "/home/belostome/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[dumpfile_mtime] "Wed May  8 09:32:07 2019"
+[dumpfile_size] 1965634
+[savefile] "/home/espagne/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
 [timestart] 8147990000
 [size] 1920 859
 [pos] -1 -1
@@ -17,8 +17,10 @@
 @28
 functions.trx_read
 functions.trx_write
-@421
+@420
 variables.frame_number_TX0_UE[63:0]
+@421
+variables.frame_number_TX1_UE[63:0]
 @420
 variables.frame_number_RX1_UE[63:0]
 @24

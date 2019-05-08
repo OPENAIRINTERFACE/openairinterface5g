@@ -754,7 +754,7 @@ void tx_rf(RU_t *ru) {
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
     
-    int siglen=fp->samples_per_slot>>1,flags=1;
+    int siglen=fp->samples_per_slot,flags=1;
 
 /*    
     if (SF_type == SF_S) {
@@ -1310,7 +1310,6 @@ static void* ru_thread_tx( void* param ) {
     if(!emulate_rf){    
       // do outgoing fronthaul (south) if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-  	      
       if (ru->fh_north_out) ru->fh_north_out(ru);
     }
     else

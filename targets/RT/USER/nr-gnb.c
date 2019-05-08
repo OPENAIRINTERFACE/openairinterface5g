@@ -244,8 +244,21 @@ static void* gNB_L1_thread_tx(void* param) {
 
   
   char thread_name[100];
+
+  // This tells L1_thread (RX) that L1_thread_tx is not ready yet
+  pthread_mutex_lock(&L1_proc_tx->mutex);
+  L1_proc_tx->instance_cnt = -2;
+  pthread_mutex_unlock(&L1_proc_tx->mutex);
+
   sprintf(thread_name,"gNB_L1_thread_tx\n");
-  
+ 
+  thread_top_init(thread_name,1,870000L,1000000L,1000000L);
+
+  // This tells L1_thread (RX) that L1_thread_tx is ready
+  pthread_mutex_lock(&L1_proc_tx->mutex);
+  L1_proc_tx->instance_cnt++;
+  pthread_mutex_unlock(&L1_proc_tx->mutex);
+ 
   while (!oai_exit) {
     
     if (wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,thread_name)<0) break;
@@ -296,13 +309,23 @@ static void* gNB_L1_thread( void* param ) {
 
   char thread_name[100];
 
-
+  // This tells ru_thread that L1_thread is not ready
+  pthread_mutex_lock(&L1_proc->mutex);
+  L1_proc->instance_cnt = -2;
+  pthread_mutex_unlock(&L1_proc->mutex);
 
   // set default return value
   gNB_thread_rxtx_status = 0;
 
 
   sprintf(thread_name,"gNB_L1_thread");
+
+  thread_top_init(thread_name,1,870000L,1000000L,1000000L);
+
+  // This tells ru_thread that L1_thread is ready
+  pthread_mutex_lock(&L1_proc->mutex);
+  L1_proc->instance_cnt++;
+  pthread_mutex_unlock(&L1_proc->mutex);
 
   while (!oai_exit) {
 
@@ -476,6 +499,11 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
     exit_fun("ERROR pthread_lock");
     return(-1);
   }
+  if (L1_proc_tx->instance_cnt == -2) { // L1_thread_tx isn't ready yet so return
+     pthread_mutex_unlock( &L1_proc_tx->mutex);
+     return(0);
+  }
+
   while(L1_proc_tx->instance_cnt == 0){
     pthread_cond_wait(&L1_proc_tx->cond,&L1_proc_tx->mutex);
   }
@@ -490,7 +518,10 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
   L1_proc_tx->timestamp_tx  = timestamp_tx;
 
   pthread_mutex_unlock( &L1_proc_tx->mutex);
-  
+ 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,1);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,0);
+ 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
     LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
@@ -535,16 +566,6 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-  /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < fp->slots_per_frame && L1_proc->instance_cnt == 0; i++) {
-    LOG_W( PHY,"[gNB] SFN.SL %d.%d, gNB L1 thread busy!! (i %d, cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, i,L1_proc->instance_cnt);
-    usleep(100);
-  }
-  if (L1_proc->instance_cnt == 0) {
-    exit_fun( "RX thread busy" );
-    return(-1);
-  }
-
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
@@ -552,7 +573,17 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     exit_fun( "error locking mutex" );
     return(-1);
   }
-  
+
+  if (L1_proc->instance_cnt==-2) { // L1_thread isn't ready yet so return 
+   pthread_mutex_unlock( &L1_proc->mutex );
+   return(0);
+  }
+
+  if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
+   pthread_mutex_unlock( &L1_proc->mutex );
+   LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx); 
+  }
+ 
   ++L1_proc->instance_cnt;
   
   // We have just received and processed the common part of a subframe, say n. 
@@ -569,6 +600,8 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
 
   LOG_D(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
 
+  pthread_mutex_unlock( &L1_proc->mutex );
+
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
     LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB RXn-TXnp4 thread\n");
@@ -576,8 +609,6 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     return(-1);
   }
   
-  pthread_mutex_unlock( &L1_proc->mutex );
-
   return(0);
 }
 /*
@@ -707,8 +738,8 @@ void init_gNB_proc(int inst) {
 
     L1_proc                        = &proc->L1_proc;
     L1_proc_tx                     = &proc->L1_proc_tx;
-    L1_proc->instance_cnt          = -1;
-    L1_proc_tx->instance_cnt       = -1;
+    L1_proc->instance_cnt          = -2;
+    L1_proc_tx->instance_cnt       = -2;
     L1_proc->instance_cnt_RUs      = 0;
     L1_proc_tx->instance_cnt_RUs   = 0;
     proc->instance_cnt_prach       = -1;
