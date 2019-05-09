@@ -241,7 +241,6 @@ add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdo
 add_boolean_option(TRACE_RLC_PAYLOAD   False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace
 add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
-add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" )
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
@@ -1988,16 +1987,28 @@ endif()
 
 list(APPEND ATLAS_LIBRARIES lapack lapacke)
 
-if (${XFORMS})
-  include_directories ("/usr/include/X11")
-  set(XFORMS_SOURCE
-    ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
-    )
-  set(XFORMS_SOURCE_SOFTMODEM
-    ${OPENAIR_TARGETS}/RT/USER/stats.c
-    )
-  set(XFORMS_LIBRARIES "forms")
-endif (${XFORMS})
+set(XFORMS_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
+  )
+set(XFORMS_ENB_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_enb_scope.c
+  )
+set(XFORMS_UE_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_ue_scope.c
+  )    
+set(XFORMS_SOURCE_SOFTMODEM
+  ${OPENAIR_TARGETS}/RT/USER/stats.c
+  )
+set(XFORMS_LIBRARIES "forms")
+
+
+set (XFORMSINTERFACE_SOURCE
+   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
+   )
+add_library(enbscope MODULE ${XFORMS_SOURCE} ${XFORMS_ENB_SOURCE})
+add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_UE_SOURCE})
+target_link_libraries(enbscope ${XFORMS_LIBRARIES})
+target_link_libraries(uescope ${XFORMS_LIBRARIES})
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2065,8 +2076,7 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2109,7 +2119,7 @@ target_link_libraries(du_test
 )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -2134,8 +2144,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2150,7 +2159,7 @@ target_link_libraries (lte-uesoftmodem
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
 
@@ -2194,14 +2203,14 @@ add_executable(dlsim_tm4
   )
 target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
-  pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
+  pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${T_LIB}
   )
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
   add_executable(${myExe}
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
-    ${XFORMS_SOURCE}
+    ${XFORMSINTERFACE_SOURCE}
     ${T_SOURCE}
     ${CONFIG_SOURCES}
     ${SHLIB_LOADER_SOURCES}
@@ -2210,7 +2219,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
   target_link_libraries (${myExe}
 
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
-    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB} dl
+    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${T_LIB} dl
     )
 endforeach(myExe)
 

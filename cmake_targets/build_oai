@@ -260,7 +260,7 @@ function main() {
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
-            XFORMS="True"
+            XFORMS=1
             EXE_ARGUMENTS="$EXE_ARGUMENTS -d"
             echo_info "Will generate the software oscilloscope features"
             shift;;
@@ -475,7 +475,6 @@ function main() {
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
-    echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
 #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
@@ -658,7 +657,18 @@ function main() {
             $lte_build_dir msc \
                   libmsc.so $dbin/libmsc.so
 
-  fi  
+  fi 
+  # softsope compilations
+  #####################
+  if [ "$XFORMS" = "1" ] ; then
+              compilations \
+            $lte_build_dir enbscope \
+                  libenbscope.so $dbin/libenbscope.so
+              compilations \
+            $lte_build_dir uescope \
+                  libuescope.so $dbin/libuescope.so
+
+  fi    
   # build RF device and transport protocol libraries
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
