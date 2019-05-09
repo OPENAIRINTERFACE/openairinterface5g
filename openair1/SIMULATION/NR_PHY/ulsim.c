@@ -102,6 +102,11 @@ NR_IF_Module_init(int Mod_id) {
   return (NULL);
 }
 
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
+
+    return 0;
+}
+
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 
 

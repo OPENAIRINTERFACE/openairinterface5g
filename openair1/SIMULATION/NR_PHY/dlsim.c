@@ -98,6 +98,11 @@ void exit_function(const char* file, const char* function, const int line,const 
    exit(-1); 
 }
 
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
+
+    return 0;
+}
+
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 			      const int             CC_id,
 			      const uint8_t         gNB_index,
