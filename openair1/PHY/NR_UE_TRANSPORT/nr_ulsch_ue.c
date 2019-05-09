@@ -151,8 +151,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id,
-                               unsigned char *test_input) {
+                               int eNB_id) {
 
   unsigned int available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
@@ -180,8 +179,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     ulsch_ue = UE->ulsch[thread_id][eNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-
-    harq_process_ul_ue->a = test_input;
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////

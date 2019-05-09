@@ -1060,7 +1060,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   @param[in] thread_id, thread id
   @param[in] gNB_id, gNB id
   @param[in] harq_pid, harq id
-  @param[in] test_input, pointer to ulsch pdu to be sent
 */
 
 int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
@@ -1093,8 +1092,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id,
-                               unsigned char *test_input);
+                               int eNB_id);
 
 
 /** \brief This function does IFFT for PUSCH
