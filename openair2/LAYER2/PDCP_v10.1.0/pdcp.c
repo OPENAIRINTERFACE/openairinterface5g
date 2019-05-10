@@ -126,6 +126,7 @@ boolean_t pdcp_data_req(
     T(T_ENB_PDCP_DL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_buffer_sizeP));
 #endif
 
+  LOG_I(PDCP, "In pdcp_data_req \n \n");
   if (sdu_buffer_sizeP == 0) {
     LOG_W(PDCP, "Handed SDU is of size 0! Ignoring...\n");
     return FALSE;
@@ -136,7 +137,7 @@ boolean_t pdcp_data_req(
    */
   AssertFatal(sdu_buffer_sizeP<= MAX_IP_PACKET_SIZE,"Requested SDU size (%d) is bigger than that can be handled by PDCP (%u)!\n",
           sdu_buffer_sizeP, MAX_IP_PACKET_SIZE);
-  
+
   if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
     AssertError (rb_idP < NB_RB_MBMS_MAX, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, NB_RB_MBMS_MAX, ctxt_pP->module_id, ctxt_pP->rnti);
   } else {
@@ -162,7 +163,7 @@ boolean_t pdcp_data_req(
     // instance for a given RB is configured
     ctxt_pP->configured=TRUE;
   }
-    
+
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_req);
   } else {
@@ -256,7 +257,7 @@ boolean_t pdcp_data_req(
         if (pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer((unsigned char*)pdcp_pdu_p->data, &pdu_header) == FALSE) {
           LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" Cannot fill PDU buffer with relevant header fields!\n",
                 PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p));
-         
+
           if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
 
             stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_req);
@@ -426,9 +427,9 @@ boolean_t pdcp_data_req(
   Pdcp_stats_tx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=current_sn;
 
   Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
+  Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
-    
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
   return ret;
 
@@ -459,7 +460,7 @@ pdcp_data_ind(
   hash_key_t      key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
   uint8_t      rb_offset= (srb_flagP == 0) ? DTCH -1 :0;
-  uint16_t     pdcp_uid=0;      
+  uint16_t     pdcp_uid=0;
   uint8_t      oo_flag=0;
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
   MessageDef  *message_p        = NULL;
@@ -749,9 +750,9 @@ pdcp_data_ind(
     GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ctxt_pP->rnti;
     GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
-    packet_forwarded = TRUE;    
+    packet_forwarded = TRUE;
   }
-  
+
 #else
   packet_forwarded = FALSE;
 #endif
@@ -813,8 +814,8 @@ pdcp_data_ind(
              sdu_buffer_sizeP - payload_offset);
       list_add_tail_eurecom (new_sdu_p, sdu_list_p);
 
-      
-      
+
+
     }
 
   /* Print octets of incoming data in hexadecimal form */
@@ -823,33 +824,33 @@ pdcp_data_ind(
 	sdu_buffer_sizeP  - payload_offset);
   //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
   //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
-  
+
   /*
      * Update PDCP statistics
    * XXX Following two actions are identical, is there a merge error?
    */
-  
+
   for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ){
       break;
     }
-  }	
-  
+  }
+
   Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
   Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-  
+
   Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
-  
+
   if (oo_flag == 1 )
     Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-  
+
   Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
 
-  
+
 #if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
     else {
       AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
@@ -875,8 +876,8 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 
   uint16_t           pdcp_uid = 0;
   uint8_t            rb_id     = 0;
-  
- // these stats are measured for both eNB and UE on per seond basis 
+
+ // these stats are measured for both eNB and UE on per seond basis
   for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
     for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
       //printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
@@ -892,11 +893,11 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	}else {
 	  Pdcp_stats_tx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	}
-	// reset the tmp vars 
+	// reset the tmp vars
 	Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	
+
       }
       if (Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] > 0 &&
           pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
@@ -904,20 +905,20 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	Pdcp_stats_rx_goodput_w[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
 	Pdcp_stats_rx_w[ctxt_pP->module_id][pdcp_uid][rb_id]= 	Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
 	Pdcp_stats_rx_bytes_w[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
-	
+
 	if(Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
 	  Pdcp_stats_rx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]= (Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]);
 	} else {
 	  Pdcp_stats_rx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	}
-	
-	// reset the tmp vars 
+
+	// reset the tmp vars
 	Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-      } 
+      }
     }
-    
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -927,7 +928,7 @@ pdcp_run (
 )
 //-----------------------------------------------------------------------------
 {
-  
+
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
   } else {
@@ -935,10 +936,10 @@ pdcp_run (
   }
 
   pdcp_enb[ctxt_pP->module_id].sfn++; // range: 0 to 18,446,744,073,709,551,615
-  pdcp_enb[ctxt_pP->module_id].frame=ctxt_pP->frame; // 1023 
+  pdcp_enb[ctxt_pP->module_id].frame=ctxt_pP->frame; // 1023
   pdcp_enb[ctxt_pP->module_id].subframe= ctxt_pP->subframe;
   pdcp_update_stats(ctxt_pP);
-   
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
 
 #if defined(ENABLE_ITTI)
@@ -959,7 +960,7 @@ pdcp_run (
           RRC_DCCH_DATA_REQ (msg_p).module_id,
           RRC_DCCH_DATA_REQ (msg_p).enb_flag,
           RRC_DCCH_DATA_REQ (msg_p).rnti,
-          RRC_DCCH_DATA_REQ (msg_p).frame, 
+          RRC_DCCH_DATA_REQ (msg_p).frame,
 	  0,
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
         LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
@@ -1087,7 +1088,7 @@ pdcp_remove_UE(
   DRB_Identity_t  drb_id         = 0;
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
-  int i; 
+  int i;
    // check and remove SRBs first
 
   for(int i = 0;i<MAX_MOBILES_PER_ENB;i++){
@@ -1122,7 +1123,7 @@ pdcp_remove_UE(
       break;
     }
   }
-   
+
   return 1;
 }
 
@@ -1141,7 +1142,7 @@ rrc_pdcp_config_asn1_req (
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
 #endif
-  ,rb_id_t                 *const defaultDRB 
+  ,rb_id_t                 *const defaultDRB
 )
 //-----------------------------------------------------------------------------
 {
@@ -1549,14 +1550,14 @@ pdcp_config_req_asn1 (
   uint8_t         *const        kUPenc_pP)
 //-----------------------------------------------------------------------------
 {
-  
+
   switch (actionP) {
   case CONFIG_ACTION_ADD:
     DevAssert(pdcp_pP != NULL);
     if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
       pdcp_pP->is_ue = FALSE;
       pdcp_add_UE(ctxt_pP);
-      
+
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
 //      pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
       if( srb_flagP == SRB_FLAG_NO ) {
@@ -1922,14 +1923,14 @@ rrc_pdcp_config_req (
 
 
 //-----------------------------------------------------------------------------
- 
+
 int
 pdcp_module_init (
   void
 )
 //-----------------------------------------------------------------------------
 {
- 
+
 #ifdef PDCP_USE_RT_FIFO
   int ret;
 
@@ -2028,9 +2029,9 @@ void pdcp_layer_init(void)
 #endif
     pdcp_eNB_UE_instance_to_rnti[instance] = NOT_A_RNTI;
   }
-  pdcp_eNB_UE_instance_to_rnti_index = 0; 
+  pdcp_eNB_UE_instance_to_rnti_index = 0;
 
-    
+
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
@@ -2057,7 +2058,7 @@ void pdcp_layer_init(void)
 
   memset(pdcp_enb, 0, sizeof(pdcp_enb_t));
 
-  
+
   memset(Pdcp_stats_tx_window_ms, 0, sizeof(Pdcp_stats_tx_window_ms));
   memset(Pdcp_stats_rx_window_ms, 0, sizeof(Pdcp_stats_rx_window_ms));
   for (i =0; i< MAX_NUM_CCs ; i ++){
@@ -2066,7 +2067,7 @@ void pdcp_layer_init(void)
       Pdcp_stats_rx_window_ms[i][j]=100;
     }
   }
-  
+
   memset(Pdcp_stats_tx, 0, sizeof(Pdcp_stats_tx));
   memset(Pdcp_stats_tx_w, 0, sizeof(Pdcp_stats_tx_w));
   memset(Pdcp_stats_tx_tmp_w, 0, sizeof(Pdcp_stats_tx_tmp_w));
@@ -2077,7 +2078,7 @@ void pdcp_layer_init(void)
   memset(Pdcp_stats_tx_throughput_w, 0, sizeof(Pdcp_stats_tx_throughput_w));
   memset(Pdcp_stats_tx_aiat, 0, sizeof(Pdcp_stats_tx_aiat));
   memset(Pdcp_stats_tx_iat, 0, sizeof(Pdcp_stats_tx_iat));
-  
+
 
   memset(Pdcp_stats_rx, 0, sizeof(Pdcp_stats_rx));
   memset(Pdcp_stats_rx_w, 0, sizeof(Pdcp_stats_rx_w));
@@ -2090,7 +2091,111 @@ void pdcp_layer_init(void)
   memset(Pdcp_stats_rx_aiat, 0, sizeof(Pdcp_stats_rx_aiat));
   memset(Pdcp_stats_rx_iat, 0, sizeof(Pdcp_stats_rx_iat));
   memset(Pdcp_stats_rx_outoforder, 0, sizeof(Pdcp_stats_rx_outoforder));
-    
+
+  // Addition for the use-case of 4G stack on top of 5G-NR.
+  // We need to configure pdcp and rlc instances without having an actual
+  // UE RRC Connection. Just to be able to test the NR PHY with some injected
+  // on top of the LTE stack.
+  protocol_ctxt_t ctxt;
+  DRB_ToAddModList_t*                DRB_configList=NULL;
+  DRB_configList = CALLOC(1, sizeof(DRB_ToAddModList_t));
+  struct LogicalChannelConfig        *DRB_lchan_config                                 = NULL;
+  struct RLC_Config                  *DRB_rlc_config                   = NULL;
+  struct PDCP_Config                 *DRB_pdcp_config                  = NULL;
+  struct PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
+
+  struct DRB_ToAddMod *DRB_config = NULL;
+  struct LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters        = NULL;
+  long  *logicalchannelgroup_drb;
+
+
+  //Static preconfiguration of DRB
+  DRB_config = CALLOC(1, sizeof(*DRB_config));
+
+  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
+  // allowed value 5..15, value : x+4
+  *(DRB_config->eps_BearerIdentity) = 1; //ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation
+  //   DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+  // 1 + drb_identiy_index;
+  DRB_config->drb_Identity = 1;
+  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
+  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
+
+  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
+  DRB_config->rlc_Config = DRB_rlc_config;
+
+  DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
+  DRB_config->pdcp_Config = DRB_pdcp_config;
+  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
+  *DRB_pdcp_config->discardTimer = PDCP_Config__discardTimer_infinity;
+  DRB_pdcp_config->rlc_AM = NULL;
+  DRB_pdcp_config->rlc_UM = NULL;
+
+  DRB_rlc_config->present = RLC_Config_PR_um_Bi_Directional;
+  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms35;
+  // PDCP
+  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
+  DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
+  PDCP_rlc_UM->pdcp_SN_Size = PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
+
+  DRB_pdcp_config->headerCompression.present = PDCP_Config__headerCompression_PR_notUsed;
+
+  DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
+  DRB_config->logicalChannelConfig = DRB_lchan_config;
+  DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
+  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
+
+  DRB_ul_SpecificParameters->priority= 4;
+
+  DRB_ul_SpecificParameters->prioritisedBitRate = LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
+  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  DRB_ul_SpecificParameters->bucketSizeDuration =
+  LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+
+  logicalchannelgroup_drb = CALLOC(1, sizeof(long));
+  *logicalchannelgroup_drb = 1;//(i+1) % 3;
+  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+
+
+  // Have to dins out how to fill the DRB_config and then feed it back to the list
+  /*
+    if (DRB_configList != NULL) {
+    LOG_D(RRC, "get DRB_config from (ue_context_pP->ue_context.DRB_configList)\n");
+    for (i = 0; (i < DRB_configList->list.count) && (i < 3); i++) {
+      DRB_config = DRB_configList->list.array[i];
+
+      // Add DRB to DRB configuration list, for RRCConnectionReconfigurationComplete
+      ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+    }
+  }
+  */
+
+
+  ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
+
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+  rrc_pdcp_config_asn1_req(&ctxt,
+               (SRB_ToAddModList_t *) NULL,
+               DRB_configList,
+               (DRB_ToReleaseList_t*) NULL,
+               0xff, NULL, NULL, NULL
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+               , (PMCH_InfoList_r9_t *) NULL
+#endif
+               ,NULL);
+
+rrc_rlc_config_asn1_req(&ctxt,
+               (SRB_ToAddModList_t*)NULL,
+               DRB_configList,
+               (DRB_ToReleaseList_t*)NULL
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+               ,(PMCH_InfoList_r9_t *)NULL
+               , 0, 0
+#endif
+         );
+
 }
 
 //-----------------------------------------------------------------------------

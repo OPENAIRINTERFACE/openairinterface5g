@@ -213,7 +213,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
                                     0b00000010,
                                     0b00000001};
 #endif
- 
+
 
 #ifndef __AVX2__
   if ((n&15) > 0)
@@ -226,9 +226,9 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
 
 
   for (i=0; i<loop ; i++ ) {
-    // int cur_byte=i<<3; 
-    // for (b=0;b<8;b++) 
-    //   expandInput[cur_byte+b] = (input[i]&(1<<(7-b)))>>(7-b); 
+    // int cur_byte=i<<3;
+    // for (b=0;b<8;b++)
+    //   expandInput[cur_byte+b] = (input[i]&(1<<(7-b)))>>(7-b);
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifndef __AVX2__
@@ -317,8 +317,8 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
 
     tmp3=_mm256_unpackhi_epi16(tmp2,tmp2); // tmp3 = B12 B13 B14 B15 B28 B29 B30 B31
     tmp4=_mm256_unpacklo_epi32(tmp3,tmp3); // tmp4 = B12 B13 B28 B29
-    tmp5=_mm256_unpackhi_epi32(tmp3,tmp3); // tmp5 = B14 B15 B30 B31 
-    tmp6=_mm256_insertf128_si256(tmp4,_mm256_extracti128_si256(tmp5,0),1);  // tmp6 = B12 B13 B14 B15 
+    tmp5=_mm256_unpackhi_epi32(tmp3,tmp3); // tmp5 = B14 B15 B30 B31
+    tmp6=_mm256_insertf128_si256(tmp4,_mm256_extracti128_si256(tmp5,0),1);  // tmp6 = B12 B13 B14 B15
     tmp7=_mm256_insertf128_si256(tmp5,_mm256_extracti128_si256(tmp4,1),0);  // tmp7 = B28 B29 B30 B31
     //print_bytes2("tmp2",(uint8_t*)&tmp2);
     //print_bytes2("tmp3",(uint8_t*)&tmp3);
@@ -368,7 +368,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     //print_bytes("tmp4:",(uint8_t*)&tmp4);
 
     *o_128++=vceqq_u8(vandq_u8((uint8x16_t)tmp4,BIT_MASK),BIT_MASK);    //4
-    //and_tmp = vandq_u8((uint8x16_t)tmp4,BIT_MASK); print_bytes("and:",and_tmp); 
+    //and_tmp = vandq_u8((uint8x16_t)tmp4,BIT_MASK); print_bytes("and:",and_tmp);
     //print_bytes("o:",(uint8_t*)(o_128-1));
 
 
@@ -408,7 +408,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     i_128++;
 #endif
   }
-  
+
 
   short * ptr_intl=base_interleaver;
 #if defined(__x86_64) || defined(__i386__)
@@ -421,7 +421,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
 #endif
 #elif defined(__arm__)
   uint8x16_t tmp;
-  const uint8_t __attribute__ ((aligned (16))) _Powers[16]= 
+  const uint8_t __attribute__ ((aligned (16))) _Powers[16]=
     { 1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128 };
 
 // Set the powers of 2 (do it once for all, if applicable)
@@ -568,7 +568,7 @@ void threegpplte_turbo_encoder_sse(unsigned char *input,
 #if defined(__x86_64__) || defined(__i386__)
   __m64 *ptr_output=(__m64*) output;
 #elif defined(__arm__)
-  uint8x8_t *ptr_output=(uint8x8_t*)output; 
+  uint8x8_t *ptr_output=(uint8x8_t*)output;
 #endif
   unsigned char cur_s1, cur_s2;
   int code_rate;
@@ -587,14 +587,14 @@ void threegpplte_turbo_encoder_sse(unsigned char *input,
 
       *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
 				  all_treillis[state1][cur_s2].parity2_64[code_rate]);
-	
-	
+
+
 #elif defined(__arm__)
 	*ptr_output++ = vadd_u8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
 				all_treillis[state0][cur_s1].parity2_64[code_rate]);
 #endif
       }
-      
+
       state0=all_treillis[state0][cur_s1].exit_state;
       state1=all_treillis[state1][cur_s2].exit_state;
   }
@@ -638,11 +638,11 @@ void threegpplte_turbo_encoder_sse(unsigned char *input,
 }
 
 void init_encoder_sse (void) {
-    treillis_table_init(); 	   
+    treillis_table_init();
 }
 /* function which will be called by the shared lib loader, to check shared lib version
    against main exec version. version mismatch no considered as fatal (interfaces not supposed to change)
-*/ 
+*/
 int  coding_checkbuildver(char * mainexec_buildversion, char ** shlib_buildversion)
 {
 #ifndef PACKAGE_VERSION
@@ -657,7 +657,7 @@ int  coding_checkbuildver(char * mainexec_buildversion, char ** shlib_buildversi
 }
 
 #ifdef TC_MAIN
-#define INPUT_LENGTH 20 
+#define INPUT_LENGTH 20
 #define F1 21
 #define F2 120
 
