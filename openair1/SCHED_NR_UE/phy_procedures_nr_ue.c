@@ -2473,7 +2473,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
   //int32_t ulsch_start=0;
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
-  unsigned char *mac_pdu;
   int harq_pid, i, TBS;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
@@ -2500,13 +2499,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   TBS = nr_compute_tbs(ul_dci_pdu->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, ul_dci_pdu->precod_nbr_layers);
 
-  mac_pdu = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+//-----------------------------------------------------//
+  // to be removed later when MAC is ready
 
   for (i = 0; i < TBS / 8; i++)
-    mac_pdu[i] = (unsigned char) rand();
+    harq_process_ul_ue->a[i] = (unsigned char) rand();
 
-  memcpy(harq_process_ul_ue->a, mac_pdu, TBS/8);
-
+//-----------------------------------------------------//
 
   nr_ue_ulsch_procedures(ue,
                          harq_pid,
