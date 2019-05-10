@@ -784,6 +784,7 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
 #if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = timing_advance;
+    PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
 #else
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
 #endif

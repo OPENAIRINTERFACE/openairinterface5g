@@ -383,11 +383,18 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
+  int timing_advance;
 
   /////////////////////////IFFT///////////////////////
   ///////////
 
-  tx_offset = slot*frame_parms->samples_per_slot;
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)  || defined(OAI_ADRV9371_ZC706)
+  timing_advance = UE->timing_advance;
+#else
+  timing_advance = 0;
+#endif
+
+  tx_offset = slot*frame_parms->samples_per_slot - timing_advance;
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 

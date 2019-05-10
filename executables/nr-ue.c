@@ -421,7 +421,7 @@ void UE_processing(void *arg) {
   processSlotRX(UE, proc);
   //printf(">>> mac ended\n");
   // Prepare the future Tx data
-#if 0
+/*
 #ifndef NO_RAT_NR
 
   if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
@@ -429,11 +429,12 @@ void UE_processing(void *arg) {
   if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
       (UE->frame_parms.frame_type == FDD) )
 #endif
+*/
     if (UE->mode != loop_through_memory)
-      phy_procedures_nrUE_TX(UE,proc,0,0,UE->mode,no_relay);
+      phy_procedures_nrUE_TX(UE,proc,0,0);
 
   //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
-#endif
+
 #if 0
 
   if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
