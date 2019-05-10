@@ -306,8 +306,7 @@ void
 flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t *const ue_context_pP,
-							     const uint8_t ho_state,
-  agent_reconf_rrc *trig_param
+  const uint8_t ho_state
 );
 void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,

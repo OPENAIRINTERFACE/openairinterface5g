@@ -7,7 +7,7 @@ import "time_common.proto";
 import "config_messages.proto";
 import "controller_commands.proto";
 import "control_delegation.proto";
-
+import "config_common.proto";
 
 message flexran_message {
        optional flexran_direction msg_dir = 100;
@@ -188,7 +188,8 @@ message flex_ul_mac_config {
 message flex_rrc_triggering {
 
 	optional flex_header header = 1;
-	optional string rrc_trigger = 2;	
+	optional string rrc_trigger = 2;
+        optional flex_measurement_info meas_info = 3;
 }
 
 //

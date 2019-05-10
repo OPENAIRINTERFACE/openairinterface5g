@@ -1434,6 +1434,19 @@ uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, uint16_t uid, lcid_t lcid)
 }
 
 /******************** RRC *****************************/
+/* RRC Wrappers */
+int flexran_call_rrc_reconfiguration (mid_t mod_id, rnti_t rnti) {
+  if (!rrc_is_present(mod_id)) return -1;
+  protocol_ctxt_t  ctxt;
+  memset(&ctxt, 0, sizeof(ctxt));
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
+  flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt, ue_context_p, 0);
+  return 0;
+}
+
+/* RRC Getters */
 
 LTE_MeasId_t  flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti) {
   if (!rrc_is_present(mod_id)) return -1;
@@ -1565,6 +1578,8 @@ float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id) {
   return RSRQ_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult)];
 }
 
+/* Measurement offsets */
+
 long flexran_get_rrc_ofp(mid_t mod_id, rnti_t rnti) {
   if (!rrc_is_present(mod_id)) return -1;
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
@@ -1586,7 +1601,40 @@ long flexran_get_rrc_ocp(mid_t mod_id, rnti_t rnti) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->cellIndividualOffset[0];
+  switch (ue_context_p->ue_context.measurement_info->cellIndividualOffset[0]) {
+  case LTE_Q_OffsetRange_dB_24: return -24;
+  case LTE_Q_OffsetRange_dB_22: return -22;
+  case LTE_Q_OffsetRange_dB_20: return -20;
+  case LTE_Q_OffsetRange_dB_18: return -18;
+  case LTE_Q_OffsetRange_dB_16: return -16;
+  case LTE_Q_OffsetRange_dB_14: return -14;
+  case LTE_Q_OffsetRange_dB_12: return -12;
+  case LTE_Q_OffsetRange_dB_10: return -10;
+  case LTE_Q_OffsetRange_dB_8:  return -8;
+  case LTE_Q_OffsetRange_dB_6:  return -6;
+  case LTE_Q_OffsetRange_dB_5:  return -5;
+  case LTE_Q_OffsetRange_dB_4:  return -4;
+  case LTE_Q_OffsetRange_dB_3:  return -3;
+  case LTE_Q_OffsetRange_dB_2:  return -2;
+  case LTE_Q_OffsetRange_dB_1:  return -1;
+  case LTE_Q_OffsetRange_dB0:   return  0;
+  case LTE_Q_OffsetRange_dB1:   return  1;
+  case LTE_Q_OffsetRange_dB2:   return  2;
+  case LTE_Q_OffsetRange_dB3:   return  3;
+  case LTE_Q_OffsetRange_dB4:   return  4;
+  case LTE_Q_OffsetRange_dB5:   return  5;
+  case LTE_Q_OffsetRange_dB6:   return  6;
+  case LTE_Q_OffsetRange_dB8:   return  8;
+  case LTE_Q_OffsetRange_dB10:  return 10;
+  case LTE_Q_OffsetRange_dB12:  return 12;
+  case LTE_Q_OffsetRange_dB14:  return 14;
+  case LTE_Q_OffsetRange_dB16:  return 16;
+  case LTE_Q_OffsetRange_dB18:  return 18;
+  case LTE_Q_OffsetRange_dB20:  return 20;
+  case LTE_Q_OffsetRange_dB22:  return 22;
+  case LTE_Q_OffsetRange_dB24:  return 24;
+  default:                      return -99;
+  }
 }
 
 long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id) {
@@ -1594,7 +1642,40 @@ long flexran_get_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->cellIndividualOffset[cell_id+1];
+  switch (ue_context_p->ue_context.measurement_info->cellIndividualOffset[cell_id+1]) {
+  case LTE_Q_OffsetRange_dB_24: return -24;
+  case LTE_Q_OffsetRange_dB_22: return -22;
+  case LTE_Q_OffsetRange_dB_20: return -20;
+  case LTE_Q_OffsetRange_dB_18: return -18;
+  case LTE_Q_OffsetRange_dB_16: return -16;
+  case LTE_Q_OffsetRange_dB_14: return -14;
+  case LTE_Q_OffsetRange_dB_12: return -12;
+  case LTE_Q_OffsetRange_dB_10: return -10;
+  case LTE_Q_OffsetRange_dB_8:  return -8;
+  case LTE_Q_OffsetRange_dB_6:  return -6;
+  case LTE_Q_OffsetRange_dB_5:  return -5;
+  case LTE_Q_OffsetRange_dB_4:  return -4;
+  case LTE_Q_OffsetRange_dB_3:  return -3;
+  case LTE_Q_OffsetRange_dB_2:  return -2;
+  case LTE_Q_OffsetRange_dB_1:  return -1;
+  case LTE_Q_OffsetRange_dB0:   return  0;
+  case LTE_Q_OffsetRange_dB1:   return  1;
+  case LTE_Q_OffsetRange_dB2:   return  2;
+  case LTE_Q_OffsetRange_dB3:   return  3;
+  case LTE_Q_OffsetRange_dB4:   return  4;
+  case LTE_Q_OffsetRange_dB5:   return  5;
+  case LTE_Q_OffsetRange_dB6:   return  6;
+  case LTE_Q_OffsetRange_dB8:   return  8;
+  case LTE_Q_OffsetRange_dB10:  return 10;
+  case LTE_Q_OffsetRange_dB12:  return 12;
+  case LTE_Q_OffsetRange_dB14:  return 14;
+  case LTE_Q_OffsetRange_dB16:  return 16;
+  case LTE_Q_OffsetRange_dB18:  return 18;
+  case LTE_Q_OffsetRange_dB20:  return 20;
+  case LTE_Q_OffsetRange_dB22:  return 22;
+  case LTE_Q_OffsetRange_dB24:  return 24;
+  default:                      return -99;
+  }
 }
 
 long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti) {
@@ -1602,7 +1683,25 @@ long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->filterCoefficientRSRP;
+  switch (ue_context_p->ue_context.measurement_info->filterCoefficientRSRP) {
+  case LTE_FilterCoefficient_fc0:    return 0;
+  case LTE_FilterCoefficient_fc1:    return 1;
+  case LTE_FilterCoefficient_fc2:    return 2;
+  case LTE_FilterCoefficient_fc3:    return 3;
+  case LTE_FilterCoefficient_fc4:    return 4;
+  case LTE_FilterCoefficient_fc5:    return 5;
+  case LTE_FilterCoefficient_fc6:    return 6;
+  case LTE_FilterCoefficient_fc7:    return 7;
+  case LTE_FilterCoefficient_fc8:    return 8;
+  case LTE_FilterCoefficient_fc9:    return 9;
+  case LTE_FilterCoefficient_fc11:   return 11;
+  case LTE_FilterCoefficient_fc13:   return 13;
+  case LTE_FilterCoefficient_fc15:   return 15;
+  case LTE_FilterCoefficient_fc17:   return 17;
+  case LTE_FilterCoefficient_fc19:   return 19;
+  case LTE_FilterCoefficient_spare1: return -1; /* spare means no coefficient */
+  default:                           return -1;
+  }
 }
 
 long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti) {
@@ -1610,7 +1709,25 @@ long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
-  return ue_context_p->ue_context.measurement_info->filterCoefficientRSRQ;
+  switch (ue_context_p->ue_context.measurement_info->filterCoefficientRSRQ) {
+  case LTE_FilterCoefficient_fc0:    return 0;
+  case LTE_FilterCoefficient_fc1:    return 1;
+  case LTE_FilterCoefficient_fc2:    return 2;
+  case LTE_FilterCoefficient_fc3:    return 3;
+  case LTE_FilterCoefficient_fc4:    return 4;
+  case LTE_FilterCoefficient_fc5:    return 5;
+  case LTE_FilterCoefficient_fc6:    return 6;
+  case LTE_FilterCoefficient_fc7:    return 7;
+  case LTE_FilterCoefficient_fc8:    return 8;
+  case LTE_FilterCoefficient_fc9:    return 9;
+  case LTE_FilterCoefficient_fc11:   return 11;
+  case LTE_FilterCoefficient_fc13:   return 13;
+  case LTE_FilterCoefficient_fc15:   return 15;
+  case LTE_FilterCoefficient_fc17:   return 17;
+  case LTE_FilterCoefficient_fc19:   return 19;
+  case LTE_FilterCoefficient_spare1: return -1; /* spare means no coefficient */
+  default:                           return -1;
+  }
 }
 
 /* Periodic event */
@@ -1644,7 +1761,25 @@ long flexran_get_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti) {
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
-  return ue_context_p->ue_context.measurement_info->events->a3_event->timeToTrigger;
+  switch (ue_context_p->ue_context.measurement_info->events->a3_event->timeToTrigger) {
+  case LTE_TimeToTrigger_ms0:    return 0;
+  case LTE_TimeToTrigger_ms40:   return 40;
+  case LTE_TimeToTrigger_ms64:   return 64;
+  case LTE_TimeToTrigger_ms80:   return 80;
+  case LTE_TimeToTrigger_ms100:  return 100;
+  case LTE_TimeToTrigger_ms128:  return 128;
+  case LTE_TimeToTrigger_ms160:  return 160;
+  case LTE_TimeToTrigger_ms256:  return 256;
+  case LTE_TimeToTrigger_ms320:  return 320;
+  case LTE_TimeToTrigger_ms480:  return 480;
+  case LTE_TimeToTrigger_ms512:  return 512;
+  case LTE_TimeToTrigger_ms640:  return 640;
+  case LTE_TimeToTrigger_ms1024: return 1024;
+  case LTE_TimeToTrigger_ms1280: return 1280;
+  case LTE_TimeToTrigger_ms2560: return 2560;
+  case LTE_TimeToTrigger_ms5120: return 5120;
+  default:                       return -1;
+  }
 }
 
 long flexran_get_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti) {
@@ -1675,6 +1810,259 @@ int flexran_get_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti) {
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
   return ue_context_p->ue_context.measurement_info->events->a3_event->reportOnLeave;
+}
+
+/* RRC Setters */
+
+/* Measurement offsets */
+
+int flexran_set_rrc_ofp(mid_t mod_id, rnti_t rnti, long offsetFreq) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  ue_context_p->ue_context.measurement_info->offsetFreq = offsetFreq;
+  return 0;
+}
+
+int flexran_set_rrc_ofn(mid_t mod_id, rnti_t rnti, long offsetFreq) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  ue_context_p->ue_context.measurement_info->offsetFreq = offsetFreq;
+  return 0;
+}
+
+int flexran_set_rrc_ocp(mid_t mod_id, rnti_t rnti, long cellIndividualOffset) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  LTE_Q_OffsetRange_t *cio = &ue_context_p->ue_context.measurement_info->cellIndividualOffset[0];
+  switch (cellIndividualOffset) {
+  case -24: *cio = LTE_Q_OffsetRange_dB_24; break;
+  case -22: *cio = LTE_Q_OffsetRange_dB_22; break;
+  case -20: *cio = LTE_Q_OffsetRange_dB_20; break;
+  case -18: *cio = LTE_Q_OffsetRange_dB_18; break;
+  case -16: *cio = LTE_Q_OffsetRange_dB_16; break;
+  case -14: *cio = LTE_Q_OffsetRange_dB_14; break;
+  case -12: *cio = LTE_Q_OffsetRange_dB_12; break;
+  case -10: *cio = LTE_Q_OffsetRange_dB_10; break;
+  case -8:  *cio = LTE_Q_OffsetRange_dB_8;  break;
+  case -6:  *cio = LTE_Q_OffsetRange_dB_6;  break;
+  case -5:  *cio = LTE_Q_OffsetRange_dB_5;  break;
+  case -4:  *cio = LTE_Q_OffsetRange_dB_4;  break;
+  case -3:  *cio = LTE_Q_OffsetRange_dB_3;  break;
+  case -2:  *cio = LTE_Q_OffsetRange_dB_2;  break;
+  case -1:  *cio = LTE_Q_OffsetRange_dB_1;  break;
+  case 0:   *cio = LTE_Q_OffsetRange_dB0;   break;
+  case 1:   *cio = LTE_Q_OffsetRange_dB1;   break;
+  case 2:   *cio = LTE_Q_OffsetRange_dB2;   break;
+  case 3:   *cio = LTE_Q_OffsetRange_dB3;   break;
+  case 4:   *cio = LTE_Q_OffsetRange_dB4;   break;
+  case 5:   *cio = LTE_Q_OffsetRange_dB5;   break;
+  case 6:   *cio = LTE_Q_OffsetRange_dB6;   break;
+  case 8:   *cio = LTE_Q_OffsetRange_dB8;   break;
+  case 10:  *cio = LTE_Q_OffsetRange_dB10;  break;
+  case 12:  *cio = LTE_Q_OffsetRange_dB12;  break;
+  case 14:  *cio = LTE_Q_OffsetRange_dB14;  break;
+  case 16:  *cio = LTE_Q_OffsetRange_dB16;  break;
+  case 18:  *cio = LTE_Q_OffsetRange_dB18;  break;
+  case 20:  *cio = LTE_Q_OffsetRange_dB20;  break;
+  case 22:  *cio = LTE_Q_OffsetRange_dB22;  break;
+  case 24:  *cio = LTE_Q_OffsetRange_dB24;  break;
+  default:                                  return -1;
+  }
+  return 0;
+}
+
+int flexran_set_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id, long cellIndividualOffset) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  LTE_Q_OffsetRange_t *cio = &ue_context_p->ue_context.measurement_info->cellIndividualOffset[cell_id+1];
+  switch (cellIndividualOffset) {
+  case -24: *cio = LTE_Q_OffsetRange_dB_24; break;
+  case -22: *cio = LTE_Q_OffsetRange_dB_22; break;
+  case -20: *cio = LTE_Q_OffsetRange_dB_20; break;
+  case -18: *cio = LTE_Q_OffsetRange_dB_18; break;
+  case -16: *cio = LTE_Q_OffsetRange_dB_16; break;
+  case -14: *cio = LTE_Q_OffsetRange_dB_14; break;
+  case -12: *cio = LTE_Q_OffsetRange_dB_12; break;
+  case -10: *cio = LTE_Q_OffsetRange_dB_10; break;
+  case -8:  *cio = LTE_Q_OffsetRange_dB_8;  break;
+  case -6:  *cio = LTE_Q_OffsetRange_dB_6;  break;
+  case -5:  *cio = LTE_Q_OffsetRange_dB_5;  break;
+  case -4:  *cio = LTE_Q_OffsetRange_dB_4;  break;
+  case -3:  *cio = LTE_Q_OffsetRange_dB_3;  break;
+  case -2:  *cio = LTE_Q_OffsetRange_dB_2;  break;
+  case -1:  *cio = LTE_Q_OffsetRange_dB_1;  break;
+  case 0:   *cio = LTE_Q_OffsetRange_dB0;   break;
+  case 1:   *cio = LTE_Q_OffsetRange_dB1;   break;
+  case 2:   *cio = LTE_Q_OffsetRange_dB2;   break;
+  case 3:   *cio = LTE_Q_OffsetRange_dB3;   break;
+  case 4:   *cio = LTE_Q_OffsetRange_dB4;   break;
+  case 5:   *cio = LTE_Q_OffsetRange_dB5;   break;
+  case 6:   *cio = LTE_Q_OffsetRange_dB6;   break;
+  case 8:   *cio = LTE_Q_OffsetRange_dB8;   break;
+  case 10:  *cio = LTE_Q_OffsetRange_dB10;  break;
+  case 12:  *cio = LTE_Q_OffsetRange_dB12;  break;
+  case 14:  *cio = LTE_Q_OffsetRange_dB14;  break;
+  case 16:  *cio = LTE_Q_OffsetRange_dB16;  break;
+  case 18:  *cio = LTE_Q_OffsetRange_dB18;  break;
+  case 20:  *cio = LTE_Q_OffsetRange_dB20;  break;
+  case 22:  *cio = LTE_Q_OffsetRange_dB22;  break;
+  case 24:  *cio = LTE_Q_OffsetRange_dB24;  break;
+  default:                                  return -1;
+  }
+  return 0;
+}
+
+int flexran_set_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRP) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  LTE_FilterCoefficient_t *fc = &ue_context_p->ue_context.measurement_info->filterCoefficientRSRP;
+  switch (filterCoefficientRSRP) {
+  case 0:  *fc = LTE_FilterCoefficient_fc0;    break;
+  case 1:  *fc = LTE_FilterCoefficient_fc1;    break;
+  case 2:  *fc = LTE_FilterCoefficient_fc2;    break;
+  case 3:  *fc = LTE_FilterCoefficient_fc3;    break;
+  case 4:  *fc = LTE_FilterCoefficient_fc4;    break;
+  case 5:  *fc = LTE_FilterCoefficient_fc5;    break;
+  case 6:  *fc = LTE_FilterCoefficient_fc6;    break;
+  case 7:  *fc = LTE_FilterCoefficient_fc7;    break;
+  case 8:  *fc = LTE_FilterCoefficient_fc8;    break;
+  case 9:  *fc = LTE_FilterCoefficient_fc9;    break;
+  case 11: *fc = LTE_FilterCoefficient_fc11;   break;
+  case 13: *fc = LTE_FilterCoefficient_fc13;   break;
+  case 15: *fc = LTE_FilterCoefficient_fc15;   break;
+  case 17: *fc = LTE_FilterCoefficient_fc17;   break;
+  case 19: *fc = LTE_FilterCoefficient_fc19;   break;
+  case -1: *fc = LTE_FilterCoefficient_spare1; break;
+  default:                                     return -1;
+  }
+  return 0;
+}
+
+int flexran_set_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRQ) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  LTE_FilterCoefficient_t *fc = &ue_context_p->ue_context.measurement_info->filterCoefficientRSRQ;
+  switch (filterCoefficientRSRQ) {
+  case 0:  *fc = LTE_FilterCoefficient_fc0;    break;
+  case 1:  *fc = LTE_FilterCoefficient_fc1;    break;
+  case 2:  *fc = LTE_FilterCoefficient_fc2;    break;
+  case 3:  *fc = LTE_FilterCoefficient_fc3;    break;
+  case 4:  *fc = LTE_FilterCoefficient_fc4;    break;
+  case 5:  *fc = LTE_FilterCoefficient_fc5;    break;
+  case 6:  *fc = LTE_FilterCoefficient_fc6;    break;
+  case 7:  *fc = LTE_FilterCoefficient_fc7;    break;
+  case 8:  *fc = LTE_FilterCoefficient_fc8;    break;
+  case 9:  *fc = LTE_FilterCoefficient_fc9;    break;
+  case 11: *fc = LTE_FilterCoefficient_fc11;   break;
+  case 13: *fc = LTE_FilterCoefficient_fc13;   break;
+  case 15: *fc = LTE_FilterCoefficient_fc15;   break;
+  case 17: *fc = LTE_FilterCoefficient_fc17;   break;
+  case 19: *fc = LTE_FilterCoefficient_fc19;   break;
+  case -1: *fc = LTE_FilterCoefficient_spare1; break;
+  default:                                     return -1;
+  }
+  return 0;
+}
+
+/* Periodic event */
+
+int flexran_set_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->per_event) return -1;
+  ue_context_p->ue_context.measurement_info->events->per_event->maxReportCells = maxReportCells;
+  return 0;
+}
+
+/* A3 event */
+
+int flexran_set_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti, long hysteresis) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  ue_context_p->ue_context.measurement_info->events->a3_event->hysteresis = hysteresis;
+  return 0;
+}
+
+int flexran_set_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti, long timeToTrigger) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  LTE_TimeToTrigger_t *ttt = &ue_context_p->ue_context.measurement_info->events->a3_event->timeToTrigger;
+  switch (timeToTrigger) {
+  case 0:    *ttt = LTE_TimeToTrigger_ms0;    break;
+  case 40:   *ttt = LTE_TimeToTrigger_ms40;   break;
+  case 64:   *ttt = LTE_TimeToTrigger_ms64;   break;
+  case 80:   *ttt = LTE_TimeToTrigger_ms80;   break;
+  case 100:  *ttt = LTE_TimeToTrigger_ms100;  break;
+  case 128:  *ttt = LTE_TimeToTrigger_ms128;  break;
+  case 160:  *ttt = LTE_TimeToTrigger_ms160;  break;
+  case 256:  *ttt = LTE_TimeToTrigger_ms256;  break;
+  case 320:  *ttt = LTE_TimeToTrigger_ms320;  break;
+  case 480:  *ttt = LTE_TimeToTrigger_ms480;  break;
+  case 512:  *ttt = LTE_TimeToTrigger_ms512;  break;
+  case 640:  *ttt = LTE_TimeToTrigger_ms640;  break;
+  case 1024: *ttt = LTE_TimeToTrigger_ms1024; break;
+  case 1280: *ttt = LTE_TimeToTrigger_ms1280; break;
+  case 2560: *ttt = LTE_TimeToTrigger_ms2560; break;
+  case 5120: *ttt = LTE_TimeToTrigger_ms5120; break;
+  default:                                    return -1;
+  }
+  return 0;
+}
+
+int flexran_set_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  ue_context_p->ue_context.measurement_info->events->a3_event->maxReportCells = maxReportCells;
+  return 0;
+}
+
+int flexran_set_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti, long a3_offset) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  ue_context_p->ue_context.measurement_info->events->a3_event->a3_offset = a3_offset;
+  return 0;
+}
+
+int flexran_set_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti, int reportOnLeave) {
+  if (!rrc_is_present(mod_id)) return -1;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events) return -1;
+  if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  ue_context_p->ue_context.measurement_info->events->a3_event->reportOnLeave = reportOnLeave;
+  return 0;
 }
 
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id) {

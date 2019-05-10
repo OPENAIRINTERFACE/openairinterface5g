@@ -498,6 +498,9 @@ uint32_t flexran_get_pdcp_rx_aiat_w(mid_t mod_id, uint16_t uid, lcid_t lcid);
 uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, uint16_t uid, lcid_t lcid);
 
 /*********************RRC**********************/
+/* Call RRC Reconfiguration wrapper function */
+int flexran_call_rrc_reconfiguration (mid_t mod_id, rnti_t rnti);
+
 /*Get primary cell measuremeant id flexRAN*/
 LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti);
 
@@ -575,6 +578,42 @@ long flexran_get_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti);
 
 /* Get filter coefficient for rsrq */
 long flexran_get_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti);
+
+/* Set ofp offset */
+int flexran_set_rrc_ofp(mid_t mod_id, rnti_t rnti, long offsetFreq);
+
+/* Set ofn offset */
+int flexran_set_rrc_ofn(mid_t mod_id, rnti_t rnti, long offsetFreq);
+
+/* Set ocp offset */
+int flexran_set_rrc_ocp(mid_t mod_id, rnti_t rnti, long cellIndividualOffset);
+
+/* Set ocn offset */
+int flexran_set_rrc_ocn(mid_t mod_id, rnti_t rnti, long cell_id, long cellIndividualOffset);
+
+/* Set Periodic Event max reported cells */
+int flexran_set_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells);
+
+/* Set A3 Event hysteresis */
+int flexran_set_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti, long hysteresis);
+
+/* Set A3 Event time to trigger */
+int flexran_set_rrc_a3_event_timeToTrigger(mid_t mod_id, rnti_t rnti, long timeToTrigger);
+
+/* Set A3 Event max reported cells */
+int flexran_set_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxReportCells);
+
+/* Set A3 Event a3 offset */
+int flexran_set_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti, long a3_offset);
+
+/* Set A3 Event report on leave */
+int flexran_set_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti, int reportOnLeave);
+
+/* Set filter coefficient for rsrp */
+int flexran_set_filter_coeff_rsrp(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRP);
+
+/* Set filter coefficient for rsrq */
+int flexran_set_filter_coeff_rsrq(mid_t mod_id, rnti_t rnti, long filterCoefficientRSRQ);
 
 /* Get number of PLMNs that is broadcasted in SIB1 */
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);

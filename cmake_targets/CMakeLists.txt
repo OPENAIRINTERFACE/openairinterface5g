@@ -887,6 +887,7 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY/flexran_agent_phy.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc_internal.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
