@@ -691,7 +691,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   }
   else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_slot) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
+      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
     }

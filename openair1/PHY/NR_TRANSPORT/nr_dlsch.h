@@ -77,12 +77,19 @@ void nr_pdsch_layer_mapping(int16_t **mod_symbs,
                          uint16_t n_symbs,
                          int16_t **tx_layers);
 
+void nr_fill_dlsch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   unsigned char *sdu); 
+
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
-                          uint8_t subframe,
+                          int frame,
+                          uint8_t slot,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config);
 
@@ -96,8 +103,10 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
-int nr_dlsch_encoding(unsigned char *a,
-                     uint8_t subframe,
+int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+
+int nr_dlsch_encoding(unsigned char *a,int frame,
+                     uint8_t slot,
                      NR_gNB_DLSCH_t *dlsch,
                      NR_DL_FRAME_PARMS* frame_parms);
 

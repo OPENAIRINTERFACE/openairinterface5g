@@ -45,13 +45,11 @@ void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t n_RNTI,
                          uint32_t *out);
 
-void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
-                           int frame,
-                           int subframe,
-                           gNB_L1_rxtx_proc_t *proc,
-                           NR_gNB_DCI_ALLOC_t *dci_alloc,
-                           nfapi_nr_dl_config_dci_dl_pdu *pdu,
-                           nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu);
+void nr_fill_dci(PHY_VARS_gNB *gNB,
+                 int frame,
+                 int slot,
+                 NR_gNB_DCI_ALLOC_t *dci_alloc,
+                 nfapi_nr_dl_config_dci_dl_pdu *pdu);
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t *dci_alloc, uint16_t n_shift, uint8_t m);
 

@@ -176,7 +176,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
-                          AMP, slot, *fp, *cfg);
+                          AMP, frame,slot, *fp, *cfg);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
     }

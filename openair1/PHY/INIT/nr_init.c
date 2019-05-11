@@ -35,7 +35,6 @@
 
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
-#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
@@ -80,11 +79,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *const fp       = &gNB->frame_parms;
   nfapi_nr_config_request_t *cfg    = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  LTE_eNB_PUSCH **const pusch_vars  = gNB->pusch_vars;
+  /*LTE_eNB_PUSCH **const pusch_vars  = gNB->pusch_vars;
   LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
-  LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;
+  LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
-  int i, UE_id;
+  int i;
 
   LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
   gNB->total_dlsch_bitrate = 0;
@@ -154,19 +153,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
-  /*
-    lte_gold(fp,gNB->lte_gold_table,fp->Nid_cell);
-    generate_pcfich_reg_mapping(fp);
-    generate_phich_reg_mapping(fp);*/
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    gNB->first_run_timing_advance[UE_id] =
-      1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
-    // clear whole structure
-    bzero( &gNB->UE_stats[UE_id], sizeof(LTE_eNB_UE_stats) );
-    gNB->physicalConfigDedicated[UE_id] = NULL;
-  }
-
   gNB->first_run_I0_measurements =
     1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
   common_vars->rxdata  = (int32_t **)NULL;
@@ -182,6 +168,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   // Channel estimates for SRS
+/*
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     srs_vars[UE_id].srs_ch_estimates      = (int32_t **)malloc16( 64*sizeof(int32_t *) );
     srs_vars[UE_id].srs_ch_estimates_time = (int32_t **)malloc16( 64*sizeof(int32_t *) );
@@ -191,11 +178,12 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       srs_vars[UE_id].srs_ch_estimates_time[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
     }
   } //UE_id
-
+*/
   /*generate_ul_ref_sigs_rx();
 
   init_ulsch_power_LUT();*/
 
+/*
   // SRS
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     srs_vars[UE_id].srs = (int32_t *)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
@@ -210,8 +198,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   prach_vars->rxsigF[0]        = (int16_t **)malloc16_clear(64*sizeof(int16_t *));
 
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+  for (int ulsch_id=0; ulsch_id<NUMBER_OF_NR_ULSCH_MAX; ulsch_id++) {
     //FIXME
+
     pusch_vars[UE_id] = (LTE_eNB_PUSCH *)malloc16_clear( NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH) );
     pusch_vars[UE_id]->rxdataF_ext      = (int32_t **)malloc16( 2*sizeof(int32_t *) );
     pusch_vars[UE_id]->rxdataF_ext2     = (int32_t **)malloc16( 2*sizeof(int32_t *) );
@@ -240,6 +229,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->UE_stats_ptr[UE_id] = &gNB->UE_stats[UE_id];
 
   gNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+*/
   return (0);
 }
 /*
@@ -290,9 +280,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  LTE_eNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  /*LTE_eNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
-  LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;
+  LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
   int i, UE_id;
 
@@ -305,7 +295,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
   free_and_zero(common_vars->rxdataF);
   // PDCCH DMRS sequences
   free_and_zero(pdcch_dmrs);
-
+/*
   // Channel estimates for SRS
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
     for (i=0; i<64; i++) {
@@ -351,6 +341,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
   } //UE_id
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
+*/
 }
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)
@@ -492,8 +483,6 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
   gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
   LOG_D(PHY,"gNB %d.%d : RA %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_ra);
-  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
-  LOG_D(PHY,"gNB %d.%d : MCH %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_MCH);
   gNB->rx_total_gain_dB=130;
 
   for(i=0; i<NUMBER_OF_UE_MAX; i++)

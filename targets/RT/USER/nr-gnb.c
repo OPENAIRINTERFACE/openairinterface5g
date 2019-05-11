@@ -919,7 +919,7 @@ void init_eNB_afterRU(void) {
 
       //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
 
-      gNB->prach_vars.rxsigF[0] = (int16_t**)malloc16(64*sizeof(int16_t*));
+      //gNB->prach_vars.rxsigF[0] = (int16_t**)malloc16(64*sizeof(int16_t*));
 
       LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
@@ -935,7 +935,7 @@ void init_eNB_afterRU(void) {
 
 	for (i=0;i<gNB->RU_list[ru_id]->nb_rx;aa++,i++) { 
 	  LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	  gNB->prach_vars.rxsigF[0][aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+//	  gNB->prach_vars.rxsigF[0][aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
 	  gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
 	}
       }

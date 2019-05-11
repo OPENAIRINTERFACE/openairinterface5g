@@ -45,7 +45,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   uint8_t  CC_id;
 
   gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
-  //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
+  NR_COMMON_channels_t                *cc          = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
@@ -163,6 +163,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
   TX_req->segments[0].segment_length = 8;
+  TX_req->segments[0].segment_data   = cc[CC_id].RAR_pdu.payload;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
@@ -172,7 +173,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
-  TX_req->segments[0].segment_length = 8;
+  TX_req->segments[0].segment_length = TX_req->pdu_length;
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
