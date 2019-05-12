@@ -1,4 +1,4 @@
-/*
+/*/*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -424,7 +424,7 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   int waitret;
   struct timespec wait;
   wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
+  wait.tv_nsec=10000000L;
  
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
@@ -433,7 +433,7 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   waitret=timedwait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh",500000); 
 
   if (waitret == ETIMEDOUT) {
-     LOG_W(PHY,"Dropping TX slot because FH is blocked more than 1 slot times (500us)\n");
+     LOG_W(PHY,"Dropping TX slot (%d.%d) because FH is blocked more than 2 slot times (1000us)\n",frame_tx,slot_tx);
 
      pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
      gNB->proc.RU_mask_tx = 0;
@@ -456,11 +456,11 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
       pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
       return(-1);
     }
-    if (pthread_mutex_timedlock(&ru_proc->mutex_gNBs,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->tti_rx&1,ru_proc->instance_cnt_gNBs );
-      exit_fun( "error locking mutex_gNB" );
+    if ((waitret = pthread_mutex_timedlock(&ru_proc->mutex_gNBs,&wait)) == ETIMEDOUT) {
+      LOG_W( PHY, "[eNB] ERROR pthread_mutex_lock timed out on mutex_gNBs L1_thread_tx (timeout)\n");
       return(-1);
     }
+    else AssertFatal(waitret==0,"pthread_mutex_timedlock returned %d\n",waitret);
 
     ru_proc->instance_cnt_gNBs = 0;
     ru_proc->timestamp_tx = timestamp_tx;
@@ -468,16 +468,15 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
     ru_proc->frame_tx     = frame_tx;
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_UE, ru_proc->instance_cnt_gNBs);
+    pthread_mutex_unlock( &ru_proc->mutex_gNBs );
 
-    LOG_D(PHY,"Signaling tx_thread_fh for %d.%d\n",ru_proc->frame_tx,ru_proc->tti_tx);  
+    LOG_D(PHY,"Signaling tx_thread_fh for %d.%d\n",frame_tx,slot_tx);  
     // the thread can now be woken up
     if (pthread_cond_signal(&ru_proc->cond_gNBs) != 0) {
       LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return(-1);
     }
-  
-    pthread_mutex_unlock( &ru_proc->mutex_gNBs );
   }
 
   return(0);

@@ -580,8 +580,8 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot_tx );
   }
 
-  if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
-  if (ru->fh_south_out) ru->fh_south_out(ru);
+  if (ru->feptx_ofdm) ru->feptx_ofdm(ru,frame_tx,slot_tx);
+  if (ru->fh_south_out) ru->fh_south_out(ru,frame_tx,slot_tx,proc->timestamp_tx);
 } 
 
 void fh_if5_north_out(RU_t *ru) {
@@ -736,7 +736,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru) {
+void tx_rf(RU_t *ru,int frame_tx,int tti_tx,uint64_t timestamp_tx) {
 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
@@ -745,10 +745,10 @@ void tx_rf(RU_t *ru) {
   unsigned int txs;
   int i;
 
-  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->tti_tx),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_slot], fp->samples_per_slot * 4));
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame_tx), T_INT(tti_tx),
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][tti_tx * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  nr_subframe_t SF_type     = nr_slot_select(cfg,proc->tti_tx%fp->slots_per_frame);
+  nr_subframe_t SF_type     = nr_slot_select(cfg,tti_tx%fp->slots_per_frame);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -776,25 +776,24 @@ void tx_rf(RU_t *ru) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
       sf_extension = ru->N_TA_offset<<1;
     } */
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU,tti_tx );
 
     for (i=0; i<ru->nb_tx; i++)
 
-      txp[i] = (void*)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_slot)-sf_extension];
+      txp[i] = (void*)&ru->common.txdata[i][(tti_tx*fp->samples_per_slot)-sf_extension];
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+				      timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      4);//flags);
-    
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->tti_tx);
+	  (long long unsigned int)timestamp_tx,frame_tx,proc->frame_tx_unwrap,tti_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
@@ -1297,24 +1296,32 @@ static void* ru_thread_tx( void* param ) {
 
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
 
+
+    pthread_mutex_lock(&proc->mutex_gNBs);
+    int frame_tx=proc->frame_tx;
+    int tti_tx  =proc->tti_tx;
+    uint64_t timestamp_tx = proc->timestamp_tx;
+
+    pthread_mutex_unlock(&proc->mutex_gNBs);
+
     if (oai_exit) break;
   	       
 //printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->tti_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
+    if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
   	  
     // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
     if(!emulate_rf){    
       // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,tti_tx,timestamp_tx);
       if (ru->fh_north_out) ru->fh_north_out(ru);
     }
     else
     {
-      if(proc->frame_tx == print_frame)
+      if(frame_tx == print_frame)
       {
         for (i=0; i<ru->nb_tx; i++)
         {
@@ -1367,13 +1374,13 @@ static void* ru_thread_tx( void* param ) {
         pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         L1_proc->instance_cnt_RUs = 0;
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
+        pthread_mutex_unlock( &L1_proc->mutex_RUs_tx );
 
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB L1 TX thread\n");
           exit_fun( "ERROR pthread_cond_signal" );
         }
-        pthread_mutex_unlock( &L1_proc->mutex_RUs_tx );
       }
     }
   }
@@ -1526,14 +1533,14 @@ static void* ru_thread( void* param ) {
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_gNB==0)
     {
       // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
+      if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
    
       // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
       if(!emulate_rf)
       {
         // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
   
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
@@ -1676,9 +1683,9 @@ int stop_rf(RU_t *ru)
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
-extern void nr_feptx_ofdm(RU_t *ru);
-extern void nr_feptx_ofdm_2thread(RU_t *ru);
-extern void feptx_prec(RU_t *ru);
+extern void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
+extern void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
+extern void feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
 extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
 extern void init_nr_feptx_thread(RU_t *ru,pthread_attr_t *attr);
 
