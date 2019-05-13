@@ -204,6 +204,8 @@ typedef enum {
 #define ENB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define ENB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
 #define ENB_CONFIG_STRING_NR_CELLID                     "nr_cellid"
+#define ENB_CONFIG_STRING_MEASUREMENT_REPORTS           "enable_measurement_reports"
+#define ENB_CONFIG_STRING_X2                            "enable_x2"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -224,6 +226,8 @@ typedef enum {
 {ENB_CONFIG_STRING_LOCAL_S_PORTD,                NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_NR_CELLID,                    NULL,   0,            u64ptr:NULL,   defint64val:0,                TYPE_UINT64,    0},  \
+{ENB_CONFIG_STRING_MEASUREMENT_REPORTS,          NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
+{ENB_CONFIG_STRING_X2,                           NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
 }															     	
 #define ENB_ENB_ID_IDX                  0
 #define ENB_CELL_TYPE_IDX               1
@@ -240,6 +244,8 @@ typedef enum {
 #define ENB_LOCAL_S_PORTD_IDX           12
 #define ENB_REMOTE_S_PORTD_IDX          13
 #define ENB_NRCELLID_IDX                14
+#define ENB_ENABLE_MEASUREMENT_REPORTS  15
+#define ENB_ENABLE_X2                   16
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define ENBPARAMS_CHECK {                                         \

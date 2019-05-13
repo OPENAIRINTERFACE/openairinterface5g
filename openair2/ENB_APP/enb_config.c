@@ -417,6 +417,22 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                       RRC_CONFIGURATION_REQ(msg_p).mnc[l]);
         }
 
+        /* measurement reports enabled? */
+        if (ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr != NULL &&
+            *(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr) != NULL &&
+            !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr), "yes"))
+          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 1;
+        else
+          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 0;
+
+        /* x2 enabled? */
+        if (ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr != NULL &&
+            *(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr) != NULL &&
+            !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr), "yes"))
+          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 1;
+        else
+          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 0;
+
         // Parse optional physical parameters
         config_getlist( &CCsParamList,NULL,0,enbpath);
         LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);
