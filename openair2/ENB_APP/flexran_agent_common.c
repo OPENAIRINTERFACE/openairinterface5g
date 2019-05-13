@@ -805,66 +805,35 @@ error:
 }
 
 
-int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
-  //protocol_ctxt_t  ctxt;
+int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexRrcTriggering *triggering = input->rrc_triggering;
-  //agent_reconf_rrc *rrc_reconf = malloc(sizeof(agent_reconf_rrc));
-
-  #if 0
-  reconf_param->trigger_policy = triggering->rrc_trigger;
-  reconf_param->report_interval = 0;
-  reconf_param->report_amount = 0;
-  struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
-    flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt, ue_context_p, 0, reconf_param);
-  }
-  #endif
-
-  // TODO: Step 1 - Verification process
-
-  // Step 2 - Set the proper values using FlexRAN API (protected with mutex ?)
-  int num_ue = 0;
-
-  if (flexran_agent_get_rrc_xface(mod_id))
-     num_ue = flexran_get_rrc_num_ues(mod_id);
-  else if (flexran_agent_get_mac_xface(mod_id))
-     num_ue = flexran_get_mac_num_ues(mod_id);
-
-  if (flexran_agent_get_rrc_xface(mod_id) && flexran_agent_get_mac_xface(mod_id)
-      && flexran_get_rrc_num_ues(mod_id) != flexran_get_mac_num_ues(mod_id)) {
-    const int nrrc = flexran_get_rrc_num_ues(mod_id);
-    const int nmac = flexran_get_mac_num_ues(mod_id);
-    num_ue  = nrrc < nmac ? nrrc : nmac;
-    LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %d UEs\n",
-        __func__, nrrc, nmac, num_ue);
+  // Set the proper values using FlexRAN API (protected with mutex ?)
+  if (!flexran_agent_get_rrc_xface(mod_id)) {
+    LOG_E(FLEXRAN_AGENT, "%s(): no RRC present, aborting\n", __func__);
+    return -1;
   }
 
+  int num_ue = flexran_get_rrc_num_ues(mod_id);
   if (num_ue == 0)
     return 0;
 
-  int error = 0;
   rnti_t rntis[num_ue];
   flexran_get_rrc_rnti_list(mod_id, rntis, num_ue);
   for (int i = 0; i < num_ue; i++) {
     const rnti_t rnti = rntis[i];
-    if (flexran_agent_get_rrc_xface(mod_id))
-      error = update_rrc_reconfig(mod_id, rnti, triggering);
+    const int error = update_rrc_reconfig(mod_id, rnti, triggering);
     if (error < 0) {
       LOG_E(FLEXRAN_AGENT, "Error in updating user %d\n", i);
+      continue;
     }
-    else {
-      // Step 3 - Call the proper wrapper in FlexRAN API
-      if (flexran_call_rrc_reconfiguration (mod_id, rnti) <0) {
-        LOG_E(FLEXRAN_AGENT, "Error in reconfiguring user %d\n", i);
-      }
+    // Call the proper wrapper in FlexRAN API
+    if (flexran_call_rrc_reconfiguration (mod_id, rnti) < 0) {
+      LOG_E(FLEXRAN_AGENT, "Error in reconfiguring user %d\n", i);
     }
   }
 
   *msg = NULL;
-  //free(reconf_param);
-  //reconf_param = NULL;
   return 0;
 }
 

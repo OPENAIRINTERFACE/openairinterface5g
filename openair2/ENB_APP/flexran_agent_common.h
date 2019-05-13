@@ -137,7 +137,7 @@ int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__Fl
 int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg);
 
 /* rrc triggering measurement message constructor and destructor */
-int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_rrc_measurement(Protocol__FlexranMessage *msg);
 
 
