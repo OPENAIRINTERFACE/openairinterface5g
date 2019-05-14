@@ -2471,7 +2471,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;
-  int slot_tx = proc->nr_slot_tx;
+  int slot_tx = proc->nr_tti_tx;
   int frame_tx = proc->frame_tx;
   int harq_pid, i, TBS;
 

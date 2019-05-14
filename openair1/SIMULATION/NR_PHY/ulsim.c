@@ -397,7 +397,7 @@ int main(int argc, char **argv) {
   gNB_proc.frame_rx = frame;
   gNB_proc.slot_rx  = slot;
 
-  UE_proc.nr_slot_tx = slot;
+  UE_proc.nr_tti_tx = slot;
   UE_proc.frame_tx = frame;
 
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
