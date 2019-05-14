@@ -55,14 +55,18 @@ void nr_layer_mapping(int16_t **mod_symbs,
 
 /*!
 \brief This function implements the OFDM front end processor on reception (FEP)
-\param phy_vars_ue Pointer to PHY variables
+\param frame_parms Pointer to frame parameters
+\param rxdata Pointer to input data in time domain
+\param rxdataF Pointer to output data in frequency domain
 \param symbol symbol within slot (0..12/14)
 \param Ns Slot number (0..19)
 \param sample_offset offset within rxdata (points to beginning of subframe)
 \param no_prefix if 1 prefix is removed by HW
 */
 
-int nr_slot_fep_ul(PHY_VARS_gNB *phy_vars_gNB,
+int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
+                   int32_t *rxdata,
+                   int32_t *rxdataF,
                    unsigned char symbol,
                    unsigned char Ns,
                    int sample_offset,
