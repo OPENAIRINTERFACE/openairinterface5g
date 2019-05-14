@@ -196,48 +196,6 @@ void start_background_system(void) {
   background_system_process();
 }
 
-void thread_top_init(char *thread_name,
-                     int affinity,
-                     uint64_t runtime,
-                     uint64_t deadline,
-                     uint64_t period) {
-#ifdef DEADLINE_SCHEDULER
-  struct sched_attr attr;
-  unsigned int flags = 0;
-  attr.size = sizeof(attr);
-  attr.sched_flags = 0;
-  attr.sched_nice = 0;
-  attr.sched_priority = 0;
-  attr.sched_policy   = SCHED_DEADLINE;
-  attr.sched_runtime  = runtime;
-  attr.sched_deadline = deadline;
-  attr.sched_period   = period;
-  
-  AssertFatal(sched_setattr(0, &attr, flags) == 0, "[SCHED] eNB tx thread: sched_setattr failed\n");
-	      
-#else
-#ifdef CPU_AFFINITY
-  /* Set affinity mask to include CPUs 2 to MAX_CPUS */
-  /* CPU 0 is reserved for UHD threads */  /* CPU 1 is reserved for all RX_TX threads */
-  /* Enable CPU Affinity only if number of CPUs > 2 */
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  if (affinity == 0) {
-    LOG_W(HW,"thread_top_init() called with affinity==0, but overruled by #ifdef CPU_AFFINITY\n");
-  } else if (get_nprocs() > 2) {
-    for (j = 2; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-    AssertFatal( pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
-  }
-#endif //CPU_AFFINITY
-  
-  struct sched_param sparam={0};
-  sparam.sched_priority = OAI_PRIORITY_RT;
-  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO , &sparam) == 0,"Error setting thread priority");
-  pthread_setname_np(pthread_self(), thread_name);
-#endif 
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-}
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;

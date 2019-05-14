@@ -373,6 +373,8 @@ typedef struct {
   int instance_cnt;
   /// pthread structure for RXn-TXnp4 processing thread
   pthread_t pthread;
+  /// pthread attributes for RXn-TXnp4 processing thread
+  pthread_attr_t attr;
   /// condition variable for tx processing thread
   pthread_cond_t cond;
   /// mutex for RXn-TXnp4 processing thread
@@ -428,6 +430,12 @@ typedef struct gNB_L1_proc_t_s {
   int first_rx;
   /// flag to indicate first TX transmission
   int first_tx;
+  /// pthread attributes for single gNB processing thread
+  pthread_attr_t attr_single;
+  /// pthread attributes for prach processing thread
+  pthread_attr_t attr_prach;
+  /// pthread attributes for asynchronous RX thread
+  pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for parallel turbo-decoder thread
   struct sched_param sched_param_td;
   /// scheduling parameters for parallel turbo-encoder thread

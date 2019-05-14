@@ -201,6 +201,7 @@ sin_addr:
 
 int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
   rfsimulator_state_t *t = device->priv;
+  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *ptr=&t->buf[i];
@@ -231,7 +232,7 @@ static bool flushInput(rfsimulator_state_t *t) {
   // Process all incoming events on sockets
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {0};
-  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, 200);
+  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, 20);
 
   if ( nfds==-1 ) {
     if ( errno==EINTR || errno==EAGAIN )
@@ -310,6 +311,7 @@ static bool flushInput(rfsimulator_state_t *t) {
       }
 
       if ( b->headerMode==false ) {
+	LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
         b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
 
         if ( b->remainToTransfer==0) {
@@ -364,13 +366,14 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
     do {
       have_to_wait=false;
 
-      for ( int sock=0; sock<FD_SETSIZE; sock++)
+      for ( int sock=0; sock<FD_SETSIZE; sock++) {
         if ( t->buf[sock].circularBuf &&
              t->buf[sock].alreadyRead && //>= t->initialAhead &&
              (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
           have_to_wait=true;
           break;
         }
+      }
 
       if (have_to_wait)
         /*printf("Waiting on socket, current last ts: %ld, expected at least : %ld\n",

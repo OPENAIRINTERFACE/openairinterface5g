@@ -36,6 +36,7 @@
 //#include "extern.h"
 #include "PHY/sse_intrin.h"
 #include "T.h"
+#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
