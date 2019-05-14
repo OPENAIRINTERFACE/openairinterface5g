@@ -1560,25 +1560,26 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 
 #endif
 
-void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
-
-  int harq_pid;
-  int frame_tx=proc->frame_tx;
+void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
+								UE_nr_rxtx_proc_t *proc,
+								uint8_t eNB_id,
+								uint8_t abstraction_flag)
+{
   int nr_tti_tx=proc->nr_tti_tx;
-  unsigned int input_buffer_length;
-  int i;
-  int aa;
-  int tx_amp;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_IN);
 
   /* reset harq for tx of current rx slot because it is sure that transmission has already been achieved for this slot */
   set_tx_harq_id(ue->ulsch[ue->current_thread_id[nr_tti_tx]][eNB_id][0], NR_MAX_HARQ_PROCESSES, proc->nr_tti_rx);
 
+#if 0
+  int frame_tx=proc->frame_tx;
+  int harq_pid;
   /* get harq pid related to this next tx slot */
   harq_pid = get_tx_harq_id(ue->ulsch[ue->current_thread_id[nr_tti_tx]][eNB_id][0], nr_tti_tx);
 
-#if 0
-
+  int tx_amp;
+  unsigned int input_buffer_length;
   int Mod_id = ue->Mod_id;
   int CC_id = ue->CC_id;
   uint8_t Msg3_flag=0;
@@ -1599,9 +1600,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
       ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
       if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round==0)
-	generate_ue_ulsch_params_from_rar(ue,
-					  proc,
-					  eNB_id);
+    	  generate_ue_ulsch_params_from_rar(ue,
+    			                            proc,
+											eNB_id);
 
       ue->ulsch[eNB_id]->power_offset = 14;
       LOG_D(PHY,"[UE  %d][RAPROC] Frame %d: Setting Msg3_flag in nr_tti_rx %d, for harq_pid %d\n",
@@ -1864,7 +1865,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
 #ifdef DEBUG_ULSCH
     LOG_D(PHY,"[UE] Frame %d, nr_tti_rx %d : ULSCH SDU (TX harq_pid %d)  (%d bytes) : \n",frame_tx,nr_tti_tx,harq_pid, ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 
-    for (i=0; i<ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3; i++)
+    for (int i=0; i<ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3; i++)
       LOG_T(PHY,"%x.",ulsch_input_buffer[i]);
 
     LOG_T(PHY,"\n");
@@ -1874,7 +1875,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
   else {
     unsigned int taus(void);
 
-    for (i=0; i<input_buffer_length; i++)
+    for (int i=0; i<input_buffer_length; i++)
       ulsch_input_buffer[i]= (uint8_t)(taus()&0xff);
 
   }
@@ -1956,7 +1957,7 @@ if (abstraction_flag == 0) {
 		   nr_tti_tx,
 		   &ue->frame_parms,
 		   ue->ulsch[eNB_id]);
-  for (aa=0; aa<1/*frame_parms->nb_antennas_tx*/; aa++)
+  for (int aa=0; aa<1/*frame_parms->nb_antennas_tx*/; aa++)
     generate_drs_pusch(ue,
 		       proc,
 		       eNB_id,
@@ -2670,22 +2671,18 @@ void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstractio
 
 #endif 
 
-void nr_ue_measurement_procedures(
-				  uint16_t l,    // symbol index of each slot [0..6]
-				  PHY_VARS_NR_UE *ue,
-				  UE_nr_rxtx_proc_t *proc, 
-				  uint8_t eNB_id,
-				  uint16_t slot, // slot index of each radio frame [0..19]
-				  runmode_t mode)
+void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0..6]
+								  PHY_VARS_NR_UE *ue,
+								  UE_nr_rxtx_proc_t *proc,
+								  uint8_t eNB_id,
+								  uint16_t slot, // slot index of each radio frame [0..19]
+								  runmode_t mode)
 {
-
   LOG_D(PHY,"ue_measurement_procedures l %u Ncp %d\n",l,ue->frame_parms.Ncp);
 
-  NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-
-  int nr_tti_rx = proc->nr_tti_rx;
-
 #if 0
+  NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+  int nr_tti_rx = proc->nr_tti_rx;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
 
   if (l==0) {
@@ -2806,15 +2803,17 @@ void restart_phy(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,uint
 }
 #endif //(0)
 
-void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t abstraction_flag)
+void nr_ue_pbch_procedures(uint8_t eNB_id,
+						   PHY_VARS_NR_UE *ue,
+						   UE_nr_rxtx_proc_t *proc,
+						   uint8_t abstraction_flag)
 {
-
   //  int i;
   //int pbch_tx_ant=0;
   //uint8_t pbch_phase;
   int ret = 0;
-  uint16_t frame_tx;
-  uint8_t pbch_trials = 0;
+  //static uint8_t first_run = 1;
+  //uint8_t pbch_trials = 0;
 
   DevAssert(ue);
 
@@ -2837,6 +2836,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
 
 #ifdef DEBUG_PHY_PROC
+    uint16_t frame_tx;
     LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
     ue->Mod_id,
     frame_rx,
@@ -2907,9 +2907,10 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
 
 #ifdef NR_PDCCH_SCHED
 
-int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc)
+int nr_ue_pdcch_procedures(uint8_t eNB_id,
+						   PHY_VARS_NR_UE *ue,
+						   UE_nr_rxtx_proc_t *proc)
 {
-
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
 #ifdef NR_PDCCH_SCHED_DEBUG
   printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_ue_pdcch_procedures() \n");
@@ -2939,7 +2940,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   pdcch_vars[eNB_id]->crnti = 0x1234; //to be check how to set when using loop memory
 
   uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
-  uint16_t cs_rnti=0,new_rnti=0,tc_rnti;
+  uint16_t cs_rnti=0,new_rnti=0,tc_rnti=0;
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
   uint16_t ra_rnti=99;
@@ -2957,10 +2958,10 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   #endif
 
   // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
-  int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
+  //int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
   unsigned int dci_cnt=0;
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
-  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {{0}};
+  //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {{0}};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
   //  uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
@@ -2969,7 +2970,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // Up to 10 searchSpaces can be configured to UE (s<=10)
   for (nb_searchspace_active=0; nb_searchspace_active<nb_searchspace_total; nb_searchspace_active++){
     int nb_coreset_active=nb_searchspace_active;
-    int do_pdcch_monitoring_current_slot=1; // this variable can be removed and fapi is handling
+    //int do_pdcch_monitoring_current_slot=1; // this variable can be removed and fapi is handling
     /*
      * The following code has been removed as it is handled by higher layers (fapi)
      *
@@ -2987,7 +2988,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
      * To be implemented LATER !!!
      */
     //int _offset,_index,_M;
-    int searchSpace_id                              = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceId;
+    //int searchSpace_id                              = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceId;
 
 
     #ifdef NR_PDCCH_SCHED_DEBUG
@@ -3000,16 +3001,16 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       // the searchSpace indicates that we need to monitor PDCCH in current nr_tti_rx
       // get the parameters describing the current SEARCHSPACE
       // the CORESET id applicable to the current SearchSpace
-      int searchSpace_coreset_id                      = pdcch_vars2->searchSpace[nb_searchspace_active].controlResourceSetId;
+      //int searchSpace_coreset_id                      = pdcch_vars2->searchSpace[nb_searchspace_active].controlResourceSetId;
       // FIXME this variable is a bit string (14 bits) identifying every OFDM symbol in a slot.
       // at the moment we will not take into consideration this variable and we will consider that the OFDM symbol offset is always the first OFDM in a symbol
       uint16_t symbol_within_slot_mon                 = pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSymbolWithinSlot;
       // get the remaining parameters describing the current SEARCHSPACE:     // FIXME! To be defined where we get this information from
-      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L1         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel1;
+      /*NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L1         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel1;
       NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L2         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel2;
       NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L4         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel4;
       NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L8         = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel8;
-      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L16        = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel16;
+      NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L16        = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel16;*/
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
       //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
@@ -3126,9 +3127,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
         //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d nr_tti_rx %d PHICH RX\n",ue->Mod_id,frame_rx,nr_tti_rx);
 
-
-    uint8_t *nCCE_current = &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->nCCE[nr_tti_rx];
     /*
+    uint8_t *nCCE_current = &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->nCCE[nr_tti_rx];
     uint8_t *nCCE_dest = &ue->pdcch_vars[next1_thread_id][eNB_id]->nCCE[nr_tti_rx];
     uint8_t *nCCE_dest1 = &ue->pdcch_vars[next2_thread_id][eNB_id]->nCCE[nr_tti_rx];
     memcpy(nCCE_dest, nCCE_current, sizeof(uint8_t));
@@ -3779,13 +3779,14 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
-  int CC_id = ue->CC_id;
+  //int CC_id = ue->CC_id;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  // to be updated by higher layer
-  uint8_t nb_re_dmrs = 6;
-  uint16_t length_dmrs = 1;
+  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
+  uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
+  uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
 
   if (dlsch0==NULL)
@@ -3793,6 +3794,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
   harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
+  nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -3860,10 +3862,10 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif
       nr_dlsch_unscrambling(pdsch_vars->llr[0],
-			    dlsch0->harq_processes[harq_pid]->G,
-                            0,
-			    ue->frame_parms.Nid_cell,
-			    dlsch0->rnti);
+    		  	  	  	    dlsch0->harq_processes[harq_pid]->G,
+							0,
+							ue->frame_parms.Nid_cell,
+							dlsch0->rnti);
       
 
 #if UE_TIMING_TRACE
@@ -3886,7 +3888,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 #ifdef UE_DLSCH_PARALLELISATION
-		 ret = nr_dlsch_decoding_mthread(ue,proc,eNB_id,
+		 ret = nr_dlsch_decoding_mthread(ue,
+			   proc,
+			   eNB_id,
 			   pdsch_vars->llr[0],
 			   &ue->frame_parms,
 			   dlsch0,
@@ -3897,6 +3901,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+		 LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret = %d\n", ret);
 #else
       ret = nr_dlsch_decoding(ue,
 			   pdsch_vars->llr[0],
@@ -3907,8 +3912,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   nb_symb_sch,
 			   nr_tti_rx,
 			   harq_pid,
-			   pdsch==PDSCH?1:0,//proc->decoder_switch,
+			   pdsch==PDSCH?1:0,
 			   dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+      LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret = %d\n", ret);
       //printf("start cW0 dlsch decoding\n");
 #endif
 
@@ -3963,7 +3969,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 #ifdef UE_DLSCH_PARALLELISATION
-          ret1 = nr_dlsch_decoding_mthread(ue,proc, eNB_id,
+          ret1 = nr_dlsch_decoding_mthread(ue,
+        		  	  	  	proc,
+        		  	  	    eNB_id,
                             pdsch_vars->llr[1],
                             &ue->frame_parms,
                             dlsch1,
@@ -3974,19 +3982,20 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             harq_pid,
                             pdsch==PDSCH?1:0,
                             dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+          LOG_T(PHY,"UE_DLSCH_PARALLELISATION is defined, ret1 = %d\n", ret1);
 #else
-
           ret1 = nr_dlsch_decoding(ue,
                   pdsch_vars->llr[1],
                   &ue->frame_parms,
                   dlsch1,
                   dlsch1->harq_processes[harq_pid],
                   frame_rx,
-		  nb_symb_sch,
+				  nb_symb_sch,
                   nr_tti_rx,
                   harq_pid,
                   pdsch==PDSCH?1:0,//proc->decoder_switch,
                   dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+          LOG_T(PHY,"UE_DLSCH_PARALLELISATION is NOT defined, ret1 = %d\n", ret1);
           printf("start cw1 dlsch decoding\n");
 #endif
 
@@ -4316,18 +4325,19 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 
 
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
-			   uint8_t do_pdcch_flag,runmode_t mode) {
-
-
-
-  int l,l2;
-  int pilot1;
-
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
+						   UE_nr_rxtx_proc_t *proc,
+						   uint8_t eNB_id,
+						   uint8_t do_pdcch_flag,
+						   runmode_t mode)
+{
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
-  uint16_t nb_symb_sch = 9; // to be updated by higher layer
+  NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
+  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+  uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   uint8_t dci_cnt = 0;
   

@@ -1116,15 +1116,19 @@ set(PHY_POLARSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_procedures.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_sequence_pattern.c
 )
+set(PHY_SMALLBLOCKSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrSmallBlock/encodeSmallBlock.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrSmallBlock/decodeSmallBlock.c
+)
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
-  )
+)
 set(PHY_LDPCSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
-  )
+)
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 set(PHY_SRC_COMMON
@@ -1290,6 +1294,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
+  ${PHY_SMALLBLOCKSRC}
   ${PHY_LDPCSRC}
   )
 
@@ -1334,6 +1339,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   #  ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_test.c
   ${PHY_POLARSRC}
+  ${PHY_SMALLBLOCKSRC}
   ${PHY_LDPCSRC}
   )
 
@@ -2512,6 +2518,12 @@ add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   ${OPENAIR_DIR}/common/utils/backtrace.c)
 target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
+
+
+add_executable(smallblocktest
+  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
+  ${OPENAIR_DIR}/common/utils/backtrace.c)
+target_link_libraries(smallblocktest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 add_executable(ldpctest  
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c

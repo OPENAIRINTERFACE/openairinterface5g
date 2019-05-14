@@ -67,6 +67,11 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out);
 
+void nr_modulation(uint32_t *in,
+                   uint16_t length,
+                   nr_mod_t modulation_type,
+                   int16_t *out);
+
 void nr_pdsch_codeword_modulation(uint32_t *in,
                          uint8_t  Qm,
                          uint32_t length,
@@ -95,6 +100,8 @@ uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
+
+void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
 
 int nr_dlsch_encoding(unsigned char *a,
                      uint8_t subframe,

@@ -85,19 +85,19 @@ unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{
 extern void print_shorts(char *s,int16_t *x);
 
 static void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
-                                        int **dl_ch_estimates_ext_i,
-                                        int **dl_ch_rho_ext,
-                                        unsigned char n_tx,
-                                        unsigned char n_rx,
-                                        unsigned char output_shift,
-                                        int length,
-                                        int start_point);
+						  int **dl_ch_estimates_ext_i,
+						  int **dl_ch_rho_ext,
+						  unsigned char n_tx,
+						  unsigned char n_rx,
+						  unsigned char output_shift,
+						  int length,
+						  int start_point);
 
 static void nr_dlsch_layer_demapping(int16_t **llr_cw,
-                         uint8_t Nl,
-                                                 uint8_t mod_order,
-                         uint16_t length,
-                         int16_t **llr_layers);
+				     uint8_t Nl,
+				     uint8_t mod_order,
+				     uint16_t length,
+				     int16_t **llr_layers);
 
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              PDSCH_t type,
@@ -128,7 +128,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   unsigned char aatx=0,aarx=0;
 
-  unsigned short nb_rb = 0, nb_re =0, round;
+  unsigned short nb_rb = 0, round;
   int avgs = 0;// rb;
   NR_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
 
@@ -151,9 +151,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //int16_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
   //uint16_t bundle_L = 2;
-  uint8_t l0 =2;
+  uint8_t l0 =2, pilots=0;
   uint16_t n_tx=1, n_rx=1;
   int32_t median[16];
+  uint32_t len;
   
   switch (type) {
   case SI_PDSCH:
@@ -173,16 +174,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
-    
-    
-  //set active for testing -> to be removed
-  dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
-  dlsch[0]->harq_processes[harq_pid]->Qm = 2;
-  dlsch[0]->harq_processes[harq_pid]->mcs = 9;
-  dlsch[0]->harq_processes[harq_pid]->Nl=1;
-  dlsch[0]->harq_processes[harq_pid]->round=0;
-  dlsch[0]->harq_processes[harq_pid]->nb_rb = nb_rb_pdsch;
-  frame_parms->nushift = 0;
+
+
+  dlsch[0]->harq_processes[harq_pid]->Qm = nr_get_Qm(dlsch[0]->harq_processes[harq_pid]->mcs, 1);;
   
   //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
@@ -236,6 +230,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
   printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
 #endif
+
+  start_rb = dlsch0_harq->start_rb;
+  nb_rb_pdsch =  dlsch0_harq->nb_rb;
+  l0 = dlsch0_harq->start_symbol;
 
   DevAssert(dlsch0_harq);
   round = dlsch0_harq->round;
@@ -298,9 +296,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
 #endif
 
+  pilots = (symbol==l0) ? 1 : 0;
+
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
-    LOG_I(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0],dlsch0_harq->rb_alloc_even[0]);
+    LOG_I(PHY,"dlsch: using pmi %x (%p)\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0]);
 #endif
 
 #if UE_TIMING_TRACE
@@ -312,8 +312,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                    pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                    dlsch0_harq->pmi_alloc,
                                    pdsch_vars[eNB_id]->pmi_ext,
-                                   rballoc,
                                    symbol,
+								   pilots,
 								   start_rb,
 								   nb_rb_pdsch,
                                    nr_tti_rx,
@@ -321,7 +321,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                    frame_parms,
                                    dlsch0_harq->mimo_mode);
 #ifdef DEBUG_DLSCH_MOD
-      printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
+      printf("dlsch: using pmi %lx, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
        for (rb=0;rb<nb_rb;rb++)
           printf("%d",pdsch_vars[eNB_id]->pmi_ext[rb]);
        printf("\n");
@@ -335,8 +335,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
-                                       rballoc,
                                        symbol,
+									   pilots,
 									   start_rb,
 									   nb_rb_pdsch,
                                        nr_tti_rx,
@@ -350,8 +350,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
-                                       rballoc,
                                        symbol,
+									   pilots,
 									   start_rb,
 									   nb_rb_pdsch,
                                        nr_tti_rx,
@@ -367,8 +367,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                      dlsch0_harq->pmi_alloc,
                                      pdsch_vars[eNB_id]->pmi_ext,
-                                     rballoc,
                                      symbol,
+									 pilots,
 									 start_rb,
 									 nb_rb_pdsch,
                                      nr_tti_rx,
@@ -424,6 +424,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
+  len = (symbol==l0)? (nb_rb*6):(nb_rb*12);
+
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -440,12 +442,12 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
   n_tx = frame_parms->nb_antenna_ports_eNB;
   n_rx = frame_parms->nb_antennas_rx;
-  nb_re= (symbol==l0)? (nb_rb*6):(nb_rb*12);
 
   nr_dlsch_scale_channel(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                       frame_parms,
                       dlsch,
                       symbol,
+					  pilots,
                       nb_rb);
 
   if ((dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) &&
@@ -458,6 +460,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                         frame_parms,
                         dlsch,
                         symbol,
+						pilots,
                         nb_rb);
   }
 
@@ -480,6 +483,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                            frame_parms,
                            avg,
                            symbol,
+						   len,
                            nb_rb);
         avgs = 0;
         for (aatx=0;aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
@@ -496,7 +500,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     	                             median,
     	                             n_tx,
     	                             n_rx,
-    	                             2*nb_re,// subcarriers Re Im
+    	                             2*len,// subcarriers Re Im
     	                             0);
 
     	  for (aatx = 0; aatx < n_tx; ++aatx)
@@ -602,6 +606,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                (aatx>1) ? pdsch_vars[eNB_id]->rho : NULL,
                                frame_parms,
                                symbol,
+							   pilots,
                                first_symbol_flag,
                                dlsch0_harq->Qm,
                                nb_rb,
@@ -655,7 +660,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 	                                    n_rx,
 										dlsch0_harq->Qm,
 										pdsch_vars[eNB_id]->log2_maxh,
-	                                    2*nb_re, // subcarriers Re Im
+	                                    2*len, // subcarriers Re Im
 	                                    0); // we start from the beginning of the vector
   /*   if (symbol == 5) {
      write_output("rxF_comp_d00.m","rxF_c_d00",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
@@ -670,7 +675,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                              n_tx,
                                              n_rx,
 											 pdsch_vars[eNB_id]->log2_maxh,
-                                             2*nb_re,
+                                             2*len,
                                              0);
         //printf("rho stream1 =%d\n", &pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
         nr_dlsch_dual_stream_correlation_core(&(pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
@@ -679,7 +684,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                             n_tx,
                                             n_rx,
        										pdsch_vars[eNB_id]->log2_maxh,
-                                            2*nb_re,
+                                            2*len,
                                             0);
     //  printf("rho stream2 =%d\n",&pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",pdsch_vars[eNB_id]->log2_maxh);
@@ -719,7 +724,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                    NULL,
                                    n_tx,
                                    n_rx,
-                                   2*nb_re,
+                                   2*len,
                                    0);
     /*   if (symbol == 5) {
      write_output("rho0_mrc.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
@@ -792,7 +797,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
   
-  pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm + llr_offset_symbol;
+  pdsch_vars[eNB_id]->llr_offset[symbol] = len*dlsch0_harq->Qm + llr_offset_symbol;
  
   /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
              symbol,
@@ -817,6 +822,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        pllr_symbol_cw0,
                        symbol,
+					   len,
                        first_symbol_flag,
                        nb_rb,
                        beamforming_mode);
@@ -827,6 +833,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        pllr_symbol_cw1,
                        symbol,
+					   len,
                        first_symbol_flag,
                        nb_rb,
                        beamforming_mode);
@@ -838,7 +845,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               rxdataF_comp_ptr,
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                               pdsch_vars[eNB_id]->layer_llr[0],
-                              symbol,first_symbol_flag,nb_rb,
+                              symbol,len,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
           if (rx_type==rx_IC_dual_stream) {
@@ -847,7 +854,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 pdsch_vars[eNB_id]->rxdataF_comp0,
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                 pdsch_vars[eNB_id]->layer_llr[1],
-                                symbol,first_symbol_flag,nb_rb,
+                                symbol,len,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
           }
@@ -904,7 +911,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->llr[0],
                       pdsch_vars[eNB_id]->dl_ch_mag0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr128,
                       beamforming_mode);
     } else if (codeword_TB0 == -1){
@@ -912,7 +919,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->llr[1],
                       pdsch_vars[eNB_id]->dl_ch_mag0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr128_2ndstream,
                       beamforming_mode);
     }
@@ -947,7 +954,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                               pdsch_vars[eNB_id]->layer_llr[0],
-                              symbol,first_symbol_flag,nb_rb,
+                              symbol,len,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr128);
         if (rx_type==rx_IC_dual_stream) {
@@ -958,7 +965,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                 pdsch_vars[eNB_id]->layer_llr[1],
-                                symbol,first_symbol_flag,nb_rb,
+                                symbol,len,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr128_2ndstream);
         }
@@ -996,7 +1003,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       (int16_t*)pllr_symbol_cw0,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
                       pdsch_vars[eNB_id]->dl_ch_magb0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr_offset[symbol],
                       beamforming_mode);
     } else if (codeword_TB0 == -1){
@@ -1005,7 +1012,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       pllr_symbol_cw1,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
                       pdsch_vars[eNB_id]->dl_ch_magb0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr_offset[symbol],
                       beamforming_mode);
     }
@@ -1064,7 +1071,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               dl_ch_mag_ptr,//i
                               pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                               (int16_t*)pllr_symbol_layer0,
-                              symbol,first_symbol_flag,nb_rb,
+                              symbol,len,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                               pdsch_vars[eNB_id]->llr_offset[symbol]);
         if (rx_type==rx_IC_dual_stream) {
@@ -1075,7 +1082,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                 pllr_symbol_layer1,
-                                symbol,first_symbol_flag,nb_rb,
+                                symbol,len,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr_offset[symbol]);
         }
@@ -1094,7 +1101,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         nr_dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        pllr_symbol_cw0,
-                       symbol,first_symbol_flag,nb_rb,
+                       symbol,len,first_symbol_flag,nb_rb,
                        beamforming_mode);
     }
     break;
@@ -1104,7 +1111,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
                       pdsch_vars[eNB_id]->llr[0],
                       pdsch_vars[eNB_id]->dl_ch_mag0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr128,
                       beamforming_mode);
     }
@@ -1116,7 +1123,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                       pllr_symbol_cw0,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
                       pdsch_vars[eNB_id]->dl_ch_magb0,
-                      symbol,first_symbol_flag,nb_rb,
+                      symbol,len,first_symbol_flag,nb_rb,
                       pdsch_vars[eNB_id]->llr_offset[symbol],
                       beamforming_mode);
   }
@@ -1132,10 +1139,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   
  if (rx_type==rx_IC_dual_stream) {  
 	nr_dlsch_layer_demapping(pdsch_vars[eNB_id]->llr,
-		  	  	  	  	   dlsch[0]->harq_processes[harq_pid]->Nl,
-						   dlsch[0]->harq_processes[harq_pid]->G,
-						   -1,
-                           pdsch_vars[eNB_id]->layer_llr);
+				 dlsch[0]->harq_processes[harq_pid]->Nl,
+				 dlsch[0]->harq_processes[harq_pid]->Qm,
+				 dlsch[0]->harq_processes[harq_pid]->G,
+				 pdsch_vars[eNB_id]->layer_llr);
  }
 
 #if UE_TIMING_TRACE
@@ -1197,6 +1204,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 }
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
+							uint8_t start_symbol,
 							uint16_t L,
 							uint16_t *llr,
 							uint16_t *llr_deint,
@@ -1215,7 +1223,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 
   printf("N_bundle %d L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 
-  if (symbol==2)
+  if (symbol==start_symbol)
 	  nb_re = 6;
   else
 	  nb_re = 12;
@@ -1253,6 +1261,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
                                 int **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
+								uint8_t pilots,
                                 uint8_t first_symbol_flag,
                                 unsigned char mod_order,
                                 unsigned short nb_rb,
@@ -1263,15 +1272,10 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
 #if defined(__i386) || defined(__x86_64)
 
   unsigned short rb;
-  unsigned char aatx,aarx,pilots=0;
+  unsigned char aatx,aarx;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
   QAM_amp128b = _mm_setzero_si128();
-
-  if (symbol == 2){
-      pilots=1;
-  }
-
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
     if (mod_order == 4) {
@@ -1917,19 +1921,19 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          NR_UE_DLSCH_t **dlsch_ue,
                          uint8_t symbol,
+						 uint8_t pilots,
                          unsigned short nb_rb)
 {
 
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb, ch_amp;
-  unsigned char aatx,aarx,pilots=0;
+  unsigned char aatx,aarx;
   __m128i *dl_ch128, ch_amp128;
 
   
-  if (symbol==2){
+  if (pilots==1){
 	  nb_rb = nb_rb>>1;
-	  pilots=1;
   }
 
   // Determine scaling amplitude based the symbol
@@ -1977,6 +1981,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
                          uint8_t symbol,
+						 uint32_t len,
                          unsigned short nb_rb)
 {
 
@@ -1986,14 +1991,9 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   unsigned char aatx,aarx,nre=12;
   __m128i *dl_ch128, avg128D;
 
-    if (symbol==2) //assume start symbol 2
-      nre=6;
-    else
-      nre=12;
-
   //nb_rb*nre = y * 2^x
-  int16_t x = factor2(nb_rb*nre);
-  int16_t y = (nb_rb*nre)>>x;
+  int16_t x = factor2(len);
+  int16_t y = (len)>>x;
   //printf("nb_rb*nre = %d = %d * 2^(%d)\n",nb_rb*nre,y,x);
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
@@ -2492,8 +2492,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 					   int **dl_ch_estimates_ext,
 					   unsigned short pmi,
 					   unsigned char *pmi_ext,
-					   unsigned int *rb_alloc, //unused in NR
 					   unsigned char symbol,
+					   uint8_t pilots,
 					   unsigned short start_rb,
 					   unsigned short nb_rb_pdsch,
 					   unsigned char nr_tti_rx,
@@ -2508,9 +2508,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
 
 
-  unsigned char pilots=0,j=0;
+  unsigned char j=0;
 
-  pilots = (symbol==2) ? 1 : 0; //to updated from config!!!
   k = frame_parms->first_carrier_offset + 12*start_rb; 
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -2593,8 +2592,8 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
                                       int **dl_ch_estimates_ext,
                                       unsigned short pmi,
                                       unsigned char *pmi_ext,
-                                      unsigned int *rb_alloc,
                                       unsigned char symbol,
+									  uint8_t pilots,
 									  unsigned short start_rb,
 									  unsigned short nb_rb_pdsch,
                                       unsigned char nr_tti_rx,
@@ -2604,18 +2603,10 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
 
   int prb,nb_rb=0;
   unsigned short k;
-  //int prb_off,prb_off2;
-  int skip_half=0,l;//sss_symb,pss_symb=0,nsymb
-  int i,aarx;
+  int i,j,aarx;
   int32_t *dl_ch0=NULL,*dl_ch0p=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1p=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
-  int symbol_mod,pilots=0,j=0;
-  unsigned char *pmi_loc=NULL;
 
-  pilots = (symbol==2) ? 1 : 0; //to updated from config
   k = frame_parms->first_carrier_offset + 516; //0
-
-  //nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
-  l=symbol;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
@@ -2627,7 +2618,7 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
       dl_ch1     = &dl_ch_estimates[2+aarx][0];
     }
 
-    pmi_loc = pmi_ext;
+    //pmi_loc = pmi_ext;
 
     // pointers to extracted RX signals and channel estimates
     rxF_ext    = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
@@ -2635,13 +2626,13 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
     dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol*(nb_rb_pdsch*12)];
 
     for (prb=0; prb<frame_parms->N_RB_DL; prb++) {
-      skip_half=0;
+      //skip_half=0;
 
       if ((frame_parms->N_RB_DL&1) == 0) {  // even number of RBs
 
         // For second half of RBs skip DC carrier
         if (k>=frame_parms->ofdm_symbol_size) {
-          rxF       = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
+          rxF = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
           k=k-(frame_parms->ofdm_symbol_size);
         }
 
@@ -2688,11 +2679,12 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
   return(nb_rb/frame_parms->nb_antennas_rx);
 }
 
+
 static void nr_dlsch_layer_demapping(int16_t **llr_cw,
-                         uint8_t Nl,
-						 uint8_t mod_order,
-                         uint16_t length,
-                         int16_t **llr_layers) {
+				     uint8_t Nl,
+				     uint8_t mod_order,
+				     uint16_t length,
+				     int16_t **llr_layers) {
 
   switch (Nl) {
 

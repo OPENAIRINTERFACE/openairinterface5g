@@ -229,6 +229,8 @@ typedef struct {
   double rx_sample_rate;
   //! the sample rate for transmit.
   double tx_sample_rate;
+  //! check for threequarter sampling rate
+  int8_t threequarter_fs;
 
 } openair0_config_t;
 

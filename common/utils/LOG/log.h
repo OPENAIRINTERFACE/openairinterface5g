@@ -83,11 +83,11 @@ extern "C" {
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
 # define  OAILOG_DISABLE -1 /*!< \brief disable all LOG messages, cannot be used in LOG macros, use only in LOG module */
-# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
+# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" functionalities */
 # define  OAILOG_WARNING  1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
 # define  OAILOG_INFO     2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
-# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
-# define  OAILOG_TRACE    4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
+# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers, may impact real-time behavior */
+# define  OAILOG_TRACE    4 /*!< \brief second level debug-level messages, for developers, likely impact real-time behavior*/
 
 #define NUM_LOG_LEVEL 5 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
 /* @}*/

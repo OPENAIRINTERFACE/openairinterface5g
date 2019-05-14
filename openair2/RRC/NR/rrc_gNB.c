@@ -140,17 +140,18 @@ void rrc_gNB_process_SgNBAdditionRequest(
 
 void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
      const protocol_ctxt_t  *const ctxt_pP,
-     rrc_gNB_ue_context_t   *const ue_context_pP
-     ){
-  
-  int     CC_id = ue_context_pP->ue_context.primaryCC_id;
-  OCTET_STRING_t                                      *secondaryCellGroup;
+     rrc_gNB_ue_context_t   *const ue_context_pP)
+{
+  //uint8_t size;
+  //uint8_t buffer[100];
+  //int     CC_id = ue_context_pP->ue_context.primaryCC_id;
+  //OCTET_STRING_t                                      *secondaryCellGroup;
   NR_CellGroupConfig_t                                *cellGroupconfig;
   struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
   struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
   struct NR_SpCellConfig                              *spCellConfig;
-  struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
+  //struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
 
   cellGroupconfig                           = CALLOC(1,sizeof(NR_CellGroupConfig_t));
   cellGroupconfig->rlc_BearerToAddModList   = CALLOC(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
