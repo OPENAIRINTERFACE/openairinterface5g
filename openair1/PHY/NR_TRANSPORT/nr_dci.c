@@ -31,6 +31,7 @@
 */
 
 #include "nr_dci.h"
+#include "nr_dlsch.h"
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI

@@ -205,8 +205,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
 
   // everything here is hard-coded to 30 kHz
-  int scs = get_dlscs(cfg);
-  int slots_per_frame = get_spf(cfg);
+  //int scs = get_dlscs(cfg);
+  //int slots_per_frame = get_spf(cfg);
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
 

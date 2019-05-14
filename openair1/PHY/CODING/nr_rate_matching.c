@@ -26,6 +26,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/CODING/coding_defs.h"
 
 //#define RM_DEBUG 1
 

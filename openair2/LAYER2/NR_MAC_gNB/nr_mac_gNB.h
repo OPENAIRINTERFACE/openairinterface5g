@@ -171,8 +171,4 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
 } gNB_MAC_INST;
 
-void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
-                                   frame_t       frameP,
-                                   sub_frame_t   subframeP);
-
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

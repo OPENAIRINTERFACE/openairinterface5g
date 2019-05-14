@@ -56,7 +56,7 @@
 #include "L1_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"
-#include "RRC_config_tools.h"
+//#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
@@ -81,6 +81,8 @@ extern void set_parallel_conf(char *parallel_conf);
 extern void set_worker_conf(char *worker_conf);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
+extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
+                                         int32_t uplink_frequency_offset, uint32_t  frame_type);
 
 void RCconfig_nr_flexran()
 {
@@ -628,7 +630,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   ////////// Physical parameters
-  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  //checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   

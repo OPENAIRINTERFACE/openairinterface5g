@@ -285,8 +285,8 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
   uint32_t A, Z, F=0;
   uint32_t *pz = &Z;
   uint8_t mod_order = rel15.modulation_order;
-  uint16_t Kr=0,r,r_offset=0,Kr_bytes;
-  uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
+  uint16_t Kr=0,r,r_offset=0;
+  //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG=1;
   uint32_t E;
   uint8_t Ilbrm = 0;
@@ -359,13 +359,16 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 	}
 
     Kr = dlsch->harq_processes[harq_pid]->K;
+#ifdef DEBUG_DLSCH_CODING
+    uint16_t Kr_bytes;
     Kr_bytes = Kr>>3;
+#endif
 
     //printf("segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
     //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
-      d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
+      //d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
       //channel_input[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
       printf("Encoder: B %d F %d \n",dlsch->harq_processes[harq_pid]->B, dlsch->harq_processes[harq_pid]->F);
@@ -398,7 +401,6 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
 
-    //write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
 #ifdef DEBUG_DLSCH_CODING
       write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
       write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[0][0],(3*8*Kr_bytes)+12,1,4);
