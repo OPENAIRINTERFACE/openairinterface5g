@@ -85,8 +85,7 @@ void config_common(int Mod_idP,
                    uint64_t ssb_pattern,
 		   uint16_t ssb_periodicity,
 		   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-                  ){
+                   uint32_t dl_BandwidthP){
 
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[CC_idP];
 
