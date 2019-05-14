@@ -332,7 +332,9 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
   //uint8_t rb_count_bit;
   uint8_t i, j, aarx, bitcnt_coreset_freq_dom=0;
   int32_t *dl_ch0, *dl_ch0_ext, *rxF, *rxF_ext;
+#ifdef NR_PDCCH_DCI_DEBUG
   int nushiftmod3 = frame_parms->nushift % 3;
+#endif
   uint8_t symbol_mod;
   symbol_mod = (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol;
   c_rb = n_BWP_start; // c_rb is the common resource block: RB within the BWP
@@ -809,8 +811,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // indicates the number of active CORESETs for the current BWP to decode PDCCH: max is 3 (this variable is not useful here, to be removed)
   //uint8_t  coreset_nbr_act;
   // indicates the number of REG contained in the PDCCH (number of RBs * number of symbols, in CORESET)
-  uint8_t  coreset_nbr_reg;
-  uint32_t coreset_C;
   uint32_t coreset_nbr_rb = 0;
   // for (int j=0; j < coreset_nbr_act; j++) {
   // for each active CORESET (max number of active CORESETs in a BWP is 3),
@@ -829,9 +829,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #ifdef NR_PDCCH_DCI_DEBUG
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%ld,%lx), coreset_nbr_rb=%d\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
 #endif
-  coreset_nbr_reg = coreset_time_dur * coreset_nbr_rb;
-  coreset_C = (uint32_t)(coreset_nbr_reg / (reg_bundle_size_L * coreset_interleaver_size_R));
 #ifdef NR_PDCCH_DCI_DEBUG
+  uint8_t  coreset_nbr_reg = coreset_time_dur * coreset_nbr_rb;
+  uint32_t coreset_C = (uint32_t)(coreset_nbr_reg / (reg_bundle_size_L * coreset_interleaver_size_R));
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_nbr_rb=%d, coreset_nbr_reg=%d, coreset_C=(%d/(%d*%d))=%d\n",
          coreset_nbr_rb, coreset_nbr_reg, coreset_nbr_reg, reg_bundle_size_L,coreset_interleaver_size_R, coreset_C);
 #endif

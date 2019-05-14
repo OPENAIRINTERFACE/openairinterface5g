@@ -106,17 +106,6 @@ void crcTableInit (void)
   } while (++c);
 }
 
-//Generic version
-void crcTable256Init (uint32_t poly, uint32_t* crc256Table)
-{
-        unsigned char c = 0;
-
-        do {
-                crc256Table[c] = crcbit(&c, 1, poly);
-        } while (++c);
-
-}
-
 /*********************************************************
 
 Byte by byte implementations,
@@ -236,30 +225,10 @@ crc8 (unsigned char * inptr, int bitlen)
   return crc;
 }
 
-//Generic version
-unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table)
-{
-        int octetlen, resbit;
-        unsigned int crc = 0;
-        octetlen = bitlen/8; // Change in bytes
-        resbit = (bitlen % 8);
-
-        while (octetlen-- > 0)
-        {
-                crc = (crc << 8) ^ crc256Table[(*inptr++) ^ (crc >> 24)];
-        }
-
-        if (resbit > 0)
-        {
-                crc = (crc << resbit) ^ crc256Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
-        }
-        return crc;
-}
-
 int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
 {
   uint32_t crc=0,oldcrc=0;
-  uint8_t crc_len,temp;
+  uint8_t crc_len=0;
 
   switch (crc_type) {
   case CRC24_A:
@@ -335,7 +304,7 @@ main()
 {
   unsigned char test[] = "Thebigredfox";
   crcTableInit();
-  printf("%x\n", crcbit(test, sizeof(test) - 1, poly24));
+  printf("%x\n", crcbit(test, sizeof(test) - 1, poly24a));
   printf("%x\n", crc24(test, (sizeof(test) - 1)*8));
   printf("%x\n", crcbit(test, sizeof(test) - 1, poly8));
   printf("%x\n", crc8(test, (sizeof(test) - 1)*8));

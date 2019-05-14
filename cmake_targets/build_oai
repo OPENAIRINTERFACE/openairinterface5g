@@ -80,8 +80,6 @@ function print_help() {
 This program installs OpenAirInterface Software
 You should have ubuntu 16.xx or 18.04 updated
 Options
--h
-   This help
 -c | --clean
    Erase all files to make a rebuild from start
 -C | --clean-all
@@ -691,7 +689,7 @@ function main() {
     echo_info "Compiling unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
     #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
-    simlist="dlsim ulsim polartest ldpctest nr_pbchsim nr_dlschsim nr_dlsim nr_ulschsim"
+    simlist="dlsim ulsim polartest ldpctest smallblocktest nr_pbchsim nr_dlschsim nr_dlsim nr_ulschsim"
     for f in $simlist ; do
       compilations \
       phy_simulators $f \

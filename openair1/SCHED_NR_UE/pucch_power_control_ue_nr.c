@@ -67,9 +67,19 @@
 *
 *********************************************************************/
 
-int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, pucch_format_nr_t pucch_format,
-                              int nb_of_prbs, int N_sc_ctrl_RB, int N_symb_PUCCH, int O_UCI, int O_SR, int O_CSI, int O_ACK,
-                              int O_CRC, int n_HARQ_ACK) {
+int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
+                              uint8_t gNB_id,
+							  UE_nr_rxtx_proc_t *proc,
+							  pucch_format_nr_t pucch_format,
+							  int nb_of_prbs,
+							  int N_sc_ctrl_RB,
+							  int N_symb_PUCCH,
+							  int O_UCI,
+							  int O_SR,
+							  int O_CSI,
+							  int O_ACK,
+                              int O_CRC,
+							  int n_HARQ_ACK) {
 
   int16_t P_O_NOMINAL_PUCCH = ue->pucch_config_common_nr[gNB_id].p0_nominal;
   PUCCH_PowerControl_t *power_config = &ue->pucch_config_dedicated_nr[gNB_id].pucch_PowerControl;
@@ -147,7 +157,6 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_pro
     }
   }
 
-  int l = 0;
   int k2;
 
   if (power_config->twoPUCCH_PC_AdjustmentStates > 1) {
@@ -156,11 +165,11 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_pro
   }
 
   /* response to a detection by the UE of a DCI format 1_0 or DCI format 1_1 */
-  int K_PUCCH = 0;
+  //int K_PUCCH = 0;
   if (O_ACK != 0) {
     /* it assumes that PDCCH is in the first symbol of receive slot FFS TDDO NR */
-    int slots_gap = (proc->nr_tti_tx > proc->nr_tti_rx ? (proc->nr_tti_tx - proc->nr_tti_rx - 1) : ((proc->nr_tti_tx + ue->frame_parms.ttis_per_subframe) - proc->nr_tti_rx - 1));
-    K_PUCCH = (slots_gap * (ue->frame_parms.symbols_per_tti)) - 1;
+    //int slots_gap = (proc->nr_tti_tx > proc->nr_tti_rx ? (proc->nr_tti_tx - proc->nr_tti_rx - 1) : ((proc->nr_tti_tx + ue->frame_parms.ttis_per_subframe) - proc->nr_tti_rx - 1));
+    //K_PUCCH = (slots_gap * (ue->frame_parms.symbols_per_tti)) - 1;
   }
   else {
     /* field k2 is not present - to check k2 of pucch from upper layer FFS TDDO NR */
@@ -189,7 +198,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_pro
        } while(ue->pusch_config.pusch_TimeDomainResourceAllocation[i] != NULL);
       k2 = k2_min;
     }
-    K_PUCCH = N_SYMB_SLOT * k2; /* the product of a number of symbols per slot and the minimum of the values provided by higher layer parameter k2 */
+    //K_PUCCH = N_SYMB_SLOT * k2; /* the product of a number of symbols per slot and the minimum of the values provided by higher layer parameter k2 */
   }
 
   int contributor = (10 * log10((double)(pow(2,(ue->frame_parms.numerology_index)) * nb_of_prbs)));

@@ -918,6 +918,7 @@ typedef struct {
   NR_UE_COMMON    common_vars;
 
   nr_ue_if_module_t *if_inst;
+  nfapi_nr_config_request_t  nrUE_config;
 
   nr_downlink_indication_t dl_indication;
   nr_uplink_indication_t ul_indication;
