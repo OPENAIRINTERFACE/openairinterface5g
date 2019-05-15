@@ -67,7 +67,7 @@ UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
-
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope msc"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -119,8 +119,6 @@ Options
    runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
--x | --xforms
-   Adds a software oscilloscope feature to the produced binaries. 
 --install-system-files
    Install OpenArInterface required files in Linux system
    (will ask root password)
@@ -148,10 +146,8 @@ Options
     Enable traces for timing
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
---build-telnet
-   Build telnet server, specify --telnetsrv on command line to start it (eNB only)
---build-msc
-   Build MSC tracing utility, specify --msc on command line to start it (eNB and UE)
+--build-lib <libraries>
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
 --usrp-recplay
    Build for I/Q record-playback modes
 
@@ -322,14 +318,20 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
             shift 1;;
-       --build-telnetsrv)
-            BUILD_TELNETSRV=1
-            echo_info "Build embedded telnet server"
-            shift ;;
-       --build-msc)
-            MSC_GEN=1
-            echo_info "Build MSC tracing utility"
-            shift ;;			
+       --build-lib) 
+            BUILD_OPTLIB="" 
+            for alib in $2 ; do 
+                for oklib in $OPTIONAL_LIBRARIES ; do
+                     if [ "$alib" = "$oklib" ] ; then
+                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                        echo_info "Enabling build of lib${alib}.so" 
+                     fi   
+                done
+            done
+	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+            fi
+            shift 2;;		
         --usrp-recplay)
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
@@ -642,34 +644,17 @@ function main() {
     fi
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
-
-  # Telnet server compilation
+  # optional libraries
   #####################
-  if [ "$BUILD_TELNETSRV" = "1" ] ; then
-              compilations \
-            $lte_build_dir telnetsrv \
-                  libtelnetsrv.so $dbin/libtelnetsrv.so
+  if [ ! -z "$BUILD_OPTLIB" ] ; then 
+     for oklib in $BUILD_OPTLIB ; do
+         compilations \
+            $lte_build_dir $oklib \
+                  lib${oklib}.so $dbin/lib${oklib}.so
+     done
 
   fi 
-    # msc library compilation
-  #####################
-  if [ "$MSC_GEN" = "1" ] ; then
-              compilations \
-            $lte_build_dir msc \
-                  libmsc.so $dbin/libmsc.so
-
-  fi 
-  # softsope compilations
-  #####################
-  if [ "$XFORMS" = "1" ] ; then
-              compilations \
-            $lte_build_dir enbscope \
-                  libenbscope.so $dbin/libenbscope.so
-              compilations \
-            $lte_build_dir uescope \
-                  libuescope.so $dbin/libuescope.so
-
-  fi    
+ 
   # build RF device and transport protocol libraries
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then

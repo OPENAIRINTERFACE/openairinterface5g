@@ -70,13 +70,13 @@ After completing the build, the binaries are available in the `cmake_targets/lte
 
 ## Telnet Server
 
-The telnet server can be built  with the --build-telnet option, after building the softmodem or while building it.
+The telnet server can be built  with the `--build-lib telnetsrv` option, after building the softmodem or while building it.
 
-`./build_oai -I -w USRP --eNB --UE --build-telnetsrv`
+`./build_oai -I -w USRP --eNB --UE --build-lib telnetsrv`
 
 or
 
-`./build_oai  --build-telnetsrv`
+`./build_oai  --build-lib telnetsrv`
 
 ## USRP record player
 
@@ -105,13 +105,11 @@ The USRP record player today needs a specific build. Work to make it available a
 | --eNB                                                       | maintained and tested in CI                 | build `lte-softmodem` the LTE eNodeB                         |
 | --UE                                                        | maintained and tested in CI                 | build `lte-uesoftmodem` the LTE UE                           |
 | --usrp-recplay                                              | maintained                                  | build with support for the record player. Implementation will be soon reviewed to switch to a run-time option. |
-| --build-telnet                                              | maintained                                  | build the telnet server shared library, which can then be loaded at run time via the --telnetsrv command line option. |
-| --build-msc                                                 | unknown                                     | build the msc shared library, which can then be loaded at run time via the --msc command line option. msc is a tracing utility which status is unknown. |
+| --build-lib                                                 | maintained                                  | build  optional shared library(ies), which can then be loaded at run time via command line option. Use the --help option to get the list of supported optional libraries. |
 | --UE-conf-nvram                                             |                                             |                                                              |
 | --UE-gen-nvram                                              |                                             |                                                              |
 | -r                                                          | unknown, to be removed                      | specifies which 3GPP release to build for. Only the default (today rel14) is tested in CI and it is likely that future oai release will remove this option |
 | -V                                                          | deprecated                                  | Used to build with support for synchronization diagram utility. This is now available via the T-Tracer and is included if T-Tracer is not disabled. |
-| -x                                                          | deprecated                                  | Used to build with support for embedded signal analyzer. This is now available via the T-Tracer and is included if T-Tracer is not disabled. |
 | --build-doxygen                                             | unknown                                     | build doxygen documentation, many oai source files do not include doxygen comments |
 | --disable-deadline --enable-deadline --disable-cpu-affinity | deprecated                                  | These options were used to activate or de-activate specific code depending on the choice of a specific linux scheduling  mode. This has not been tested for a while and should be implemented as configuration options |
 | --disable-T-Tracer                                          | maintained, to be tested                    | Remove T_Tracer and console LOG messages except error messages. |
