@@ -184,17 +184,18 @@ static inline int rxtx(PHY_VARS_gNB *gNB,int frame_rx, int slot_rx, int frame_tx
   // ****************************************
   // Common RX procedures subframe n
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
-  /*
-    // if this is IF5 or 3GPP_gNB
-    if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
-      wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
-    }
+/*
+  // if this is IF5 or 3GPP_gNB
+  if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
+    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
+  }
 
-    // UE-specific RX processing for subframe n
-    if (nfapi_mode == 0 || nfapi_mode == 1) {
-      phy_procedures_gNB_uespec_RX(gNB, proc, no_relay );
-    }
-  */
+  // UE-specific RX processing for subframe n
+  if (nfapi_mode == 0 || nfapi_mode == 1) */ {
+    nfapi_nr_ul_config_ulsch_pdu_rel15_t *ulsch_pdu_rel15 = &gNB->ulsch[1][0]->harq_processes[0]->ulsch_pdu.ulsch_pdu_rel15;
+    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx, ulsch_pdu_rel15->start_symbol, ulsch_pdu_rel15->start_symbol + ulsch_pdu_rel15->number_symbols);
+  }
+
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
