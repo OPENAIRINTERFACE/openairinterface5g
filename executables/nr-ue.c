@@ -432,7 +432,7 @@ void UE_processing(void *arg) {
 */
   if (proc->nr_tti_tx == NR_UPLINK_SLOT){
 
-    LOG_D(PHY, "[UE_processing] Slot = %d\n", proc->nr_tti_tx);
+    LOG_D(PHY, "[UE_processing] Frame = %d, Slot = %d\n", proc->frame_tx, proc->nr_tti_tx);
 
     if (UE->mode != loop_through_memory)
       phy_procedures_nrUE_TX(UE,proc,0,0);
