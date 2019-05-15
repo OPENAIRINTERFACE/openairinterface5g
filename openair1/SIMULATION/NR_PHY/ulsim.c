@@ -326,10 +326,6 @@ int main(int argc, char **argv)
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0][0];
   //gNB_config = &gNB->gNB_config;
-  gNB_L1_rxtx_proc_t gNB_proc;
-
-  gNB_proc.frame_rx = frame;
-  gNB_proc.slot_rx  = slot;
 
   UE_proc.nr_tti_tx = slot;
   UE_proc.frame_tx = frame;
@@ -486,16 +482,15 @@ int main(int argc, char **argv)
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-          // [hna] doesn't work with noise in case of mod_order = 6
           ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])+ (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
           ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1])+ (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
         }
       }
 
       
-      phy_procedures_gNB_common_RX(gNB, &gNB_proc);
+      phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-      phy_procedures_gNB_uespec_RX(gNB, &gNB_proc, rel15_ul->ulsch_pdu_rel15.start_symbol, rel15_ul->ulsch_pdu_rel15.start_symbol + rel15_ul->ulsch_pdu_rel15.number_symbols);
+      phy_procedures_gNB_uespec_RX(gNB, frame, slot, rel15_ul->ulsch_pdu_rel15.start_symbol, rel15_ul->ulsch_pdu_rel15.start_symbol + rel15_ul->ulsch_pdu_rel15.number_symbols);
 
 
       //----------------------------------------------------------

@@ -210,10 +210,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 }
 
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
-                         gNB_L1_rxtx_proc_t *proc,
-                         int UE_id,
-                         uint8_t harq_pid)
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id, uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
@@ -249,9 +246,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                     UE_id,
                     gNB->pusch_vars[UE_id]->llr,
                     frame_parms,
-                    proc->frame_rx,
+                    frame_rx,
                     nfapi_ulsch_pdu_rel15->number_symbols,
-                    proc->slot_rx,
+                    slot_rx,
                     harq_pid,
                     0);
         
@@ -261,7 +258,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
 }
 
 
-void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
+void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   uint8_t symbol;
   unsigned char aa;
@@ -273,7 +270,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
                      gNB->common_vars.rxdata[aa],
                      gNB->common_vars.rxdataF[aa],
                      symbol,
-                     proc->slot_rx,
+                     slot_rx,
                      0,
                      0);
     }
@@ -282,7 +279,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
 }
 
 
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end) {
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, uint8_t symbol_start, uint8_t symbol_end) {
   
   uint8_t UE_id;
   uint8_t symbol;
@@ -293,11 +290,11 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, u
     
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
 
-      nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
+      nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);
 
     }
       
-    nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
+    nr_ulsch_procedures(gNB, frame_rx, slot_rx, UE_id, harq_pid);
         
   }
 

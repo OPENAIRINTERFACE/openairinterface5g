@@ -1354,6 +1354,8 @@ static void *ru_thread( void *param ) {
   char               filename[40],threadname[40];
   int                print_frame = 8;
   int                i = 0;
+  int                aa;
+
   // set default return value
   ru_thread_status = 0;
   // set default return value
@@ -1471,6 +1473,15 @@ static void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
     if (ru->feprx) ru->feprx(ru,proc->tti_rx);
+
+    LOG_I(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
+    LOG_I(PHY,"gNB proc: frame_rx = %d, slot_rx = %d\n", RC.gNB[0][0]->proc.frame_rx, RC.gNB[0][0]->proc.slot_rx);
+    LOG_I(PHY,"Copying rxdataF from RU to gNB\n");
+
+    for (aa=0;aa<ru->nb_rx;aa++)
+      memcpy((void*)RC.gNB[0][0]->common_vars.rxdataF[aa],
+         (void*)&ru->common.rxdataF[aa][proc->tti_rx*fp->symbols_per_tti*fp->ofdm_symbol_size],
+         fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
 
     // At this point, all information for subframe has been received on FH interface
 
@@ -1620,14 +1631,6 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
-extern void fep_full(RU_t *ru,int slot);
-extern void ru_fep_full_2thread(RU_t *ru,int slot);
-extern void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
-extern void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
-extern void feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
-extern void init_fep_thread(RU_t *ru);
-extern void nr_init_feptx_thread(RU_t *ru);
-
 void init_RU_proc(RU_t *ru) {
   int i=0;
   RU_proc_t *proc;
@@ -1692,7 +1695,7 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_thread_worker_conf() == WORKER_ENABLE) {
-    if (ru->feprx) init_fep_thread(ru);
+    if (ru->feprx) nr_init_feprx_thread(ru);
 
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
   }
@@ -1985,8 +1988,8 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
         ru->fh_south_out          = tx_rf;                    // send output to RF
         ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-        ru->feprx                 = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread : fep_full;                 // RX DFTs
-        ru->feptx_ofdm            = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;               // this is fep with idft only (no precoding in RRU)
+        ru->feprx                 = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;     // RX DFTs
+        ru->feptx_ofdm            = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // this is fep with idft only (no precoding in RRU)
         ru->feptx_prec            = NULL;
         ru->nr_start_if           = nr_start_if;              // need to start the if interface for if4p5
         ru->ifdevice.host_type    = RRU_HOST;
@@ -2007,8 +2010,8 @@ void set_function_spec_param(RU_t *ru) {
         malloc_IF4p5_buffer(ru);
       } else if (ru->function == gNodeB_3GPP) {
         ru->do_prach             = 0;                       // no prach processing in RU
-        ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread : fep_full;                // RX DFTs
-        ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;              // this is fep with idft and precoding
+        ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;     // RX DFTs
+        ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // this is fep with idft and precoding
         ru->feptx_prec           = NULL;              // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
@@ -2037,13 +2040,13 @@ void set_function_spec_param(RU_t *ru) {
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
-      ru->feprx                  = fep_full;                   // this is frequency-shift + DFTs
-      ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
-      ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;                 // need to do transmit Precoding + IDFTs
-      ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
-      ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
-      ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
-      ru->start_rf               = NULL;                 // no local RF
+      ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;     // this is frequency-shift + DFTs
+      ru->feptx_prec             = feptx_prec;          // need to do transmit Precoding + IDFTs
+      ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // need to do transmit Precoding + IDFTs
+      ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
+      ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
+      ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
+      ru->start_rf               = NULL;                // no local RF
       ru->stop_rf                = NULL;
       ru->nr_start_if            = nr_start_if;         // need to start if interface for IF5
       ru->ifdevice.host_type     = RAU_HOST;
