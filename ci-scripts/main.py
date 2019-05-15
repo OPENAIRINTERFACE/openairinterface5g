@@ -335,12 +335,24 @@ class SSHConnection():
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 600)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		buildStatus = True
+		result = re.search('lte-softmodem', str(self.ssh.before))
+		if result is None:
+			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+		if buildStatus:
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+		else:
+			logging.error('\u001B[1m Building OAI eNB Failed\u001B[0m')
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'KO', ALL_PROCESSES_OK)
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def BuildOAIUE(self):
 		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -371,13 +383,24 @@ class SSHConnection():
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 600)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		buildStatus = True
+		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		if result is None:
+			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-
+		if buildStatus:
+			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+		else:
+			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
+			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -2660,7 +2683,6 @@ class SSHConnection():
 		else:
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('cd scripts', '\$', 5)
-			self.command('rm -f ./kill_hss.sh', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)

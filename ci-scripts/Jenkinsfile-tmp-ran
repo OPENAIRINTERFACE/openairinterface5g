@@ -106,21 +106,6 @@ pipeline {
                     if (params.pythonExecutor != null) {
                         echo "eNB CI executor node  :   ${pythonExecutor}"
                     }
-                    // If not present picking a default XML file
-                    if (params.pythonTestXmlFile == null) {
-                        // picking default
-                        testXMLFile = 'xml_files/enb_usrpB210_band7_50PRB.xml'
-                        echo "Test XML file(default):   ${testXMLFile}"
-                        mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
-                    } else {
-                        String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
-                        for (xmlFile in myXmlTestSuite) {
-                            if (fileExists("ci-scripts/" + xmlFile)) {
-                                mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
-                                echo "Test XML file         :   ${xmlFile}"
-                            }
-                        }
-                    }
                     // If not present picking a default Stage Name
                     if (params.pipelineTestStageName == null) {
                         // picking default
@@ -212,6 +197,21 @@ pipeline {
                 script {
                     dir ('ci-scripts') {
                         echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
+                        // If not present picking a default XML file
+                        if (params.pythonTestXmlFile == null) {
+                            // picking default
+                            testXMLFile = 'xml_files/enb_usrpB210_band7_50PRB.xml'
+                            echo "Test XML file(default):   ${testXMLFile}"
+                            mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
+                        } else {
+                            String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                            for (xmlFile in myXmlTestSuite) {
+                                if (fileExists("ci-scripts/" + xmlFile)) {
+                                    mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                                    echo "Test XML file         :   ${xmlFile}"
+                                }
+                            }
+                        }
                         withCredentials([
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
