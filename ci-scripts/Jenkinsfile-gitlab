@@ -416,6 +416,11 @@ pipeline {
                                 }
                             }
                         }
+                        stage ("Destroy all Virtual Machines") {
+                            steps {
+                                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+                        }
                     }
                 }
                 stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
@@ -576,17 +581,10 @@ pipeline {
                 }
             }
         }
-        stage ("Destroy all Virtual Machines") {
-            steps {
-                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-            }
-        }
     }
     post {
         always {
             script {
-                // Stage destroy may not be run if error in previous stage
-                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                 emailext attachmentsPattern: '*results*.html',
                      body: '''Hi,
 
