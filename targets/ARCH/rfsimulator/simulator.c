@@ -198,7 +198,7 @@ sin_addr:
   t->buf[sock].alreadyRead=true; // UE will start blocking on read
   return 0;
 }
-
+uint64_t lastW=-1;
 int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
@@ -222,7 +222,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
         fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
     }
   }
-
+  lastW=timestamp;
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   return nsamps;
@@ -306,6 +306,8 @@ static bool flushInput(rfsimulator_state_t *t) {
         }
 
         b->lastReceivedTS=b->th.timestamp;
+	AssertFatal(lastW == -1 || ( abs((double)lastW-b->lastReceivedTS) < (double)CirSize),
+	  "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", lastW, b->lastReceivedTS);
         b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
