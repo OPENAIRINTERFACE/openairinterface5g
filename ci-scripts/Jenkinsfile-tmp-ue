@@ -177,7 +177,7 @@ pipeline {
                         } else {
                             String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                             for (xmlFile in myXmlTestSuite) {
-                                if (fileExists("ci-scripts/" + xmlFile)) {
+                                if (fileExists(xmlFile)) {
                                     mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
                                     echo "Test XML file         :   ${xmlFile}"
                                 }
