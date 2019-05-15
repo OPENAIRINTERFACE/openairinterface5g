@@ -630,8 +630,7 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
 
-    if(IS_SOFTMODEM_DOFORMS)
-      load_softscope("enb");
+
 
     rt_sleep_ns(10*100000000ULL);
 
@@ -718,6 +717,8 @@ int main( int argc, char **argv ) {
   fflush(stderr);
   // end of CI modifications
   //getchar();
+  if(IS_SOFTMODEM_DOFORMS)
+     load_softscope("enb");
   itti_wait_tasks_end();
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);

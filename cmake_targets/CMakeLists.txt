@@ -2005,8 +2005,8 @@ set(XFORMS_LIBRARIES "forms")
 set (XFORMSINTERFACE_SOURCE
    ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
    )
-add_library(enbscope MODULE ${XFORMS_SOURCE} ${XFORMS_ENB_SOURCE})
-add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_UE_SOURCE})
+add_library(enbscope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_ENB_SOURCE})
+add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_UE_SOURCE})
 target_link_libraries(enbscope ${XFORMS_LIBRARIES})
 target_link_libraries(uescope ${XFORMS_LIBRARIES})
 

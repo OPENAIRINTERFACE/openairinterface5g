@@ -110,10 +110,10 @@ static void *scope_thread_UE(void *arg) {
 
 int uescope_autoinit(void) {
   int UE_id;
-  int argc;
-  char *argv;
+  int argc=config_get_if()->argc;
+  char  **argv=config_get_if()->argv;
   printf("XFORMS\n");
-  fl_initialize (&argc, &argv, NULL, 0, 0);
+  fl_initialize (&argc, argv, NULL, 0, 0);
   form_stats = create_form_stats_form();
   fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
   UE_id = 0;

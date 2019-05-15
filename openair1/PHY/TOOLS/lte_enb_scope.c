@@ -120,9 +120,9 @@ static void *scope_thread_eNB(void *arg) {
 int enbscope_autoinit(void) {
   int UE_id;
   printf("XFORMS\n");
-  int argc=0;
-  char  *argv=NULL;
-  fl_initialize (&argc, &argv, NULL, 0, 0);
+  int argc=config_get_if()->argc;
+  char  **argv=config_get_if()->argv;
+  fl_initialize (&argc, argv, NULL, 0, 0);
   form_stats_l2 = create_form_stats_form();
   fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
   form_stats = create_form_stats_form();
