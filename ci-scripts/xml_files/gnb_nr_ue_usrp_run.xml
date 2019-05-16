@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>run OAI gNB and OAI NR UE USRP</htmlTabRef>
-        <htmlTabName>run-OAI-gNB-NR-UE-USRP</htmlTabName>
+        <htmlTabRef>run-OAI-gNB-NR-UE-USRP</htmlTabRef>
+        <htmlTabName>run OAI gNB and OAI NR UE USRP</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
 	<TestCaseRequestedList>
 090101 000001 090102 000001 090108 090109

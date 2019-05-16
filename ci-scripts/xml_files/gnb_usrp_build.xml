@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabRef>gnb-build-tab</htmlTabRef>
 	<htmlTabName>Build-gNB</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>

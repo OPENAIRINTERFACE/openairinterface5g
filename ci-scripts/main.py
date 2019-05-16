@@ -2854,11 +2854,11 @@ class SSHConnection():
 			self.htmlFile.write('        <td></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
+			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th colspan=2 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
-				self.htmlFile.write('        <th colspan=2 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')

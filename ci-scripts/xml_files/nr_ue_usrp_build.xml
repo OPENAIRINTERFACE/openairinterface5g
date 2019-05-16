@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
 	<htmlTabName>Build-NR-UE</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>

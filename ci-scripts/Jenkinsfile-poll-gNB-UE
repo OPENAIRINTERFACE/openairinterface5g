@@ -34,6 +34,7 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 // Location of the test XML file to be run
 def testXMLFile = params.pythonTestXmlFile
 def mainPythonAllXmlFiles = ""
+def buildStageStatus = true
 
 // Name of the phone resource
 def ciUSRPsResource = params.USRPsResource
@@ -129,21 +130,6 @@ pipeline {
                         eNB_CommitID = params.eNB_CommitID
                     }
                     echo "eNB_CommitID = ${eNB_CommitID}"
-                    // If not present picking a default XML file
-                    if (params.pythonTestXmlFile == null) {
-                        // picking default
-                        testXMLFile = 'xml_files/gnb_usrp_build.xml'
-                        echo "Test XML file(default):   ${testXMLFile}"
-                        mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
-                    } else {
-                        String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
-                        for (xmlFile in myXmlTestSuite) {
-                            if (fileExists("ci-scripts/" + xmlFile)) {
-                        	mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
-                        	echo "Test XML file         :   ${xmlFile}"
-                            }
-                        }
-                    }
                     // If not present picking a default Stage Name
                     if (params.pipelineTestStageName == null) {
                         // picking default
@@ -193,6 +179,21 @@ pipeline {
             steps {
         	    script {
         	        dir ('ci-scripts') {
+                        // If not present picking a default XML file
+                        if (params.pythonTestXmlFile == null) {
+                            // picking default
+                            testXMLFile = 'xml_files/gnb_usrp_build.xml'
+                            echo "Test XML file(default):   ${testXMLFile}"
+                            mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
+                        } else {
+                            String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                            for (xmlFile in myXmlTestSuite) {
+                                if (fileExists(xmlFile)) {
+                            	mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                            	echo "Test XML file         :   ${xmlFile}"
+                                }
+                            }
+                        }
         	    	withCredentials([
         	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
         	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
@@ -205,9 +206,11 @@ pipeline {
         	    	            sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${eNB_Username} --UEPassword=${eNB_Password} --eNBBranch=${eNB_Branch} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UESourceCodePath=${params.eNB_SourceCodePath} --eNBRepository=${eNB_Repository} --eNBCommitID=${eNB_CommitID} --ADBIPAddress=${ADB_IPAddress} --EPCIPAddress=${EPC_IPAddress} --XMLTestFile=${xmlFile}"
         	    	        } catch (Exception e) {
         	    	            currentBuild.result = 'FAILURE'
+        	    	            buildStageStatus = false
         	    	        }
         	    	    }
         	    	    }
+                            sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
         	        }
         	    }
                 }
