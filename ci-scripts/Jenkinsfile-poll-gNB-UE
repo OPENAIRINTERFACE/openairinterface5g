@@ -55,6 +55,7 @@ def eNB_TargetBranch
 def PROJECT_NAME = "test-boris"
 def GIT_COMMIT_AUTHORi
 def GIT_COMMIT_EMAIL
+def testStageName
 // Reversing list because pop() will take the last (right-most) element
 //def modeList = ['TesteNB', 'TestUE', 'TesteNB'].reverse()
 
@@ -134,7 +135,9 @@ pipeline {
                     if (params.pipelineTestStageName == null) {
                         // picking default
                         testStageName = 'Template Test Stage'
-                    }
+                    } else {
+			testStageName = params.pipelineTestStageName
+	            }
 
                     if (params.USRPsResource == null) {
                         allParametersPresent = false
