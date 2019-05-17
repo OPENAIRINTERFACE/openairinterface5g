@@ -90,6 +90,7 @@ what about the implementation
 
 #include <pthread.h>
 #include <stdint.h>
+#include <common/utils/system.h>
 
 #include "opt.h"
 
@@ -203,15 +204,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
     return -1;
   }
 
-  ret = pthread_create(&opt_listener.thread, NULL, opt_listener_thread, NULL);
-
-  if (ret != 0) {
-    LOG_E(OPT, "Failed to create thread for server socket: %s\n", strerror(errno));
-    opt_type = OPT_NONE;
-    close(opt_listener.sd);
-    opt_listener.sd = -1;
-    return -1;
-  }
+  threadCreate(&opt_listener.thread, opt_listener_thread, NULL, "flexran", -1, OAI_PRIORITY_RT_LOW);
 
   return 0;
 }

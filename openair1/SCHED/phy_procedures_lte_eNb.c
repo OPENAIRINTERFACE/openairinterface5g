@@ -38,6 +38,7 @@
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "common/utils/LOG/log.h"
+#include <common/utils/system.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "assertions.h"
@@ -1473,11 +1474,7 @@ void init_td_thread(PHY_VARS_eNB *eNB) {
   proc->tdp.eNB = eNB;
   proc->instance_cnt_td         = -1;
   
-  pthread_attr_init( &proc->attr_td);  
-  pthread_mutex_init( &proc->mutex_td, NULL);
-  pthread_cond_init( &proc->cond_td, NULL);
-  
-  pthread_create(&proc->pthread_td, &proc->attr_td, td_thread, (void*)&proc->tdp);
+  threadCreate(&proc->pthread_td, td_thread, (void*)&proc->tdp, "TD", -1, OAI_PRIORITY_RT);
 
 }
 void kill_td_thread(PHY_VARS_eNB *eNB) {
@@ -1501,12 +1498,10 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
     proc->tep[i].eNB = eNB;
     proc->tep[i].instance_cnt_te         = -1;
       
-    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
-    pthread_cond_init( &proc->tep[i].cond_te, NULL);
-    pthread_attr_init( &proc->tep[i].attr_te);
-    
     LOG_I(PHY,"Creating te_thread %d\n",i);
-    pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void*)&proc->tep[i]);
+    char txt[128];
+    sprintf(txt,"TE_%d", i); 
+    threadCreate(&proc->tep[i].pthread_te, te_thread, (void*)&proc->tep[i], txt, -1, OAI_PRIORITY_RT);
   }
 }
 void kill_te_thread(PHY_VARS_eNB *eNB) {

@@ -397,24 +397,14 @@ static void _nas_timer_handler(int signal)
   /* Get the timer entry for which the system timer expired */
   nas_timer_entry_t *te = _nas_timer_db.head->entry;
 
-  /* Execute the callback function */
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-  int rc = pthread_create (&te->pid, &attr, te->cb, te->args);
-  pthread_attr_destroy(&attr);
+  threadCreate (&te->pid, te->cb, te->args, "nas-timer", -1, OAI_PRIORITY_RT_LOW);
 
-  /* Wait for the thread to terminate before releasing the timer entry */
-  if (rc == 0) {
     void *result = NULL;
     (void) pthread_join(te->pid, &result);
 
-    /* TODO: Check returned result ??? */
     if (result) {
       free(result);
     }
-  }
 }
 #endif
 

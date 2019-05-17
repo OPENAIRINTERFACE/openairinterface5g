@@ -32,8 +32,6 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_slot1_dl_processing;
   /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_slot1_dl_processing;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
   pthread_cond_t cond_slot1_dl_processing;
@@ -46,8 +44,6 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_dlsch_td;
   /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_dlsch_td;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
   pthread_cond_t cond_dlsch_td;

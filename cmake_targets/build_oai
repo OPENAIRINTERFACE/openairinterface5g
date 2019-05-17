@@ -420,11 +420,6 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  if [ "$eNB" = "1" -o "$gNB" = "1" ] && [ "$UE" = "1" -o "$nrUE" = "1" ]; then
-    echo_error "Cannot build UE/nrUE and eNB/gNB on one build_oai execution"
-    echo_error "use 2 build_oai invocations"
-    exit
-  fi
 
   #########################################################
   # check validity of HW and TP parameters for eNB / gNB
