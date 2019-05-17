@@ -1821,6 +1821,7 @@ int flexran_set_rrc_ofp(mid_t mod_id, rnti_t rnti, long offsetFreq) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!((offsetFreq >= -15) && (offsetFreq <= 15))) return -1;
   ue_context_p->ue_context.measurement_info->offsetFreq = offsetFreq;
   return 0;
 }
@@ -1830,6 +1831,7 @@ int flexran_set_rrc_ofn(mid_t mod_id, rnti_t rnti, long offsetFreq) {
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measurement_info) return -1;
+  if (!((offsetFreq >= -15) && (offsetFreq <= 15))) return -1;
   ue_context_p->ue_context.measurement_info->offsetFreq = offsetFreq;
   return 0;
 }
@@ -1985,6 +1987,7 @@ int flexran_set_rrc_per_event_maxReportCells(mid_t mod_id, rnti_t rnti, long max
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->per_event) return -1;
+  if (!((maxReportCells >= 1) && (maxReportCells <= 8))) return -1;
   ue_context_p->ue_context.measurement_info->events->per_event->maxReportCells = maxReportCells;
   return 0;
 }
@@ -1998,6 +2001,7 @@ int flexran_set_rrc_a3_event_hysteresis(mid_t mod_id, rnti_t rnti, long hysteres
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  if (!((hysteresis >=0) && (hysteresis <= 30))) return -1;
   ue_context_p->ue_context.measurement_info->events->a3_event->hysteresis = hysteresis;
   return 0;
 }
@@ -2039,6 +2043,7 @@ int flexran_set_rrc_a3_event_maxReportCells(mid_t mod_id, rnti_t rnti, long maxR
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  if (!((maxReportCells >= 1) && (maxReportCells <= 8))) return -1;
   ue_context_p->ue_context.measurement_info->events->a3_event->maxReportCells = maxReportCells;
   return 0;
 }
@@ -2050,6 +2055,7 @@ int flexran_set_rrc_a3_event_a3_offset(mid_t mod_id, rnti_t rnti, long a3_offset
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  if (!((a3_offset >= -30) && (a3_offset <= 30))) return -1;
   ue_context_p->ue_context.measurement_info->events->a3_event->a3_offset = a3_offset;
   return 0;
 }
@@ -2061,6 +2067,7 @@ int flexran_set_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti, int report
   if (!ue_context_p->ue_context.measurement_info) return -1;
   if (!ue_context_p->ue_context.measurement_info->events) return -1;
   if (!ue_context_p->ue_context.measurement_info->events->a3_event) return -1;
+  if (!((reportOnLeave == 0) || (reportOnLeave == 1))) return -1;
   ue_context_p->ue_context.measurement_info->events->a3_event->reportOnLeave = reportOnLeave;
   return 0;
 }
