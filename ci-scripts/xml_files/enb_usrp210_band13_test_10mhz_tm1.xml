@@ -1,0 +1,79 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-10-tm1</htmlTabRef>
+	<htmlTabName>Test-10MHz-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<TestCaseRequestedList>
+ 030201
+ 040102
+ 030121 000001 040302 000001 040502 000001 040402 040202 000001 030201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList>
+	</TestCaseExclusionList>
+
+        <testCase id="000001">
+                <class>IdleSleep</class>
+                <desc>Waiting for a moment...</desc>
+                <idle_sleep_time_in_sec>15</idle_sleep_time_in_sec>
+        </testCase>
+
+	<testCase id="030121">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band13/10MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band13.tm1.50PRB.emtc.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+        <testCase id="040102">
+                <class>Initialize_CatM_module</class>
+                <desc>Initialize CAT-M Module</desc>
+        </testCase>
+
+        <testCase id="040202">
+                <class>Terminate_CatM_module</class>
+                <desc>Terminate CAT-M Module</desc>
+        </testCase>
+
+        <testCase id="040302">
+                <class>Attach_CatM_module</class>
+                <desc>Attach CAT-M Module</desc>
+        </testCase>
+
+        <testCase id="040402">
+                <class>Detach_CatM_module</class>
+                <desc>Detach CAT-M Module</desc>
+        </testCase>
+
+        <testCase id="040502">
+                <class>Ping_CatM_module</class>
+                <desc>ping (10MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+</testCaseList>

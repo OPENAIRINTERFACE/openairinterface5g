@@ -672,7 +672,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  
+
   LOG_D(PHY,"[p %d : symb %d / FirstSym %d / Length %d]: @LLR Buff %p, @LLR Buff(symb) %p \n",
 	frame_parms->nb_antenna_ports_eNB,
 	symbol,
@@ -680,7 +680,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 	len,
 	dlsch_llr,
 	llr32);
- 
+
 
   qpsk_llr((short *)rxF,
            (short *)llr32,

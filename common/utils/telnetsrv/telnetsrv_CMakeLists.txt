@@ -9,6 +9,7 @@ set(TELNETSRV_SOURCE
     ${TELNETROOT}/telnetsrv_phycmd.c
     ${TELNETROOT}/telnetsrv_proccmd.c
     ${TELNETROOT}/telnetsrv_loader.c
+    ${TELNETROOT}/telnetsrv_measurements.c
     )
 
 #set(TELNETSRV_ETHDEVCMD_SOURCE

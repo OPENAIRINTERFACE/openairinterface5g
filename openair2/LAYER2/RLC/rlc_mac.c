@@ -261,12 +261,12 @@ void mac_rlc_data_ind     (
 #ifdef DEBUG_MAC_INTERFACE
 
   if (num_tbP) {
-    LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, Num_tb %d\n",
+    LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, tb_sizeP %d\n",
           PROTOCOL_CTXT_ARGS(&ctxt),
           channel_idP,
           RLC_MAX_LC,
           NB_RB_MAX,
-          num_tbP);
+          tb_sizeP);
   }
 
 #endif // DEBUG_MAC_INTERFACE
@@ -293,7 +293,7 @@ void mac_rlc_data_ind     (
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    //AssertFatal (0 , "%s RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
+    //AssertFatal (0 , "%s RLC not configured lcid %u ! (h_rc %d)\n", __FUNCTION__,channel_idP,h_rc);
   }
 
   struct mac_data_ind data_ind = mac_rlc_deserialize_tb(buffer_pP, tb_sizeP, num_tbP, crcs_pP);

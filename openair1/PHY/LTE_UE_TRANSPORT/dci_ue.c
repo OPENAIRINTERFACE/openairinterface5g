@@ -362,6 +362,10 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #elif defined(__arm__)
   int16x8_t *dl_ch128;
   int32x4_t *avg128P;
+#else
+  int16_t *dl_ch128;
+  int32_t *avg128P;
+#error Unsupported CPU architecture, cannot build __FILE__
 #endif
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -370,7 +374,11 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
       avg128P = _mm_setzero_si128();
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
 #elif defined(__arm__)
-
+     dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
+#error __arm__ not yet implemented, cannot build __FILE__
+#else
+      dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
+#error Unsupported CPU architecture, cannot build __FILE__
 #endif
       for (rb=0; rb<nb_rb; rb++) {
 
@@ -379,7 +387,8 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
         avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
         avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
 #elif defined(__arm__)
-
+#else
+#error Unsupported CPU architecture, cannot build __FILE__
 #endif
         dl_ch128+=3;
         /*
@@ -423,6 +432,8 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
 #elif defined(__arm__)
   int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
+#else
+#error Unsupported CPU architecture, cannot build __FILE__
 #endif
   int32_t i;
 
@@ -436,6 +447,8 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
 #elif defined(__arm__)
       rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
+#else
+#error Unsupported CPU architecture, cannot build __FILE__
 #endif
       // MRC on each re of rb on MF output
       for (i=0; i<frame_parms->N_RB_DL*3; i++) {

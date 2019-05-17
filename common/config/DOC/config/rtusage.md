@@ -1,34 +1,34 @@
- 
-   -O  is the only mandatory command line option to start the eNodeb softmodem (lte-softmodem executable), it is used to specify the configuration source with the associated parameters:  
+
+   -O  is the only mandatory command line option to start the eNodeb softmodem (lte-softmodem executable), it is used to specify the configuration source with the associated parameters:
 ```bash
 $ ./lte-softmodem -O <configsource>:<parameter1>:<parameter2>:...
 ```
-  The configuration module can also be used without a configuration source, ie to only parse the command line. In this case the -O switch is optional. This mode is used in the ue-softmodem executable and by the phy_simulators executables (ulsim, dlsim)  
+  The configuration module can also be used without a configuration source, ie to only parse the command line. In this case the -O switch is optional. This mode is used in the ue-softmodem executable and by the phy_simulators executables (ulsim, dlsim)
 
 Currently the available config sources are:
 
-- **libconfig**: libconfig file. [libconfig file format](http://www.hyperrealm.com/libconfig/libconfig_manual.html#Configuration-Files) Parameter1 is the file path and parameter 2 can be used to specify the level of console messages printed by the configuration module.  
+- **libconfig**: libconfig file. [libconfig file format](http://www.hyperrealm.com/libconfig/libconfig_manual.html#Configuration-Files) Parameter1 is the file path and parameter 2 can be used to specify the level of console messages printed by the configuration module.
 ```bash
 $ ./lte-softmodem -O libconfig:<config>:dbgl<debuglevel>
 ```
 - **cmdlineonly**: command line only, the default mode for lte-uesoftmodem and the phy simiulators. In this case -O may be used to specify the config module debug level.
 
-The debug level is a mask:  
-*  bit 1: print parameters values 
+The debug level is a mask:
+*  bit 1: print parameters values
 *  bit 2: print memory allocation/free performed by the config module
 *  bit 3: print command line processing messages
 *  bit 4: disable execution abort when parameters checking fails
 
-As a oai user, you may have to use bit 1 (dbgl1) , to check your configuration and get the full name of a parameter you would like to modify on the command line. Other bits are for developers usage, (dbgl7 will print all debug messages).  
+As a oai user, you may have to use bit 1 (dbgl1) , to check your configuration and get the full name of a parameter you would like to modify on the command line. Other bits are for developers usage, (dbgl7 will print all debug messages).
 
 ```bash
-$ ./lte-softmodem -O libconfig:<config>:dbgl1  
+$ ./lte-softmodem -O libconfig:<config>:dbgl1
 ```
 ```bash
 $ ./lte-uesoftmodem -O cmdlineonly:dbgl1
 ```
 To get help on supported parameters you can use specific options:
-*  ---help: print help for command line only parameters and for parameters not defined in a specific section 
+*  ---help: print help for command line only parameters and for parameters not defined in a specific section
 	*  ---help_< prefix > : print help for parameters defined under the section < prefix >
 
 ```
@@ -49,23 +49,23 @@ To get help on supported parameters you can use specific options:
     -C: Set the downlink frequency for all component carriers
     -a: Channel id offset
     -d: Enable soft scope and L1 and L2 stats (Xforms)
-    -q: Enable processing timing measurement of lte softmodem on per subframe basis 
-    -S: Skip the missed slots/subframes 
+    -q: Enable processing timing measurement of lte softmodem on per subframe basis
+    -S: Skip the missed slots/subframes
     --numerology: adding numerology for 5G
     --parallel-config: three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'
     --worker-config: two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'
     --nbiot-disable: disable nb-iot, even if defined in config
     --noS1: Disable s1 interface
-    --nokrnmod: (noS1 only): Use tun instead of namesh module 
+    --nokrnmod: (noS1 only): Use tun instead of namesh module
 --------------------------------------------------------------------
 
 [LIBCONFIG] (root): 4/4 parameters successfully set, (4 to default value)
 
 -----Help for section (root section)            : 004 entries------
-    -R: Enable online log 
+    -R: Enable online log
     -g: Set the global log level, valide options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))
-    --telnetsrv: Start embedded telnet server 
-    --msc: Enable the MSC tracing utility 
+    --telnetsrv: Start embedded telnet server
+    --msc: Enable the MSC tracing utility
 --------------------------------------------------------------------
 
 [LIBCONFIG] loader: 2/2 parameters successfully set, (2 to default value)
@@ -84,13 +84,13 @@ Getting ENBSParams
 
 ```
 
-For the lte-softmodem (the eNodeB) The config source parameter defaults to libconfig, preserving the initial -O option format. In this case you cannot specify the debug level.  
+For the lte-softmodem (the eNodeB) The config source parameter defaults to libconfig, preserving the initial -O option format. In this case you cannot specify the debug level.
 
 ```bash
 $ ./lte-softmodem -O <config>
 ```
 
-Configuration file parameters, except for the configuration file path,  can be specified in a **config** section in the configuration file:  
+Configuration file parameters, except for the configuration file path,  can be specified in a **config** section in the configuration file:
 
 ```
 config:
@@ -102,7 +102,7 @@ Configuration files examples can be found in the targets/PROJECTS/GENERIC-LTE-EP
 
 ```bash
 $ ./lte-softmodem -O <config> --eNBs.[0].component_carriers.[0].N_RB_DL 100
-```  
+```
 
 As specified earlier, use the dbgl1 debug level to get the full name of a parameter you would like to modify on the command line.
 

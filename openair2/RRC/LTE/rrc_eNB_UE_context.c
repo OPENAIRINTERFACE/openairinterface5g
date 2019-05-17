@@ -41,7 +41,7 @@
 //------------------------------------------------------------------------------
 void
 uid_linear_allocator_init(
-  uid_allocator_t* const uid_pP
+  uid_allocator_t *const uid_pP
 )
 //------------------------------------------------------------------------------
 {
@@ -51,14 +51,14 @@ uid_linear_allocator_init(
 //------------------------------------------------------------------------------
 uid_t
 uid_linear_allocator_new(
-  eNB_RRC_INST* const rrc_instance_pP
+  eNB_RRC_INST *const rrc_instance_pP
 )
 //------------------------------------------------------------------------------
 {
   unsigned int i;
   unsigned int bit_index = 1;
   uid_t        uid = 0;
-  uid_allocator_t* uia_p = &rrc_instance_pP->uid_allocator;
+  uid_allocator_t *uia_p = &rrc_instance_pP->uid_allocator;
 
   for (i=0; i < UID_LINEAR_ALLOCATOR_BITMAP_SIZE; i++) {
     if (uia_p->bitmap[i] != UINT_MAX) {
@@ -82,7 +82,7 @@ uid_linear_allocator_new(
 //------------------------------------------------------------------------------
 void
 uid_linear_allocator_free(
-  eNB_RRC_INST* rrc_instance_pP,
+  eNB_RRC_INST *rrc_instance_pP,
   uid_t uidP
 )
 //------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ uid_linear_allocator_free(
 
 //------------------------------------------------------------------------------
 int rrc_eNB_compare_ue_rnti_id(
-  struct rrc_eNB_ue_context_s* c1_pP, struct rrc_eNB_ue_context_s* c2_pP)
+  struct rrc_eNB_ue_context_s *c1_pP, struct rrc_eNB_ue_context_s *c2_pP)
 //------------------------------------------------------------------------------
 {
   if (c1_pP->ue_id_rnti > c2_pP->ue_id_rnti) {
@@ -120,14 +120,14 @@ RB_GENERATE(rrc_ue_tree_s, rrc_eNB_ue_context_s, entries,
 
 
 //------------------------------------------------------------------------------
-struct rrc_eNB_ue_context_s*
+struct rrc_eNB_ue_context_s *
 rrc_eNB_allocate_new_UE_context(
-  eNB_RRC_INST* rrc_instance_pP
+  eNB_RRC_INST *rrc_instance_pP
 )
 //------------------------------------------------------------------------------
 {
-  struct rrc_eNB_ue_context_s* new_p;
-  new_p = (struct rrc_eNB_ue_context_s* )malloc(sizeof(struct rrc_eNB_ue_context_s));
+  struct rrc_eNB_ue_context_s *new_p;
+  new_p = (struct rrc_eNB_ue_context_s * )malloc(sizeof(struct rrc_eNB_ue_context_s));
 
   if (new_p == NULL) {
     LOG_E(RRC, "Cannot allocate new ue context\n");
@@ -136,18 +136,20 @@ rrc_eNB_allocate_new_UE_context(
 
   memset(new_p, 0, sizeof(struct rrc_eNB_ue_context_s));
   new_p->local_uid = uid_linear_allocator_new(rrc_instance_pP);
+
   for(int i = 0; i < NB_RB_MAX; i++) {
-      new_p->ue_context.e_rab[i].xid = -1;
-      new_p->ue_context.modify_e_rab[i].xid = -1;
+    new_p->ue_context.e_rab[i].xid = -1;
+    new_p->ue_context.modify_e_rab[i].xid = -1;
   }
+
   return new_p;
 }
 
 
 //------------------------------------------------------------------------------
-struct rrc_eNB_ue_context_s*
+struct rrc_eNB_ue_context_s *
 rrc_eNB_get_ue_context(
-  eNB_RRC_INST* rrc_instance_pP,
+  eNB_RRC_INST *rrc_instance_pP,
   rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
@@ -157,6 +159,7 @@ rrc_eNB_get_ue_context(
   temp.ue_id_rnti = rntiP;
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
   ue_context_p = RB_FIND(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
+
   if ( ue_context_p != NULL) {
     return ue_context_p;
   } else {
@@ -172,9 +175,9 @@ rrc_eNB_get_ue_context(
 
 //------------------------------------------------------------------------------
 void rrc_eNB_remove_ue_context(
-  const protocol_ctxt_t* const ctxt_pP,
-  eNB_RRC_INST*                rrc_instance_pP,
-  struct rrc_eNB_ue_context_s* ue_context_pP)
+  const protocol_ctxt_t *const ctxt_pP,
+  eNB_RRC_INST                *rrc_instance_pP,
+  struct rrc_eNB_ue_context_s *ue_context_pP)
 //------------------------------------------------------------------------------
 {
   if (rrc_instance_pP == NULL) {
@@ -190,12 +193,10 @@ void rrc_eNB_remove_ue_context(
   }
 
   RB_REMOVE(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
-
   MSC_LOG_EVENT(
     MSC_RRC_ENB,
     "0 Removed UE %"PRIx16" ",
     ue_context_pP->ue_context.rnti);
-
   rrc_eNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
   uid_linear_allocator_free(rrc_instance_pP, ue_context_pP->local_uid);
   free(ue_context_pP);

@@ -300,7 +300,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
-    
+  dlsch0->ue_type = 0;
+  dlsch1->ue_type = 0; 
   beamforming_mode                          = eNB->transmission_mode[(uint8_t)UE_id]<7?0:eNB->transmission_mode[(uint8_t)UE_id];
   dlsch0_harq                               = dlsch0->harq_processes[rel8->harq_process];
   dlsch0_harq->codeword                     = 0;
@@ -351,7 +352,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
                 &rel8->resource_block_coding,rel8->resource_block_coding,rel8->rnti,rel8->rnti_type,rel8->dci_format,rel8->harq_process);
   
     dci_alloc->format = format1A;
-    
+
     switch (fp->N_RB_DL) {
     case 6:
       if (fp->frame_type == TDD) {
@@ -527,7 +528,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
 
     dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-    if (rel8->rnti_type == 1) LOG_I(PHY,"DCI 1A: round %d, mcs %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
+    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:
@@ -1559,7 +1560,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
 
   case 10:                     // Format 6-1A
     dci_alloc->format = format6_1A;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
 
     case 25:
@@ -1594,7 +1594,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
       ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
-      LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, srs_req %d, harq_ack_off %d, dci_rep r%d => %x\n",
+      LOG_D(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, srs_req %d, harq_ack_off %d, dci_rep r%d => %x\n",
 	    frame,subframe,
 	    ((DCI6_1A_10MHz_t *) dci_pdu)->type,
 	    ((DCI6_1A_10MHz_t *) dci_pdu)->hopping,
@@ -1630,7 +1630,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     break;
   case 11:                     // Format 6-1B
     dci_alloc->format = format6_1B;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
 
     case 25:
@@ -1670,7 +1669,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     }
   case 12:                     // Format 6-2
     dci_alloc->format = format6_2;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
     case 25:
       dci_alloc->dci_length = sizeof_DCI6_2_5MHz_t;
@@ -1719,15 +1717,17 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   }
   AssertFatal (rel13->harq_process < 8, "ERROR: Format 6_1A: harq_pid=%d >= 8\n", rel13->harq_process);
 
+  dlsch0->ue_type = rel13->ce_mode;
+
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
   dlsch0_harq->codeword = 0;
 
   // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
-  LOG_I(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
+  LOG_D(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
-  conv_eMTC_rballoc (rel13->resource_block_coding, 
-		     fp->N_RB_DL, 
+  conv_eMTC_rballoc (rel13->resource_block_coding,
+		     fp->N_RB_DL,
 		     dlsch0_harq->rb_alloc);
 
   dlsch0_harq->nb_rb = RIV2nb_rb_LUT6[rel13->resource_block_coding & 31];       // this is the 6PRB RIV
@@ -1750,6 +1750,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   if (dlsch0->rnti != rel13->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
     dlsch0_harq->round = 0;
     dlsch0->harq_mask =0;
+    printf("*********************** rnti %x => %x, pos %d\n",rel13->rnti,dlsch0->rnti,UE_id);
   }
   if ((dlsch0->harq_mask & (1 << rel13->harq_process)) > 0) {
     if ((rel13->new_data_indicator != dlsch0_harq->ndi)||(dci_alloc->ra_flag==1))
@@ -1767,8 +1768,9 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     else if (rel13->tpc == 0)  //N1A_PRB=2, get TBS from table using mcs and nb_rb=2
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][1];
     else if (rel13->tpc == 1)  //N1A_PRB=3, get TBS from table using mcs and nb_rb=3
-      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];      
-    LOG_I(PHY,"TBS = %d(%d)\n",dlsch0_harq->TBS,dlsch0_harq->mcs);
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];
+    else AssertFatal(1==0,"Don't know how to set TBS (TPC %d)\n",rel13->tpc);
+    LOG_D(PHY,"fill_mdci_and_dlsch : TBS = %d(%d) %p, %x\n",dlsch0_harq->TBS,dlsch0_harq->mcs,dlsch0,rel13->rnti);
   }
   dlsch0->active = 1;
   dlsch0->harq_mask |= (1 << rel13->harq_process);
@@ -1776,11 +1778,11 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
-  LOG_I(PHY,"Setting DLSCH harq_ids[%d] to %d\n",dlsch0_harq->subframe,dlsch0->harq_ids[frame%2][dlsch0_harq->subframe]);
-  dlsch0->harq_ids[frame%2][dlsch0_harq->subframe] = rel13->harq_process;
+  LOG_D(PHY,"Setting DLSCH UEid %d harq_ids[%d] from %d to %d\n",UE_id,dlsch0_harq->subframe,dlsch0->harq_ids[frame%2][dlsch0_harq->subframe],rel13->harq_process);
+  dlsch0->harq_ids[dlsch0_harq->frame%2][dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
-  LOG_I(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
+  LOG_D(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
 
   dlsch0->rnti = rel13->rnti;
 
@@ -1968,7 +1970,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_narrowband_index(int N_RB_UL,int rb) {
-  
+
   switch (N_RB_UL) {
   case 6: // 6 PRBs, N_NB=1, i_0=0
   case 25: // 25 PRBs, N_NB=4, i_0=0
@@ -2011,6 +2013,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   ulsch->harq_mask |= 1 << harq_pid;
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LOG_D(PHY,"Filling ULSCH : ue_type %d, harq_pid %d\n",ulsch->ue_type,harq_pid);
   ulsch->ue_type = ulsch_pdu->ulsch_pdu_rel13.ue_type;
   AssertFatal(harq_pid ==0 || ulsch->ue_type == NOCE, "Harq PID is not zero for BL/CE UE\n");
 
@@ -2115,7 +2118,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 int get_first_rb_in_narrowband(int N_RB_UL,int rb) {
-  
+
   switch (N_RB_UL) {
   case 6: // 6 PRBs, N_NB=1, i_0=0
   case 25: // 25 PRBs, N_NB=4, i_0=0
@@ -2236,7 +2239,7 @@ void fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, L1_rxtx_proc_t * proc, mDCI_ALLOC_t *
       ((DCI6_0A_10MHz_t *) dci_pdu)->csi_req = cqi_req;
       ((DCI6_0A_10MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
       ((DCI6_0A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
-      LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-0A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, csi_req %d, srs_req %d, dci_rep r%d => %x\n",
+      LOG_D(PHY,"Frame %d, Subframe %d : Programming Format 6-0A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, csi_req %d, srs_req %d, dci_rep r%d => %x\n",
 	    proc->frame_tx,proc->subframe_tx,
 	    ((DCI6_0A_10MHz_t *) dci_pdu)->type,
 	    ((DCI6_0A_10MHz_t *) dci_pdu)->hopping,
@@ -2287,6 +2290,3 @@ void fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, L1_rxtx_proc_t * proc, mDCI_ALLOC_t *
   }
 }
 #endif
-
-
-

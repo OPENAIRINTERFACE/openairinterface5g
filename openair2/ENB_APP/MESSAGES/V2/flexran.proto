@@ -31,6 +31,7 @@ message flexran_message {
 	      flex_agent_reconfiguration agent_reconfiguration_msg = 17;
 	      flex_rrc_triggering rrc_triggering = 18;
 	      flex_ul_mac_config ul_mac_config_msg = 19;
+              flex_disconnect disconnect_msg = 20;
 	}
 }
 
@@ -64,9 +65,21 @@ enum flexran_err {
 //
 // Maintenance and discovery messages
 //
+enum flex_bs_capability {
+    LOPHY = 0;
+    HIPHY = 1;
+    LOMAC = 2;
+    HIMAC = 3;
+    RLC   = 4;
+    PDCP  = 5;
+    SDAP  = 6;
+    RRC   = 7;
+}
 
 message flex_hello {
-	optional flex_header header = 1;
+    optional flex_header header = 1;
+    optional uint64 bs_id = 2;        // Unique id to distinguish the eNB
+    repeated flex_bs_capability capabilities = 3;
 }
 
 message flex_echo_request {
@@ -131,7 +144,6 @@ message flex_enb_config_request {
 
 message flex_enb_config_reply {
 	optional flex_header header = 1;
-	optional uint64 eNB_id = 2;		// Unique id to distinguish the eNB
 	repeated flex_cell_config cell_config = 3;
         optional uint32 device_spec = 4;
 }
@@ -223,4 +235,6 @@ message flex_echo_reply_latency {
 	}
 }
 
-
+message flex_disconnect {
+        optional flex_header header = 1;
+}

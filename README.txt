@@ -17,7 +17,7 @@ openairinterface5g
 ├── maketags : Script to generate emacs tags
 ├── nfapi : Contains the NFAPI code. A local Readme file provides more details.
 ├── openair1 : 3GPP LTE Rel-10/12 PHY layer + PHY RF simulation. A local Readme file provides more details.
-├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
+├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation.
     ├── COMMON
     ├── DOCS
     ├── ENB_APP
@@ -61,3 +61,5 @@ v1.0.0 -> January 2019. This version first implements the architectural split de
             S1-flex has been introduced.
             New tools: config library, telnet server, ...
             A lot of bugfixes and a proper automated Continuous Integration process validates contributions.
+v1.0.1 -> February 2019: Bug fix for the UE L1 simulator.
+v1.0.2 -> February 2019: Full OAI support for 3.13.1 UHD

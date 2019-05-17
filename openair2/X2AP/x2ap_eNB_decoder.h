@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_decoder.h
+ * \brief x2ap decoder procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #ifndef X2AP_ENB_DECODER_H_
 #define X2AP_ENB_DECODER_H_
 
@@ -26,4 +33,3 @@ int x2ap_eNB_decode_pdu(X2AP_X2AP_PDU_t *pdu, const uint8_t *const buffer, uint3
 __attribute__ ((warn_unused_result));
 
 #endif /* X2AP_ENB_DECODER_H_ */
-

@@ -975,3 +975,4 @@ void install_schedule_handlers(IF_Module_t *if_inst)
   if_inst->PHY_config_req = phy_config_request;
   if_inst->schedule_response = schedule_response;
 }
+

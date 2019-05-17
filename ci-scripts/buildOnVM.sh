@@ -94,17 +94,24 @@ function build_on_vm {
         echo "############################################################"
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
+        acquire_vm_create_lock
         uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $VM_NAME --insecure
+
+        VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+        echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+        release_vm_create_lock
+    else
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $VM_NAME --insecure
+
+        VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+        echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
     fi
 
-    echo "Waiting for VM to be started"
-    uvt-kvm wait $VM_NAME --insecure
-
-    VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
-    echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
-
     echo "############################################################"
-    echo "Copying GIT repo into VM ($VM_NAME)" 
+    echo "Copying GIT repo into VM ($VM_NAME)"
     echo "############################################################"
     if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then
@@ -206,6 +213,6 @@ function build_on_vm {
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
         fi
     fi
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
 }

@@ -88,17 +88,17 @@ uint32_t crcbit (uint8_t * inputptr, int32_t octetlen, uint32_t poly)
 
  // Reference 38.212 V15.1.1 Section 5.1 (36-212 v8.6.0 , pp 8-9)
 // The highest degree is set by default
-// 1000 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1 
+// 1000 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
 static const uint32_t poly24a = 0x864cfb00;
-// 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1 
+// 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1
 static const uint32_t poly24b = 0x80006300;
-// 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1 
+// 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
 static const uint32_t poly16  = 0x10210000;
-// 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1 
+// 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
 static const uint32_t poly12  = 0x80F00000;
-// 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1 
+// 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
 static const uint32_t poly8   = 0x9B000000;
- 
+
 void crcTableInit (void)
 {
     uint8_t c = 0;

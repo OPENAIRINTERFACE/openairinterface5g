@@ -34,14 +34,19 @@ function top_usage {
 }
 
 function variant_usage {
+    echo " # OpenAirInterface Build Variants"
     echo "    --variant enb-usrp     OR -v1"
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
-    echo "    --variant l2-sim       OR -v9"
+    echo " # non-OSA Build Variants"
     echo "    --variant flexran-rtc  OR -v10"
+    echo " # OpenAirInterface Test Variants"
+    echo "    --variant l1-sim       OR -v20"
+    echo "    --variant rf-sim       OR -v21"
+    echo "    --variant l2-sim       OR -v22"
 }
 
 MY_DIR=$(dirname $(readlink -f $0))
@@ -69,7 +74,7 @@ VM_MEMORY=2048
 VM_CPU=4
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
-NB_PATTERN_FILES=4
+NB_PATTERN_FILES=7
 BUILD_OPTIONS="--eNB -w USRP"
 KEEP_VM_ALIVE=0
 RUN_OPTIONS="none"
@@ -231,7 +236,7 @@ case $key in
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--eNB -w USRP --mu"
     NBARGS=$[$NBARGS+256]
     shift
@@ -264,37 +269,29 @@ case $key in
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
     -v7)
     VM_NAME=ci-enb-ethernet
+    VM_MEMORY=4096
+    VM_CPU=4
     ARCHIVES_LOC=enb_eth
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    BUILD_OPTIONS="--eNB -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
     -v8)
     VM_NAME=ci-ue-ethernet
+    VM_MEMORY=4096
+    VM_CPU=4
     ARCHIVES_LOC=ue_eth
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v9)
-    VM_NAME=ci-l2-sim
-    VM_MEMORY=8192
-    VM_CPU=8
-    ARCHIVES_LOC=l2_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=4
-    BUILD_OPTIONS="--eNB -t ETHERNET"
-    RUN_OPTIONS="complex"
+    NB_PATTERN_FILES=10
+    BUILD_OPTIONS="--UE -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -307,6 +304,27 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
+    -v20)
+    VM_NAME=ci-l1-sim
+    ARCHIVES_LOC=l1_sim
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v21)
+    VM_NAME=ci-rf-sim
+    ARCHIVES_LOC=rf_sim
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v22)
+    VM_NAME=ci-l2-sim
+    ARCHIVES_LOC=l2_sim
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
     --variant)
     variant="$2"
     case $variant in
@@ -314,7 +332,7 @@ case $key in
         VM_NAME=ci-enb-usrp
         ARCHIVES_LOC=enb_usrp
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=4
+        NB_PATTERN_FILES=7
         BUILD_OPTIONS="--eNB -w USRP --mu"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -340,38 +358,31 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
-        VM_MEMORY=8192
+        VM_MEMORY=4096
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
         NBARGS=$[$NBARGS+256]
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet
+        VM_MEMORY=4096
+        VM_CPU=4
         ARCHIVES_LOC=enb_eth
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        BUILD_OPTIONS="--eNB -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         ue-ethernet)
         VM_NAME=ci-ue-ethernet
+        VM_MEMORY=4096
+        VM_CPU=4
         ARCHIVES_LOC=ue_eth
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        l2-sim)
-        VM_NAME=ci-l2-sim
-        VM_MEMORY=8192
-        VM_CPU=8
-        ARCHIVES_LOC=l2_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=4
-        BUILD_OPTIONS="--eNB -t ETHERNET"
-        RUN_OPTIONS="complex"
+        NB_PATTERN_FILES=10
+        BUILD_OPTIONS="--UE -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         flexran-rtc)
@@ -380,6 +391,24 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="cmake . && make -j2"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        l1-sim)
+        VM_NAME=ci-l1-sim
+        ARCHIVES_LOC=l1_sim
+        RUN_OPTIONS="complex"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        rf-sim)
+        VM_NAME=ci-rf-sim
+        ARCHIVES_LOC=rf_sim
+        RUN_OPTIONS="complex"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        l2-sim)
+        VM_NAME=ci-l2-sim
+        ARCHIVES_LOC=l2_sim
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         *)
@@ -510,13 +539,16 @@ else
     fi
 fi
 
-# Checking uvt-kvm is installed
-UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
-if [ $UVT_KVM_PATH -eq 0 ]
+if [ $REPORT_BUILD_CMD -ne 1 ] && [ $REPORT_TEST_CMD -ne 1 ]
 then
-    echo "Error: uvt-kvm is not installed"
-    top_usage
-    exit 1
+    # Checking uvt-kvm is installed
+    UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
+    if [ $UVT_KVM_PATH -eq 0 ]
+    then
+        echo "Error: uvt-kvm is not installed"
+        top_usage
+        exit 1
+    fi
 fi
 
 if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]
@@ -533,11 +565,23 @@ ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 STATUS=0
 if [ $CREATE_CMD -eq 1 ]
 then
-    create_vm
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        create_vm
+    fi
 fi
 if [ $BUILD_CMD -eq 1 ]
 then
-    build_on_vm
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        build_on_vm
+    fi
     if [ $DAEMON -eq 0 ] && [ $STATUS -eq 0 ]
     then
         check_on_vm_build
@@ -545,7 +589,13 @@ then
 fi
 if [ $WAIT_CMD -eq 1 ]
 then
-    wait_on_vm_build
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        wait_on_vm_build
+    fi
     if [ $STATUS -eq 0 ]
     then
         check_on_vm_build
@@ -553,6 +603,24 @@ then
 fi
 if [ $TEST_CMD -eq 1 ]
 then
+    # Comment out or delete the following lines if you want to run L1-simulator in your branch and/or merge request
+    if [[ $VM_NAME =~ .*-l1-sim.* ]]
+    then
+        echo "Currently L1-Simulator Testing is not implemented / enabled"
+        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
+        echo "STATUS seems OK"
+        exit $STATUS
+    fi
+    # end to comment out for L1-simulator
+    # Comment out or delete the following lines if you want to run RF-simulator in your branch and/or merge request
+    if [[ $VM_NAME =~ .*-rf-sim.* ]]
+    then
+        echo "Currently RF-Simulator Testing is not implemented / enabled"
+        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
+        echo "STATUS seems OK"
+        exit $STATUS
+    fi
+    # end to comment out for RF-simulator
     ARCHIVES_LOC=${ARCHIVES_LOC}/test
     run_test_on_vm
 fi

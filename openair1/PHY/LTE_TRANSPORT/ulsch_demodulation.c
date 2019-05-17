@@ -687,7 +687,7 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0[i],1),_mm_srai_epi16(ul_ch_mag128_1[i],1));
       ul_ch_mag128_0b[i]   = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0b[i],1),_mm_srai_epi16(ul_ch_mag128_1b[i],1));
       rxdataF_comp128_0[i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i*)&jitterc[0]));
-
+   }
 #elif defined(__arm__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
@@ -702,10 +702,10 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128_0[i]    = vhaddq_s16(ul_ch_mag128_0[i],ul_ch_mag128_1[i]);
       ul_ch_mag128_0b[i]   = vhaddq_s16(ul_ch_mag128_0b[i],ul_ch_mag128_1b[i]);
       rxdataF_comp128_0[i] = vqaddq_s16(rxdataF_comp128_0[i],(*(int16x8_t*)&jitterc[0]));
-
+    }
 
 #endif
-    }
+
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -1127,7 +1127,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   int16_t *llrp;
   int subframe = proc->subframe_rx;
 
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (ulsch[UE_id]->ue_type > 0) harq_pid =0;
   else
 #endif

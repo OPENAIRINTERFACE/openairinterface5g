@@ -116,7 +116,7 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
     
     for (i=0;i<4;i++) {
       resampling_factor[i] = (openair0_exmimo_pci[card].exmimo_config_ptr)->framing.resampling_factor[i];
-      printf("card %d, ant %d, resampling %d\n",card,i,resampling_factor[i]);
+      printf("card %d, ant %d, resampling %u\n",card,i,resampling_factor[i]);
     }
     
     for (i=0;i<numcols;i++){

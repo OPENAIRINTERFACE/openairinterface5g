@@ -32,9 +32,11 @@
 #include "as_message.h"
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
-  #include "LTE_SystemInformationBlockType2.h"
+#include "f1ap_messages_types.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "LTE_SL-OffsetIndicator-r12.h"
 #include "LTE_SubframeBitmapSL-r12.h"
+#include "LTE_DRX-Config.h"
 #include "LTE_SL-CP-Len-r12.h"
 #include "LTE_SL-PeriodComm-r12.h"
 #include "LTE_SL-DiscResourcePool-r12.h"
@@ -80,6 +82,8 @@
 #define NAS_CONN_RELEASE_IND(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_release_ind
 #define NAS_UPLINK_DATA_CNF(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_cnf
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
+
+#define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
 
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
@@ -138,6 +142,14 @@ typedef struct RadioResourceConfig_s {
   long                    bcch_modificationPeriodCoeff;
   long                    pcch_defaultPagingCycle;
   long                    pcch_nB;
+  LTE_DRX_Config_PR                                   drx_Config_present;
+  long                                                drx_onDurationTimer;
+  long                                                drx_InactivityTimer;
+  long                                                drx_RetransmissionTimer;
+  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR  drx_longDrx_CycleStartOffset_present;
+  long                                                drx_longDrx_CycleStartOffset;
+  long                                                drx_shortDrx_Cycle;
+  long                                                drx_shortDrx_ShortCycleTimer;
   long                    ue_TimersAndConstants_t300;
   long                    ue_TimersAndConstants_t301;
   long                    ue_TimersAndConstants_t310;
@@ -146,7 +158,7 @@ typedef struct RadioResourceConfig_s {
   long                    ue_TimersAndConstants_n311;
   long                    ue_TransmissionMode;
   long                    ue_multiple_max;
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //SIB2 BR Options
   long*			  preambleTransMax_CE_r13;
   BOOLEAN_t		  prach_ConfigCommon_v1310;
@@ -190,7 +202,7 @@ typedef struct RrcConfigurationReq_s {
 
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
-   
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   //MIB
   long	 		  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
@@ -253,11 +265,11 @@ typedef struct RrcConfigurationReq_s {
   bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
   long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
   long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-  long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
-  long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
-  long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
+  long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];
+  long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
+  long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
   long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-  long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+  long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];
   long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
   long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
   long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
@@ -399,5 +411,11 @@ typedef nas_establish_cnf_t     NasConnEstabCnf;
 typedef nas_release_ind_t       NasConnReleaseInd;
 typedef ul_info_transfer_cnf_t  NasUlDataCnf;
 typedef dl_info_transfer_ind_t  NasDlDataInd;
+
+// eNB: realtime -> RRC messages
+typedef struct rrc_subframe_process_s {
+  protocol_ctxt_t ctxt;
+  int             CC_id;
+} RrcSubframeProcess;
 
 #endif /* RRC_MESSAGES_TYPES_H_ */

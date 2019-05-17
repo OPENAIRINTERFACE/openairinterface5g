@@ -46,7 +46,7 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
 int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 
 /* Receive a message from a given channel */
-int flexran_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info);
+int flexran_agent_async_msg_recv(void **data, int *priority, void *channel_info);
 
 /* Release a channel */
 void flexran_agent_async_release(flexran_agent_channel_t *channel);

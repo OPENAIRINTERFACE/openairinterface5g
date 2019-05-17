@@ -55,7 +55,7 @@
 
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "dummy_functions.c"
-
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/config/config_load_configmodule.h"
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -81,7 +81,7 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
-int nfapi_mode = 0;
+
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
@@ -349,19 +349,6 @@ int main(int argc, char **argv) {
   char input_val_str[50],input_val_str2[50];
   //  FILE *rx_frame_file;
   FILE *csv_fdUL=NULL;
-  /*
-    FILE *fperen=NULL;
-    char fperen_name[512];
-
-    FILE *fmageren=NULL;
-    char fmageren_name[512];
-
-    FILE *flogeren=NULL;
-    char flogeren_name[512];
-  */
-  /* FILE *ftxlev;
-     char ftxlev_name[512];
-  */
   char csv_fname[512];
   static int n_frames=5000;
   static int n_ch_rlz = 1;
@@ -405,7 +392,6 @@ int main(int argc, char **argv) {
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
   cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
-
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
               "cannot load configuration module, exiting\n");
@@ -456,10 +442,8 @@ int main(int argc, char **argv) {
     { "help", "display help and exit", PARAMFLAG_BOOL,  iptr:&help, defintval:0, TYPE_INT, 0 },
     { "", "",0,  iptr:NULL, defintval:0, TYPE_INT, 0 },
   };
-  struct option * long_options = parse_oai_options(options); 
-
+  struct option *long_options = parse_oai_options(options);
   int option_index;
-
   int res;
 
   while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) == 0) {
@@ -467,125 +451,125 @@ int main(int argc, char **argv) {
       if (long_options[option_index].has_arg==no_argument)
         *(bool *)options[option_index].iptr=1;
       else switch (options[option_index].type) {
-	case TYPE_INT:
-	  *(int *)options[option_index].iptr=atoi(optarg);
-	  break;
+          case TYPE_INT:
+            *(int *)options[option_index].iptr=atoi(optarg);
+            break;
 
-	case TYPE_DOUBLE:
-	  *(double *)options[option_index].dblptr=atof(optarg);
-	  break;
+          case TYPE_DOUBLE:
+            *(double *)options[option_index].dblptr=atof(optarg);
+            break;
 
-	case TYPE_UINT8:
-	  *(uint8_t *)options[option_index].dblptr=atoi(optarg);
-	  break;
-	  	    
-	case TYPE_UINT16:
-	  *(uint16_t *)options[option_index].dblptr=atoi(optarg);
-	  break;
-	  
-	default:
-	  printf("not decoded type.\n");
-	  exit(1);
+          case TYPE_UINT8:
+            *(uint8_t *)options[option_index].dblptr=atoi(optarg);
+            break;
+
+          case TYPE_UINT16:
+            *(uint16_t *)options[option_index].dblptr=atoi(optarg);
+            break;
+
+          default:
+            printf("not decoded type.\n");
+            exit(1);
         }
 
       continue;
     }
 
     switch (long_options[option_index].name[0]) {
-    case 'T':
-      tdd_config=atoi(optarg);
-      frame_type=TDD;
-      break;
+      case 'T':
+        tdd_config=atoi(optarg);
+        frame_type=TDD;
+        break;
 
-    case 'a':
-      channel_model = AWGN;
-      chMod = 1;
-      break;
+      case 'a':
+        channel_model = AWGN;
+        chMod = 1;
+        break;
 
-    case 'g':
-      strncpy(channel_model_input,optarg,9);
-      struct tmp {
-	char opt;
-	int m;
-	int M;
-      }
-      tmp[]= {
-	{'A',SCM_A,2},
-	{'B',SCM_B,3},
-	{'C',SCM_C,4},
-	{'D',SCM_D,5},
-	{'E',EPA,6},
-	{'G',ETU,8},
-	{'H',Rayleigh8,9},
-	{'I',Rayleigh1,10},
-	{'J',Rayleigh1_corr,11},
-	{'K',Rayleigh1_anticorr,12},
-	{'L',Rice8,13},
-	{'M',Rice1,14},
-	{'N',AWGN,1},
-	{0,0,0}
-      };
-      struct tmp *ptr;
+      case 'g':
+        strncpy(channel_model_input,optarg,9);
+        struct tmp {
+          char opt;
+          int m;
+          int M;
+        }
+        tmp[]= {
+          {'A',SCM_A,2},
+          {'B',SCM_B,3},
+          {'C',SCM_C,4},
+          {'D',SCM_D,5},
+          {'E',EPA,6},
+          {'G',ETU,8},
+          {'H',Rayleigh8,9},
+          {'I',Rayleigh1,10},
+          {'J',Rayleigh1_corr,11},
+          {'K',Rayleigh1_anticorr,12},
+          {'L',Rice8,13},
+          {'M',Rice1,14},
+          {'N',AWGN,1},
+          {0,0,0}
+        };
+        struct tmp *ptr;
 
-      for (ptr=tmp; ptr->opt!=0; ptr++)
-	if ( ptr->opt == optarg[0] ) {
-	  channel_model=ptr->m;
-	  chMod=ptr->M;
-	  break;
-	}
+        for (ptr=tmp; ptr->opt!=0; ptr++)
+          if ( ptr->opt == optarg[0] ) {
+            channel_model=ptr->m;
+            chMod=ptr->M;
+            break;
+          }
 
-      AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
-      break;
+        AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
+        break;
 
-    case 'x':
-      transmission_m=atoi(optarg);
-      AssertFatal(transmission_m==1 || transmission_m==2,
-		  "Unsupported transmission mode %d\n",transmission_m);
-      break;
+      case 'x':
+        transmission_m=atoi(optarg);
+        AssertFatal(transmission_m==1 || transmission_m==2,
+                    "Unsupported transmission mode %d\n",transmission_m);
+        break;
 
-    case 'r':
-      nb_rb = atoi(optarg);
-      nb_rb_set = 1;
-      break;
+      case 'r':
+        nb_rb = atoi(optarg);
+        nb_rb_set = 1;
+        break;
 
       //case 'c':
       //  cyclic_shift = atoi(optarg);
       //  break;
 
-    case 'i':
-      input_fdUL = fopen(optarg,"r");
-      printf("Reading in %s (%p)\n",optarg,input_fdUL);
-      AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
-      break;
+      case 'i':
+        input_fdUL = fopen(optarg,"r");
+        printf("Reading in %s (%p)\n",optarg,input_fdUL);
+        AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
+        break;
 
-    case 'A':
-      beta_ACK = atoi(optarg);
-      AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
-      break;
+      case 'A':
+        beta_ACK = atoi(optarg);
+        AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
+        break;
 
-    case 'C':
-      beta_CQI = atoi(optarg);
-      AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
-      break;
+      case 'C':
+        beta_CQI = atoi(optarg);
+        AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
+        break;
 
-    case 'R':
-      beta_RI = atoi(optarg);
-      AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
-      break;
+      case 'R':
+        beta_RI = atoi(optarg);
+        AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
+        break;
 
-    case 'P':
-      dump_perf=1;
-      opp_enabled=1;
-      break;
+      case 'P':
+        dump_perf=1;
+        opp_enabled=1;
+        break;
 
-    case 'L':
-      set_parallel_conf(optarg);
-      break;
-      
-    default:
-      printf("Wrong option: %s\n",long_options[option_index].name);
-      exit(1);
-      break;
+      case 'L':
+        set_parallel_conf(optarg);
+        break;
+
+      default:
+        printf("Wrong option: %s\n",long_options[option_index].name);
+        exit(1);
+        break;
     }
   }
 
@@ -594,14 +578,15 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-
   if (help || verbose )
-     display_options_values(options, true);
+    display_options_values(options, true);
+
   if (help)
     exit(0);
-  
+
   if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
     set_worker_conf("WORKER_ENABLE");
+
   RC.nb_L1_inst = 1;
   RC.nb_RU = 1;
   lte_param_init(&eNB,&UE,&ru,
@@ -619,7 +604,7 @@ int main(int argc, char **argv) {
                  threequarter_fs,
                  osf,
                  0);
-  RC.eNB = (PHY_VARS_eNB ***)malloc(sizeof(PHY_VARS_eNB **));
+  RC.eNB = (PHY_VARS_eNB ** *)malloc(sizeof(PHY_VARS_eNB **));
   RC.eNB[0] = (PHY_VARS_eNB **)malloc(sizeof(PHY_VARS_eNB *));
   RC.ru = (RU_t **)malloc(sizeof(RC.ru));
   RC.eNB[0][0] = eNB;
@@ -637,7 +622,7 @@ int main(int argc, char **argv) {
   eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
   printf("lte_param_init done\n");
   // for a call to phy_reset_ue later we need PHY_vars_UE_g allocated and pointing to UE
-  PHY_vars_UE_g = (PHY_VARS_UE ***)malloc(sizeof(PHY_VARS_UE **));
+  PHY_vars_UE_g = (PHY_VARS_UE ** *)malloc(sizeof(PHY_VARS_UE **));
   PHY_vars_UE_g[0] = (PHY_VARS_UE **) malloc(sizeof(PHY_VARS_UE *));
   PHY_vars_UE_g[0][0] = UE;
 
@@ -822,7 +807,7 @@ int main(int argc, char **argv) {
   if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
-  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
+  printf("Rate = %f (mod %d), coded bits %u\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
   for (ch_realization=0; ch_realization<n_ch_rlz; ch_realization++) {
     /*
@@ -884,7 +869,7 @@ int main(int argc, char **argv) {
         i=0;
 
         while (!feof(input_fdUL)) {
-          ret=fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+          ret=fscanf(input_fdUL,"%49s %49s",input_val_str,input_val_str2);//&input_val1,&input_val2);
 
           if (ret != 2) printf("ERROR: error reading file\n");
 
@@ -971,7 +956,7 @@ int main(int argc, char **argv) {
           eNB->ulsch[0]->harq_processes[harq_pid]->round=round;
           UE->ulsch[0]->harq_processes[harq_pid]->round=round;
 
-          if (n_frames==1) printf("filling ulsch: Trial %d : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_tx,proc_rxtx_ue->frame_tx);
+          if (n_frames==1) printf("filling ulsch: Trial %u : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_tx,proc_rxtx_ue->frame_tx);
 
           round_trials[round]++;
           UL_req.sfn_sf = (1<<4)+subframe;
@@ -1062,10 +1047,10 @@ int main(int argc, char **argv) {
           sigma2_dB = N0;//-10*log10(UE->frame_parms.ofdm_symbol_size/(UE->frame_parms.N_RB_DL*12));//10*log10((double)tx_lev)  +10*log10(UE->frame_parms.ofdm_symbol_size/(UE->frame_parms.N_RB_DL*12)) - SNR;
           sigma2 = pow(10,sigma2_dB/10);
           // compute tx_gain to achieve target SNR (per resource element!)
-          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);//*(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
+          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);// *(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
 
           if (n_frames==1)
-            printf("tx_lev = %d (%d.%d dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
+            printf("tx_lev = %u (%u.%u dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
 
           // fill measurement symbol (19) with noise
           for (i=0; i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
@@ -1100,7 +1085,7 @@ int main(int argc, char **argv) {
                 // calculate freq domain representation to compute SINR
                 freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1);
                 // snr=pow(10.0,.1*SNR);
-                fprintf(csv_fdUL,"%f,%d,%d,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
+                fprintf(csv_fdUL,"%f,%u,%u,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
 
                 //fprintf(csv_fdUL,"%f,",SNR);
                 for (u=0; u<12*nb_rb; u++) {
@@ -1156,12 +1141,12 @@ int main(int argc, char **argv) {
             if (eNB->frame_parms.nb_antennas_rx>1) LOG_M("rxsig1UL.m","rxs1", &ru->common.rxdata[1][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
-	  start_meas(&eNB->phy_proc_rx);
+          start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
-	  stop_meas(&eNB->phy_proc_rx);
-	  
+          stop_meas(&eNB->phy_proc_rx);
+
           if (cqi_flag > 0) {
             cqi_error = 0;
 
@@ -1226,11 +1211,10 @@ int main(int argc, char **argv) {
               }
 
               dump_ulsch(eNB,eNB->proc.frame_rx,subframe,0,round);
-
-              if (round == 4) exit(-1);
+              round=5;
             }
 
-            if (n_frames==1) printf("round %d errors %d/%d\n",round,errs[round],trials);
+            if (n_frames==1) printf("round %d errors %u/%u\n",round,errs[round],trials);
 
             round++;
 
@@ -1288,7 +1272,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
-      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %d dB (gain %f dB), N0W %f dB, I0 %d dB, delta_IF %d [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %d dB, delta_IF %d [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,
              20*log10(tx_gain),
@@ -1300,7 +1284,7 @@ int main(int argc, char **argv) {
              eNB->measurements.n0_power_dB[0],
              eNB->measurements.n0_power_dB[1]);
       effective_rate = ((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
-      printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e) => effective rate %f (%3.1f%%,%f,%f), normalized delay %f (%f)\n",
+      printf("Errors (%u/%u %u/%u %u/%u %u/%u), Pe = (%e,%e,%e,%e) => effective rate %f (%3.1f%%,%f,%f), normalized delay %f (%f)\n",
              errs[0],
              round_trials[0],
              errs[1],
@@ -1322,16 +1306,16 @@ int main(int argc, char **argv) {
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
       if (cqi_flag >0) {
-        printf("CQI errors %d/%d,false positives %d/%d, CQI false negatives %d/%d\n",
+        printf("CQI errors %d/%u,false positives %d/%u, CQI false negatives %d/%u\n",
                cqi_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
                cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
                cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       }
 
       if (eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0] > 0)
-        printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
+        printf("ACK/NAK errors %d/%u\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
 
-      fprintf(bler_fd,"%f;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
+      fprintf(bler_fd,"%f;%d;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u\n",
               SNR,
               mcs,
               nb_rb,
@@ -1358,15 +1342,15 @@ int main(int argc, char **argv) {
         printStatIndent(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
         printStatIndent(&UE->ulsch_interleaving_stats,"ULSCH sub-block interleaving");
         printStatIndent(&UE->ulsch_multiplexing_stats,"ULSCH multiplexing time");
-	printf("\n");
+        printf("\n");
         printDistribution(&eNB->phy_proc_rx,table_rx,"Total PHY proc rx subframe");
         printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"|__ OFDM_demod time");
         printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"|__ ULSCH demodulation time");
-	printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
+        printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
         printf("     (%.2f Mbit/s, avg iter %.2f, max %.2f)\n",
                UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,
-	       (double)iter_trials,
-	       (double)eNB->ulsch_decoding_stats.max*timeBase);
+               (double)iter_trials,
+               (double)eNB->ulsch_decoding_stats.max*timeBase);
         printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
         printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
         printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
@@ -1404,7 +1388,7 @@ int main(int argc, char **argv) {
 
       if ( (test_perf != 0) && (100 * effective_rate > test_perf )) {
         //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3\n");
-        fprintf(time_meas_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;",
+        fprintf(time_meas_fd,"%f;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;",
                 SNR,
                 mcs,
                 eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
@@ -1418,7 +1402,7 @@ int main(int argc, char **argv) {
                 errs[3],
                 round_trials[3]);
         //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3;ND;\n");
-        fprintf(time_meas_fd,"%f;%d;%d;%f;%2.1f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%f;%f;",
+        fprintf(time_meas_fd,"%f;%d;%d;%f;%2.1f;%f;%u;%u;%u;%u;%u;%u;%u;%u;%e;%e;%e;%e;%f;%f;",
                 SNR,
                 mcs,
                 eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
@@ -1463,34 +1447,34 @@ int main(int argc, char **argv) {
                );
         //fprintf(time_meas_fd,"UE_PROC_TX_STD;UE_PROC_TX_MAX;UE_PROC_TX_MIN;UE_PROC_TX_MED;UE_PROC_TX_Q1;UE_PROC_TX_Q3;UE_PROC_TX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",
-		squareRoot(&UE->phy_proc_tx), t_tx_max, t_tx_min, median(table_tx), q1(table_tx), q3(table_tx), n_tx_dropped);
+                squareRoot(&UE->phy_proc_tx), t_tx_max, t_tx_min, median(table_tx), q1(table_tx), q3(table_tx), n_tx_dropped);
         //fprintf(time_meas_fd,"IFFT;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ofdm_mod_stats),
+                squareRoot(&UE->ofdm_mod_stats),
                 median(table_tx_ifft),q1(table_tx_ifft),q3(table_tx_ifft));
         //fprintf(time_meas_fd,"MOD;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ulsch_modulation_stats),
+                squareRoot(&UE->ulsch_modulation_stats),
                 median(table_tx_mod), q1(table_tx_mod), q3(table_tx_mod));
         //fprintf(time_meas_fd,"ENC;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ulsch_encoding_stats),
+                squareRoot(&UE->ulsch_encoding_stats),
                 median(table_tx_enc),q1(table_tx_enc),q3(table_tx_enc));
         //fprintf(time_meas_fd,"eNB_PROC_RX_STD;eNB_PROC_RX_MAX;eNB_PROC_RX_MIN;eNB_PROC_RX_MED;eNB_PROC_RX_Q1;eNB_PROC_RX_Q3;eNB_PROC_RX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",
-		squareRoot(&eNB->phy_proc_rx), t_rx_max, t_rx_min,
+                squareRoot(&eNB->phy_proc_rx), t_rx_max, t_rx_min,
                 median(table_rx), q1(table_rx), q3(table_rx), n_rx_dropped);
         //fprintf(time_meas_fd,"FFT;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&ru->ofdm_demod_stats),
+                squareRoot(&ru->ofdm_demod_stats),
                 median(table_rx_fft), q1(table_rx_fft), q3(table_rx_fft));
         //fprintf(time_meas_fd,"DEMOD;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&eNB->ulsch_demodulation_stats),
+                squareRoot(&eNB->ulsch_demodulation_stats),
                 median(table_rx_demod), q1(table_rx_demod), q3(table_rx_demod));
         //fprintf(time_meas_fd,"DEC;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f\n",
-		squareRoot(&eNB->ulsch_decoding_stats),
+                squareRoot(&eNB->ulsch_decoding_stats),
                 median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
         break;
@@ -1523,5 +1507,7 @@ int main(int argc, char **argv) {
   return(0);
 }
 
-
-
+/* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+uint64_t get_softmodem_optmask(void) {
+  return 0;
+}

@@ -46,6 +46,8 @@ TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,          1000)
 // GTP_V1U task
 TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,          1000)
 TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,          200)
+TASK_DEF(TASK_CU_F1,     TASK_PRIORITY_MED,          200)
+TASK_DEF(TASK_DU_F1,     TASK_PRIORITY_MED,          200)
 ///   X2ap task, acts as both source and target
 TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,          200)
 ///   Sctp task (Used by both S1AP and X2AP)
@@ -54,7 +56,7 @@ TASK_DEF(TASK_SCTP,     TASK_PRIORITY_MED,          200)
 TASK_DEF(TASK_ENB_APP,  TASK_PRIORITY_MED,          200)
 ///   eNB Agent task
 TASK_DEF(TASK_FLEXRAN_AGENT,  TASK_PRIORITY_MED,          200)
-
+TASK_DEF(TASK_PROTO_AGENT,  TASK_PRIORITY_MED,          200)
 // UE tasks and sub-tasks:
 
 ///   Radio Resource Control task

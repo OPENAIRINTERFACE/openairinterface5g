@@ -40,6 +40,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/eNB_scheduler_fairRR.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
@@ -49,7 +50,7 @@
 
 #include "T.h"
 
-extern uint8_t nfapi_mode;
+
 #ifdef PHY_TX_THREAD
   extern volatile int16_t phy_tx_txdataF_end;
   extern int oai_exit;
@@ -295,7 +296,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -418,7 +420,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -541,7 +544,8 @@ void dlsch_scheduler_pre_ue_select_fairRR(
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_NONE);
+                            S_DL_NONE,
+                            rnti);
           end_flag[CC_id] = 1;
           break;
         }
@@ -810,7 +814,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
   unsigned char ta_len = 0;
   unsigned char sdu_lcids[NB_RB_MAX], lcid, offset, num_sdus = 0;
   uint16_t nb_rb, nb_rb_temp, nb_available_rb;
-  uint16_t TBS, j, sdu_lengths[NB_RB_MAX], rnti, padding = 0, post_padding = 0;
+  uint16_t TBS, j, sdu_lengths[NB_RB_MAX], padding = 0, post_padding = 0;
+  rnti_t rnti = 0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char round = 0;
   unsigned char harq_pid = 0;
@@ -1007,13 +1012,13 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
          DevCheck(((eNB_UE_stats->dl_cqi < MIN_CQI_VALUE) || (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
          eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
        */
-      if (nfapi_mode) {
+      if (NFAPI_MODE != NFAPI_MONOLITHIC) {
         eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       } else {
         eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       }
 
-      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;  //cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+      //eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
       // store stats
       //UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->dl_cqi;
@@ -1215,8 +1220,11 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           }
 
           add_ue_dlsch_info(module_idP,
-                            CC_id, UE_id, subframeP,
-                            S_DL_SCHEDULED);
+                            CC_id,
+                            UE_id,
+                            subframeP,
+                            S_DL_SCHEDULED,
+                            rnti);
           //eNB_UE_stats->dlsch_trials[round]++;
           UE_list->eNB_UE_stats[CC_id][UE_id].
           num_retransmission += 1;
@@ -1444,7 +1452,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                             MBMS_FLAG_NO,
                                             lcid,
                                             TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                             , 0, 0
 #endif
                                            );
@@ -1465,7 +1473,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                       lcid,
                                       TBS,  //not used
                                       (char *)&dlsch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                       , 0, 0
 #endif
                                                       );
@@ -1678,10 +1686,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
           if (opt_enabled == 1) {
             trace_pdu(DIRECTION_DOWNLINK, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                      TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP,UE_id),
+                      TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP, UE_id),
                       eNB->frame, eNB->subframe,0,0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-                  module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
+                  module_idP, CC_id, frameP, UE_RNTI(module_idP, UE_id), TBS);
           }
 
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
@@ -1691,7 +1699,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                             CC_id,
                             UE_id,
                             subframeP,
-                            S_DL_SCHEDULED);
+                            S_DL_SCHEDULED,
+                            rnti);
           // store stats
           eNB->eNB_stats[CC_id].dlsch_bytes_tx+=sdu_length_total;
           eNB->eNB_stats[CC_id].dlsch_pdus_tx+=1;
@@ -2583,7 +2592,7 @@ schedule_ulsch_fairRR(module_id_t module_idP, frame_t frameP,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
             0,//tdd_mapindex
-            frameP); //Nf
+            frameP); //Nf --> shouldn't it be sched_frame ???
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].nb_rb = 6;
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].UE_id = -1;
       ulsch_ue_select[CC_id].ue_num++;
@@ -2985,10 +2994,10 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           last_ulsch_ue_id[CC_id] = ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id;
         }
       } else if (ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_RETRANS) { // round > 0 => retransmission
-        T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
-          T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-          T_INT(round));
         round = UE_sched_ctrl->round_UL[CC_id][harq_pid];
+        T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
+          T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb), T_INT(ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb),
+          T_INT(round));
         UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
         UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
         uint8_t mcs_rv = 0;

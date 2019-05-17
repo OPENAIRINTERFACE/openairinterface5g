@@ -130,7 +130,7 @@ ccodedot11_encode (unsigned int numbytes,
             *outPtr++ = (out>>1)&1;
 
 #ifdef DEBUG_CCODE
-          printf("%d: %u -> %d (%u)\n",dummy,state,out,ccodedot11_table[state]);
+          printf("%u: %u -> %d (%u)\n",dummy,state,out,ccodedot11_table[state]);
           dummy+=2;
 #endif //DEBUG_CCODE      
           bit_index=(bit_index==0)?1:0;

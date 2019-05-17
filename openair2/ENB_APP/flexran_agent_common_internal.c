@@ -159,7 +159,7 @@ int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
       }
       // Check what key needs to be set
       // use eNB egistered
-      if (mac_agent_registered[mod_id]) {
+      if (flexran_agent_get_mac_xface(mod_id)) {
 	LOG_I(ENB_APP, "Setting parameter for eNB %s\n", event.data.scalar.value);
 	if (strcmp((char *) event.data.scalar.tag, YAML_INT_TAG) == 0) { // if int 
 	  if ((strtol((char *) event.data.scalar.value, &endptr, 10))== mod_id ) { // enb_id == mod_id: right enb instance to be configured
@@ -542,7 +542,7 @@ int apply_parameter_modification(void *parameter, yaml_parser_t *parser) {
 
 void initiate_soft_restart(module_id_t mod_id, Protocol__FlexCellConfig *c)
 {
-  uint8_t cc_id = c->has_cell_id ? c->cell_id : 0;
+  const uint8_t cc_id = 0;
   if (c->has_eutra_band) {
     flexran_agent_set_operating_eutra_band(mod_id, cc_id, c->eutra_band);
     LOG_I(ENB_APP, "Setting eutra_band to %d\n", c->eutra_band);

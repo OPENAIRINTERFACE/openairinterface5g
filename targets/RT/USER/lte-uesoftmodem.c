@@ -68,6 +68,7 @@
 #include "PHY_INTERFACE/phy_interface_vars.h"
 
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
@@ -109,11 +110,9 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0;
-#ifdef PDCP_USE_NETLINK
+
 #ifdef UESIM_EXPANSION
-uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
+  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
 uint16_t sf_ahead=2;
 int tddflag;
@@ -143,7 +142,7 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
-int simL1flag = 0;
+
 int snr_dB=25;
 
 runmode_t mode = normal_txrx;
@@ -202,7 +201,6 @@ extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;
-
 
 
 char *usrp_args=NULL;
@@ -324,12 +322,10 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-#if defined(ENABLE_ITTI)
 
   if(PHY_vars_UE_g != NULL )
     itti_terminate_tasks (TASK_UNKNOWN);
 
-#endif
   exit(1);
 }
 
@@ -406,6 +402,8 @@ static void get_options(void) {
   char *loopfile=NULL;
   int dumpframe;
   int timingadv;
+  uint8_t nfapi_mode;
+  int simL1flag ;
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
@@ -416,6 +414,10 @@ static void get_options(void) {
   paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
+  nfapi_setmode(nfapi_mode);
+
+  if (simL1flag)
+    set_softmodem_optmask(SOFTMODEM_SIML1_BIT);
 
   if (loopfile != NULL) {
     printf("Input file for hardware emulation: %s",loopfile);
@@ -448,7 +450,7 @@ static void get_options(void) {
   }
 
   UE_scan=0;
-   
+
   if (tddflag > 0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       frame_parms[CC_id]->frame_type = TDD;
@@ -490,16 +492,6 @@ static void get_options(void) {
     rx_gain[0][CC_id] = rx_gain[0][0];
     tx_gain[0][CC_id] = tx_gain[0][0];
   }
-
-  /*
-  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
-    // Here the configuration file is the XER encoded UE capabilities
-    // Read it in and store in asn1c data structures
-    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
-    printf("%s\n",uecap_xer);
-    if(nfapi_mode!=3)
-      uecap_xer_in=1;
-  } *//* UE with config file  */
 }
 
 
@@ -637,10 +629,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 
 
 
-
-#if defined(ENABLE_ITTI)
-/*
- * helper function to terminate a certain ITTI task
+/* helper function to terminate a certain ITTI task
  */
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
@@ -648,11 +637,6 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
   msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
-
-
-
-#endif
-
 
 
 static inline void wait_nfapi_init(char *thread_name) {
@@ -675,16 +659,29 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
+void init_pdcp(void) {
+  uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
+
+  if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+  }
+
+  if (IS_SOFTMODEM_NOKRNMOD)
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+
+  pdcp_module_init(pdcp_initmask);
+  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+}
+
 int main( int argc, char **argv ) {
 #if defined (XFORMS)
   void *status;
 #endif
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef PDCP_USE_NETLINK
 #ifdef UESIM_EXPANSION
   memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
 #endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
@@ -693,11 +690,11 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
   int ret;
 #endif
+  configmodule_interface_t *config_mod;
+  start_background_system();
+  config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
 
-   start_background_system();
-
-  
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
  
@@ -710,38 +707,29 @@ int main( int argc, char **argv ) {
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
   get_options ();
+
+  if (is_nos1exec(argv[0]) )
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
 
-  if (NB_UE_INST > 1 && simL1flag != 1 && nfapi_mode != 3) {
+  if (NB_UE_INST > 1 && (!IS_SOFTMODEM_SIML1)  && NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
     abort();
   }
 
-
-  printf("NFAPI_MODE value: %d \n", nfapi_mode);
-
   // Checking option of nums_ue_thread.
-  if(NB_THREAD_INST < 1){
+  if(NB_THREAD_INST < 1) {
     printf("Running with 0 UE rxtx thread, exiting.\n");
     abort();
   }
+
   // Checking option's relation between nums_ue_thread and num-ues
-  if(NB_UE_INST <NB_THREAD_INST ){
+  if(NB_UE_INST <NB_THREAD_INST ) {
     printf("Number of UEs < number of UE rxtx threads, exiting.\n");
     abort();
   }
-  // Not sure if the following is needed here
-  /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
-      if (UE_flag == 0) {
-        fprintf(stderr,"Getting configuration failed\n");
-        exit(-1);
-      }
-      else {
-        printf("Setting nfapi mode to UE_STUB_OFFNET\n");
-        nfapi_mode = 4;
-      }
-    }*/
-
 
 #if T_TRACER
   T_Config_Init();
@@ -751,7 +739,6 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-#if defined(ENABLE_ITTI)
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
@@ -761,22 +748,15 @@ int main( int argc, char **argv ) {
   }
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
   init_opt();
-#ifdef PDCP_USE_NETLINK
-  printf("PDCP netlink\n");
-  netlink_init();
-#if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
-#endif
-#endif
+
+  init_pdcp();
+
   //TTN for D2D
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");
   pdcp_pc5_socket_init();
-#endif
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
   signal(SIGINT, signal_handler);
@@ -797,7 +777,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(nfapi_mode == 3) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -813,44 +793,10 @@ int main( int argc, char **argv ) {
     }
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
-  if (simL1flag==1) {
-    AssertFatal(NULL!=load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY),
-                "[SOFTMODEM] Error, configuration module init failed\n");
+  if (IS_SOFTMODEM_SIML1 ) {
     RCConfig_sim();
   }
 
-// source code written in below moved to later to avoid keeping waiting for nfapi_sync_cond in wait_nfapi_init.
-/*
-  // start the main UE threads
-  int eMBMS_active = 0;
-
-  if (nfapi_mode==3) { // UE-STUB-PNF
-    config_sync_var=0;
-    wait_nfapi_init("main?");
-    //Panos: Temporarily we will be using single set of threads for multiple UEs.
-    //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
-    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
-  } else {
-    init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-            frame_parms[0]);
-  }
-
-  if (get_softmodem_params()->phy_test==0) {
-    printf("Filling UE band info\n");
-    fill_ue_band_info();
-    dl_phy_sync_success (0, 0, 0, 1);
-  }
-
-  if (nfapi_mode!=3) {
-    number_of_cards = 1;
-
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-    }
-  }
-*/
-  
   cpuf=get_cpu_freq_GHz();
 #ifndef DEADLINE_SCHEDULER
   printf("NO deadline scheduler\n");
@@ -882,7 +828,7 @@ int main( int argc, char **argv ) {
     exit_fun("Error getting processor affinity ");
   }
 
-  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  memset(cpu_affinity, 0, sizeof(cpu_affinity));
 
   for (int j = 0; j < CPU_SETSIZE; j++) {
     if (CPU_ISSET(j, &cpuset)) {
@@ -894,65 +840,31 @@ int main( int argc, char **argv ) {
 
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
-#if defined(ENABLE_ITTI)
+
   if (create_tasks_ue(NB_UE_INST) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
   }
 
-  if(nfapi_mode==3) { // Here we should add another nfapi_mode for the case of Supervised LTE-D2D
+  if (NFAPI_MODE==NFAPI_UE_STUB_PNF) { // UE-STUB-PNF
     UE_config_stub_pnf();
   }
 
   printf("ITTI tasks created\n");
-#endif
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_sleep_ns(10*100000000ULL);
-  const char *nfapi_mode_str = "<UNKNOWN>";
-  // start the main UE threads
   int eMBMS_active = 0;
 
-  switch(nfapi_mode) {
-    case 0:
-      nfapi_mode_str = "MONOLITHIC";
-      break;
-
-    case 1:
-      nfapi_mode_str = "PNF";
-      break;
-
-    case 2:
-      nfapi_mode_str = "VNF";
-      break;
-
-    case 3:
-      nfapi_mode_str = "UE_STUB_PNF";
-      break;
-
-    case 4:
-      nfapi_mode_str = "UE_STUB_OFFNET";
-      break;
-
-    default:
-      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
-      break;
+  if (NFAPI_MODE==NFAPI_UE_STUB_PNF) { // UE-STUB-PNF
+    config_sync_var=0;
+    wait_nfapi_init("main?");
+    //Panos: Temporarily we will be using single set of threads for multiple UEs.
+    //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+  } else {
+    init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
+            frame_parms[0]);
   }
-
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
-
-  if (nfapi_mode==3) // UE-STUB-PNF
-  {
-      config_sync_var=0;
-      wait_nfapi_init("main?");
-      //Panos: Temporarily we will be using single set of threads for multiple UEs.
-      //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
-      init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
-  }
-  else {
-      init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-              frame_parms[0]);
-  }
-
 
   if (get_softmodem_params()->phy_test==0) {
     printf("Filling UE band info\n");
@@ -960,23 +872,14 @@ int main( int argc, char **argv ) {
     dl_phy_sync_success (0, 0, 0, 1);
   }
 
-  if (nfapi_mode!=3){
-      number_of_cards = 1;
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-              PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-              PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-      }
-  }
-  // connect the TX/RX buffers
+  if (NFAPI_MODE != NFAPI_UE_STUB_PNF) {
+    number_of_cards = 1;
 
-  /*
-  if(nfapi_mode!=3) {
-    if (setup_ue_buffers(PHY_vars_UE_g[0],&openair0_cfg[0])!=0) {
-      printf("Error setting up eNB buffer\n");
-      exit(-1);
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }
   }
-  */
 
   if (input_fd) {
     printf("Reading in from file to antenna buffer %d\n",0);
@@ -990,7 +893,7 @@ int main( int argc, char **argv ) {
 
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
-  if (simL1flag==1)  {
+  if (IS_SOFTMODEM_SIML1 )  {
     init_ocm((double)snr_dB,0);
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }

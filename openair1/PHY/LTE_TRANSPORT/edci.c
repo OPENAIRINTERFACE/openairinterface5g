@@ -84,7 +84,7 @@ void mpdcch_scrambling(LTE_DL_FRAME_PARMS * frame_parms, mDCI_ALLOC_t * mdci, ui
 
   // rule for BL/CE UEs from Section 6.8.B2 in 36.211
   x2 = ((((j0 + j) * Nacc) % 10) << 9) + mdci->dmrs_scrambling_init;
-  LOG_I(PHY,"MPDCCH cinit = %x (mdci->dmrs_scrambling_init = %d), scrambling %d encoded DCI bits\n",
+  LOG_D(PHY,"MPDCCH cinit = %x (mdci->dmrs_scrambling_init = %d), scrambling %d encoded DCI bits\n",
 	x2,mdci->dmrs_scrambling_init,length);
   for (n = 0; n < length; n++) {
     if ((n & 0x1f) == 0) {
@@ -109,17 +109,16 @@ void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcchss15tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcchss15tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
 
   for (l = 1; l < 14; l++) {
     for (k = 0; k < 72; k++) {
       kmod = k % 12;
       if (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9)) {
-	mpdcch5ss1tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
-	re++;
-	printf("l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re);
+        mpdcch5ss1tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
+        re++;
       } else if ((kmod == 0) || (kmod == 5) || (kmod == 10)) {
-	mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
+	    mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
       }
     }
   }
@@ -139,7 +138,7 @@ void init_mpdcch5ss2tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
   int nushift = eNB->frame_parms.Nid_cell % 6;
   int nushiftp3 = (eNB->frame_parms.Nid_cell+3) % 6;
   // NOTE : THIS IS FOR TM1 ONLY FOR NOW!!!!!!!
-  LOG_I(PHY, "Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 2; l < 14; l++) {
     for (k = 0; k < 72; k++) {
       kmod = k % 12;
@@ -168,7 +167,7 @@ void init_mpdcch5ss3tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch5ss3tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch5ss3tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 3; l < 14; l++) {
     for (k = 0; k < 72; k++) {
       kmod = k % 12;
@@ -194,7 +193,7 @@ void init_mpdcch3ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch3ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch3ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 1, re = 0; l < 14; l++) {
     for (k = 0; k < 48; k++) {
       kmod = k % 12;
@@ -218,7 +217,7 @@ void init_mpdcch2ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch2ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch2ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 1, re = 0; l < 14; l++) {
     for (k = 0; k < 24; k++) {
       kmod = k % 12;
@@ -288,7 +287,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
   int wp[2][4] = {{1,1,1,1},{1,-1,1,-1}};
   int *w;
 
-  LOG_I(PHY, "generate_mdci_top: num_dci %d\n", mpdcch->num_dci);
+  LOG_D(PHY, "generate_mdci_top: num_dci %d\n", mpdcch->num_dci);
 
   for (i = 0; i < mpdcch->num_dci; i++) {
     mdci = &mpdcch->mdci_alloc[i];
@@ -320,7 +319,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     } else
       AssertFatal(1 == 0, "Illegal combination start_symbol %d, a_index %d\n", mdci->start_symbol, a_index);
 
-    LOG_I(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, transmission type %s, i0 %d, ss %d ,coded_bits %d\n", 
+    LOG_D(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, transmission type %s, i0 %d, ss %d ,coded_bits %d\n", 
 	  i, mdci->dci_length,mdci->rnti, 
 	  mdci->L, mdci->number_of_prb_pairs, 
 	  mdci->ce_mode, 
@@ -422,7 +421,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     uint32_t        b = ((mdci->dmrs_scrambling_init << 1) + 1) << 16;
     x2 = a * b;
     x2 = x2 + 2;
-    LOG_I(PHY, "mpdcch_dmrs cinit %x (a=%d,b=%d,i0=%d,j0=%d)\n", x2,a,b,i0,j0);
+    LOG_D(PHY, "mpdcch_dmrs cinit %x (a=%d,b=%d,i0=%d,j0=%d)\n", x2,a,b,i0,j0);
 
     // add MPDCCH pilots
     int             reset = 1;

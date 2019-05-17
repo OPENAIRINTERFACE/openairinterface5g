@@ -61,13 +61,13 @@
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
 #include "MobilityControlInfo.h"
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
 #include "SCellToAddMod-r10.h"
 #endif
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #include "SystemInformationBlockType1-v1310-IEs.h"
 #endif
 
@@ -87,7 +87,7 @@
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -132,7 +132,7 @@
 /*!\brief size of buffer status report table */
 #define BSR_TABLE_SIZE 64
 /*!\brief The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1 */
-#define PHR_MAPPING_OFFSET 23  // if ( x>= -23 ) val = floor (x + 23) 
+#define PHR_MAPPING_OFFSET 23  // if ( x>= -23 ) val = floor (x + 23)
 /*!\brief maximum number of resource block groups */
 #define N_RBG_MAX 25 // for 20MHz channel BW
 /*!\brief minimum value for channel quality indicator */
@@ -140,9 +140,9 @@
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
 /*!\briefmaximum number of supported bandwidth (1.4, 5, 10, 20 MHz) */
-#define MAX_SUPPORTED_BW  4  
+#define MAX_SUPPORTED_BW  4
 /*!\brief CQI values range from 1 to 15 (4 bits) */
-#define CQI_VALUE_RANGE 16 
+#define CQI_VALUE_RANGE 16
 
 /*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
@@ -157,16 +157,16 @@
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
 /*!\brief maximum number of slices / groups */
-#define MAX_NUM_SLICES 4 
+#define MAX_NUM_SLICES 4
 
-/* 
- * eNB part 
- */ 
+/*
+ * eNB part
+ */
 
 
-/* 
- * UE/ENB common part 
- */ 
+/*
+ * UE/ENB common part
+ */
 /*!\brief MAC header of Random Access Response for Random access preamble identifier (RAPID) */
 typedef struct {
   uint8_t RAPID:6;
@@ -283,7 +283,7 @@ typedef struct {
   uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))PCCH_PDU;
 
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
   uint8_t payload[MCCH_PAYLOAD_SIZE_MAX] ;
@@ -306,18 +306,18 @@ typedef struct {
   uint8_t stop_sf_LSB:8;
 } __attribute__((__packed__))MSI_ELEMENT;
 #endif
-/*! \brief Values of CCCH LCID for DLSCH */ 
+/*! \brief Values of CCCH LCID for DLSCH */
 #define CCCH_LCHANID 0
 /*!\brief Values of BCCH logical channel (fake)*/
-#define BCCH 3  // SI 
+#define BCCH 3  // SI
 /*!\brief Values of PCCH logical channel (fake)*/
-#define PCCH 4  // Paging 
+#define PCCH 4  // Paging
 /*!\brief Values of PCCH logical channel (fake) */
-#define MIBCH 5  // MIB 
+#define MIBCH 5  // MIB
 /*!\brief Values of BCCH SIB1_BR logical channel (fake) */
-#define BCCH_SIB1_BR 6  // SIB1_BR 
+#define BCCH_SIB1_BR 6  // SIB1_BR
 /*!\brief Values of BCCH SIB_BR logical channel (fake) */
-#define BCCH_SI_BR 7  // SI-BR 
+#define BCCH_SI_BR 7  // SI-BR
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0  // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -327,9 +327,9 @@ typedef struct {
 /*!\brief DTCH DRB1  logical channel */
 #define DTCH 3 // LCID
 /*!\brief MCCH logical channel */
-#define MCCH 4 
+#define MCCH 4
 /*!\brief MTCH logical channel */
-#define MTCH 1 
+#define MTCH 1
 // DLSCH LCHAN ID
 /*!\brief LCID of UE contention resolution identity for DLSCH*/
 #define UE_CONT_RES 28
@@ -340,7 +340,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -441,20 +441,20 @@ typedef struct {
 } eNB_DLSCH_INFO;
 /*! \brief eNB overall statistics */
 typedef struct {
-  /// num BCCH PDU per CC 
+  /// num BCCH PDU per CC
   uint32_t total_num_bcch_pdu;
-  /// BCCH buffer size  
+  /// BCCH buffer size
   uint32_t bcch_buffer;
-  /// total BCCH buffer size  
+  /// total BCCH buffer size
   uint32_t total_bcch_buffer;
   /// BCCH MCS
   uint32_t bcch_mcs;
 
-  /// num CCCH PDU per CC 
+  /// num CCCH PDU per CC
   uint32_t total_num_ccch_pdu;
-  /// BCCH buffer size  
+  /// BCCH buffer size
   uint32_t ccch_buffer;
-  /// total BCCH buffer size  
+  /// total BCCH buffer size
   uint32_t total_ccch_buffer;
   /// BCCH MCS
   uint32_t ccch_mcs;
@@ -481,22 +481,22 @@ typedef struct {
   uint32_t total_dlsch_bytes_tx;
   //
   uint32_t total_dlsch_pdus_tx;
-  
+
   // here for RX
   //
   uint32_t ulsch_bitrate;
   //
   uint32_t ulsch_bytes_rx;
   //
-  uint64_t ulsch_pdus_rx; 
+  uint64_t ulsch_pdus_rx;
 
   uint32_t total_ulsch_bitrate;
   //
   uint32_t total_ulsch_bytes_rx;
   //
   uint32_t total_ulsch_pdus_rx;
-  
-  
+
+
   /// MAC agent-related stats
   /// total number of scheduling decisions
   int sched_decisions;
@@ -600,9 +600,9 @@ typedef struct {
   uint32_t rbs_used_retx_rx;
   ///  total rb used for a new uplink transmission
   uint32_t total_rbs_used_rx;
-  /// normalized rx power 
+  /// normalized rx power
   int32_t      normalized_rx_power;
-   /// target rx power 
+   /// target rx power
   int32_t    target_rx_power;
 
   /// num rx pdu
@@ -613,7 +613,7 @@ typedef struct {
   //  uint32_t tti_goodput[NB_RB_MAX];
   /// errors
   uint32_t num_errors_rx;
-  
+
   uint64_t overhead_bytes_rx;
   /// headers+ CE +  padding bytes for a MAC PDU
   uint64_t total_overhead_bytes_rx;
@@ -676,6 +676,9 @@ typedef struct {
   /// Number of Allocated RBs for UL after scheduling
   uint16_t first_rb_ul[8]; // num_max_harq
 
+  /// Is CQI requested for UL after scheduling 1st transmission
+  uint8_t cqi_req[8];         // num_max_harq
+
   /// Cyclic shift for DMRS after scheduling
   uint16_t cshift[8]; // num_max_harq
 
@@ -732,12 +735,12 @@ typedef struct {
   uint32_t dl_buffer_head_sdu_creation_time[MAX_NUM_LCID];
   /// maximum creation time of the downlink buffer head across all LCID
   uint32_t  dl_buffer_head_sdu_creation_time_max;
-  /// a flag indicating that the downlink head SDU is segmented  
+  /// a flag indicating that the downlink head SDU is segmented
   uint8_t    dl_buffer_head_sdu_is_segmented[MAX_NUM_LCID];
   /// size of remaining size to send for the downlink head SDU
   uint32_t dl_buffer_head_sdu_remaining_size_to_send[MAX_NUM_LCID];
 
-  /// total uplink buffer size 
+  /// total uplink buffer size
   uint32_t ul_total_buffer;
   /// uplink buffer creation time for each LCID
   uint32_t ul_buffer_creation_time[MAX_NUM_LCGID];
@@ -759,7 +762,7 @@ typedef struct {
   eNB_UE_estimated_distances distance;
 #endif
 
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t rach_resource_type;
 
  uint16_t mpdcch_repetition_cnt;
@@ -797,7 +800,7 @@ typedef struct {
   uint16_t priority[MAX_NUM_LCID];
 
   // resource scheduling information
-  
+
   /// Current DL harq round per harq_pid on each CC
   uint8_t       round[MAX_NUM_CCs][10];
   /// Current Active TBs per harq_pid on each CC
@@ -813,7 +816,7 @@ typedef struct {
   int32_t       context_active_timer;
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;
-  int32_t       ul_failure_timer; 
+  int32_t       ul_failure_timer;
   int32_t       ul_scheduled;
   int32_t       ra_pdcch_order_sent;
   int32_t       ul_out_of_sync;
@@ -923,7 +926,7 @@ typedef struct {
   uint8_t msg4_rrc_sdu_length;
   uint32_t msg4_delay;
 
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;
   uint8_t msg2_mpdcch_done;
@@ -943,25 +946,25 @@ typedef struct {
   uint8_t sb_size;
   uint8_t nb_active_sb;
 } SBMAP_CONF;
-/*! \brief UE list used by eNB to order UEs/CC for scheduling*/ 
+/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
 typedef struct {
   /// Dedicated information for UEs
   struct PhysicalConfigDedicated  *physicalConfigDedicated[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  /// DLSCH pdu 
+  /// DLSCH pdu
   DLSCH_PDU DLSCH_pdu[MAX_NUM_CCs][2][NUMBER_OF_UE_MAX];
   /// DCI template and MAC connection parameters for UEs
   UE_TEMPLATE UE_template[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   /// DCI template and MAC connection for RA processes
   int pCC_id[NUMBER_OF_UE_MAX];
-  /// sorted downlink component carrier for the scheduler 
+  /// sorted downlink component carrier for the scheduler
   int ordered_CCids[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  /// number of downlink active component carrier 
+  /// number of downlink active component carrier
   int numactiveCCs[NUMBER_OF_UE_MAX];
-  /// sorted uplink component carrier for the scheduler 
+  /// sorted uplink component carrier for the scheduler
   int ordered_ULCCids[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  /// number of uplink active component carrier 
+  /// number of uplink active component carrier
   int numactiveULCCs[NUMBER_OF_UE_MAX];
-  /// number of downlink active component carrier 
+  /// number of downlink active component carrier
   uint8_t dl_CC_bitmap[NUMBER_OF_UE_MAX];
   /// eNB to UE statistics
   eNB_UE_STATS eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
@@ -976,7 +979,7 @@ typedef struct {
   boolean_t active[NUMBER_OF_UE_MAX];
 } UE_list_t;
 
-/*! \brief eNB common channels */ 
+/*! \brief eNB common channels */
 typedef struct {
   int                              physCellId;
   int                              p_eNB;
@@ -985,8 +988,8 @@ typedef struct {
   uint32_t                         dl_CarrierFreq;
   BCCH_BCH_Message_t               *mib;
   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon;
-#ifdef Rel14
-  RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BR;  
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BR;
 #endif
   TDD_Config_t                     *tdd_Config;
   SchedulingInfoList_t             *schedulingInfoList;
@@ -1012,7 +1015,7 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// MBMS Flag
   uint8_t MBMS_flag;
   /// Outgoing MCCH pdu for PHY
@@ -1034,7 +1037,7 @@ typedef struct {
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
 #endif
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Rel13 parameters from SIB1
   SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
   /// Counter for SIB1-BR scheduling
@@ -1043,7 +1046,7 @@ typedef struct {
   BCCH_PDU BCCH_BR_pdu[20];
 #endif
 } COMMON_channels_t;
-/*! \brief top level eNB MAC structure */ 
+/*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t         eth_params_n;
@@ -1076,7 +1079,7 @@ typedef struct eNB_MAC_INST_s {
   nfapi_ul_config_request_t UL_req[MAX_NUM_CCs];
   /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
   nfapi_ul_config_request_t UL_req_tmp[MAX_NUM_CCs][10];
-  /// Preallocated HI_DCI0 pdu list 
+  /// Preallocated HI_DCI0 pdu list
   nfapi_hi_dci0_request_pdu_t hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs];
@@ -1097,29 +1100,29 @@ typedef struct eNB_MAC_INST_s {
   /// eNB stats
   eNB_STATS eNB_stats[MAX_NUM_CCs];
   // MAC function execution peformance profiler
-  /// processing time of eNB scheduler 
+  /// processing time of eNB scheduler
   time_stats_t eNB_scheduler;
-  /// processing time of eNB scheduler for SI 
+  /// processing time of eNB scheduler for SI
   time_stats_t schedule_si;
   /// processing time of eNB scheduler for Random access
   time_stats_t schedule_ra;
-  /// processing time of eNB ULSCH scheduler 
+  /// processing time of eNB ULSCH scheduler
   time_stats_t schedule_ulsch;
   /// processing time of eNB DCI generation
   time_stats_t fill_DLSCH_dci;
   /// processing time of eNB MAC preprocessor
   time_stats_t schedule_dlsch_preprocessor;
-  /// processing time of eNB DLSCH scheduler 
+  /// processing time of eNB DLSCH scheduler
   time_stats_t schedule_dlsch; // include rlc_data_req + MAC header + preprocessor
-  /// processing time of eNB MCH scheduler 
+  /// processing time of eNB MCH scheduler
   time_stats_t schedule_mch;
   /// processing time of eNB ULSCH reception
   time_stats_t rx_ulsch_sdu; // include rlc_data_ind
 } eNB_MAC_INST;
 
-/* 
- * UE part 
- */ 
+/*
+ * UE part
+ */
 
 typedef enum {
   TYPE0,
@@ -1222,7 +1225,7 @@ typedef struct {
   struct RACH_ConfigDedicated *rach_ConfigDedicated;
   /// pointer to RRC PHY configuration
   struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// pointer to RRC PHY configuration SCEll
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
 #endif
@@ -1298,7 +1301,7 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// number of active MBSFN area
   uint8_t num_active_mbsfn_area;
   /// MBSFN Area Info
@@ -1311,25 +1314,25 @@ typedef struct {
   uint8_t msi_status;// could be an array if there are >1 MCH in one MBSFN area
 #endif
   //#ifdef CBA
-  /// CBA RNTI for each group 
+  /// CBA RNTI for each group
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-  /// last SFN for CBA channel access 
+  /// last SFN for CBA channel access
   uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
   //#endif
-  /// total UE scheduler processing time 
+  /// total UE scheduler processing time
   time_stats_t ue_scheduler; // total
-  /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation 
-  time_stats_t tx_ulsch_sdu;  
+  /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation
+  time_stats_t tx_ulsch_sdu;
   /// UE DLSCH rx  processing time inlcuding RLC interface (mac_rrc_data_ind or mac_rlc_status_ind+mac_rlc_data_ind) and mac header parser
-  time_stats_t rx_dlsch_sdu ; 
-  /// UE query for MCH subframe processing time 
+  time_stats_t rx_dlsch_sdu ;
+  /// UE query for MCH subframe processing time
   time_stats_t ue_query_mch;
-  /// UE MCH rx processing time 
+  /// UE MCH rx processing time
   time_stats_t rx_mch_sdu;
-  /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind) 
-  time_stats_t rx_si; 
-  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind) 
-  time_stats_t rx_p; 
+  /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_si;
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_p;
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {
@@ -1340,6 +1343,3 @@ typedef struct {
 #include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */
-
-
-

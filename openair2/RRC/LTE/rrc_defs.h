@@ -16,7 +16,7 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
 /*! \file RRC/LTE/defs.h
@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "collection/tree.h"
+#include "common/ngran_types.h"
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
@@ -199,6 +200,8 @@ void *send_UE_status_notification(void *);
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
 
+#include "LTE_DRX-Config.h"
+
 /* correct Rel(8|10)/Rel14 differences
  * the code is in favor of Rel14, those defines do the translation
  */
@@ -284,21 +287,14 @@ void *send_UE_status_notification(void *);
   #include "rrc_rrm_interface.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
 
-/* TODO: be sure this include is correct.
- * It solves a problem of compilation of the RRH GW,
- * issue #186.
- */
-#if !defined(ENABLE_ITTI)
-  #include "as_message.h"
-#endif
+#include "intertask_interface.h"
 
-#if defined(ENABLE_USE_MME)
-  #include "commonDef.h"
-#endif
+
+
+
+#include "commonDef.h"
+
 
 //--------
 typedef unsigned int uid_t;
@@ -344,10 +340,15 @@ typedef enum UE_STATE_e {
 
 typedef enum HO_STATE_e {
   HO_IDLE=0,
-  HO_MEASURMENT,
+  HO_MEASUREMENT,
   HO_PREPARE,
   HO_CMD, // initiated by the src eNB
-  HO_COMPLETE // initiated by the target eNB
+  HO_COMPLETE, // initiated by the target eNB
+  HO_REQUEST,
+  HO_ACK,
+  HO_CONFIGURED,
+  HO_RELEASE,
+  HO_CANCEL
 } HO_STATE_t;
 
 typedef enum SL_TRIGGER_e {
@@ -440,11 +441,12 @@ typedef struct UE_S_TMSI_s {
   m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI;
 
-#if defined(ENABLE_ITTI)
+
 typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
   E_RAB_STATUS_DONE, // from the eNB perspective
   E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
+  E_RAB_STATUS_REESTABLISHED, // after HO
   E_RAB_STATUS_FAILED,
   E_RAB_STATUS_TORELEASE  // to release DRB between eNB and UE
 } e_rab_status_t;
@@ -456,22 +458,23 @@ typedef struct e_rab_param_s {
   s1ap_Cause_t cause;
   uint8_t cause_value;
 } __attribute__ ((__packed__)) e_rab_param_t;
-#endif
-
 
 
 /* Intermediate structure for Handover management. Associated per-UE in eNB_RRC_INST */
 typedef struct HANDOVER_INFO_s {
   uint8_t ho_prepare;
   uint8_t ho_complete;
-  uint8_t modid_s; //module_idP of serving cell
-  uint8_t modid_t; //module_idP of target cell
+  HO_STATE_t state; //current state of handover
+  uint32_t modid_s; //module_idP of serving cell
+  uint32_t modid_t; //module_idP of target cell
+  int assoc_id;
   uint8_t ueid_s; //UE index in serving cell
   uint8_t ueid_t; //UE index in target cell
   LTE_AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
   LTE_AS_Context_t as_context; /* They are mandatory for HO */
   uint8_t buf[RRC_BUF_SIZE];  /* ASN.1 encoded handoverCommandMessage */
   int size;   /* size of above message in bytes */
+  int x2_id;   /* X2AP UE ID in the target eNB */
 } HANDOVER_INFO;
 
 #define RRC_HEADER_SIZE_MAX 64
@@ -523,6 +526,14 @@ typedef struct HANDOVER_INFO_UE_s {
   uint8_t measFlag;
 } HANDOVER_INFO_UE;
 
+typedef struct rrc_gummei_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_len;
+  uint8_t  mme_code;
+  uint16_t mme_group_id;
+} rrc_gummei_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -549,17 +560,17 @@ typedef struct eNB_RRC_UE_s {
   LTE_MeasConfig_t                  *measConfig;
   HANDOVER_INFO                     *handover_info;
   LTE_MeasResults_t                 *measResults;
+  LTE_MobilityControlInfo_t         *mobilityInfo;
 
   LTE_UE_EUTRA_Capability_t         *UE_Capability;
+  int                                UE_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
-#if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */
   uint8_t kenb[32];
   int8_t  kenb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
@@ -568,7 +579,7 @@ typedef struct eNB_RRC_UE_s {
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-#if defined(ENABLE_ITTI)
+
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
   LTE_EstablishmentCause_t           establishment_cause;
@@ -582,7 +593,14 @@ typedef struct eNB_RRC_UE_s {
   /* Information from S1AP initial_context_setup_req */
   uint32_t                           eNB_ue_s1ap_id :24;
 
+  uint32_t                           mme_ue_s1ap_id;
+  rrc_gummei_t                       ue_gummei;
+
   security_capabilities_t            security_capabilities;
+
+  int                                next_hop_chain_count;
+
+  uint8_t                            next_security_key[SECURITY_KEY_LENGTH];
 
   /* Total number of e_rab already setup in the list */
   uint8_t                            setup_e_rabs;
@@ -594,14 +612,17 @@ typedef struct eNB_RRC_UE_s {
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  /* UE aggregate maximum bitrate */
+  ambr_t ue_ambr;
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
+  /* list of e_rab to be released by RRC layers */
+  uint8_t                            e_rabs_tobereleased[NB_RB_MAX];
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
   // LG: For GTPV1 TUNNELS
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
@@ -657,10 +678,14 @@ typedef struct {
   int                                   p_eNB;
   uint32_t                              dl_CarrierFreq;
   uint32_t                              ul_CarrierFreq;
+  uint32_t                              eutra_band;
+  uint32_t                              N_RB_DL;
   uint32_t                              pbch_repetition;
   LTE_BCCH_BCH_Message_t                mib;
+  LTE_BCCH_BCH_Message_t                *mib_DU;
   LTE_BCCH_DL_SCH_Message_t             siblock1;
   LTE_BCCH_DL_SCH_Message_t             siblock1_BR;
+  LTE_BCCH_DL_SCH_Message_t             *siblock1_DU;
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
   //  SystemInformation_t               systemInformation;
@@ -695,14 +720,17 @@ typedef struct {
   LTE_SystemInformationBlockType21_r14_t *sib21;
   // End - TTN
   SRB_INFO                          SI;
-  SRB_INFO                          Srb0;
   uint8_t                           *paging[MAX_MOBILES_PER_ENB];
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
 
+  
 typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
+  ngran_node_t                    node_type;
   eth_params_t                    eth_params_s;
+  char                            *node_name;
+  uint32_t                        node_id;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
@@ -723,9 +751,10 @@ typedef struct eNB_RRC_INST_s {
 #endif
 
   //RRC configuration
-#if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
-#endif
+
+  /// NR cell id
+  uint64_t nr_cellid;
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;
@@ -735,6 +764,11 @@ typedef struct eNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255
@@ -747,11 +781,9 @@ typedef struct OAI_UECapability_s {
 typedef struct UE_RRC_INST_s {
   Rrc_State_t     RrcState;
   Rrc_Sub_State_t RrcSubState;
-# if defined(ENABLE_USE_MME)
   plmn_t          plmnID;
   Byte_t          rat;
   as_nas_info_t   initialNasMsg;
-# endif
   OAI_UECapability_t *UECap;
   uint8_t *UECapability;
   uint8_t UECapability_size;
@@ -854,12 +886,10 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if defined(ENABLE_SECURITY)
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
 
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;

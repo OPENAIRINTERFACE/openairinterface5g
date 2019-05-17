@@ -53,6 +53,7 @@
 #include "LTE_UL-DCCH-Message.h"
 #include "LTE_DL-DCCH-Message.h"
 #include "LTE_TDD-Config.h"
+#include "LTE_HandoverPreparationInformation.h"
 #include "LTE_HandoverCommand.h"
 #include "rlc.h"
 #include "rrc_eNB_UE_context.h"
@@ -68,6 +69,7 @@
    #include "LTE_NonMBSFN-SubframeConfig-r14.h"
 #endif
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "x2ap_eNB.h"
 
 #include "T.h"
 
@@ -80,32 +82,15 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
-#if defined(ENABLE_USE_MME)
-  #include "rrc_eNB_S1AP.h"
-  #include "rrc_eNB_GTPV1U.h"
-  #if defined(ENABLE_ITTI)
-  #else
-    #include "../../S1AP/s1ap_eNB.h"
-  #endif
-  /* temporary warning removale while implementing noS1 */
-  /* as config option                                   */
-#else
-  #ifdef EPC_MODE_ENABLED
-    #undef  EPC_MODE_ENABLED
-  #endif
-  #define EPC_MODE_ENABLED 0
-#endif
+#include "rrc_eNB_S1AP.h"
+#include "rrc_eNB_GTPV1U.h"
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #if ENABLE_RAL
   #include "rrc_eNB_ral.h"
@@ -126,6 +111,11 @@ extern uint16_t                     two_tier_hexagonal_cellIds[7];
 
 mui_t                               rrc_eNB_mui = 0;
 
+extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
+extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, security_capabilities_t *security_capabilities_pP);
+extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
+extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t * kenb_star);
+
 void
 openair_rrc_on(
   const protocol_ctxt_t *const ctxt_pP
@@ -139,17 +129,15 @@ openair_rrc_on(
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-    rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
   }
 }
 
 //-----------------------------------------------------------------------------
 static void
 init_SI(
-  const protocol_ctxt_t* const ctxt_pP,
+  const protocol_ctxt_t *const ctxt_pP,
   const int              CC_id,
-  RrcConfigurationReq * configuration
+  RrcConfigurationReq *configuration
 )
 //-----------------------------------------------------------------------------
 {
@@ -282,294 +270,359 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
 }
 #endif
 
+  eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
+  rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
-
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = 0;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = 0;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1 = (uint8_t *) malloc16(32);
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
+  carrier->MIB = (uint8_t*) malloc16(4);
+  carrier->sizeof_SIB1 = 0;
+  carrier->sizeof_SIB23 = 0;
+  carrier->SIB1 = (uint8_t*) malloc16(32);
+  
+  AssertFatal(carrier->SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+  LOG_I(RRC,"[eNB %d] Node type %d \n ", ctxt_pP->module_id, rrc->node_type);
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    // copy basic Cell parameters
+    carrier->physCellId      = configuration->Nid_cell[CC_id];
+    carrier->p_eNB           = configuration->nb_antenna_ports[CC_id];
+    carrier->Ncp             = configuration->prefix_type[CC_id];
+    carrier->dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
+    carrier->ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
+    carrier->eutra_band      = configuration->eutra_band[CC_id];
+    carrier->N_RB_DL         = configuration->N_RB_DL[CC_id];
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-								   ,FALSE
+    carrier->pbch_repetition = configuration->pbch_repetition[CC_id];
+    LOG_I(RRC, "configuration->schedulingInfoSIB1_BR_r13[CC_id] %d\n",(int)configuration->schedulingInfoSIB1_BR_r13[CC_id]);
 #endif
-								   , configuration
-								   );
 
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
+    LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
+	  (int)configuration->N_RB_DL[CC_id],
+	  (int)configuration->radioresourceconfig[CC_id].phich_resource,
+	  (int)configuration->radioresourceconfig[CC_id].phich_duration);
 
-  
+    carrier->sizeof_MIB = do_MIB(&rrc->carrier[CC_id],
+                                 configuration->N_RB_DL[CC_id],
+                                 configuration->radioresourceconfig[CC_id].phich_resource,
+                                 configuration->radioresourceconfig[CC_id].phich_duration,
+                                 0
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = 0;
-  if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_BR = (uint8_t*) malloc16(32);
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
-									,TRUE
-									, configuration
-									);
+                                 ,configuration->schedulingInfoSIB1_BR_r13[CC_id]
+#endif
+   );
+    
+    
+    carrier->sizeof_SIB1 = do_SIB1(&rrc->carrier[CC_id],
+                                   ctxt_pP->module_id,
+                                   CC_id
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                   ,FALSE
+#endif
+                                   , configuration
+				   );
+    
+    AssertFatal(carrier->sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = 0;
+
+    if (configuration->schedulingInfoSIB1_BR_r13[CC_id] > 0) {
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_BR = (uint8_t *) malloc16(32);
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
+                                                                          ctxt_pP->module_id,
+                                                                          CC_id, TRUE, configuration);
+    }
+#endif
+
   }
-#endif
-  
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = do_SIB23(
-								     ctxt_pP->module_id,
-								     CC_id
+  if (!NODE_IS_DU(rrc->node_type)) {
+    carrier->SIB23 = (uint8_t*) malloc16(64);
+    AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
+    carrier->sizeof_SIB23 = do_SIB23(ctxt_pP->module_id,
+                                     CC_id
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-								     ,FALSE
+                                     ,FALSE
 #endif
-								     , configuration
-								     );
-
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
-
+                                     , configuration
+                                     );
+    
+    LOG_I(RRC,"do_SIB23, size %d \n ", carrier->sizeof_SIB23);
+    
+    AssertFatal(carrier->sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
+    
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = 0;
+  carrier->sizeof_SIB23_BR = 0;
   if (configuration->schedulingInfoSIB1_BR_r13[CC_id]>0) {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR = (uint8_t*) malloc16(64);
-    AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23_BR!=NULL,"cannot allocate memory for SIB");
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23_BR = do_SIB23(
-									  ctxt_pP->module_id,
-                                      CC_id
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                      ,TRUE
-#endif
-                                      ,configuration
-                );
+    carrier->SIB23_BR = (uint8_t*) malloc16(64);
+    AssertFatal(carrier->SIB23_BR!=NULL,"cannot allocate memory for SIB");
+    carrier->sizeof_SIB23_BR = do_SIB23(ctxt_pP->module_id, CC_id, TRUE, configuration);
   }
+    
 #endif
-
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" SIB2/3 Contents (partial)\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.n_SB = %ld\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        pusch_ConfigBasic.n_SB);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.hoppingMode = %ld\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        pusch_ConfigBasic.hoppingMode);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.pusch_HoppingOffset = %ld\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        pusch_ConfigBasic.pusch_HoppingOffset);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.enable64QAM = %d\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        pusch_ConfigBasic.enable64QAM);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupHoppingEnabled = %d\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupAssignmentPUSCH = %ld\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.sequenceHoppingEnabled = %d\n",
-        PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-        (int)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-        ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
-  LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.cyclicShift  = %ld\n",
-	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
-	ul_ReferenceSignalsPUSCH.cyclicShift);
-
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" SIB2/3 Contents (partial)\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.n_SB = %ld\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.hoppingMode = %ld\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.pusch_HoppingOffset = %ld\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.enable64QAM = %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          (int)carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupHoppingEnabled = %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          (int)carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.groupAssignmentPUSCH = %ld\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.sequenceHoppingEnabled = %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          (int)carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
+    LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT" pusch_config_common.cyclicShift  = %ld\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+          carrier->sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
+    
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
-  if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag > 0) {
-    for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count; i++) {
-      // SIB 2
-      //   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            i,
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count);
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" mbsfn_Subframe_pattern is  = %x\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0] >> 0);
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_period  = %ld (just index number, not the real value)\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod);   // need to display the real value, using array of char (like in dumping SIB2)
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_offset  = %ld\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
-    }
-
-
-
-    //   SIB13
-    for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            i,
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count);
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %ld (just index number, not real value)\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %ld\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
-    }
-  }
-  else memset((void*)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
-
-  //TTN - SIB 18
-  if (configuration->SL_configured>0) {
-    for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count; j++) {
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB18 %d/%d \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    j+1,
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+    
+    if (carrier->MBMS_flag > 0) {
+      for (i = 0; i < carrier->sib2->mbsfn_SubframeConfigList->list.count; i++) {
+	// SIB 2
+	//   LOG_D(RRC, "[eNB %d] mbsfn_SubframeConfigList.list.count = %ld\n", enb_mod_idP, RC.rrc[enb_mod_idP].sib2->mbsfn_SubframeConfigList->list.count);
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN subframe allocation %d/%d(partial)\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              i,
+              carrier->sib2->mbsfn_SubframeConfigList->list.count);
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" mbsfn_Subframe_pattern is  = %x\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib2->mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0] >> 0);
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_period  = %ld (just index number, not the real value)\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationPeriod);   // need to display the real value, using array of char (like in dumping SIB2)
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" radioframe_allocation_offset  = %ld\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
+      }
       
-    }
-
-
-
-
-    for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count; j++) {
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB19 %d/%d \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    j+1,
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %ld \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
-	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+      //   SIB13
+      for (i = 0; i < carrier->sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              i,
+              carrier->sib13->mbsfn_AreaInfoList_r9.list.count);
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Repetition Period: %ld (just index number, not real value)\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" MCCH Offset: %ld\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
+      }
+    } else memset((void *)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
+    
+    //TTN - SIB 18
+    if (configuration->SL_configured > 0) {
+      for (int j = 0; j < carrier->sib18->commConfig_r12->commRxPool_r12.list.count; j++) {
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB18 %d/%d \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              j+1,
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.count);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+      }
       
+      //TTN - SIB 19
+      for (int j = 0; j < carrier->sib19->discConfig_r12->discRxPool_r12.list.count; j++) {
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB19 %d/%d \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              j+1,
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.count);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %ld \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+              carrier->sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+      }
     }
-  }
-
 #endif // (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))    
-
-
+  }
+   
   LOG_D(RRC,
         PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
         PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
-  if ((RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib.message.schedulingInfoSIB1_BR_r13>0) &&
-      (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR!=NULL)) {
+  // LTE-M stuff here (take out CU-DU for now)
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
+    if ((carrier->mib.message.schedulingInfoSIB1_BR_r13>0) && 
+        (carrier->sib1_BR!=NULL)) {
+      AssertFatal(carrier->sib1_BR->nonCriticalExtension!=NULL,
+                  "sib2_br->nonCriticalExtension is null (v8.9)\n");
+      AssertFatal(carrier->sib1_BR->nonCriticalExtension->nonCriticalExtension!=NULL,
+                  "sib2_br->nonCriticalExtension is null (v9.2)\n");
+      AssertFatal(carrier->sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+                  "sib2_br->nonCriticalExtension is null (v11.3)\n");
+      AssertFatal(carrier->sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+                  "sib2_br->nonCriticalExtension is null (v12.5)\n");
+      AssertFatal(carrier->sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+                  "sib2_br->nonCriticalExtension is null (v13.10)\n");
 
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v8.9)\n");
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v9.2)\n");
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
-		  "sib2_br->nonCriticalExtension is null (v13.10)\n");
-      sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
+      sib1_v13ext = carrier->sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
 
       // Basic Asserts for CE_level0 PRACH configuration
-
-      LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR = &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2_BR->radioResourceConfigCommon;
-      struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310; 
-      
+      LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR = &carrier[CC_id].sib2_BR->radioResourceConfigCommon;
+      struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
       LTE_PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
       AssertFatal(prach_ParametersListCE_r13->list.count>0,"prach_ParametersListCE_r13 is empty\n");
-      LTE_PRACH_ParametersCE_r13_t *p = prach_ParametersListCE_r13->list.array[0];
+                  LTE_PRACH_ParametersCE_r13_t *p = prach_ParametersListCE_r13->list.array[0];
       AssertFatal(p->prach_StartingSubframe_r13 != NULL, "prach_StartingSubframe_r13 celevel0 is null\n");
       AssertFatal((1<<p->numRepetitionPerPreambleAttempt_r13)<=(2<<*p->prach_StartingSubframe_r13),
-		  "prachce0->numReptitionPerPreambleAttempt_r13 %d > prach_StartingSubframe_r13 %d\n",
-		  1<<p->numRepetitionPerPreambleAttempt_r13,
-		  2<<*p->prach_StartingSubframe_r13);
+                  "prachce0->numReptitionPerPreambleAttempt_r13 %d > prach_StartingSubframe_r13 %d\n",
+                  1<<p->numRepetitionPerPreambleAttempt_r13,
+                  2<<*p->prach_StartingSubframe_r13);
+    }
+  
   }
-
 #endif
-  LOG_D(RRC, "About to call rrc_mac_config_req_eNB\n");
-  rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
+  /*
+  if (rrc->node_type == ngran_eNB_DU) {
+    LOG_D(RRC, "About to call rrc_mac_config_req_eNB for ngran_eNB_DU\n");
+    
+    rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
+			   carrier->physCellId,
+			   carrier->p_eNB,
+			   carrier->Ncp,
+			   carrier->sib1->freqBandIndicator,
+			   carrier->dl_CarrierFreq,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition,
+			   carrier->pbch_repetition,
 #endif
-                         0, // rnti
-                         (LTE_BCCH_BCH_Message_t *)
-                         &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib,
-                         (LTE_RadioResourceConfigCommonSIB_t *) &
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon,
+			   0, // rnti
+			   (BCCH_BCH_Message_t *)
+			   &carrier->mib,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                         (LTE_RadioResourceConfigCommonSIB_t *) &
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2_BR->radioResourceConfigCommon,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-                         (struct LTE_PhysicalConfigDedicated *)NULL,
+			   (struct PhysicalConfigDedicated *)NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                         (LTE_SCellToAddMod_r10_t *)NULL,
-                         //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+			   (SCellToAddMod_r10_t *)NULL,
+			   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-                         (LTE_MeasObjectToAddMod_t **) NULL,
-                         (LTE_MAC_MainConfig_t *) NULL, 0,
-                         (struct LTE_LogicalChannelConfig *)NULL,
-                         (LTE_MeasGapConfig_t *) NULL,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->tdd_Config,
-                         NULL,
-                         &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->schedulingInfoList,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.ul_Bandwidth,
-                         &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.additionalSpectrumEmission,
-                         (LTE_MBSFN_SubframeConfigList_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList
+			   (MeasObjectToAddMod_t **) NULL,
+			   (MAC_MainConfig_t *) NULL, 0,
+			   (struct LogicalChannelConfig *)NULL,
+			   (MeasGapConfig_t *) NULL,
+			   carrier->sib1->tdd_Config,
+			   NULL,
+			   &carrier->sib1->schedulingInfoList,
+			   carrier->ul_CarrierFreq,
+			   NULL,
+			   NULL,
+			   NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                         ,
-                         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) & RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9,
-                         (LTE_PMCH_InfoList_r9_t *) NULL
+			   ,
+			   carrier->MBMS_flag,
+			   NULL,
+			   (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                         ,
-                         sib1_v13ext
+			   , 
+			   NULL
+#endif
+			   );
+  }
+  else 
+  */
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
+    LOG_D(RRC, "About to call rrc_mac_config_req_eNB for ngran_eNB\n");
+    
+    rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
+                           carrier->physCellId,
+                           carrier->p_eNB,
+                           carrier->Ncp,
+                           carrier->sib1->freqBandIndicator,
+                           carrier->dl_CarrierFreq,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           carrier->pbch_repetition,
+#endif
+                           0, // rnti
+                           (LTE_BCCH_BCH_Message_t *) &carrier->mib,
+                           (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2->radioResourceConfigCommon,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2_BR->radioResourceConfigCommon,
+#endif
+                           (struct LTE_PhysicalConfigDedicated *)NULL,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+                           (LTE_SCellToAddMod_r10_t *)NULL,
+                           //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+#endif
+                           (LTE_MeasObjectToAddMod_t **) NULL,
+                           (LTE_MAC_MainConfig_t *) NULL, 0,
+                           (struct LTE_LogicalChannelConfig *)NULL,
+                           (LTE_MeasGapConfig_t *) NULL,
+                           carrier->sib1->tdd_Config,
+                           NULL,
+                           &carrier->sib1->schedulingInfoList,
+                           carrier->ul_CarrierFreq,
+                           carrier->sib2->freqInfo.ul_Bandwidth,
+                           &carrier->sib2->freqInfo.additionalSpectrumEmission,
+                           (LTE_MBSFN_SubframeConfigList_t*) carrier->sib2->mbsfn_SubframeConfigList
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                           ,
+                           carrier->MBMS_flag,
+                           (LTE_MBSFN_AreaInfoList_r9_t*) & carrier->sib13->mbsfn_AreaInfoList_r9,
+                           (LTE_PMCH_InfoList_r9_t *) NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+                           ,
+                           sib1_v13ext
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -581,6 +634,12 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                         );
+  }
+	/* set flag to indicate that cell information is configured. This is required
+	 * in DU to trigger F1AP_SETUP procedure */
+  pthread_mutex_lock(&rrc->cell_info_mutex);
+  rrc->cell_info_configured=1;
+  pthread_mutex_unlock(&rrc->cell_info_mutex);
 }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -594,6 +653,8 @@ init_MCCH(
 {
   int                                 sync_area = 0;
   // initialize RRC_eNB_INST MCCH entry
+  eNB_RRC_INST *rrc = RC.rrc[enb_mod_idP];
+
   RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE =
     malloc(RC.rrc[enb_mod_idP]->carrier[CC_id].num_mbsfn_sync_area * sizeof(uint8_t *));
 
@@ -630,40 +691,37 @@ init_MCCH(
   // call mac_config_req with appropriate structure from ASN.1 description
   //  LOG_I(RRC, "DUY: serviceID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
-  rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
-                         0,0,0,0,0,
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
+                           0,0,0,0,0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                         0,
+                           0,
 #endif
-                         0,//rnti
-                         (LTE_BCCH_BCH_Message_t *)NULL,
-                         (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                           0,//rnti
+                           (LTE_BCCH_BCH_Message_t *)NULL,
+                           (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                         (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                           (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-                         (struct LTE_PhysicalConfigDedicated *)NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                         (LTE_SCellToAddMod_r10_t *)NULL,
+                           (struct LTE_PhysicalConfigDedicated *)NULL,
+                           (LTE_SCellToAddMod_r10_t *)NULL,
                          //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
-#endif
-                         (LTE_MeasObjectToAddMod_t **) NULL,
-                         (LTE_MAC_MainConfig_t *) NULL,
-                         0,
-                         (struct LTE_LogicalChannelConfig *)NULL,
-                         (LTE_MeasGapConfig_t *) NULL,
-                         (LTE_TDD_Config_t *) NULL,
-                         (LTE_MobilityControlInfo_t *)NULL,
-                         (LTE_SchedulingInfoList_t *) NULL,
-                         0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                         ,
-                         0,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                         (LTE_PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#endif
+                           (LTE_MeasObjectToAddMod_t **) NULL,
+                           (LTE_MAC_MainConfig_t *) NULL,
+                           0,
+                           (struct LTE_LogicalChannelConfig *)NULL,
+                           (LTE_MeasGapConfig_t *) NULL,
+                           (LTE_TDD_Config_t *) NULL,
+                           (LTE_MobilityControlInfo_t *)NULL,
+                           (LTE_SchedulingInfoList_t *) NULL,
+                           0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                           ,
+                           0,
+                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                           (LTE_PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                         ,
-                         (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+                           ,
+                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -675,6 +733,7 @@ init_MCCH(
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                         );
+  }
   //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
 }
 
@@ -701,20 +760,21 @@ static void init_MBMS(
                              NULL,  // key rrc encryption
                              NULL,  // key rrc integrity
                              NULL   // key encryption
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                              , &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#endif
                              ,NULL);
-    rrc_rlc_config_asn1_req(&ctxt,
-                            NULL, // LTE_SRB_ToAddModList
-                            NULL,   // LTE_DRB_ToAddModList
-                            NULL,   // DRB_ToReleaseList
-                            &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
+    
+    if (!NODE_IS_CU(RC.rrc[enb_mod_idP]->node_type)) {
+      rrc_rlc_config_asn1_req(&ctxt,
+                              NULL, // LTE_SRB_ToAddModList
+                              NULL,   // LTE_DRB_ToAddModList
+                              NULL,   // DRB_ToReleaseList
+                              &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                            ,0, 0
+			      ,0, 0
 #endif
-                           );
-    //rrc_mac_config_req();
+			      );
+    }
+	    //rrc_mac_config_req();
   }
 }
 #endif
@@ -849,6 +909,7 @@ rrc_eNB_get_next_free_ue_context(
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
     return NULL;
   }
+  return(ue_context_p);
 }
 
 //-----------------------------------------------------------------------------
@@ -939,7 +1000,8 @@ rrc_eNB_free_mem_UE_context(
       ue_context_pP->ue_context.measGapConfig = NULL;
     }*/
   if (ue_context_pP->ue_context.handover_info) {
-    ASN_STRUCT_FREE(asn_DEF_LTE_Handover, ue_context_pP->ue_context.handover_info);
+    /* TODO: be sure free is enough here (check memory leaks) */
+    free(ue_context_pP->ue_context.handover_info);
     ue_context_pP->ue_context.handover_info = NULL;
   }
 
@@ -957,10 +1019,9 @@ rrc_eNB_free_mem_UE_context(
     ue_context_pP->ue_context.measConfig = NULL;
   }
 
+#if 0
   //HANDOVER_INFO                     *handover_info;
-#if defined(ENABLE_SECURITY)
   //uint8_t kenb[32];
-#endif
   //e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
   //e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
   //uint8_t                            Status;
@@ -978,6 +1039,7 @@ rrc_eNB_free_mem_UE_context(
   //uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   //transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   //rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+#endif
 #endif
 }
 
@@ -1002,30 +1064,36 @@ rrc_eNB_free_UE(
     return;
   }
 
-  if (EPC_MODE_ENABLED) {
-    if ((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
-      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n",
-            enb_mod_idP,
-            rnti);
-      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21);
-      // send cause 21: radio connection with ue lost
-      /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
-        * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
-        *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
-        *  procedure, see TS 23.401 [17].
-        */
-      return;
-    }
+   if(EPC_MODE_ENABLED) {
+     if (!NODE_IS_DU(RC.rrc[enb_mod_idP]->node_type)) {
+       if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+         LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n",
+               enb_mod_idP,
+               rnti);
+         rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP,
+                                                  ue_context_pP,
+                                                  S1AP_CAUSE_RADIO_NETWORK,
+                                                  21); // send cause 21: radio connection with ue lost
+        /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
+         * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
+         *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
+         *  procedure, see TS 23.401 [17].
+         */
+        return;
+      }
 
-    if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres) &&
-        (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED) &&
-        (RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres > 0)) {
-      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n",
-            enb_mod_idP,
-            rnti);
-      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 20);
-      // send cause 20: user inactivity
-      return;
+      if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres) &&
+          (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED) &&
+          (RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres > 0)) {
+        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n",
+              enb_mod_idP,
+              rnti);
+        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP,
+                                                 ue_context_pP,
+                                                 S1AP_CAUSE_RADIO_NETWORK,
+                                                 20); // send cause 20: user inactivity
+        return;
+      }
     }
   }
 
@@ -1123,9 +1191,9 @@ void release_UE_in_freeList(module_id_t mod_id) {
           }
         }
 
-        if (rrc_agent_registered[mod_id]) {
-          agent_rrc_xface[mod_id]->flexran_agent_notify_ue_state_change(mod_id,
-              rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+        if (flexran_agent_get_rrc_xface(mod_id)) {
+          flexran_agent_get_rrc_xface(mod_id)->flexran_agent_notify_ue_state_change(
+              mod_id, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
         }
 
         for(j = 0; j < 10; j++) {
@@ -1153,13 +1221,23 @@ void release_UE_in_freeList(module_id_t mod_id) {
         }
       }
 
-      rrc_mac_remove_ue(mod_id,rnti);
-      rrc_rlc_remove_ue(&ctxt);
-      pdcp_remove_UE(&ctxt);
+      if (!NODE_IS_CU(RC.rrc[mod_id]->node_type)) {
+        rrc_mac_remove_ue(mod_id,rnti);
+        rrc_rlc_remove_ue(&ctxt);
+        pdcp_remove_UE(&ctxt);
+      }
+      else {
+        MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+        F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = rnti;
+        F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+        F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+        F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+        F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+        itti_send_msg_to_task(TASK_CU_F1, mod_id, m);
+      }
 
       if(remove_UEContext) {
-        ue_context_pP = rrc_eNB_get_ue_context(
-                          RC.rrc[mod_id],rnti);
+        ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[mod_id],rnti);
 
         if(ue_context_pP) {
           rrc_eNB_remove_ue_context(&ctxt,RC.rrc[mod_id],
@@ -1185,14 +1263,18 @@ rrc_eNB_process_RRCConnectionSetupComplete(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_I(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing LTE_RRCConnectionSetupComplete from UE (SRB1 Active)\n",
+  LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing LTE_RRCConnectionSetupComplete from UE (SRB1 Active)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
-  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity timer when UE goes into RRC_CONNECTED
+
+  T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE,
+    T_INT(ctxt_pP->module_id),
+    T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe),
+    T_INT(ctxt_pP->rnti));
 
   if (EPC_MODE_ENABLED == 1) {
     // Forward message to S1AP layer
@@ -1242,14 +1324,18 @@ rrc_eNB_generate_SecurityModeCommand(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
-  rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+
+  if (!NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    LOG_I(RRC,"calling rrc_data_req :securityModeCommand\n");
+
+    rrc_data_req(ctxt_pP,
+                 DCCH,
+                 rrc_eNB_mui++,
+                 SDU_CONFIRM_NO,
+                 size,
+                 buffer,
+                 PDCP_TRANSMISSION_MODE_CONTROL);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1309,110 +1395,134 @@ rrc_eNB_generate_RRCConnectionReject(
 {
   T(T_ENB_RRC_CONNECTION_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReject(ctxt_pP->module_id,
-                           (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
+                          (uint8_t*) ue_p->Srb0.Tx_buffer.Payload);
+
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReject\n");
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    ue_p->Srb0.Tx_buffer.Header,
+    ue_p->Srb0.Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" LTE_RRCConnectionReject UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+    ue_p->Srb0.Tx_buffer.payload_size);
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReject (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 }
 
 //-----------------------------------------------------------------------------
+/*
+ * Generate a RCC Connection Reestablishment after requested
+ */
 void
 rrc_eNB_generate_RRCConnectionReestablishment(
-  const protocol_ctxt_t         *const ctxt_pP,
-  rrc_eNB_ue_context_t          *const ue_context_pP,
-  const int                            CC_id
-)
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t  *const ue_context_pP,
+  const int             CC_id)
 //-----------------------------------------------------------------------------
 {
-  LTE_LogicalChannelConfig_t             *SRB1_logicalChannelConfig;
-  LTE_SRB_ToAddModList_t                 **SRB_configList;
-  LTE_SRB_ToAddMod_t                     *SRB1_config;
-  int                                 cnt;
-  T(T_ENB_RRC_CONNECTION_REESTABLISHMENT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  SRB_configList = &ue_context_pP->ue_context.SRB_configList;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
-    do_RRCConnectionReestablishment(ctxt_pP,
-                                    ue_context_pP,
-                                    CC_id,
-                                    (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-                                    (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
-                                    rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                                    SRB_configList,
-                                    &ue_context_pP->ue_context.physicalConfigDedicated);
-  LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
-              "[MSG] RRCConnectionReestablishment\n"
-             );
-  // configure SRB1 for UE
+  int UE_id = -1;
+  LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig = NULL;
+  LTE_SRB_ToAddModList_t     **SRB_configList;
+  LTE_SRB_ToAddMod_t         *SRB1_config = NULL;
+  rrc_eNB_carrier_data_t     *carrier = NULL;
+  eNB_RRC_UE_t               *ue_context = NULL;
 
+  module_id_t module_id = ctxt_pP->module_id;
+  uint16_t rnti = ctxt_pP->rnti;
+
+  T(T_ENB_RRC_CONNECTION_REESTABLISHMENT,
+    T_INT(module_id),
+    T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe),
+    T_INT(rnti));
+
+  SRB_configList = &(ue_context_pP->ue_context.SRB_configList);
+  carrier = &(RC.rrc[ctxt_pP->module_id]->carrier[CC_id]);
+  ue_context = &(ue_context_pP->ue_context);
+
+  ue_context->Srb0.Tx_buffer.payload_size = do_RRCConnectionReestablishment(ctxt_pP,
+                                                                         ue_context_pP,
+                                                                         CC_id,
+                                                                         (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
+                                                                         (uint8_t) carrier->p_eNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
+                                                                         rrc_eNB_get_next_transaction_identifier(module_id),
+                                                                         SRB_configList,
+                                                                         &(ue_context->physicalConfigDedicated));
+
+  LOG_DUMPMSG(RRC, DEBUG_RRC,
+              (char *)(ue_context->Srb0.Tx_buffer.Payload),
+              ue_context->Srb0.Tx_buffer.payload_size,
+              "[MSG] RRCConnectionReestablishment \n");
+
+  /* Configure SRB1 for UE */
   if (*SRB_configList != NULL) {
-    for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
+    for (int cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
       if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
         SRB1_config = (*SRB_configList)->list.array[cnt];
 
         if (SRB1_config->logicalChannelConfig) {
-          if (SRB1_config->logicalChannelConfig->present ==
-              LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
-            SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
+          if (SRB1_config->logicalChannelConfig->present == LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+            SRB1_logicalChannelConfig = &(SRB1_config->logicalChannelConfig->choice.explicitValue);
           } else {
-            SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+            SRB1_logicalChannelConfig = &(SRB1_logicalChannelConfig_defaultValue);
           }
         } else {
-          SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+          SRB1_logicalChannelConfig = &(SRB1_logicalChannelConfig_defaultValue);
         }
 
-        LOG_D(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
+        LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-        rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                               ue_context_pP->ue_context.primaryCC_id,
-                               0,0,0,0,0,
+        if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
+          rrc_mac_config_req_eNB(module_id,
+                                 ue_context->primaryCC_id,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                               0,
+                                 0,
 #endif
-                               ctxt_pP->rnti,
-                               (LTE_BCCH_BCH_Message_t *) NULL,
-                               (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                 rnti,
+                                 (LTE_BCCH_BCH_Message_t *) NULL,
+                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                               (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-                               (struct LTE_PhysicalConfigDedicated * ) ue_context_pP->ue_context.physicalConfigDedicated,
+                                 (struct LTE_PhysicalConfigDedicated * ) ue_context->physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                               (LTE_SCellToAddMod_r10_t *)NULL,
-                               //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+                                 (LTE_SCellToAddMod_r10_t *)NULL,
 #endif
-                               (LTE_MeasObjectToAddMod_t **) NULL,
-                               ue_context_pP->ue_context.mac_MainConfig,
-                               1,
-                               SRB1_logicalChannelConfig,
-                               ue_context_pP->ue_context.measGapConfig,
-                               (LTE_TDD_Config_t *) NULL,
-                               NULL,
-                               (LTE_SchedulingInfoList_t *) NULL,
-                               0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                                 (LTE_MeasObjectToAddMod_t **) NULL,
+                                 ue_context->mac_MainConfig,
+                                 1,
+                                 SRB1_logicalChannelConfig,
+                                 ue_context->measGapConfig,
+                                 (LTE_TDD_Config_t *) NULL,
+                                 NULL,
+                                 (LTE_SchedulingInfoList_t *) NULL,
+                                 0,
+                                 NULL,
+                                 NULL,
+                                 (LTE_MBSFN_SubframeConfigList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                               , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
+                                 , 0,
+                                 (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                                 (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                               ,(LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+                                 ,(LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -1423,40 +1533,42 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
-                              );
-        break;
-      }
-    }
-  }
+                                 );
+          break;
+        }
+      }  // if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1)
+    }  // for (int cnt = 0; cnt < (*SRB_configList)->list.count; cnt++)
+  }  // if (*SRB_configList != NULL)
 
   MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
                      MSC_RRC_UE,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+                     ue_context->Srb0.Tx_buffer.Header,
+                     ue_context->Srb0.Tx_buffer.payload_size,
                      MSC_AS_TIME_FMT" LTE_RRCConnectionReestablishment UE %x size %u",
                      MSC_AS_TIME_ARGS(ctxt_pP),
-                     ue_context_pP->ue_context.rnti,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
-  LOG_I(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishment (bytes %d)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
-  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+                     ue_context->rnti,
+                     ue_context->Srb0.Tx_buffer.payload_size);
 
-  if(UE_id != -1) {
-    // activate release timer, if RRCComplete not received after 100 frames, remove UE
-    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-    // remove UE after 100 frames after LTE_RRCConnectionReestablishmentRelease is triggered
-    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
+  LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishment (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        ue_context->Srb0.Tx_buffer.payload_size);
+
+  UE_id = find_UE_id(module_id, rnti);
+
+  if (UE_id != -1) {
+    /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
+    RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+    /* Reject UE after 10 frames, LTE_RRCConnectionReestablishmentReject is triggered */
+    RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
   } else {
-    LOG_E(RRC,
-          PROTOCOL_RRC_CTXT_UE_FMT" Generating LTE_RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
-          PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Generating LTE_RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
+          PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+          rnti);
   }
 
-  // activate release timer, if RRCComplete not received after 100 frames, remove UE
+  /* Activate release timer, if RRCComplete not received after 100 frames, remove UE */
   ue_context_pP->ue_context.ue_reestablishment_timer = 1;
-  // remove UE after 100 frames after LTE_RRCConnectionReestablishmentRelease is triggered
+  /* Remove UE after 100 frames after LTE_RRCConnectionReestablishmentReject is triggered */
   ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
 }
 
@@ -1502,6 +1614,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   /* for no gcc warnings */
   (void)dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
+  int                                    x2_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
@@ -1524,16 +1637,12 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     }
   }
 
-  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[next_xid];
-  DRB_configList2 = &ue_context_pP->ue_context.DRB_configList2[next_xid];
+  SRB_configList2 = &(ue_context_pP->ue_context.SRB_configList2[next_xid]);
+  DRB_configList2 = &(ue_context_pP->ue_context.DRB_configList2[next_xid]);
 
-  if(SRB_configList2!=NULL) {
-    if (*SRB_configList2) {
-      free(*SRB_configList2);
-      LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
-    }
-  } else {
-    LOG_E(RRC, "SRB_configList2 is null\n");
+  if (*SRB_configList2) {
+    free(*SRB_configList2);
+    LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
   }
 
   *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
@@ -1551,13 +1660,9 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     LOG_W(RRC,"SRB2 configuration does not exist in SRB configuration list\n");
   }
 
-  if(DRB_configList2!=NULL) {
-    if (*DRB_configList2) {
-      free(*DRB_configList2);
-      LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
-    }
-  } else {
-    LOG_E(RRC, "DRB_configList2 is null\n");
+  if (*DRB_configList2) {
+    free(*DRB_configList2);
+    LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
   }
 
   *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
@@ -1574,7 +1679,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
   ue_context_pP->ue_context.Srb1.Active = 1;
   //ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
-#if defined(ENABLE_USE_MME)
+
+  if (EPC_MODE_ENABLED) {
   hashtable_rc_t    h_rc;
   int               j;
   rrc_ue_s1ap_ids_t *rrc_ue_s1ap_ids_p = NULL;
@@ -1619,18 +1725,21 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     ctxt_pP->instance,
     &create_tunnel_req,
     reestablish_rnti);
-#endif
+  } /* EPC_MODE_ENABLED */
+
   /* Update RNTI in ue_context */
   ue_context_pP->ue_id_rnti                    = ctxt_pP->rnti; // here ue_id_rnti is just a key, may be something else
   ue_context_pP->ue_context.rnti               = ctxt_pP->rnti;
-#if defined(ENABLE_USE_MME)
+
+  if (EPC_MODE_ENABLED) {
   uint8_t send_security_mode_command = FALSE;
   rrc_pdcp_config_security(
     ctxt_pP,
     ue_context_pP,
     send_security_mode_command);
   LOG_D(RRC, "set security successfully \n");
-#endif
+  }
+
   // Measurement ID list
   MeasId_list = CALLOC(1, sizeof(*MeasId_list));
   memset((void *)MeasId_list, 0, sizeof(*MeasId_list));
@@ -1734,7 +1843,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A1);
 
-  if (RC.rrc[ctxt_pP->module_id]->HO_flag == 1 /*HO_MEASURMENT */ ) {
+  if (RC.rrc[ctxt_pP->module_id]->HO_flag == 1 /*HO_MEASUREMENT */ ) {
     LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, A5, and A6 event reporting\n",
           ctxt_pP->module_id, ctxt_pP->frame);
     ReportConfig_A2->reportConfigId = 3;
@@ -1883,7 +1992,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   }
 
 #endif
-#if defined(ENABLE_ITTI)
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -1907,6 +2015,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     }
     /* TODO should test if e RAB are Ok before! */
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE;
+    ue_context_pP->ue_context.e_rab[i].xid    = xid;
     LOG_D(RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
           i, ue_context_pP->ue_context.e_rab[i].status, "E_RAB_STATUS_DONE");
   }
@@ -1917,7 +2026,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     dedicatedInfoNASList = NULL;
   }
 
-#endif
+  x2_enabled = is_x2ap_enabled();
+
   // send LTE_RRCConnectionReconfiguration
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionReconfiguration(ctxt_pP,
@@ -1928,17 +2038,18 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                          (struct LTE_SPS_Config *)NULL,   // maybe ue_context_pP->ue_context.sps_Config,
                                          (struct LTE_PhysicalConfigDedicated *)ue_context_pP->ue_context.physicalConfigDedicated,
-#ifdef EXMIMO_IOT
-                                         NULL, NULL, NULL,NULL,
-#else
-                                         (LTE_MeasObjectToAddModList_t *)MeasObj_list, // MeasObj_list,
-                                         (LTE_ReportConfigToAddModList_t *)ReportConfig_list, // ReportConfig_list,
-                                         (LTE_QuantityConfig_t *)quantityConfig, //quantityConfig,
+//#ifdef EXMIMO_IOT
+//                                         NULL, NULL, NULL,NULL,
+//#else
+                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL, // MeasObj_list,
+                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL, // ReportConfig_list,
+                                         x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL, //quantityConfig,
                                          (LTE_MeasIdToAddModList_t *)NULL,
-#endif
+//#endif
                                          (LTE_MAC_MainConfig_t *)ue_context_pP->ue_context.mac_MainConfig,
                                          (LTE_MeasGapConfig_t *)NULL,
                                          (LTE_MobilityControlInfo_t *)NULL,
+                                         (LTE_SecurityConfigHO_t *)NULL,
                                          (struct LTE_MeasConfig__speedStatePars *)Sparams, // Sparams,
                                          (LTE_RSRP_Range_t *)rsrp, // rsrp,
                                          (LTE_C_RNTI_t *)cba_RNTI, // cba_RNTI
@@ -1951,7 +2062,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                         );
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -1961,8 +2071,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
       ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
     }
   }
-
-#endif
 
   if(size==65535) {
     LOG_E(RRC,"RRC decode err!!! do_RRCConnectionReconfiguration\n");
@@ -2048,6 +2156,7 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 )
 //-----------------------------------------------------------------------------
 {
+ if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
   if(UE_id != -1) {
@@ -2058,29 +2167,34 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
           PROTOCOL_RRC_CTXT_UE_FMT" Generating LTE_RRCConnectionReestablishmentReject without UE_id(MAC) rnti %x\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
   }
-
+ }
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
-                                          (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
+                          (uint8_t*) ue_p->Srb0.Tx_buffer.Payload);
+
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReestablishmentReject\n");
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    ue_p->Srb0.Tx_buffer.Header,
+    ue_p->Srb0.Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" LTE_RRCConnectionReestablishmentReject UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+    ue_p->Srb0.Tx_buffer.payload_size);
+
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishmentReject (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -2147,19 +2261,28 @@ rrc_eNB_generate_RRCConnectionRelease(
   }
 
   pthread_mutex_unlock(&rrc_release_freelist);
-  rrc_data_req(ctxt_pP,
-               DCCH,
-               rrc_eNB_mui++,
-               SDU_CONFIRM_NO,
-               size,
-               buffer,
-               PDCP_TRANSMISSION_MODE_CONTROL);
+  if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = buffer;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
+    itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+  } else {
+    rrc_data_req(ctxt_pP,
+                 DCCH,
+                 rrc_eNB_mui++,
+                 SDU_CONFIRM_NO,
+                 size,
+                 buffer,
+                 PDCP_TRANSMISSION_MODE_CONTROL);
+  }
 }
 
 uint8_t qci_to_priority[9]= {2,4,3,5,1,6,7,8,9};
 
 // TBD: this directive can be remived if we create a similar e_rab_param_t structure in RRC context
-#if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------
 void
 rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
@@ -2363,7 +2486,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
                                          (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                          (struct LTE_SPS_Config *)NULL,   // *sps_Config,
                                          NULL, NULL, NULL, NULL,NULL,
-                                         NULL, NULL,  NULL, NULL, NULL, NULL,
+                                         NULL, NULL,  NULL, NULL, NULL, NULL, NULL,
                                          (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)dedicatedInfoNASList,
                                          (LTE_SL_CommConfig_r12_t *)NULL,
                                          (LTE_SL_DiscConfig_r12_t *)NULL
@@ -2372,7 +2495,6 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
 #endif
                                         );
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -2383,7 +2505,6 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
     }
   }
 
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE RNTI %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -2614,7 +2735,7 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *cons
                                          (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                          (struct LTE_SPS_Config *)NULL,   // *sps_Config,
                                          NULL, NULL, NULL, NULL,NULL,
-                                         NULL, NULL,  NULL, NULL, NULL, NULL,
+                                         NULL, NULL,  NULL, NULL, NULL, NULL, NULL,
                                          (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)dedicatedInfoNASList,
                                          (LTE_SL_CommConfig_r12_t *)NULL,
                                          (LTE_SL_DiscConfig_r12_t *)NULL
@@ -2624,7 +2745,6 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *cons
                                         );
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_modify_e_rabs; i++) {
@@ -2635,7 +2755,6 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *cons
     }
   }
 
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE RNTI %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -2729,6 +2848,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
                                          NULL,
                                          NULL,
                                          NULL,
+                                         NULL,
                                          (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)dedicatedInfoNASList,
                                          (LTE_SL_CommConfig_r12_t *)NULL,
                                          (LTE_SL_DiscConfig_r12_t *)NULL
@@ -2739,7 +2859,6 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
   ue_context_pP->ue_context.e_rab_release_command_flag = 1;
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -2747,7 +2866,6 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
     free(nas_buffer);
   }
 
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE RNTI %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -2773,20 +2891,22 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 }
-#endif
+
 //-----------------------------------------------------------------------------
-void
-rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
-    rrc_eNB_ue_context_t          *const ue_context_pP,
-    const uint8_t                ho_state
-                                                    )
+/*
+ * Generate the basic (first) RRC Connection Reconfiguration (non BR UE)
+ */
+void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+                                                          rrc_eNB_ue_context_t  *const ue_context_pP,
+                                                          const uint8_t                ho_state)
 //-----------------------------------------------------------------------------
 {
-  uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size;
-  int                                 i;
-  // configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE
-  eNB_RRC_INST                       *rrc_inst = RC.rrc[ctxt_pP->module_id];
+  uint8_t   buffer[RRC_BUF_SIZE];
+  uint16_t  size;
+  int       i;
+  
+  /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
+  eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
   struct LTE_SRB_ToAddMod                *SRB2_config                      = NULL;
   struct LTE_SRB_ToAddMod__rlc_Config    *SRB2_rlc_config                  = NULL;
@@ -2794,7 +2914,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   struct LTE_LogicalChannelConfig__ul_SpecificParameters
     *SRB2_ul_SpecificParameters       = NULL;
   LTE_SRB_ToAddModList_t                 *SRB_configList = ue_context_pP->ue_context.SRB_configList;
-  LTE_SRB_ToAddModList_t                 **SRB_configList2                  = NULL;
+  LTE_SRB_ToAddModList_t                 **SRB_configList2                 = NULL;
   struct LTE_DRB_ToAddMod                *DRB_config                       = NULL;
   struct LTE_RLC_Config                  *DRB_rlc_config                   = NULL;
   struct LTE_PDCP_Config                 *DRB_pdcp_config                  = NULL;
@@ -2804,7 +2924,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   struct LTE_LogicalChannelConfig__ul_SpecificParameters
     *DRB_ul_SpecificParameters        = NULL;
   LTE_DRB_ToAddModList_t                **DRB_configList = &ue_context_pP->ue_context.DRB_configList;
-  LTE_DRB_ToAddModList_t                **DRB_configList2 = NULL;
+  LTE_DRB_ToAddModList_t                **DRB_configList2                  = NULL;
   LTE_MAC_MainConfig_t                   *mac_MainConfig                   = NULL;
   LTE_MeasObjectToAddModList_t           *MeasObj_list                     = NULL;
   LTE_MeasObjectToAddMod_t               *MeasObj                          = NULL;
@@ -2813,26 +2933,31 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
                                          *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
   LTE_MeasIdToAddModList_t               *MeasId_list                      = NULL;
   LTE_MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  long                               *sr_ProhibitTimer_r9              = NULL;
-  //     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
-  //uint8_t                            sCellIndexToAdd = 0;
+  long                                   *sr_ProhibitTimer_r9              = NULL;
 #endif
-  long                               *logicalchannelgroup, *logicalchannelgroup_drb;
-  long                               *maxHARQ_Tx, *periodicBSR_Timer;
+
+  long                                   *logicalchannelgroup              = NULL;
+  long                                   *logicalchannelgroup_drb          = NULL;
+  long                                   *maxHARQ_Tx                       = NULL; 
+  long                                   *periodicBSR_Timer                = NULL;
   LTE_RSRP_Range_t                       *rsrp                             = NULL;
   struct LTE_MeasConfig__speedStatePars  *Sparams                          = NULL;
   LTE_QuantityConfig_t                   *quantityConfig                   = NULL;
-  LTE_CellsToAddMod_t                    *CellToAdd                        = NULL;
-  LTE_CellsToAddModList_t                *CellsToAddModList                = NULL;
-  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
+  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList 
+    *dedicatedInfoNASList = NULL;
   LTE_DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
-  /* for no gcc warnings */
-  (void)dedicatedInfoNas;
+  
+  /* For no gcc warnings */
+  (void) dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
+  int                                    x2_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
-#ifdef CBA
-  //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
+  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
+  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
+
+#ifdef CBA // Contention Based Access
   uint8_t                            *cba_RNTI_buf;
   cba_RNTI = CALLOC(1, sizeof(LTE_C_RNTI_t));
   cba_RNTI_buf = CALLOC(1, 2 * sizeof(uint8_t));
@@ -2840,27 +2965,33 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   cba_RNTI->size = 2;
   cba_RNTI->bits_unused = 0;
 
-  // associate UEs to the CBa groups as a function of their UE id
+  /* Associate UEs to the CBA groups as a function of their UE id */
   if (rrc_inst->num_active_cba_groups) {
     cba_RNTI->buf[0] = rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups] & 0xff;
     cba_RNTI->buf[1] = 0xff;
-    LOG_D(RRC,
-          "[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n",
-          enb_mod_idP, frameP,
+    LOG_D(RRC, "[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n",
+          enb_mod_idP, 
+          frameP,
           rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups],
           ue_mod_idP % rrc_inst->num_active_cba_groups, ue_mod_idP);
   } else {
     cba_RNTI->buf[0] = 0x0;
     cba_RNTI->buf[1] = 0x0;
-    LOG_D(RRC, "[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n", enb_mod_idP, frameP, ue_mod_idP);
+    LOG_D(RRC, "[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n", 
+          enb_mod_idP, 
+          frameP, 
+          ue_mod_idP);
   }
-
 #endif
-  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  // Configure SRB2
-  /// SRB2
-  SRB_configList2=&ue_context_pP->ue_context.SRB_configList2[xid];
+
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, 
+    T_INT(ctxt_pP->module_id), 
+    T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), 
+    T_INT(ctxt_pP->rnti));
+
+  /* Configure SRB2 */
+  SRB_configList2 = &(ue_context_pP->ue_context.SRB_configList2[xid]);
 
   if (*SRB_configList2) {
     free(*SRB_configList2);
@@ -2885,22 +3016,19 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   SRB2_lchan_config->present = LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
   SRB2_ul_SpecificParameters = CALLOC(1, sizeof(*SRB2_ul_SpecificParameters));
   SRB2_ul_SpecificParameters->priority = 3; // let some priority for SRB1 and dedicated DRBs
-  SRB2_ul_SpecificParameters->prioritisedBitRate =
-    LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  SRB2_ul_SpecificParameters->bucketSizeDuration =
-    LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-  // LCG for CCCH and DCCH is 0 as defined in 36331
+  SRB2_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  SRB2_ul_SpecificParameters->bucketSizeDuration = LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  
+  /* LCG for CCCH and DCCH is 0 as defined in 36331 */
   logicalchannelgroup = CALLOC(1, sizeof(long));
   *logicalchannelgroup = 0;
   SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
-  // this list has the configuration for SRB1 and SRB2
-  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
-  // this list has only the configuration for SRB2
-  ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+  
+  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config); // this list has the configuration for SRB1 and SRB2
+  ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config); // this list has only the configuration for SRB2
 
-  // Configure DRB
-  //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
+  /* Configure DRB */
   // list for all the configured DRB
   if (*DRB_configList) {
     free(*DRB_configList);
@@ -2908,8 +3036,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 
   *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
   memset(*DRB_configList, 0, sizeof(**DRB_configList));
-  // list for the configured DRB for a this xid
-  DRB_configList2=&ue_context_pP->ue_context.DRB_configList2[xid];
+  
+  DRB_configList2=&ue_context_pP->ue_context.DRB_configList2[xid]; // list for the configured DRB for a this xid
 
   if (*DRB_configList2) {
     free(*DRB_configList2);
@@ -2917,17 +3045,17 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 
   *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
   memset(*DRB_configList2, 0, sizeof(**DRB_configList2));
-  /// DRB
+  
   DRB_config = CALLOC(1, sizeof(*DRB_config));
   DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
   *(DRB_config->eps_BearerIdentity) = 5L; // LW set to first value, allowed value 5..15, value : x+4
-  // DRB_config->drb_Identity = (LTE_DRB_Identity_t) 1; //allowed values 1..32
   // NN: this is the 1st DRB for this ue, so set it to 1
   DRB_config->drb_Identity = (LTE_DRB_Identity_t) 1;  // (ue_mod_idP+1); //allowed values 1..32, value: x
   DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
   *(DRB_config->logicalChannelIdentity) = (long)3; // value : x+2
   DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
   DRB_config->rlc_Config = DRB_rlc_config;
+
 #ifdef RRC_DEFAULT_RAB_IS_AM
   DRB_rlc_config->present = LTE_RLC_Config_PR_am;
   DRB_rlc_config->choice.am.ul_AM_RLC.t_PollRetransmit = LTE_T_PollRetransmit_ms50;
@@ -2940,21 +3068,25 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
   DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
+
 #ifdef CBA
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering   = LTE_T_Reordering_ms5;//T_Reordering_ms25;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering   = LTE_T_Reordering_ms5; //T_Reordering_ms25;
 #else
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
 #endif
+
 #endif
+
   DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
   DRB_config->pdcp_Config = DRB_pdcp_config;
   DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
   *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
   DRB_pdcp_config->rlc_AM = NULL;
   DRB_pdcp_config->rlc_UM = NULL;
-  /* avoid gcc warnings */
+  /* Avoid gcc warnings */
   (void)PDCP_rlc_AM;
   (void)PDCP_rlc_UM;
+
 #ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
   DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
@@ -2964,57 +3096,102 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
   PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
 #endif
+
   DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
   DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
   DRB_config->logicalChannelConfig = DRB_lchan_config;
   DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
   DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-  DRB_ul_SpecificParameters->priority = 12;    // lower priority than srb1, srb2 and other dedicated bearer
-  DRB_ul_SpecificParameters->prioritisedBitRate =LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8 ;
-  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  DRB_ul_SpecificParameters->bucketSizeDuration =
-    LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  DRB_ul_SpecificParameters->priority = 12; // lower priority than srb1, srb2 and other dedicated bearer
+  DRB_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8; // LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  DRB_ul_SpecificParameters->bucketSizeDuration = LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
   // LCG for DTCH can take the value from 1 to 3 as defined in 36331: normally controlled by upper layers (like RRM)
   logicalchannelgroup_drb = CALLOC(1, sizeof(long));
   *logicalchannelgroup_drb = 1;
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+  
   ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
   ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
-  //ue_context_pP->ue_context.DRB_configList2[0] = &(*DRB_configList);
+  
+  /* MAC Main Config */
+  // The different parts of MAC main config are set below
   mac_MainConfig = CALLOC(1, sizeof(*mac_MainConfig));
   ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
   mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
   maxHARQ_Tx = CALLOC(1, sizeof(long));
   *maxHARQ_Tx = LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
   mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+
+  /* BSR reconfiguration */
   periodicBSR_Timer = CALLOC(1, sizeof(long));
-  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64;
+  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64; //LTE_PeriodicBSR_Timer_r12_infinity; // LTE_PeriodicBSR_Timer_r12_sf64; // LTE_PeriodicBSR_Timer_r12_sf20
   mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
-  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320;
+  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320; // LTE_RetxBSR_Timer_r12_sf320; // LTE_RetxBSR_Timer_r12_sf5120
   mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
   mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
-  mac_MainConfig->drx_Config = NULL;
+
+  /* PHR reconfiguration */
   mac_MainConfig->phr_Config = CALLOC(1, sizeof(*mac_MainConfig->phr_Config));
   mac_MainConfig->phr_Config->present = LTE_MAC_MainConfig__phr_Config_PR_setup;
-  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
-  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
-  mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;  // Value dB1 =1 dB, dB3 = 3 dB
+  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf500; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_infinity
+  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
+  mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
+
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    /* CDRX Configuration */
+    // Need to check if UE is a BR UE
+    rnti_t rnti = ue_context_pP->ue_id_rnti;
+    module_id_t module_id = ctxt_pP->module_id;
+    int UE_id = find_UE_id(module_id, rnti);
+    eNB_MAC_INST *mac = RC.mac[module_id];
+    UE_list_t *UE_list = &(mac->UE_list);
+
+    if (UE_id != -1) {
+      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
+        (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
+      // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
+      
+      LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+
+      /* Process the IE drx_Config */
+      if (cc_id < MAX_NUM_CCs) {
+        mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+      } else {
+        LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
+      }
+
+      /* Set timers and thresholds values in local MAC context of UE */
+      eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
+
+      LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+
+      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
+        mac_MainConfig->drx_Config = NULL;
+      }
+    } else { // UE_id invalid
+      LOG_E(RRC, "Invalid UE_id found!\n");
+      mac_MainConfig->drx_Config = NULL;
+    }
+  } else { // No CDRX with the CU/DU split in this version
+    LOG_E(RRC, "CU/DU split activated\n");
+    mac_MainConfig->drx_Config = NULL;
+  }
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
-  *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
+  *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
   mac_MainConfig->ext1 = CALLOC(1, sizeof(struct LTE_MAC_MainConfig__ext1));
   mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
-  //sps_RA_ConfigList_rlola = NULL;
 #endif
 
-  //change the transmission mode for the primary component carrier
-  //TODO: add codebook subset restriction here
-  //TODO: change TM for secondary CC in SCelltoaddmodlist
+  // change the transmission mode for the primary component carrier
+  // TODO: add codebook subset restriction here
+  // TODO: change TM for secondary CC in SCelltoaddmodlist
   if (*physicalConfigDedicated) {
     if ((*physicalConfigDedicated)->antennaInfo) {
-
       (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
       LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+
       if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm3) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
@@ -3024,8 +3201,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf[0] = 0xc0;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
-      }
-      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) {
+      } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3034,8 +3210,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf[0] = 0xfc;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
-      }
-      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) {
+      } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3044,8 +3219,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf[0] = 0xf0;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
-      }
-      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6) {
+      } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3055,23 +3229,24 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.bits_unused=4;
       }
-    }
-    else {
+    } else {
       LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
     }
 
-    if ((*physicalConfigDedicated)->cqi_ReportConfig) {
+    /* CSI RRC Reconfiguration */
+    if ((*physicalConfigDedicated)->cqi_ReportConfig != NULL) {
+      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm4) ||
+          (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm5) ||
+          (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm6)) {
 
-      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) ||
-	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) ||
-	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6)) {
-	//feedback mode needs to be set as well
-	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
-	printf("setting cqi reporting mode to rm31\n");
+        // feedback mode needs to be set as well
+	      // TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
+        LOG_I(RRC, "Setting cqi reporting mode to rm31 (hardcoded)\n");
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-        *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=LTE_CQI_ReportModeAperiodic_rm31;
+        *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic) = LTE_CQI_ReportModeAperiodic_rm31; // HLC CQI, single PMI
 #else
-        *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=LTE_CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, no PMI
+        *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic) = LTE_CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, single PMI
 #endif
       }
     } else {
@@ -3123,8 +3298,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   memset((void *)MeasObj, 0, sizeof(*MeasObj));
   MeasObj->measObjectId = 1;
   MeasObj->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = 3350; //band 7, 2.68GHz
-  //MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = 36090; //band 33, 1.909GHz
+  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth = LTE_AllowedMeasBandwidth_mbw25;
   MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1 = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf = CALLOC(1, sizeof(uint8_t));
@@ -3132,19 +3309,18 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-
-  // Add adjacent cell lists (6 per eNB)
-  for (i = 0; i < 6; i++) {
-    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
-    CellToAdd->cellIndex = i + 1;
-    CellToAdd->physCellId = get_adjacent_cell_id(ctxt_pP->module_id, i);
-    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
-    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
-  }
-
+  //  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+  //    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+  //  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+  //
+  //  // Add adjacent cell lists (6 per eNB)
+  //  for (i = 0; i < 6; i++) {
+  //    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
+  //    CellToAdd->cellIndex = i + 1;
+  //    CellToAdd->physCellId = get_adjacent_cell_id(ctxt_pP->module_id, i);
+  //    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
+  //    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
+  //  }
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
   // Report Configurations for periodical, A1-A5 events
@@ -3183,132 +3359,108 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A1);
+  //if (ho_state == 1 /*HO_MEASURMENT */ ) {
+  LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, and A5 event reporting\n",
+        ctxt_pP->module_id, ctxt_pP->frame);
+  ReportConfig_A2->reportConfigId = 3;
+  ReportConfig_A2->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A2);
+  ReportConfig_A3->reportConfigId = 4;
+  ReportConfig_A3->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 0;   //10;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA3.reportOnLeave = 1;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0; // FIXME ...hysteresis is of type long!
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
+    LTE_TimeToTrigger_ms40;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A3);
+  ReportConfig_A4->reportConfigId = 5;
+  ReportConfig_A4->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A4);
+  ReportConfig_A5->reportConfigId = 6;
+  ReportConfig_A5->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present =
+    LTE_ReportConfigEUTRA__triggerType_PR_event;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
+    LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold1.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold2.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
+  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+  rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
+  *rsrp = 20;
+  Sparams = CALLOC(1, sizeof(*Sparams));
+  Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
+  Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
+  Sparams->choice.setup.timeToTrigger_SF.sf_Medium = LTE_SpeedStateScaleFactors__sf_High_oDot5;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh = 10;
+  Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium = 5;
+  Sparams->choice.setup.mobilityStateParameters.t_Evaluation = LTE_MobilityStateParameters__t_Evaluation_s60;
+  Sparams->choice.setup.mobilityStateParameters.t_HystNormal = LTE_MobilityStateParameters__t_HystNormal_s120;
+  quantityConfig = CALLOC(1, sizeof(*quantityConfig));
+  memset((void *)quantityConfig, 0, sizeof(*quantityConfig));
+  quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(struct LTE_QuantityConfigEUTRA));
+  memset((void *)quantityConfig->quantityConfigEUTRA, 0, sizeof(*quantityConfig->quantityConfigEUTRA));
+  quantityConfig->quantityConfigCDMA2000 = NULL;
+  quantityConfig->quantityConfigGERAN = NULL;
+  quantityConfig->quantityConfigUTRA = NULL;
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP =
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ =
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
+  *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
 
-  if (ho_state == 1 /*HO_MEASURMENT */ ) {
-    LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, A5, and A6 event reporting\n",
-          ctxt_pP->module_id, ctxt_pP->frame);
-    ReportConfig_A2->reportConfigId = 3;
-    ReportConfig_A2->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA2.a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA2.a2_Threshold.choice.threshold_RSRP = 10;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A2);
-    ReportConfig_A3->reportConfigId = 4;
-    ReportConfig_A3->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 1;   //10;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA3.reportOnLeave = 1;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0.5; // FIXME ...hysteresis is of type long!
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
-      LTE_TimeToTrigger_ms40;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A3);
-    ReportConfig_A4->reportConfigId = 5;
-    ReportConfig_A4->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA4.a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA4.a4_Threshold.choice.threshold_RSRP = 10;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A4);
-    ReportConfig_A5->reportConfigId = 6;
-    ReportConfig_A5->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.present =
-      LTE_ReportConfigEUTRA__triggerType_PR_event;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
-      LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA5;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold1.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold2.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
-    eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
-      LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
-    //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
-    rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
-    *rsrp = 20;
-    Sparams = CALLOC(1, sizeof(*Sparams));
-    Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
-    Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
-    Sparams->choice.setup.timeToTrigger_SF.sf_Medium = LTE_SpeedStateScaleFactors__sf_High_oDot5;
-    Sparams->choice.setup.mobilityStateParameters.n_CellChangeHigh = 10;
-    Sparams->choice.setup.mobilityStateParameters.n_CellChangeMedium = 5;
-    Sparams->choice.setup.mobilityStateParameters.t_Evaluation = LTE_MobilityStateParameters__t_Evaluation_s60;
-    Sparams->choice.setup.mobilityStateParameters.t_HystNormal = LTE_MobilityStateParameters__t_HystNormal_s120;
-    quantityConfig = CALLOC(1, sizeof(*quantityConfig));
-    memset((void *)quantityConfig, 0, sizeof(*quantityConfig));
-    quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(struct LTE_QuantityConfigEUTRA));
-    memset((void *)quantityConfig->quantityConfigEUTRA, 0, sizeof(*quantityConfig->quantityConfigEUTRA));
-    quantityConfig->quantityConfigCDMA2000 = NULL;
-    quantityConfig->quantityConfigGERAN = NULL;
-    quantityConfig->quantityConfigUTRA = NULL;
-    quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP =
-      CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
-    quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ =
-      CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
-    *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
-    *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
-    LOG_I(RRC,
-          "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
-          ctxt_pP->module_id, ctxt_pP->frame);
-    // store the information in an intermediate structure for Hanodver management
-    //rrc_inst->handover_info.as_config.sourceRadioResourceConfig.srb_ToAddModList = CALLOC(1,sizeof());
-    ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.srb_ToAddModList,(void *)SRB_list,sizeof(LTE_SRB_ToAddModList_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList = *SRB_configList2;
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.drb_ToAddModList,(void *)DRB_list,sizeof(LTE_DRB_ToAddModList_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList = *DRB_configList;
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig =
-      CALLOC(1, sizeof(*ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig));
-    memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
-           (void *)mac_MainConfig, sizeof(LTE_MAC_MainConfig_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated =
-      CALLOC(1, sizeof(LTE_PhysicalConfigDedicated_t));
-    memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
-           (void *)ue_context_pP->ue_context.physicalConfigDedicated, sizeof(LTE_PhysicalConfigDedicated_t));
-    ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.sps_Config = NULL;
-    //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[ue_mod_idP],sizeof(SPS_Config_t));
-  }
-
-#if defined(ENABLE_ITTI)
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -3329,7 +3481,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
       //      ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
       //      ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
     }
-    /* TODO should test if e RAB are Ok before! */
+
+    /* TODO should test if e RAB are OK before! */
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE;
     LOG_D(RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
           i, ue_context_pP->ue_context.e_rab[i].status, "E_RAB_STATUS_DONE");
@@ -3341,40 +3494,38 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
     dedicatedInfoNASList = NULL;
   }
 
-#endif
+  x2_enabled = is_x2ap_enabled();
+
   memset(buffer, 0, RRC_BUF_SIZE);
+
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
-                                         xid,   //Transaction_id,
-                                         (LTE_SRB_ToAddModList_t *)*SRB_configList2, // SRB_configList
-                                         (LTE_DRB_ToAddModList_t *)*DRB_configList,
-                                         (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
-                                         (struct LTE_SPS_Config *)NULL,   // *sps_Config,
-                                         (struct LTE_PhysicalConfigDedicated *)*physicalConfigDedicated,
-#ifdef EXMIMO_IOT
-                                         NULL, NULL, NULL,NULL,
-#else
-                                         (LTE_MeasObjectToAddModList_t *)MeasObj_list,
-                                         (LTE_ReportConfigToAddModList_t *)ReportConfig_list,
-                                         (LTE_QuantityConfig_t *)quantityConfig,
-                                         (LTE_MeasIdToAddModList_t *)MeasId_list,
-#endif
-                                         (LTE_MAC_MainConfig_t *)mac_MainConfig,
-                                         (LTE_MeasGapConfig_t *)NULL,
-                                         (LTE_MobilityControlInfo_t *)NULL,
-                                         (struct LTE_MeasConfig__speedStatePars *)Sparams,
-                                         (LTE_RSRP_Range_t *)rsrp,
-                                         (LTE_C_RNTI_t *)cba_RNTI,
-                                         (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)dedicatedInfoNASList,
-                                         (LTE_SL_CommConfig_r12_t *)NULL,
-                                         (LTE_SL_DiscConfig_r12_t *)NULL
+                                         xid, // Transaction_id,
+                                         (LTE_SRB_ToAddModList_t *) *SRB_configList2, // SRB_configList
+                                         (LTE_DRB_ToAddModList_t *) *DRB_configList,
+                                         (LTE_DRB_ToReleaseList_t *) NULL, // DRB2_list,
+                                         (struct LTE_SPS_Config *) NULL,   // *sps_Config,
+                                         (struct LTE_PhysicalConfigDedicated *) *physicalConfigDedicated,
+                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *) MeasObj_list : NULL,
+                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *) ReportConfig_list : NULL,
+                                         x2_enabled ? (LTE_QuantityConfig_t *) quantityConfig : NULL,
+                                         x2_enabled ? (LTE_MeasIdToAddModList_t *) MeasId_list : NULL,
+                                         (LTE_MAC_MainConfig_t *) mac_MainConfig,
+                                         (LTE_MeasGapConfig_t *) NULL,
+                                         (LTE_MobilityControlInfo_t *) NULL,
+                                         (LTE_SecurityConfigHO_t *) NULL,
+                                         (struct LTE_MeasConfig__speedStatePars *) Sparams,
+                                         (LTE_RSRP_Range_t *) rsrp,
+                                         (LTE_C_RNTI_t *) cba_RNTI,
+                                         (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *) dedicatedInfoNASList,
+                                         (LTE_SL_CommConfig_r12_t *) NULL,
+                                         (LTE_SL_DiscConfig_r12_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                                         , (LTE_SCellToAddMod_r10_t *)NULL
+                                         , (LTE_SCellToAddMod_r10_t *) NULL
 #endif
                                         );
-  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
+
+  LOG_DUMPMSG(RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Connection Reconfiguration\n");
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -3385,31 +3536,38 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
     }
   }
 
-#endif
-  LOG_I(RRC,
-        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
-        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
-  LOG_D(RRC,
-        "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
-        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" LTE_RRCConnectionReconfiguration UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_eNB_mui,
-    size);
-  rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  LOG_I(RRC, "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
+        ctxt_pP->module_id, 
+        ctxt_pP->frame, 
+        size, 
+        ue_context_pP->ue_context.rnti);
+
+  LOG_D(RRC, "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+        ctxt_pP->frame, 
+        ctxt_pP->module_id, 
+        size, 
+        ue_context_pP->ue_context.rnti, 
+        rrc_eNB_mui, 
+        ctxt_pP->module_id, 
+        DCCH);
+
+  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
+                     MSC_RRC_UE,
+                     buffer,
+                     size,
+                     MSC_AS_TIME_FMT" LTE_RRCConnectionReconfiguration UE %x MUI %d size %u",
+                     MSC_AS_TIME_ARGS(ctxt_pP),
+                     ue_context_pP->ue_context.rnti,
+                     rrc_eNB_mui,
+                     size);
+
+  rrc_data_req(ctxt_pP,
+               DCCH,
+               rrc_eNB_mui++,
+               SDU_CONFIRM_NO,
+               size,
+               buffer,
+               PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 //-----------------------------------------------------------------------------
@@ -3469,6 +3627,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   /* for no gcc warnings */
   (void)dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
+  int                                    x2_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
 #ifdef CBA
   //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
@@ -3653,8 +3812,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     if ((*physicalConfigDedicated)->antennaInfo) {
       (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
       LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+
       if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm3) {
-	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
 	  LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm3;
@@ -3663,7 +3823,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
       } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) {
-	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
 	  LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm4;
@@ -3671,10 +3831,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf[0] = 0xfc;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
-      } 
-      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) {
-
-	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+      } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
 	  LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm5;
@@ -3682,10 +3840,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf[0] = 0xf0;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
-      }
-      
-      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6) {
-	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
+      } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6) {
+	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
 	  CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
 	  LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm6;
@@ -3693,21 +3849,20 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf[0] = 0xf0;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.bits_unused=4;
-	
       }
-    }
-    else {
+    } else {
       LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
     }
 
-    if ((*physicalConfigDedicated)->cqi_ReportConfig) {
-      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) ||
-	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) ||
-	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6)) {
+    /* CSI Configuration through RRC */
+    if ((*physicalConfigDedicated)->cqi_ReportConfig != NULL) {
+      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm4) ||
+          (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm5) ||
+          (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode == LTE_AntennaInfoDedicated__transmissionMode_tm6)) {
+        //feedback mode needs to be set as well
+        //TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
+        LOG_I(RRC, "Setting cqi aperiodic reporting mode to rm31 (hardcoded)\n");
 
-	//feedback mode needs to be set as well
-	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
-	printf("setting cqi reporting mode to rm31\n");
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
         *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=LTE_CQI_ReportModeAperiodic_rm31;
 #else
@@ -3810,7 +3965,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
-#if defined(ENABLE_ITTI)
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -3843,7 +3997,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     dedicatedInfoNASList = NULL;
   }
 
-#endif
+  x2_enabled = is_x2ap_enabled();
+
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
@@ -3856,14 +4011,15 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                          // #ifdef EXMIMO_IOT
                                          //                                          NULL, NULL, NULL,NULL,
                                          // #else
-                                         (LTE_MeasObjectToAddModList_t *)MeasObj_list,
-                                         (LTE_ReportConfigToAddModList_t *)ReportConfig_list,
-                                         (LTE_QuantityConfig_t *)quantityConfig,
-                                         (LTE_MeasIdToAddModList_t *)MeasId_list,
+                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
+                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
+                                         x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
+                                         x2_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
                                          // #endif
                                          (LTE_MAC_MainConfig_t *)mac_MainConfig,
                                          (LTE_MeasGapConfig_t *)NULL,
                                          (LTE_MobilityControlInfo_t *)NULL,
+                                         (LTE_SecurityConfigHO_t *)NULL,
                                          (struct LTE_MeasConfig__speedStatePars *)Sparams,
                                          (LTE_RSRP_Range_t *)rsrp,
                                          (LTE_C_RNTI_t *)cba_RNTI,
@@ -3876,7 +4032,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                         );
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -3887,7 +4042,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     }
   }
 
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -3955,6 +4109,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
                                          (LTE_MAC_MainConfig_t *)NULL,
                                          (LTE_MeasGapConfig_t *)NULL,
                                          (LTE_MobilityControlInfo_t *)NULL,
+                                         (LTE_SecurityConfigHO_t *)NULL,
                                          (struct LTE_MeasConfig__speedStatePars *)NULL,
                                          (LTE_RSRP_Range_t *)NULL,
                                          (LTE_C_RNTI_t *)NULL,
@@ -4000,6 +4155,11 @@ rrc_eNB_process_MeasurementReport(
 {
   int i=0;
   int neighboring_cells=-1;
+  int ncell_index = 0;
+  long ncell_max = -150;
+  uint32_t earfcn_dl;
+  uint8_t KeNB_star[32] = { 0 };
+
   T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -4012,6 +4172,38 @@ rrc_eNB_process_MeasurementReport(
     }
 
     ue_context_pP->ue_context.measResults->measId=measResults2->measId;
+
+    switch (measResults2->measId) {
+      case 1:
+        LOG_D(RRC,"Periodic report at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
+      case 2:
+        LOG_D(RRC,"A1 event report (Serving becomes better than absolute threshold) at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
+      case 3:
+        LOG_D(RRC,"A2 event report (Serving becomes worse than absolute threshold) at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
+      case 4:
+        LOG_D(RRC,"A3 event report (Neighbour becomes amount of offset better than PCell) at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
+      case 5:
+        LOG_D(RRC,"A4 event report (Neighbour becomes better than absolute threshold) at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
+      case 6:
+        LOG_D(RRC,"A5 event report (PCell becomes worse than absolute threshold1 AND Neighbour becomes better than another absolute threshold2) at frame %d and subframe %d \n", ctxt_pP->frame,
+              ctxt_pP->subframe);
+        break;
+
+      default:
+        LOG_D(RRC,"Other event report frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+    }
+
     ue_context_pP->ue_context.measResults->measResultPCell.rsrpResult=measResults2->measResultPCell.rsrpResult;
     ue_context_pP->ue_context.measResults->measResultPCell.rsrqResult=measResults2->measResultPCell.rsrqResult;
     LOG_D(RRC, "[eNB %d]Frame %d: UE %x (Measurement Id %d): RSRP of Source %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId,
@@ -4027,308 +4219,480 @@ rrc_eNB_process_MeasurementReport(
     neighboring_cells = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count;
 
     if (ue_context_pP->ue_context.measResults->measResultNeighCells == NULL) {
-      ue_context_pP->ue_context.measResults->measResultNeighCells = CALLOC(1, sizeof(*measResults2->measResultNeighCells)*neighboring_cells);
+      ue_context_pP->ue_context.measResults->measResultNeighCells = CALLOC(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
     }
 
-    ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count = neighboring_cells;
-
     for (i=0; i < neighboring_cells; i++) {
-      memcpy (ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i],
-              measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i],
-              sizeof(LTE_MeasResultListEUTRA_t));
+      if (i>=ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count) {
+        //printf("NeighCells number: %d \n", ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count);
+        ASN_SEQUENCE_ADD(&ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]);
+      }
+
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId =
+        measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId;
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult =
+        measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult;
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult =
+        measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult;
       LOG_D(RRC, "Physical Cell Id %d\n",
             (int)ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId);
-      LOG_D(RRC, "RSRP of Target %d\n",
-            (int)*(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult));
-      LOG_D(RRC, "RSRQ of Target %d\n",
-            (int)*(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult));
+      LOG_D(RRC, "RSRP of Target %ld\n",
+            (*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult)-140);
+      LOG_D(RRC, "RSRQ of Target %ld\n",
+            (*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult)/2 - 20);
+
+      if ( *measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult >= ncell_max ) {
+        ncell_max = *measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult;
+        ncell_index = i;
+      }
+
+      //LOG_D(RRC, "Physical Cell Id2 %d\n",
+      //(int)measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId);
+      //LOG_D(RRC, "RSRP of Target2 %ld\n",
+      //(*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->
+      //measResult.rsrpResult))-140);
+      //LOG_D(RRC, "RSRQ of Target2 %ld\n",
+      //(*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->
+      //measResult.rsrqResult))/2 - 20);
     }
   }
 
-  // #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  // #else
-  // LOG_I(RRC, "RSRP of Source %d\n", measResults2->measResultServCell.rsrpResult);
-  // LOG_I(RRC, "RSRQ of Source %d\n", measResults2->measResultServCell.rsrqResult);
-  // #endif
-  // if (ue_context_pP->ue_context.handover_info->ho_prepare != 0xF0) {
-  //   rrc_eNB_generate_HandoverPreparationInformation(ctxt_pP,
-  //       ue_context_pP,
-  //       measResults2->measResultNeighCells->choice.
-  //       measResultListEUTRA.list.array[0]->physCellId);
-  // } else {
-  //   LOG_D(RRC, "[eNB %d] Frame %d: Ignoring MeasReport from UE %x as Handover is in progress... \n", ctxt_pP->module_id, ctxt_pP->frame,
-  //         ctxt_pP->rnti);
-  // }
-  //Look for IP address of the target eNB
-  //Send Handover Request -> target eNB
-  //Wait for Handover Acknowledgement <- target eNB
-  //Send Handover Command
-  //x2delay();
-  //    handover_request_x2(ue_mod_idP,enb_mod_idP,measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
-  //    uint8_t buffer[100];
-  //    int size=rrc_eNB_generate_Handover_Command_TeNB(0,0,buffer);
-  //
-  //      send_check_message((char*)buffer,size);
-  //send_handover_command();
+  /* Decide whether to trigger HO or not */
+  if (!(measResults2->measId == 4))
+    return;
+
+  /* if X2AP is disabled, do nothing */
+  if (!is_x2ap_enabled())
+    return;
+
+  LOG_D(RRC, "A3 event is triggered...\n");
+
+  /* if the UE is not in handover mode, start handover procedure */
+  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+    MessageDef      *msg;
+    LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+    /* HO info struct may not be needed anymore */
+    ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
+    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
+    /* HO Preparation message */
+    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ);
+    rrc_eNB_generate_HandoverPreparationInformation(
+      ue_context_pP,
+      X2AP_HANDOVER_REQ(msg).rrc_buffer,
+      &X2AP_HANDOVER_REQ(msg).rrc_buffer_size);
+    X2AP_HANDOVER_REQ(msg).rnti = ctxt_pP->rnti;
+    X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
+        measResultListEUTRA.list.array[ncell_index]->physCellId;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mcc = ue_context_pP->ue_context.ue_gummei.mcc;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mnc = ue_context_pP->ue_context.ue_gummei.mnc;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len = ue_context_pP->ue_context.ue_gummei.mnc_len;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code = ue_context_pP->ue_context.ue_gummei.mme_code;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mme_group_id = ue_context_pP->ue_context.ue_gummei.mme_group_id;
+    // Don't know how to get this ID?
+    X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
+    X2AP_HANDOVER_REQ(msg).security_capabilities = ue_context_pP->ue_context.security_capabilities;
+    // compute keNB*
+    earfcn_dl = (uint32_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
+    RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+    derive_keNB_star(ue_context_pP->ue_context.kenb, X2AP_HANDOVER_REQ(msg).target_physCellId, earfcn_dl, true, KeNB_star);
+    memcpy(X2AP_HANDOVER_REQ(msg).kenb, KeNB_star, 32);
+    X2AP_HANDOVER_REQ(msg).kenb_ncc = ue_context_pP->ue_context.kenb_ncc;
+    //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
+    X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ue_context_pP->ue_context.setup_e_rabs;
+
+    for (int i=0; i<ue_context_pP->ue_context.setup_e_rabs; i++) {
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].e_rab_id = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr = ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].gtp_teid = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.qci = ue_context_pP->ue_context.e_rab[i].param.qos.qci;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_capability;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_vulnerability;
+    }
+
+    /* TODO: don't do that, X2AP should find the target by itself */
+    //X2AP_HANDOVER_REQ(msg).target_mod_id = 0;
+    LOG_I(RRC,
+          "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
+          ctxt_pP->module_id, ctxt_pP->frame);
+    itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+  } else {
+    LOG_D(RRC, "[eNB %d] Frame %d: Ignoring MeasReport from UE %x as Handover is in progress... \n", ctxt_pP->module_id, ctxt_pP->frame,
+          ctxt_pP->rnti);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void
 rrc_eNB_generate_HandoverPreparationInformation(
-  const protocol_ctxt_t *const ctxt_pP,
+  //const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t *const ue_context_pP,
-  LTE_PhysCellId_t            targetPhyId
-)
-//-----------------------------------------------------------------------------
-{
+  uint8_t                     *buffer,
+  int                          *_size
+) {
+  memset(buffer, 0, RRC_BUF_SIZE);
+  char *ho_buf = (char *) buffer;
+  int ho_size;
+  ho_size = do_HandoverPreparation(ho_buf, 1024, ue_context_pP->ue_context.UE_Capability, ue_context_pP->ue_context.UE_Capability_size);
+  *_size = ho_size;
+}
+
+void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m) {
   struct rrc_eNB_ue_context_s        *ue_context_target_p = NULL;
-  //uint8_t                             UE_id_target        = -1;
-  uint8_t                             mod_id_target = get_adjacent_cell_mod_id(targetPhyId);
-  HANDOVER_INFO                      *handoverInfo = CALLOC(1, sizeof(*handoverInfo));
-  /*
-     uint8_t buffer[100];
-     uint8_t size;
-     struct LTE_PhysicalConfigDedicated  **physicalConfigDedicated = &RC.rrc[enb_mod_idP]->physicalConfigDedicated[ue_mod_idP];
-     RadioResourceConfigDedicated_t *radioResourceConfigDedicated = CALLOC(1,sizeof(RadioResourceConfigDedicated_t));
-   */
-  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  handoverInfo->as_config.antennaInfoCommon.antennaPortsCount = 0;    //Not used 0- but check value
-  handoverInfo->as_config.sourceDl_CarrierFreq = 36090;   //Verify!
-  memcpy((void *)&handoverInfo->as_config.sourceMasterInformationBlock,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.mib, sizeof(LTE_MasterInformationBlock_t));
-  memcpy((void *)&handoverInfo->as_config.sourceMeasConfig,
-         (void *)ue_context_pP->ue_context.measConfig, sizeof(LTE_MeasConfig_t));
-  // FIXME handoverInfo not used...
-  free( handoverInfo );
-  handoverInfo = 0;
-  //to be configured
-  memset((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSecurityAlgorithmConfig,
-         0, sizeof(LTE_SecurityAlgorithmConfig_t));
-  memcpy((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSystemInformationBlockType1,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.SIB1, sizeof(LTE_SystemInformationBlockType1_t));
-  memcpy((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSystemInformationBlockType2,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.SIB23, sizeof(LTE_SystemInformationBlockType2_t));
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo =
-    CALLOC(1, sizeof(LTE_ReestablishmentInfo_t));
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId =
-    RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.physCellId;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.buf = NULL;  // Check values later
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.size = 0;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.bits_unused = 0;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->additionalReestabInfoList = NULL;
-  ue_context_pP->ue_context.handover_info->ho_prepare = 0xFF;    //0xF0;
-  ue_context_pP->ue_context.handover_info->ho_complete = 0;
+  /* TODO: get proper UE rnti */
+  int rnti = taus() & 0xffff;
+  int i;
+  //global_rnti = rnti;
+  LTE_HandoverPreparationInformation_t *ho = NULL;
+  LTE_HandoverPreparationInformation_r8_IEs_t *ho_info;
+  asn_dec_rval_t                      dec_rval;
+  ue_context_target_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
-  if (mod_id_target != 0xFF) {
-    //UE_id_target = rrc_find_free_ue_index(modid_target);
-    ue_context_target_p =
-      rrc_eNB_get_ue_context(
-        RC.rrc[mod_id_target],
-        ue_context_pP->ue_context.rnti);
+  if (ue_context_target_p != NULL) {
+    LOG_E(RRC, "\nError in obtaining free UE id in target eNB for handover \n");
+    return;
+  }
 
-    /*UE_id_target = rrc_eNB_get_next_free_UE_index(
-                    mod_id_target,
-                    RC.rrc[ctxt_pP->module_id]->Info.UE_list[ue_mod_idP]);  //this should return a new index*/
+  ue_context_target_p = rrc_eNB_allocate_new_UE_context(RC.rrc[mod_id]);
 
-    if (ue_context_target_p == NULL) { // if not already in target cell
-      ue_context_target_p = rrc_eNB_allocate_new_UE_context(RC.rrc[ctxt_pP->module_id]);
-      ue_context_target_p->ue_id_rnti      = ue_context_pP->ue_context.rnti;             // LG: should not be the same
-      ue_context_target_p->ue_context.rnti = ue_context_target_p->ue_id_rnti; // idem
-      LOG_I(RRC,
-            "[eNB %d] Frame %d : Emulate sending HandoverPreparationInformation msg from eNB source %d to eNB target %ld: source UE_id %x target UE_id %x source_modId: %d target_modId: %d\n",
-            ctxt_pP->module_id,
-            ctxt_pP->frame,
-            RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.physCellId,
-            targetPhyId,
-            ue_context_pP->ue_context.rnti,
-            ue_context_target_p->ue_id_rnti,
-            ctxt_pP->module_id,
-            mod_id_target);
-      ue_context_target_p->ue_context.handover_info =
-        CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-      memcpy((void *)&ue_context_target_p->ue_context.handover_info->as_context,
-             (void *)&ue_context_pP->ue_context.handover_info->as_context,
-             sizeof(LTE_AS_Context_t));
-      memcpy((void *)&ue_context_target_p->ue_context.handover_info->as_config,
-             (void *)&ue_context_pP->ue_context.handover_info->as_config,
-             sizeof(LTE_AS_Config_t));
-      ue_context_target_p->ue_context.handover_info->ho_prepare = 0x00;// 0xFF;
-      ue_context_target_p->ue_context.handover_info->ho_complete = 0;
-      ue_context_pP->ue_context.handover_info->modid_t = mod_id_target;
-      ue_context_pP->ue_context.handover_info->ueid_s  = ue_context_pP->ue_context.rnti;
-      ue_context_pP->ue_context.handover_info->modid_s = ctxt_pP->module_id;
-      ue_context_target_p->ue_context.handover_info->modid_t = mod_id_target;
-      ue_context_target_p->ue_context.handover_info->modid_s = ctxt_pP->module_id;
-      ue_context_target_p->ue_context.handover_info->ueid_t  = ue_context_target_p->ue_context.rnti;
-    } else {
-      LOG_E(RRC, "\nError in obtaining free UE id in target eNB %ld for handover \n", targetPhyId);
-    }
-  } else {
-    LOG_E(RRC, "\nError in obtaining Module ID of target eNB for handover \n");
+  if (ue_context_target_p == NULL) {
+    LOG_E(RRC, "Cannot create new UE context\n");
+    return;
+  }
+
+  ue_context_target_p->ue_id_rnti = rnti;
+  ue_context_target_p->ue_context.rnti = rnti;
+  RB_INSERT(rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head, ue_context_target_p);
+  LOG_D(RRC, "eNB %d: Created new UE context uid %u\n", mod_id, ue_context_target_p->local_uid);
+  ue_context_target_p->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
+  ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  ue_context_target_p->ue_context.handover_info->state = HO_ACK;
+  ue_context_target_p->ue_context.handover_info->x2_id = m->x2_id;
+  ue_context_target_p->ue_context.handover_info->assoc_id = m->target_assoc_id;
+  memset (ue_context_target_p->ue_context.nh, 0, 32);
+  ue_context_target_p->ue_context.nh_ncc = -1;
+  memcpy (ue_context_target_p->ue_context.kenb, m->kenb, 32);
+  ue_context_target_p->ue_context.kenb_ncc = m->kenb_ncc;
+  ue_context_target_p->ue_context.security_capabilities.encryption_algorithms = m->security_capabilities.encryption_algorithms;
+  ue_context_target_p->ue_context.security_capabilities.integrity_algorithms = m->security_capabilities.integrity_algorithms;
+
+  dec_rval = uper_decode(NULL,
+                         &asn_DEF_LTE_HandoverPreparationInformation,
+                         (void **)&ho,
+                         m->rrc_buffer,
+                         m->rrc_buffer_size, 0, 0);
+
+ if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_LTE_HandoverPreparationInformation, ho);
+ }
+
+  if (dec_rval.code != RC_OK ||
+      ho->criticalExtensions.present != LTE_HandoverPreparationInformation__criticalExtensions_PR_c1 ||
+      ho->criticalExtensions.choice.c1.present != LTE_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation_r8) {
+    LOG_E(RRC, "could not decode Handover Preparation\n");
+    abort();
+  }
+
+  ho_info = &ho->criticalExtensions.choice.c1.choice.handoverPreparationInformation_r8;
+
+  if (ue_context_target_p->ue_context.UE_Capability) {
+    LOG_I(RRC, "freeing old UE capabilities for UE %x\n", rnti);
+    ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
+                    ue_context_target_p->ue_context.UE_Capability);
+    ue_context_target_p->ue_context.UE_Capability = 0;
+  }
+
+  dec_rval = uper_decode(NULL,
+                         &asn_DEF_LTE_UE_EUTRA_Capability,
+                         (void **)&ue_context_target_p->ue_context.UE_Capability,
+                         ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.buf,
+                         ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.size, 0, 0);
+
+  ue_context_target_p->ue_context.UE_Capability_size = ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.size;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_target_p->ue_context.UE_Capability);
+  }
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      LOG_E(RRC, "Failed to decode UE capabilities (%zu bytes)\n", dec_rval.consumed);
+      ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
+                      ue_context_target_p->ue_context.UE_Capability);
+      ue_context_target_p->ue_context.UE_Capability = 0;
+  }
+
+  ue_context_target_p->ue_context.nb_of_e_rabs = m->nb_e_rabs_tobesetup;
+  ue_context_target_p->ue_context.setup_e_rabs = m->nb_e_rabs_tobesetup;
+  ue_context_target_p->ue_context.mme_ue_s1ap_id = m->mme_ue_s1ap_id;
+  ue_context_target_p->ue_context.ue_gummei.mcc = m->ue_gummei.mcc;
+  ue_context_target_p->ue_context.ue_gummei.mnc = m->ue_gummei.mnc;
+  ue_context_target_p->ue_context.ue_gummei.mnc_len = m->ue_gummei.mnc_len;
+  ue_context_target_p->ue_context.ue_gummei.mme_code = m->ue_gummei.mme_code;
+  ue_context_target_p->ue_context.ue_gummei.mme_group_id = m->ue_gummei.mme_group_id;
+  LOG_I(RRC, "eNB %d: Update the E-RABS %u\n", mod_id, ue_context_target_p->ue_context.nb_of_e_rabs);
+
+  for (i = 0; i < ue_context_target_p->ue_context.nb_of_e_rabs; i++) {
+    ue_context_target_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+    ue_context_target_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobesetup[i].e_rab_id;
+    ue_context_target_p->ue_context.e_rab[i].param.sgw_addr = m->e_rabs_tobesetup[i].eNB_addr;
+    ue_context_target_p->ue_context.e_rab[i].param.gtp_teid= m->e_rabs_tobesetup[i].gtp_teid;
+    LOG_I(RRC, "eNB %d: Update the UE context after HO, e_rab_id %u gtp_teid %u\n", mod_id,
+          ue_context_target_p->ue_context.e_rab[i].param.e_rab_id,
+          ue_context_target_p->ue_context.e_rab[i].param.gtp_teid);
   }
 }
 
-//-----------------------------------------------------------------------------
-void
-rrc_eNB_process_handoverPreparationInformation(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t           *const ue_context_pP
-)
-//-----------------------------------------------------------------------------
-{
-  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  LOG_I(RRC,
-        "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending LTE_RRCConnectionReconfiguration to UE %d \n",
-        ctxt_pP->module_id, ctxt_pP->frame, ue_context_pP->ue_context.rnti);
-  rrc_eNB_generate_RRCConnectionReconfiguration_handover(
-    ctxt_pP,
-    ue_context_pP,
-    NULL,
-    0);
+void rrc_eNB_process_handoverCommand(
+  int                         mod_id,
+  struct rrc_eNB_ue_context_s *ue_context,
+  x2ap_handover_req_ack_t     *m) {
+  asn_dec_rval_t dec_rval;
+  LTE_HandoverCommand_t *ho = NULL;
+  dec_rval = uper_decode(
+               NULL,
+               &asn_DEF_LTE_HandoverCommand,
+               (void **)&ho,
+               m->rrc_buffer,
+               m->rrc_buffer_size,
+               0,
+               0);
+
+  if (dec_rval.code != RC_OK ||
+      ho->criticalExtensions.present != LTE_HandoverCommand__criticalExtensions_PR_c1 ||
+      ho->criticalExtensions.choice.c1.present != LTE_HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8) {
+    LOG_E(RRC, "could not decode Handover Command\n");
+    abort();
+  }
+
+  unsigned char *buf = ho->criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf;
+  int size = ho->criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size;
+
+  if (size > RRC_BUF_SIZE) {
+    printf("%s:%d: fatal\n", __FILE__, __LINE__);
+    abort();
+  }
+
+  memcpy(ue_context->ue_context.handover_info->buf, buf, size);
+  ue_context->ue_context.handover_info->size = size;
 }
 
+void rrc_eNB_handover_ue_context_release(
+        protocol_ctxt_t *const ctxt_pP,
+        struct rrc_eNB_ue_context_s *ue_context_p) {
+  int e_rab = 0;
+  //MessageDef *msg_release_p = NULL;
+  MessageDef *msg_delete_tunnels_p = NULL;
+  uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
 
-//-----------------------------------------------------------------------------
+  //msg_release_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE);
+  //itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_release_p);
+  s1ap_ue_context_release(ctxt_pP->instance, ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+  //MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+
+  for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+    GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+      ue_context_p->ue_context.enb_gtp_ebi[e_rab];
+    // erase data
+    ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+    memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+    ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
+  }
+
+  itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+  struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
+  rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
+
+  if (rrc_ue_s1ap_ids != NULL) {
+    rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
+  }
+}
+
+/* This function may be incorrect. */
+void rrc_eNB_handover_cancel(
+        protocol_ctxt_t              *const ctxt_pP,
+        struct rrc_eNB_ue_context_s  *ue_context_p) {
+  int s1_cause = 1;                        /* 1 = tx2relocoverall-expiry */
+
+  rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(ctxt_pP->module_id, ue_context_p,
+      S1AP_CAUSE_RADIO_NETWORK, s1_cause);
+}
+
 void
 check_handovers(
   protocol_ctxt_t *const ctxt_pP
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 result;
   struct rrc_eNB_ue_context_s        *ue_context_p;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &RC.rrc[ctxt_pP->module_id]->rrc_ue_head) {
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti  = ue_context_p->ue_id_rnti;
 
-    if (ue_context_p->ue_context.handover_info != NULL) {
-      if (ue_context_p->ue_context.handover_info->ho_prepare == 0xFF) {
+    if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info != NULL) {
+      /* in the source, UE in HO_PREPARE mode */
+      if (ue_context_p->ue_context.handover_info->state == HO_PREPARE) {
         LOG_D(RRC,
-              "[eNB %d] Frame %d: Incoming handover detected for new UE_idx %d (source eNB %d->target eNB %d) \n",
+              "[eNB %d] Frame %d: Incoming handover detected for new UE_id %x) \n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
-              ctxt_pP->rnti,
-              ctxt_pP->module_id,
-              ue_context_p->ue_context.handover_info->modid_t);
-        // source eNB generates LTE_RRCConnectionreconfiguration to prepare the HO
-        rrc_eNB_process_handoverPreparationInformation(
+              ctxt_pP->rnti);
+        // source eNB generates rrcconnectionreconfiguration to prepare the HO
+        LOG_I(RRC,
+              "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending RRCConnectionReconfiguration to UE %d \n",
+              ctxt_pP->module_id, ctxt_pP->frame, ue_context_p->ue_context.rnti);
+        rrc_data_req(
           ctxt_pP,
-          ue_context_p);
-        ue_context_p->ue_context.handover_info->ho_prepare = 0xF1;
-      }
-
-      if (ue_context_p->ue_context.handover_info->ho_complete == 0xF1) {
-        LOG_D(RRC,
-              "[eNB %d] Frame %d: handover Command received for new UE_id  %x current eNB %d target eNB: %d \n",
-              ctxt_pP->module_id,
-              ctxt_pP->frame,
-              ctxt_pP->rnti,
-              ctxt_pP->module_id,
-              ue_context_p->ue_context.handover_info->modid_t);
-        //rrc_eNB_process_handoverPreparationInformation(enb_mod_idP,frameP,i);
-        result = pdcp_data_req(ctxt_pP,
-                               SRB_FLAG_YES,
                                DCCH,
                                rrc_eNB_mui++,
                                SDU_CONFIRM_NO,
                                ue_context_p->ue_context.handover_info->size,
                                ue_context_p->ue_context.handover_info->buf,
-                               PDCP_TRANSMISSION_MODE_CONTROL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                               ,NULL, NULL
-#endif
-                              );
+          PDCP_TRANSMISSION_MODE_CONTROL);
 
-        //AssertFatal(result == TRUE, "PDCP data request failed!\n");
-        if(result != TRUE) {
-          LOG_I(RRC, "PDCP data request failed!\n");
-          return;
+        ue_context_p->ue_context.handover_info->state = HO_COMPLETE;
+        LOG_I(RRC, "RRC Sends RRCConnectionReconfiguration to UE %d  at frame %d and subframe %d \n", ue_context_p->ue_context.rnti, ctxt_pP->frame,ctxt_pP->subframe);
+      }
+
+      /* in the target, UE in HO_ACK mode */
+      if (ue_context_p->ue_context.handover_info->state == HO_ACK) {
+        MessageDef *msg;
+        // Configure target
+        ue_context_p->ue_context.handover_info->state = HO_CONFIGURED;
+        msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ_ACK);
+        rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p, X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
+            &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
+        rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
+
+        X2AP_HANDOVER_REQ_ACK(msg).rnti = ue_context_p->ue_context.rnti;
+        X2AP_HANDOVER_REQ_ACK(msg).x2_id_target = ue_context_p->ue_context.handover_info->x2_id;
+        X2AP_HANDOVER_REQ_ACK(msg).source_assoc_id = ue_context_p->ue_context.handover_info->assoc_id;
+        /* Call admission control not implemented yet */
+        X2AP_HANDOVER_REQ_ACK(msg).nb_e_rabs_tobesetup = ue_context_p->ue_context.setup_e_rabs;
+
+        for (int i=0; i<ue_context_p->ue_context.setup_e_rabs; i++) {
+          X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
         }
 
-        ue_context_p->ue_context.handover_info->ho_complete = 0xF2;
+        itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+        LOG_I(RRC, "RRC Sends X2 HO ACK to the source eNB at frame %d and subframe %d \n", ctxt_pP->frame,ctxt_pP->subframe);
       }
     }
   }
 }
 
-// 5.3.5.4 LTE_RRCConnectionReconfiguration including the mobilityControlInfo to prepare the UE handover
-//-----------------------------------------------------------------------------
 void
-rrc_eNB_generate_RRCConnectionReconfiguration_handover(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t           *const ue_context_pP,
-  uint8_t                *const nas_pdu,
-  const uint32_t                nas_length
-)
+rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+    rrc_eNB_ue_context_t  *const ue_context_pP,
+    uint8_t               *buffer,
+    int                    *_size
+    //const uint8_t        ho_state
+                                                )
 //-----------------------------------------------------------------------------
 {
-  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  uint8_t                             buffer[RRC_BUF_SIZE];
+  uint16_t                            size;
   int                                 i;
   uint8_t                             rv[2];
-  uint16_t                            Idx;
-  // configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE
+  // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
   eNB_RRC_INST                       *rrc_inst = RC.rrc[ctxt_pP->module_id];
-  struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
-  struct LTE_SRB_ToAddMod                *SRB2_config;
-  struct LTE_SRB_ToAddMod__rlc_Config    *SRB2_rlc_config;
-  struct LTE_SRB_ToAddMod__logicalChannelConfig *SRB2_lchan_config;
-  struct LTE_LogicalChannelConfig__ul_SpecificParameters *SRB2_ul_SpecificParameters;
-  LTE_LogicalChannelConfig_t             *SRB1_logicalChannelConfig = NULL;
-  LTE_SRB_ToAddModList_t                 *SRB_configList = ue_context_pP->ue_context.SRB_configList;    // not used in this context: may be removed
-  LTE_SRB_ToAddModList_t                 *SRB_configList2;
-  struct LTE_DRB_ToAddMod                *DRB_config;
-  struct LTE_RLC_Config                  *DRB_rlc_config;
-  struct LTE_PDCP_Config                 *DRB_pdcp_config;
-  struct LTE_PDCP_Config__rlc_UM         *PDCP_rlc_UM;
-  struct LTE_LogicalChannelConfig        *DRB_lchan_config;
-  struct LTE_LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters;
-  LTE_DRB_ToAddModList_t                 *DRB_configList2;
-  LTE_MAC_MainConfig_t                   *mac_MainConfig;
-  LTE_MeasObjectToAddModList_t           *MeasObj_list;
-  LTE_MeasObjectToAddMod_t               *MeasObj;
-  LTE_ReportConfigToAddModList_t         *ReportConfig_list;
-  LTE_ReportConfigToAddMod_t             *ReportConfig_per, *ReportConfig_A1,
-                                         *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
-  LTE_MeasIdToAddModList_t               *MeasId_list;
-  LTE_MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
-  LTE_QuantityConfig_t                   *quantityConfig;
-  LTE_MobilityControlInfo_t              *mobilityInfo;
-  // HandoverCommand_t handoverCommand;
-  //uint8_t                             sourceModId =
-  //  get_adjacent_cell_mod_id(ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId);
+  struct LTE_PhysicalConfigDedicated **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
+  // phy config dedicated
+  LTE_PhysicalConfigDedicated_t      *physicalConfigDedicated2;
+  // srb 1: for HO
+  struct LTE_SRB_ToAddMod            *SRB1_config                      = NULL;
+  struct LTE_SRB_ToAddMod__rlc_Config *SRB1_rlc_config                 = NULL;
+  struct LTE_SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config     = NULL;
+  struct LTE_LogicalChannelConfig__ul_SpecificParameters
+    *SRB1_ul_SpecificParameters       = NULL;
+  struct LTE_SRB_ToAddMod            *SRB2_config                      = NULL;
+  struct LTE_SRB_ToAddMod__rlc_Config *SRB2_rlc_config                 = NULL;
+  struct LTE_SRB_ToAddMod__logicalChannelConfig *SRB2_lchan_config     = NULL;
+  struct LTE_LogicalChannelConfig__ul_SpecificParameters
+    *SRB2_ul_SpecificParameters       = NULL;
+  LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  LTE_SRB_ToAddModList_t             **SRB_configList2                 = NULL;
+  struct LTE_DRB_ToAddMod            *DRB_config                       = NULL;
+  struct LTE_RLC_Config              *DRB_rlc_config                   = NULL;
+  struct LTE_PDCP_Config             *DRB_pdcp_config                  = NULL;
+  struct LTE_PDCP_Config__rlc_AM     *PDCP_rlc_AM                      = NULL;
+  struct LTE_PDCP_Config__rlc_UM     *PDCP_rlc_UM                      = NULL;
+  struct LTE_LogicalChannelConfig    *DRB_lchan_config                 = NULL;
+  struct LTE_LogicalChannelConfig__ul_SpecificParameters
+    *DRB_ul_SpecificParameters        = NULL;
+  LTE_DRB_ToAddModList_t            **DRB_configList = &ue_context_pP->ue_context.DRB_configList;
+  LTE_DRB_ToAddModList_t            **DRB_configList2 = NULL;
+  LTE_MAC_MainConfig_t               *mac_MainConfig                   = NULL;
+  LTE_MeasObjectToAddModList_t       *MeasObj_list                     = NULL;
+  LTE_MeasObjectToAddMod_t           *MeasObj                          = NULL;
+  LTE_ReportConfigToAddModList_t     *ReportConfig_list                = NULL;
+  LTE_ReportConfigToAddMod_t         *ReportConfig_per, *ReportConfig_A1,
+                                     *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
+  LTE_MeasIdToAddModList_t           *MeasId_list                      = NULL;
+  LTE_MeasIdToAddMod_t               *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  long                               *sr_ProhibitTimer_r9;
+  long                               *sr_ProhibitTimer_r9              = NULL;
+  //     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
+  //uint8_t                            sCellIndexToAdd = 0;
 #endif
   long                               *logicalchannelgroup, *logicalchannelgroup_drb;
   long                               *maxHARQ_Tx, *periodicBSR_Timer;
-  // LTE_RSRP_Range_t *rsrp;
-  struct LTE_MeasConfig__speedStatePars  *Sparams;
-  LTE_CellsToAddMod_t                    *CellToAdd;
-  LTE_CellsToAddModList_t                *CellsToAddModList;
-  // srb 1: for HO
-  struct LTE_SRB_ToAddMod                *SRB1_config;
-  struct LTE_SRB_ToAddMod__rlc_Config    *SRB1_rlc_config;
-  struct LTE_SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
-  struct LTE_LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
-  // phy config dedicated
-  LTE_PhysicalConfigDedicated_t          *physicalConfigDedicated2;
-  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList;
-  protocol_ctxt_t                     ctxt;
-  LOG_D(RRC, "[eNB %d] Frame %d: handover preparation: get the newSourceUEIdentity (C-RNTI): ",
-        ctxt_pP->module_id, ctxt_pP->frame);
+  LTE_RSRP_Range_t                   *rsrp                             = NULL;
+  struct LTE_MeasConfig__speedStatePars *Sparams                       = NULL;
+  LTE_QuantityConfig_t               *quantityConfig                   = NULL;
+  LTE_MobilityControlInfo_t          *mobilityInfo                     = NULL;
+  LTE_SecurityConfigHO_t             *securityConfigHO                 = NULL;
+  //CellsToAddMod_t                    *CellToAdd                        = NULL;
+  //CellsToAddModList_t                *CellsToAddModList                = NULL;
+  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
+  LTE_DedicatedInfoNAS_t             *dedicatedInfoNas                 = NULL;
+  /* for no gcc warnings */
+  (void)dedicatedInfoNas;
+  LTE_C_RNTI_t                       *cba_RNTI                         = NULL;
+  int                                x2_enabled;
+  uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
+#ifdef CBA
+  //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
+  uint8_t                            *cba_RNTI_buf;
+  cba_RNTI = CALLOC(1, sizeof(C_RNTI_t));
+  cba_RNTI_buf = CALLOC(1, 2 * sizeof(uint8_t));
+  cba_RNTI->buf = cba_RNTI_buf;
+  cba_RNTI->size = 2;
+  cba_RNTI->bits_unused = 0;
 
-  for (i = 0; i < 2; i++) {
-    rv[i] = taus() & 0xff;
-    LOG_D(RRC, " %x.", rv[i]);
+  // associate UEs to the CBa groups as a function of their UE id
+  if (rrc_inst->num_active_cba_groups) {
+    cba_RNTI->buf[0] = rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups] & 0xff;
+    cba_RNTI->buf[1] = 0xff;
+    LOG_D(RRC,
+          "[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n",
+          enb_mod_idP, frameP,
+          rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups],
+          ue_mod_idP % rrc_inst->num_active_cba_groups, ue_mod_idP);
+  } else {
+    cba_RNTI->buf[0] = 0x0;
+    cba_RNTI->buf[1] = 0x0;
+    LOG_D(RRC, "[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n", enb_mod_idP, frameP, ue_mod_idP);
   }
 
-  LOG_D(RRC, "[eNB %d] Frame %d : handover reparation: add target eNB SRB1 and PHYConfigDedicated reconfiguration\n",
+#endif
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  rv[0] = (ue_context_pP->ue_context.rnti >> 8) & 255;
+  rv[1] = ue_context_pP->ue_context.rnti & 255;
+  LOG_I(RRC, "target UE rnti = %x (decimal: %d)\n", ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.rnti);
+  LOG_D(RRC, "[eNB %d] Frame %d : handover preparation: add target eNB SRB1 and PHYConfigDedicated reconfiguration\n",
         ctxt_pP->module_id, ctxt_pP->frame);
-  // 1st: reconfigure SRB
-  SRB_configList2 = CALLOC(1, sizeof(*SRB_configList));
+
+  if (SRB_configList) {
+    free(SRB_configList);
+  }
+
+  SRB_configList = CALLOC(1, sizeof(*SRB_configList));
+  memset(SRB_configList, 0, sizeof(*SRB_configList));
   SRB1_config = CALLOC(1, sizeof(*SRB1_config));
   SRB1_config->srb_Identity = 1;
   SRB1_rlc_config = CALLOC(1, sizeof(*SRB1_rlc_config));
@@ -4356,8 +4720,166 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   logicalchannelgroup = CALLOC(1, sizeof(long));
   *logicalchannelgroup = 0;
   SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
-  ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB1_config);
-  //2nd: now reconfigure phy config dedicated
+  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB1_config);
+  ue_context_pP->ue_context.SRB_configList = SRB_configList;
+  // Configure SRB2
+  /// SRB2
+  SRB_configList2=&ue_context_pP->ue_context.SRB_configList2[xid];
+
+  if (*SRB_configList2) {
+    free(*SRB_configList2);
+  }
+
+  *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
+  memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
+  SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+  SRB2_config->srb_Identity = 2;
+  SRB2_rlc_config = CALLOC(1, sizeof(*SRB2_rlc_config));
+  SRB2_config->rlc_Config = SRB2_rlc_config;
+  SRB2_rlc_config->present = LTE_SRB_ToAddMod__rlc_Config_PR_explicitValue;
+  SRB2_rlc_config->choice.explicitValue.present = LTE_RLC_Config_PR_am;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = LTE_T_PollRetransmit_ms15;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU = LTE_PollPDU_p8;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte = LTE_PollByte_kB1000;
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = LTE_UL_AM_RLC__maxRetxThreshold_t32;
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering = LTE_T_Reordering_ms35;
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = LTE_T_StatusProhibit_ms10;
+  SRB2_lchan_config = CALLOC(1, sizeof(*SRB2_lchan_config));
+  SRB2_config->logicalChannelConfig = SRB2_lchan_config;
+  SRB2_lchan_config->present = LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
+  SRB2_ul_SpecificParameters = CALLOC(1, sizeof(*SRB2_ul_SpecificParameters));
+  SRB2_ul_SpecificParameters->priority = 3; // let some priority for SRB1 and dedicated DRBs
+  SRB2_ul_SpecificParameters->prioritisedBitRate =
+    LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  SRB2_ul_SpecificParameters->bucketSizeDuration =
+    LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  // LCG for CCCH and DCCH is 0 as defined in 36331
+  logicalchannelgroup = CALLOC(1, sizeof(long));
+  *logicalchannelgroup = 0;
+  SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
+  SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
+  // this list has the configuration for SRB1 and SRB2
+  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  // this list has only the configuration for SRB2
+  ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+
+  // Configure DRB
+  //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
+  // list for all the configured DRB
+  if (*DRB_configList) {
+    free(*DRB_configList);
+  }
+
+  *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
+  memset(*DRB_configList, 0, sizeof(**DRB_configList));
+  // list for the configured DRB for a this xid
+  DRB_configList2=&ue_context_pP->ue_context.DRB_configList2[xid];
+
+  if (*DRB_configList2) {
+    free(*DRB_configList2);
+  }
+
+  *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
+  memset(*DRB_configList2, 0, sizeof(**DRB_configList2));
+  /// DRB
+  DRB_config = CALLOC(1, sizeof(*DRB_config));
+  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
+  *(DRB_config->eps_BearerIdentity) = 5L; // LW set to first value, allowed value 5..15, value : x+4
+  // DRB_config->drb_Identity = (DRB_Identity_t) 1; //allowed values 1..32
+  // NN: this is the 1st DRB for this ue, so set it to 1
+  DRB_config->drb_Identity = (LTE_DRB_Identity_t) 1;  // (ue_mod_idP+1); //allowed values 1..32, value: x
+  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
+  *(DRB_config->logicalChannelIdentity) = (long)3; // value : x+2
+  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
+  DRB_config->rlc_Config = DRB_rlc_config;
+#ifdef RRC_DEFAULT_RAB_IS_AM
+  DRB_rlc_config->present = RLC_Config_PR_am;
+  DRB_rlc_config->choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms50;
+  DRB_rlc_config->choice.am.ul_AM_RLC.pollPDU = PollPDU_p16;
+  DRB_rlc_config->choice.am.ul_AM_RLC.pollByte = PollByte_kBinfinity;
+  DRB_rlc_config->choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t8;
+  DRB_rlc_config->choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms35;
+  DRB_rlc_config->choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms25;
+#else
+  DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
+  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
+#ifdef CBA
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering   = LTE_T_Reordering_ms5;//T_Reordering_ms25;
+#else
+  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
+#endif
+#endif
+  DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
+  DRB_config->pdcp_Config = DRB_pdcp_config;
+  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
+  *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
+  DRB_pdcp_config->rlc_AM = NULL;
+  DRB_pdcp_config->rlc_UM = NULL;
+  /* avoid gcc warnings */
+  (void)PDCP_rlc_AM;
+  (void)PDCP_rlc_UM;
+#ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
+  PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
+  DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
+  PDCP_rlc_AM->statusReportRequired = FALSE;
+#else
+  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
+  DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
+  PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
+#endif
+  DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
+  DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
+  DRB_config->logicalChannelConfig = DRB_lchan_config;
+  DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
+  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
+  DRB_ul_SpecificParameters->priority = 12;    // lower priority than srb1, srb2 and other dedicated bearer
+  DRB_ul_SpecificParameters->prioritisedBitRate =LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8 ;
+  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  DRB_ul_SpecificParameters->bucketSizeDuration =
+    LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  // LCG for DTCH can take the value from 1 to 3 as defined in 36331: normally controlled by upper layers (like RRM)
+  logicalchannelgroup_drb = CALLOC(1, sizeof(long));
+  *logicalchannelgroup_drb = 1;
+  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+  ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+  ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+  //ue_context_pP->ue_context.DRB_configList2[0] = &(*DRB_configList);
+  mac_MainConfig = CALLOC(1, sizeof(*mac_MainConfig));
+  ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
+  mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
+  maxHARQ_Tx = CALLOC(1, sizeof(long));
+  *maxHARQ_Tx = LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+  mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+  periodicBSR_Timer = CALLOC(1, sizeof(long));
+  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64;
+  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
+  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320;
+  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
+  mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
+  mac_MainConfig->drx_Config = NULL;
+  mac_MainConfig->phr_Config = CALLOC(1, sizeof(*mac_MainConfig->phr_Config));
+  mac_MainConfig->phr_Config->present = LTE_MAC_MainConfig__phr_Config_PR_setup;
+  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;  // Value dB1 =1 dB, dB3 = 3 dB
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+  sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
+  *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
+  mac_MainConfig->ext1 = CALLOC(1, sizeof(struct LTE_MAC_MainConfig__ext1));
+  mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
+  //sps_RA_ConfigList_rlola = NULL;
+#endif
+
+  //change the transmission mode for the primary component carrier
+  //TODO: add codebook subset restriction here
+  //TODO: change TM for secondary CC in SCelltoaddmodlist
+  /// now reconfigure phy config dedicated
+  if (*physicalConfigDedicated) {
+    free(*physicalConfigDedicated);
+  }
+
+  //if (*physicalConfigDedicated) {
   physicalConfigDedicated2 = CALLOC(1, sizeof(*physicalConfigDedicated2));
   *physicalConfigDedicated = physicalConfigDedicated2;
   physicalConfigDedicated2->pdsch_ConfigDedicated =
@@ -4373,7 +4895,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH =
     CALLOC(1, sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
   physicalConfigDedicated2->cqi_ReportConfig = NULL;  //CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL; //CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig =
     CALLOC(1, sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
@@ -4420,68 +4942,95 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[0] = 0x22;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[1] = 0x34 + ue_context_pP->local_uid;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.bits_unused = 0;
-  // CQI ReportConfig
-  /*
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
-     assign_enum(physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic,
-     CQI_ReportConfig__cqi_ReportModeAperiodic_rm30); // HLC CQI, no PMI
-     physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0;  // Icqi/pmi
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present = CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI;  // subband CQI
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k=4;
-
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.ri_ConfigIndex=NULL;
-     physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI=0;
-   */
-  //soundingRS-UL-ConfigDedicated
-  /*
-     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = SoundingRS_UL_ConfigDedicated_PR_setup;
-     assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth,
-     SoundingRS_UL_ConfigDedicated__setup__srs_Bandwidth_bw0);
-     assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth,
-     SoundingRS_UL_ConfigDedicated__setup__srs_HoppingBandwidth_hbw0);
-     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition=0;
-     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.duration=1;
-     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=1;
-     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb=0;
-     assign_enum(&physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift,
-     SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0);
-   */
   //AntennaInfoDedicated
   physicalConfigDedicated2->antennaInfo = CALLOC(1, sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->antennaInfo->present = LTE_PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
-  //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
-  //     LTE_AntennaInfoDedicated__transmissionMode_tm2);
-  /*
-     switch (transmission_mode){
-     case 1:
-     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     LTE_AntennaInfoDedicated__transmissionMode_tm1;
-     break;
-     case 2:
-     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     LTE_AntennaInfoDedicated__transmissionMode_tm2;
-     break;
-     case 4:
-     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     LTE_AntennaInfoDedicated__transmissionMode_tm4;
-     break;
-     case 5:
-     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     LTE_AntennaInfoDedicated__transmissionMode_tm5;
-     break;
-     case 6:
-     physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     LTE_AntennaInfoDedicated__transmissionMode_tm6;
-     break;
-     }
-   */
+  //if ((*physicalConfigDedicated)->antennaInfo) {
+  (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
+  LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+
+  if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm3) {
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
+      CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+      LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm3;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf= MALLOC(1);
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.buf[0] = 0xc0;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
+  } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) {
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
+      CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+      LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm4;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf= MALLOC(1);
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.buf[0] = 0xfc;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.size=1;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
+  } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) {
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
+      CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+      LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm5;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf= MALLOC(1);
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.buf[0] = 0xf0;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
+  } else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6) {
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=
+      CALLOC(1,sizeof(LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR));
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
+      LTE_AntennaInfoDedicated__codebookSubsetRestriction_PR_n2TxAntenna_tm6;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf= MALLOC(1);
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.buf[0] = 0xf0;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.size=1;
+    (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm6.bits_unused=4;
+  }
+
   physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.present =
     LTE_AntennaInfoDedicated__ue_TransmitAntennaSelection_PR_release;
   physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.release = 0;
+  //}
+  //else {
+  //LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
+  //}
+  // CQI ReportConfig
+  physicalConfigDedicated2->cqi_ReportConfig = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
+  physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
+  //physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=NULL;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  LTE_CQI_ReportPeriodic_PR_release;
+
+  //if ((*physicalConfigDedicated)->cqi_ReportConfig) {
+  if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm4) ||
+      (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm5) ||
+      (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==LTE_AntennaInfoDedicated__transmissionMode_tm6)) {
+    //feedback mode needs to be set as well
+    //TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
+    printf("setting cqi reporting mode to rm31\n");
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=LTE_CQI_ReportModeAperiodic_rm31;
+#else
+    *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, no PMI
+#endif
+  } else {
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic= LTE_CQI_ReportModeAperiodic_rm30;
+#else
+    *physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CQI_ReportConfig__cqi_ReportModeAperiodic_rm30; // HLC CQI, no PMI
+#endif
+  }
+
+  //}
+  //else {
+  //LOG_E(RRC,"cqi_ReportConfig not present in physical_config_dedicated. Not reconfiguring!\n");
+  //}
   // SchedulingRequestConfig
   physicalConfigDedicated2->schedulingRequestConfig->present = LTE_SchedulingRequestConfig_PR_setup;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = ue_context_pP->local_uid;
 
-  if (rrc_inst->carrier[0].sib1->tdd_Config==NULL) {  // FD
+  if (rrc_inst->carrier[0].sib1->tdd_Config==NULL) {  // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5 + (ue_context_pP->local_uid %
         10);   // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   } else {
@@ -4536,7 +5085,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     (LTE_MeasObjectToAddMod_t **) NULL,
     ue_context_pP->ue_context.mac_MainConfig,
     1,
-    SRB1_logicalChannelConfig,
+    NULL,//SRB1_logicalChannelConfig,
     ue_context_pP->ue_context.measGapConfig,
     (LTE_TDD_Config_t *) NULL,
     (LTE_MobilityControlInfo_t *) NULL,
@@ -4593,7 +5142,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
   ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
-  ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB2_config);
+  ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
   // Configure target eNB DRB
   DRB_configList2 = CALLOC(1, sizeof(*DRB_configList2));
   /// DRB
@@ -4630,7 +5179,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   logicalchannelgroup_drb = CALLOC(1, sizeof(long));
   *logicalchannelgroup_drb = 1;
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-  ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
+  ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
   mac_MainConfig = CALLOC(1, sizeof(*mac_MainConfig));
   ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
   mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
@@ -4688,7 +5237,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   MeasId5->measObjectId = 1;
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
-  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
   // Add one EUTRA Measurement Object
   MeasObj_list = CALLOC(1, sizeof(*MeasObj_list));
   memset((void *)MeasObj_list, 0, sizeof(*MeasObj_list));
@@ -4697,7 +5246,10 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   memset((void *)MeasObj, 0, sizeof(*MeasObj));
   MeasObj->measObjectId = 1;
   MeasObj->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = 36090;
+  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth = LTE_AllowedMeasBandwidth_mbw25;
   MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1 = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf = CALLOC(1, sizeof(uint8_t));
@@ -4705,21 +5257,19 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
-  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
-    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
-  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
-
+  //MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+  //(CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+  //CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
   // Add adjacent cell lists (6 per eNB)
-  for (i = 0; i < 6; i++) {
-    CellToAdd = (LTE_CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
-    CellToAdd->cellIndex = i + 1;
-    CellToAdd->physCellId = get_adjacent_cell_id(ctxt_pP->module_id, i);
-    CellToAdd->cellIndividualOffset = LTE_Q_OffsetRange_dB0;
-    ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
-  }
-
+  //for (i = 0; i < 6; i++) {
+  //CellToAdd = (CellsToAddMod_t *) CALLOC(1, sizeof(*CellToAdd));
+  //CellToAdd->cellIndex = 1;//i + 1;
+  //CellToAdd->physCellId = 1;//get_adjacent_cell_id(ctxt_pP->module_id, i);
+  //CellToAdd->cellIndividualOffset = Q_OffsetRange_dB0;
+  //ASN_SEQUENCE_ADD(&CellsToAddModList->list, CellToAdd);
+  //}
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
-  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
   // Report Configurations for periodical, A1-A5 events
   ReportConfig_list = CALLOC(1, sizeof(*ReportConfig_list));
   ReportConfig_per = CALLOC(1, sizeof(*ReportConfig_per));
@@ -4756,17 +5306,21 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A1->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A1);
+  //  if (ho_state == 1 /*HO_MEASUREMENT */ ) {
+  LOG_I(RRC, "[eNB %d] frame %d: requesting A2, A3, A4, and A5 event reporting\n",
+        ctxt_pP->module_id, ctxt_pP->frame);
   ReportConfig_A2->reportConfigId = 3;
   ReportConfig_A2->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
   ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.present =
     LTE_ReportConfigEUTRA__triggerType_PR_event;
   ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
     LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA2;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA2.
-  a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA2.
-  a2_Threshold.choice.threshold_RSRP = 10;
-  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity = LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA2.a2_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
   ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
   ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
   ReportConfig_A2->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
@@ -4778,15 +5332,18 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     LTE_ReportConfigEUTRA__triggerType_PR_event;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
     LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA3;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset =
-    10;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset = 0;   //10;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
   eventA3.reportOnLeave = 1;
-  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity = LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0; // FIXME ...hysteresis is of type long!
+  ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
+    LTE_TimeToTrigger_ms40;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A3);
   ReportConfig_A4->reportConfigId = 5;
   ReportConfig_A4->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
@@ -4794,11 +5351,12 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     LTE_ReportConfigEUTRA__triggerType_PR_event;
   ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present =
     LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA4;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA4.
-  a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA4.
-  a4_Threshold.choice.threshold_RSRP = 10;
-  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity = LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.present = LTE_ThresholdEUTRA_PR_threshold_RSRP;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
+  eventA4.a4_Threshold.choice.threshold_RSRP = 10;
+  ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
   ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
   ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
   ReportConfig_A4->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
@@ -4818,12 +5376,16 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   eventA5.a5_Threshold1.choice.threshold_RSRP = 10;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.
   eventA5.a5_Threshold2.choice.threshold_RSRP = 10;
-  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity = LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
+  ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.triggerQuantity =
+    LTE_ReportConfigEUTRA__triggerQuantity_rsrp;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportQuantity = LTE_ReportConfigEUTRA__reportQuantity_both;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
+  //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+  rsrp = CALLOC(1, sizeof(RSRP_Range_t));
+  *rsrp = 20;
   Sparams = CALLOC(1, sizeof(*Sparams));
   Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
   Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
@@ -4834,31 +5396,37 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   Sparams->choice.setup.mobilityStateParameters.t_HystNormal = LTE_MobilityStateParameters__t_HystNormal_s120;
   quantityConfig = CALLOC(1, sizeof(*quantityConfig));
   memset((void *)quantityConfig, 0, sizeof(*quantityConfig));
-  quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(*quantityConfig->quantityConfigEUTRA));
+  quantityConfig->quantityConfigEUTRA = CALLOC(1, sizeof(struct LTE_QuantityConfigEUTRA));
   memset((void *)quantityConfig->quantityConfigEUTRA, 0, sizeof(*quantityConfig->quantityConfigEUTRA));
   quantityConfig->quantityConfigCDMA2000 = NULL;
   quantityConfig->quantityConfigGERAN = NULL;
   quantityConfig->quantityConfigUTRA = NULL;
   quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP =
-    CALLOC(1, sizeof(*quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP));
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP)));
   quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ =
-    CALLOC(1, sizeof(*quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ));
+    CALLOC(1, sizeof(*(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ)));
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = LTE_FilterCoefficient_fc4;
   *quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = LTE_FilterCoefficient_fc4;
   /* mobilityinfo  */
+  mobilityInfo = ue_context_pP->ue_context.mobilityInfo;
+
+  if (mobilityInfo) {
+    free(mobilityInfo);
+  }
+
   mobilityInfo = CALLOC(1, sizeof(*mobilityInfo));
   memset((void *)mobilityInfo, 0, sizeof(*mobilityInfo));
-  mobilityInfo->targetPhysCellId =
-    (LTE_PhysCellId_t) two_tier_hexagonal_cellIds[ue_context_pP->ue_context.handover_info->modid_t];
+  mobilityInfo->targetPhysCellId = RC.rrc[ctxt_pP->module_id]->carrier[0].physCellId;
+  //(PhysCellId_t) two_tier_hexagonal_cellIds[ue_context_pP->ue_context.handover_info->modid_t];
   LOG_D(RRC, "[eNB %d] Frame %d: handover preparation: targetPhysCellId: %ld mod_id: %d ue: %x \n",
         ctxt_pP->module_id,
         ctxt_pP->frame,
         mobilityInfo->targetPhysCellId,
-        ctxt_pP->module_id,
+        ctxt_pP->module_id, // get_adjacent_cell_mod_id(mobilityInfo->targetPhysCellId),
         ue_context_pP->ue_context.rnti);
   mobilityInfo->additionalSpectrumEmission = CALLOC(1, sizeof(*mobilityInfo->additionalSpectrumEmission));
-  *mobilityInfo->additionalSpectrumEmission = 1;  //Check this value!
-  mobilityInfo->t304 = LTE_MobilityControlInfo__t304_ms50;    // need to configure an appropriate value here
+  *mobilityInfo->additionalSpectrumEmission = (LTE_AdditionalSpectrumEmission_t) 1;  //Check this value!
+  mobilityInfo->t304 = LTE_MobilityControlInfo__t304_ms200;    // need to configure an appropriate value here
   // New UE Identity (C-RNTI) to identify an UE uniquely in a cell
   mobilityInfo->newUE_Identity.size = 2;
   mobilityInfo->newUE_Identity.bits_unused = 0;
@@ -4903,154 +5471,258 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   mobilityInfo->radioResourceConfigCommon.antennaInfoCommon = NULL;
   mobilityInfo->radioResourceConfigCommon.p_Max = NULL;   // CALLOC(1,sizeof(*mobilityInfo->radioResourceConfigCommon.p_Max));
   //memcpy((void *)mobilityInfo->radioResourceConfigCommon.p_Max,(void *)rrc_inst->sib1->p_Max,sizeof(P_Max_t));
-  mobilityInfo->radioResourceConfigCommon.tdd_Config = NULL;  //CALLOC(1,sizeof(LTE_TDD_Config_t));
-  //memcpy((void *)mobilityInfo->radioResourceConfigCommon.tdd_Config,(void *)rrc_inst->sib1->tdd_Config,sizeof(LTE_TDD_Config_t));
+  mobilityInfo->radioResourceConfigCommon.tdd_Config = NULL;  //CALLOC(1,sizeof(TDD_Config_t));
+  //memcpy((void *)mobilityInfo->radioResourceConfigCommon.tdd_Config,(void *)rrc_inst->sib1->tdd_Config,sizeof(TDD_Config_t));
   mobilityInfo->radioResourceConfigCommon.ul_CyclicPrefixLength =
     rrc_inst->carrier[0] /* CROUX TBC */.sib2->radioResourceConfigCommon.ul_CyclicPrefixLength;
   //End of configuration of radioResourceConfigCommon
   mobilityInfo->carrierFreq = CALLOC(1, sizeof(*mobilityInfo->carrierFreq));  //CALLOC(1,sizeof(CarrierFreqEUTRA_t)); 36090
-  mobilityInfo->carrierFreq->dl_CarrierFreq = 36090;
+  mobilityInfo->carrierFreq->dl_CarrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   mobilityInfo->carrierFreq->ul_CarrierFreq = NULL;
   mobilityInfo->carrierBandwidth = CALLOC(1, sizeof(
-      *mobilityInfo->carrierBandwidth));    //CALLOC(1,sizeof(struct LTE_CarrierBandwidthEUTRA));  LTE_AllowedMeasBandwidth_mbw25
+      *mobilityInfo->carrierBandwidth));    //CALLOC(1,sizeof(struct CarrierBandwidthEUTRA));  AllowedMeasBandwidth_mbw25
   mobilityInfo->carrierBandwidth->dl_Bandwidth = LTE_CarrierBandwidthEUTRA__dl_Bandwidth_n25;
   mobilityInfo->carrierBandwidth->ul_Bandwidth = NULL;
   mobilityInfo->rach_ConfigDedicated = NULL;
-  // store the srb and drb list for ho management, mainly in case of failure
-  memcpy(ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList,
-         (void *)SRB_configList2,
-         sizeof(LTE_SRB_ToAddModList_t));
-  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList,
-         (void *)DRB_configList2,
-         sizeof(LTE_DRB_ToAddModList_t));
-  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
-  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
-         (void *)mac_MainConfig,
-         sizeof(LTE_MAC_MainConfig_t));
-  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
-         (void *)ue_context_pP->ue_context.physicalConfigDedicated,
-         sizeof(LTE_PhysicalConfigDedicated_t));
-  /*    memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,
-     (void *)rrc_inst->sps_Config[ue_mod_idP],
-     sizeof(SPS_Config_t));
-   */
-  LOG_I(RRC, "[eNB %d] Frame %d: adding new UE\n",
+  ue_context_pP->ue_context.mobilityInfo = mobilityInfo;
+#if 0
+  LOG_I(RRC,
+        "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
         ctxt_pP->module_id, ctxt_pP->frame);
-  //Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
+  // store the information in an intermediate structure for Hanodver management
+  //rrc_inst->handover_info.as_config.sourceRadioResourceConfig.srb_ToAddModList = CALLOC(1,sizeof());
+  ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.srb_ToAddModList,(void *)SRB_list,sizeof(SRB_ToAddModList_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.srb_ToAddModList = *SRB_configList2;
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.drb_ToAddModList,(void *)DRB_list,sizeof(DRB_ToAddModList_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToAddModList = *DRB_configList;
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.drb_ToReleaseList = NULL;
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig =
+    CALLOC(1, sizeof(*ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig));
+  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.mac_MainConfig,
+         (void *)mac_MainConfig, sizeof(MAC_MainConfig_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated =
+    CALLOC(1, sizeof(PhysicalConfigDedicated_t));
+  memcpy((void *)ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.physicalConfigDedicated,
+         (void *)ue_context_pP->ue_context.physicalConfigDedicated, sizeof(PhysicalConfigDedicated_t));
+  ue_context_pP->ue_context.handover_info->as_config.sourceRadioResourceConfig.sps_Config = NULL;
+  //memcpy((void *)rrc_inst->handover_info[ue_mod_idP]->as_config.sourceRadioResourceConfig.sps_Config,(void *)rrc_inst->sps_Config[ue_mod_idP],sizeof(SPS_Config_t));
+#endif
+  //  }
+  securityConfigHO = CALLOC(1, sizeof(*securityConfigHO));
+  memset((void *)securityConfigHO, 0, sizeof(*securityConfigHO));
+  securityConfigHO->handoverType.present = LTE_SecurityConfigHO__handoverType_PR_intraLTE;
+  securityConfigHO->handoverType.choice.intraLTE.securityAlgorithmConfig = NULL; /* TODO: to be checked */
+  securityConfigHO->handoverType.choice.intraLTE.keyChangeIndicator = 0;
+  securityConfigHO->handoverType.choice.intraLTE.nextHopChainingCount = 0;
+#if defined(ENABLE_ITTI)
+  /* Initialize NAS list */
+  dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
+
+  /* Add all NAS PDUs to the list */
+  for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
+    if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
+      dedicatedInfoNas = CALLOC(1, sizeof(LTE_DedicatedInfoNAS_t));
+      memset(dedicatedInfoNas, 0, sizeof(OCTET_STRING_t));
+      OCTET_STRING_fromBuf(dedicatedInfoNas,
+                           (char *)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
+                           ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
+      ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
+    }
+
+    /* TODO parameters yet to process ... */
+    {
+      //      ue_context_pP->ue_context.e_rab[i].param.qos;
+      //      ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
+      //      ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
+    }
+    /* TODO should test if e RAB are Ok before! */
+    ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE;
+    LOG_D(RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
+          i, ue_context_pP->ue_context.e_rab[i].status, "E_RAB_STATUS_DONE");
+  }
+
+  /* If list is empty free the list and reset the address */
+  if (dedicatedInfoNASList->list.count == 0) {
+    free(dedicatedInfoNASList);
+    dedicatedInfoNASList = NULL;
+  }
+
+#endif
+
+  x2_enabled = is_x2ap_enabled();
+
+  memset(buffer, 0, RRC_BUF_SIZE);
+  char rrc_buf[1000 /* arbitrary, should be big enough, has to be less than size of return buf by a few bits/bytes */];
+  int rrc_size;
+  rrc_size = do_RRCConnectionReconfiguration(ctxt_pP,
+             (unsigned char *)rrc_buf,
+             xid,   //Transaction_id,
+             NULL, // SRB_configList
+             NULL,
+             NULL,  // DRB2_list,
+             (struct LTE_SPS_Config *)NULL,   // *sps_Config,
+             (struct LTE_PhysicalConfigDedicated *)*physicalConfigDedicated,
+             //#ifdef EXMIMO_IOT
+             //                                         NULL, NULL, NULL,NULL,
+             //#else
+             x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
+             x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
+             x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
+             x2_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
+             //#endif
+             (LTE_MAC_MainConfig_t *)mac_MainConfig,
+             (LTE_MeasGapConfig_t *)NULL,
+             (LTE_MobilityControlInfo_t *)mobilityInfo,
+             (LTE_SecurityConfigHO_t *)securityConfigHO,
+             (struct LTE_MeasConfig__speedStatePars *)Sparams,
+             (LTE_RSRP_Range_t *)rsrp,
+             (LTE_C_RNTI_t *)cba_RNTI,
+             (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)dedicatedInfoNASList,
+             (LTE_SL_CommConfig_r12_t *)NULL,
+             (LTE_SL_DiscConfig_r12_t *)NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+             , (LTE_SCellToAddMod_r10_t *)NULL
+#endif
+                                            );
+
+  if (rrc_size <= 0) {
+    printf("%s:%d: fatal\n", __FILE__, __LINE__);
+    abort();
+  }
+
+  char *ho_buf = (char *)buffer;
+  int ho_size;
+  ho_size = do_HandoverCommand(
+              ho_buf, 1024 /* TODO: this is the value found in struct x2ap_handover_req_ack_s for array rrc_buffer */,
+              rrc_buf,
+              rrc_size);
+  *_size = size = ho_size;
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Connection Reconfiguration handover\n");
+#if defined(ENABLE_ITTI)
+
+  /* Free all NAS PDUs */
+  for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
+    if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
+      /* Free the NAS PDU buffer and invalidate it */
+      free(ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer);
+      ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
+    }
+  }
+
+#endif
+  LOG_I(RRC,
+        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration handover (bytes %d, UE id %x)\n",
+        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+  LOG_D(RRC,
+        "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration handover to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" rrcConnectionReconfiguration handover UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_eNB_mui,
+    size);
+}
+
+void
+rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protocol_ctxt_t *const ctxt_pP) {
+  uint16_t                            Idx;
   Idx = DCCH;
+#if 1
+  // Activate the radio bearers
   // SRB1
-  ue_context_pP->ue_context.Srb1.Active = 1;
-  ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = Idx;
-  memcpy(&ue_context_pP->ue_context.Srb1.Srb_info.Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
-  memcpy(&ue_context_pP->ue_context.Srb1.Srb_info.Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  ue_context_p->ue_context.Srb1.Active = 1;
+  ue_context_p->ue_context.Srb1.Srb_info.Srb_id = Idx;
+  memcpy(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  memcpy(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
   // SRB2
-  ue_context_pP->ue_context.Srb2.Active = 1;
-  ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = Idx;
-  memcpy(&ue_context_pP->ue_context.Srb2.Srb_info.Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
-  memcpy(&ue_context_pP->ue_context.Srb2.Srb_info.Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  ue_context_p->ue_context.Srb2.Active = 1;
+  ue_context_p->ue_context.Srb2.Srb_info.Srb_id = Idx;
+  memcpy(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[0], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+  memcpy(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[1], &DCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+#endif
   LOG_I(RRC, "[eNB %d] CALLING RLC CONFIG SRB1 (rbid %d) for UE %x\n",
-        ctxt_pP->module_id, Idx, ue_context_pP->ue_context.rnti);
-  //      rrc_pdcp_config_req (enb_mod_idP, frameP, 1, CONFIG_ACTION_ADD, idx, UNDEF_SECURITY_MODE);
-  //      rrc_rlc_config_req(enb_mod_idP,frameP,1,CONFIG_ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
-  rrc_pdcp_config_asn1_req(&ctxt,
-                           ue_context_pP->ue_context.SRB_configList,
-                           (LTE_DRB_ToAddModList_t *) NULL, (LTE_DRB_ToReleaseList_t *) NULL, 0xff, NULL, NULL, NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+        ctxt_pP->module_id, Idx, ue_context_p->ue_context.rnti);
+  // Configure PDCP/RLC for the target
+  rrc_pdcp_config_asn1_req(ctxt_pP,
+                           ue_context_p->ue_context.SRB_configList,
+                           (LTE_DRB_ToAddModList_t *) NULL,
+                           (LTE_DRB_ToReleaseList_t *) NULL,
+                           0xff,
+                           NULL,
+                           NULL,
+                           NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
-                           ,NULL);
-  rrc_rlc_config_asn1_req(&ctxt,
-                          ue_context_pP->ue_context.SRB_configList,
-                          (LTE_DRB_ToAddModList_t *) NULL, (LTE_DRB_ToReleaseList_t *) NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                           , NULL);
+  rrc_rlc_config_asn1_req(ctxt_pP,
+                          ue_context_p->ue_context.SRB_configList,
+                          (LTE_DRB_ToAddModList_t *) NULL,
+                          (LTE_DRB_ToReleaseList_t *) NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                           , (LTE_PMCH_InfoList_r9_t *) NULL
                           , 0, 0
 #endif
                          );
-  /* Initialize NAS list */
-  dedicatedInfoNASList = NULL;
-  //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
-  memset(buffer, 0, RRC_BUF_SIZE);
-  int size=do_RRCConnectionReconfiguration(
-             ctxt_pP,
-             buffer,
-             rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id,
-             SRB_configList2,
-             DRB_configList2,
-             NULL,  // DRB2_list,
-             NULL,    //*sps_Config,
-             ue_context_pP->ue_context.physicalConfigDedicated,
-             MeasObj_list,
-             ReportConfig_list,
-             NULL,    //quantityConfig,
-             MeasId_list,
-             mac_MainConfig,
-             NULL,
-             mobilityInfo,
-             Sparams,
-             NULL,
-             NULL,
-             dedicatedInfoNASList,
-             (LTE_SL_CommConfig_r12_t *)NULL,
-             (LTE_SL_DiscConfig_r12_t *)NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-             , NULL   // SCellToAddMod_r10_t
-#endif
-           );
 
-  if (size <= 0)
-    LOG_E(RRC,
-          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration for handover (bytes %d, UE rnti %x) failed\n",
-          ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
-  else
-    LOG_I(RRC,
-          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration for handover (bytes %d, UE rnti %x)\n",
-          ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+  if (EPC_MODE_ENABLED) {
+  rrc_eNB_process_security (
+    ctxt_pP,
+    ue_context_p,
+    &ue_context_p->ue_context.security_capabilities);
+  process_eNB_security_key (
+    ctxt_pP,
+    ue_context_p,
+    ue_context_p->ue_context.kenb);
+  rrc_pdcp_config_security(
+    ctxt_pP,
+    ue_context_p,
+    FALSE);
+  }
 
-  // to be updated if needed
-  /*if (RC.rrc[ctxt_pP->module_id]->SRB1_config[ue_mod_idP]->logicalChannelConfig) {
-     if (RC.rrc[ctxt_pP->module_id]->SRB1_config[ue_mod_idP]->logicalChannelConfig->present == LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
-     SRB1_logicalChannelConfig = &RC.rrc[ctxt_pP->module_id]->SRB1_config[ue_mod_idP]->logicalChannelConfig->choice.explicitValue;
-     }
-     else {
-     SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-     }
-     }
-     else {
-     SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-     }
-   */
-  LOG_D(RRC,
-        "[FRAME %05d][RRC_eNB][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration_handover to UE %x MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
-        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
-  //rrc_rlc_data_req(ctxt_pP->module_id,frameP, 1,(ue_mod_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
-  //pdcp_data_req (ctxt_pP->module_id, frameP, 1, (ue_mod_idP * NB_RB_MAX) + DCCH,rrc_eNB_mui++, 0, size, (char *) buffer, 1);
+  // Add a new user (called during the HO procedure)
+  LOG_I(RRC, "rrc_eNB_target_add_ue_handover module_id %d rnti %d\n", ctxt_pP->module_id, ctxt_pP->rnti);
+  // Configure MAC for the target
   rrc_mac_config_req_eNB(
     ctxt_pP->module_id,
-    ue_context_pP->ue_context.primaryCC_id,
+    ue_context_p->ue_context.primaryCC_id,
     0,0,0,0,0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     0,
 #endif
-    ue_context_pP->ue_context.rnti,
+    ue_context_p->ue_context.rnti,
     (LTE_BCCH_BCH_Message_t *) NULL,
     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-    ue_context_pP->ue_context.physicalConfigDedicated,
+    ue_context_p->ue_context.physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     (LTE_SCellToAddMod_r10_t *)NULL,
-    //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+    //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
     (LTE_MeasObjectToAddMod_t **) NULL,
-    ue_context_pP->ue_context.mac_MainConfig,
+    ue_context_p->ue_context.mac_MainConfig,
     1,
-    SRB1_logicalChannelConfig,
-    ue_context_pP->ue_context.measGapConfig,
+    NULL,//SRB1_logicalChannelConfig,
+    ue_context_p->ue_context.measGapConfig,
     (LTE_TDD_Config_t *) NULL,
-    (LTE_MobilityControlInfo_t *) mobilityInfo,
-    (LTE_SchedulingInfoList_t *) NULL, 0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+    (LTE_MobilityControlInfo_t *) ue_context_p->ue_context.mobilityInfo,
+    (LTE_SchedulingInfoList_t *) NULL,
+    0,
+    NULL,
+    NULL,
+    (LTE_MBSFN_SubframeConfigList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
@@ -5068,147 +5740,108 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
   );
-  /*
-     handoverCommand.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
-     handoverCommand.criticalExtensions.choice.c1.present = HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
-     handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf = buffer;
-     handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size = size;
-   */
-  //#warning "COMPILATION PROBLEM"
-#ifdef PROBLEM_COMPILATION_RESOLVED
-
-  if (sourceModId != 0xFF) {
-    memcpy(RC.rrc[sourceModId].handover_info[RC.rrc[ctxt_pP->module_id]->handover_info[ue_mod_idP]->ueid_s]->buf,
-           (void *)buffer, size);
-    RC.rrc[sourceModId].handover_info[RC.rrc[ctxt_pP->module_id]->handover_info[ue_mod_idP]->ueid_s]->size = size;
-    RC.rrc[sourceModId].handover_info[RC.rrc[ctxt_pP->module_id]->handover_info[ue_mod_idP]->ueid_s]->ho_complete =
-      0xF1;
-    //RC.rrc[ctxt_pP->module_id]->handover_info[ue_mod_idP]->ho_complete = 0xFF;
-    LOG_D(RRC, "[eNB %d] Frame %d: setting handover complete to 0xF1 for (%d,%d) and to 0xFF for (%d,%d)\n",
-          ctxt_pP->module_id,
-          ctxt_pP->frame,
-          sourceModId,
-          RC.rrc[ctxt_pP->module_id]->handover_info[ue_mod_idP]->ueid_s,
-          ctxt_pP->module_id,
-          ue_mod_idP);
-  } else
-    LOG_W(RRC,
-          "[eNB %d] Frame %d: rrc_eNB_generate_RRCConnectionReconfiguration_handover: Could not find source eNB mod_id.\n",
-          ctxt_pP->module_id, ctxt_pP->frame);
-
-#endif
+//#if 0
+//}
+//#endif
 }
-
-/*
-  void ue_rrc_process_rrcConnectionReconfiguration(uint8_t enb_mod_idP,frame_t frameP,
-  LTE_RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
-  uint8_t CH_index) {
-
-  if (rrcConnectionReconfiguration->criticalExtensions.present == LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1)
-  if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
-
-  if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-  rrc_ue_process_radioResourceConfigDedicated(enb_mod_idP,frameP,CH_index,
-  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-
-  }
-
-  // check other fields for
-  }
-  }
-*/
 
 //-----------------------------------------------------------------------------
 /*
-* TODO: * add function description
-*       * format the function correctly
+* Process the RRC Connection Reconfiguration Complete from the UE
 */
 void
 rrc_eNB_process_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t        *ue_context_pP,
+  rrc_eNB_ue_context_t  *ue_context_pP,
   const uint8_t xid
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 i, drb_id;
-#ifdef PDCP_USE_NETLINK
+  int                                 drb_id;
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
-  /* avoid gcc warnings */
-  (void)oip_ifup;
-  (void)dest_ip_offset;
-#endif
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
+  LTE_DRB_ToAddModList_t             *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
+  LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
+  LTE_DRB_ToReleaseList_t            *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
+  LTE_DRB_Identity_t                 *drb_id_p      = NULL;
+
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
-  LTE_DRB_ToAddModList_t                 *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
-  LTE_SRB_ToAddModList_t                 *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
-  LTE_DRB_ToReleaseList_t                *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
-  LTE_DRB_Identity_t                     *drb_id_p      = NULL;
-  T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-#if defined(ENABLE_SECURITY)
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
+
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    /* CDRX: activated if ack was expected */
+    int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    
+    if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+      UE_scheduling_control->cdrx_waiting_ack = FALSE;
+      UE_scheduling_control->cdrx_configured = TRUE;
+      LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+    }
+  } // No CDRX with the CU/DU split in this version of the code
+
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
+    T_INT(ctxt_pP->module_id),
+    T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe),
+    T_INT(ctxt_pP->rnti));
 
   /* Derive the keys from kenb */
   if (DRB_configList != NULL) {
     derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kenb, &kUPenc);
+                      ue_context_pP->ue_context.kenb,
+                      &kUPenc);
   }
 
   derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                     ue_context_pP->ue_context.kenb, &kRRCenc);
-  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                     ue_context_pP->ue_context.kenb, &kRRCint);
-#endif
-  // Refresh SRBs/DRBs
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_PDCP_ENB,
-    NULL,
-    0,
-    MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti);
-  rrc_pdcp_config_asn1_req(
-    ctxt_pP,
-    SRB_configList, //NULL,  //LG-RK 14/05/2014 SRB_configList,
-    DRB_configList,
-    //    (LTE_DRB_ToReleaseList_t *) NULL,
-    DRB_Release_configList2,
-    /*RC.rrc[ctxt_pP->module_id]->ciphering_algorithm[ue_mod_idP] |
-             (RC.rrc[ctxt_pP->module_id]->integrity_algorithm[ue_mod_idP] << 4),
-     */
-    0xff, // already configured during the securitymodecommand
-    kRRCenc,
-    kRRCint,
-    kUPenc
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
-    ,NULL);
-  // Refresh SRBs/DRBs
-  rrc_rlc_config_asn1_req(
-    ctxt_pP,
-    SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
-    DRB_configList,
-    //    (LTE_DRB_ToReleaseList_t *) NULL
-    DRB_Release_configList2
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    , (LTE_PMCH_InfoList_r9_t *) NULL
-    , 0, 0
-#endif
-  );
+                     ue_context_pP->ue_context.kenb,
+                     &kRRCenc);
 
-  // set the SRB active in Ue context
+  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                     ue_context_pP->ue_context.kenb,
+                     &kRRCint);
+
+  /* Refresh SRBs/DRBs */
+  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
+                     MSC_AS_TIME_ARGS(ctxt_pP),
+                     ue_context_pP->ue_context.rnti);
+
+  rrc_pdcp_config_asn1_req(ctxt_pP,
+                          SRB_configList, // NULL,
+                          DRB_configList,
+                          DRB_Release_configList2,
+                          0xff, // already configured during the securitymodecommand
+                          kRRCenc,
+                          kRRCint,
+                          kUPenc
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                          , (LTE_PMCH_InfoList_r9_t *) NULL
+#endif
+                          , NULL);
+
+  /* Refresh SRBs/DRBs */
+  rrc_rlc_config_asn1_req(ctxt_pP,
+                          SRB_configList, // NULL,
+                          DRB_configList,
+                          DRB_Release_configList2
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                          , (LTE_PMCH_InfoList_r9_t *) NULL,
+                          0,
+                          0
+#endif
+                          );
+
+  /* Set the SRB active in UE context */
   if (SRB_configList != NULL) {
-    for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
-      if (SRB_configList->list.array[i]->srb_Identity == 1 ) {
-        ue_context_pP->ue_context.Srb1.Active=1;
-      } else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
-        ue_context_pP->ue_context.Srb2.Active=1;
-        ue_context_pP->ue_context.Srb2.Srb_info.Srb_id=2;
+    for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
+      if (SRB_configList->list.array[i]->srb_Identity == 1) {
+        ue_context_pP->ue_context.Srb1.Active = 1;
+      } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
+        ue_context_pP->ue_context.Srb2.Active = 1;
+        ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
         LOG_I(RRC,"[eNB %d] Frame  %d CC %d : SRB2 is now active\n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
@@ -5226,22 +5859,21 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     ue_context_pP->ue_context.SRB_configList2[xid] = NULL;
   }
 
-  // Loop through DRBs and establish if necessary
-
+  /* Loop through DRBs and establish if necessary */
   if (DRB_configList != NULL) {
-    for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
+    for (int i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
       if (DRB_configList->list.array[i]) {
         drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-        LOG_I(RRC,
-              "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE rnti %x, reconfiguring DRB %d/LCID %d\n",
+
+        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE rnti %x, reconfiguring DRB %d/LCID %d\n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
               ctxt_pP->rnti,
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
-        // for pre-ci tests
-        LOG_I(RRC,
-              "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE %u, reconfiguring DRB %d/LCID %d\n",
+
+        /* For pre-ci tests */
+        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE %u, reconfiguring DRB %d/LCID %d\n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
               oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid],
@@ -5249,49 +5881,40 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 
         if (ue_context_pP->ue_context.DRB_active[drb_id] == 0) {
-          /*
-             rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_ADD,
-             (ue_mod_idP * NB_RB_MAX) + *DRB_configList->list.array[i]->logicalChannelIdentity,UNDEF_SECURITY_MODE);
-             rrc_rlc_config_req(ctxt_pP->module_id,frameP,1,CONFIG_ACTION_ADD,
-             (ue_mod_idP * NB_RB_MAX) + (int)*RC.rrc[ctxt_pP->module_id]->DRB_config[ue_mod_idP][i]->logicalChannelIdentity,
-             RADIO_ACCESS_BEARER,Rlc_info_um);
-           */
           ue_context_pP->ue_context.DRB_active[drb_id] = 1;
-          LOG_D(RRC,
-                "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
+          LOG_D(RRC, "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
-#if  defined(PDCP_USE_NETLINK) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
-          // can mean also IPV6 since ether -> ipv6 autoconf
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET)
-          LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
-                ctxt_pP->module_id,
-                ctxt_pP->module_id);
-          oip_ifup = nas_config(
-                       ctxt_pP->module_id,   // interface index
-                       ctxtReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA_pP->module_id + 1,   // thrid octet
-                       ctxt_pP->module_id + 1);  // fourth octet
 
-          if (oip_ifup == 0) {    // interface is up --> send a config the DRB
-            module_id_t ue_module_id;
-            dest_ip_offset = 8;
-            LOG_I(OIP,
-                  "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
-                  ctxt_pP->module_id, ctxt_pP->module_id,
-                  (long int)((ue_context_pP->local_uid * maxDRB) + DRB_configList->list.array[i]->drb_Identity));
-            ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
-            rb_conf_ipv4(0, //add
-                         ue_module_id,  //cx
-                         ctxt_pP->module_id,    //inst
-                         (ue_module_id * maxDRB) + DRB_configList->list.array[i]->drb_Identity, // RB
-                         0,    //dscp
-                         ipv4_address(ctxt_pP->module_id + 1, ctxt_pP->module_id + 1),  //saddr
-                         ipv4_address(ctxt_pP->module_id + 1, dest_ip_offset + ue_module_id + 1));  //daddr
-            LOG_D(RRC, "[eNB %d] State = Attached (UE rnti %x module id %u)\n",
-                  ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ue_module_id);
-          }
+          if (!EPC_MODE_ENABLED && !ENB_NAS_USE_TUN) {
+            LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
+                  ctxt_pP->module_id,
+                  ctxt_pP->module_id);
 
-#   endif
-#endif
+            oip_ifup = nas_config(ctxt_pP->module_id,   // interface index
+                                  ctxt_pP->module_id + 1,   // third octet
+                                  ctxt_pP->module_id + 1,   // fourth octet
+                                  "oai");
+
+            if (oip_ifup == 0) { // interface is up --> send a config the DRB
+              module_id_t ue_module_id;
+              dest_ip_offset = 8;
+              LOG_I(OIP,
+                    "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
+                    ctxt_pP->module_id, ctxt_pP->module_id,
+                      (long int)((ue_context_pP->local_uid * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity));
+              ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
+              rb_conf_ipv4(0, //add
+                          ue_module_id,  //cx
+                          ctxt_pP->module_id,    //inst
+                            (ue_module_id * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity, // RB
+                          0,    //dscp
+                          ipv4_address(ctxt_pP->module_id + 1, ctxt_pP->module_id + 1),  //saddr
+                          ipv4_address(ctxt_pP->module_id + 1, dest_ip_offset + ue_module_id + 1));  //daddr
+              LOG_D(RRC, "[eNB %d] State = Attached (UE rnti %x module id %u)\n",
+                    ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ue_module_id);
+            } /* oip_ifup */
+          } /* !EPC_MODE_ENABLED && ENB_NAS_USE_TUN*/
+
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
@@ -5300,39 +5923,47 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
           }
 
-          rrc_mac_config_req_eNB(
-            ctxt_pP->module_id,
-            ue_context_pP->ue_context.primaryCC_id,
-            0,0,0,0,0,
+	        if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
+            rrc_mac_config_req_eNB(ctxt_pP->module_id,
+                                   ue_context_pP->ue_context.primaryCC_id,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            0,
+                                   0,
 #endif
-            ue_context_pP->ue_context.rnti,
-            (LTE_BCCH_BCH_Message_t *) NULL,
-            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                   ue_context_pP->ue_context.rnti,
+                                   (LTE_BCCH_BCH_Message_t *) NULL,
+                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-            ue_context_pP->ue_context.physicalConfigDedicated,
+                                   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-            (LTE_SCellToAddMod_r10_t *)NULL,
-            //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+                                   (LTE_SCellToAddMod_r10_t *)NULL,
 #endif
-            (LTE_MeasObjectToAddMod_t **) NULL,
-            ue_context_pP->ue_context.mac_MainConfig,
-            DRB2LCHAN[i],
-            DRB_configList->list.array[i]->logicalChannelConfig,
-            ue_context_pP->ue_context.measGapConfig,
-            (LTE_TDD_Config_t *) NULL,
-            NULL,
-            (LTE_SchedulingInfoList_t *) NULL,
-            0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                                   (LTE_MeasObjectToAddMod_t **) NULL,
+                                   ue_context_pP->ue_context.mac_MainConfig,
+                                   DRB2LCHAN[i],
+                                   DRB_configList->list.array[i]->logicalChannelConfig,
+                                   ue_context_pP->ue_context.measGapConfig,
+                                   (LTE_TDD_Config_t *) NULL,
+                                   NULL,
+                                   (LTE_SchedulingInfoList_t *) NULL,
+                                   0,
+                                   NULL,
+                                   NULL,
+                                   (LTE_MBSFN_SubframeConfigList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-            , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
+                                   , 0,
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                                   (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-            ,
-            (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+                                   ,
+                                   (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -5344,57 +5975,69 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
           );
+	 }
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
              */
-            rrc_rlc_config_req(
-              ctxt_pP,
-              SRB_FLAG_NO,
-              MBMS_FLAG_NO,
-              CONFIG_ACTION_REMOVE,
-              DRB2LCHAN[i],
-              Rlc_info_um);
+            if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+              rrc_rlc_config_req(ctxt_pP,
+                                SRB_FLAG_NO,
+                                MBMS_FLAG_NO,
+                                CONFIG_ACTION_REMOVE,
+                                DRB2LCHAN[i],
+                                Rlc_info_um);
+            }
           }
 
           ue_context_pP->ue_context.DRB_active[drb_id] = 0;
-          LOG_D(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
+
+          LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-          rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                                 ue_context_pP->ue_context.primaryCC_id,
-                                 0,0,0,0,0,
+          if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
+            rrc_mac_config_req_eNB(ctxt_pP->module_id,
+                                   ue_context_pP->ue_context.primaryCC_id,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
+                                   0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                 0,
+                                   0,
 #endif
-                                 ue_context_pP->ue_context.rnti,
-                                 (LTE_BCCH_BCH_Message_t *) NULL,
-                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                   ue_context_pP->ue_context.rnti,
+                                   (LTE_BCCH_BCH_Message_t *) NULL,
+                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-                                 ue_context_pP->ue_context.physicalConfigDedicated,
+                                   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                                 (LTE_SCellToAddMod_r10_t *)NULL,
-                                 //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+                                   (LTE_SCellToAddMod_r10_t *) NULL,
 #endif
-                                 (LTE_MeasObjectToAddMod_t **) NULL,
-                                 ue_context_pP->ue_context.mac_MainConfig,
-                                 DRB2LCHAN[i],
-                                 (LTE_LogicalChannelConfig_t *) NULL,
-                                 (LTE_MeasGapConfig_t *) NULL,
-                                 (LTE_TDD_Config_t *) NULL,
-                                 NULL,
-                                 (LTE_SchedulingInfoList_t *) NULL,
-                                 0, NULL, NULL, NULL
+                                   (LTE_MeasObjectToAddMod_t **) NULL,
+                                   ue_context_pP->ue_context.mac_MainConfig,
+                                   DRB2LCHAN[i],
+                                   (LTE_LogicalChannelConfig_t *) NULL,
+                                   (LTE_MeasGapConfig_t *) NULL,
+                                   (LTE_TDD_Config_t *) NULL,
+                                   NULL,
+                                   (LTE_SchedulingInfoList_t *) NULL,
+                                   0,
+                                   NULL,
+                                   NULL,
+                                   NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                                 , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
+                                   ,
+                                   0,
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                                   (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                                 ,
-                                 (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+                                   ,
+                                   (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -5405,17 +6048,18 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
-                                );
-        }
-      }
-    }
+                                   );
+          }
+        } // end else of if (ue_context_pP->ue_context.DRB_active[drb_id] == 0)
+      } // end if (DRB_configList->list.array[i])
+    } // end for (int i = 0; i < DRB_configList->list.count; i++)
 
     free(DRB_configList);
     ue_context_pP->ue_context.DRB_configList2[xid] = NULL;
-  }
+  } // end if DRB_configList != NULL
 
   if(DRB_Release_configList2 != NULL) {
-    for (i = 0; i < DRB_Release_configList2->list.count; i++) {
+    for (int i = 0; i < DRB_Release_configList2->list.count; i++) {
       if (DRB_Release_configList2->list.array[i]) {
         drb_id_p = DRB_Release_configList2->list.array[i];
         drb_id = *drb_id_p;
@@ -5432,107 +6076,144 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 }
 
 //-----------------------------------------------------------------------------
-void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
-					 rrc_eNB_ue_context_t          *const ue_context_pP,
-					 const int                    CC_id
-					 )
+void
+rrc_eNB_generate_RRCConnectionSetup(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t  *const ue_context_pP,
+  const int                    CC_id
+)
 //-----------------------------------------------------------------------------
 {
-
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   boolean_t is_mtc = ctxt_pP->brOption;
 #endif
-
   LTE_LogicalChannelConfig_t             *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
   LTE_SRB_ToAddModList_t                **SRB_configList;
   LTE_SRB_ToAddMod_t                     *SRB1_config;
 
-  int                                 cnt;
-  T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  SRB_configList = &ue_context_pP->ue_context.SRB_configList;
+  MessageDef                             *message_p;
+     
+  T(T_ENB_RRC_CONNECTION_SETUP,
+    T_INT(ctxt_pP->module_id),
+    T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe),
+    T_INT(ctxt_pP->rnti));
+
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+  SRB_configList = &ue_p->SRB_configList;
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
   if (is_mtc) {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+    ue_p->Srb0.Tx_buffer.payload_size =
       do_RRCConnectionSetup_BR(ctxt_pP,
-			       ue_context_pP,
-			       CC_id,
-			       (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-			       (const uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
-			       rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-			       SRB_configList,
-			       &ue_context_pP->ue_context.physicalConfigDedicated);
-  } else 
+                                ue_context_pP,
+                                CC_id,
+                                (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                                (const uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+                                rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                                SRB_configList,
+                                &ue_context_pP->ue_context.physicalConfigDedicated);
+  } else
 #endif
   {
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+    ue_p->Srb0.Tx_buffer.payload_size =
       do_RRCConnectionSetup(ctxt_pP,
-			    ue_context_pP,
-			    CC_id,
-			    (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-			    (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
-			    rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-			    SRB_configList,
-			    &ue_context_pP->ue_context.physicalConfigDedicated);
-    LOG_DUMPMSG(RRC,DEBUG_RRC,
-		(char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
-		"[MSG] RRC Connection Setup\n");
-    
-    // configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE
-    
-    if (*SRB_configList != NULL) {
-      for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
-	if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
-	  SRB1_config = (*SRB_configList)->list.array[cnt];
-	  
-	  if (SRB1_config->logicalChannelConfig) {
-	    if (SRB1_config->logicalChannelConfig->present ==
-		LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
-	      SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
-	    } else {
-	      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-	    }
-	  } else {
-	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-	  }
-	  
-	  LOG_D(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
-		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-	  rrc_mac_config_req_eNB(
-				 ctxt_pP->module_id,
-				 ue_context_pP->ue_context.primaryCC_id,
-				 0,0,0,0,0,
+                            ue_context_pP,
+                            CC_id,
+                            (uint8_t*) ue_p->Srb0.Tx_buffer.Payload,
+                            (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+                            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                            SRB_configList,
+                            &ue_context_pP->ue_context.physicalConfigDedicated);
+  }
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
+              "[MSG] RRC Connection Setup\n");
+
+  // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
+   switch (RC.rrc[ctxt_pP->module_id]->node_type){
+    case ngran_eNB_CU    :
+    case ngran_ng_eNB_CU :
+    case ngran_gNB_CU    :
+      // create an ITTI message
+      /* TODO: F1 IDs ar missing in RRC */
+      message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_DL_RRC_MESSAGE);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
+
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown 
+      F1AP_DL_RRC_MESSAGE (message_p).rnti = ue_p->rnti; 
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id = CCCH;  
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0; 
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+      break;
+    case ngran_eNB_DU    :
+    case ngran_gNB_DU  :
+      // nothing to do for DU 
+      AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+    case ngran_eNB:   
+    case ngran_ng_eNB :
+    case ngran_gNB  :  
+  
+      if (*SRB_configList != NULL) {
+        for (int cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
+          if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+           SRB1_config = (*SRB_configList)->list.array[cnt];
+
+            if (SRB1_config->logicalChannelConfig) {
+             if (SRB1_config->logicalChannelConfig->present ==
+                  LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+                SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
+              } else {
+                SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+             }
+            } else {
+              SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+           }
+
+           LOG_D(RRC,
+                PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+            if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+             rrc_mac_config_req_eNB(ctxt_pP->module_id,
+                                  ue_context_pP->ue_context.primaryCC_id,
+                                  0,0,0,0,0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 0,
+                                   0,
 #endif
-				 ue_context_pP->ue_context.rnti,
-				 (LTE_BCCH_BCH_Message_t *) NULL,
-				 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                  ue_context_pP->ue_context.rnti,
+                                  (LTE_BCCH_BCH_Message_t *) NULL,
+                                  (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                                  (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-				 ue_context_pP->ue_context.physicalConfigDedicated,
+                                  ue_context_pP->ue_context.physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-				 (LTE_SCellToAddMod_r10_t *)NULL,
-				 //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
+                                   (LTE_SCellToAddMod_r10_t *)NULL,
+                                  //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-				 (LTE_MeasObjectToAddMod_t **) NULL,
-				 ue_context_pP->ue_context.mac_MainConfig,
-				 1,
-				 SRB1_logicalChannelConfig,
-				 ue_context_pP->ue_context.measGapConfig,
-				 (LTE_TDD_Config_t *) NULL,
-				 NULL,
-				 (LTE_SchedulingInfoList_t *) NULL,
-				 0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                                  (LTE_MeasObjectToAddMod_t **) NULL,
+                                  ue_context_pP->ue_context.mac_MainConfig,
+                                  1,
+                                  SRB1_logicalChannelConfig,
+                                  ue_context_pP->ue_context.measGapConfig,
+                                  (LTE_TDD_Config_t *) NULL,
+                                  NULL,
+                                  (LTE_SchedulingInfoList_t *) NULL,
+                                  0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-				 , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
+                                  , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-				 ,
-				 (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+                                   ,
+                                  (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,
@@ -5548,39 +6229,48 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
 	}
       }
     }
-    
-    MSC_LOG_TX_MESSAGE(
-		       MSC_RRC_ENB,
-		       MSC_RRC_UE,
-		       RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header, // LG WARNING
-		       RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
-		       MSC_AS_TIME_FMT" LTE_RRCConnectionSetup UE %x size %u",
-		       MSC_AS_TIME_ARGS(ctxt_pP),
-		       ue_context_pP->ue_context.rnti,
-		       RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
-    LOG_I(RRC,
-	  PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionSetup (bytes %d)\n",
-	  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-	  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
-    //ue_context_pP->ue_context.ue_release_timer_thres=100;
-    // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-    ue_context_pP->ue_context.ue_release_timer=1;
-    // remove UE after 10 frames after LTE_RRCConnectionRelease is triggered
-    ue_context_pP->ue_context.ue_release_timer_thres=1000;
+
+    break;
+  default :
+    LOG_W(RRC, "Unknown node type %d\n", RC.rrc[ctxt_pP->module_id]->node_type);		
+  }
+  
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    ue_p->Srb0.Tx_buffer.Header, // LG WARNING
+    ue_p->Srb0.Tx_buffer.payload_size,
+    MSC_AS_TIME_FMT" RRCConnectionSetup UE %x size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    ue_p->Srb0.Tx_buffer.payload_size);
+
+
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionSetup (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        ue_p->Srb0.Tx_buffer.payload_size);
+
+     // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+    ue_context_pP->ue_context.ue_release_timer = 1;
+    // remove UE after 10 frames after RRCConnectionRelease is triggered
+    ue_context_pP->ue_context.ue_release_timer_thres = 1000;
+
+  /* init timers */
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
   }
 }
+
+void setup_ngran_CU(eNB_RRC_INST *rrc) {
+
   
-#if defined(ENABLE_ITTI)
+}
+
 //-----------------------------------------------------------------------------
 char openair_rrc_eNB_configuration(
-				   const module_id_t enb_mod_idP,
-				   RrcConfigurationReq *configuration
-				   )
-#else
-char openair_rrc_eNB_init(
-			  const module_id_t enb_mod_idP
-			  )
-#endif
+  const module_id_t enb_mod_idP,
+  RrcConfigurationReq *configuration
+)
 //-----------------------------------------------------------------------------
 {
   protocol_ctxt_t ctxt;
@@ -5599,29 +6289,11 @@ char openair_rrc_eNB_init(
 #endif
   AssertFatal(RC.rrc[enb_mod_idP] != NULL, "RC.rrc not initialized!");
   AssertFatal(MAX_MOBILES_PER_ENB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
-#ifdef ENABLE_ITTI
   AssertFatal(configuration!=NULL,"configuration input is null\n");
-#endif
-  //    for (j = 0; j < MAX_MOBILES_PER_ENB; j++)
-  //        RC.rrc[ctxt.module_id].Info.UE[j].Status = RRC_IDLE;  //CH_READY;
-  //
-  //#if defined(ENABLE_USE_MME)
-  //    // Connect eNB to MME
-  //    if (EPC_MODE_ENABLED <= 0)
-  //#endif
-  //    {
-  //        /* Init security parameters */
-  //        for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
-  //            RC.rrc[ctxt.module_id].ciphering_algorithm[j] = SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
-  //            RC.rrc[ctxt.module_id].integrity_algorithm[j] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
-  //            rrc_eNB_init_security(enb_mod_idP, j);
-  //        }
-  //    }
   RC.rrc[ctxt.module_id]->Nb_ue = 0;
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    RC.rrc[ctxt.module_id]->carrier[CC_id].Srb0.Active = 0;
-  }
+  pthread_mutex_init(&RC.rrc[ctxt.module_id]->cell_info_mutex,NULL);
+  RC.rrc[ctxt.module_id]->cell_info_configured = 0;
 
   uid_linear_allocator_init(&RC.rrc[ctxt.module_id]->uid_allocator);
   RB_INIT(&RC.rrc[ctxt.module_id]->rrc_ue_head);
@@ -5630,7 +6302,7 @@ char openair_rrc_eNB_init(
   //    }
   RC.rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
   RC.rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
-  memcpy(&RC.rrc[ctxt.module_id]->configuration,configuration,sizeof(RrcConfigurationReq));
+
   /// System Information INIT
   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Checking release \n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
@@ -5672,12 +6344,7 @@ char openair_rrc_eNB_init(
 #endif
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    init_SI(&ctxt,
-            CC_id
-#if defined(ENABLE_ITTI)
-            , configuration
-#endif
-           );
+    init_SI(&ctxt, CC_id, configuration);
 
     for (int ue_id = 0; ue_id < MAX_MOBILES_PER_ENB; ue_id++) {
       RC.rrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
@@ -5718,15 +6385,31 @@ char openair_rrc_eNB_init(
 #endif
     openair_rrc_top_init_eNB(RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
   }
+	
   openair_rrc_on(&ctxt);
+
+/*
+  RC.rrc[ctxt.module_id]->mcc= rrc_configuration_req->mcc;
+  RC.rrc[ctxt.module_id]->mnc= rrc_configuration_req->mnc;
+  RC.rrc[ctxt.module_id]->mnc_digit_length= rrc_configuration_req->mnc_digit_length;
+  RC.rrc[ctxt.module_id]->tac= rrc_configuration_req->tac;
+
+  LOG_W(RRC, "[inst %d] RRC->MCC/MSG->MCC %d/%d \n", ctxt.module_id, RC.rrc[ctxt.module_id]->mcc, rrc_configuration_req->mcc);
+  */
+  if (NODE_IS_CU(RC.rrc[ctxt.module_id]->node_type))
+  	// msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SCTP_REQ);
+    // RCconfig_CU_F1(msg_p, enb_id);
+    setup_ngran_CU(RC.rrc[ctxt.module_id]);
+	
   return 0;
 }
 
 /*------------------------------------------------------------------------------*/
 int
 rrc_eNB_decode_ccch(
-  protocol_ctxt_t *const ctxt_pP,
-  const SRB_INFO        *const Srb_info,
+  protocol_ctxt_t* const ctxt_pP,
+  const uint8_t          *buffer,
+  int                    buffer_length,
   const int              CC_id
 )
 //-----------------------------------------------------------------------------
@@ -5745,17 +6428,17 @@ rrc_eNB_decode_ccch(
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
   LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[0],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[1],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[2],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[3],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[4],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[5], (uint8_t *) Srb_info->Rx_buffer.Payload);
+        ((uint8_t*) buffer)[0],
+        ((uint8_t *) buffer)[1],
+        ((uint8_t *) buffer)[2],
+        ((uint8_t *) buffer)[3],
+        ((uint8_t *) buffer)[4],
+        ((uint8_t *) buffer)[5], (uint8_t *) buffer);
   dec_rval = uper_decode(
                NULL,
                &asn_DEF_LTE_UL_CCCH_Message,
                (void **)&ul_ccch_msg,
-               (uint8_t *) Srb_info->Rx_buffer.Payload,
+               (uint8_t *) buffer,
                100,
                0,
                0);
@@ -5782,8 +6465,7 @@ rrc_eNB_decode_ccch(
       case LTE_UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest:
         T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
           T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
-                    Srb_info->Rx_buffer.payload_size,
+        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(buffer), buffer_length,
                     "[MSG] RRC Connection Reestablishment Request\n");
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT"MAC_eNB--- MAC_DATA_IND (rrcConnectionReestablishmentRequest on SRB0) --> RRC_eNB\n",
@@ -5796,25 +6478,6 @@ rrc_eNB_decode_ccch(
               ((rrcConnectionReestablishmentRequest->reestablishmentCause == LTE_ReestablishmentCause_otherFailure) ?    "Other Failure" :
                (rrcConnectionReestablishmentRequest->reestablishmentCause == LTE_ReestablishmentCause_handoverFailure) ? "Handover Failure" :
                "reconfigurationFailure"));
-        /*{
-        uint64_t                            c_rnti = 0;
-
-        memcpy(((uint8_t *) & c_rnti) + 3, rrcConnectionReestablishmentRequest.UE_identity.c_RNTI.buf,
-        rrcConnectionReestablishmentRequest.UE_identity.c_RNTI.size);
-        ue_mod_id = rrc_eNB_get_UE_index(enb_mod_idP, c_rnti);
-        }
-
-        if ((RC.rrc[enb_mod_idP]->phyCellId == rrcConnectionReestablishmentRequest.UE_identity.physCellId) &&
-        (ue_mod_id != UE_INDEX_INVALID)){
-        rrc_eNB_generate_RRCConnectionReestablishment(enb_mod_idP, frameP, ue_mod_id);
-        }else {
-        rrc_eNB_generate_RRCConnectionReestablishmentReject(enb_mod_idP, frameP, ue_mod_id);
-        }
-        */
-        /* reject all reestablishment attempts for the moment */
-        //      rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP,
-        //                       rrc_eNB_get_ue_context(RC.rrc[ctxt_pP->module_id], ctxt_pP->rnti),
-        //                       CC_id);
         {
           uint16_t                          c_rnti = 0;
 
@@ -5923,16 +6586,11 @@ rrc_eNB_decode_ccch(
 
           LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
                 i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
-#if defined(ENABLE_ITTI)
           ue_context_p->ue_context.reestablishment_cause = rrcConnectionReestablishmentRequest->reestablishmentCause;
           LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept connection reestablishment request from UE physCellId %ld cause %ld\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 rrcConnectionReestablishmentRequest->ue_Identity.physCellId,
                 ue_context_p->ue_context.reestablishment_cause);
-#else
-          LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept connection restablishment request for UE\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-#endif
 #ifndef NO_RRM
           send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
 #else
@@ -5976,19 +6634,17 @@ rrc_eNB_decode_ccch(
                                    NULL,
                                    NULL,
                                    NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                    , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                                    ,NULL);
-          rrc_rlc_config_asn1_req(ctxt_pP,
-                                  ue_context_p->ue_context.SRB_configList,
-                                  (LTE_DRB_ToAddModList_t *) NULL,
-                                  (LTE_DRB_ToReleaseList_t *) NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                                  , (LTE_PMCH_InfoList_r9_t *) NULL,
-                                  0,0
-#   endif
-                                 );
+          if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+            rrc_rlc_config_asn1_req(ctxt_pP,
+                                    ue_context_p->ue_context.SRB_configList,
+                                    (LTE_DRB_ToAddModList_t *) NULL,
+                                    (LTE_DRB_ToReleaseList_t *) NULL
+                                    , (LTE_PMCH_InfoList_r9_t *) NULL,
+                                    0,0
+                                   );
+        }
 #endif //NO_RRM
         }
         break;
@@ -5996,8 +6652,9 @@ rrc_eNB_decode_ccch(
       case LTE_UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
         T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
           T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
-                    Srb_info->Rx_buffer.payload_size,
+
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,
+                  buffer_length,
                     "[MSG] RRC Connection Request\n");
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT"MAC_eNB --- MAC_DATA_IND  (rrcConnectionRequest on SRB0) --> RRC_eNB\n",
@@ -6012,7 +6669,7 @@ rrc_eNB_decode_ccch(
           MSC_LOG_RX_DISCARDED_MESSAGE(
             MSC_RRC_ENB,
             MSC_RRC_UE,
-            Srb_info->Rx_buffer.Payload,
+            buffer,
             dec_rval.consumed,
             MSC_AS_TIME_FMT" LTE_RRCConnectionRequest UE %x size %u (UE already in context)",
             MSC_AS_TIME_ARGS(ctxt_pP),
@@ -6042,6 +6699,14 @@ rrc_eNB_decode_ccch(
               }
 
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+
+              ue_context_p->ue_context.Srb0.Srb_id = 0;
+              ue_context_p->ue_context.Srb0.Active = 1;
+              memcpy(ue_context_p->ue_context.Srb0.Rx_buffer.Payload,
+                     buffer,
+                     buffer_length);
+              ue_context_p->ue_context.Srb0.Rx_buffer.payload_size = buffer_length;
+
             } else if (LTE_InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
               /* Save s-TMSI */
               LTE_S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
@@ -6051,7 +6716,20 @@ rrc_eNB_decode_ccch(
 
               if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
                 LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
-                rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+
+                if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+                  rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+                }
+                else {
+                  MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+                  F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+                  F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+                  F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+                  F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+                  F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+                  itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+                }
+
                 stmsi_received=1;
                 /* replace rnti in the context */
                 /* for that, remove the context from the RB tree */
@@ -6088,7 +6766,7 @@ rrc_eNB_decode_ccch(
               MSC_LOG_RX_MESSAGE(
                 MSC_RRC_ENB,
                 MSC_RRC_UE,
-                Srb_info->Rx_buffer.Payload,
+                buffer,
                 dec_rval.consumed,
                 MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u (s-TMSI mmec %u m_TMSI %u random UE id (0x%" PRIx64 ")",
                 MSC_AS_TIME_ARGS(ctxt_pP),
@@ -6113,7 +6791,6 @@ rrc_eNB_decode_ccch(
                 ue_context_p);
 
           if (ue_context_p != NULL) {
-#if defined(ENABLE_ITTI)
             ue_context_p->ue_context.establishment_cause = rrcConnectionRequest->establishmentCause;
             ue_context_p->ue_context.reestablishment_cause = LTE_ReestablishmentCause_spare1;
 
@@ -6131,18 +6808,12 @@ rrc_eNB_decode_ccch(
                     ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
                     ue_context_p->ue_context.establishment_cause);
 
-#else
-            LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection for UE random UE identity (0x%" PRIx64 ")\n",
-                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-                  ue_context_p->ue_context.random_ue_identity);
-#endif
-
             if (stmsi_received == 0)
               RC.rrc[ctxt_pP->module_id]->Nb_ue++;
           } else {
             // no context available
-            if (rrc_agent_registered[ctxt_pP->module_id]) {
-              agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+            if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+              flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                   ctxt_pP->rnti,
                   PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
             }
@@ -6150,7 +6821,17 @@ rrc_eNB_decode_ccch(
             LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                   random_value);
-            rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
+            if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type))
+              rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
+            else if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+              MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+              itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+            }
             return -1;
           }
         }
@@ -6203,15 +6884,18 @@ rrc_eNB_decode_ccch(
                                  , (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
                                  ,NULL);
-        rrc_rlc_config_asn1_req(ctxt_pP,
-                                ue_context_p->ue_context.SRB_configList,
-                                (LTE_DRB_ToAddModList_t *) NULL,
-                                (LTE_DRB_ToReleaseList_t *) NULL
+
+        if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+          rrc_rlc_config_asn1_req(ctxt_pP,
+                                  ue_context_p->ue_context.SRB_configList,
+                                  (LTE_DRB_ToAddModList_t *) NULL,
+                                  (LTE_DRB_ToReleaseList_t *) NULL
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                                , (LTE_PMCH_InfoList_r9_t *) NULL
-                                , 0, 0
+                                  , (LTE_PMCH_InfoList_r9_t *) NULL
+                                  , 0, 0
 #endif
-                               );
+                                 );
+        }
 #endif //NO_RRM
         break;
 
@@ -6369,6 +7053,9 @@ rrc_eNB_decode_dcch(
                 break;
               }
 
+              AssertFatal(!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type),
+                          "CU cannot decode DCCH: no access to RC.mac[]\n");
+
               if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1) {
                 LOG_I(RRC,
                       PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
@@ -6376,6 +7063,22 @@ rrc_eNB_decode_dcch(
                 dedicated_DRB = 2;
                 RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               }
+            } else if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION) {
+              int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+
+              if(UE_id == -1) {
+                LOG_E(RRC,
+                      PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReconfigurationComplete without rnti %x, fault\n",
+                      PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+                break;
+              }
+
+              dedicated_DRB = 3;
+              RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+              ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+              LOG_I(RRC,
+                    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
+                    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
             } else {
               dedicated_DRB = 0;
               ue_context_p->ue_context.Status = RRC_RECONFIGURED;
@@ -6399,65 +7102,72 @@ rrc_eNB_decode_dcch(
             ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 
           //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-          if (rrc_agent_registered[ctxt_pP->module_id]) {
-            agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+          if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+            flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                 ue_context_p->ue_id_rnti,
                 PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
           }
         }
 
-#if defined(ENABLE_ITTI)
-#if defined(ENABLE_USE_MME)
+        if (EPC_MODE_ENABLED) {
+          if (dedicated_DRB == 1) {
+            //    rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
+            //               ue_context_p,
+            //               ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+            if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
+              rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(ctxt_pP,
+                                                  ue_context_p,
+                                                  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+              ue_context_p->ue_context.nb_of_modify_e_rabs = 0;
+              ue_context_p->ue_context.nb_of_failed_e_rabs = 0;
+              memset(ue_context_p->ue_context.modify_e_rab, 0, sizeof(ue_context_p->ue_context.modify_e_rab));
 
-        if (dedicated_DRB == 1) {
-          //    rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
-          //               ue_context_p,
-          //               ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-          if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
-            rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(ctxt_pP,
-                                                ue_context_p,
-                                                ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-            ue_context_p->ue_context.nb_of_modify_e_rabs = 0;
-            ue_context_p->ue_context.nb_of_failed_e_rabs = 0;
-            memset(ue_context_p->ue_context.modify_e_rab, 0, sizeof(ue_context_p->ue_context.modify_e_rab));
+              for(int i = 0; i < NB_RB_MAX; i++) {
+                ue_context_p->ue_context.modify_e_rab[i].xid = -1;
+              }
+            } else if(ue_context_p->ue_context.e_rab_release_command_flag == 1) {
+              xid = ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier;
+              ue_context_p->ue_context.e_rab_release_command_flag = 0;
+              //gtp tunnel delete
+              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+              memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
 
-            for(int i = 0; i < NB_RB_MAX; i++) {
-              ue_context_p->ue_context.modify_e_rab[i].xid = -1;
+              for(i = 0; i < NB_RB_MAX; i++) {
+                if(xid == ue_context_p->ue_context.e_rab[i].xid) {
+                  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
+                  ue_context_p->ue_context.enb_gtp_teid[i] = 0;
+                  memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
+                  ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
+                }
+              }
+
+              itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
+              //S1AP_E_RAB_RELEASE_RESPONSE
+              rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(ctxt_pP,
+                  ue_context_p,
+                  xid);
+            } else {
+              rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
+                                                 ue_context_p,
+                                                 ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
             }
-          } else if(ue_context_p->ue_context.e_rab_release_command_flag == 1) {
-            xid = ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier;
-            ue_context_p->ue_context.e_rab_release_command_flag = 0;
-            //gtp tunnel delete
-            msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-            memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-            GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+          } else if(dedicated_DRB == 0) {
+            if(ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1) {
+              rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
+                  ue_context_p);
+            } else {
+              ue_context_p->ue_context.reestablishment_cause = LTE_ReestablishmentCause_spare1;
 
-            for(i = 0; i < NB_RB_MAX; i++) {
-              if(xid == ue_context_p->ue_context.e_rab[i].xid) {
-                GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
-                ue_context_p->ue_context.enb_gtp_teid[i] = 0;
-                memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
-                ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
+              for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+                if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+                  ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+                } else {
+                  ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+                }
               }
             }
-
-            itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
-            //S1AP_E_RAB_RELEASE_RESPONSE
-            rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(ctxt_pP,
-                ue_context_p,
-                xid);
-          } else {
-            rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
-                                               ue_context_p,
-                                               ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-          }
-        } else if(dedicated_DRB == 0) {
-          if(ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1) {
-            rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
-                ue_context_p);
-          } else {
-            ue_context_p->ue_context.reestablishment_cause = LTE_ReestablishmentCause_spare1;
-
+          } else if(dedicated_DRB == 2) {
             for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
               if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
@@ -6465,26 +7175,20 @@ rrc_eNB_decode_dcch(
                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
               }
             }
-          }
-        } else if(dedicated_DRB == 2) {
-          for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-            if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
-              ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
-            } else {
-              ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+          } else if(dedicated_DRB == 3) { //x2 path switch
+            for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+              if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+                ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+              } else {
+                ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+              }
             }
+
+            LOG_I(RRC,"issue rrc_eNB_send_PATH_SWITCH_REQ \n");
+            rrc_eNB_send_PATH_SWITCH_REQ(ctxt_pP,ue_context_p);
           }
-        }
+        } /* EPC_MODE_ENABLED */
 
-#endif
-#else  // establish a dedicated bearer 
-
-        if (dedicated_DRB == 0 ) {
-          //  ue_context_p->ue_context.e_rab[0].status = E_RAB_STATUS_ESTABLISHED;
-          rrc_eNB_reconfigure_DRBs(ctxt_pP,ue_context_p);
-        }
-
-#endif
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
@@ -6554,8 +7258,8 @@ rrc_eNB_decode_dcch(
                 &ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.choice.rrcConnectionReestablishmentComplete_r8);
 
             //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-            if (mac_agent_registered[ctxt_pP->module_id]) {
-              agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+            if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+              flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                   ue_context_p->ue_id_rnti,
                   PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
             }
@@ -6599,6 +7303,8 @@ rrc_eNB_decode_dcch(
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.
               present ==
               LTE_RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
+            AssertFatal(!NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type),
+                        "should not be reached in DU\n");
             rrc_eNB_process_RRCConnectionSetupComplete(
               ctxt_pP,
               ue_context_p,
@@ -6607,8 +7313,8 @@ rrc_eNB_decode_dcch(
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
             //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-            if (rrc_agent_registered[ctxt_pP->module_id]) {
-              agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+            if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+              flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                   ue_context_p->ue_id_rnti,
                   PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
             }
@@ -6747,6 +7453,9 @@ rrc_eNB_decode_dcch(
                                ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
                                choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                                array[0]->ueCapabilityRAT_Container.size, 0, 0);
+        ue_context_p->ue_context.UE_Capability_size = ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
+            choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
+            array[0]->ueCapabilityRAT_Container.size;
 
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
@@ -6762,11 +7471,9 @@ rrc_eNB_decode_dcch(
         }
 
         if (EPC_MODE_ENABLED) {
-          if (EPC_MODE_ENABLED == 1) {
             rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
                                                   ue_context_p,
                                                   ul_dcch_msg);
-          }
         } else {
           ue_context_p->ue_context.nb_of_e_rabs = 1;
 
@@ -6866,7 +7573,7 @@ rrc_eNB_decode_dcch(
     return 0;
     //TTN for D2D
   } else if (ul_dcch_msg->message.present == LTE_UL_DCCH_MessageType_PR_messageClassExtension) {
-    LOG_I(RRC, "THINH [UL_DCCH_MessageType_PR_messageClassExtension]\n");
+    LOG_I(RRC, "THINH [LTE_UL_DCCH_MessageType_PR_messageClassExtension]\n");
 
     switch (ul_dcch_msg->message.choice.messageClassExtension.present) {
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_NOTHING: /* No components present */
@@ -6874,7 +7581,7 @@ rrc_eNB_decode_dcch(
 
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2: //SidelinkUEInformation
         //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
-        LOG_I(RRC,"THINH [UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
+        LOG_I(RRC,"THINH [LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
         LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                     "[MSG] RRC SidelinkUEInformation \n");
         MSC_LOG_RX_MESSAGE(
@@ -6913,7 +7620,6 @@ rrc_eNB_decode_dcch(
   return 0;
 }
 
-#if defined(ENABLE_ITTI)
 void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t *const ctxt_pP,
                                rrc_eNB_ue_context_t  *ue_context_pP) {
   int i;
@@ -6945,6 +7651,120 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(ctxt_pP, ue_context_pP, 0);
 }
 
+void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) { 
+
+  
+  LOG_I(RRC,"Received F1 Setup Request from gNB_DU %llu (%s)\n",(unsigned long long int)f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
+  
+  //uint16_t num_cells_to_activate = 0;
+  
+  int cu_cell_ind=0;
+
+  MessageDef                         *msg_p = NULL;
+
+  //LOG_W(RRC,"num_cells_available %d \n", f1_setup_req->num_cells_available);
+  for (int i=0;i<f1_setup_req->num_cells_available;i++) {
+    // check that mcc/mnc match and grab MIB/SIB1
+    int found_cell=0;
+    for (int j=0;j<RC.nb_inst;j++) {
+      eNB_RRC_INST *rrc = RC.rrc[j];
+      if (rrc->configuration.mcc[0] == f1_setup_req->mcc[i] &&
+	  rrc->configuration.mnc[0] == f1_setup_req->mnc[i] &&
+	  rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
+        // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
+
+        rrc->carrier[0].MIB = malloc(f1_setup_req->mib_length[i]);
+        rrc->carrier[0].sizeof_MIB = f1_setup_req->mib_length[i];
+        LOG_W(RRC, "instance %d mib length %d\n", i, f1_setup_req->mib_length[i]);
+        LOG_W(RRC, "instance %d sib1 length %d\n", i, f1_setup_req->sib1_length[i]);
+       
+        memcpy((void*)rrc->carrier[0].MIB,f1_setup_req->mib[i],f1_setup_req->mib_length[i]);
+        asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                         &asn_DEF_LTE_BCCH_BCH_Message,
+        					       (void **)&rrc->carrier[0].mib_DU,
+        					       f1_setup_req->mib[i],
+        					       f1_setup_req->mib_length[i]);
+        AssertFatal(dec_rval.code == RC_OK,
+              "[eNB_DU %"PRIu8"] Failed to decode LTE_BCCH_BCH_MESSAGE (%zu bits)\n",
+        	    j,
+        	    dec_rval.consumed );	
+        LTE_BCCH_BCH_Message_t *mib = &rrc->carrier[0].mib;
+        LTE_BCCH_BCH_Message_t *mib_DU = rrc->carrier[0].mib_DU;
+        mib->message.dl_Bandwidth = mib_DU->message.dl_Bandwidth;
+        mib->message.phich_Config.phich_Resource = mib_DU->message.phich_Config.phich_Resource;
+        mib->message.phich_Config.phich_Duration = mib_DU->message.phich_Config.phich_Duration;
+
+        rrc->carrier[0].SIB1 = malloc(f1_setup_req->sib1_length[i]);
+        rrc->carrier[0].sizeof_SIB1 = f1_setup_req->sib1_length[i];
+        memcpy((void*)rrc->carrier[0].SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]); 
+        dec_rval = uper_decode_complete(NULL,
+                &asn_DEF_LTE_BCCH_DL_SCH_Message,
+        				(void **)&rrc->carrier[0].siblock1_DU,
+        				f1_setup_req->sib1[i],
+        				f1_setup_req->sib1_length[i]);
+        AssertFatal(dec_rval.code == RC_OK,
+              "[eNB_DU %"PRIu8"] Failed to decode LTE_BCCH_DLSCH_MESSAGE (%zu bits)\n",
+        	    j,
+        	    dec_rval.consumed );	
+        // Parse message and extract SystemInformationBlockType1 field
+        LTE_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier[0].siblock1_DU;
+        AssertFatal(bcch_message->message.present == LTE_BCCH_DL_SCH_MessageType_PR_c1,
+              "bcch_message->message.present != LTE_BCCH_DL_SCH_MessageType_PR_c1\n");
+        AssertFatal(bcch_message->message.choice.c1.present == LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
+              "bcch_message->message.choice.c1.present != LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
+        rrc->carrier[0].sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
+        rrc->carrier[0].physCellId = f1_setup_req->nr_pci[i];
+        // prepare F1_SETUP_RESPONSE
+
+        if (msg_p == NULL) {
+          msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_RESP); 						 
+        }
+        F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
+        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
+        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
+        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
+	F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
+        F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
+        int num_SI= 0;
+        if (rrc->carrier[0].SIB23) {
+          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][num_SI]        = rrc->carrier[0].SIB23;
+          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][num_SI] = rrc->carrier[0].sizeof_SIB23;
+          //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]);
+          //for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]; n++)
+          //  printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][num_SI][n]);
+          //printf("\n");
+          num_SI++;
+        }
+        F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
+
+        cu_cell_ind++;
+        found_cell=1;
+
+        F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;
+        // send ITTI message to F1AP-CU task
+        itti_send_msg_to_task (TASK_CU_F1, ENB_MODULE_ID_TO_INSTANCE(j), msg_p);
+        break;
+      } else {// setup_req mcc/mnc match rrc internal list element
+        
+        LOG_W(RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d \n", 
+            j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],rrc->configuration.mnc[0], f1_setup_req->mnc[i]);
+
+      }
+    }// for (int j=0;j<RC.nb_inst;j++)
+    if (found_cell==0) {
+      AssertFatal(1==0,"No cell found\n");
+      /*msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_FAILURE); 						 
+      F1AP_SETUP_RESP (msg_p).cause                             = rrc->node_name;
+      F1AP_SETUP_RESP (msg_p).time_to_wait                      = rrc->node_id;
+      F1AP_SETUP_RESP (msg_p).criticality_diagnostics           = rrc->node_name;*/
+    }
+    // handle other failure cases
+  }//for (int i=0;i<f1_setup_req->num_cells_available;i++)
+}
+ 
+
+  // ignore 5GNR fields for now, just take MIB and SIB1
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void rrc_enb_init(void) {
   pthread_mutex_init(&lock_ue_freelist, NULL);
@@ -6953,19 +7773,269 @@ void rrc_enb_init(void) {
 }
 
 //-----------------------------------------------------------------------------
+void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
+{
+  int32_t current_timestamp_ms = 0;
+  int32_t ref_timestamp_ms = 0;
+  struct timeval ts;
+  struct rrc_eNB_ue_context_s *ue_context_p = NULL;
+  struct rrc_eNB_ue_context_s *ue_to_be_removed = NULL;
+#ifdef LOCALIZATION
+  double estimated_distance = 0;
+  protocol_ctxt_t                     ctxt;
+#endif
+  MessageDef *msg;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_IN);
+
+  if (is_x2ap_enabled()) {
+    /* send a tick to x2ap */
+    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
+    itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
+
+  check_handovers(ctxt_pP); // counter, get the value and aggregate
+  }
+
+  // check for UL failure or for UE to be released
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+    ctxt_pP->rnti = ue_context_p->ue_id_rnti;
+
+    if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe == 0)) {
+      if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+        LOG_I(RRC, "UE rnti %x: S-TMSI %x failure timer %d/8\n",
+              ue_context_p->ue_context.rnti,
+              ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+              ue_context_p->ue_context.ul_failure_timer);
+      } else {
+        LOG_I(RRC, "UE rnti %x failure timer %d/8\n",
+              ue_context_p->ue_context.rnti,
+              ue_context_p->ue_context.ul_failure_timer);
+      }
+    }
+
+    if (ue_context_p->ue_context.ul_failure_timer > 0) {
+      ue_context_p->ue_context.ul_failure_timer++;
+
+      if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+        // remove UE after 20 seconds after MAC (or else) has indicated UL failure
+        LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        ue_to_be_removed = ue_context_p;
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.ue_release_timer_s1 > 0) {
+      ue_context_p->ue_context.ue_release_timer_s1++;
+
+      if (ue_context_p->ue_context.ue_release_timer_s1 >= ue_context_p->ue_context.ue_release_timer_thres_s1) {
+        LOG_I(RRC, "Removing UE %x instance, because of UE_CONTEXT_RELEASE_COMMAND not received after %d ms from sending request\n",
+              ue_context_p->ue_context.rnti,
+              ue_context_p->ue_context.ue_release_timer_thres_s1);
+
+        if (EPC_MODE_ENABLED && !NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type))
+          rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
+        else
+          ue_to_be_removed = ue_context_p;
+
+        ue_context_p->ue_context.ue_release_timer_s1 = 0;
+        break; // break RB_FOREACH
+      } // end if timer_s1 timeout
+    } // end if timer_s1 > 0 (S1 UE_CONTEXT_RELEASE_REQ ongoing)
+
+    if (ue_context_p->ue_context.ue_release_timer_rrc > 0) {
+      ue_context_p->ue_context.ue_release_timer_rrc++;
+
+      if (ue_context_p->ue_context.ue_release_timer_rrc >= ue_context_p->ue_context.ue_release_timer_thres_rrc) {
+        LOG_I(RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n",
+              ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_rrc = 0;
+        ue_to_be_removed = ue_context_p;
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.handover_info != NULL) {
+      if (ue_context_p->ue_context.handover_info->state == HO_RELEASE) {
+        ue_to_be_removed = ue_context_p;
+        rrc_eNB_handover_ue_context_release(ctxt_pP, ue_context_p);
+        break; //break RB_FOREACH (why to break ?)
+      }
+      if (ue_context_p->ue_context.handover_info->state == HO_CANCEL) {
+        rrc_eNB_handover_cancel(ctxt_pP, ue_context_p);
+        /* freeing handover_info and setting it to NULL to let
+         * RRC wait for MME to later on release the UE
+         */
+        free(ue_context_p->ue_context.handover_info);
+        ue_context_p->ue_context.handover_info = NULL;
+      }
+    }
+
+    pthread_mutex_lock(&rrc_release_freelist);
+
+    if (rrc_release_info.num_UEs > 0) {
+      uint16_t release_total = 0;
+
+      for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+        if (rrc_release_info.RRC_release_ctrl[release_num].flag > 0) {
+          release_total++;
+        }
+
+        if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) &&
+            (rrc_release_info.RRC_release_ctrl[release_num].rnti == ue_context_p->ue_context.rnti)) {
+          ue_context_p->ue_context.ue_release_timer_rrc = 1;
+          ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
+
+          if (EPC_MODE_ENABLED && !NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+            if (rrc_release_info.RRC_release_ctrl[release_num].flag == 4) { // if timer_s1 == 0
+              rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(ctxt_pP->module_id,
+                  ue_context_p->ue_context.eNB_ue_s1ap_id);
+            }
+
+            rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(ctxt_pP->module_id,
+                  ue_context_p);
+            // erase data of GTP tunnels in UE context
+            for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+              ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+              memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
+                  0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+              ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+            }
+
+            struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
+            rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0,
+                                                      ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+            if (rrc_ue_s1ap_ids != NULL) {
+              rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
+            }
+          } /* EPC_MODE_ENABLED && !NODE_IS_DU */
+
+          rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
+          rrc_release_info.num_UEs--;
+          break; // break for (release_num)
+        } // end if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) && ...
+
+        if (release_total >= rrc_release_info.num_UEs) {
+          break; // break for (release_num)
+        }
+      } // end for (release_num)
+    } // end if (rrc_release_info.num_UEs > 0)
+
+    pthread_mutex_unlock(&rrc_release_freelist);
+
+    if ((ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) && (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
+      ue_context_p->ue_context.ue_rrc_inactivity_timer++;
+
+      if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) {
+        LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        ue_to_be_removed = ue_context_p;
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.ue_reestablishment_timer > 0) {
+      ue_context_p->ue_context.ue_reestablishment_timer++;
+
+      if (ue_context_p->ue_context.ue_reestablishment_timer >= ue_context_p->ue_context.ue_reestablishment_timer_thres) {
+        LOG_I(RRC, "Removing UE %x instance because of reestablishment_timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ul_failure_timer = 20000; // lead to send S1 UE_CONTEXT_RELEASE_REQ
+        ue_to_be_removed = ue_context_p;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.ue_release_timer > 0) {
+      ue_context_p->ue_context.ue_release_timer++;
+
+      if (ue_context_p->ue_context.ue_release_timer >= ue_context_p->ue_context.ue_release_timer_thres) {
+        LOG_I(RRC, "Removing UE %x instance because of RRC Connection Setup timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        /*
+        * TODO: Naming problem here: ue_release_timer seems to have been used when RRC Connection Release was sent.
+        * It is no more the case.
+        * The timer should be renamed.
+        */
+        ue_to_be_removed = ue_context_p;
+        ue_context_p->ue_context.ue_release_timer = 0;
+        break; // break RB_FOREACH
+      }
+    }
+  } // end RB_FOREACH
+
+  if (ue_to_be_removed) {
+    if ((ue_to_be_removed->ue_context.ul_failure_timer >= 20000) ||
+        ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
+         (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0))) {
+      ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
+      ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
+      ue_to_be_removed->ue_context.ue_release_timer = 0;
+      ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
+    }
+
+    rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed);
+
+    if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
+      ue_to_be_removed->ue_context.ul_failure_timer = 0;
+    }
+
+    if ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
+        (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
+      ue_to_be_removed->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
+    }
+  }
+
+#ifdef RRC_LOCALIZATION
+  /* for the localization, only primary CC_id might be relevant*/
+  gettimeofday(&ts, NULL);
+  current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
+  ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+    ctxt = *ctxt_pP;
+    ctxt.rnti = ue_context_p->ue_context.rnti;
+    estimated_distance = rrc_get_estimated_ue_distance(&ctxt, CC_id, RC.rrc[ctxt_pP->module_id]->loc_type);
+
+    if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
+        estimated_distance != -1) {
+      LOG_D(LOCALIZE, "RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
+            ctxt.rnti,
+            ctxt_pP->module_id,
+            current_timestamp_ms,
+            ctxt_pP->frame,
+            estimated_distance);
+      LOG_D(LOCALIZE, "RRC status %d\n",
+            ue_context_p->ue_context.Status);
+      push_front(&RC.rrc[ctxt_pP->module_id]->loc_list, estimated_distance);
+      RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
+    } // end if
+  } // end RB_FOREACH
+#endif
+  (void)ts; /* remove gcc warning "unused variable" */
+  (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
+  (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
+}
+
+//-----------------------------------------------------------------------------
 void *rrc_enb_process_itti_msg(void *notUsed) {
   MessageDef                         *msg_p;
   const char                         *msg_name_p;
   instance_t                          instance;
   int                                 result;
-  SRB_INFO                           *srb_info_p;
-  int                                 CC_id;
   protocol_ctxt_t                     ctxt;
+
+  memset(&ctxt, 0, sizeof(ctxt));
+
   // Wait for a message
   itti_receive_msg(TASK_RRC_ENB, &msg_p);
   msg_name_p = ITTI_MSG_NAME(msg_p);
   instance = ITTI_MSG_INSTANCE(msg_p);
-  LOG_I(RRC,"Received message %s\n",msg_name_p);
+  /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
+  if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
+    LOG_I(RRC,"Received message %s\n",msg_name_p);
 
   switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -6980,30 +8050,30 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     /* Messages from MAC */
     case RRC_MAC_CCCH_DATA_IND:
       PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                    instance,
+                                    RRC_MAC_CCCH_DATA_IND(msg_p).enb_index,
                                     ENB_FLAG_YES,
                                     RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
                                     msg_p->ittiMsgHeader.lte_time.slot);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received %s\n",
-            PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
-            msg_name_p);
-      CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
-      srb_info_p = &RC.rrc[instance]->carrier[CC_id].Srb0;
+
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-            instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+            instance,
+            RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
+            &ctxt,
+            RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
 
       if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
-        LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+        LOG_I(RRC, "CCCH message has size %d > %d\n",
+              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
         break;
       }
 
-      memcpy(srb_info_p->Rx_buffer.Payload,
-             RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
-             RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-      srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
-      rrc_eNB_decode_ccch(&ctxt, srb_info_p, CC_id);
+      rrc_eNB_decode_ccch(&ctxt,
+                          (uint8_t*)RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
+                          RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
+                          RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
       break;
+
 
     /* Messages from PDCP */
     case RRC_DCCH_DATA_IND:
@@ -7013,7 +8083,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
                                     RRC_DCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
                                     msg_p->ittiMsgHeader.lte_time.slot);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
             RRC_DCCH_DATA_IND(msg_p).dcch_index,
             msg_name_p);
@@ -7030,7 +8100,6 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       }
 
       break;
-#   if defined(ENABLE_USE_MME)
 
     /* Messages from S1AP */
     case S1AP_DOWNLINK_NAS:
@@ -7071,24 +8140,122 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
       break;
 
-    case GTPV1U_ENB_DELETE_TUNNEL_RESP:
+    case GTPV1U_ENB_DELETE_TUNNEL_RESP: {
+      rrc_eNB_ue_context_t *ue = rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti);
 
-      /* Nothing to do. Apparently everything is done in S1AP processing */
-      //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
-      //instance, msg_name_p);
-      if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
-        rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
-          rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
+      if (ue != NULL
+          && ue->ue_context.ue_release_timer_rrc > 0
+          && (ue->ue_context.handover_info == NULL ||
+              (ue->ue_context.handover_info->state != HO_RELEASE &&
+               ue->ue_context.handover_info->state != HO_CANCEL))) {
+        ue->ue_context.ue_release_timer_rrc = ue->ue_context.ue_release_timer_thres_rrc;
       }
 
       break;
-#   endif
+    }
+
+    case S1AP_PATH_SWITCH_REQ_ACK:
+      LOG_I(RRC, "[eNB %d] received path switch ack %s\n", instance, msg_name_p);
+      rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK(msg_p, msg_name_p, instance);
+      break;
+
+    case X2AP_HANDOVER_REQ:
+      LOG_I(RRC, "[eNB %d] target eNB Receives X2 HO Req %s\n", instance, msg_name_p);
+      rrc_eNB_process_handoverPreparationInformation(instance, &X2AP_HANDOVER_REQ(msg_p));
+      break;
+
+    case X2AP_HANDOVER_REQ_ACK: {
+      struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_HANDOVER_REQ_ACK(msg_p).rnti);
+      if (ue_context_p == NULL) {
+        /* is it possible? */
+        LOG_E(RRC, "could not find UE (rnti %x) while processing X2AP_HANDOVER_REQ_ACK\n",
+              X2AP_HANDOVER_REQ_ACK(msg_p).rnti);
+        exit(1);
+      }
+      LOG_I(RRC, "[eNB %d] source eNB receives the X2 HO ACK %s\n", instance, msg_name_p);
+      DevAssert(ue_context_p != NULL);
+
+      if (ue_context_p->ue_context.handover_info->state != HO_REQUEST) abort();
+
+      rrc_eNB_process_handoverCommand(instance, ue_context_p, &X2AP_HANDOVER_REQ_ACK(msg_p));
+      ue_context_p->ue_context.handover_info->state = HO_PREPARE;
+      break;
+    }
+
+   case X2AP_UE_CONTEXT_RELEASE: {
+      struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_UE_CONTEXT_RELEASE(msg_p).rnti);
+      LOG_I(RRC, "[eNB %d] source eNB receives the X2 UE CONTEXT RELEASE %s\n", instance, msg_name_p);
+      DevAssert(ue_context_p != NULL);
+
+      if (ue_context_p->ue_context.handover_info->state != HO_COMPLETE) abort();
+
+      ue_context_p->ue_context.handover_info->state = HO_RELEASE;
+      break;
+    }
+
+   case X2AP_HANDOVER_CANCEL: {
+      struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
+      char *cause;
+      switch (X2AP_HANDOVER_CANCEL(msg_p).cause) {
+      case X2AP_T_RELOC_PREP_TIMEOUT:
+        cause = "T_RelocPrep timeout";
+        break;
+      case X2AP_TX2_RELOC_OVERALL_TIMEOUT:
+        cause = "Tx2_RelocOverall timeout";
+        break;
+      default:
+        /* cannot come here */
+        exit(1);
+      }
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_HANDOVER_CANCEL(msg_p).rnti);
+      if (ue_context_p != NULL &&
+          ue_context_p->ue_context.handover_info != NULL) {
+        LOG_I(RRC, "[eNB %d] eNB receives X2 HANDOVER CANCEL for rnti %x, cause %s [%s]\n",
+              instance,
+              X2AP_HANDOVER_CANCEL(msg_p).rnti,
+              cause,
+              msg_name_p);
+        if (X2AP_HANDOVER_CANCEL(msg_p).cause == X2AP_T_RELOC_PREP_TIMEOUT) {
+          /* for prep timeout, simply return to normal state */
+          /* TODO: be sure that it's correct to set Status to RRC_RECONFIGURED */
+          ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+          /* TODO: be sure free is enough here (check memory leaks) */
+          free(ue_context_p->ue_context.handover_info);
+          ue_context_p->ue_context.handover_info = NULL;
+        } else {
+          /* for overall timeout, remove UE entirely */
+          ue_context_p->ue_context.handover_info->state = HO_CANCEL;
+        }
+      } else {
+        char *failure_cause;
+        if (ue_context_p == NULL)
+          failure_cause = "no UE found";
+        else
+          failure_cause = "UE not in handover";
+        LOG_W(RRC, "[eNB %d] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n",
+              instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
+      }
+      break;
+    }
 
     /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
-      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p,&RRC_CONFIGURATION_REQ(msg_p));
+      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));
       openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
+      break;
+
+    /* Messages from F1AP task */
+    case F1AP_SETUP_REQ:
+      AssertFatal(NODE_IS_CU(RC.rrc[instance]->node_type),
+		  "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
+      LOG_I(RRC,"[eNB %d] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
+      handle_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
+      break;
+
+    case RRC_SUBFRAME_PROCESS:
+      rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
       break;
 
     default:
@@ -7121,7 +8288,6 @@ rrc_enb_task(
     (void) rrc_enb_process_itti_msg(NULL);
   }
 }
-#endif
 
 /*------------------------------------------------------------------------------*/
 void
@@ -7334,7 +8500,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
                                            (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                            (struct LTE_SPS_Config *)NULL,   // *sps_Config,
                                            NULL, NULL, NULL, NULL,NULL,
-                                           NULL, NULL,  NULL, NULL, NULL, NULL,
+                                           NULL, NULL,  NULL, NULL, NULL, NULL, NULL,
                                            (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)NULL,
                                            (LTE_SL_CommConfig_r12_t *)&sl_CommConfig,
                                            (LTE_SL_DiscConfig_r12_t *)NULL
@@ -7358,7 +8524,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
                                            (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                            (struct LTE_SPS_Config *)NULL,   // *sps_Config,
                                            NULL, NULL, NULL, NULL,NULL,
-                                           NULL, NULL,  NULL, NULL, NULL, NULL,
+                                           NULL, NULL,  NULL, NULL, NULL, NULL, NULL,
                                            (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)NULL,
                                            (LTE_SL_CommConfig_r12_t *)NULL,
                                            (LTE_SL_DiscConfig_r12_t *)&sl_DiscConfig
@@ -7467,238 +8633,10 @@ rrc_rx_tx(
 )
 //-----------------------------------------------------------------------------
 {
-  int32_t current_timestamp_ms = 0;
-  int32_t ref_timestamp_ms = 0;
-  struct timeval ts;
-  struct rrc_eNB_ue_context_s *ue_context_p = NULL;
-  struct rrc_eNB_ue_context_s *ue_to_be_removed = NULL;
-#ifdef LOCALIZATION
-  double estimated_distance = 0;
-  protocol_ctxt_t ctxt;
-#endif
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_IN);
-  check_handovers(ctxt_pP); // counter, get the value and aggregate
-  // check for UL failure or for UE to be released
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-    ctxt_pP->rnti = ue_context_p->ue_id_rnti;
-
-    if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe == 0)) {
-      if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-        LOG_I(RRC, "UE rnti %x: S-TMSI %x failure timer %d/8\n",
-              ue_context_p->ue_context.rnti,
-              ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
-              ue_context_p->ue_context.ul_failure_timer);
-      } else {
-        LOG_I(RRC, "UE rnti %x failure timer %d/8\n",
-              ue_context_p->ue_context.rnti,
-              ue_context_p->ue_context.ul_failure_timer);
-      }
-    }
-
-    if (ue_context_p->ue_context.ul_failure_timer > 0) {
-      ue_context_p->ue_context.ul_failure_timer++;
-
-      if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
-        // remove UE after 20 seconds after MAC (or else) has indicated UL failure
-        LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
-              ue_context_p->ue_context.rnti);
-        ue_to_be_removed = ue_context_p;
-        break; // break RB_FOREACH
-      }
-    }
-
-    if (ue_context_p->ue_context.ue_release_timer_s1 > 0) {
-      ue_context_p->ue_context.ue_release_timer_s1++;
-
-      if (ue_context_p->ue_context.ue_release_timer_s1 >= ue_context_p->ue_context.ue_release_timer_thres_s1) {
-        LOG_I(RRC, "Removing UE %x instance, because of UE_CONTEXT_RELEASE_COMMAND not received after %d ms from sending request\n",
-              ue_context_p->ue_context.rnti,
-              ue_context_p->ue_context.ue_release_timer_thres_s1);
-#if defined(ENABLE_USE_MME)
-#if defined(ENABLE_ITTI)
-        rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
-#endif
-#else
-        ue_to_be_removed = ue_context_p;
-#endif
-        ue_context_p->ue_context.ue_release_timer_s1 = 0;
-        break; // break RB_FOREACH
-      } // end if timer_s1 timeout
-    } // end if timer_s1 > 0 (S1 UE_CONTEXT_RELEASE_REQ ongoing)
-
-    if (ue_context_p->ue_context.ue_release_timer_rrc > 0) {
-      ue_context_p->ue_context.ue_release_timer_rrc++;
-
-      if (ue_context_p->ue_context.ue_release_timer_rrc >= ue_context_p->ue_context.ue_release_timer_thres_rrc) {
-        LOG_I(RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n",
-              ue_context_p->ue_context.rnti);
-        ue_context_p->ue_context.ue_release_timer_rrc = 0;
-        ue_to_be_removed = ue_context_p;
-        break; // break RB_FOREACH
-      }
-    }
-
-    pthread_mutex_lock(&rrc_release_freelist);
-
-    if (rrc_release_info.num_UEs > 0) {
-      uint16_t release_total = 0;
-
-      for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
-        if (rrc_release_info.RRC_release_ctrl[release_num].flag > 0) {
-          release_total++;
-        }
-
-        if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) &&
-            (rrc_release_info.RRC_release_ctrl[release_num].rnti == ue_context_p->ue_context.rnti)) {
-          ue_context_p->ue_context.ue_release_timer_rrc = 1;
-          ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
-#if defined(ENABLE_USE_MME)
-#if defined(ENABLE_ITTI)
-          int e_rab = 0;
-          MessageDef *msg_complete_p = NULL;
-          MessageDef *msg_delete_tunnels_p = NULL;
-          uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
-
-          if (rrc_release_info.RRC_release_ctrl[release_num].flag == 4) { // if timer_s1 == 0
-            MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_S1AP_ENB, NULL, 0,
-                               "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                               eNB_ue_s1ap_id);
-            msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-            S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-            itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
-          }
-
-          MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-          msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-          memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-          // do not wait response
-          GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-
-          for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-            GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-              ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-            // erase data
-            ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-            memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-            ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
-          }
-
-          itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
-          struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
-          rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
-
-          if (rrc_ue_s1ap_ids != NULL) {
-            rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
-          }
-
-#endif
-#endif
-          rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
-          rrc_release_info.num_UEs--;
-          break; // break for (release_num)
-        } // end if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) && ...
-
-        if (release_total >= rrc_release_info.num_UEs) {
-          break; // break for (release_num)
-        }
-      } // end for (release_num)
-    } // end if (rrc_release_info.num_UEs > 0)
-
-    pthread_mutex_unlock(&rrc_release_freelist);
-
-    if ((ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) && (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
-      ue_context_p->ue_context.ue_rrc_inactivity_timer++; // (un)comment this line to (de)activate the RRC inactivity timer
-
-      if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) {
-        LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n",
-              ue_context_p->ue_context.rnti);
-        ue_to_be_removed = ue_context_p;
-        break; // break RB_FOREACH
-      }
-    }
-
-    if (ue_context_p->ue_context.ue_reestablishment_timer > 0) {
-      ue_context_p->ue_context.ue_reestablishment_timer++;
-
-      if (ue_context_p->ue_context.ue_reestablishment_timer >= ue_context_p->ue_context.ue_reestablishment_timer_thres) {
-        LOG_I(RRC, "Removing UE %x instance because of reestablishment_timer timeout\n",
-              ue_context_p->ue_context.rnti);
-        ue_context_p->ue_context.ul_failure_timer = 20000; // lead to send S1 UE_CONTEXT_RELEASE_REQ
-        ue_to_be_removed = ue_context_p;
-        ue_context_p->ue_context.ue_reestablishment_timer = 0;
-        break; // break RB_FOREACH
-      }
-    }
-
-    if (ue_context_p->ue_context.ue_release_timer > 0) {
-      ue_context_p->ue_context.ue_release_timer++;
-
-      if (ue_context_p->ue_context.ue_release_timer >= ue_context_p->ue_context.ue_release_timer_thres) {
-        LOG_I(RRC, "Removing UE %x instance because of RRC Connection Setup timer timeout\n",
-              ue_context_p->ue_context.rnti);
-        /*
-        * TODO: Naming problem here: ue_release_timer seems to have been used when RRC Connection Release was sent.
-        * It is no more the case.
-        * The timer should be renamed.
-        */
-        ue_to_be_removed = ue_context_p;
-        ue_context_p->ue_context.ue_release_timer = 0;
-        break; // break RB_FOREACH
-      }
-    }
-  } // end RB_FOREACH
-
-  if (ue_to_be_removed) {
-    if ((ue_to_be_removed->ue_context.ul_failure_timer >= 20000) ||
-        ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
-         (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0))) {
-      ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
-      ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
-      ue_to_be_removed->ue_context.ue_release_timer = 0;
-      ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
-    }
-
-    rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed);
-
-    if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
-      ue_to_be_removed->ue_context.ul_failure_timer = 0;
-    }
-
-    if ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
-        (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
-      ue_to_be_removed->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
-    }
-  }
-
-#ifdef RRC_LOCALIZATION
-  /* for the localization, only primary CC_id might be relevant*/
-  gettimeofday(&ts, NULL);
-  current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
-  ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-    ctxt = *ctxt_pP;
-    ctxt.rnti = ue_context_p->ue_context.rnti;
-    estimated_distance = rrc_get_estimated_ue_distance(&ctxt, CC_id, RC.rrc[ctxt_pP->module_id]->loc_type);
-
-    if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
-        estimated_distance != -1) {
-      LOG_D(LOCALIZE, "RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
-            ctxt.rnti,
-            ctxt_pP->module_id,
-            current_timestamp_ms,
-            ctxt_pP->frame,
-            estimated_distance);
-      LOG_D(LOCALIZE, "RRC status %d\n",
-            ue_context_p->ue_context.Status);
-      push_front(&RC.rrc[ctxt_pP->module_id]->loc_list, estimated_distance);
-      RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
-    } // end if
-  } // end RB_FOREACH
-#endif
-  (void)ts; /* remove gcc warning "unused variable" */
-  (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
-  (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_SUBFRAME_PROCESS);
+  RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt_pP;
+  RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
+  itti_send_msg_to_task(TASK_RRC_ENB, ctxt_pP->module_id, message_p);
   return RRC_OK;
 }
-

@@ -36,6 +36,8 @@
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_extern.h"
+// for flexran_agent_get_mac_xface()
+#include "flexran_agent_extern.h"
 
 
 /* Initialization function for the agent structures etc */
@@ -51,7 +53,7 @@ int flexran_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
 /* Statistics reply protocol message constructor and destructor */
 int flexran_agent_mac_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
-int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* DL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
 int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
@@ -81,11 +83,23 @@ void flexran_agent_send_update_mac_stats(mid_t mod_id);
 /// Provide to the scheduler a pending dl_mac_config message
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 
+/* Fill the MAC part of an cell_config message */
+void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf);
+
+/* Fill the MAC part of a ue_config message */
+void flexran_agent_fill_mac_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexUeConfig *ue_conf);
+
+/* Fill the lc_ue_config->lc_config message */
+void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexLcUeConfig *lc_ue_conf);
+
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
+int flexran_agent_register_mac_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface*xface);
+int flexran_agent_unregister_mac_xface(mid_t mod_id);
 
 /***************************************
  * FlexRAN agent - slice configuration *

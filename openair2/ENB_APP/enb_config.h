@@ -40,6 +40,7 @@
 #include "PHY/impl_defs_lte.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
+#include "f1ap_messages_types.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
 #include "RRC/LTE/rrc_defs.h"
@@ -63,6 +64,9 @@
 // Hard to find a defined value for max enb...
 #define MAX_ENB 16
 
+#define MAX_DU	4
+#define CU_BALANCING_ALL		127
+#define CU_BALANCING_ROUND_ROBIN	126
 
 typedef struct mme_ip_address_s {
   unsigned  ipv4:1;
@@ -71,6 +75,13 @@ typedef struct mme_ip_address_s {
   char     *ipv4_address;
   char     *ipv6_address;
 } mme_ip_address_t;
+
+typedef struct cu_params {
+  const char    *local_ipv4_address;
+  const uint16_t local_port;
+  const char    *remote_ipv4_address;
+  const int16_t  remote_port;
+} cudu_params_t;
 
 typedef struct ru_config_s {
   // indicates if local or remote rf is used (1 == LOCAL)
@@ -93,7 +104,7 @@ typedef struct ru_config_s {
 extern void RCconfig_RU(void);
 extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
-extern void RCconfig_macrlc(void);
+extern void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]);
 extern void UE_config_stub_pnf(void);
 extern int  RCconfig_gtpu(void );
 extern void RCConfig(void);
@@ -101,12 +112,17 @@ extern void RCConfig(void);
 void                          enb_config_display(void);
 void                          ru_config_display(void);
 
-int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
+
+void read_config_and_init(void);
 int RCconfig_X2(MessageDef *msg_p, uint32_t i);
 
 void fill_SL_configuration(MessageDef *msg_p,  ccparams_sidelink_t *SLconfig,int cell_idx,int cc_idx,char *config_fname);
 void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, int cell_idx,int cc_idx,char *config_fname,char *brparamspath);
+
+int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
+void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

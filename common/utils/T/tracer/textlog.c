@@ -195,5 +195,8 @@ int main(int n, char **v)
     handle_event(h, e);
   }
 
+  free(on_off_name);
+  free(on_off_action);
+
   return 0;
 }
