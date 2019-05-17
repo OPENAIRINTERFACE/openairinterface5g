@@ -718,16 +718,17 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 		  uint8_t *payload,
 		  int     frame,
 		  uint8_t subframe,
-		  uint8_t pucch1_thres)
+		  uint8_t pucch1_thres
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+		  ,uint8_t br_flag
+#endif
+)
+//-----------------------------------------------------------------------------
 {
-
-
-  static int first_call=1;
-  LTE_eNB_COMMON *common_vars                        = &eNB->common_vars;
-  LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
-  //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
-
-  int8_t sigma2_dB                                   = 20;//eNB->measurements.n0_subband_power_tot_dB[0]-10;
+  static int first_call = 1;
+  LTE_eNB_COMMON *common_vars = &eNB->common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  int8_t sigma2_dB = max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -765,7 +766,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   uint16_t Ret = 0;
   int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2];       //[Antenna][Symbol][Subcarrier][Complex]
   int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2];              //[Antenna][Symbol][Subcarrier][Complex]
-  double delta_theta[NB_ANTENNAS_RX][12];                      //[Antenna][Subcarrier][Complex]
+  double delta_theta[NB_ANTENNAS_RX][12];                       //[Antenna][Subcarrier][Complex]
   int16_t ChestValue[NB_ANTENNAS_RX][2][12][2];                 //[Antenna][Slot][Subcarrier][Complex]
   int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14][12][2];      //[Antenna][Symbol][Subcarrier][Complex]
   int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2];       //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
@@ -774,7 +775,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t Fmt3xDataAvgSym[2][12][2];                            //[Slot][Subcarrier][Complex]
   int16_t IFFTOutData_Fmt3[2][12][2];                           //[Slot][Subcarrier][Complex]
   int16_t b[48];                                                //[bit]
-  //int16_t IP_CsData_allavg[NB_ANTENNAS_RX][12][4][2];           //[Antenna][Symbol][Nouse Cyclic Shift][Complex]
   int16_t payload_entity = -1;
   int16_t Interpw;
   int16_t payload_max;
@@ -973,7 +973,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   m = (n1_pucch < thres) ? NRB2 : (((n1_pucch-thres)/(12*c/deltaPUCCH_Shift))+NRB2+((deltaPUCCH_Shift*Ncs1_div_deltaPUCCH_Shift)>>3)+rem);
 
 #ifdef DEBUG_PUCCH_RX
-  printf("[eNB] PUCCH: m %d\n",m);
+  printf("[eNB] PUCCH: m %d, thres %d, NRB2 %d\n",m,thres,NRB2);
 #endif
   nsymb = N_UL_symb<<1;
 
@@ -984,14 +984,25 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     //for (j=0,l=0;l<(nsymb-1);l++) {
     for (j=0,l=0; l<nsymb; l++) {
-      if ((l<(nsymb>>1)) && ((m&1) == 0))
-        re_offset = (m*6) + frame_parms->first_carrier_offset;
-      else if ((l<(nsymb>>1)) && ((m&1) == 1))
-        re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
-      else if ((m&1) == 0)
-        re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      if (br_flag > 0 ) {
+        if ((m&1) == 0)
+          re_offset = (m*6) + frame_parms->first_carrier_offset;
+	else
+	  re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+      }
       else
-        re_offset = ((m-1)*6) + frame_parms->first_carrier_offset;
+#endif
+      {
+        if ((l<(nsymb>>1)) && ((m&1) == 0))
+          re_offset = (m*6) + frame_parms->first_carrier_offset;
+        else if ((l<(nsymb>>1)) && ((m&1) == 1))
+          re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+        else if ((m&1) == 0)
+          re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+        else
+          re_offset = ((m-1)*6) + frame_parms->first_carrier_offset;
+      }
 
       if (re_offset > frame_parms->ofdm_symbol_size)
         re_offset -= (frame_parms->ofdm_symbol_size);
@@ -1211,7 +1222,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     stat_max/=(12);  //normalize to energy per symbol and RE
 #ifdef DEBUG_PUCCH_RX
-    printf("[eNB] PUCCH fmt1a/b:  stat_max : %d, phase_max : %d\n",stat_max,phase_max);
+    LOG_I(PHY,"[eNB] PUCCH fmt1a/b:  stat_max : %d (%d : sigma2 %d), phase_max : %d\n",stat_max,dB_fixed(stat_max),sigma2_dB,phase_max);
 #endif
 
     stat_re=0;
@@ -1302,7 +1313,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #endif
 	  }
 	  
-      
+	  
 
 #ifdef DEBUG_PUCCH_RX
           printf("[eNB] PUCCH subframe %d chest1[%d][%d] => (%d,%d)\n",subframe,aa,re,
@@ -1352,7 +1363,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
       LOG_D(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
 	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
-      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+      LOG_D(PHY,"In pucch.c PUCCH 1a/b: ACK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
       
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
@@ -1369,8 +1380,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #if defined(USRP_REC_PLAY)
       LOG_D(PHY,"PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
 #else
-      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
-#endif      
+      LOG_D(PHY,"In pucch.c PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+#endif
+
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);

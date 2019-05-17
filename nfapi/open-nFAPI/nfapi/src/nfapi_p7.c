@@ -1545,7 +1545,7 @@ static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg,
                         // DJP - if(pusharray8(pdu->segments[j].segment_data, (uint32_t)(-1), pdu->segments[j].segment_length, ppWritePackedMsg, end) == 0)
 			int push_ret = pusharray8(pdu->segments[j].segment_data, 65535, pdu->segments[j].segment_length, ppWritePackedMsg, end);
                         
-                        if (0 && pdu->segments[j].segment_length == 3)
+                        if (pdu->segments[j].segment_length == 3)
                         {
                           NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
                           pdu->segments[j].segment_data[0], 
@@ -4429,40 +4429,43 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 				for(i = 0; i < totalNumPdus; ++i)
 				{
 					nfapi_tx_request_pdu_t* pdu = &(pNfapiMsg->tx_request_body.tx_pdu_list[i]);
+					if (pdu) {
+					  uint16_t length = 0;
+					  uint16_t index = 0;
 					
-					uint16_t length = 0;
-					uint16_t index = 0;
-					
-					if(!(pull16(ppReadPackedMsg, &length, end) &&
+					  if(!(pull16(ppReadPackedMsg, &length, end) &&
 						 pull16(ppReadPackedMsg, &index, end)))
-						return 0;
+						  return 0;
 
-					pdu->pdu_length = length;
-					pdu->pdu_index = index;
+                                          pdu->pdu_length = length;
+                                          pdu->pdu_index = index;
 					
 
 					// TODO : May need to rethink this bit
-					pdu->num_segments = 1;
-					pdu->segments[0].segment_length = pdu->pdu_length;
-					pdu->segments[0].segment_data = nfapi_p7_allocate(pdu->pdu_length, config);
+					  pdu->num_segments = 1;
+					  pdu->segments[0].segment_length = pdu->pdu_length;
+					  pdu->segments[0].segment_data = nfapi_p7_allocate(pdu->pdu_length, config);
 
-					if(pdu->segments[0].segment_data)
-					{
-						if(!pullarray8(ppReadPackedMsg, pdu->segments[0].segment_data, pdu->segments[0].segment_length, pdu->segments[0].segment_length, end))
+					  if(pdu->segments[0].segment_data)
+					  {
+						  if(!pullarray8(ppReadPackedMsg, pdu->segments[0].segment_data, pdu->segments[0].segment_length, pdu->segments[0].segment_length, end))
 							return 0;
-                                                if (0 && pdu->segments[0].segment_length == 3)
-                                                {
+                                                  if (pdu->segments[0].segment_length == 3)
+                                                  {
                                                   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
                                                       pdu->segments[0].segment_data[0], 
                                                       pdu->segments[0].segment_data[1], 
                                                       pdu->segments[0].segment_data[2]
                                                       );
-                                                }
-					}
-					else
-					{
+                                                  }
+					  }
+					  else
+					  {
 						NFAPI_TRACE(NFAPI_TRACE_ERROR, "unpack_tx_request: Failed to allocate pdu (len:%d) %d/%d %d\n", pdu->pdu_length, totalNumPdus, i, pdu->pdu_index);
-					}
+					  }
+                                      } else {
+                                          NFAPI_TRACE(NFAPI_TRACE_ERROR, "NULL pdu\n");
+                                      }
 				}
 			}
 			break;

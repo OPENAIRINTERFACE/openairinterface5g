@@ -47,27 +47,20 @@ void
 ccodedot11_encode (unsigned int numbytes,
                    unsigned char *inPtr,
                    unsigned char *outPtr,
-                   unsigned char puncturing)
-{
+                   unsigned char puncturing) {
   unsigned int             state;
-
   unsigned char              c, out, shiftbit =0;
-
   //  printf("In ccodedot11_encode (%d,%p,%p,%d)\n",numbytes,inPtr,outPtr,puncturing);
-
 #ifdef DEBUG_CCODE
   unsigned int  dummy;
 #endif //DEBUG_CCODE
   int bit_index;
-
   /* The input bit is shifted in position 8 of the state.
      Shiftbit will take values between 1 and 8 */
   state = 0;
-
 #ifdef DEBUG_CCODE
   dummy = 0;
 #endif //DEBUG_CCODE
-
   /* Do not increment inPtr until we read the next octet */
   bit_index=0;
 
@@ -78,85 +71,75 @@ ccodedot11_encode (unsigned int numbytes,
 #endif //DEBUG_CCODE
 
     switch (puncturing) {
-    case 0:  //rate 1/2
-      for (shiftbit = 0; shiftbit<8; shiftbit++) {
+      case 0:  //rate 1/2
+        for (shiftbit = 0; shiftbit<8; shiftbit++) {
+          state >>= 1;
 
-        state >>= 1;
+          if ((c&(1<<shiftbit)) != 0) {
+            state |= 64;
+          }
 
-        if ((c&(1<<shiftbit)) != 0) {
-          state |= 64;
+          out = ccodedot11_table[state];
+          *outPtr++ = out  & 1;
+          *outPtr++ = (out>>1)&1;
+#ifdef DEBUG_CCODE
+          printf("%u: %u -> %d (%u)\n",dummy,state,out,ccodedot11_table[state]);
+          dummy+=2;
+#endif //DEBUG_CCODE      
         }
 
-        out = ccodedot11_table[state];
+        break;
 
-        *outPtr++ = out  & 1;
-        *outPtr++ = (out>>1)&1;
+      case 1: // rate 3/4
+        for (shiftbit = 0; shiftbit<8; shiftbit++) {
+          state >>= 1;
+
+          if ((c&(1<<shiftbit)) != 0) {
+            state |= 64;
+          }
+
+          out = ccodedot11_table[state];
+
+          if (bit_index<2)
+            *outPtr++ = out  & 1;
+
+          if (bit_index!=1)
+            *outPtr++ = (out>>1)&1;
 
 #ifdef DEBUG_CCODE
-        printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
-        dummy+=2;
+          printf("%u: %u -> %d (%u)\n",dummy,state,out,ccodedot11_table[state]);
+          dummy+=2;
 #endif //DEBUG_CCODE      
-
-      }
-
-      break;
-
-    case 1: // rate 3/4
-      for (shiftbit = 0; shiftbit<8; shiftbit++) {
-
-        state >>= 1;
-
-        if ((c&(1<<shiftbit)) != 0) {
-          state |= 64;
+          bit_index=(bit_index==2)?0:(bit_index+1);
         }
 
-        out = ccodedot11_table[state];
+        break;
 
-        if (bit_index<2)
+      case 2: // rate 2/3
+        for (shiftbit = 0; shiftbit<8; shiftbit++) {
+          state >>= 1;
+
+          if ((c&(1<<shiftbit)) != 0) {
+            state |= 64;
+          }
+
+          out = ccodedot11_table[state];
           *outPtr++ = out  & 1;
 
-        if (bit_index!=1)
-          *outPtr++ = (out>>1)&1;
+          if (bit_index==0)
+            *outPtr++ = (out>>1)&1;
 
 #ifdef DEBUG_CCODE
-        printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
-        dummy+=2;
+          printf("%u: %u -> %d (%u)\n",dummy,state,out,ccodedot11_table[state]);
+          dummy+=2;
 #endif //DEBUG_CCODE      
-
-        bit_index=(bit_index==2)?0:(bit_index+1);
-      }
-
-      break;
-
-    case 2: // rate 2/3
-      for (shiftbit = 0; shiftbit<8; shiftbit++) {
-
-        state >>= 1;
-
-        if ((c&(1<<shiftbit)) != 0) {
-          state |= 64;
+          bit_index=(bit_index==0)?1:0;
         }
 
-        out = ccodedot11_table[state];
+        break;
 
-        *outPtr++ = out  & 1;
-
-        if (bit_index==0)
-          *outPtr++ = (out>>1)&1;
-
-#ifdef DEBUG_CCODE
-        printf("%d: %d -> %d (%d)\n",dummy,state,out,ccodedot11_table[state]);
-        dummy+=2;
-#endif //DEBUG_CCODE      
-
-        bit_index=(bit_index==0)?1:0;
-
-      }
-
-      break;
-
-    default:
-      break;
+      default:
+        break;
     }
   }
 
@@ -181,8 +164,6 @@ ccodedot11_encode (unsigned int numbytes,
   }
 
   */
-
-
 }
 
 
@@ -197,8 +178,7 @@ ccodedot11_encode (unsigned int numbytes,
 /* Basic code table initialization for constraint length 7 */
 /* Input in MSB, followed by state in 6 LSBs */
 
-void ccodedot11_init(void)
-{
+void ccodedot11_init(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -219,8 +199,7 @@ void ccodedot11_init(void)
 }
 
 /* Input in LSB, followed by state in 6 MSBs */
-void ccodedot11_init_inv(void)
-{
+void ccodedot11_init_inv(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -251,21 +230,15 @@ void ccodedot11_init_inv(void)
 #ifdef DEBUG_CCODE
 #include <stdio.h>
 
-main()
-{
+main() {
   unsigned char test[] = "0Thebigredfox";
   unsigned char output[512], *inPtr, *outPtr;
   unsigned int i;
-
   test[0] = 128;
   test[1] = 0;
-
-
   ccodedot11_init();
-
   inPtr = test;
   outPtr = output;
-
   ccodedot11_encode(16, inPtr, outPtr,0);
 
   for (i = 0; i < 32; i++) printf("%x ", output[i]);

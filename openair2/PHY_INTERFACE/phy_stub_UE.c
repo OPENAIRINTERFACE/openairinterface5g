@@ -25,7 +25,11 @@ extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
 
 
-
+UL_IND_t *UL_INFO = NULL;
+nfapi_tx_request_pdu_t* tx_request_pdu_list = NULL;
+nfapi_dl_config_request_t* dl_config_req = NULL;
+nfapi_ul_config_request_t* ul_config_req = NULL;
+nfapi_hi_dci0_request_t* hi_dci0_req = NULL;
 
 //extern uint8_t nfapi_pnf;
 //UL_IND_t *UL_INFO;
@@ -47,7 +51,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  int timing_advance_update;
 
 
-	  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // change for mutiple UE's simulation.
+	  pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
 
 
 	  UL_INFO->rx_ind.sfn_sf                    = frame<<4| subframe;
@@ -65,7 +71,11 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  //pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
 	  pdu->rx_indication_rel8.length         = buflen;
 	  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-	  pdu->data                              = ulsch_buffer;
+
+	  // ulsch_buffer is necessary to keep its value.
+	  //pdu->data                              = ulsch_buffer;
+	  pdu->data = malloc(buflen);
+	  memcpy(pdu->data,ulsch_buffer,buflen);
 	  // estimate timing advance for MAC
 	  //sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
 	  timing_advance_update                  = 0;  // Don't know what to put here
@@ -80,7 +90,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 
 	  UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
 	  UL_INFO->rx_ind.sfn_sf = frame<<4 | subframe;
-	  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // change for mutiple UE's simulation.
+	  pthread_mutex_unlock(&fill_ul_mutex.rx_mutex);
 
 
 }
@@ -88,7 +100,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 void fill_sr_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint16_t rnti) {
 
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
 
   nfapi_sr_indication_t       *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t  *sr_ind_body =    &sr_ind->sr_indication_body;
@@ -122,13 +136,17 @@ void fill_sr_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_I
 
   //UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   sr_ind_body->number_of_srs++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.sr_mutex);
 }
 
 
 void fill_crc_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint8_t crc_flag, int index, uint16_t rnti) {
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
 
   // REMEMBER HAVE EXCHANGED THE FOLLOWING TWO LINES HERE!
   nfapi_crc_indication_pdu_t *pdu =   &UL_INFO->crc_ind.crc_indication_body.crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -151,14 +169,21 @@ void fill_crc_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_
 
   LOG_D(PHY, "%s() rnti:%04x pdus:%d\n", __FUNCTION__, pdu->rx_ue_information.rnti, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
 
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.crc_mutex);
 }
 
 void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint8_t ra_PreambleIndex, uint16_t ra_RNTI) {
 
 	LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
-	pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-	UL_INFO = (UL_IND_t*)malloc(sizeof(UL_IND_t));
+
+	// change for mutiple UE's simulation.
+	// pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
+
+	// memory allocation and free memory of UL_INFO are done in UE_phy_stub_single_thread_rxn_txnp4.
+	// UL_INFO = (UL_IND_t*)malloc(sizeof(UL_IND_t));
 
 	    UL_INFO->rach_ind.rach_indication_body.number_of_preambles                 = 1;
 
@@ -195,16 +220,22 @@ void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL
 	          // with that branch.
 	          oai_nfapi_rach_ind(&UL_INFO->rach_ind);
 	          free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
-	          free(UL_INFO);
+
+	         // memory allocation and free memory of UL_INFO are done in UE_phy_stub_single_thread_rxn_txnp4.
+	          //free(UL_INFO);
 
 	        //}
-	      pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	      // change for mutiple UE's simulation.
+	      // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	      pthread_mutex_unlock(&fill_ul_mutex.rach_mutex);
 
 }
 
 void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subframe, UL_IND_t *UL_INFO, uint16_t rnti) {
 
-	pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	// change for mutiple UE's simulation.
+	//pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
 	nfapi_cqi_indication_pdu_t *pdu         = &UL_INFO->cqi_ind.cqi_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
 	nfapi_cqi_indication_raw_pdu_t *raw_pdu = &UL_INFO->cqi_ind.cqi_raw_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
 
@@ -233,14 +264,18 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subfram
 
 
   UL_INFO->cqi_ind.number_of_cqis++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);
 }
 
 void fill_ulsch_harq_indication_UE_MAC(int Mod_id, int frame,int subframe, UL_IND_t *UL_INFO, nfapi_ul_config_ulsch_harq_information *harq_information, uint16_t rnti)
 {
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
+
   nfapi_harq_indication_pdu_t *pdu =   &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list[UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
   int i;
 
@@ -271,8 +306,9 @@ void fill_ulsch_harq_indication_UE_MAC(int Mod_id, int frame,int subframe, UL_IN
     }
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-}
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);}
 
 
 void fill_uci_harq_indication_UE_MAC(int Mod_id,
@@ -285,7 +321,10 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 			      uint16_t tdd_multiplexing_mask*/) {
 
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
+
   nfapi_harq_indication_t *ind       = &UL_INFO->harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
   nfapi_harq_indication_pdu_t *pdu =   &body->harq_pdu_list[UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
@@ -311,6 +350,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
   else                        pdu->ul_cqi_information.ul_cqi=(640+SNRtimes10)/5;
   pdu->ul_cqi_information.channel = 0;
+  if(harq_information->harq_information_rel9_fdd.tl.tag == NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL9_FDD_TAG){
       if ((harq_information->harq_information_rel9_fdd.ack_nack_mode == 0) &&
           (harq_information->harq_information_rel9_fdd.harq_size == 1)) {
 
@@ -332,12 +372,31 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       pdu->harq_indication_fdd_rel13.harq_tb_n[1] = 1; // Assuming always an ACK (No NACK or DTX)
 
     }
-    else AssertFatal(1==0,"only format 1a/b for now, received \n");
+  }else if(harq_information->harq_information_rel10_tdd.tl.tag == NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG ){
+      if ((harq_information->harq_information_rel10_tdd.ack_nack_mode == 0) &&
+          (harq_information->harq_information_rel10_tdd.harq_size == 1)) {
+        pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+        pdu->harq_indication_tdd_rel13.mode = 0;
+        pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
+
+      }  else if ((harq_information->harq_information_rel10_tdd.ack_nack_mode == 1) &&
+                  (harq_information->harq_information_rel10_tdd.harq_size == 2)) {
+        pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+        pdu->harq_indication_tdd_rel13.mode = 0;
+        pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[1].bundling.value_0 = 1;
+
+      }
+  } else AssertFatal(1==0,"only format 1a/b for now, received \n");
 
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
   LOG_D(PHY,"Incremented eNB->UL_INFO.harq_ind.number_of_harqs:%d\n", UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 
 }
 
@@ -590,7 +649,7 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) //,
   //Mod_id = 0; // Currently static (only for one UE) but this should change.
 
   /*struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  eNB_rxtx_proc_t *proc = &eNB->proc.proc_rxtx[0];*/
+  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;*/
   nfapi_dl_config_request_pdu_t* dl_config_pdu_list = req->dl_config_request_body.dl_config_pdu_list;
   nfapi_dl_config_request_pdu_t *dl_config_pdu_tmp;
 
@@ -622,7 +681,8 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) //,
 				//if(tx_request_pdu_list[dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data!= NULL && tx_request_pdu_list[dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_length >0){
 				*/
 
-				if(dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index <= tx_req_num_elems -1){
+				// to avoid unexpected error , add check pdu_index is more than 0.
+				if((dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index >= 0) &&(dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index <= tx_req_num_elems -1)){
 				//if(tx_request_pdu_list + dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index!= NULL){
 
 					LOG_E(MAC, "dl_config_req_UE_MAC 2 Received data: sfn/sf:%d PDU[%d] size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n", NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size, dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index, tx_req_num_elems);
@@ -941,14 +1001,14 @@ void UE_config_stub_pnf(void) {
 
 /* Dummy functions*/
 
-void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                   nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
 
 }
 
 
-void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
 
@@ -957,14 +1017,14 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rx
 
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame, int subframe,
-                             eNB_rxtx_proc_t *proc,
+                             L1_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
 {
 
 }
 
 
-void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                           nfapi_dl_config_request_pdu_t *dl_config_pdu,
                           uint8_t *sdu)
 {
@@ -972,7 +1032,7 @@ void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 }
 
 
-void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                             nfapi_dl_config_request_pdu_t *dl_config_pdu,
                             uint8_t codeword_index,
                             uint8_t *sdu)
@@ -981,7 +1041,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
 }
 
 
-void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                          nfapi_ul_config_request_pdu_t *ul_config_pdu,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present)
 {

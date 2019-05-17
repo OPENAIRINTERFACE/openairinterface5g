@@ -19,6 +19,7 @@ int f_read(char *calibF_fname, int nb_antM, int nb_freq, int16_t (*calibF_mtx)[n
     }
     printf("%d\n",(int)calibF_mtx[0][0]);
     printf("%d\n",(int)calibF_mtx[1][599]);
+    fclose(calibF_fd);
   } else
    printf("%s not found, running with defaults\n",calibF_fname);
 }

@@ -111,9 +111,14 @@ function build_on_vm {
     fi
 
     echo "############################################################"
-    echo "Copying GIT repo into VM ($VM_NAME)" 
+    echo "Copying GIT repo into VM ($VM_NAME)"
     echo "############################################################"
-    scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/flexran/flexran.zip ubuntu@$VM_IP_ADDR:/home/ubuntu/localZip.zip
+    else
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
+    fi
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
 
     echo "############################################################"
@@ -133,7 +138,22 @@ function build_on_vm {
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
             echo "sudo apt-get --yes install zip daemon cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
         fi
-    else
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"sudo apt-get --yes --quiet install zip curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"sudo apt-get --yes --quiet install zip daemon curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip daemon curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        fi
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
         if [ $DAEMON -eq 0 ]
         then
             echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
@@ -163,7 +183,19 @@ function build_on_vm {
             echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp -O /home/ubuntu/tmp/cmake_targets/log/cppcheck_build.txt -E /home/ubuntu/tmp/cmake_targets/log/cppcheck.xml ./my-vm-build.sh" >> $VM_CMDS
         fi
-    else
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        echo "mkdir -p cmake_targets/log" >> $VM_CMDS
+        echo "chmod 777 cmake_targets/log" >> $VM_CMDS
+        echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
+        echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
+        echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
         echo "echo \"source oaienv\"" >> $VM_CMDS
         echo "source oaienv" >> $VM_CMDS
         echo "cd cmake_targets/" >> $VM_CMDS
@@ -181,6 +213,6 @@ function build_on_vm {
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
         fi
     fi
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
 }

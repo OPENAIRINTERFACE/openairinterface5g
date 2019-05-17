@@ -1,0 +1,101 @@
+// *INDENT-OFF*   cppcheck doesn't like "astyling" this file!!!!
+// /*
+// * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+// * contributor license agreements.  See the NOTICE file distributed with
+// * this work for additional information regarding copyright ownership.
+// * The OpenAirInterface Software Alliance licenses this file to You under
+// * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+// * except in compliance with the License.
+// * You may obtain a copy of the License at
+// *
+// *      http://www.openairinterface.org/?page_id=698
+// *
+// * Unless required by applicable law or agreed to in writing, software
+// * distributed under the License is distributed on an "AS IS" BASIS,
+// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// * See the License for the specific language governing permissions and
+// * limitations under the License.
+// *-------------------------------------------------------------------------------
+// * For more information about the OpenAirInterface (OAI) Software Alliance:
+// *      contact@openairinterface.org
+// */
+//*****************************************************************************
+//*****************************************************************************
+// section for "valid" memory leaks: the related functions are allocators and
+// the caller is responsible of freeing the memory. cppcheck has a mechanism
+// to check more accuretaly this, by defining callers responsible of freeing
+// but tools like valgring might be more suitable
+//
+//-----------------------------------------------------------------------------
+//    suppress error about keysP memory leak, free must be done by calling func
+memleak:common/utils/hashtable/obj_hashtable.c
+//-----------------------------------------------------------------------------
+//    suppress error about keys memory leak, free must be done by calling func
+memleak:openair2/UTIL/OMG/omg_hashtable.c
+//-----------------------------------------------------------------------------
+//     suppress error about data memory leak. This is the buffer where
+//    _emm_as_encode function creates the encoded buffer
+//
+memleak:openair3/NAS/UE/EMM/SAP/emm_as.c
+//-----------------------------------------------------------------------------
+//*****************************************************************************
+// section for files not used in oai exec's included in CI.
+// Possibly candidates for removal otherwise should be documented and updated
+// for project rules enforcement
+// ----------------------------------------------------------------------------
+// likely sources for test programs, maintained?
+invalidPrintfArgType_sint:openair1/PHY/CODING/TESTBENCH/ltetest.c
+memleak:openair1/PHY/CODING/TESTBENCH/ltetest.c
+invalidPrintfArgType_sint:openair1/PHY/CODING/TESTBENCH/pdcch_test.c
+//
+//-----------------------------------------------------------------------------
+// oaisim deprecated, remove?
+doubleFree:openair3/TEST/oaisim_mme_list_benchmark.c
+//
+//-----------------------------------------------------------------------------
+// is itti analyzer deprecated
+nullPointer:common/utils/itti_analyzer/itti_analyzer.c
+nullPointerRedundantCheck:common/utils/itti_analyzer/libbuffers/buffers.c
+doubleFree:common/utils/itti_analyzer/libbuffers/socket.c
+memleak:common/utils/itti_analyzer/libbuffers/socket.c
+memleak:common/utils/itti_analyzer/libparser/array_type.c
+memleak:common/utils/itti_analyzer/libui/ui_callbacks.c
+//-----------------------------------------------------------------------------
+// obviously never even compiled!!!
+syntaxError:openair1/SIMULATION/LTE_PHY/dlsim_tm4.c
+//-----------------------------------------------------------------------------
+// omg, otg commented out in cmakelist to be cleaned up definitely?
+arrayIndexOutOfBounds:openair2/UTIL/OMG/omg.c
+uninitvar:openair2/UTIL/OTG/otg_rx_socket.c
+//-----------------------------------------------------------------------------
+// cppcheck is not able to understand that buf is initialized at the first
+// iteration of the loop.
+nullPointer:common/utils/T/local_tracer.c:243
+//-----------------------------------------------------------------------------
+// once again cppcheck does not understand that fds is initialized in the
+// first iteration of the loop
+nullPointer:common/utils/T/tracer/multi.c:264
+nullPointer:common/utils/T/tracer/multi.c:265
+//
+//*****************************************************************************
+//
+// True problems we don't know how to fix, Suppression is commented out,
+// as these kind of problem need either to be fixed or can be suppressed
+// when fully uderstood
+//-----------------------------------------------------------------------------
+// the function [nv]fapi_pnf_p7_config_create should return
+// _this. _this points to a structure and a dynamically allocated field is
+// returned. cppcheck suspects _this will never be released, so do i
+// memleak:nfapi/open-nFAPI/pnf/src/pnf_p7_interface.c
+// memleak:nfapi/open-nFAPI/vnf/src/vnf_p7_interface.c
+//-----------------------------------------------------------------------------
+// may be security_data->kenb.value is released from calling functions. But even
+// when, for test, freeing it before returning from emm_proc_security_mode_command
+// which does the allocation, cppcheck complains. So something might be wrong...
+// memleak:openair3/NAS/UE/EMM/SecurityModeControl.c
+//-----------------------------------------------------------------------------
+// when used, nobody but the original developer can guess if sn_data_cnf is set or not
+// cppcheck found that in some cases it is not, code needs cleanup before fixing that...
+// uninitvar:openair2/LAYER2/RLC/AM_v9.3.0/rlc_am_status_report.c
+//*****************************************************************************
+// *INDENT-ON*

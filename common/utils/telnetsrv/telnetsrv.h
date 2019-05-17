@@ -69,7 +69,8 @@ typedef struct cmddef {
 #define TELNET_VARTYPE_INT64  3
 #define TELNET_VARTYPE_STRING 4
 #define TELNET_VARTYPE_DOUBLE 5
-//#define TELNET_VARTYPE_PTR    6
+#define TELNET_VARTYPE_INT8   6
+#define TELNET_VARTYPE_UINT   7
 typedef struct variabledef {
     char varname[TELNET_CMD_MAXSIZE];
     char vartype;

@@ -27,7 +27,7 @@
  */
 
 #include "flexran_agent_rrc.h"
-
+#include "flexran_agent_ran_api.h"
 
 #include "liblfds700.h"
 
@@ -35,9 +35,6 @@
 
 /*Trigger boolean for RRC measurement*/
 bool triggered_rrc = false;
-
-/*Flags showing if an rrc agent has already been registered*/
-unsigned int rrc_agent_registered[NUM_MAX_ENB];
 
 /*Array containing the Agent-RRC interfaces*/
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
@@ -71,154 +68,21 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
     goto error;
   }
   protocol__flex_ue_config__init(config);
-  if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED) {
-    // Simply set the rnti of the UE
+  switch (state_change) {
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED:
     config->has_rnti = 1;
     config->rnti = rnti;
-  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED
-      || state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED) {
-    int i = find_UE_id(mod_id, rnti);
-    config->has_rnti = 1;
-    config->rnti = rnti;
-    config->imsi = flexran_get_ue_imsi(mod_id, i);
-    config->has_imsi = 1;
-    config->dl_slice_id = flexran_get_ue_dl_slice_id(mod_id, i);
-    config->has_dl_slice_id = 1;
-    config->ul_slice_id = flexran_get_ue_ul_slice_id(mod_id, i);
-    config->has_ul_slice_id = 1;
-    if(flexran_get_time_alignment_timer(mod_id,i) != -1) {
-      config->time_alignment_timer = flexran_get_time_alignment_timer(mod_id,i);
-      config->has_time_alignment_timer = 1;
-    }
-    if(flexran_get_meas_gap_config(mod_id,i) != -1){
-      config->meas_gap_config_pattern = flexran_get_meas_gap_config(mod_id,i);
-      config->has_meas_gap_config_pattern = 1;
-    }
-    if(config->has_meas_gap_config_pattern == 1 &&
-        config->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
-      config->meas_gap_config_sf_offset = flexran_get_meas_gap_config_offset(mod_id,i);
-      config->has_meas_gap_config_sf_offset = 1;
-    }
-    //TODO: Set the SPS configuration (Optional)
-    //Not supported for now, so we do not set it
-
-    //TODO: Set the SR configuration (Optional)
-    //We do not set it for now
-
-    //TODO: Set the CQI configuration (Optional)
-    //We do not set it for now
-
-    if(flexran_get_ue_transmission_mode(mod_id,i) != -1) {
-      config->transmission_mode = flexran_get_ue_transmission_mode(mod_id,i);
-      config->has_transmission_mode = 1;
-    }
-
-    config->ue_aggregated_max_bitrate_ul = flexran_get_ue_aggregated_max_bitrate_ul(mod_id,i);
-    config->has_ue_aggregated_max_bitrate_ul = 1;
-
-    config->ue_aggregated_max_bitrate_dl = flexran_get_ue_aggregated_max_bitrate_dl(mod_id,i);
-    config->has_ue_aggregated_max_bitrate_dl = 1;
-
-    Protocol__FlexUeCapabilities *c_capabilities;
-    c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
-    protocol__flex_ue_capabilities__init(c_capabilities);
-    c_capabilities->has_half_duplex = 1;
-    c_capabilities->half_duplex = flexran_get_half_duplex(mod_id, i);
-    c_capabilities->has_intra_sf_hopping = 1;
-    c_capabilities->intra_sf_hopping = flexran_get_intra_sf_hopping(mod_id, i);
-    c_capabilities->has_type2_sb_1 = 1;
-    c_capabilities->type2_sb_1 = flexran_get_type2_sb_1(mod_id, i);
-    c_capabilities->has_ue_category = 1;
-    c_capabilities->ue_category = flexran_get_ue_category(mod_id, i);
-    c_capabilities->has_res_alloc_type1 = 1;
-    c_capabilities->res_alloc_type1 = flexran_get_res_alloc_type1(mod_id, i);
-    //Set the capabilites to the message
-    config->capabilities = c_capabilities;
-
-    if(flexran_get_ue_transmission_antenna(mod_id,i) != -1) {
-      config->has_ue_transmission_antenna = 1;
-      config->ue_transmission_antenna = flexran_get_ue_transmission_antenna(mod_id,i);
-    }
-
-    if(flexran_get_tti_bundling(mod_id,i) != -1) {
-      config->has_tti_bundling = 1;
-      config->tti_bundling = flexran_get_tti_bundling(mod_id,i);
-    }
-
-    if(flexran_get_maxHARQ_TX(mod_id,i) != -1){
-      config->has_max_harq_tx = 1;
-      config->max_harq_tx = flexran_get_maxHARQ_TX(mod_id,i);
-    }
-
-    if(flexran_get_beta_offset_ack_index(mod_id,i) != -1) {
-      config->has_beta_offset_ack_index = 1;
-      config->beta_offset_ack_index = flexran_get_beta_offset_ack_index(mod_id,i);
-    }
-
-    if(flexran_get_beta_offset_ri_index(mod_id,i) != -1) {
-      config->has_beta_offset_ri_index = 1;
-      config->beta_offset_ri_index = flexran_get_beta_offset_ri_index(mod_id,i);
-    }
-
-    if(flexran_get_beta_offset_cqi_index(mod_id,i) != -1) {
-      config->has_beta_offset_cqi_index = 1;
-      config->beta_offset_cqi_index = flexran_get_beta_offset_cqi_index(mod_id,i);
-    }
-
-    /* assume primary carrier */
-    if(flexran_get_ack_nack_simultaneous_trans(mod_id,i,0) != -1) {
-      config->has_ack_nack_simultaneous_trans = 1;
-      config->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,i,0);
-    }
-
-    if(flexran_get_simultaneous_ack_nack_cqi(mod_id,i) != -1) {
-      config->has_simultaneous_ack_nack_cqi = 1;
-      config->simultaneous_ack_nack_cqi = flexran_get_simultaneous_ack_nack_cqi(mod_id,i);
-    }
-
-    if(flexran_get_aperiodic_cqi_rep_mode(mod_id,i) != -1) {
-      config->has_aperiodic_cqi_rep_mode = 1;
-      int mode = flexran_get_aperiodic_cqi_rep_mode(mod_id,i);
-      if (mode > 4) {
-        config->aperiodic_cqi_rep_mode = PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_NONE;
-      } else {
-        config->aperiodic_cqi_rep_mode = mode;
-      }
-    }
-
-    if(flexran_get_tdd_ack_nack_feedback_mode(mod_id, i) != -1) {
-      config->has_tdd_ack_nack_feedback = 1;
-      config->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback_mode(mod_id,i);
-    }
-
-    if(flexran_get_ack_nack_repetition_factor(mod_id, i) != -1) {
-      config->has_ack_nack_repetition_factor = 1;
-      config->ack_nack_repetition_factor = flexran_get_ack_nack_repetition_factor(mod_id,i);
-    }
-
-    if(flexran_get_extended_bsr_size(mod_id, i) != -1) {
-      config->has_extended_bsr_size = 1;
-      config->extended_bsr_size = flexran_get_extended_bsr_size(mod_id,i);
-    }
-
-    config->has_pcell_carrier_index = 1;
-    config->pcell_carrier_index = UE_PCCID(mod_id, i);
-    //TODO: Set carrier aggregation support (boolean)
-    config->has_ca_support = 0;
-    config->ca_support = 0;
-    if(config->has_ca_support){
-      //TODO: Set cross carrier scheduling support (boolean)
-      config->has_cross_carrier_sched_support = 1;
-      config->cross_carrier_sched_support = 0;
-      //TODO: Set secondary cells configuration
-      // We do not set it for now. No carrier aggregation support
-
-      //TODO: Set deactivation timer for secondary cell
-      config->has_scell_deactivation_timer = 0;
-      config->scell_deactivation_timer = 0;
-    }
-  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED) {
-    // TODO: Not supported for now. Leave blank
+    break;
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED:
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED:
+    flexran_agent_fill_rrc_ue_config(mod_id, rnti, config);
+    /* we don't call into the MAC CM here; it will be called later through an
+     * ue_config_request */
+    break;
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED:
+  default:
+    LOG_E(FLEXRAN_AGENT, "state change FLUESC_MOVED or unknown state occured for RNTI %x\n",
+          rnti);
   }
 
   ue_state_change_msg->config = config;
@@ -242,16 +106,18 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   return;
  error:
   if (err_code != 0)
-     LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
+     LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d for RNTI %x\n",
+           err_code, rnti);
 }
-
 
 
 int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
     goto error;
   free(msg->ue_state_change_msg->header);
-  //TODO: Free the contents of the UE config structure
+  if (msg->ue_state_change_msg->config->capabilities)
+    free(msg->ue_state_change_msg->config->capabilities);
+  free(msg->ue_state_change_msg->config);
   free(msg->ue_state_change_msg);
   free(msg);
   return 0;
@@ -262,32 +128,29 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 }
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
+void flexran_trigger_rrc_measurements (mid_t mod_id, LTE_MeasResults_t*  measResults) {
 
-  //int i;
   // int                   priority = 0; // Warning Preventing
   // void                  *data;
   // int                   size;
   // err_code_t             err_code = -100;
   triggered_rrc = true;
-  //int num;
 
   /* TODO do we need this at the current state? meas_stats is never put into a
    * protobuf message?!
-  num = flexran_get_num_ues (mod_id);
+  int num = flexran_get_rrc_num_ues (mod_id);
+  rnti_t rntis[num];
+  flexran_get_rrc_rnti_list(mod_id, rntis, num);
 
   meas_stats = malloc(sizeof(rrc_meas_stats) * num); 
 
-  for (i = 0; i < num; i++){
-    UE_id = flexran_get_ue_id(mod_id, i);
-    meas_stats[i].rnti = flexran_get_ue_crnti(mod_id, UE_id);
-    meas_stats[i].meas_id = flexran_get_rrc_pcell_measid(mod_id, UE_id);
-    meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id, UE_id) - 140;
+  for (int i = 0; i < num; i++){
+    const rnti_t rnti = rntis[i];
+    meas_stats[i].rnti = rnti;
+    meas_stats[i].meas_id = flexran_get_rrc_pcell_measid(mod_id, rnti);
+    meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id, rnti) - 140;
     // measResults->measResultPCell.rsrpResult - 140;
-    meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id, UE_id)/2 - 20;
-    // (measResults->measResultPCell.rsrqResult)/2 - 20;                          
-    
-  }
+    meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id, rnti)/2 - 20;
   */
     // repl->neigh_meas = NULL;
 
@@ -496,17 +359,11 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
            Protocol__FlexUeStatsReport **ue_report,
            Protocol__FlexCellStatsReport **cell_report) {
 
-
-  // Protocol__FlexHeader *header;
-  int i,j;
-  int UE_id;
-
-  /* Allocate memory for list of UE reports */
   if (report_config->nr_ue > 0) {
-
-    for (i = 0; i < report_config->nr_ue; i++) {
-
-      UE_id = flexran_get_ue_id(mod_id, i);
+    rnti_t rntis[report_config->nr_ue];
+    flexran_get_rrc_rnti_list(mod_id, rntis, report_config->nr_ue);
+    for (int i = 0; i < report_config->nr_ue; i++) {
+      const rnti_t rnti = rntis[i];
       
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS) {
@@ -518,15 +375,14 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
       	  goto error;
       	protocol__flex_rrc_measurements__init(rrc_measurements);
       	
-        rrc_measurements->measid = flexran_get_rrc_pcell_measid(mod_id, UE_id);
-        rrc_measurements->has_measid = 1;
-
-        rrc_measurements->pcell_rsrp = flexran_get_rrc_pcell_rsrp(mod_id, UE_id);
-        rrc_measurements->has_pcell_rsrp = 1;
-
-        rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id, UE_id);
-        rrc_measurements->has_pcell_rsrq = 1 ;
-
+        rrc_measurements->measid = flexran_get_rrc_pcell_measid(mod_id, rnti);
+      	rrc_measurements->has_measid = 1;
+      	
+        rrc_measurements->pcell_rsrp = flexran_get_rrc_pcell_rsrp(mod_id, rnti);
+      	rrc_measurements->has_pcell_rsrp = 1;
+      	
+        rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id, rnti);
+      	rrc_measurements->has_pcell_rsrq = 1 ;
         
         /* Target Cell, Neghibouring*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;
@@ -536,7 +392,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         protocol__flex_neigh_cells_measurements__init(neigh_meas);
          
         
-        neigh_meas->n_eutra_meas = flexran_get_rrc_num_ncell(mod_id, UE_id);
+        neigh_meas->n_eutra_meas = flexran_get_rrc_num_ncell(mod_id, rnti);
 
         Protocol__FlexEutraMeasurements **eutra_meas = NULL;
 
@@ -546,7 +402,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
           if (eutra_meas == NULL)
             goto error;
           
-          for (j = 0; j < neigh_meas->n_eutra_meas; j++ ){
+          for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
 
               eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
               if (eutra_meas[j] == NULL)
@@ -554,7 +410,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
               protocol__flex_eutra_measurements__init(eutra_meas[j]);
 
-              eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, UE_id, j);
+              eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
               eutra_meas[j]->has_phys_cell_id = 1;
 
 
@@ -565,10 +421,10 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
               protocol__flex_eutra_ref_signal_meas__init(meas_result);     
 
-              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, UE_id, eutra_meas[j]->phys_cell_id);
+              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, eutra_meas[j]->phys_cell_id);
               meas_result->has_rsrp = 1;
 
-              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, UE_id, eutra_meas[j]->phys_cell_id);
+              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, eutra_meas[j]->phys_cell_id);
               meas_result->has_rsrq = 1;
 
               eutra_meas[j]->meas_result = meas_result;
@@ -582,6 +438,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         }
 
       	 ue_report[i]->rrc_measurements = rrc_measurements;
+         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
       	
       }
 
@@ -618,6 +475,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
   //                           ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
   //                           ni_report->has_p0_nominal_pucch = 1;
   //                           cell_report[i]->noise_inter_report = ni_report;
+  //                           cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
   //                     }
   //           }
             
@@ -630,12 +488,10 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
  error:
 
-  for (i = 0; i < report_config->nr_ue; i++){
+  for (int i = 0; i < report_config->nr_ue; i++){
 
-      UE_id = flexran_get_ue_id(mod_id, i);
-
-      if (ue_report[i]->rrc_measurements->neigh_meas != NULL){
-          for (j = 0; j < flexran_get_rrc_num_ncell(mod_id, UE_id); j++){
+      if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL){
+          for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
 
              free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
         }
@@ -651,10 +507,131 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
   return -1;
 }
 
+int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
+{
+  for (int i = 0; i < reply->n_ue_report; i++){
+    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas){
+      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
+        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
+      }
+      free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas);
+      free(reply->ue_report[i]->rrc_measurements->neigh_meas);
+      free(reply->ue_report[i]->rrc_measurements);
+    }
+  }
+  return 0;
+}
 
-int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
-  if (rrc_agent_registered[mod_id]) {
-    LOG_E(RRC, "RRC agent for eNB %d is already registered\n", mod_id);
+void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
+    Protocol__FlexUeConfig *ue_conf)
+{
+  if (ue_conf->has_rnti && ue_conf->rnti != rnti) {
+    LOG_E(FLEXRAN_AGENT, "ue_config existing RNTI %x does not match RRC RNTI %x\n",
+          ue_conf->rnti, rnti);
+    return;
+  }
+  ue_conf->has_rnti = 1;
+  ue_conf->rnti = rnti;
+  ue_conf->imsi = flexran_get_ue_imsi(mod_id, rnti);
+  ue_conf->has_imsi = 1;
+
+  //TODO: Set the DRX configuration (optional)
+  //Not supported for now, so we do not set it
+
+  ue_conf->time_alignment_timer = flexran_get_time_alignment_timer(mod_id, rnti);
+  ue_conf->has_time_alignment_timer = 1;
+
+  ue_conf->meas_gap_config_pattern = flexran_get_meas_gap_config(mod_id, rnti);
+  ue_conf->has_meas_gap_config_pattern = 1;
+
+  if(ue_conf->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
+    ue_conf->meas_gap_config_sf_offset = flexran_get_meas_gap_config_offset(mod_id, rnti);
+    ue_conf->has_meas_gap_config_sf_offset = 1;
+  }
+
+  //TODO: Set the SPS configuration (Optional)
+  //Not supported for now, so we do not set it
+
+  //TODO: Set the SR configuration (Optional)
+  //We do not set it for now
+
+  //TODO: Set the CQI configuration (Optional)
+  //We do not set it for now
+
+  ue_conf->transmission_mode = flexran_get_ue_transmission_mode(mod_id, rnti);
+  ue_conf->has_transmission_mode = 1;
+
+  Protocol__FlexUeCapabilities *c_capabilities;
+  c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
+  if (c_capabilities) {
+    protocol__flex_ue_capabilities__init(c_capabilities);
+
+    c_capabilities->has_half_duplex = 1;
+    c_capabilities->half_duplex = flexran_get_half_duplex(mod_id, rnti);
+
+    c_capabilities->has_intra_sf_hopping = 1;
+    c_capabilities->intra_sf_hopping = flexran_get_intra_sf_hopping(mod_id, rnti);
+
+    c_capabilities->has_type2_sb_1 = 1;
+    c_capabilities->type2_sb_1 = flexran_get_type2_sb_1(mod_id, rnti);
+
+    c_capabilities->has_ue_category = 1;
+    c_capabilities->ue_category = flexran_get_ue_category(mod_id, rnti);
+
+    c_capabilities->has_res_alloc_type1 = 1;
+    c_capabilities->res_alloc_type1 = flexran_get_res_alloc_type1(mod_id, rnti);
+
+    ue_conf->capabilities = c_capabilities;
+  }
+
+  ue_conf->has_ue_transmission_antenna = 1;
+  ue_conf->ue_transmission_antenna = flexran_get_ue_transmission_antenna(mod_id, rnti);
+
+  ue_conf->has_tti_bundling = 1;
+  ue_conf->tti_bundling = flexran_get_tti_bundling(mod_id, rnti);
+
+  ue_conf->has_max_harq_tx = 1;
+  ue_conf->max_harq_tx = flexran_get_maxHARQ_TX(mod_id, rnti);
+
+  ue_conf->has_beta_offset_ack_index = 1;
+  ue_conf->beta_offset_ack_index = flexran_get_beta_offset_ack_index(mod_id, rnti);
+
+  ue_conf->has_beta_offset_ri_index = 1;
+  ue_conf->beta_offset_ri_index = flexran_get_beta_offset_ri_index(mod_id, rnti);
+
+  ue_conf->has_beta_offset_cqi_index = 1;
+  ue_conf->beta_offset_cqi_index = flexran_get_beta_offset_cqi_index(mod_id, rnti);
+
+  /* assume primary carrier */
+  ue_conf->has_ack_nack_simultaneous_trans = 1;
+  ue_conf->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,0);
+
+  ue_conf->has_simultaneous_ack_nack_cqi = 1;
+  ue_conf->simultaneous_ack_nack_cqi = flexran_get_simultaneous_ack_nack_cqi(mod_id, rnti);
+
+  ue_conf->has_aperiodic_cqi_rep_mode = 1;
+  ue_conf->aperiodic_cqi_rep_mode = flexran_get_aperiodic_cqi_rep_mode(mod_id, rnti);
+
+  ue_conf->has_tdd_ack_nack_feedback = 1;
+  ue_conf->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback_mode(mod_id, rnti);
+
+  ue_conf->has_ack_nack_repetition_factor = 1;
+  ue_conf->ack_nack_repetition_factor = flexran_get_ack_nack_repetition_factor(mod_id, rnti);
+
+  ue_conf->has_extended_bsr_size = 1;
+  ue_conf->extended_bsr_size = flexran_get_extended_bsr_size(mod_id, rnti);
+}
+
+int flexran_agent_register_rrc_xface(mid_t mod_id)
+{
+  if (agent_rrc_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "RRC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_RRC_xface *xface = malloc(sizeof(AGENT_RRC_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for RRC agent xface %d\n", mod_id);
     return -1;
   }
 
@@ -663,21 +640,98 @@ int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
   xface->flexran_agent_notify_ue_state_change = flexran_agent_ue_state_change;
   xface->flexran_trigger_rrc_measurements = flexran_trigger_rrc_measurements;
 
-  rrc_agent_registered[mod_id] = 1;
   agent_rrc_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
+void flexran_agent_fill_rrc_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf) {
 
+  if (!conf->si_config) {
+    conf->si_config = malloc(sizeof(Protocol__FlexSiConfig));
+    if (conf->si_config)
+      protocol__flex_si_config__init(conf->si_config);
+  }
+
+  if (conf->si_config) {
+    // TODO THIS IS DU RRC
+    conf->si_config->sib1_length = flexran_get_sib1_length(mod_id, cc_id);
+    conf->si_config->has_sib1_length = 1;
+
+    conf->si_config->si_window_length = (uint32_t) flexran_get_si_window_length(mod_id,  cc_id);
+    conf->si_config->has_si_window_length = 1;
+
+    conf->si_config->n_si_message = 0;
+
+    /* Protocol__FlexSiMessage **si_message; */
+    /* si_message = malloc(sizeof(Protocol__FlexSiMessage *) * si_config->n_si_message); */
+    /* if(si_message == NULL) */
+    /* 	goto error; */
+    /* for(j = 0; j < si_config->n_si_message; j++){ */
+    /* 	si_message[j] = malloc(sizeof(Protocol__FlexSiMessage)); */
+    /* 	if(si_message[j] == NULL) */
+    /* 	  goto error; */
+    /* 	protocol__flex_si_message__init(si_message[j]); */
+    /* 	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames */
+    /* 	si_message[j]->periodicity = 1;				//SIPeriod */
+    /* 	si_message[j]->has_periodicity = 1; */
+    /* 	//TODO: Fill in with actual value, rhe length of the SI message in bytes */
+    /* 	si_message[j]->length = 10; */
+    /* 	si_message[j]->has_length = 1; */
+    /* } */
+    /* if(si_config->n_si_message > 0){ */
+    /* 	si_config->si_message = si_message; */
+    /* } */
+  }
+
+  conf->ra_response_window_size = flexran_get_ra_ResponseWindowSize(mod_id, cc_id);
+  conf->has_ra_response_window_size = 1;
+
+  // belongs to MAC but is read in RRC
+  conf->mac_contention_resolution_timer = flexran_get_mac_ContentionResolutionTimer(mod_id, cc_id);
+  conf->has_mac_contention_resolution_timer = 1;
+
+  conf->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (mod_id, cc_id);
+  conf->has_ul_pusch_power = 1;
+
+  conf->n_plmn_id = flexran_get_rrc_num_plmn_ids(mod_id);
+  conf->plmn_id = calloc(conf->n_plmn_id, sizeof(Protocol__FlexPlmn *));
+  if (conf->plmn_id) {
+    for (int i = 0; i < conf->n_plmn_id; i++) {
+      conf->plmn_id[i] = malloc(sizeof(Protocol__FlexPlmn));
+      if (!conf->plmn_id[i]) continue;
+      protocol__flex_plmn__init(conf->plmn_id[i]);
+      conf->plmn_id[i]->mcc = flexran_get_rrc_mcc(mod_id, i);
+      conf->plmn_id[i]->has_mcc = 1;
+      conf->plmn_id[i]->mnc = flexran_get_rrc_mnc(mod_id, i);
+      conf->plmn_id[i]->has_mnc = 1;
+      conf->plmn_id[i]->mnc_length = flexran_get_rrc_mnc_digit_length(mod_id, i);
+      conf->plmn_id[i]->has_mnc_length = 1;
+    }
+  } else {
+    conf->n_plmn_id = 0;
+  }
+}
+
+int flexran_agent_unregister_rrc_xface(mid_t mod_id)
+{
+  if (!agent_rrc_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "RRC agent for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
   //xface->agent_ctxt = NULL;
 //  xface->flexran_agent_send_update_rrc_stats = NULL;
 
-  xface->flexran_agent_notify_ue_state_change = NULL;
-  xface->flexran_trigger_rrc_measurements = NULL;
-  rrc_agent_registered[mod_id] = 0;
+  agent_rrc_xface[mod_id]->flexran_agent_notify_ue_state_change = NULL;
+  agent_rrc_xface[mod_id]->flexran_trigger_rrc_measurements = NULL;
+  free(agent_rrc_xface[mod_id]);
   agent_rrc_xface[mod_id] = NULL;
 
   return 0;
+}
+
+AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id)
+{
+  return agent_rrc_xface[mod_id];
 }

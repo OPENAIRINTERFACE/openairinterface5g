@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/impl_defs_lte.h
+/*! \file common/ran_context.h
 * \brief LTE Physical channel configuration and variable structure definitions
 * \author R. Knopp, F. Kaltenberger
 * \date 2011
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \email: knopp@eurecom.fr, florian.kaltenberger@eurecom.fr
 * \note
 * \warning
 */
@@ -38,7 +38,9 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
-#include "RRC/LTE/rrc_defs.h"
+#include "PHY/defs_L1_NB_IoT.h"
+#include "PHY/defs_RU.h"
+#include "ENB_APP/enb_config.h"
 #include "flexran_agent_defs.h"
 
 #include "gtpv1u.h"
@@ -47,8 +49,8 @@
 #include "NwGtpv1uPrivate.h"
 #include "gtpv1u_eNB_defs.h"
 
-#include "PHY/defs_L1_NB_IoT.h"
 #include "RRC/LTE/defs_NB_IoT.h"
+#include "RRC/LTE/rrc_defs.h"
 #include "RRC/NR/nr_rrc_defs.h"
 
 

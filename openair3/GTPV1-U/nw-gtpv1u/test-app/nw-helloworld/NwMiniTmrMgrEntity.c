@@ -64,8 +64,8 @@ NwGtpv1uRcT nwTimerStart( NwGtpv1uTimerMgrHandleT tmrMgrHandle,
   struct timeval tv;
 
   NW_LOG(NW_LOG_LEVEL_INFO,
-         "Received start timer request from stack with timer type %u, arg %x, for %u sec and %u usec",
-         tmrType, timeoutArg, timeoutSec, timeoutUsec);
+         "Received start timer request from stack with timer type %d , arg %x, for %d sec and %d usec",
+         tmrType, (unsigned int)timeoutArg, timeoutSec, timeoutUsec);
 
   pTmr = (NwMiniTmrMgrEntityT *) malloc (sizeof(NwMiniTmrMgrEntityT));
 
@@ -90,7 +90,7 @@ NwGtpv1uRcT nwTimerStop( NwGtpv1uTimerMgrHandleT tmrMgrHandle,
                          NwGtpv1uTimerHandleT hTmr)
 {
   NW_LOG(NW_LOG_LEVEL_INFO,
-         "Received stop timer request from stack for timer handle %u", hTmr);
+         "Received stop timer request from stack for timer handle %d", hTmr);
   evtimer_del(&(((NwMiniTmrMgrEntityT *)hTmr)->ev));
   free((void *)hTmr);
   return NW_GTPV1U_OK;

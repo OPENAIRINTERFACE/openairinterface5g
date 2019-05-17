@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/impl_defs_lte.h
+/*! \file PHY/impl_defs_lte_NB_IoT.h
 * \brief LTE Physical channel configuration and variable structure definitions
 * \author R. Knopp, F. Kaltenberger
 * \date 2011

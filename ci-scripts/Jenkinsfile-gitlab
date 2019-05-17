@@ -31,16 +31,20 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 }
 
 def doRedHatBuild = false
+def doFlexranCtrlTest = false
+
+// Location of the executor node
+def nodeExecutor = params.nodeExecutor
 
 pipeline {
     agent {
-        label 'bellatrix'
+        label nodeExecutor
     }
     options {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build gNb-usrp", "Build nr-UE-usrp", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test-FDD-Band7", "Test-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40"])
+        gitlabBuilds(builds: ["Build basic-sim", "Build gNb-usrp", "Build nr-UE-usrp", "Build eNb-USRP", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13"])
         ansiColor('xterm')
     }
 
@@ -69,6 +73,12 @@ pipeline {
                     } else {
                         doRedHatBuild = false
                     }
+                    if (params.FlexRanRtcGitLabRepository_Credentials != null) {
+                        doFlexranCtrlTest = true
+                    }
+                    if (fileExists("flexran")) {
+                        sh "rm -Rf flexran > /dev/null 2>&1"
+                    }
                 }
             }
         }
@@ -78,6 +88,9 @@ pipeline {
                 echo "GitLab Act      is ${env.gitlabActionType}"
                 script {
                     if ("MERGE".equals(env.gitlabActionType)) {
+                        // since a bit, in push events, gitlabUserEmail is not populated
+                        gitCommitAuthorEmailAddr = env.gitlabUserEmail
+                        echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
                         // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
                         sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
@@ -97,11 +110,28 @@ pipeline {
                     } else {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
+                        // since a bit, in push events, gitlabUserEmail is not populated
+                        gitCommitAuthorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
+                        gitCommitAuthorEmailAddr = gitCommitAuthorEmailAddr.trim()
+                        echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
+                        sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
 
                         sh "zip -r -qq localZip.zip ."
                         // Running astyle options on all C/H files in the repository
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"
+                    }
+                    if (doFlexranCtrlTest) {
+                        sh "mkdir flexran"
+                        dir ('flexran') {
+                            withCredentials([
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.FlexRanRtcGitLabRepository_Credentials}", usernameVariable: 'git_username', passwordVariable: 'git_password']
+                                ]) {
+                                sh "git clone https://${git_username}:${git_password}@gitlab.eurecom.fr/flexran/flexran-rtc.git . > ../git_clone.log 2>&1"
+                            }
+                            sh "sed -i -e 's#add-apt-repository.*cleishm.*neo4j#add-apt-repository ppa:cleishm/neo4j -y#' -e 's#libneo4j-client-dev#libneo4j-client-dev -y#' tools/install_dependencies"
+                            sh "zip -r -qq flexran.zip ."
+                        }
                     }
                 }
             }
@@ -110,6 +140,7 @@ pipeline {
                     script {
                         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
                         addGitLabMRComment comment: message
+                        currentBuild.result = 'FAILURE'
                     }
                 }
             }
@@ -147,6 +178,14 @@ pipeline {
             }
         }
 
+        stage ("Start VM -- phy-sim") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+        
         stage ("Start VM -- enb-ethernet") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
@@ -162,15 +201,7 @@ pipeline {
                 }
             }
         }
-
-        stage ("Start VM -- phy-sim") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
-                }
-            }
-        }
-
+        
         stage ("Start VM -- cppcheck") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
@@ -190,15 +221,6 @@ pipeline {
                         }
                     }
                 }
-                stage ("Build eNb-USRP") {
-                    steps {
-                        gitlabCommitStatus(name: "Build eNb-USRP") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                            }
-                        }
-                    }
-                }
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
@@ -208,29 +230,11 @@ pipeline {
                         }
                     }
                 }
-                stage ("Build eNb-ethernet") {
-                    steps {
-                        gitlabCommitStatus(name: "Build eNb-ethernet") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                            }
-                        }
-                    }
-                }
-                stage ("Build UE-ethernet") {
-                    steps {
-                        gitlabCommitStatus(name: "Build UE-ethernet") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                            }
-                        }
-                    }
-                }
                 stage ("Build 5G gNB-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build gNb-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -239,7 +243,16 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        }
+                    }
+                }
+                stage ("Build eNb-USRP") {
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-USRP") {
+                            timeout (time: 20, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -253,12 +266,30 @@ pipeline {
                         }
                     }
                 }
+                stage ("Build eNb-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-ethernet") {
+                            timeout (time: 20, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        }
+                    }
+                }
+                stage ("Build UE-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build UE-ethernet") {
+                            timeout (time: 20, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        }
+                    }
+                }
                 stage ("Build eNb-USRP on Red Hat") {
                     when {
                         expression {doRedHatBuild}
                     }
                     steps {
-                        gitlabCommitStatus(name: "Build eNb-USRP-CentOS") {
+                        gitlabCommitStatus(name: "Build eNb-USRP-RHE") {
                             script {
                                 try {
                                     withCredentials([
@@ -269,7 +300,7 @@ pipeline {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    echo "Red Hat build failed not an error now"
+                                    echo "Red Hat build failed but we could keep running pipeline if all ubuntu-based build passed"
                                 }
                             }
                         }
@@ -277,6 +308,11 @@ pipeline {
                 }
             }
             post {
+                failure {
+                    script {
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
                 always {
                     script {
                         dir ('archives') {
@@ -287,6 +323,17 @@ pipeline {
                         }
                         if ("MERGE".equals(env.gitlabActionType)) {
                             sh "./ci-scripts/oai-ci-vm-tool report-build --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            // If the merge request has introduced more CPPCHECK errors or warnings, notifications in GitLab
+                            if (fileExists('oai_cppcheck_added_errors.txt')) {
+                                def ret=readFile('./oai_cppcheck_added_errors.txt').trim();
+                                if ("0".equals(ret)) {
+                                    echo "No added cppcheck warnings/errors in this merge request"
+                                } else {
+                                    def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some modified files in Merge Request MAY have INTRODUCED up to " + ret + " CPPCHECK errors/warnings"
+                                    addGitLabMRComment comment: message
+                                }
+                            }
+                            // If the merge request has introduced compilation warnings, notifications in GitLab
                             sh "./ci-scripts/checkAddedWarnings.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
                             def res=readFile('./oai_warning_files.txt').trim();
                             if ("0".equals(res)) {
@@ -310,112 +357,140 @@ pipeline {
 
         stage ("Variant Tests") {
             parallel {
-                stage ("Test physical simulators") {
-                    steps {
-                        gitlabCommitStatus(name: "Test phy-sim") {
-                            timeout (time: 45, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                            }
-                        }
-                    }
-                }
-                stage ("Test basic simulator") {
-                    steps {
-                        gitlabCommitStatus(name: "Test basic-sim") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                            }
-                        }
-                    }
-                }
-                stage ("Test FDD - Band 7 - B210") {
-                    steps {
-                        script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-FDD-Band7") {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-FDD-Band7") {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
-                        }
-                    }
-                    post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
-                        always {
-                            script {
-                                if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-FDD-Band7-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                stage ("VM-based tests") {
+                    stages {
+                        stage ("Test physical simulators") {
+                            steps {
+                                script {
+                                    timeout (time: 20, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test phy-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            }
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-                stage ("Test TDD - Band 40 - B210") {
-                    steps {
-                        script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-TDD-Band40") {
-                                    build job: 'eNB-CI-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-TDD-Band40") {
-                                    build job: 'eNB-CI-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
+                        stage ("Build Flexran Controller") {
+                            when {
+                                expression {doFlexranCtrlTest}
+                            }
+                            steps {
+                                script {
+                                    timeout (time: 20, unit: 'MINUTES') {
+                                        try {
+                                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
-                        always {
-                            script {
-                                if (!fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-TDD-Band40-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-TDD-Band40-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
+                        stage ("Test basic simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test basic-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            }
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
+                                        }
                                     }
                                 }
+                            }
+                        }
+                        stage ("Test L1 simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test L1-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l1-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ("Test RF simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test RF-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ("Test L2 simulator") {
+                            steps {
+                                script {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test L2-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ("Destroy all Virtual Machines") {
+                            steps {
+                                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+        				}
+                    }
+                }
+                stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('eNB-CI-FDD-Band7-B210', 'Test-Mono-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-FDD-Band7-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test MONOLITHIC - TDD - Band 40 - B210") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('eNB-CI-TDD-Band40-B210', 'Test-Mono-TDD-Band40')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-TDD-Band40-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -423,45 +498,18 @@ pipeline {
                 stage ("Test IF4p5 - FDD - Band 7 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-IF4p5-FDD-Band7") {
-                                    build job: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-IF4p5-FDD-Band7") {
-                                    build job: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-IF4p5-FDD-Band7-B210', 'Test-IF4p5-FDD-Band7')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-IF4p5-FDD-Band7-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-IF4p5-FDD-Band7-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-IF4p5-FDD-Band7-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-IF4p5-FDD-Band7-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-FDD-Band7-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-IF4p5-FDD-Band7-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -469,45 +517,77 @@ pipeline {
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
                     steps {
                         script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-IF4p5-TDD-Band40") {
-                                    build job: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true),
-                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
-                                       ]
-                                }
-                            } else {
-                                gitlabCommitStatus(name: "Test-IF4p5-TDD-Band40") {
-                                    build job: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
+                            triggerSlaveJob ('eNB-CI-IF4p5-TDD-Band40-B210', 'Test-IF4p5-TDD-Band40')
                         }
                     }
                     post {
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
-                                if (!fileExists('test_results-eNB-CI-IF4p5-TDD-Band40-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-IF4p5-TDD-Band40-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-IF4p5-TDD-Band40-B210.html')) {
-                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-IF4p5-TDD-Band40-B210.html"
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-TDD-Band40-B210.html'
-                                    }
-                                }
+                                finalizeSlaveJob('eNB-CI-IF4p5-TDD-Band40-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-MONO-FDD-Band13-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI UE - FDD - Band 20 - B200") {
+                    steps {
+                        script {
+                            triggerSlaveJobNoGitLab ('UE-CI-FDD-Band20-B200')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('UE-CI-FDD-Band20-B200')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI UE - OAI eNB - FDD - Band 7 - B200") {
+                    steps {
+                        script {
+                            // Delayed trigger on slave job, so it is always the last one to run
+                            sh "sleep 240"
+                            triggerSlaveJob ('eNB-UE-CI-MONO-FDD-Band7-B200', 'Test-eNB-OAI-UE-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -517,7 +597,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "if [ -d basic_sim/test ] || [ -d phy_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                            sh "if [ -d basic_sim/test ] || [ -d phy_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
@@ -535,11 +615,6 @@ pipeline {
                 }
             }
         }
-        stage ("Destroy all Virtual Machines") {
-            steps {
-                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-            }
-        }
     }
     post {
         always {
@@ -548,13 +623,18 @@ pipeline {
                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                 emailext attachmentsPattern: '*results*.html',
                      body: '''Hi,
+
 Here are attached HTML report files for $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!
 
 Regards,
 OAI CI Team''',
                      replyTo: 'no-reply@openairinterface.org',
                      subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
-                     to: env.gitlabUserEmail
+                     to: gitCommitAuthorEmailAddr
+
+                if (fileExists('.git/CI_COMMIT_MSG')) {
+                    sh "rm -f .git/CI_COMMIT_MSG"
+                }
             }
         }
         success {
@@ -582,6 +662,69 @@ OAI CI Team''',
                     sendSocialMediaMessage('ci-enb', 'danger', message)
                 }
             }
+        }
+    }
+}
+
+// ----  Slave Job functions
+
+def triggerSlaveJob (jobName, gitlabStatusName) {
+    if ("MERGE".equals(env.gitlabActionType)) {
+        gitlabCommitStatus(name: gitlabStatusName) {
+            build job: jobName,
+                parameters: [
+                    string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                    string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                    string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                    booleanParam(name: 'eNB_mergeRequest', value: true),
+                    string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+                ]
+        }
+    } else {
+        gitlabCommitStatus(name: gitlabStatusName) {
+            build job: jobName,
+                parameters: [
+                    string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                    string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                    string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                    booleanParam(name: 'eNB_mergeRequest', value: false)
+                ]
+       }
+    }
+}
+
+def triggerSlaveJobNoGitLab (jobName) {
+    if ("MERGE".equals(env.gitlabActionType)) {
+        build job: jobName,
+            parameters: [
+                string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                booleanParam(name: 'eNB_mergeRequest', value: true),
+                string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+            ]
+    } else {
+        build job: jobName,
+            parameters: [
+                string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                booleanParam(name: 'eNB_mergeRequest', value: false)
+            ]
+    }
+}
+
+def finalizeSlaveJob(jobName) {
+    // In case of any non-success, we are retrieving the HTML report of the last completed
+    // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
+    fileName = "test_results-${jobName}.html"
+    if (!fileExists(fileName)) {
+        copyArtifacts(projectName: jobName,
+            filter: 'test_results*.html',
+            selector: lastCompleted())
+        if (fileExists(fileName)) {
+            sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' ${fileName}"
+            archiveArtifacts artifacts: fileName
         }
     }
 }

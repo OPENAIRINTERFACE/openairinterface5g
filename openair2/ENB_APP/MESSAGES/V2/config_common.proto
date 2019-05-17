@@ -218,6 +218,9 @@ enum flex_aperiodic_cqi_report_mode {
      FLACRM_RM30 = 3;
      FLACRM_RM31 = 4;
      FLACRM_NONE = 5;
+     FLACRM_RM32_v1250 = 6;
+     FLACRM_RM10_v1310 = 7;
+     FLACRM_RM11_v1310 = 8;
 }
 
 enum flex_tdd_ack_nack_feedback_mode {
@@ -258,4 +261,10 @@ enum flex_ue_state_change_type {
      FLUESC_ACTIVATED = 1;
      FLUESC_DEACTIVATED = 2;
      FLUESC_MOVED = 3;
+}
+
+message flex_plmn {
+        optional uint32 mcc = 1;
+        optional uint32 mnc = 2;
+        optional uint32 mnc_length = 3;
 }

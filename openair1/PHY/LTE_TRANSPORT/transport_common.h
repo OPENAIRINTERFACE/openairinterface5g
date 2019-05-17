@@ -104,7 +104,7 @@ typedef enum {
 
 
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   CEmodeA = 0,
   CEmodeB = 1
@@ -137,7 +137,7 @@ typedef enum {
   HARQ_SR_CQI  
 } UCI_type_t;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   NOCE,
   CEMODEA,
@@ -182,7 +182,7 @@ typedef struct {
   PRACH_TDD_PREAMBLE_MAP_elem map[6];
 } PRACH_TDD_PREAMBLE_MAP;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 typedef struct {
   uint16_t slss_id;

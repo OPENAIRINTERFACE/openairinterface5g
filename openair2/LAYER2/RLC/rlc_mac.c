@@ -128,7 +128,7 @@ tbs_size_t mac_rlc_data_req(
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
   char             *buffer_pP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -180,7 +180,7 @@ tbs_size_t mac_rlc_data_req(
     }
   } else {
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0))
        key = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
 #endif
@@ -254,18 +254,19 @@ void mac_rlc_data_ind     (
   srb_flag_t             srb_flag        = (channel_idP <= 2) ? SRB_FLAG_YES : SRB_FLAG_NO;
   protocol_ctxt_t     ctxt;
 
+
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, enb_flagP, rntiP, frameP, 0, eNB_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_DATA_IND,VCD_FUNCTION_IN);
 #ifdef DEBUG_MAC_INTERFACE
 
   if (num_tbP) {
-    LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, Num_tb %d\n",
+    LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, tb_sizeP %d\n",
           PROTOCOL_CTXT_ARGS(&ctxt),
           channel_idP,
           RLC_MAX_LC,
           NB_RB_MAX,
-          num_tbP);
+          tb_sizeP);
   }
 
 #endif // DEBUG_MAC_INTERFACE
@@ -292,7 +293,7 @@ void mac_rlc_data_ind     (
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    //AssertFatal (0 , "%s RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
+    //AssertFatal (0 , "%s RLC not configured lcid %u ! (h_rc %d)\n", __FUNCTION__,channel_idP,h_rc);
   }
 
   struct mac_data_ind data_ind = mac_rlc_deserialize_tb(buffer_pP, tb_sizeP, num_tbP, crcs_pP);
@@ -330,7 +331,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -363,7 +364,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0)) {
        key = RLC_COLL_KEY_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
     } else

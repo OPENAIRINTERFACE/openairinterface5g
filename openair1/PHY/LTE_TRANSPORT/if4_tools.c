@@ -47,7 +47,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
 #endif
   void *tx_buffer            = ru->ifbuffer.tx[subframe&1];
@@ -150,6 +150,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
 	for (element_id=0; element_id<db_halflength; element_id+=8) {
 	  i = (uint16_t*) &rx0[element_id];
+
           d = (uint16_t*) &data_block[element_id];
           d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
           d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
@@ -221,7 +222,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     int16_t *rxF;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (packet_type > IF4p5_PRACH)
       rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];
     else 
@@ -262,7 +263,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
 #endif
   void *rx_buffer            = ru->ifbuffer.rx;
@@ -359,7 +360,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 
     int16_t *rxF;
     
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (*packet_type > IF4p5_PRACH)
       rxF = &prach_rxsigF_br[*packet_type - IF4p5_PRACH - 1][0][0];
     else 

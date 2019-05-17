@@ -1203,12 +1203,12 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 
 			if(phy->in_sync == 0)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "***** Adjusting VNF phy_id:%d SFN/SF (%s) from %d to %d (%d) mode:%s zeroCount:%u sync:%s\n", 
+				/*NFAPI_TRACE(NFAPI_TRACE_NOTE, "***** Adjusting VNF phy_id:%d SFN/SF (%s) from %d to %d (%d) mode:%s zeroCount:%u sync:%s\n",
 					ind.header.phy_id, (phy->in_sync ? "via sfn" : "now"),
 					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment, 
 					phy->filtered_adjust ? "FILTERED" : "ABSOLUTE",
 					phy->zero_count,
-					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");
+					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
 
 				phy->sfn_sf = new_sfn_sf;
 			}

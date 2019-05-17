@@ -105,7 +105,7 @@ function details_table {
     COMPLETE_MESSAGE="start"
     for MESSAGE in $LIST_MESSAGES
     do
-        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]]
+        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]] || [[  $MESSAGE == *"/tmp/CI-eNB"* ]]
         then
             FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" | awk -F ":" '{print $1}'`
             LINENB=`echo $MESSAGE | awk -F ":" '{print $2}'`
@@ -141,6 +141,31 @@ function details_table {
 
 function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
+    if [ -f $2/build_final_status.log ]
+    then
+        if [ `grep -c COMMAND $2/build_final_status.log` -eq 1 ]
+        then
+            COMMAND=`grep COMMAND $2/build_final_status.log | sed -e "s#COMMAND: ##"`
+        else
+            COMMAND="Unknown"
+        fi
+        if [ `grep -c BUILD_OK $2/build_final_status.log` -eq 1 ]
+        then
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
+            echo "      <strong>BUILD was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
+            echo "      <strong>BUILD was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        fi
+    else
+        echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+        echo "      <strong>COULD NOT DETERMINE BUILD FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    fi
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Element</th>" >> ./build_results.html
@@ -198,7 +223,92 @@ function summary_table_footer {
 }
 
 function sca_summary_table_header {
-    echo "   <h3>$1</h3>" >> ./build_results.html
+    echo "   <h3>$2</h3>" >> ./build_results.html
+    NB_ERRORS=`egrep -c "severity=\"error\"" $1`
+    NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
+    ADDED_ERRORS="0"
+    ADDED_WARNINGS="0"
+    FINAL_LOG=`echo $1 | sed -e "s#cppcheck\.xml#build_final_status.log#"`
+    if [ `grep -c COMMAND $FINAL_LOG` -eq 1 ]
+    then
+        COMMAND=`grep COMMAND $FINAL_LOG | sed -e "s#COMMAND: ##"`
+    else
+        COMMAND="Unknown"
+    fi
+    if [ $MR_TRIG -eq 1 ]
+    then
+        if [ -d ../../cppcheck_archives ]
+        then
+            if [ -d ../../cppcheck_archives/$JOB_NAME ]
+            then
+                ADDED_ERRORS=`diff $1 ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep -c "severity=\"error"`
+                ADDED_WARNINGS=`diff $1 ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep -c "severity=\"warning"`
+            fi
+        fi
+        local TOTAL_NUMBER=$[$ADDED_ERRORS+$ADDED_WARNINGS]
+        if [ -f $JENKINS_WKSP/oai_cppcheck_added_errors.txt ]; then rm -f $JENKINS_WKSP/oai_cppcheck_added_errors.txt; fi
+        echo "$TOTAL_NUMBER" > $JENKINS_WKSP/oai_cppcheck_added_errors.txt
+    fi
+    if [ $NB_ERRORS -eq 0 ] && [ $NB_WARNINGS -eq 0 ]
+    then
+        echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+        echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
+        echo "      <strong>CPPCHECK found NO error and NO warning <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    else
+        if [ $NB_ERRORS -eq 0 ]
+        then
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]
+            then
+                echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+            fi
+            if [ $MR_TRIG -eq 1 ]
+            then
+                if [ $ADDED_WARNINGS -eq 0 ]
+                then
+                    echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+                else
+                    echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+                fi
+            fi
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]
+            then
+                echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            fi
+            if [ $MR_TRIG -eq 1 ]
+            then
+                if [ $ADDED_ERRORS -eq 0 ] && [ $ADDED_WARNINGS -eq 0 ]
+                then
+                    echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+                else
+                    echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span>" >> ./build_results.html
+                    echo "      <br>" >> ./build_results.html
+                    echo "      <br>" >> ./build_results.html
+                    echo "      <span class=\"glyphicon glyphicon-alert\"></span> This Merge Request may have introduced up to $ADDED_ERRORS errors and $ADDED_WARNINGS warnings. <span class=\"glyphicon glyphicon-alert\"></span></strong>" >> ./build_results.html
+                fi
+            fi
+            echo "   </div>" >> ./build_results.html
+        fi
+    fi
+    if [ $PU_TRIG -eq 1 ]
+    then
+        if [ -d ../../cppcheck_archives ]
+        then
+            if [ -d ../../cppcheck_archives/$JOB_NAME ]
+            then
+                cp $1 ../../cppcheck_archives/$JOB_NAME
+            fi
+        fi
+    fi
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-cppcheck-details\">More details on CPPCHECK results</button>" >> ./build_results.html
+    echo "   <div id=\"oai-cppcheck-details\" class=\"collapse\">" >> ./build_results.html
+    echo "   <br>" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Error / Warning Type</th>" >> ./build_results.html
@@ -263,6 +373,44 @@ function sca_summary_table_footer {
     echo "   </table>" >> ./build_results.html
     echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
     echo "   <p style=\"margin-left: 30px\">Graphical Interface tool : <strong><code>cppcheck-gui -l cppcheck/cppcheck.xml</code></strong></p>" >> ./build_results.html
+
+    if [ $MR_TRIG -eq 1 ]
+    then
+        if [ $ADDED_ERRORS -ne 0 ] || [ $ADDED_WARNINGS -ne 0 ]
+        then
+            echo "   <table border = \"1\">" >> ./build_results.html
+            echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
+            echo "        <th>Potential File(s) impacted by added errors/warnings</th>" >> ./build_results.html
+            echo "        <th>Line Number</th>" >> ./build_results.html
+            echo "        <th>Severity</th>" >> ./build_results.html
+            echo "        <th>Message</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            SEVERITY="none"
+            POTENTIAL_FILES=`diff $1  ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep "location file|severity" | sed -e "s# #@#g"`
+            for POT_FILE in $POTENTIAL_FILES
+            do
+                if [ `echo $POT_FILE | grep -c location` -eq 1 ]
+                then
+                    FILENAME=`echo $POT_FILE | sed -e "s#^.*file=\"##" -e "s#\"@line.*/>##"`
+                    LINE=`echo $POT_FILE | sed -e "s#^.*line=\"##" -e "s#\"/>##"`
+                    if [[ $SEVERITY != *"none" ]]
+                    then
+                        echo "      <tr>" >> ./build_results.html
+                        echo "        <td>$FILENAME</td>" >> ./build_results.html
+                        echo "        <td>$LINE</td>" >> ./build_results.html
+                        echo "        <td>$SEVERITY</td>" >> ./build_results.html
+                        echo "        <td>$MESSAGE</td>" >> ./build_results.html
+                        echo "      </tr>" >> ./build_results.html
+                    fi
+                else
+                    SEVERITY=`echo $POT_FILE | sed -e "s#^.*severity=\"##" -e "s#\"@msg=.*##"`
+                    MESSAGE=`echo $POT_FILE | sed -e "s#^.*msg=\"##" -e "s#\"@verbose=.*##" -e "s#@# #g"`
+                fi
+            done
+            echo "   </table>" >> ./build_results.html
+        fi
+    fi
+    echo "   </div>" >> ./build_results.html
 }
 
 function report_build {
@@ -271,15 +419,21 @@ function report_build {
     echo "############################################################"
 
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
+    echo "GIT_URL             = $GIT_URL"
 
     cd ${JENKINS_WKSP}
     echo "<!DOCTYPE html>" > ./build_results.html
     echo "<html class=\"no-js\" lang=\"en-US\">" >> ./build_results.html
     echo "<head>" >> ./build_results.html
+    echo "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> ./build_results.html
+    echo "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">" >> ./build_results.html
+    echo "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>" >> ./build_results.html
+    echo "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>" >> ./build_results.html
     echo "  <title>Build Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./build_results.html
     echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
     echo "</head>" >> ./build_results.html
-    echo "<body>" >> ./build_results.html
+    echo "<body><div class=\"container\">" >> ./build_results.html
+    echo "  <br>" >> ./build_results.html
     echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
@@ -296,45 +450,61 @@ function report_build {
     echo "  <br>" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-time\"></span> Build Start Time (UTC)</td>" >> ./build_results.html
     echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
-    echo "        <td>$GIT_URL</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-cloud-upload\"></span> GIT Repository</td>" >> ./build_results.html
+    echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./build_results.html
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Job Trigger</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-wrench\"></span> Job Trigger</td>" >> ./build_results.html
     if [ $PU_TRIG -eq 1 ]; then echo "        <td>Push Event</td>" >> ./build_results.html; fi
     if [ $MR_TRIG -eq 1 ]; then echo "        <td>Merge-Request</td>" >> ./build_results.html; fi
     echo "      </tr>" >> ./build_results.html
     if [ $PU_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./build_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
     fi
     if [ $MR_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-out\"></span> Source Branch</td>" >> ./build_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Source Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./build_results.html
         echo "        <td>$TARGET_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Target Commit ID</td>" >> ./build_results.html
         echo "        <td>$TARGET_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
     fi
@@ -344,33 +514,38 @@ function report_build {
     if [ -f ./oai_rules_result.txt ]
     then
         echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
-        echo "   <table border = "1">" >> ./build_results.html
-        echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Result:</td>" >> ./build_results.html
         NB_FILES=`cat ./oai_rules_result.txt`
         if [ $NB_FILES = "0" ]
         then 
-            if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All files in repository follow OAI rules. </td>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All modified files in Merge-Request follow OAI rules.</td>" >> ./build_results.html; fi
-            echo "      </tr>" >> ./build_results.html
-            echo "   </table>" >> ./build_results.html
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>All files in repository follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>All modified files in Merge-Request follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
         else
-            if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES files in repository DO NOT follow OAI rules. </td>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES modified files in Merge-Request DO NOT follow OAI rules.</td>" >> ./build_results.html; fi
-            echo "      </tr>" >> ./build_results.html
-            if [ -f ./oai_rules_result_list.txt ]
-            then
-                awk '{print "      <tr><td></td><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
-            fi
-            echo "   </table>" >> ./build_results.html
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES files in repository DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES modified files in Merge-Request DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+        fi
+        if [ -f ./oai_rules_result_list.txt ]
+        then
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-formatting-details\">More details on formatting check</button>" >> ./build_results.html
+            echo "   <div id=\"oai-formatting-details\" class=\"collapse\">" >> ./build_results.html
             echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
             echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
+            echo "   <table border = 1>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            awk '{print "      <tr><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+            echo "   </table>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
         fi
     fi
 
     echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
 
-    sca_summary_table_header "OAI Static Code Analysis with CPPCHECK"
+    sca_summary_table_header ./archives/cppcheck/cppcheck.xml "OAI Static Code Analysis with CPPCHECK"
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
@@ -469,45 +644,70 @@ function report_build {
     fi
 
     echo "   <h3>Details</h3>" >> ./build_results.html
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
+    echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
 
-    for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./basic_sim_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./phy_sim_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-
-    for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./enb_eth_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./ue_eth_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    if [ -e ./archives/red_hat ]
+    if [ -f ./enb_usrp_row1.html ] || [ -f ./enb_usrp_row2.html ] || [ -f ./enb_usrp_row3.html ] || [ -f ./enb_usrp_row4.html ]
     then
-    for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
+        for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ]
+    then
+        for DETAILS_TABLE in `ls ./basic_sim_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./phy_sim_row1.html ] || [ -f ./phy_sim_row2.html ] || [ -f ./phy_sim_row3.html ]
+    then
+        for DETAILS_TABLE in `ls ./phy_sim_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./gnb_usrp_row1.html ] || [ -f ./gnb_usrp_row2.html ] || [ -f ./gnb_usrp_row3.html ] || [ -f ./gnb_usrp_row4.html ]
+    then 
+        for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./nrue_usrp_row1.html ] || [ -f ./nrue_usrp_row2.html ] || [ -f ./nrue_usrp_row3.html ] || [ -f ./nrue_usrp_row4.html ]
+    then
+        for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ]
+    then
+        for DETAILS_TABLE in `ls ./enb_eth_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./ue_eth_row1.html ] || [ -f ./ue_eth_row2.html ] || [ -f ./ue_eth_row3.html ] || [ -f ./ue_eth_row4.html ] || [ -f ./ue_eth_row5.html ] || [ -f ./ue_eth_row6.html ]
+    then
+        for DETAILS_TABLE in `ls ./ue_eth_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./enb_usrp_rh_row1.html ] || [ -f ./enb_usrp_rh_row2.html ] || [ -f ./enb_usrp_rh_row3.html ] || [ -f ./enb_usrp_rh_row4.html ]
+    then
+        for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
     fi
     rm -f ./*_row*.html
 
-    echo "</body>" >> ./build_results.html
+    echo "   </div>" >> ./build_results.html
+    echo "   <p></p>" >> ./build_results.html
+    echo "   <div class=\"well well-lg\">End of Build Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./build_results.html
+    echo "</div></body>" >> ./build_results.html
     echo "</html>" >> ./build_results.html
 }

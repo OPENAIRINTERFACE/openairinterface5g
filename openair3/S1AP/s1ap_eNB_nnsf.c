@@ -321,3 +321,79 @@ s1ap_eNB_nnsf_select_mme_by_gummei(s1ap_eNB_instance_t       *instance_p,
    * connectivity. */
   return NULL;
 }
+
+
+struct s1ap_eNB_mme_data_s *
+s1ap_eNB_nnsf_select_mme_by_gummei_no_cause(s1ap_eNB_instance_t       *instance_p,
+                                            s1ap_gummei_t                   gummei)
+{
+  struct s1ap_eNB_mme_data_s *mme_data_p             = NULL;
+  struct s1ap_eNB_mme_data_s *mme_highest_capacity_p = NULL;
+  uint8_t                     current_capacity       = 0;
+
+  RB_FOREACH(mme_data_p, s1ap_mme_map, &instance_p->s1ap_mme_head) {
+    struct served_gummei_s *gummei_p = NULL;
+
+    if (mme_data_p->state != S1AP_ENB_STATE_CONNECTED) {
+      /* The association between MME and eNB is not ready for the moment,
+       * go to the next known MME.
+       */
+      if (mme_data_p->state == S1AP_ENB_OVERLOAD) {
+        /* MME is overloaded. We have to check the RRC establishment
+         * cause and take decision to the select this MME depending on
+         * the overload state.
+         */
+    } else {
+        /* The MME is not overloaded, association is simply not ready. */
+        continue;
+      }
+    }
+
+    if (current_capacity < mme_data_p->relative_mme_capacity) {
+      /* We find a better MME, keep a reference to it */
+      current_capacity = mme_data_p->relative_mme_capacity;
+      mme_highest_capacity_p = mme_data_p;
+    }
+
+    /* Looking for MME gummei matching the one provided by NAS */
+    STAILQ_FOREACH(gummei_p, &mme_data_p->served_gummei, next) {
+      struct served_group_id_s *group_id_p = NULL;
+      struct mme_code_s        *mme_code_p = NULL;
+      struct plmn_identity_s   *served_plmn_p = NULL;
+
+      STAILQ_FOREACH(served_plmn_p, &gummei_p->served_plmns, next) {
+        if ((served_plmn_p->mcc == gummei.mcc) &&
+            (served_plmn_p->mnc == gummei.mnc)) {
+          break;
+        }
+      }
+      STAILQ_FOREACH(mme_code_p, &gummei_p->mme_codes, next) {
+        if (mme_code_p->mme_code == gummei.mme_code) {
+          break;
+        }
+      }
+      STAILQ_FOREACH(group_id_p, &gummei_p->served_group_ids, next) {
+        if (group_id_p->mme_group_id == gummei.mme_group_id) {
+          break;
+        }
+      }
+
+      /* The MME matches the parameters provided by the NAS layer ->
+      * the MME is knwown and the association is ready.
+      * Return the reference to the MME to use it for this UE.
+      */
+      if ((group_id_p != NULL) &&
+          (mme_code_p != NULL) &&
+          (served_plmn_p != NULL)) {
+        return mme_data_p;
+      }
+    }
+  }
+
+  /* At this point no MME matches the provided GUMMEI. Select the one with the
+   * highest relative capacity.
+   * In case the list of known MME is empty, simply return NULL, that way the RRC
+   * layer should know about it and reject RRC connectivity.
+   */
+  return mme_highest_capacity_p;
+}

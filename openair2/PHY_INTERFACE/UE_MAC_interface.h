@@ -37,7 +37,7 @@
 #define __UE_MAC_INTERFACE__H__
 
 #include "nfapi_interface.h"
-#include "openair1/PHY/impl_defs_lte.h"
+#include "openair1/PHY/defs_RU.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 
 

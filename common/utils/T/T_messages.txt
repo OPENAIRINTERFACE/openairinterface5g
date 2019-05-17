@@ -75,12 +75,16 @@ ID = ENB_PHY_MSG3_ALLOCATION
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,rnti : int,first_transmission : int,Msg3_frame : int,Msg3_subframe
 ID = ENB_PHY_INITIATE_RA_PROCEDURE
     DESC = eNodeB initiates a random access procedure after detecting enough energy for one of the preambles
-    GROUP = ALL:PHY:ENB
+    GROUP = ALL:PHY:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,preamble : int,energy : int,delay
 ID = GNB_PHY_DL_TICK
     DESC = gNodeB downlink tick - one tick per ms at start of downlink processing
     GROUP = ALL:PHY:GRAPHIC:GNB
     FORMAT = int,gNB_ID : int,frame : int,subframe
+ID = ENB_PHY_MIB
+    DESC = MIB data
+    GROUP = ALL:PHY:ENB:WIRESHARK
+    FORMAT = int,eNB_ID : int,frame : int,subframe : buffer,data
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -101,7 +105,7 @@ ID = ENB_MAC_UE_UL_PDU
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,sdu_length : int,num_ce : int,num_sdu
 ID = ENB_MAC_UE_UL_PDU_WITH_DATA
     DESC = MAC uplink UE received PDU
-    GROUP = ALL:MAC:ENB
+    GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,sdu_length : int,num_ce : int,num_sdu : buffer,data
 ID = ENB_MAC_UE_UL_SDU
     DESC = MAC uplink UE received SDU
@@ -117,12 +121,16 @@ ID = ENB_MAC_UE_UL_CE
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,ce
 ID = ENB_MAC_UE_DL_PDU_WITH_DATA
     DESC = MAC downlink PDU for an UE
-    GROUP = ALL:MAC:ENB
+    GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 ID = ENB_MAC_SCHEDULING_REQUEST
     DESC = MAC scheduling request detected for an UE
     GROUP = ALL:MAC:ENB
     FORMAT = int,eNB_ID : int,CC_id : int,frame : int,subframe : int,rnti
+ID = ENB_MAC_UE_DL_RAR_PDU_WITH_DATA
+    DESC = MAC downlink PDU for an UE
+    GROUP = ALL:MAC:ENB:WIRESHARK
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL
@@ -709,7 +717,7 @@ ID = LEGACY_OCM_DEBUG
     FORMAT = string,log
 ID = LEGACY_OCM_TRACE
     DESC = OCM legacy logs - trace level
-    GROUP = ALL:LEGACY_OCM:LEGACY_GROUP_TRACE:LEGACY
+    OGROUP = ALL:LEGACY_OCM:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
 ID = LEGACY_OIP_INFO
@@ -880,6 +888,47 @@ ID = LEGACY_SIM_TRACE
     GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_NFAPI_VNF_INFO
+    DESC = NFAPI_VNF legacy logs - info level
+    GROUP = ALL:LEGACY_NFAPI_VNF:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_VNF_ERROR
+    DESC = NFAPI_VNF legacy logs - error level
+    GROUP = ALL:LEGACY_NFAPI_VNF:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_VNF_WARNING
+    DESC = NFAPI_VNF legacy logs - warning level
+    GROUP = ALL:LEGACY_NFAPI_VNF:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_VNF_DEBUG
+    DESC = NFAPI_VNF legacy logs - debug level
+    GROUP = ALL:LEGACY_NFAPI_VNF:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_VNF_TRACE
+    DESC = NFAPI_VNF legacy logs - trace level
+    GROUP = ALL:LEGACY_NFAPI_VNF:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_NFAPI_PNF_INFO
+    DESC = NFAPI_PNF legacy logs - info level
+    GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_PNF_ERROR
+    DESC = NFAPI_PNF legacy logs - error level
+    GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_PNF_WARNING
+    DESC = NFAPI_PNF legacy logs - warning level
+    GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_PNF_DEBUG
+    DESC = NFAPI_PNF legacy logs - debug level
+    GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_NFAPI_PNF_TRACE
+    DESC = NFAPI_PNF legacy logs - trace level
+    GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
 # this is a bad hack but I won't fix (function util_print_hex_octets
 # in openairinterface5g/openair2/LAYER2/PDCP_v10.1.0/pdcp_util.c
 # does funky things with the LOG_x macros but we work on the C pre-processor
@@ -925,26 +974,62 @@ ID = LEGACY_componentP_TRACE
     GROUP = ALL:LEGACY_componentP:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
-#needed?
-ID = LEGACY_CLI_INFO
-    DESC = CLI legacy logs - info level
-    GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_INFO:LEGACY
+
+
+ID = LEGACY_PROTO_AGENT_DEBUG
+    DESC = PROTO AGENT DEBUG LEVEL
+    GROUP = ALL:LEGACY_PROTO:LEGACY_GROUP_DEBUG:LEGACY
     FORMAT = string,log
-ID = LEGACY_CLI_ERROR
-    DESC = CLI legacy logs - error level
-    GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_ERROR:LEGACY
+
+ID = LEGACY_PROTO_AGENT_INFO
+    DESC = PROTO AGENT INFO LEVEL
+    GROUP = ALL:LEGACY_PROTO:LEGACY_GROUP_INFO:LEGACY
     FORMAT = string,log
-ID = LEGACY_CLI_WARNING
-    DESC = CLI legacy logs - warning level
-    GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_WARNING:LEGACY
+
+ID = LEGACY_PROTO_AGENT_WARNING
+    DESC = PROTO AGENT WARNING LEVEL
+    GROUP = ALL:LEGACY_PROTO:LEGACY_GROUP_WARNING:LEGACY
     FORMAT = string,log
-ID = LEGACY_CLI_DEBUG
-    DESC = CLI legacy logs - debug level
-    GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_DEBUG:LEGACY
+
+ID = LEGACY_PROTO_AGENT_ERROR
+    DESC = PROTO AGENT ERROR LEVEL
+    GROUP = ALL:LEGACY_PROTO:LEGACY_GROUP_ERROR:LEGACY
     FORMAT = string,log
-ID = LEGACY_CLI_TRACE
-    DESC = CLI legacy logs - trace level
-    GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_TRACE:LEGACY
+
+ID = LEGACY_F1U_DEBUG
+    DESC = F1U DEBUG LEVEL
+    GROUP = ALL:LEGACY_F1U:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_F1U_INFO
+    DESC = F1U INFO LEVEL
+    GROUP = ALL:LEGACY_F1U:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_F1U_ERROR
+    DESC = F1U ERROR LEVEL
+    GROUP = ALL:LEGACY_F1U:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_F1AP_TRACE
+    DESC = F1AP TRACE LEVEL
+    GROUP = ALL:LEGACY_F1AP:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+ID = LEGACY_F1AP_DEBUG
+    DESC = F1AP DEBUG LEVEL
+    GROUP = ALL:LEGACY_F1AP:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_F1AP_INFO
+    DESC = F1AP INFO LEVEL
+    GROUP = ALL:LEGACY_F1AP:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_F1AP_WARNING
+    DESC = F1AP WARNING LEVEL
+    GROUP = ALL:LEGACY_F1AP:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_F1AP_ERROR
+    DESC = F1AP ERROR LEVEL
+    GROUP = ALL:LEGACY_F1AP:LEGACY_GROUP_ERROR:LEGACY
     FORMAT = string,log
 
 #################
@@ -1679,6 +1764,46 @@ ID = VCD_VARIABLE_CPUID_RU_THREAD_TX
     GROUP = ALL:VCD:ENB:VCD_VARIABLE
     FORMAT = ulong,value
     VCD_NAME = ru_thread_tx_CPUID
+ID = VCD_VARIABLE_ON_DURATION_TIMER
+    DESC = VCD variable ON_DURATION_TIMER
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_on_duration_timer
+ID = VCD_VARIABLE_DRX_INACTIVITY
+    DESC = VCD variable DRX_INACTIVITY
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_inactivity
+ID = VCD_VARIABLE_DRX_SHORT_CYCLE
+    DESC = VCD variable DRX_SHORT_CYCLE
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_short_cycle
+ID = VCD_VARIABLE_SHORT_DRX_CYCLE_NUMBER
+    DESC = VCD variable SHORT_DRX_CYCLE_NUMBER
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_short_drx_cycle_number
+ID = VCD_VARIABLE_DRX_LONG_CYCLE
+    DESC = VCD variable DRX_LONG_CYCLE
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_long_cycle
+ID = VCD_VARIABLE_DRX_RETRANSMISSION_HARQ0
+    DESC = VCD variable DRX_RETRANSMISSION_HARQ0
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_retransmission_harq0
+ID = VCD_VARIABLE_DRX_ACTIVE_TIME
+    DESC = VCD variable DRX_ACTIVE_TIME
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_active_time
+ID = VCD_VARIABLE_DRX_ACTIVE_TIME_CONDITION
+    DESC = VCD variable DRX_ACTIVE_TIME_CONDITION
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = ue0_drx_active_time_condition
 
  #variable for gNB
 ID = VCD_VARIABLE_FRAME_NUMBER_TX0_GNB

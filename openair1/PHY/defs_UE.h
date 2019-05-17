@@ -204,6 +204,12 @@ typedef struct {
 	/// condition variable for timer_thread;
 	pthread_cond_t cond_ticking;
 	//time_stats_t timer_stats;
+
+	// below 3 members is used for waiting each UE threads(multiple UEs test) in L2 FAPI simulator.
+	// This used in UE_phy_stub_single_thread_rxn_txnp4
+	pthread_mutex_t mutex_single_thread;
+	pthread_cond_t  cond_single_thread;
+	int             num_single_thread[NUMBER_OF_UE_MAX];
 } SF_ticking;
 
 typedef struct {
@@ -847,6 +853,7 @@ typedef struct {
   time_stats_t pdsch_procedures_stat[RX_NB_TH];
   time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_procedures_stat[RX_NB_TH];
+  time_stats_t crnti_procedures_stats;
 
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
@@ -889,6 +896,7 @@ typedef struct {
 struct rx_tx_thread_data {
   PHY_VARS_UE    *UE;
   UE_rxtx_proc_t *proc;
+  uint16_t       ue_thread_id;
 };
 
 

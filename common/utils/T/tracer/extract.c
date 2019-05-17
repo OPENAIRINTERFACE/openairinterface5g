@@ -16,6 +16,8 @@ void usage(void)
 "    -f <name> <value>         field 'name' of 'event' has to match 'value'\n"
 "                              type of 'name' must be int\n"
 "                              (you can use several -f options)\n"
+"    -after <raw time> <nsec>  'event' time has to be greater than this\n"
+"    -count <n>                dump 'n' matching events (less if EOF reached)\n"
   );
   exit(1);
 }
@@ -51,6 +53,10 @@ int main(int n, char **v)
   int filter_count = 0;
   int buffer_arg;
   int found;
+  int count = 1;
+  int check_time = 0;
+  time_t sec;
+  long nsec;
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
@@ -63,6 +69,14 @@ int main(int n, char **v)
       filter_value[filter_count++] = atoi(v[++i]);
       continue;
     }
+    if (!strcmp(v[i], "-after")) { if (i>n-3) usage();
+      check_time = 1;
+      sec        = atoll(v[++i]);
+      nsec       = atol(v[++i]);
+      continue;
+    }
+    if (!strcmp(v[i], "-count"))
+      { if (i > n-2) usage(); count = atoi(v[++i]); continue; }
     if (file == NULL) { file = v[i]; continue; }
     if (event_name == NULL) { event_name = v[i]; continue; }
     if (buffer_name == NULL) { buffer_name = v[i]; continue; }
@@ -111,13 +125,20 @@ int main(int n, char **v)
         break;
     if (i != filter_count)
       continue;
+    if (check_time &&
+        !(e.sending_time.tv_sec > sec ||
+         (e.sending_time.tv_sec == sec && e.sending_time.tv_nsec >= nsec)))
+      continue;
     if (fwrite(e.e[buffer_arg].b, e.e[buffer_arg].bsize, 1, out) != 1)
       { perror(output_file); exit(1); }
-    found = 1;
-    break;
+    found++;
+    if (found == count)
+      break;
   }
 
   if (found == 0) printf("ERROR: event not found\n");
+  if (found != count)
+    printf("WARNING: dumped %d events (wanted %d)\n", found, count);
 
   fclose(out);
 

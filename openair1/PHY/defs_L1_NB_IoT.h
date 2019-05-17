@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/defs.h
+/*! \file PHY/defs_L1_NB_IoT.h
  \brief Top-level defines and structure definitions
  \author R. Knopp, F. Kaltenberger
  \date 2011
@@ -122,8 +122,6 @@ static inline void* malloc16_clear( size_t size )
 
 
 #include "PHY/impl_defs_top_NB_IoT.h"
-//#include "impl_defs_top.h"
-//#include "impl_defs_lte.h"
 #include "PHY/impl_defs_lte_NB_IoT.h"
 
 #include "PHY/TOOLS/time_meas.h"
@@ -425,7 +423,7 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int RU_mask;
   /// mask for RUs serving nbiot (PRACH)
   int RU_mask_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
 #endif

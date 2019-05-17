@@ -190,7 +190,14 @@ const char* eurecomVariablesNames[] = {
   "enb_thread_rxtx_CPUID",
   "ru_thread_CPUID",
   "ru_thread_tx_CPUID",
-
+  "ue0_on_duration_timer",
+  "ue0_drx_inactivity",
+  "ue0_drx_short_cycle",
+  "ue0_short_drx_cycle_number",
+  "ue0_drx_long_cycle",
+  "ue0_drx_retransmission_harq0",
+  "ue0_drx_active_time",
+  "ue0_drx_active_time_condition",
   /*signal for NR*/
   "frame_number_TX0_gNB",
   "frame_number_TX1_gNB",
@@ -200,6 +207,7 @@ const char* eurecomVariablesNames[] = {
   "slot_number_TX1_gNB",
   "slot_number_RX0_gNB",
   "slot_number_RX1_gNB"
+
 };
 
 const char* eurecomFunctionsNames[] = {

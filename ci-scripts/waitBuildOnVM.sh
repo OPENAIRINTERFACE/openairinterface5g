@@ -98,7 +98,7 @@ function wait_on_vm_build {
         echo "while [ \$(ps -aux | grep --color=never build_oai | grep -v grep | wc -l) -gt 0 ]; do sleep 3; done" >> $VM_CMDS
     fi
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
 }
 
@@ -124,11 +124,16 @@ function check_on_vm_build {
 
     if [ $KEEP_VM_ALIVE -eq 0 ]
     then
+      if [[ "$VM_NAME" == *"-enb-ethernet"* ]] || [[ "$VM_NAME" == *"-ue-ethernet"* ]]
+      then
+        echo "Hack to not destroy in current pipeline"
+      else
         echo "############################################################"
         echo "Destroying VM"
         echo "############################################################"
         uvt-kvm destroy $VM_NAME
         ssh-keygen -R $VM_IP_ADDR
+      fi
     fi
     rm -f $VM_CMDS
 
@@ -136,7 +141,12 @@ function check_on_vm_build {
     echo "Checking build status" 
     echo "############################################################"
 
-    LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
+    else
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
+    fi
     STATUS=0
     NB_FOUND_FILES=0
 
@@ -171,4 +181,25 @@ function check_on_vm_build {
         STATUS=-1
     fi
 
+    # If we were building the FlexRan Controller, flag-touch for basic-simulator to continue
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        if [[ $STATUS -eq 0 ]]
+        then
+            touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
+        fi
+    fi
+
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        echo "COMMAND: cppcheck $BUILD_OPTIONS . 2> cppcheck.xml" > $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "COMMAND: build_oai -I $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
+    fi
+    if [[ $STATUS -eq 0 ]]
+    then
+        echo "BUILD_OK" >> $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "BUILD_KO" >> $ARCHIVES_LOC/build_final_status.log
+    fi
 }

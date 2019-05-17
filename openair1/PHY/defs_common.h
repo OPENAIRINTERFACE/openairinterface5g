@@ -59,6 +59,7 @@
 #include <math.h>
 #include "common_lib.h"
 #include "msc.h"
+#include <common/utils/LOG/log.h>
 
 //#include <complex.h>
 #include "PHY/TOOLS/time_meas.h"
@@ -158,7 +159,7 @@ typedef struct {
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
@@ -191,7 +192,7 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
 #endif  
 } PRACH_eMTC_CONFIG_COMMON;
@@ -643,7 +644,7 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// PRACH_eMTC_CONFIG
   PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
 #endif
@@ -806,6 +807,8 @@ typedef struct {
   uint8_t harq_pid;
   /// Narrowband index
   uint8_t narrowband;
+  /// number of mdpcch repetitions
+  uint16_t reps;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
   /// mpdcch resource assignment (combinatorial index r)
@@ -820,8 +823,6 @@ typedef struct {
   uint16_t dmrs_scrambling_init;
   /// Absolute subframe of the initial transmission (0-10239)
   uint16_t i0;
-  /// number of mdpcch repetitions
-  uint16_t reps;
   /// current absolute subframe number
   uint16_t absSF;
   /// DCI pdu
@@ -861,22 +862,60 @@ typedef enum {
   RESYNCH=4
 } UE_MODE_t;
 
-/// Threading Parameter
-typedef enum {
-  PARALLEL_SINGLE_THREAD    =0,
-  PARALLEL_RU_L1_SPLIT      =1,
-  PARALLEL_RU_L1_TRX_SPLIT  =2
-}PARALLEL_CONF_t;
+#define FOREACH_PARALLEL(GEN)			\
+  GEN(PARALLEL_SINGLE_THREAD)			\
+  GEN(PARALLEL_RU_L1_SPLIT)			\
+  GEN(PARALLEL_RU_L1_TRX_SPLIT)
+
+#define GENERATE_ENUM(N) N,
+#define GENERATE_ENUMTXT(N) {(char*)#N, N},
 
 typedef enum {
-  WORKER_DISABLE            =0,
-  WORKER_ENABLE             =1
+  FOREACH_PARALLEL(GENERATE_ENUM)
+} PARALLEL_CONF_t;
+
+#define FOREACH_WORKER(GEN) GEN(WORKER_DISABLE) GEN(WORKER_ENABLE)
+typedef enum {
+  FOREACH_WORKER(GENERATE_ENUM)
 }WORKER_CONF_t;
 
 typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
+extern THREAD_STRUCT  thread_struct;
+
+static inline void set_parallel_conf(char *parallel_conf) {
+  mapping config[]= {
+    FOREACH_PARALLEL(GENERATE_ENUMTXT)
+    {NULL,-1}
+  };
+  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
+  if (thread_struct.parallel_conf == -1 ) {
+    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
+    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  }
+}
+
+static inline void set_worker_conf(char *worker_conf) {
+  mapping config[]={
+    FOREACH_WORKER(GENERATE_ENUMTXT)
+    {NULL, -1}
+  };
+  thread_struct.worker_conf =  (WORKER_CONF_t)map_str_to_int(config, worker_conf);
+  if (thread_struct.worker_conf == -1 ) {
+    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
+    thread_struct.worker_conf = WORKER_DISABLE ;
+  }
+}
+
+static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
+  return thread_struct.parallel_conf;
+}
+
+static inline WORKER_CONF_t get_thread_worker_conf(void) {
+  return thread_struct.worker_conf;
+}
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

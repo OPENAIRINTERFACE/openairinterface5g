@@ -249,7 +249,7 @@ int et_hex2data(unsigned char * const data, const unsigned char * const hexstrin
   char *endptr = NULL;
   size_t count = 0;
 
-  fprintf(stdout, "%s(%s,%d)\n", __FUNCTION__, hexstring, len);
+  fprintf(stdout, "%s(%s,%u)\n", __FUNCTION__, hexstring, len);
 
   if ((len > 1) && (strlen((const char*)hexstring) % 2)) {
     //or hexstring has an odd length
@@ -473,7 +473,7 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP)
       setting_enb   = config_setting_get_elem(setting, i);
       active_enb[i] = config_setting_get_string (setting_enb);
       AssertFatal (active_enb[i] != NULL,
-                   "Failed to parse config file %s, %uth attribute %s \n",
+                   "Failed to parse config file %s, %dth attribute %s \n",
                    lib_config_file_name_pP, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
       active_enb[i] = strdup(active_enb[i]);
       num_enb_properties += 1;
@@ -513,7 +513,7 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP)
             )
         ) {
         AssertError (0, parse_errors ++,
-                     "Failed to parse eNB configuration file %s, %u th enb\n",
+                     "Failed to parse eNB configuration file %s, %d th enb\n",
                      lib_config_file_name_pP, i);
         continue; // FIXME this prevents segfaults below, not sure what happens after function exit
       }
@@ -561,7 +561,7 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP)
                  )
               ) {
               AssertError (0, parse_errors ++,
-                           "Failed to parse eNB configuration file %s, %u th enb %u th mme address !\n",
+                           "Failed to parse eNB configuration file %s, %d th enb %d th mme address !\n",
                            lib_config_file_name_pP, i, j);
               continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
             }
@@ -1103,7 +1103,7 @@ et_config_parse_opt_line (
             fprintf(stderr, "Please provide a valid -D/--delay-on-exit argument, %s is not a valid value\n", delay_on_exit);
             exit(1);
           }
-          printf("Delay on exit is %d\n", delay_on_exit);
+          printf("Delay on exit is %d\n", (int) delay_on_exit);
         }
         break;
 

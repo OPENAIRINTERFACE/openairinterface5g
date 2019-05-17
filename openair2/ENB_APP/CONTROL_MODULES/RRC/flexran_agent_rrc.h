@@ -37,10 +37,9 @@
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_rrc_defs.h"
+// for flexran_agent_get_rrc_xface()
+#include "flexran_agent_extern.h"
 
-
-/* Initialization function for the agent structures etc */
-void flexran_agent_init_rrc_agent(mid_t mod_id);
 
 /* UE state change message constructor and destructor */
 void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
@@ -55,16 +54,24 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
 // void flexran_agent_send_update_rrc_stats(mid_t mod_id);
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
+void flexran_trigger_rrc_measurements (mid_t mod_id, LTE_MeasResults_t *);
 
 /* Statistics reply protocol message constructor and destructor */
 int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
-int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexranMessage *msg);
+int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply);
+
+/* Fill the RRC part of a ue_config message */
+void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
+    Protocol__FlexUeConfig *ue_conf);
+
+/* Fill the RRC part of an cell_config message */
+void flexran_agent_fill_rrc_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface);
+int flexran_agent_register_rrc_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_rrc_xface(mid_t mod_id, AGENT_RRC_xface*xface);
+int flexran_agent_unregister_rrc_xface(mid_t mod_id);
 
 #endif
