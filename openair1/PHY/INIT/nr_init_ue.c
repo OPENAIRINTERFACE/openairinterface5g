@@ -369,7 +369,7 @@ void phy_config_harq_ue(module_id_t Mod_id,
 
   for (num_of_threads=0;num_of_threads<RX_NB_TH_MAX;num_of_threads++)
     for (num_of_code_words=0;num_of_code_words<NR_MAX_NB_CODEWORDS;num_of_code_words++)
-      phy_vars_ue->ulsch[eNB_id][num_of_threads][num_of_code_words]->Mlimit = max_harq_tx;
+      phy_vars_ue->ulsch[num_of_threads][eNB_id][num_of_code_words]->Mlimit = max_harq_tx;
 }
 
 extern uint16_t beta_cqi[16];

@@ -97,11 +97,11 @@ extern FD_stats_form *create_form_stats_form( void );
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
-FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
+FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-//unsigned char                   scope_enb_num_ue = 2;
+unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 #include <executables/nr-uesoftmodem.h>
@@ -313,7 +313,7 @@ static void *scope_thread(void *arg) {
   sleep(5);
 
   while (!oai_exit) {
-    phy_scope_UE(form_ue[0],
+    phy_scope_nrUE(form_nrue[0],
                  PHY_vars_UE_g[0][0],
                  0,0,1);
     usleep(100*1000);
@@ -325,18 +325,15 @@ static void *scope_thread(void *arg) {
 
 void init_scope(void) {
 #ifdef XFORMS
-  int ret;
   int fl_argc=1;
 
   if (do_forms==1) {
     char *name="5G-UE-scope";
     fl_initialize (&fl_argc, &name, NULL, 0, 0);
     int UE_id = 0;
-    form_ue[UE_id] = create_lte_phy_scope_ue();
+    form_nrue[UE_id] = create_phy_scope_nrue();
     sprintf (title, "NR DL SCOPE UE");
-    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    fl_set_button(form_ue[UE_id]->button_0,0);
-    fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
+    fl_show_form (form_nrue[UE_id]->phy_scope_nrue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
     threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
   }
 

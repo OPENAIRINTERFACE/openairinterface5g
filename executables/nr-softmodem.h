@@ -119,22 +119,6 @@
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 
 
-/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters specific to UE                                                                */
-/*   optname                     helpstr             paramflags                      XXXptr                  defXXXval       type          numelt   */
-/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_UEPARAMS_DESC {  \
-    {"ue-rxgain",                CONFIG_HLP_UERXG,      0,    dblptr:&(rx_gain[0][0]),      defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,   0,    dblptr:&rx_gain_off,        defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-txgain",                CONFIG_HLP_UETXG,      0,    dblptr:&(tx_gain[0][0]),      defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,    0,    u8ptr:&nb_antenna_rx,       defuintval:1,   TYPE_UINT8,    0},     \
-    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,    0,    u8ptr:&nb_antenna_tx,       defuintval:1,   TYPE_UINT8,    0},     \
-    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL, iptr:&UE_scan_carrier,        defintval:0,    TYPE_INT,    0},     \
-    {"ue-max-power",             NULL,          0,    iptr:&(tx_max_power[0]),      defintval:90,   TYPE_INT,    0},     \
-    {"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
-    {"dlsch-demod-shift",        CONFIG_HLP_DLSHIFT,  0,      iptr:(int32_t *)&dlsch_demod_shift, defintval:0,         TYPE_INT,    0},        \
-  }
-
 #define DEFAULT_DLF 2680000000
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -188,6 +172,11 @@
 #define CMDLINE_GLOGVERBO_IDX     2
 #define CMDLINE_STARTTELN_IDX     3
 
+
+typedef struct {
+  int *argc;
+  char **argv;
+} scopeParms_t;
 
 extern int T_port;
 extern int T_nowait;

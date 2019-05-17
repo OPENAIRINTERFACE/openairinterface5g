@@ -204,7 +204,7 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
   if (t->measurePerf)
     msg->returnTime=rdtsc();
 
-  if (t->traceFd)
+  if (t->traceFd >= 0)
     if(write(t->traceFd, msg, sizeof(*msg)));
 
   return msg;

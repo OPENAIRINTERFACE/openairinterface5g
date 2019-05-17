@@ -81,7 +81,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/GNB_APP/gnb_app.h>
 
 #ifdef XFORMS
-  #include "PHY/TOOLS/lte_phy_scope.h"
+  #include "PHY/TOOLS/nr_phy_scope.h"
   #include "stats.h"
 #endif
 #include "nr-softmodem.h"
@@ -91,8 +91,7 @@ unsigned short config_frames[4] = {2,9,11,13};
   // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
   // at eNB 0, an UL scope for every UE
 
-  FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-  FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+  FD_phy_scope_gnb *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   unsigned char                   scope_enb_num_ue = 2;
@@ -408,7 +407,7 @@ static void *scope_thread(void *arg) {
         if ((ue_cnt<scope_enb_num_ue)) {
           /*
           //this function needs to be written
-          phy_scope_gNB(form_enb[CC_id][ue_cnt],
+          phy_scope_gNB(form_gnb[CC_id][ue_cnt],
                     RC.gNB[0][CC_id],
                 UE_id);
           */
@@ -1050,16 +1049,16 @@ int main( int argc, char **argv ) {
 
     for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
       for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        form_enb[CC_id][UE_id] = create_lte_phy_scope_enb();
+        form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
         sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-        fl_show_form (form_enb[CC_id][UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+        fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
         if (otg_enabled) {
-          fl_set_button(form_enb[CC_id][UE_id]->button_0,1);
-          fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic ON");
+          fl_set_button(form_gnb[CC_id][UE_id]->button_0,1);
+          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic ON");
         } else {
-          fl_set_button(form_enb[CC_id][UE_id]->button_0,0);
-          fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic OFF");
+          fl_set_button(form_gnb[CC_id][UE_id]->button_0,0);
+          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic OFF");
         }
       } // CC_id
     } // UE_id
@@ -1187,8 +1186,8 @@ int main( int argc, char **argv ) {
 
         for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      fl_hide_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
-      fl_free_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
+      fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
+      fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
     }
         }
     }

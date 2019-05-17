@@ -2114,10 +2114,17 @@ if (${XFORMS})
     ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
     )
   set(XFORMS_SOURCE_SOFTMODEM
-	  ${OPENAIR_DIR}/executables/stats.c
+	  ${OPENAIR_DIR}/targets/RT/USER/stats.c
     )
   set(XFORMS_LIBRARIES "forms")
 endif (${XFORMS})
+
+include_directories ("/usr/include/X11")
+
+add_library(gnbScope MODULE
+  ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
+  )
+target_link_libraries(gnbScope forms)
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2351,8 +2358,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2389,8 +2395,7 @@ add_executable(nr-softmodem-nos1
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2426,7 +2431,6 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE_NR}
-  ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2458,7 +2462,6 @@ add_executable(nr-uesoftmodem-nos1
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE_NR}
-  ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
