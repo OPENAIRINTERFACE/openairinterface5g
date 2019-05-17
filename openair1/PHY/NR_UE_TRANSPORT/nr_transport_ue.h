@@ -273,7 +273,7 @@ typedef struct {
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
-  MIMO_mode_t mimo_mode;
+  MIMO_nrmode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
