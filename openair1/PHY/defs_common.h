@@ -705,6 +705,11 @@ typedef enum {
   TM9_10=14
 } MIMO_mode_t;
 
+typedef enum {
+  NR_SISO=0,
+  NR_DUALSTREAM=1
+} MIMO_nrmode_t;
+
 
 typedef enum {
   /// MRT

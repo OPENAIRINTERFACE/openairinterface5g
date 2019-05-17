@@ -822,11 +822,11 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   pllr_symbol += llr_offset;
 
 #if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*nb_rb*12)];
 #elif defined(__arm__)
-  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*nb_rb*12)];
 #endif
 
 //  printf("nr_dlsch_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
