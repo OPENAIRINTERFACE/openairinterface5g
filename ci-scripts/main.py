@@ -2582,17 +2582,6 @@ class SSHConnection():
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-<<<<<<< HEAD
-		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
-		time.sleep(5)
-		self.command('stdbuf -o0  ps -aux | grep -v grep | grep lte-softmodem', '\$', 5)
-		result = re.search('lte-softmodem', str(self.ssh.before))
-		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
-			time.sleep(5)
-=======
 		self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is not None:
@@ -2605,7 +2594,6 @@ class SSHConnection():
 				self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 				time.sleep(2)
 		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
->>>>>>> develop
 		self.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -2614,17 +2602,10 @@ class SSHConnection():
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
-<<<<<<< HEAD
-			pcap_log_file = self.eNBLogFile.replace('.log', '_s1log.pcap')
-			self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + pcap_log_file, '\$', 5)
-			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-			self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
-=======
 			if self.EPC_PcapFileName != '':
 				self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + self.EPC_PcapFileName, '\$', 5)
 				self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
 				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.EPC_PcapFileName, self.eNBSourceCodePath + '/cmake_targets/.')
->>>>>>> develop
 			self.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -2644,10 +2625,6 @@ class SSHConnection():
 			self.eNBLogFile = ''
 		else:
 			result = re.search('enb_', str(self.eNBLogFile))
-<<<<<<< HEAD
-			if result is not None:
-				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
-=======
 			analyzeFile = False
 			if result is not None:
 				analyzeFile = True
@@ -2661,31 +2638,19 @@ class SSHConnection():
 					self.rruLogFile = ''
 			if analyzeFile:
 				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + fileToAnalyze, '.')
->>>>>>> develop
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
-<<<<<<< HEAD
-					self.eNBLogFile = ''
-					return
-				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
-				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
-=======
 					return
 				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
->>>>>>> develop
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 				else:
 					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-<<<<<<< HEAD
-				self.eNBLogFile = ''
-=======
->>>>>>> develop
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
@@ -2931,45 +2896,6 @@ class SSHConnection():
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
 		self.close()
 
-<<<<<<< HEAD
-	def RetrieveSystemVersion(self):
-		if self.eNBIPAddress == 'none':
-			self.eNBOsVersion = 'Ubuntu 16.04.5 LTS'
-			self.eNBKernelVersion = '4.15.0-45-generic'
-			self.eNBUhdVersion = '3.13.0.1-0'
-			self.eNBCpuNb = '4'
-			self.eNBCpuModel = 'Intel(R) Core(TM) i5-6200U'
-			self.eNBCpuMHz = '2399.996 MHz'
-			return
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('lsb_release -a', '\$', 5)
-		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
-		if result is not None:
-			self.eNBOsVersion = result.group('os_type')
-			logging.debug('OS is: ' + self.eNBOsVersion)
-		self.command('uname -r', '\$', 5)
-		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', str(self.ssh.before))
-		if result is not None:
-			self.eNBKernelVersion = result.group('kernel_version')
-			logging.debug('Kernel Version is: ' + self.eNBKernelVersion)
-		self.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
-		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
-		if result is not None:
-			self.eNBUhdVersion = result.group('uhd_version')
-			logging.debug('UHD Version is: ' + self.eNBUhdVersion)
-		self.command('lscpu', '\$', 5)
-		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
-		if result is not None:
-			self.eNBCpuNb = result.group('nb_cpus')
-			logging.debug('nb_cpus: ' + self.eNBCpuNb)
-			self.eNBCpuModel = result.group('model')
-			logging.debug('model: ' + self.eNBCpuModel)
-			self.eNBCpuMHz = result.group('cpu_mhz') + ' MHz'
-			logging.debug('cpu_mhz: ' + self.eNBCpuMHz)
-=======
 	def LogCollectOAIUE(self):
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
@@ -3034,7 +2960,6 @@ class SSHConnection():
 			logging.debug('model: ' + self.CpuModel)
 			self.CpuMHz = result.group('cpu_mhz') + ' MHz'
 			logging.debug('cpu_mhz: ' + self.CpuMHz)
->>>>>>> develop
 		self.close()
 
 #-----------------------------------------------------------
@@ -3122,20 +3047,6 @@ class SSHConnection():
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
-<<<<<<< HEAD
-			terminate_ue_flag = True
-			if (self.ADBIPAddress != 'none'):
-				self.GetAllUEDevices(terminate_ue_flag)
-				self.GetAllCatMDevices(terminate_ue_flag)
-			else:
-				self.UEDevices.append('doughq9rehg')
-				self.UEDevices.append('dnsgiuahgia')
-				self.UEDevices.append('uehgieng9')
-			self.htmlUEConnected = len(self.UEDevices)
-
-			self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
-			self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.CatMDevices)) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
-=======
 			if (self.ADBIPAddress != 'none'):
 				terminate_ue_flag = True
 				self.GetAllUEDevices(terminate_ue_flag)
@@ -3147,7 +3058,6 @@ class SSHConnection():
 				self.UEDevices.append('OAI-UE')
 				self.htmlUEConnected = len(self.UEDevices)
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' OAI UE(s) is(are) connected to CI bench</h2>\n')
->>>>>>> develop
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
@@ -3187,13 +3097,7 @@ class SSHConnection():
 					self.GetAllUEDevices(terminate_ue_flag)
 					self.GetAllCatMDevices(terminate_ue_flag)
 				else:
-<<<<<<< HEAD
-					self.UEDevices.append('doughq9rehg')
-					self.UEDevices.append('dnsgiuahgia')
-					self.UEDevices.append('uehgieng9')
-=======
 					self.UEDevices.append('OAI-UE')
->>>>>>> develop
 				self.htmlUEConnected = len(self.UEDevices)
 
 			i = 0
@@ -3218,45 +3122,14 @@ class SSHConnection():
 
 	def CreateHtmlFooter(self, passStatus):
 		if (os.path.isfile('test_results.html')):
-<<<<<<< HEAD
-			self.RetrieveSystemVersion()
-=======
 			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 			logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
 			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
->>>>>>> develop
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
-<<<<<<< HEAD
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=6>eNB Server Characteristics</th>\n')
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td>OS Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBOsVersion + '</span></td>\n')
-			self.htmlFile.write('        <td>Kernel Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBKernelVersion + '</span></td>\n')
-			self.htmlFile.write('        <td>UHD Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBUhdVersion + '</span></td>\n')
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td>Nb CPUs</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuNb + '</span></td>\n')
-			self.htmlFile.write('        <td>CPU Model Name</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuModel + '</span></td>\n')
-			self.htmlFile.write('        <td>CPU Frequency</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuMHz + '</span></td>\n')
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
-			if passStatus:
-				self.htmlFile.write('        <th colspan=2 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
-			else:
-				self.htmlFile.write('        <th colspan=2 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
-=======
 
 			machines = [ 'eNB', 'UE' ]
 			for machine in machines:
@@ -3292,7 +3165,6 @@ class SSHConnection():
 				self.htmlFile.write('        <th colspan=3 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
 				self.htmlFile.write('        <th colspan=3 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
->>>>>>> develop
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')
@@ -3321,17 +3193,11 @@ class SSHConnection():
 				elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
 				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
-<<<<<<< HEAD
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process faced Real Time issue(s)</td>\n')
-				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE):
-					self.htmlFile.write('        <td bgcolor = "orange" >OK</td>\n')
-=======
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
 				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
 					self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
 				elif (processesStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
->>>>>>> develop
 				elif (processesStatus == HSS_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
 				elif (processesStatus == MME_PROCESS_FAILED):
@@ -3353,12 +3219,7 @@ class SSHConnection():
 					result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
-<<<<<<< HEAD
-				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' +
- cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
-=======
 				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
->>>>>>> develop
 				self.htmleNBFailureMsg = ''
 			elif (len(str(self.htmlUEFailureMsg)) > 2):
 				cellBgColor = 'white'
@@ -3451,11 +3312,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-<<<<<<< HEAD
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'IdleSleep':
-=======
 	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
->>>>>>> develop
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3482,9 +3339,6 @@ def GetParametersFromXML(action):
 		else:
 			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
 
-<<<<<<< HEAD
-	if action == 'Ping':
-=======
 	if action == 'Build_OAI_UE':
 		SSH.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
 
@@ -3500,7 +3354,6 @@ def GetParametersFromXML(action):
 			SSH.UE_instance = '0'
 
 	if action == 'Ping' or action == 'Ping_CatM_module':
->>>>>>> develop
 		SSH.ping_args = test.findtext('ping_args')
 		SSH.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
 
@@ -3615,8 +3468,6 @@ while len(argvs) > 1:
 		matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
 		SSH.testXMLfiles.append(matchReg.group(1))
 		SSH.nbTestXMLfiles += 1
-<<<<<<< HEAD
-=======
 	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UEIPAddress = matchReg.group(1)
@@ -3629,7 +3480,6 @@ while len(argvs) > 1:
 	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UESourceCodePath = matchReg.group(1)
->>>>>>> develop
 	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
 		finalStatus = matchReg.group(1)
@@ -3706,43 +3556,6 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
-<<<<<<< HEAD
-elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
-	if SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
-		Usage()
-		sys.exit('Insufficient Parameter')
-	count = 0
-	foundCount = 0
-	while (count < SSH.nbTestXMLfiles):
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[count]
-		if (os.path.isfile(xml_test_file)):
-			xmlTree = ET.parse(xml_test_file)
-			xmlRoot = xmlTree.getroot()
-			SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
-			SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
-			SSH.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
-			foundCount += 1
-		count += 1
-	if foundCount != SSH.nbTestXMLfiles:
-		SSH.nbTestXMLfiles = foundCount
-	SSH.CreateHtmlHeader()
-elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
-	SSH.CreateHtmlFooter(SSH.finalStatus)
-elif re.match('^TesteNB$', mode, re.IGNORECASE):
-	if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
-		Usage()
-		sys.exit('Insufficient Parameter')
-
-	if (SSH.EPCIPAddress != 'none'):
-		SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
-		SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
-	#read test_case_list.xml file
-        # if no parameters for XML file, use default value
-	if (SSH.nbTestXMLfiles != 1):
-		xml_test_file = sys.path[0] + "/test_case_list.xml"
-	else:
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[0]
-=======
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
         if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
                 Usage()
@@ -3790,7 +3603,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
 		xml_test_file = cwd + "/" + SSH.testXMLfiles[0]
->>>>>>> develop
 
 	xmlTree = ET.parse(xml_test_file)
 	xmlRoot = xmlTree.getroot()
@@ -3868,15 +3680,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.AttachUE()
 			elif action == 'Detach_UE':
 				SSH.DetachUE()
-<<<<<<< HEAD
-=======
 			elif action == 'Build_OAI_UE':
 				SSH.BuildOAIUE()
 			elif action == 'Initialize_OAI_UE':
 				SSH.InitializeOAIUE()
 			elif action == 'Terminate_OAI_UE':
 				SSH.TerminateOAIUE()
->>>>>>> develop
 			elif action == 'Initialize_CatM_module':
 				SSH.InitializeCatM()
 			elif action == 'Terminate_CatM_module':
@@ -3885,11 +3694,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.AttachCatM()
 			elif action == 'Detach_CatM_module':
 				SSH.TerminateCatM()
-<<<<<<< HEAD
-=======
 			elif action == 'Ping_CatM_module':
 				SSH.PingCatM()
->>>>>>> develop
 			elif action == 'Ping':
 				SSH.Ping()
 			elif action == 'Iperf':
