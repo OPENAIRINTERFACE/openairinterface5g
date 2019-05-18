@@ -955,11 +955,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   /* This schedules MIB */
-  if ((subframeP == 0) && (frameP & 3) == 0) {
+  if ((subframeP == 0) && (frameP & 3) == 0) 
     schedule_mib(module_idP, frameP, subframeP);
-
-    schedule_SI_MBMS(module_idP, frameP, subframeP);
-  }
 
   if (get_softmodem_params()->phy_test == 0) {
     /* This schedules SI for legacy LTE and eMTC starting in subframeP */

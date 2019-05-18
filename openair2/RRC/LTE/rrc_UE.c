@@ -2667,7 +2667,7 @@ int decode_BCCH_MBMS_DLSCH_Message(
   }
 
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-  //  xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,(void *)bcch_message );
+    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,(void *)bcch_message );
   //}
 
   if (bcch_message->message.present == LTE_BCCH_DL_SCH_MessageType_MBMS_r14_PR_c1) {
