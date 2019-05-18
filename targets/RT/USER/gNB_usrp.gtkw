@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Wed May  8 09:33:31 2019
+[*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
+[*] Sat May 18 17:25:11 2019
 [*]
 [dumpfile] "/tmp/openair_dump_gNB40.vcd"
-[dumpfile_mtime] "Wed May  8 09:32:07 2019"
-[dumpfile_size] 1965634
-[savefile] "/home/espagne/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 8147990000
-[size] 1920 859
+[dumpfile_mtime] "Sat May 18 17:11:31 2019"
+[dumpfile_size] 53148516
+[savefile] "/home/caracal/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 11552775390
+[size] 1840 795
 [pos] -1 -1
-*-21.848083 8158741030 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.848083 11552814436 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
@@ -19,16 +19,16 @@ functions.trx_read
 functions.trx_write
 @420
 variables.frame_number_TX0_UE[63:0]
-@421
 variables.frame_number_TX1_UE[63:0]
+@28
+functions.ue_gain_control
 @420
 variables.frame_number_RX1_UE[63:0]
+@25
+variables.trx_ts_ue[63:0]
 @24
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
-@28
-functions.eNB_thread_rxtx0
-@24
 variables.frame_number_RX0_RU[63:0]
 variables.tti_number_RX0_RU[63:0]
 variables.frame_number_TX0_RU[63:0]

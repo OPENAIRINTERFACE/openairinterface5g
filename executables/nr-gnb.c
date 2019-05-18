@@ -293,13 +293,13 @@ static void *gNB_L1_thread_tx(void *param) {
     pthread_mutex_lock( &L1_proc_tx->mutex );
     L1_proc_tx->instance_cnt = -1;
 
+    pthread_mutex_unlock(&L1_proc_tx->mutex);
     // the thread can now be woken up
     if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
       LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
       exit_fun( "ERROR pthread_cond_signal" );
     }
 
-    pthread_mutex_unlock( &L1_proc_tx->mutex );
     wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
   }
@@ -414,46 +414,51 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   RU_t *ru;
   RU_proc_t *ru_proc;
 
-  int waitret;
+  int waitret,ret;
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=10000000L;
  
 
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
 
 // note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,1);
   waitret=timedwait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh",500000); 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,0);
+
+  AssertFatal(release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")==0, "error releaseing gNB lock on RUs\n"); 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
 
   if (waitret == ETIMEDOUT) {
      LOG_W(PHY,"Dropping TX slot (%d.%d) because FH is blocked more than 2 slot times (1000us)\n",frame_tx,slot_tx);
 
-     pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
+     AssertFatal((ret=pthread_mutex_lock(&gNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
      gNB->proc.RU_mask_tx = 0;
-     pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
+     AssertFatal((ret=pthread_mutex_unlock(&gNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE,1);
      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE,0);
 
      return(-1);
   } 
-  else if (release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
  
   for(int i=0; i<gNB->num_RU; i++)
   {
     ru      = gNB->RU_list[i];
     ru_proc = &ru->proc;
+    
+    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_gNBs))==0,"ERROR pthread_mutex_lock failed on mutex_gNBs L1_thread_tx with ret=%d\n",ret);
+
     if (ru_proc->instance_cnt_gNBs == 0) {
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST_UE, 1);
       LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->slot_rx);
-      pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
+      AssertFatal((ret=pthread_mutex_lock(&gNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
       gNB->proc.RU_mask_tx = 0;
-      pthread_mutex_unlock(&gNB->proc.mutex_RU_tx);
+      AssertFatal((ret=pthread_mutex_unlock(&gNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
+      AssertFatal((ret=pthread_mutex_unlock( &ru_proc->mutex_gNBs ))==0,"mutex_unlock return %d\n",ret);
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST_UE, 0);
       return(-1);
     }
-    if ((waitret = pthread_mutex_timedlock(&ru_proc->mutex_gNBs,&wait)) == ETIMEDOUT) {
-      LOG_W( PHY, "[eNB] ERROR pthread_mutex_lock timed out on mutex_gNBs L1_thread_tx (timeout)\n");
-      return(-1);
-    }
-    else AssertFatal(waitret==0,"pthread_mutex_timedlock returned %d\n",waitret);
 
     ru_proc->instance_cnt_gNBs = 0;
     ru_proc->timestamp_tx = timestamp_tx;
@@ -461,15 +466,13 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
     ru_proc->frame_tx     = frame_tx;
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_UE, ru_proc->instance_cnt_gNBs);
-    pthread_mutex_unlock( &ru_proc->mutex_gNBs );
 
     LOG_D(PHY,"Signaling tx_thread_fh for %d.%d\n",frame_tx,slot_tx);  
     // the thread can now be woken up
-    if (pthread_cond_signal(&ru_proc->cond_gNBs) != 0) {
-      LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-      return(-1);
-    }
+    AssertFatal(pthread_cond_signal(&ru_proc->cond_gNBs) == 0,
+               "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
+    AssertFatal((ret=pthread_mutex_unlock(&ru_proc->mutex_gNBs))==0,"mutex_unlock returned %d\n",ret);
+
   }
   return(0);
 }
@@ -479,21 +482,15 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
 
   gNB_L1_rxtx_proc_t *L1_proc_tx = &gNB->proc.L1_proc_tx;
 
-  
+  int ret;
+ 
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
   
   
-  if (pthread_mutex_timedlock(&L1_proc_tx->mutex,&wait) != 0) {
-    LOG_E(PHY, "[SCHED][eNB] ERROR locking mutex for eNB L1_thread_tx\n");
-    exit_fun("ERROR pthread_lock");
-    return(-1);
-  }
-  if (L1_proc_tx->instance_cnt == -2) { // L1_thread_tx isn't ready yet so return
-     pthread_mutex_unlock( &L1_proc_tx->mutex);
-     return(0);
-  }
+  AssertFatal((ret = pthread_mutex_lock(&L1_proc_tx->mutex))==0,"mutex_lock returns %d\n",ret);
+
 
   while(L1_proc_tx->instance_cnt == 0){
     pthread_cond_wait(&L1_proc_tx->cond,&L1_proc_tx->mutex);
@@ -508,18 +505,14 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
   L1_proc_tx->frame_tx      = frame_tx;
   L1_proc_tx->timestamp_tx  = timestamp_tx;
 
-  pthread_mutex_unlock( &L1_proc_tx->mutex);
  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,1);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_UE,0);
  
   // the thread can now be woken up
-  if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
-  }
+  AssertFatal(pthread_cond_signal(&L1_proc_tx->cond) == 0, "ERROR pthread_cond_signal for gNB L1 thread\n");
   
+  AssertFatal((ret=pthread_mutex_unlock(&L1_proc_tx->mutex))==0,"mutex_unlock returns %d\n",ret);
 
   return(0);
 }
@@ -529,11 +522,11 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   gNB_L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
-
+  int ret;
   int i;
   struct timespec wait;
   
-  pthread_mutex_lock(&proc->mutex_RU);
+  AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
   for (i=0;i<gNB->num_RU;i++) {
     if (ru == gNB->RU_list[i]) {
       if ((proc->RU_mask&(1<<i)) > 0)
@@ -544,12 +537,12 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   }
   if (proc->RU_mask != (1<<gNB->num_RU)-1) {  // not all RUs have provided their information so return
     LOG_E(PHY,"Not all RUs have provided their info\n");
-    pthread_mutex_unlock(&proc->mutex_RU);
+    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"mutex_unlock returns %d\n",ret);
     return(0);
   }
   else { // all RUs have provided their information so continue on and wakeup gNB processing
     proc->RU_mask = 0;
-    pthread_mutex_unlock(&proc->mutex_RU);
+    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"muex_unlock returns %d\n",ret);
   }
 
 
@@ -558,19 +551,10 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB L1 thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
-    exit_fun( "error locking mutex" );
-    return(-1);
-  }
-
-  if (L1_proc->instance_cnt==-2) { // L1_thread isn't ready yet so return 
-   pthread_mutex_unlock( &L1_proc->mutex );
-   return(0);
-  }
+  AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex)) == 0,"mutex_lock returns %d\n", ret);
 
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
-   pthread_mutex_unlock( &L1_proc->mutex );
+   AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
    LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx); 
   }
  

@@ -657,7 +657,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     proc->timestamp_rx = 0;
   } else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_slot) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
+      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
@@ -669,7 +669,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   proc->timestamp_tx = proc->timestamp_rx+(sl_ahead*fp->samples_per_slot);
   proc->tti_tx  = (proc->tti_rx+sl_ahead)%fp->slots_per_frame;
   proc->frame_tx     = (proc->tti_rx>(fp->slots_per_frame-1-sl_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
+  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
         ru->idx,
         0,
         (unsigned long long int)proc->timestamp_rx,
@@ -1206,27 +1206,25 @@ static void *ru_thread_tx( void *param ) {
   char               filename[40];
   int                print_frame = 8;
   int                i = 0;
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  //CPU_SET(5, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //wait_sync("ru_thread_tx");
+  int                ret;
+  
+
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
 
   while (!oai_exit) {
     if (oai_exit) break;
 
-    LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
+    LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
 
-    pthread_mutex_lock(&proc->mutex_gNBs);
+    AssertFatal((ret=pthread_mutex_lock(&proc->mutex_gNBs))==0,"mutex_lock return %d\n",ret);
     int frame_tx=proc->frame_tx;
     int tti_tx  =proc->tti_tx;
     uint64_t timestamp_tx = proc->timestamp_tx;
 
-    pthread_mutex_unlock(&proc->mutex_gNBs);
+    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_gNBs))==0,"mutex_lock returns %d\n",ret);
 
     if (oai_exit) break;
 
@@ -1277,7 +1275,7 @@ static void *ru_thread_tx( void *param ) {
       gNB       = ru->gNB_list[i];
       gNB_proc  = &gNB->proc;
       L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &gNB_proc->L1_proc_tx : &gNB_proc->L1_proc;
-      pthread_mutex_lock(&gNB_proc->mutex_RU_tx);
+      AssertFatal((ret=pthread_mutex_lock(&gNB_proc->mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
 
       for (int j=0; j<gNB->num_RU; j++) {
         if (ru == gNB->RU_list[j]) {
@@ -1290,21 +1288,21 @@ static void *ru_thread_tx( void *param ) {
       }
 
       if (gNB_proc->RU_mask_tx != (1<<gNB->num_RU)-1) {  // not all RUs have provided their information so return
-        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
-      } else { // all RUs TX are finished so send the ready signal to eNB processing
+        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
+      } else { // all RUs TX are finished so send the ready signal to gNB processing
         gNB_proc->RU_mask_tx = 0;
-        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
+        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
 
-        pthread_mutex_lock( &L1_proc->mutex_RUs_tx);
+        AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex_RUs_tx))==0,"mutex_lock returns %d\n",ret);
+        // the thread can now be woken up
+        if (L1_proc->instance_cnt_RUs==-1) {
+           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
+                       "ERROR pthread_cond_signal for gNB_L1_thread\n");
+        } else AssertFatal(1==0,"gNB TX thread is not ready\n");
         L1_proc->instance_cnt_RUs = 0;
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
-        pthread_mutex_unlock( &L1_proc->mutex_RUs_tx );
+        AssertFatal((ret=pthread_mutex_unlock(&L1_proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
 
-        // the thread can now be woken up
-        if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
-          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-          exit_fun( "ERROR pthread_cond_signal" );
-        }
       }
     }
   }

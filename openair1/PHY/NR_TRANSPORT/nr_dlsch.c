@@ -213,6 +213,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t encoded_length = nb_symbols*Qm;
 
   /// CRC, coding, interleaving and rate matching
+  AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
   nr_dlsch_encoding(harq->pdu, frame,slot, &dlsch, &frame_parms);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
