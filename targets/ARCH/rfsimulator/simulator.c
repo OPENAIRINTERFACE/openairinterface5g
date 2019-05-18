@@ -34,7 +34,7 @@
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
-#define sample_t uint32_t // 2*16 bits complex number
+#define sample_t uint32_t //2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
