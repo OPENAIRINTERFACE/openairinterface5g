@@ -646,8 +646,8 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
   }
 
-  if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
-  if (ru->fh_south_out) ru->fh_south_out(ru);
+  if (ru->feptx_ofdm) ru->feptx_ofdm(ru,frame_tx,tti_tx);
+  if (ru->fh_south_out) ru->fh_south_out(ru,frame_tx,tti_tx,proc->timestamp_tx);
 } 
 
 void fh_if5_north_out(RU_t *ru) {
@@ -1558,13 +1558,13 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
+    if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
   	  
     // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
     if(!emulate_rf){    
       // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
   	      
       if (ru->fh_north_out) ru->fh_north_out(ru);
     }
@@ -1804,13 +1804,13 @@ static void* ru_thread( void* param ) {
 #ifndef PHY_TX_THREAD
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0){
       // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
+      if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
       
       // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
       if(!emulate_rf){
         // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
         
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
@@ -2074,10 +2074,10 @@ static void* rf_tx( void* param ) {
        // do TX front-end processing if needed (precoding and/or IDFTs)
        if (ru->feptx_prec) ru->feptx_prec(ru);
        // do OFDM if needed
-       if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+       if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
        if(!emulate_rf){
          // do outgoing fronthaul (south) if needed
-         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
 
          if (ru->fh_north_out) ru->fh_north_out(ru);
        }
@@ -2114,11 +2114,11 @@ int stop_rf(RU_t *ru)
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
-extern void feptx_ofdm(RU_t *ru);
-extern void feptx_ofdm_2thread(RU_t *ru);
-extern void feptx_prec(RU_t *ru);
-extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
-extern void init_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+extern void feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
+extern void feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
+extern void feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
+extern void init_fep_thread(RU_t *ru);
+extern void init_feptx_thread(RU_t *ru);
 extern void kill_fep_thread(RU_t *ru);
 extern void kill_feptx_thread(RU_t *ru);
 
@@ -2256,8 +2256,8 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_thread_worker_conf() == WORKER_ENABLE) { 
-    init_fep_thread(ru,NULL); 
-    init_feptx_thread(ru,NULL);
+    init_fep_thread(ru); 
+    init_feptx_thread(ru);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   

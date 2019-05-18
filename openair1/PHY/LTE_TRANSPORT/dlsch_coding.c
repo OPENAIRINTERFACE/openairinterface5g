@@ -41,7 +41,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
-#include "targets/RT/USER/rt_wrapper.h"
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -337,14 +336,6 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
 extern int oai_exit;
 void *te_thread(void *param) {
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  
-  thread_top_init("te_thread",1,200000,250000,500000);
-  pthread_setname_np( pthread_self(),"te processing");
-  LOG_I(PHY,"thread te created id=%ld\n", syscall(__NR_gettid));
-  
-
   te_params *tep                 = (te_params *)param;
   
   //wait_sync("te_thread");

@@ -35,8 +35,6 @@ float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
 
-extern int64_t *pss_corr_ue[3];
-
 
 static void ia_receiver_on_off( FL_OBJECT *button, long arg)
 {
@@ -66,14 +64,14 @@ static void dl_traffic_on_off( FL_OBJECT *button, long arg)
   }
 }
 
-FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
+FD_phy_scope_gnb *create_phy_scope_gnb( void )
 {
 
   FL_OBJECT *obj;
-  FD_lte_phy_scope_enb *fdui = fl_malloc( sizeof *fdui );
+  FD_phy_scope_gnb *fdui = fl_malloc( sizeof *fdui );
 
   // Define form
-  fdui->lte_phy_scope_enb = fl_bgn_form( FL_NO_BOX, 800, 800 );
+  fdui->phy_scope_gnb = fl_bgn_form( FL_NO_BOX, 800, 800 );
 
   // This the whole UI box
   obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 800, "" );
@@ -146,30 +144,28 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_object_callback(fdui->button_0, dl_traffic_on_off, 0 );
 
   fl_end_form( );
-  fdui->lte_phy_scope_enb->fdui = fdui;
+  fdui->phy_scope_gnb->fdui = fdui;
 
   return fdui;
 }
 
-/*
-void phy_scope_eNB(FD_lte_phy_scope_enb *form,
-                   PHY_VARS_eNB *phy_vars_enb,
+void phy_scope_gNB(FD_phy_scope_gnb *form,
+                   PHY_VARS_gNB *phy_vars_gnb,
                    int UE_id)
 {
-  int eNB_id = 0;
   int i,i2,arx,atx,ind,k;
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->frame_parms;
+  NR_DL_FRAME_PARMS *frame_parms = &phy_vars_gnb->frame_parms;
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
   int16_t **rxsig_t;
-  int16_t **chest_t;
-  int16_t **chest_f;
-  int16_t *pusch_llr;
-  int32_t *pusch_comp;
-  int32_t *pucch1_comp;
-  int32_t *pucch1_thres;
-  int32_t *pucch1ab_comp;
+  int16_t **chest_t=NULL;
+  int16_t **chest_f=NULL;
+  int16_t *pusch_llr=NULL;
+  int32_t *pusch_comp=NULL;
+  int32_t *pucch1_comp=NULL;
+  int32_t *pucch1_thres=NULL;
+  int32_t *pucch1ab_comp=NULL;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
@@ -180,16 +176,18 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  int frame = phy_vars_enb->proc.proc_rxtx[0].frame_tx;
-  uint32_t total_dlsch_bitrate = phy_vars_enb->total_dlsch_bitrate;
+  uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
   int Qm = 2;
 
+  if (!RC.nrmac[0]->UE_list.active[UE_id])
+    return;
+  
   // choose max MCS to compute coded_bits_per_codeword
-  if (phy_vars_enb->ulsch[UE_id]!=NULL) {
+  if (phy_vars_gnb->ulsch[UE_id][0]!=NULL) {
     for (harq_pid=0; harq_pid<3; harq_pid++) {
-      Qm = cmax(phy_vars_enb->ulsch[UE_id]->harq_processes[harq_pid]->Qm,Qm);
+      //Qm = cmax(phy_vars_gnb->ulsch[UE_id][0]->harq_processes->Qm,Qm);
     }
   }
 
@@ -199,15 +197,16 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
 
-  rxsig_t = (int16_t**) phy_vars_enb->common_vars.rxdata[eNB_id];
-  //chest_t = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
-  chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates[eNB_id];
-  chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
-  pusch_llr = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->llr;
-  pusch_comp = (int32_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
-  pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
-  pucch1_thres = (int32_t*) phy_vars_enb->pucch1_stats_thres[UE_id];
-  pucch1ab_comp = (int32_t*) phy_vars_enb->pucch1ab_stats[UE_id];
+  rxsig_t = (int16_t**) phy_vars_gnb->common_vars.rxdata;
+  //chest_t = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
+  /*  chest_t = (int16_t**) phy_vars_gnb->srs_vars[UE_id].srs_ch_estimates;
+  chest_f = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates;
+  pusch_llr = (int16_t*) phy_vars_gnb->pusch_vars[UE_id]->llr;
+  pusch_comp = (int32_t*) phy_vars_gnb->pusch_vars[UE_id]->rxdataF_comp;
+  pucch1_comp = (int32_t*) phy_vars_gnb->pucch1_stats[UE_id];
+  pucch1_thres = (int32_t*) phy_vars_gnb->pucch1_stats_thres[UE_id];
+  pucch1ab_comp = (int32_t*) phy_vars_gnb->pucch1ab_stats[UE_id];
+  */
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -363,7 +362,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   memmove( tput_time_enb[UE_id], &tput_time_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
   memmove( tput_enb[UE_id], &tput_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
 
-  tput_time_enb[UE_id][TPUT_WINDOW_LENGTH-1]  = (float) frame;
+  tput_time_enb[UE_id][TPUT_WINDOW_LENGTH-1]  = (float) 0;
   tput_enb[UE_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;
 
   fl_set_xyplot_data(form->pusch_tput,tput_time_enb[UE_id],tput_enb[UE_id],TPUT_WINDOW_LENGTH,"","","");
@@ -377,16 +376,15 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   free(bit);
   free(chest_f_abs);
 }
-*/
 
-FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
+FD_phy_scope_nrue *create_phy_scope_nrue( void )
 {
 
   FL_OBJECT *obj;
-  FD_lte_phy_scope_ue *fdui = fl_malloc( sizeof *fdui );
+  FD_phy_scope_nrue *fdui = fl_malloc( sizeof *fdui );
 
   // Define form
-  fdui->lte_phy_scope_ue = fl_bgn_form( FL_NO_BOX, 800, 900 );
+  fdui->phy_scope_nrue = fl_bgn_form( FL_NO_BOX, 800, 900 );
 
   // This the whole UI box
   obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 900, "" );
@@ -477,12 +475,12 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
   fl_hide_object(fdui->button_0);
 
   fl_end_form( );
-  fdui->lte_phy_scope_ue->fdui = fdui;
+  fdui->phy_scope_nrue->fdui = fdui;
 
   return fdui;
 }
 
-void phy_scope_UE(FD_lte_phy_scope_ue *form,
+void phy_scope_nrUE(FD_phy_scope_nrue *form,
                   PHY_VARS_NR_UE *phy_vars_ue,
                   int eNB_id,
                   int UE_id,
@@ -629,6 +627,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   if (phy_vars_ue->is_synchronized==0) {
     for (ind=0;ind<3;ind++) {
+      /*
       if (pss_corr_ue[ind]) {
 	for (i=0; i<samples_per_frame; i++) {
 	  corr[i] = (float) pss_corr_ue[ind][i];
@@ -642,6 +641,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
 	overlay = 1;
       }
+      */
     }
   } 
   else {
@@ -842,4 +842,92 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
   free(chest_t_abs);
   */
+}
+
+typedef struct {
+  FL_FORM    *stats_form;
+  void       *vdata;
+  char       *cdata;
+  long        ldata;
+  FL_OBJECT *stats_text;
+  FL_OBJECT *stats_button;
+} FD_stats_form;
+
+void reset_stats_gNB(FL_OBJECT *button, long arg) {
+  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
+
+  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+    for (int k=0; k<8; k++) { //harq_processes
+      /*      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
+        phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
+        phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
+        phy_vars_gNB->UE_stats[i].dlsch_trials[k][j]=0;
+            }
+      phy_vars_gNB->UE_stats[i].dlsch_l2_errors[k]=0;
+      phy_vars_gNB->UE_stats[i].ulsch_errors[k]=0;
+      phy_vars_gNB->UE_stats[i].ulsch_consecutive_errors=0;
+      phy_vars_gNB->UE_stats[i].dlsch_sliding_cnt=0;
+      phy_vars_gNB->UE_stats[i].dlsch_NAK_round0=0;
+      phy_vars_gNB->UE_stats[i].dlsch_mcs_offset=0;*/
+    }
+  }
+}
+
+static FD_phy_scope_gnb *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+static void *scope_thread(void *arg) {
+  int ue_cnt=0;
+  while (!oai_exit) {
+    ue_cnt=0;
+    
+    for(int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+      for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        if ((ue_cnt<scope_enb_num_ue)) 
+          //this function needs to be written
+          phy_scope_gNB(form_gnb[CC_id][ue_cnt], RC.gNB[0][CC_id], UE_id);
+	ue_cnt++;
+      }
+    }
+    sleep(1);
+  }
+  return NULL;
+}
+
+FD_stats_form * create_form_stats_form( void ) {
+  FL_OBJECT *obj;
+  FD_stats_form *fdui = fl_malloc( sizeof *fdui );
+  fdui->vdata = fdui->cdata = NULL;
+  fdui->ldata = 0;
+  fdui->stats_form = fl_bgn_form( FL_NO_BOX, 1115, 900 );
+  obj = fl_add_box( FL_UP_BOX, 0, 0, 1115, 900, "" );
+  //fdui->stats_text = obj = fl_add_text( FL_NORMAL_TEXT, 60, 50, 1000, 810, "test" );
+  //fl_set_object_lsize( obj, FL_TINY_SIZE );
+  fdui->stats_text = obj = fl_add_browser( FL_NORMAL_BROWSER, 60, 50, 1000, 810, "test" );
+  fl_set_browser_fontsize(obj,FL_TINY_SIZE);
+  fdui->stats_button = obj = fl_add_button( FL_PUSH_BUTTON, 60, 10, 130, 30, "Reset Stats" );
+  fl_set_object_lalign( obj, FL_ALIGN_CENTER );
+  fl_set_object_color( obj, FL_GREEN, FL_GREEN);
+  fl_end_form( );
+  fdui->stats_form->fdui = fdui;
+  return fdui;
+}
+
+void startScope(scopeParms_t * p) {
+  FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
+  char title[255];
+  fl_initialize (p->argc, p->argv, NULL, 0, 0);
+  form_stats_l2 = create_form_stats_form();
+  fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
+  form_stats = create_form_stats_form();
+  fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+
+  for(int UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
+    for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
+      sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
+      fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+    } // CC_id
+  } // UE_id
+
+  pthread_t forms_thread;
+  threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
 }

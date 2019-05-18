@@ -69,7 +69,7 @@
 
 #include "TOOLS/tools_defs.h"
 
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 #include "common/utils/LOG/log.h"
 
 #include "types.h"
@@ -703,6 +703,11 @@ typedef enum {
   TM8=13,
   TM9_10=14
 } MIMO_mode_t;
+
+typedef enum {
+  NR_SISO=0,
+  NR_DUALSTREAM=1
+} MIMO_nrmode_t;
 
 
 typedef enum {
