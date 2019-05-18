@@ -252,7 +252,7 @@ case $key in
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=9
+    NB_PATTERN_FILES=10
     BUILD_OPTIONS="--phy_simulators"
     VM_MEMORY=8192
     RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
@@ -331,7 +331,7 @@ case $key in
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=9
+        NB_PATTERN_FILES=10
         BUILD_OPTIONS="--phy_simulators"
 	VM_MEMORY=8192
         RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"

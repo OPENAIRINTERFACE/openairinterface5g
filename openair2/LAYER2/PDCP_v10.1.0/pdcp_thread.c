@@ -45,7 +45,6 @@ extern int  oai_exit;
 extern char UE_flag;
 
 pthread_t       pdcp_thread;
-pthread_attr_t  pdcp_thread_attr;
 pthread_mutex_t pdcp_mutex;
 pthread_cond_t  pdcp_cond;
 int             pdcp_instance_cnt;
@@ -101,33 +100,12 @@ static void *pdcp_thread_main(void* param)
 int init_pdcp_thread(void)
 {
 
-  int    error_code;
-  struct sched_param p;
-
-  pthread_attr_init (&pdcp_thread_attr);
-  pthread_attr_setstacksize(&pdcp_thread_attr,OPENAIR_THREAD_STACK_SIZE);
-  //attr_dlsch_threads.priority = 1;
-
-  p.sched_priority = OPENAIR_THREAD_PRIORITY;
-  pthread_attr_setschedparam  (&pdcp_thread_attr, &p);
-  pthread_attr_setschedpolicy (&pdcp_thread_attr, SCHED_FIFO);
   pthread_mutex_init(&pdcp_mutex,NULL);
   pthread_cond_init(&pdcp_cond,NULL);
 
   pdcp_instance_cnt = -1;
   LOG_I(PDCP,"Allocating PDCP thread\n");
-  error_code = pthread_create(&pdcp_thread,
-                              &pdcp_thread_attr,
-                              pdcp_thread_main,
-                              (void*)NULL);
-
-  if (error_code!= 0) {
-    LOG_I(PDCP,"Could not allocate PDCP thread, error %d\n",error_code);
-    return(error_code);
-  } else {
-    LOG_I(PDCP,"Allocate PDCP thread successful\n");
-    pthread_setname_np( pdcp_thread, "PDCP" );
-  }
+  threadCreate(&pdcp_thread, pdcp_thread_main, (void*)NULL, "PDCP", -1, OAI_PRIORITY_RT);
 
   return(0);
 }

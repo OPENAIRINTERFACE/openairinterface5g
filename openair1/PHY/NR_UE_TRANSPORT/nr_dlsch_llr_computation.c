@@ -632,6 +632,7 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    int32_t **rxdataF_comp,
                    int16_t *dlsch_llr,
                    uint8_t symbol,
+				   uint32_t len,
 				   uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint8_t beamforming_mode)
@@ -639,7 +640,7 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*nb_rb*12)];
   uint32_t *llr32;
-  int i,len;
+  int i;
 
   llr32 = (uint32_t*)dlsch_llr;
   if (!llr32) {
@@ -647,10 +648,6 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-  if (symbol ==2)  //to update from config
-	  len = nb_rb*6;
-  else
-	  len = nb_rb*12;
   /*
   LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
              symbol,
@@ -677,6 +674,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int16_t *dlsch_llr,
                      int32_t **dl_ch_mag,
                      uint8_t symbol,
+					 uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      int16_t **llr32p,
@@ -696,7 +694,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
 
-  int i,len;
+  int i;
   unsigned char len_mod4=0;
 
 
@@ -719,11 +717,6 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 #elif defined(__arm__)
   ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
 #endif
-
-  if (symbol ==2)  //to update from config
- 	  len = nb_rb*6;
-   else
- 	  len = nb_rb*12;
 
   // update output pointer according to number of REs in this symbol (<<2 because 4 bits per RE)
   if (first_symbol_flag == 1)
@@ -798,6 +791,7 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t **dl_ch_mag,
                      int32_t **dl_ch_magb,
                      uint8_t symbol,
+					 uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint32_t llr_offset,
@@ -810,7 +804,7 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
   int16x8_t *ch_mag,*ch_magb,xmm1,xmm2;
 #endif
-  int i,len,len2;
+  int i,len2;
   unsigned char len_mod4;
   short *llr;
   int16_t *llr2;
@@ -828,17 +822,12 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   pllr_symbol += llr_offset;
 
 #if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*nb_rb*12)];
 #elif defined(__arm__)
-  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*nb_rb*12)];
 #endif
-
-    if (symbol ==2)  //to update from config
-  	  len = nb_rb*6;
-    else
-  	  len = nb_rb*12;
 
 //  printf("nr_dlsch_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
 
@@ -1131,6 +1120,7 @@ int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                         int **rho_i,
                         short *dlsch_llr,
                         unsigned char symbol,
+						uint32_t len,
                         unsigned char first_symbol_flag,
                         unsigned short nb_rb,
                         uint16_t pbch_pss_sss_adjust,
@@ -1141,8 +1131,6 @@ int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
   int16_t *rxF_i=(int16_t*)&rxdataF_comp_i[0][(symbol*nb_rb*12)];
   int16_t *rho=(int16_t*)&rho_i[0][(symbol*nb_rb*12)];
   int16_t *llr16;
-  int len;
-  //uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   if (first_symbol_flag == 1) {
     llr16 = (int16_t*)dlsch_llr;
@@ -1151,11 +1139,6 @@ int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
   }
 
   AssertFatal(llr16!=NULL,"nr_dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-
-  if (symbol ==2)  //to update from config
- 	  len = nb_rb*6;
-  else
- 	  len = nb_rb*12;
 
   // printf("nr_dlsch_qpsk_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
   //    printf("qpsk_qpsk: len %d, llr16 %p\n",len,llr16);
@@ -2972,6 +2955,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int32_t **rho_i,
                           int16_t *dlsch_llr,
                           uint8_t symbol,
+						  uint32_t len,
                           uint8_t first_symbol_flag,
                           uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
@@ -2984,8 +2968,6 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*nb_rb*12)];
   int16_t *rho      = (int16_t*)&rho_i[0][(symbol*nb_rb*12)];
   int16_t *llr16;
-  int len;
-  //uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   // first symbol has different structure due to more pilots
   if (first_symbol_flag == 1) {
@@ -2996,11 +2978,6 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
 
   AssertFatal(llr16!=NULL,"nr_dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
-
-  if (symbol ==2)  //to update from config
- 	  len = nb_rb*6;
-  else
- 	  len = nb_rb*12;
 
   // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
 
@@ -8514,6 +8491,7 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int32_t **rho_i,
                           int16_t *dlsch_llr,
                           uint8_t symbol,
+						  uint32_t len,
                           uint8_t first_symbol_flag,
                           uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
@@ -8521,15 +8499,13 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           uint32_t llr_offset)
 {
 
-  int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rxF_i    = (int16_t*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag   = (int16_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rho      = (int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
+  int16_t *rxF_i    = (int16_t*)&rxdataF_comp_i[0][(symbol*nb_rb*12)];
+  int16_t *ch_mag   = (int16_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
+  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*nb_rb*12)];
+  int16_t *rho      = (int16_t*)&rho_i[0][(symbol*nb_rb*12)];
   int16_t *llr16;
   int8_t  *pllr_symbol; // pointer where llrs should filled for this ofdm symbol
-  int len;
-  uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   //first symbol has different structure due to more pilots
   /*if (first_symbol_flag == 1) {
@@ -8542,19 +8518,6 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   AssertFatal(llr16!=NULL,"nr_dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
 
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_eNB!=1)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  } else {
-    // symbol has no pilots
-    len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
 
   pllr_symbol = (int8_t*)dlsch_llr;
   pllr_symbol += llr_offset;

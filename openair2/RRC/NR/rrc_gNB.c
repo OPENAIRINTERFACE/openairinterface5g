@@ -116,10 +116,9 @@ mui_t                               rrc_gNB_mui = 0;
 
 void openair_nr_rrc_on(const protocol_ctxt_t* const ctxt_pP){
   
-  int            CC_id;
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
     RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
     rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
@@ -141,19 +140,18 @@ void rrc_gNB_process_SgNBAdditionRequest(
 
 void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
      const protocol_ctxt_t  *const ctxt_pP,
-     rrc_gNB_ue_context_t   *const ue_context_pP
-     ){
-  
-  uint8_t size;
-  uint8_t buffer[100];
-  int     CC_id = ue_context_pP->ue_context.primaryCC_id;
-  OCTET_STRING_t                                      *secondaryCellGroup;
+     rrc_gNB_ue_context_t   *const ue_context_pP)
+{
+  //uint8_t size;
+  //uint8_t buffer[100];
+  //int     CC_id = ue_context_pP->ue_context.primaryCC_id;
+  //OCTET_STRING_t                                      *secondaryCellGroup;
   NR_CellGroupConfig_t                                *cellGroupconfig;
   struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
   struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
   struct NR_SpCellConfig                              *spCellConfig;
-  struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
+  //struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
 
   cellGroupconfig                           = CALLOC(1,sizeof(NR_CellGroupConfig_t));
   cellGroupconfig->rlc_BearerToAddModList   = CALLOC(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));

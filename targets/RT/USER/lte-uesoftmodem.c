@@ -431,6 +431,7 @@ static void *scope_thread(void *arg) {
 		   PHY_vars_UE_g[0][0],
 		   0,
 		   0,7);
+       usleep(10000);
 
   //  printf("%s",stats_buffer);
     }
@@ -1004,7 +1005,7 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
   
   
   
-#ifndef DEADLINE_SCHEDULER
+#if 0 // #ifndef DEADLINE_SCHEDULER
   
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
