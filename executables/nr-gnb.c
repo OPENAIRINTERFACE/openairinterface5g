@@ -321,21 +321,11 @@ static void *gNB_L1_thread( void *param ) {
   //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
   char thread_name[100];
 
-  // This tells ru_thread that L1_thread is not ready
-  pthread_mutex_lock(&L1_proc->mutex);
-  L1_proc->instance_cnt = -2;
-  pthread_mutex_unlock(&L1_proc->mutex);
-
   // set default return value
   gNB_thread_rxtx_status = 0;
 
   sprintf(thread_name,"gNB_L1_thread");
 
-
-  // This tells ru_thread that L1_thread is ready
-  pthread_mutex_lock(&L1_proc->mutex);
-  L1_proc->instance_cnt++;
-  pthread_mutex_unlock(&L1_proc->mutex);
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );

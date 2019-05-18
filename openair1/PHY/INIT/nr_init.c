@@ -437,9 +437,9 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,NUMBER_OF_NR_DLSCH_MAX);
 
     for (j=0; j<2; j++) {
       gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,0,fp,cfg);
