@@ -163,7 +163,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
   TX_req->segments[0].segment_length = 8;
-  TX_req->segments[0].segment_data   = cc[CC_id].RAR_pdu.payload[0];
+  TX_req->segments[0].segment_data   = &cc[CC_id].RAR_pdu.payload[0];
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
@@ -296,7 +296,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
-  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload;
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
 
   TX_req->segments[0].segment_length = dlsch_pdu_rel15->transport_block_size+2;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;

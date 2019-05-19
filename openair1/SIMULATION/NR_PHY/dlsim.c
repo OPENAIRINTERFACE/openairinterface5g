@@ -177,7 +177,6 @@ int main(int argc, char **argv)
   int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
-  gNB_L1_rxtx_proc_t gNB_proc;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
@@ -554,9 +553,7 @@ int main(int argc, char **argv)
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
 
-    gNB_proc.frame_tx = frame;
-    gNB_proc.slot_tx  = slot;
-    phy_procedures_gNB_TX(gNB,&gNB_proc,0);
+    phy_procedures_gNB_TX(gNB,frame,slot,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
 

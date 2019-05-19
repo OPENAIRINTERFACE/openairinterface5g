@@ -285,9 +285,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
   LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
-  int i, UE_id;
 
-  for (i = 0; i < 15; i++) {
+  for (int i = 0; i < 15; i++) {
     free_and_zero(common_vars->txdataF[i]);
     /* rxdataF[i] is not allocated -> don't free */
   }
