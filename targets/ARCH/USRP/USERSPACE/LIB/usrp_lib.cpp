@@ -465,20 +465,8 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       }
     }
 
-    int packet_size = s->tx_stream->get_max_num_samps(); 
-    int residual = nsamps % packet_size;
-    int num_packets = (nsamps/packet_size) + ((residual>0) ? 1 : 0);
-    int first_packet_length = (num_packets>1) ? packet_size : residual;
-    int packet_s;
-
-/*    s->tx_md.has_time_spec = flags;
-
-    if(flags>0)
-      s->tx_md.has_time_spec = true;
-    else
-      s->tx_md.has_time_spec = false;*/
-
     boolean_t first_packet_state=false,last_packet_state=false,first_packet_has_timespec=false;
+
     if (flags == 2) { // start of burst
       //      s->tx_md.start_of_burst = true;
       //      s->tx_md.end_of_burst = false;
@@ -509,49 +497,10 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
      first_packet_state=false;
      last_packet_state=true;
     }
-    /*
-    int offset=0;
-    for (int packet_ind=0;packet_ind<num_packets;packet_ind++) {
-
-      s->tx_md.has_time_spec  = first_packet_has_timespec;
-      s->tx_md.start_of_burst = false;
-      s->tx_md.end_of_burst   = false;
-      s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp+offset, s->sample_rate);
-
-      if (packet_ind == 0) {
-	  packet_s                                  = first_packet_length;
-	  s->tx_md.start_of_burst                   = first_packet_state;
-	  if (num_packets==1) s->tx_md.end_of_burst = last_packet_state;
-          else                s->tx_md.end_of_burst = false;
-      }
-      else if (packet_ind==num_packets-1) {
-	  packet_s = residual;
-	  s->tx_md.end_of_burst = last_packet_state;
-      }
-      else packet_s = packet_size;
-
-      if (cc>1) {
-        std::vector<void *> buff_ptrs;
-
-        for (int i=0; i<cc; i++)
-          buff_ptrs.push_back(&(((int16_t*)buff_tx[i])[offset]));
-
-        ret = (int)s->tx_stream->send(buff_ptrs, packet_s, s->tx_md,1e-3);
-      } else
-        ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[offset]), packet_s, s->tx_md,1e-3);
-
-      if (ret != packet_s)  {
-	 LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
-	 break;
-      }
-      offset += packet_s;
-    }
-    ret=offset;
-    */
-      s->tx_md.has_time_spec  = first_packet_has_timespec;
-      s->tx_md.start_of_burst = first_packet_state; 
-      s->tx_md.end_of_burst   = last_packet_state;
-      s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+    s->tx_md.has_time_spec  = first_packet_has_timespec;
+    s->tx_md.start_of_burst = first_packet_state; 
+    s->tx_md.end_of_burst   = last_packet_state;
+    s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
     if (cc>1) {
        std::vector<void *> buff_ptrs;
@@ -559,9 +508,8 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
        for (int i=0; i<cc; i++)
          buff_ptrs.push_back(&(((int16_t*)buff_tx[i])[0]));
 
-       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
-     } else
-       ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md,1e-3);
+       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
+    } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
 
      if (ret != nsamps) LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
  
