@@ -1095,7 +1095,7 @@ extern "C" {
         device->type = USRP_B200_DEV;
         usrp_master_clock = 30.72e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
+        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
       }
 
       if (device_adds[0].get("type") == "n3xx") {
