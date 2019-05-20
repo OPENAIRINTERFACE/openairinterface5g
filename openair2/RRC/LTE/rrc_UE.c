@@ -74,6 +74,7 @@
 #include "pdcp.h"
 #include "plmn_data.h"
 #include "msc.h"
+#include <common/utils/system.h>
 
 #include "intertask_interface.h"
 
@@ -4953,7 +4954,6 @@ rrc_ue_process_sidelink_radioResourceConfig(
           } else {
             //SL_DiscConfig_r12__ext2__discTxResourcesPS_r13__setup_PR_NOTHING, /* No components present */
           }
-
           break;
 
         case LTE_SL_DiscConfig_r12__ext2__discTxResourcesPS_r13_PR_release:
@@ -4972,58 +4972,37 @@ rrc_ue_process_sidelink_radioResourceConfig(
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //-----------------------------------------------------------
-void
-rrc_control_socket_init() {
+void rrc_control_socket_init() {
   struct sockaddr_in rrc_ctrl_socket_addr;
-  pthread_attr_t     attr;
-  struct sched_param sched_param;
   int optval; // flag value for setsockopt
   //int n; // message byte size
+
   // create the control socket
   ctrl_sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
-
   if (ctrl_sock_fd == -1) {
-    LOG_E(RRC,"[rrc_control_socket_init] :Error opening socket %d (%d:%s)\n",ctrl_sock_fd,errno, strerror(errno));
+    LOG_E(RRC,"[rrc_control_socket_init] :Error opening socket %d (%d:%s)\n", ctrl_sock_fd, errno, strerror(errno));
     exit(EXIT_FAILURE);
   }
 
   //   if (ctrl_sock_fd < 0)
   //      error("ERROR: Failed on opening socket");
   optval = 1;
-  setsockopt(ctrl_sock_fd, SOL_SOCKET, SO_REUSEADDR,
-             (const void *)&optval, sizeof(int));
-  //build the server's  address
+  setsockopt(ctrl_sock_fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval, sizeof(int));
+  //build the server's address
   bzero((char *) &rrc_ctrl_socket_addr, sizeof(rrc_ctrl_socket_addr));
   rrc_ctrl_socket_addr.sin_family = AF_INET;
   rrc_ctrl_socket_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   rrc_ctrl_socket_addr.sin_port = htons(CONTROL_SOCKET_PORT_NO);
 
   // associate the parent socket with a port
-  if (bind(ctrl_sock_fd, (struct sockaddr *) &rrc_ctrl_socket_addr,
-           sizeof(rrc_ctrl_socket_addr)) < 0) {
+  if (bind(ctrl_sock_fd, (struct sockaddr *) &rrc_ctrl_socket_addr, sizeof(rrc_ctrl_socket_addr)) < 0) {
     LOG_E(RRC,"[rrc_control_socket_init] ERROR: Failed on binding the socket\n");
     exit(1);
   }
 
-  //create thread to listen to incoming packets
-  if (pthread_attr_init(&attr) != 0) {
-    LOG_E(RRC, "[rrc_control_socket_init]Failed to initialize pthread attribute for ProSe -> RRC communication (%d:%s)\n",
-          errno, strerror(errno));
-    exit(EXIT_FAILURE);
-  }
+   pthread_t rrc_control_socket_thread;
 
-  sched_param.sched_priority = 10;
-  pthread_attr_setschedpolicy(&attr, SCHED_RR);
-  pthread_attr_setschedparam(&attr, &sched_param);
-  pthread_t rrc_control_socket_thread;
-
-  if (pthread_create(&rrc_control_socket_thread, &attr, rrc_control_socket_thread_fct, NULL) != 0) {
-    LOG_E(RRC, "[rrc_control_socket_init]Failed to create new thread for RRC/ProSeApp communication (%d:%s)\n",
-          errno, strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  pthread_setname_np( rrc_control_socket_thread, "RRC Control Socket" );
+   threadCreate(&rrc_control_socket_thread, rrc_control_socket_thread_fct, NULL, "RRC/ProSeApp", -1, OAI_PRIORITY_RT);
 }
 
 //--------------------------------------------------------

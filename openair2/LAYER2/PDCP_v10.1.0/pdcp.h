@@ -83,7 +83,6 @@ typedef struct {
 uint64_t get_pdcp_optmask(void);
 
 extern pthread_t       pdcp_thread;
-extern pthread_attr_t  pdcp_thread_attr;
 extern pthread_mutex_t pdcp_mutex;
 extern pthread_cond_t  pdcp_cond;
 extern int             pdcp_instance_cnt;

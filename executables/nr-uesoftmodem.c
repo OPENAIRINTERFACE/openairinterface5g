@@ -64,7 +64,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 #include "intertask_interface.h"
-#include "create_tasks.h"
 
 #include "PHY/INIT/phy_init.h"
 #include "system.h"
@@ -98,11 +97,11 @@ extern FD_stats_form *create_form_stats_form( void );
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
-FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
+FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-//unsigned char                   scope_enb_num_ue = 2;
+unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 #include <executables/nr-uesoftmodem.h>
@@ -311,15 +310,10 @@ void reset_stats(FL_OBJECT *button, long arg) {
 }
 
 static void *scope_thread(void *arg) {
-  struct sched_param sched_param;
-  sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
-  sched_setscheduler(0, SCHED_FIFO,&sched_param);
-  printf("Scope thread has priority %d\n",sched_param.sched_priority);
-  //wait the modem is runnign
   sleep(5);
 
   while (!oai_exit) {
-    phy_scope_UE(form_ue[0],
+    phy_scope_nrUE(form_nrue[0],
                  PHY_vars_UE_g[0][0],
                  0,0,1);
     usleep(100*1000);
@@ -331,24 +325,16 @@ static void *scope_thread(void *arg) {
 
 void init_scope(void) {
 #ifdef XFORMS
-  int ret;
   int fl_argc=1;
 
   if (do_forms==1) {
     char *name="5G-UE-scope";
     fl_initialize (&fl_argc, &name, NULL, 0, 0);
     int UE_id = 0;
-    form_ue[UE_id] = create_lte_phy_scope_ue();
+    form_nrue[UE_id] = create_phy_scope_nrue();
     sprintf (title, "NR DL SCOPE UE");
-    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    fl_set_button(form_ue[UE_id]->button_0,0);
-    fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
-
-    printf("Scope thread created, ret=%d\n",ret);
+    fl_show_form (form_nrue[UE_id]->phy_scope_nrue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
   }
 
 #endif
@@ -541,7 +527,6 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->nb_antennas_tx      = 1;
     frame_parms[CC_id]->nb_antennas_rx      = 1;
     //frame_parms[CC_id]->nushift             = 0;
-
     // NR: Init to legacy LTE 20Mhz params
     frame_parms[CC_id]->numerology_index  = 0;
     frame_parms[CC_id]->ttis_per_subframe = 1;
@@ -685,7 +670,7 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
   tpool_t pool;
   Tpool = &pool;
-  char params[]="-1,-1,-1,-1";
+  char params[]="-1,-1"; 
   initTpool(params, Tpool, false);
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
@@ -712,9 +697,7 @@ int main( int argc, char **argv ) {
     frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
     frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
     LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
-
     get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
- 
   }
 
   NB_UE_INST=1;
@@ -766,6 +749,7 @@ int main( int argc, char **argv ) {
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
   init_scope();
   number_of_cards = 1;

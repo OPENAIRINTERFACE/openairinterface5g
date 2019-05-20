@@ -42,7 +42,6 @@
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
-#include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
@@ -356,9 +355,7 @@ extern int oai_exit;
 void *td_thread(void *param) {
   PHY_VARS_eNB *eNB = ((td_params *)param)->eNB;
   L1_proc_t *proc  = &eNB->proc;
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  thread_top_init("td_thread",1,200000,250000,500000);
+
   pthread_setname_np( pthread_self(),"td processing");
   LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
   //wait_sync("td_thread");

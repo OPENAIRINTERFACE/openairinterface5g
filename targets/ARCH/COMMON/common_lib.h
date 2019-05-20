@@ -58,11 +58,6 @@ typedef volatile int64_t openair0_vtimestamp;
 /*!\brief structrue holds the parameters to configure USRP devices*/
 typedef struct openair0_device_t openair0_device;
 
-
-
-
-
-
 //#define USRP_GAIN_OFFSET (56.0)  // 86 calibrated for USRP B210 @ 2.6 GHz to get equivalent RS EPRE in OAI to SMBV100 output
 
 typedef enum {
@@ -83,9 +78,6 @@ typedef enum {
  */
 /*!\brief RF device types
  */
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   MIN_RF_DEV_TYPE = 0,
   /*!\brief device is ExpressMIMO */
@@ -109,7 +101,6 @@ typedef enum {
   MAX_RF_DEV_TYPE
 
 } dev_type_t;
-#endif
 
 /*!\brief transport protocol types
  */
@@ -209,7 +200,7 @@ typedef struct {
   //! clock source
   clock_source_t clock_source;
   //! Manual SDR IP address
-//#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) 
+  //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];
@@ -235,7 +226,7 @@ typedef struct {
   unsigned int   sf_read_delay;     // read delay in replay mode
   unsigned int   sf_write_delay;    // write delay in replay mode
   unsigned int   eth_mtu;           // ethernet MTU
-#endif  
+#endif
 
   //! number of samples per tti
   unsigned int  samples_per_tti;
@@ -408,6 +399,32 @@ typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *
 /* type of transport init function, implemented in shared lib */
 typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
 
+#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
+#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
+#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
+#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
+
+#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
+#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
+#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
+#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
+
+#define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
+
+#define sample_t uint32_t // 2*16 bits complex number
+
+typedef struct {
+  uint64_t magic;          // Magic value (see defines above)
+  uint32_t size;           // Number of samples per antenna to follow this header
+  uint32_t nbAnt;          // Total number of antennas following this header
+  // Samples per antenna follow this header,
+  // i.e. nbAnt = 2 => this header+samples_antenna_0+samples_antenna_1
+  // data following this header in bytes is nbAnt*size*sizeof(sample_t)
+  uint64_t timestamp;      // Timestamp value of first sample
+  uint32_t option_value;   // Option value
+  uint32_t option_flag;    // Option flag
+} samplesBlockHeader_t;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -432,6 +449,7 @@ openair0_timestamp get_usrp_time(openair0_device *device);
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
 
+#define gettid() syscall(__NR_gettid)
 /*@}*/
 
 #ifdef __cplusplus

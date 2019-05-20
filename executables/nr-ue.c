@@ -43,6 +43,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -123,7 +124,6 @@ extern double cpuf;
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
-#define FIFO_PRIORITY   40
 
 typedef enum {
   pss=0,
@@ -156,7 +156,7 @@ PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
  */
 
 typedef struct syncData_s {
-  UE_nr_rxtx_proc_t *proc;
+  UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE *UE;
 } syncData_t;
 
@@ -239,7 +239,7 @@ static void UE_synch(void *arg) {
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
-      if (nr_initial_sync( syncD->proc, UE, UE->mode ) == 0) {
+      if (nr_initial_sync( &syncD->proc, UE, UE->mode ) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
@@ -375,7 +375,9 @@ void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
+    uint64_t a=rdtsc();
     phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //            printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
   }
@@ -530,10 +532,12 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
     //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
     return 1;
   }
+
   return 0;
 }
 
 void *UE_thread(void *arg) {
+  //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   //  int tx_enabled = 0;
   openair0_timestamp timestamp;
@@ -547,40 +551,45 @@ void *UE_thread(void *arg) {
   initNotifiedFIFO(&nf);
   int nbSlotProcessing=0;
   int thread_idx=0;
-  notifiedFIFO_elt_t *processingMsg[RX_NB_TH];
+  notifiedFIFO_t freeBlocks;
+  initNotifiedFIFO_nothreadSafe(&freeBlocks);
 
-  for (int i=0; i<RX_NB_TH; i++) {
-    processingMsg[i]= newNotifiedFIFO_elt(sizeof(processingData_t), 0,&nf,UE_processing);
-    processingData_t *tmp=(processingData_t *)NotifiedFifoData(processingMsg[i]);
-    tmp->UE=UE;
-  }
+  for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
+    pushNotifiedFIFO_nothreadSafe(&freeBlocks,
+                                  newNotifiedFIFO_elt(sizeof(processingData_t), 0,&nf,UE_processing));
 
   bool syncRunning=false;
-  notifiedFIFO_elt_t *syncMsg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
-  syncData_t *syncD=(syncData_t *)NotifiedFifoData(syncMsg);
-  syncD->UE=UE;
-  syncD->proc=&((processingData_t *)NotifiedFifoData(processingMsg[0]))->proc;
   const int nb_slot_frame = 10*UE->frame_parms.slots_per_subframe;
-  int absolute_slot, decoded_frame_rx=INT_MAX, trashed_frames=0;
+  int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   while (!oai_exit) {
-    if (!syncD->UE->is_synchronized) {
-      if (syncRunning) {
-        notifiedFIFO_elt_t *res=tryPullTpool(&nf, Tpool);
+    if (syncRunning) {
+      notifiedFIFO_elt_t *res=tryPullTpool(&nf, Tpool);
 
-        if (res) {
-          syncRunning=false;
-        } else {
-          trashFrame(UE, &timestamp);
-          trashed_frames++;
-        }
+      if (res) {
+        syncRunning=false;
+        syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
+        // shift the frame index with all the frames we trashed meanwhile we perform the synch search
+        decoded_frame_rx=(tmp->proc.decoded_frame_rx+trashed_frames) % MAX_FRAME_NUMBER;
+        delNotifiedFIFO_elt(res);
       } else {
-        readFrame(UE, &timestamp);
-        pushTpool(Tpool, syncMsg);
-        trashed_frames=0;
-        syncRunning=true;
+        trashFrame(UE, &timestamp);
+        trashed_frames++;
+        continue;
       }
+    }
 
+    AssertFatal( !syncRunning, "At this point synchronisation can't be running\n");
+
+    if (!UE->is_synchronized) {
+      readFrame(UE, &timestamp);
+      notifiedFIFO_elt_t *Msg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
+      syncData_t *syncMsg=(syncData_t *)NotifiedFifoData(Msg);
+      syncMsg->UE=UE;
+      memset(&syncMsg->proc, 0, sizeof(syncMsg->proc));
+      pushTpool(Tpool, Msg);
+      trashed_frames=0;
+      syncRunning=true;
       continue;
     }
 
@@ -598,29 +607,32 @@ void *UE_thread(void *arg) {
                                               UE->frame_parms.nb_antennas_rx),"");
       // we have the decoded frame index in the return of the synch process
       // and we shifted above to the first slot of next frame
-      // the synch thread proc context is hard linked to regular processing thread context, thread id  = 0
-      UE_nr_rxtx_proc_t *proc=&(((processingData_t *)NotifiedFifoData(processingMsg[0]))->proc);
-      // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-      proc->decoded_frame_rx=(proc->decoded_frame_rx + trashed_frames) % MAX_FRAME_NUMBER;
-      decoded_frame_rx=proc->decoded_frame_rx;
-      // we do ++ first in the regular processing, so it will be 0;
+      decoded_frame_rx++;
+      // we do ++ first in the regular processing, so it will be beging of frame;
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
 
     absolute_slot++;
+    // whatever means thread_idx
+    // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
+    // Slot 3 will overlap if RX_NB_TH is 2
+    // this is general failure in UE !!!
     thread_idx = absolute_slot % RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
-    UE_nr_rxtx_proc_t *proc=&(((processingData_t *)NotifiedFifoData(processingMsg[thread_idx]))->proc);
+    notifiedFIFO_elt_t *msgToPush;
+    AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
+    processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
+    curMsg->UE=UE;
     // update thread index for received subframe
-    proc->nr_tti_rx= slot_nr;
-    UE->current_thread_id[slot_nr] = thread_idx;
-    proc->subframe_rx=table_sf_slot[slot_nr];
-    proc->nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
-    proc->subframe_tx=proc->nr_tti_rx;
-    proc->frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
-    proc->frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
-    proc->decoded_frame_rx=-1;
+    curMsg->proc.nr_tti_rx= slot_nr;
+    curMsg->UE->current_thread_id[slot_nr] = thread_idx;
+    curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
+    curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
+    curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
+    curMsg->proc.frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
+    curMsg->proc.decoded_frame_rx=-1;
     LOG_D(PHY,"Process slot %d thread Idx %d \n", slot_nr, thread_idx);
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -629,7 +641,7 @@ void *UE_thread(void *arg) {
                slot_nr*UE->frame_parms.samples_per_slot];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      txp[i] = (void *)&UE->common_vars.txdata[i][proc->nr_tti_tx*UE->frame_parms.samples_per_slot];
+      txp[i] = (void *)&UE->common_vars.txdata[i][curMsg->proc.nr_tti_tx*UE->frame_parms.samples_per_slot];
 
     int readBlockSize, writeBlockSize;
 
@@ -678,41 +690,47 @@ void *UE_thread(void *arg) {
         LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
     }
 
-    proc->timestamp_tx = timestamp+
-                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
-                         UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
+    curMsg->proc.timestamp_tx = timestamp+
+                                (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
+                                UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
     notifiedFIFO_elt_t *res;
+
+    while (nbSlotProcessing >= RX_NB_TH) {
+      if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
+        nbSlotProcessing--;
+        processingData_t *tmp=(processingData_t *)res->msgData;
+
+        if (tmp->proc.decoded_frame_rx != -1)
+          decoded_frame_rx=tmp->proc.decoded_frame_rx;
+
+        pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
+      }
+
+      usleep(200);
+    }
+
+    if (  decoded_frame_rx != curMsg->proc.frame_rx &&
+          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx )
+      LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
+            decoded_frame_rx, curMsg->proc.frame_rx  );
+
+    nbSlotProcessing++;
+    msgToPush->key=slot_nr;
+    pushTpool(Tpool, msgToPush);
 
     if (getenv("RFSIMULATOR")) {
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done
-      while ((res=tryPullTpool(&nf, Tpool)) == NULL)
-        usleep(200);
-
-      nbSlotProcessing--;
-      processingData_t *tmp=(processingData_t *)res->msgData;
-
-      if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=tmp->proc.decoded_frame_rx;
-    }
-
-    while (nbSlotProcessing >= RX_NB_TH && (res=tryPullTpool(&nf, Tpool)) != NULL ) {
+      res=pullTpool(&nf, Tpool);
       nbSlotProcessing--;
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
-      usleep(200);
+      pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
-
-    if (  decoded_frame_rx != proc->frame_rx &&
-          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != proc->frame_rx )
-      LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
-            decoded_frame_rx,  proc->frame_rx);
-
-    pushTpool(Tpool, processingMsg[thread_idx]);
   } // while !oai_exit
 
   return NULL;
@@ -722,14 +740,6 @@ void init_UE(int nb_inst) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   pthread_t threads[nb_inst];
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&attr, SCHED_RR);
-  struct sched_param sched;
-  sched.sched_priority = sched_get_priority_max(SCHED_RR)-1;
-  pthread_attr_setschedparam(&attr, &sched);
 
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
@@ -738,25 +748,19 @@ void init_UE(int nb_inst) {
     nr_l2_init_ue();
     mac_inst = get_mac_inst(inst);
     mac_inst->if_module = UE->if_inst;
-
     // Initial bandwidth part configuration -- full carrier bandwidth
     mac_inst->initial_bwp_dl.bwp_id = 0;
     mac_inst->initial_bwp_dl.location = 0;
     mac_inst->initial_bwp_dl.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_dl.N_RB = UE->frame_parms.N_RB_DL;
     mac_inst->initial_bwp_dl.cyclic_prefix = UE->frame_parms.Ncp;
-    
     mac_inst->initial_bwp_ul.bwp_id = 0;
     mac_inst->initial_bwp_ul.location = 0;
     mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
-        
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
-    AssertFatal(0 == pthread_create(&threads[inst],
-                                    &attr,
-                                    UE_thread,
-                                    (void *)UE), "");
+    threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
   }
 
   printf("UE threads created by %ld\n", gettid());

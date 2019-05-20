@@ -53,7 +53,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
 
   //  printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
   //Else, initialize and add node to the end of the linked list.
-  t_nrPolar_params *newPolarInitNode = malloc(sizeof(t_nrPolar_params));
+  t_nrPolar_params *newPolarInitNode = calloc(sizeof(t_nrPolar_params),1);
 
   if (newPolarInitNode != NULL) {
     newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);

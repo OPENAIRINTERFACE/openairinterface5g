@@ -497,8 +497,8 @@ typedef struct RRU_config_s {
 
 #include <pthread.h>
 
-#include "targets/ARCH/COMMON/common_lib.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "common_lib.h"
+#include "openairinterface5g_limits.h"
 
 
 #define NUMBER_OF_SUBBANDS_MAX 13

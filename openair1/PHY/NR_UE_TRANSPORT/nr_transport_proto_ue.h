@@ -1803,21 +1803,6 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 			uint16_t n_RB_DLBWP,
 			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
 
-void nr_dlsch_dual_stream_correlation_core(int **dl_ch_estimates_ext,
-                                           int **dl_ch_estimates_ext_i,
-										   int **dl_ch_rho_ext,
-										   unsigned char n_tx,
-										   unsigned char n_rx,
-										   unsigned char output_shift,
-										   int length,
-										   int start_point);
-
-void nr_dlsch_layer_demapping(int16_t **llr_cw,
-                         	  uint8_t Nl,
-							  uint8_t mod_order,
-							  uint16_t length,
-							  int16_t **llr_layers);
-
 
 /**@}*/
 #endif

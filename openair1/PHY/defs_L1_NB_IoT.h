@@ -139,7 +139,7 @@ static inline void* malloc16_clear( size_t size )
 #include <pthread.h>
 
 #include "targets/ARCH/COMMON/common_lib.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 
 #define NUM_DCI_MAX_NB_IoT 32
 

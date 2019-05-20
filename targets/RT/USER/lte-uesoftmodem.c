@@ -369,15 +369,16 @@ static void *scope_thread(void *arg) {
 
   while (!oai_exit) {
     //      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
-    //fl_set_object_label(form_stats->stats_text, stats_buffer);
-    fl_clear_browser(form_stats->stats_text);
-    fl_add_browser_line(form_stats->stats_text, stats_buffer);
-    phy_scope_UE(form_ue[0],
-                 PHY_vars_UE_g[0][0],
-                 0,
-                 0,7);
-    //  printf("%s",stats_buffer);
-  }
+      //fl_set_object_label(form_stats->stats_text, stats_buffer);
+      fl_clear_browser(form_stats->stats_text);
+      fl_add_browser_line(form_stats->stats_text, stats_buffer);
+
+      phy_scope_UE(form_ue[0],
+		           PHY_vars_UE_g[0][0],
+				   0,
+				   0,
+				   7);
+      usleep(10000);
 
 # ifdef ENABLE_XFORMS_WRITE_STATS
 
@@ -799,7 +800,10 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-#ifndef DEADLINE_SCHEDULER
+  
+  
+#if 0 // #ifndef DEADLINE_SCHEDULER
+  
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   cpu_set_t cpuset;

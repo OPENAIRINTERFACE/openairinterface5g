@@ -38,6 +38,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "fapi_l1.h"
 #include "common/utils/LOG/log.h"
+#include <common/utils/system.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "assertions.h"
@@ -1351,12 +1352,11 @@ extern void    *td_thread (void *);
 void init_td_thread(PHY_VARS_eNB *eNB) {
   L1_proc_t *proc = &eNB->proc;
   proc->tdp.eNB = eNB;
-  proc->instance_cnt_td         = -1;
-  pthread_attr_init( &proc->attr_td);
-  pthread_mutex_init( &proc->mutex_td, NULL);
-  pthread_cond_init( &proc->cond_td, NULL);
-  pthread_create(&proc->pthread_td, &proc->attr_td, td_thread, (void *)&proc->tdp);
+  proc->instance_cnt_td = -1;
+  
+  threadCreate(&proc->pthread_td, td_thread, (void*)&proc->tdp, "TD", -1, OAI_PRIORITY_RT);
 }
+
 void kill_td_thread(PHY_VARS_eNB *eNB) {
   L1_proc_t *proc = &eNB->proc;
   proc->instance_cnt_td         = 0;
@@ -1368,20 +1368,23 @@ void kill_td_thread(PHY_VARS_eNB *eNB) {
 
 extern void    *te_thread (void *);
 
-void init_te_thread(PHY_VARS_eNB *eNB) {
+void init_te_thread(PHY_VARS_eNB *eNB)
+{
   L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ; i++) {
     proc->tep[i].eNB = eNB;
-    proc->tep[i].instance_cnt_te         = -1;
-    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
-    pthread_cond_init( &proc->tep[i].cond_te, NULL);
-    pthread_attr_init( &proc->tep[i].attr_te);
+    proc->tep[i].instance_cnt_te = -1;
+      
     LOG_I(PHY,"Creating te_thread %d\n",i);
-    pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void *)&proc->tep[i]);
+    char txt[128];
+    sprintf(txt,"TE_%d", i); 
+    threadCreate(&proc->tep[i].pthread_te, te_thread, (void*)&proc->tep[i], txt, -1, OAI_PRIORITY_RT);
   }
 }
-void kill_te_thread(PHY_VARS_eNB *eNB) {
+
+void kill_te_thread(PHY_VARS_eNB *eNB)
+{
   L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ; i++) {
@@ -1393,7 +1396,11 @@ void kill_te_thread(PHY_VARS_eNB *eNB) {
   }
 }
 
-void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
+void fill_rx_indication(PHY_VARS_eNB *eNB,
+		                int UE_id,
+						int frame,
+						int subframe)
+{
   nfapi_rx_indication_pdu_t *pdu;
   int             timing_advance_update;
   int             sync_pos;
