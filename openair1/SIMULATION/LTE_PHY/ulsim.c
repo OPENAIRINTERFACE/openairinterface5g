@@ -108,8 +108,8 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 int nfapi_mode = 0;
 
-extern void fep_full(RU_t *ru);
-extern void ru_fep_full_2thread(RU_t *ru);
+extern void fep_full(RU_t *ru,int);
+extern void ru_fep_full_2thread(RU_t *ru,int);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
 
@@ -1283,7 +1283,7 @@ int main(int argc, char **argv) {
 	  start_meas(&eNB->phy_proc_rx);
           ru->feprx = (parallel_flag == 1) ? ru_fep_full_2thread        : fep_full;
           eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-          ru->feprx(ru);
+          ru->feprx(ru,subframe);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
 	  stop_meas(&eNB->phy_proc_rx);
 	  
