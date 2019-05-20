@@ -297,27 +297,27 @@ int connect_rau(RU_t *ru) {
 /* Southbound Fronthaul functions, RCC/RAU                   */
 
 // southbound IF5 fronthaul for 16-bit OAI format
-static inline void fh_if5_south_out(RU_t *ru) {
+static inline void fh_if5_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_RRH_GW_DL);
+  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
 }
 
 // southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru) {
+static inline void fh_if5_mobipass_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_MOBIPASS);
+  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_MOBIPASS);
 }
 
 // southbound IF4p5 fronthaul
-static inline void fh_if4p5_south_out(RU_t *ru) {
+static inline void fh_if4p5_south_out(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
   if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL)
-    send_IF4p5(ru,ru->proc.frame_tx, ru->proc.tti_tx, IF4p5_PDLFFT);
+    send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
@@ -707,16 +707,16 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru) {
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx];
   unsigned int txs;
   int i;
-  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->tti_tx),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_slot], fp->samples_per_slot * 4));
-  nr_subframe_t SF_type     = nr_slot_select(cfg,proc->tti_tx%fp->slots_per_frame);
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
+  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -742,23 +742,23 @@ void tx_rf(RU_t *ru) {
           flags = 4; // start of burst and end of burst (only one DL SF between two UL)
           sf_extension = ru->N_TA_offset<<1;
         } */
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
 
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_slot)-sf_extension];
+      txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                      timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
                                       txp,
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->tti_tx);
+          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
   }
@@ -1438,7 +1438,7 @@ static void *ru_thread( void *param ) {
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
 
     // do RX front-end processing (frequency-shift, dft) if needed
-    if (ru->feprx) ru->feprx(ru);
+    if (ru->feprx) ru->feprx(ru,proc->tti_rx);
 
     // At this point, all information for subframe has been received on FH interface
 
@@ -1588,8 +1588,8 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
-extern void fep_full(RU_t *ru);
-extern void ru_fep_full_2thread(RU_t *ru);
+extern void fep_full(RU_t *ru,int slot);
+extern void ru_fep_full_2thread(RU_t *ru,int slot);
 extern void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 extern void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
 extern void feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
