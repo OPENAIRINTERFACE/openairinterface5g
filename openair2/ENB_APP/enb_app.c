@@ -55,6 +55,7 @@
 extern unsigned char NB_eNB_INST;
 #endif
 
+#include <nr-softmodem.h>
 extern RAN_CONTEXT_t RC;
 
 #if defined(ENABLE_ITTI)
@@ -63,8 +64,6 @@ extern RAN_CONTEXT_t RC;
 # if defined(ENABLE_USE_MME)
 #   define ENB_REGISTER_RETRY_DELAY 10
 # endif
-
-#include "targets/RT/USER/lte-softmodem.h"
 
 /*------------------------------------------------------------------------------*/
 

@@ -40,16 +40,9 @@ extern int number_of_cards;
 
 extern short conjugate[8],conjugate2[8];
 
-#ifndef OCP_FRAMEWORK
-//extern PHY_VARS_eNB ***PHY_vars_eNB_g;
-extern RAN_CONTEXT_t RC;
-extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
-#else
-#define MAX_UE 10
-#define MAX_eNB 20
 
-extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
-#endif
+
+extern RAN_CONTEXT_t RC;
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];

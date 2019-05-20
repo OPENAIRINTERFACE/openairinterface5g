@@ -76,6 +76,7 @@
 #include "pdcp.h"
 #include "plmn_data.h"
 #include "msc.h"
+#include <common/utils/system.h>
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -5476,8 +5477,6 @@ rrc_ue_process_sidelink_radioResourceConfig(
 void rrc_control_socket_init(){
 
    struct sockaddr_in rrc_ctrl_socket_addr;
-   pthread_attr_t     attr;
-   struct sched_param sched_param;
    int optval; // flag value for setsockopt
    //int n; // message byte size
 
@@ -5505,27 +5504,10 @@ void rrc_control_socket_init(){
       LOG_E(RRC,"[rrc_control_socket_init] ERROR: Failed on binding the socket\n");
       exit(1);
    }
-   //create thread to listen to incoming packets
-   if (pthread_attr_init(&attr) != 0) {
-      LOG_E(RRC, "[rrc_control_socket_init]Failed to initialize pthread attribute for ProSe -> RRC communication (%d:%s)\n",
-            errno, strerror(errno));
-      exit(EXIT_FAILURE);
-   }
-
-   sched_param.sched_priority = 10;
-
-   pthread_attr_setschedpolicy(&attr, SCHED_RR);
-   pthread_attr_setschedparam(&attr, &sched_param);
 
    pthread_t rrc_control_socket_thread;
 
-   if (pthread_create(&rrc_control_socket_thread, &attr, rrc_control_socket_thread_fct, NULL) != 0) {
-      LOG_E(RRC, "[rrc_control_socket_init]Failed to create new thread for RRC/ProSeApp communication (%d:%s)\n",
-            errno, strerror(errno));
-      exit(EXIT_FAILURE);
-   }
-
-   pthread_setname_np( rrc_control_socket_thread, "RRC Control Socket" );
+   threadCreate(&rrc_control_socket_thread, rrc_control_socket_thread_fct, NULL, "RRC/ProSeApp", -1, OAI_PRIORITY_RT);
 
 }
 

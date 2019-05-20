@@ -3157,36 +3157,42 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
       /*
        * This is the NR part
        */
-
-      if ((dci_alloc_rx[i].format == format0_0))
-        if ((dci_alloc_rx[i].format == format1_0) &&
-            (dci_alloc_rx[i].rnti != crc_scrambled_values[_P_RNTI_]) &&
-            (dci_alloc_rx[i].rnti != crc_scrambled_values[_SI_RNTI_]) &&
-            (dci_alloc_rx[i].rnti != crc_scrambled_values[_RA_RNTI_])) ue->dlsch_received[eNB_id]++;
-
-        if ((dci_alloc_rx[i].rnti == crc_scrambled_values[_SI_RNTI_]) && (dci_alloc_rx[i].format == format1_0)) ue->dlsch_SI_received[eNB_id]++;
-        if ((dci_alloc_rx[i].rnti == crc_scrambled_values[_P_RNTI_]) && (dci_alloc_rx[i].format == format1_0)) ue->dlsch_p_received[eNB_id]++;
-        if ((dci_alloc_rx[i].rnti == crc_scrambled_values[_RA_RNTI_]) && (dci_alloc_rx[i].format == format1_0)) ue->dlsch_ra_received[eNB_id]++;
-        if ((dci_alloc_rx[i].format == format2_0)){
-        }
-        if ((dci_alloc_rx[i].format == format2_1)){
-        }
-        if ((dci_alloc_rx[i].format == format2_2)){
-        }
-        if ((dci_alloc_rx[i].format == format2_3)){
-        }
-        if ((dci_alloc_rx[i].format == format0_1)){ // This format not implemented at a first time. FIXME
-        }
-        if ((dci_alloc_rx[i].format == format1_1)){ // This format not implemented at a first time. FIXME
-        }
-
-
+      if ((dci_alloc_rx[i].format == format0_0)){
+      }
+      
+      if (dci_alloc_rx[i].format == format1_0) {
+	if ((dci_alloc_rx[i].rnti != crc_scrambled_values[_P_RNTI_]) &&
+	    (dci_alloc_rx[i].rnti != crc_scrambled_values[_SI_RNTI_]) &&
+	    (dci_alloc_rx[i].rnti != crc_scrambled_values[_RA_RNTI_]))
+	  ue->dlsch_received[eNB_id]++;
+	
+	if (dci_alloc_rx[i].rnti == crc_scrambled_values[_SI_RNTI_])
+	  ue->dlsch_SI_received[eNB_id]++;
+	if (dci_alloc_rx[i].rnti == crc_scrambled_values[_P_RNTI_])
+	  ue->dlsch_p_received[eNB_id]++;
+	if (dci_alloc_rx[i].rnti == crc_scrambled_values[_RA_RNTI_])
+	  ue->dlsch_ra_received[eNB_id]++;
+      }
+      
+      if ((dci_alloc_rx[i].format == format2_0)){
+      }
+      if ((dci_alloc_rx[i].format == format2_1)){
+      }
+      if ((dci_alloc_rx[i].format == format2_2)){
+      }
+      if ((dci_alloc_rx[i].format == format2_3)){
+      }
+      if ((dci_alloc_rx[i].format == format0_1)){ // This format not implemented at a first time. FIXME
+      }
+      if ((dci_alloc_rx[i].format == format1_1)){ // This format not implemented at a first time. FIXME
+      }
+      
 	uint8_t status=0;
-
+	
 	LOG_D(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",dci_alloc_rx[i].format,dci_alloc_rx[i].rnti,dci_alloc_rx[i].dci_length,dci_alloc_rx[i].dci_pdu[0],dci_alloc_rx[i].dci_pdu[1]);
-
+	
 	memset(&ue->dci_ind.dci_list[i].dci,0,sizeof(fapi_nr_dci_pdu_rel15_t));
-
+	
 	ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
 	ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
 	ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
@@ -3205,15 +3211,15 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 				     pdcch_vars2->n_RB_BWP[nb_searchspace_active],
 				     pdcch_vars2->n_RB_BWP[nb_searchspace_active],
 				     crc_scrambled_values);
-
+	
 	if(status == 0) {
 	  LOG_W(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> bad DCI %d !!! \n",dci_alloc_rx[i].format);
 	  return(-1);
 	}
 	
 	LOG_D(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> Ending function nr_extract_dci_info()\n");
-
-  /*
+	
+	/*
        nr_generate_ue_ul_dlsch_params_from_dci(ue,
 					       eNB_id,
 					       frame_rx,

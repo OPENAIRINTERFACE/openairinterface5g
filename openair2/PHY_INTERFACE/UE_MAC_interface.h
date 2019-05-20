@@ -38,7 +38,7 @@
 
 #include "nfapi_interface.h"
 #include "openair1/PHY/impl_defs_lte.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 
 
 

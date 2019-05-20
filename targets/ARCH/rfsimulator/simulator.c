@@ -3,6 +3,12 @@
   copyleft: OpenAirInterface Software Alliance and it's licence
 */
 
+/* 
+ * Open issues and limitations
+ * The read and write should be called in the same thread, that is not new USRP UHD design
+ * When the opposite side switch from passive reading to active R+Write, the synchro is not fully deterministic
+ */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -27,22 +33,15 @@
 #define sample_t uint32_t // 2*16 bits complex number
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
-#define MAGICeNB 0xA5A5A5A5A5A5A5A5
-#define MAGICUE  0x5A5A5A5A5A5A5A5A
 
-typedef struct {
-  uint64_t magic;
-  uint32_t size;
-  uint32_t nbAnt;
-  uint64_t timestamp;
-} transferHeader;
+#define sample_t uint32_t //2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
   bool alreadyRead;
   uint64_t lastReceivedTS;
   bool headerMode;
-  transferHeader th;
+  samplesBlockHeader_t th;
   char *transferPtr;
   uint64_t remainToTransfer;
   char *circularBufEnd;
@@ -53,8 +52,8 @@ typedef struct {
   int listen_sock, epollfd;
   uint64_t nextTimestamp;
   uint64_t typeStamp;
-  uint64_t initialAhead;
   char *ip;
+  int saveIQfile;
   buffer_t buf[FD_SETSIZE];
 } rfsimulator_state_t;
 
@@ -63,9 +62,11 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   AssertFatal ( (ptr->circularBuf=(sample_t *) malloc(sampleToByte(CirSize,1))) != NULL, "");
   ptr->circularBufEnd=((char *)ptr->circularBuf)+sampleToByte(CirSize,1);
   ptr->conn_sock=sock;
+  ptr->alreadyRead=false;
+  ptr->lastReceivedTS=0;
   ptr->headerMode=true;
   ptr->transferPtr=(char *)&ptr->th;
-  ptr->remainToTransfer=sizeof(transferHeader);
+  ptr->remainToTransfer=sizeof(samplesBlockHeader_t);
   int sendbuff=1000*1000*10;
   AssertFatal ( setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sendbuff, sizeof(sendbuff)) == 0, "");
   struct epoll_event ev= {0};
@@ -87,11 +88,10 @@ void socketError(rfsimulator_state_t *bridge, int sock) {
     LOG_W(HW,"Lost socket \n");
     removeCirBuf(bridge, sock);
 
-    if (bridge->typeStamp==MAGICUE)
+    if (bridge->typeStamp==UE_MAGICDL_FDD)
       exit(1);
   }
 }
-
 
 #define helpTxt "\
 \x1b[31m\
@@ -117,11 +117,19 @@ void setblocking(int sock, enum blocking_t active) {
   AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
 }
 
-static bool flushInput(rfsimulator_state_t *t);
+static bool flushInput(rfsimulator_state_t *t, int timeout);
 
-void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
+void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
+  if (t->saveIQfile != -1) {
+    if (write(t->saveIQfile, _buf, count) != count )
+      LOG_E(HW,"write in save iq file failed (%s)\n",strerror(errno));
+  }
+
+  AssertFatal(fd>=0 && _buf && count >0 && t,
+	      "Bug: %d/%p/%zd/%p", fd, _buf, count, t);
+
   char *buf = _buf;
-  int l;
+  ssize_t l;
   setblocking(fd, notBlocking);
 
   while (count) {
@@ -132,7 +140,9 @@ void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
         continue;
 
       if(errno==EAGAIN) {
-        flushInput(t);
+	// The opposite side is saturated
+	// we read incoming sockets meawhile waiting
+        flushInput(t, 5);
         continue;
       } else
         return;
@@ -145,7 +155,7 @@ void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
 
 int server_start(openair0_device *device) {
   rfsimulator_state_t *t = (rfsimulator_state_t *) device->priv;
-  t->typeStamp=MAGICeNB;
+  t->typeStamp=ENB_MAGICDL_FDD;
   AssertFatal((t->listen_sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0, "");
   int enable = 1;
   AssertFatal(setsockopt(t->listen_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == 0, "");
@@ -168,7 +178,7 @@ sin_addr:
 
 int start_ue(openair0_device *device) {
   rfsimulator_state_t *t = device->priv;
-  t->typeStamp=MAGICUE;
+  t->typeStamp=UE_MAGICDL_FDD;
   int sock;
   AssertFatal((sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0, "");
   struct sockaddr_in addr = {
@@ -200,14 +210,16 @@ sin_addr:
   return 0;
 }
 
+uint64_t lastW=-1;
 int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
   rfsimulator_state_t *t = device->priv;
+  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *ptr=&t->buf[i];
 
     if (ptr->conn_sock >= 0 ) {
-      transferHeader header= {t->typeStamp, nsamps, nbAnt, timestamp};
+      samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(ptr->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
 
@@ -222,17 +234,20 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
         fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
     }
   }
-
+  lastW=timestamp;
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
+  // Let's verify we don't have incoming data
+  // This is mandatory when the opposite side don't transmit
+  flushInput(t, 0);
   return nsamps;
 }
 
-static bool flushInput(rfsimulator_state_t *t) {
+static bool flushInput(rfsimulator_state_t *t, int timeout) {
   // Process all incoming events on sockets
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {0};
-  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, 200);
+  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {
     if ( errno==EINTR || errno==EAGAIN )
@@ -263,7 +278,7 @@ static bool flushInput(rfsimulator_state_t *t) {
         continue;
       }
 
-      int blockSz;
+      ssize_t blockSz;
 
       if ( b->headerMode)
         blockSz=b->remainToTransfer;
@@ -272,7 +287,7 @@ static bool flushInput(rfsimulator_state_t *t) {
                  b->remainToTransfer :
                  b->circularBufEnd - 1 - b->transferPtr ;
 
-      int sz=recv(fd, b->transferPtr, blockSz, MSG_DONTWAIT);
+      ssize_t sz=recv(fd, b->transferPtr, blockSz, MSG_DONTWAIT);
 
       if ( sz < 0 ) {
         if ( errno != EAGAIN ) {
@@ -282,6 +297,7 @@ static bool flushInput(rfsimulator_state_t *t) {
       } else if ( sz == 0 )
         continue;
 
+      LOG_D(HW, "Socket rcv %zd bytes\n", sz);
       AssertFatal((b->remainToTransfer-=sz) >= 0, "");
       b->transferPtr+=sz;
 
@@ -290,8 +306,8 @@ static bool flushInput(rfsimulator_state_t *t) {
 
       // check the header and start block transfer
       if ( b->headerMode==true && b->remainToTransfer==0) {
-        AssertFatal( (t->typeStamp == MAGICUE  && b->th.magic==MAGICeNB) ||
-                     (t->typeStamp == MAGICeNB && b->th.magic==MAGICUE), "Socket Error in protocol");
+        AssertFatal( (t->typeStamp == UE_MAGICDL_FDD  && b->th.magic==ENB_MAGICDL_FDD) ||
+                     (t->typeStamp == ENB_MAGICDL_FDD && b->th.magic==UE_MAGICDL_FDD), "Socket Error in protocol");
         b->headerMode=false;
         b->alreadyRead=true;
 
@@ -306,23 +322,24 @@ static bool flushInput(rfsimulator_state_t *t) {
         }
 
         b->lastReceivedTS=b->th.timestamp;
+	AssertFatal(lastW == -1 || ( abs((double)lastW-b->lastReceivedTS) < (double)CirSize),
+	  "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", lastW, b->lastReceivedTS);
         b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
       if ( b->headerMode==false ) {
+	LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
         b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
-
+	// First block in UE, resync with the eNB current TS
+	if ( t->nextTimestamp == 0 )
+	  t->nextTimestamp=b->lastReceivedTS-b->th.size;
+	
         if ( b->remainToTransfer==0) {
           LOG_D(HW,"Completed block reception: %ld\n", b->lastReceivedTS);
-
-          // First block in UE, resync with the eNB current TS
-          if ( t->nextTimestamp == 0 )
-            t->nextTimestamp=b->lastReceivedTS-b->th.size;
-
           b->headerMode=true;
           b->transferPtr=(char *)&b->th;
-          b->remainToTransfer=sizeof(transferHeader);
+          b->remainToTransfer=sizeof(samplesBlockHeader_t);
           b->th.magic=-1;
         }
       }
@@ -350,7 +367,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
-    if (!flushInput(t)) {
+    if (!flushInput(t, 10)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
@@ -365,20 +382,21 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
     do {
       have_to_wait=false;
 
-      for ( int sock=0; sock<FD_SETSIZE; sock++)
-        if ( t->buf[sock].circularBuf &&
-             t->buf[sock].alreadyRead && //>= t->initialAhead &&
-             (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
-          have_to_wait=true;
-          break;
-        }
+      for ( int sock=0; sock<FD_SETSIZE; sock++) {
+        if ( t->buf[sock].circularBuf && t->buf[sock].alreadyRead )
+	  if ( t->buf[sock].lastReceivedTS == 0 ||
+	       (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
+	    have_to_wait=true;
+	    break;
+	  }
+      }
 
       if (have_to_wait)
         /*printf("Waiting on socket, current last ts: %ld, expected at least : %ld\n",
           ptr->lastReceivedTS,
           t->nextTimestamp+nsamps);
         */
-        flushInput(t);
+        flushInput(t, 3);
     } while (have_to_wait);
   }
 
@@ -439,6 +457,7 @@ int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_c
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   //set_log(HW,OAILOG_DEBUG);
+  //set_log(PHY,OAILOG_DEBUG);
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {
@@ -446,11 +465,26 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     exit(1);
   }
 
-  rfsimulator->typeStamp = strncasecmp(rfsimulator->ip,"enb",3) == 0 ?
-                           MAGICeNB:
-                           MAGICUE;
-  LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == MAGICeNB ? "eNB" : "UE");
-  device->trx_start_func       = rfsimulator->typeStamp == MAGICeNB ?
+  if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
+       strncasecmp(rfsimulator->ip,"server",3) == 0 )
+    rfsimulator->typeStamp = ENB_MAGICDL_FDD;
+  else
+    rfsimulator->typeStamp = UE_MAGICDL_FDD;
+  
+  LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL_FDD ? "(eg)NB" : "UE");
+  char *saveF;
+
+  if ((saveF=getenv("saveIQfile")) != NULL) {
+    rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
+
+    if ( rfsimulator->saveIQfile != -1 )
+      LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
+    else
+      LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
+  } else
+    rfsimulator->saveIQfile = -1;
+
+  device->trx_start_func       = rfsimulator->typeStamp == ENB_MAGICDL_FDD ?
                                  server_start :
                                  start_ue;
   device->trx_get_stats_func   = rfsimulator_get_stats;
@@ -470,6 +504,5 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     rfsimulator->buf[i].conn_sock=-1;
 
   AssertFatal((rfsimulator->epollfd = epoll_create1(0)) != -1,"");
-  rfsimulator->initialAhead=openair0_cfg[0].sample_rate/1000; // One sub frame
   return 0;
 }

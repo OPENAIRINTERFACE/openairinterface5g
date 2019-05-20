@@ -40,16 +40,10 @@ int16_t *primary_synch2_time;
 
 //#include "PHY/CODING/coding_vars.h"
 
-//PHY_VARS *PHY_vars;
-#ifndef OCP_FRAMEWORK
+
+
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
 PHY_VARS_eNB ***PHY_vars_eNB_g;
-NR_DL_FRAME_PARMS *lte_frame_parms_g;
-#else
-PHY_VARS_NR_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
-
-#endif
-
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];

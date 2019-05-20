@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 
 #include "assertions.h"
+#include "common/utils/system.h"
 #include "queue.h"
 
 #include "intertask_interface.h"
