@@ -1450,12 +1450,12 @@ int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
             unsigned char symbol*/ 
             ,int mcs)  // currently work around TOFIX
 { 
-  unsigned int symbol; 
+  //unsigned int symbol; 
  
   LTE_UE_COMMON *common_vars  = &ue->common_vars; 
   LTE_UE_PDSCH **pdsch_vars   = &ue->pdsch_vars_MCH[eNB_id]; 
   LTE_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms; 
-  LTE_UE_DLSCH_t   **dlsch        = &ue->dlsch_MCH[eNB_id]; 
+  //LTE_UE_DLSCH_t   **dlsch        = &ue->dlsch_MCH[eNB_id]; 
   int avgs,aarx; 
  
      

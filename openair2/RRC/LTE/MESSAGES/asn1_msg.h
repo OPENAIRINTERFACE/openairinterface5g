@@ -78,7 +78,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 @param additional Non MBSFN Subframes parameter
 @param frame radio frame number
 @return size of encoded bit stream in bytes*/
-uint8_t do_MIB_MBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFNSubframes, uint32_t frame);
+uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFNSubframes, uint32_t frame);
 /**
 \brief Generate configuration structure for DRX_Config
 @param Mod_id Instance of eNB

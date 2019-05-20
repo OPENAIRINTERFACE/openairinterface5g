@@ -877,7 +877,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
          LOG_D(MAC,
           "[eNB %d][CONFIG] Received a non MBSFN subframe allocation pattern (%x,%x):%x for FeMBMS-CAS\n",
           Mod_idP, nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7 );
-         RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+         RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1) | (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
 
         nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
         cfg->fembms_config.non_mbsfn_config_flag.value   = 1;

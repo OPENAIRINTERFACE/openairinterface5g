@@ -2632,7 +2632,7 @@ int decode_BCCH_MBMS_DLSCH_Message(
   const uint8_t                rsrq,
   const uint8_t                rsrp ) {
   LTE_BCCH_DL_SCH_Message_MBMS_t *bcch_message = NULL;
-  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_mbms = UE_rrc_inst[ctxt_pP->module_id].sib1_MBMS[eNB_index];
+  //LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_mbms = UE_rrc_inst[ctxt_pP->module_id].sib1_MBMS[eNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
 
   /*if (((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus_MBMS&1) == 1) &&  // SIB1 received
@@ -2699,7 +2699,7 @@ int decode_BCCH_MBMS_DLSCH_Message(
           LOG_W( RRC, "[UE %"PRIu8"] Decoding MBMS SI for frameP %"PRIu32"\n",
                  ctxt_pP->module_id,
                  ctxt_pP->frame );
-          //decode_SI( ctxt_pP, eNB_index );
+          decode_SI_MBMS( ctxt_pP, eNB_index ); //TODO
           //UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
         //}
 	}
@@ -3887,7 +3887,7 @@ void dump_sib21(LTE_SystemInformationBlockType21_r14_t *sib21) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //-----------------------------------------------------------------------------
 int decode_SI_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
-  LTE_SystemInformation_t **si = &UE_rrc_inst[ctxt_pP->module_id].si[eNB_index];
+  /*LTE_SystemInformation_t **si = &UE_rrc_inst[ctxt_pP->module_id].si[eNB_index];
   int new_sib = 0;
   LTE_SystemInformationBlockType1_t *sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_IN );
@@ -4241,7 +4241,7 @@ int decode_SI_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_inde
           sib1->schedulingInfoList.list.count);
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI  , VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI  , VCD_FUNCTION_OUT);*/
   return 0;
 }
 

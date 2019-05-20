@@ -352,7 +352,7 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode)
 {
-  int G_adj;
+  //int G_adj;
 
   /*if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
     G_adj= adjust_G(frame_parms,rb_alloc,mod_order,subframe);

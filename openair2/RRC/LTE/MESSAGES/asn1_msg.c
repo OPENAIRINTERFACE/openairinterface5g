@@ -431,7 +431,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   int i;
   //LTE_NonMBSFN_SubframeConfig_r14 nonMBSFN_SubframeConfig_r14;
 
-  struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1, *MBSFN_Area2;
+  struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1/*, *MBSFN_Area2*/;
   struct LTE_NonMBSFN_SubframeConfig_r14 nonMBSFN_SubframeConfig_r14;
 
   memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_MBMS_t));

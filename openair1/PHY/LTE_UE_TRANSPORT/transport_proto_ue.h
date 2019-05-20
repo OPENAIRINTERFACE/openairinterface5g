@@ -72,6 +72,12 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
             uint8_t subframe,
             unsigned char symbol);
 
+int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
+            unsigned char eNB_id,
+            uint8_t subframe/*, 
+            unsigned char symbol*/
+            ,int mcs);
+
 /** \brief Dump OCTAVE/MATLAB files for PMCH debugging
     @param phy_vars_ue Pointer to UE variables
     @param eNB_id index of eNB in ue variables

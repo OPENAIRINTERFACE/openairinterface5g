@@ -148,33 +148,6 @@ init_SI(
   LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext=(LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL;
 #endif
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t *) malloc16(4);
-  // copy basic parameters
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
-#endif
-  LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
-	configuration->N_RB_DL[CC_id],
-	(int)configuration->radioresourceconfig[CC_id].phich_resource,
-	(int)configuration->radioresourceconfig[CC_id].phich_duration);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  LOG_I(RRC, "configuration->schedulingInfoSIB1_BR_r13[CC_id] %d\n",(int)configuration->schedulingInfoSIB1_BR_r13[CC_id]);
-#endif
-  do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
-	 configuration->N_RB_DL[CC_id],
-	 (int)configuration->radioresourceconfig[CC_id].phich_resource,
-	 (int)configuration->radioresourceconfig[CC_id].phich_duration,
-	 0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-	 ,configuration->schedulingInfoSIB1_BR_r13[CC_id]
-#endif
-	 );
 
 if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -202,7 +175,7 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
  LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB1-MBMS\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP)
 	);
-   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS freqBandIndicator_r14 %d\n",
+   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS freqBandIndicator_r14 %ld\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->freqBandIndicator_r14
 	);
@@ -234,10 +207,9 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
         LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS MCCH Signalling MCS: %ld\n",
             PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
             RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.signallingMCS_r9);
-	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS SIB13 sf_AllocInfo is = %s\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-            i,
-            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.sf_AllocInfo_r9.buf);
+	//LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS SIB13 sf_AllocInfo is = %x\n",
+        //    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+        //    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.sf_AllocInfo_r9.buf);
 
         if(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->ext1) {
 	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS Subcarrier Spacing MBMS: %s\n",
@@ -249,11 +221,11 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
 
 
     if(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14) {
-    	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationPeriod-r14 %d\n",
+    	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationPeriod-r14 %ld\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14
 	);
- 	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationOffset-r14 %d\n",
+ 	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationOffset-r14 %ld\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14
 	);
