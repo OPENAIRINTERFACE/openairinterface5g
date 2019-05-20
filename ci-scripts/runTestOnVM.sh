@@ -1279,7 +1279,7 @@ function run_test_on_vm {
           do
               # Not Running in TDD-10MHz and TDD-20MHz : too unstable
               #if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*10.* ]]; then continue; fi
-              #if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*20.* ]]; then continue; fi
+              if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*20.* ]]; then continue; fi
 
               if [[ $BW =~ .*05.* ]]; then PRB=25; fi
               if [[ $BW =~ .*10.* ]]; then PRB=50; fi

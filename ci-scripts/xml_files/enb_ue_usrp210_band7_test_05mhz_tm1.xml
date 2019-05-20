@@ -26,7 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  030201 090109
- 030101 000001 090101 000002 040501 040502 000001 040601 040641 040642 000001 090109 030201
+ 030101 000001 090101 000002 040501 040502 000001 040601 040602 040641 040642 000001 090109 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -93,8 +93,8 @@
 
         <testCase id="040602">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - DL/1.2Mbps/UDP)(30 sec)</desc>
-		<iperf_args>-c 10.0.1.2 -u -b 1.2M -t 30 -i 1 -fm -B 10.0.1.1</iperf_args>
+		<desc>iperf (5MHz - DL/14Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-c 10.0.1.2 -u -b 14M -t 30 -i 1 -fm -B 10.0.1.1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 
