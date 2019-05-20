@@ -134,7 +134,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
 
   uint8_t beamforming_mode;
-  uint32_t *rballoc;
 
   int32_t **rxdataF_comp_ptr;
   int32_t **dl_ch_mag_ptr;
@@ -265,25 +264,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
-  if (((frame_parms->Ncp == NORMAL) && (symbol>=7)) ||
-      ((frame_parms->Ncp == EXTENDED) && (symbol>=6)))
-    rballoc = dlsch0_harq->rb_alloc_odd;
-  else
-    rballoc = dlsch0_harq->rb_alloc_even;
-
-
-  if (dlsch0_harq->mimo_mode>DUALSTREAM_PUSCH_PRECODING) {
+  if (dlsch0_harq->mimo_mode>NR_DUALSTREAM) {
     LOG_E(PHY,"This transmission mode is not yet supported!\n");
     return(-1);
   }
 
 
-  if ((dlsch0_harq->mimo_mode==LARGE_CDD) || ((dlsch0_harq->mimo_mode>=DUALSTREAM_UNIFORM_PRECODING1) && (dlsch0_harq->mimo_mode<=DUALSTREAM_PUSCH_PRECODING)))  {
+  if (dlsch0_harq->mimo_mode==NR_DUALSTREAM)  {
     DevAssert(dlsch1_harq);
-    if (eNB_id!=eNB_id_i) {
-      LOG_E(PHY,"TM3/TM4 requires to set eNB_id==eNB_id_i!\n");
-      return(-1);
-    }
   }
 
 #if UE_TIMING_TRACE
@@ -376,46 +364,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                      ue->high_speed_flag,
                                      frame_parms);
 
-
-/*
-   if (rx_type==rx_IC_single_stream) {
-     if (eNB_id_i<ue->n_connected_eNB)
-        nb_rb = dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                         common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id_i],
-                                         pdsch_vars[eNB_id_i]->rxdataF_ext,
-                                         pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                         dlsch0_harq->pmi_alloc,
-                                         pdsch_vars[eNB_id_i]->pmi_ext,
-                                         rballoc,
-                                         symbol,
-                                         nr_tti_rx,
-                                         ue->high_speed_flag,
-                                         frame_parms);
-      else
-        nb_rb = dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                         common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
-                                         pdsch_vars[eNB_id_i]->rxdataF_ext,
-                                         pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                                         dlsch0_harq->pmi_alloc,
-                                         pdsch_vars[eNB_id_i]->pmi_ext,
-                                         rballoc,
-                                         symbol,
-                                         nr_tti_rx,
-                                         ue->high_speed_flag,
-                                         frame_parms);
-    }*/
-  } /*else if (beamforming_mode==7) { //else if beamforming_mode == 7
-    nb_rb = dlsch_extract_rbs_TM7(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                  pdsch_vars[eNB_id]->dl_bf_ch_estimates,
-                                  pdsch_vars[eNB_id]->rxdataF_ext,
-                                  pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
-                                  rballoc,
-                                  symbol,
-                                  nr_tti_rx,
-                                  ue->high_speed_flag,
-                                  frame_parms);
-
-  } else if(beamforming_mode>7) {
+  } /*else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation: beamforming mode not supported yet.\n");
   }*/
 
@@ -451,20 +400,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 					  pilots,
                       nb_rb);
 
-  if ((dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) &&
-      (rx_type==rx_IC_single_stream) &&
-      (eNB_id_i==ue->n_connected_eNB) &&
-      (dlsch0_harq->dl_power_off==0)
-     )  // TM5 two-user
-  {
-    nr_dlsch_scale_channel(pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
-                        frame_parms,
-                        dlsch,
-                        symbol,
-						pilots,
-                        nb_rb);
-  }
-
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -479,7 +414,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
   if (first_symbol_flag==1) {
     if (beamforming_mode==0){
-      if (dlsch0_harq->mimo_mode<LARGE_CDD) {
+      if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
         nr_dlsch_channel_level(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                            frame_parms,
                            avg,
@@ -493,9 +428,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
         pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)+1;
      }
-     else if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
-           ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-            (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))
+     else if (dlsch0_harq->mimo_mode == NR_DUALSTREAM)
      {
     	 nr_dlsch_channel_level_median(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
     	                             median,
@@ -514,54 +447,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
     	  pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1; // this might need to be tuned
 
-     }/*
-      else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
-        if ((rx_type==rx_IC_single_stream) && (eNB_id_i==ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {
-            dlsch_channel_level_TM56(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                frame_parms,
-                                pdsch_vars[eNB_id]->pmi_ext,
-                                avg,
-                                symbol,
-                                nb_rb);
-            avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1];
-            pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
-
-        }
-        else if (dlsch0_harq->dl_power_off==1) { //TM6
-
-          nr_dlsch_channel_level(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                   frame_parms,
-                                   avg,
-                                   symbol,
-                                   nb_rb);
-
-          avgs = 0;
-          for (aatx=0;aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
-            for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-              avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
-
-          pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
-          pdsch_vars[eNB_id]->log2_maxh++;
-
-        }
-      }
-
+     }
     }
-    else if (beamforming_mode==7)
-       dlsch_channel_level_TM7(pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
-                              frame_parms,
-                              avg,
-                              symbol,
-                              nb_rb);*/
-    }
-//#ifdef UE_DEBUG_TRACE
+#ifdef UE_DEBUG_TRACE
     LOG_I(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
             frame%1024,nr_tti_rx, pdsch_vars[eNB_id]->log2_maxh,
                                                  pdsch_vars[eNB_id]->log2_maxh0,
                                                  pdsch_vars[eNB_id]->log2_maxh1,
                                                  avg[0],avgs);
     //LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
-//#endif
+#endif
 
     //wait until pdcch is decoded
     //proc->channel_level = 1;
@@ -598,7 +493,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
 // Now channel compensation
-  if (dlsch0_harq->mimo_mode<LARGE_CDD) {
+  if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
     nr_dlsch_channel_compensation(pdsch_vars[eNB_id]->rxdataF_ext,
                                pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                pdsch_vars[eNB_id]->dl_ch_mag0,
@@ -649,8 +544,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     }*/
   }
 
-  else if ((dlsch0_harq->mimo_mode == LARGE_CDD) || ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-            (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){
+  else if (dlsch0_harq->mimo_mode == NR_DUALSTREAM){
 	  nr_dlsch_channel_compensation_core(pdsch_vars[eNB_id]->rxdataF_ext,
 			  	  	  	  	  	  	  	pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 										pdsch_vars[eNB_id]->dl_ch_mag0,
@@ -712,9 +606,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
     if (frame_parms->nb_antennas_rx > 1) {
-    if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
-        ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-         (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING))){  // TM3 or TM4
+    if (dlsch0_harq->mimo_mode == NR_DUALSTREAM){
         nr_dlsch_detection_mrc_core(pdsch_vars[eNB_id]->rxdataF_comp0,
                                    NULL,
 								   pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
@@ -733,33 +625,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         } */
     }
   }
-#if 0
-  //  printf("Combining");
-  if ((dlsch0_harq->mimo_mode == SISO) ||
-      ((dlsch0_harq->mimo_mode >= UNIFORM_PRECODING11) &&
-       (dlsch0_harq->mimo_mode <= PUSCH_PRECODING0)) ||
-       (dlsch0_harq->mimo_mode == TM7)) {
-    /*
-      dlsch_siso(frame_parms,
-      pdsch_vars[eNB_id]->rxdataF_comp,
-      pdsch_vars[eNB_id_i]->rxdataF_comp,
-      symbol,
-      nb_rb);
-    */
-  } else if (dlsch0_harq->mimo_mode == ALAMOUTI) {
-    dlsch_alamouti(frame_parms,
-                   pdsch_vars[eNB_id]->rxdataF_comp0,
-                   pdsch_vars[eNB_id]->dl_ch_mag0,
-                   pdsch_vars[eNB_id]->dl_ch_magb0,
-                   symbol,
-                   nb_rb);
-  }
-#endif
 
       //printf("start compute LLR\n");
-  if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
-      ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-       (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))  {
+  if (dlsch0_harq->mimo_mode == NR_DUALSTREAM)  {
     rxdataF_comp_ptr = pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round];
     dl_ch_mag_ptr = pdsch_vars[eNB_id]->dl_ch_mag1[harq_pid][round];
   }
@@ -1989,7 +1857,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb;
-  unsigned char aatx,aarx,nre=12;
+  unsigned char aatx,aarx;
   __m128i *dl_ch128, avg128D;
 
   //nb_rb*nre = y * 2^x
