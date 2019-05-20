@@ -56,6 +56,9 @@ flexran_agent_message_decoded_callback agent_messages_callback[][3] = {
   {flexran_agent_control_delegation, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
   {flexran_agent_reconfiguration, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_AGENT_RECONFIGURATION_MSG*/
   {flexran_agent_rrc_reconfiguration, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_RRC_TRIGGERING_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_DISCONNECT_MSG*/
+  {flexran_agent_rrc_trigger_handover, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_HO_COMMAND_MSG*/
 };
 
 flexran_agent_message_destruction_callback message_destruction_callback[] = {

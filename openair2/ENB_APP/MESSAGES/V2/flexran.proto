@@ -32,6 +32,7 @@ message flexran_message {
 	      flex_rrc_triggering rrc_triggering = 18;
 	      flex_ul_mac_config ul_mac_config_msg = 19;
               flex_disconnect disconnect_msg = 20;
+              flex_ho_command ho_command_msg = 21;
 	}
 }
 
@@ -190,6 +191,12 @@ message flex_rrc_triggering {
 	optional flex_header header = 1;
 	optional string rrc_trigger = 2;
         optional flex_measurement_info meas_info = 3;
+}
+
+message flex_ho_command {
+  optional flex_header header = 1;
+  optional uint32 rnti = 2;
+  optional uint32 target_phy_cell_id = 3;
 }
 
 //

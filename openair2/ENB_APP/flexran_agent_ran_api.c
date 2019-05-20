@@ -1446,6 +1446,16 @@ int flexran_call_rrc_reconfiguration (mid_t mod_id, rnti_t rnti) {
   return 0;
 }
 
+int flexran_call_rrc_trigger_handover (mid_t mod_id, rnti_t rnti, int target_cell_id) {
+  if (!rrc_is_present(mod_id)) return -1;
+  protocol_ctxt_t  ctxt;
+  memset(&ctxt, 0, sizeof(ctxt));
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return -1;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
+  return flexran_rrc_eNB_trigger_handover(mod_id, &ctxt, ue_context_p, target_cell_id);
+}
+
 /* RRC Getters */
 
 LTE_MeasId_t  flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti) {

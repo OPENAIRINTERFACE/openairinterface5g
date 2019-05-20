@@ -4817,6 +4817,99 @@ void rrc_eNB_handover_cancel(
       S1AP_CAUSE_RADIO_NETWORK, s1_cause);
 }
 
+
+int
+flexran_rrc_eNB_trigger_handover (int mod_id,
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t  *ue_context_pP,
+  int target_cell_id) {
+
+uint32_t earfcn_dl;
+uint8_t KeNB_star[32] = { 0 };
+int cell_found = 0;
+
+  /* Check if eNB id belongs to the supported ones-Extend for multiple carrieres */
+
+  for (int i=0; i < RC.rrc[mod_id]->num_neigh_cells; i++) {
+    if (RC.rrc[mod_id]->neigh_cells_id[i][0] == target_cell_id) {
+      cell_found = 1;
+      break;
+    }
+  }
+
+  /* Check if eNB id was found */
+
+  if (!cell_found)
+    return -1;
+
+  /* Handover process is following */
+
+  /* if X2AP is disabled, do nothing */
+  if (!is_x2ap_enabled())
+    return -1;
+
+  LOG_D(RRC, "Handover is triggered by FlexRAN controller...\n");
+
+  /* if the UE is not in handover mode, start handover procedure */
+  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+    MessageDef      *msg;
+    LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
+    /* Check memory leakage for handover info */
+    //if (ue_context_pP->ue_context.handover_info) {
+      //free(ue_context_pP->ue_context.handover_info);
+    //}
+    ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
+    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
+    /* HO Preparation message */
+    msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ);
+    rrc_eNB_generate_HandoverPreparationInformation(
+      ue_context_pP,
+      X2AP_HANDOVER_REQ(msg).rrc_buffer,
+      &X2AP_HANDOVER_REQ(msg).rrc_buffer_size);
+    X2AP_HANDOVER_REQ(msg).rnti = ctxt_pP->rnti;
+    X2AP_HANDOVER_REQ(msg).target_physCellId = target_cell_id;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mcc = ue_context_pP->ue_context.ue_gummei.mcc;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mnc = ue_context_pP->ue_context.ue_gummei.mnc;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len = ue_context_pP->ue_context.ue_gummei.mnc_len;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code = ue_context_pP->ue_context.ue_gummei.mme_code;
+    X2AP_HANDOVER_REQ(msg).ue_gummei.mme_group_id = ue_context_pP->ue_context.ue_gummei.mme_group_id;
+    // Don't know how to get this ID?
+    X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
+    X2AP_HANDOVER_REQ(msg).security_capabilities = ue_context_pP->ue_context.security_capabilities;
+    // compute keNB*
+    earfcn_dl = (uint32_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
+    RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+    derive_keNB_star(ue_context_pP->ue_context.kenb, X2AP_HANDOVER_REQ(msg).target_physCellId, earfcn_dl, true, KeNB_star);
+    memcpy(X2AP_HANDOVER_REQ(msg).kenb, KeNB_star, 32);
+    X2AP_HANDOVER_REQ(msg).kenb_ncc = ue_context_pP->ue_context.kenb_ncc;
+    //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
+    X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ue_context_pP->ue_context.setup_e_rabs;
+
+    for (int i=0; i<ue_context_pP->ue_context.setup_e_rabs; i++) {
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].e_rab_id = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr = ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].gtp_teid = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.qci = ue_context_pP->ue_context.e_rab[i].param.qos.qci;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_capability;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_vulnerability;
+    }
+
+    /* TODO: don't do that, X2AP should find the target by itself */
+    //X2AP_HANDOVER_REQ(msg).target_mod_id = 0;
+    LOG_I(RRC,
+          "[eNB %d] Frame %d: potential handover preparation: store the information in an intermediate structure in case of failure\n",
+          ctxt_pP->module_id, ctxt_pP->frame);
+    itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+  } else {
+    LOG_D(RRC, "[eNB %d] Frame %d: Ignoring MeasReport from UE %x as Handover is in progress... \n", ctxt_pP->module_id, ctxt_pP->frame,
+          ctxt_pP->rnti);
+  }
+
+  return 0;
+}
+
 void
 check_handovers(
   protocol_ctxt_t *const ctxt_pP

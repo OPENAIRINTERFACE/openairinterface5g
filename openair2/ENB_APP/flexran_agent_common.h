@@ -138,8 +138,11 @@ int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg);
 
 /* rrc triggering measurement message constructor and destructor */
 int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
-int flexran_agent_destroy_rrc_measurement(Protocol__FlexranMessage *msg);
+int flexran_agent_destroy_rrc_reconfiguration(Protocol__FlexranMessage *msg);
 
+/* rrc triggering handover command message constructor and destructor */
+int flexran_agent_rrc_trigger_handover(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
+int flexran_agent_destroy_rrc_trigger_handover(Protocol__FlexranMessage *msg);
 
 /* FlexRAN protocol message dispatcher function */
 Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id, 

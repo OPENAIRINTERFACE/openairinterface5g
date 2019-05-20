@@ -501,6 +501,9 @@ uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, uint16_t uid, lcid_t lcid);
 /* Call RRC Reconfiguration wrapper function */
 int flexran_call_rrc_reconfiguration (mid_t mod_id, rnti_t rnti);
 
+/* Call RRC to trigger handover wrapper function */
+int flexran_call_rrc_trigger_handover (mid_t mod_id, rnti_t rnti, int target_cell_id);
+
 /*Get primary cell measuremeant id flexRAN*/
 LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti);
 

@@ -612,6 +612,12 @@ rrc_eNB_generate_HandoverPreparationInformation(
   //LTE_PhysCellId_t targetPhyId
 );
 
+int
+flexran_rrc_eNB_trigger_handover (int mod_id,
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t  *ue_context_pP,
+  int target_cell_id);
+
 void
 check_handovers(
   protocol_ctxt_t *const ctxt_pP
