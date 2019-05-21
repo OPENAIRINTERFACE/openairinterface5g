@@ -2471,19 +2471,14 @@ class SSHConnection():
 		if (not os.path.isfile('./' + UElogFile)):
 			return -1
 		ue_log_file = open('./' + UElogFile, 'r')
-<<<<<<< HEAD
 		exitSignalReceived = False
-=======
->>>>>>> origin/develop-nr
 		foundAssertion = False
 		msgAssertion = ''
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
-<<<<<<< HEAD
 		uciStatMsgCount = 0
 		pdcpDataReqFailedCount = 0
-		badDciCount = 0
 		rrcConnectionRecfgComplete = 0
 		no_cell_sync_found = False
 		mib_found = False
@@ -2505,35 +2500,11 @@ class SSHConnection():
 				foundAssertion = True
 			result = re.search('LLL', str(line))
 			if result is not None and not exitSignalReceived:
-=======
-		rlcDiscardBuffer = 0
-		rachCanceledProcedure = 0
-		uciStatMsgCount = 0
-		pdcpFailure = 0
-		ulschFailure = 0
-		no_cell_sync_found = False
-		mib_found = False
-		frequency_found = False
-		self.htmlUEFailureMsg = ''
-		for line in ue_log_file.readlines():
-			result = re.search('[Ss]egmentation [Ff]ault', str(line))
-			if result is not None:
-				foundSegFault = True
-			result = re.search('[Cc]ore [dD]ump', str(line))
-			if result is not None:
-				foundSegFault = True
-			result = re.search('[Aa]ssertion', str(line))
-			if result is not None:
-				foundAssertion = True
-			result = re.search('LLL', str(line))
-			if result is not None:
->>>>>>> origin/develop-nr
 				foundRealTimeIssue = True
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
 			result = re.search('uci->stat', str(line))
-<<<<<<< HEAD
 			if result is not None and not exitSignalReceived:
 				uciStatMsgCount += 1
 			result = re.search('PDCP data request failed', str(line))
@@ -2545,10 +2516,6 @@ class SSHConnection():
 			result = re.search('Generating RRCConnectionReconfigurationComplete', str(line))
 			if result is not None:
 				rrcConnectionRecfgComplete += 1
-=======
-			if result is not None:
-				uciStatMsgCount += 1
->>>>>>> origin/develop-nr
 			# No cell synchronization found, abandoning
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
@@ -2586,7 +2553,6 @@ class SSHConnection():
 					frequency_found = True
 				except Exception as e:
 					logging.error('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
-<<<<<<< HEAD
 			result = re.search("PLMN MCC (?P<mcc>\d{1,3}), MNC (?P<mnc>\d{1,3}), TAC", str(line))
 			if result is not None and (not plmn_found):
 				try:
@@ -2596,8 +2562,6 @@ class SSHConnection():
 					plmn_found = True
 				except Exception as e:
 					logging.error('\033[91m' + "PLMN not found" + '\033[0m')
-=======
->>>>>>> origin/develop-nr
 			result = re.search("Found (?P<operator>[\w,\s]{1,15}) \(name from internal table\)", str(line))
 			if result is not None:
 				try:
@@ -2633,18 +2597,14 @@ class SSHConnection():
 				except Exception as e:
 					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
 		ue_log_file.close()
-<<<<<<< HEAD
 		if rrcConnectionRecfgComplete > 0:
 			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
 			logging.debug('\033[94m' + statMsg + '\033[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-=======
->>>>>>> origin/develop-nr
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-<<<<<<< HEAD
 		if pdcpDataReqFailedCount > 0:
 			statMsg = 'UE showed ' + str(pdcpDataReqFailedCount) + ' "PDCP data request failed" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -2653,20 +2613,6 @@ class SSHConnection():
 			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1A" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-=======
-		if pdcpFailure > 0:
-			statMsg = 'UE showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
-		if ulschFailure > 0:
-			statMsg = 'UE showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
-		if rachCanceledProcedure > 0:
-			rachMsg = 'UE cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
-			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rachMsg + '\n'
->>>>>>> origin/develop-nr
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
@@ -2684,48 +2630,22 @@ class SSHConnection():
 		if no_cell_sync_found and not mib_found:
 			logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE could not synchronize!\n'
-<<<<<<< HEAD
 			return UE_PROCESS_COULD_NOT_SYNC
-=======
-			return UE_PROCESS_COULD_NOT_SYNC
-		if rlcDiscardBuffer > 0:
-			rlcMsg = 'UE RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
-			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rlcMsg + '\n'
-			return ENB_PROCESS_REALTIME_ISSUE
->>>>>>> origin/develop-nr
 		return 0
 
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-<<<<<<< HEAD
 		self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-		result = re.search('lte-softmodem', str(self.ssh.before))
-		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
-=======
-		#to use daemon on CentOS we need to source the function
-		#linux_distro = platform.linux_distribution()[0]		
-		#if re.match('(.*)CentOS(.*)', linux_distro, re.IGNORECASE):
-			#self.command('source /etc/init.d/functions', '\$', 5)
-		#use nohup instead of daemon
-		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT -r .*-softmodem || true', '\$', 5)
-		time.sleep(5)
-		self.command('stdbuf -o0  ps -aux | grep softmodem | grep -v grep', '\$', 5)
 		result = re.search('-softmodem', str(self.ssh.before))
 		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL -r .*-softmodem || true', '\$', 5)
->>>>>>> origin/develop-nr
+			self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
+			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT -r .*-softmodem || true', '\$', 5)
 			time.sleep(5)
-			self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-softmodem', str(self.ssh.before))
+			self.command('stdbuf -o0  ps -aux | grep softmodem | grep -v grep', '\$', 5)
+			result = re.search('-softmodem', str(self.ssh.before))
 			if result is not None:
-				self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
-				time.sleep(2)
+				self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL -r .*-softmodem || true', '\$', 5)
 		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.close()
 		# If tracer options is on, stopping tshark on EPC side
@@ -2871,52 +2791,29 @@ class SSHConnection():
 	def TerminateOAIUE(self):
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
-<<<<<<< HEAD
 		self.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-		result = re.search('lte-uesoftmodem', str(self.ssh.before))
-		if result is not None:
-			self.command('echo ' + self.UEPassword + ' | sudo -S daemon --name=ue' + str(self.UE_instance) + '_daemon --stop', '\$', 5)
-			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT lte-uesoftmodem || true', '\$', 5)
-			time.sleep(5)
-			self.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-uesoftmodem', str(self.ssh.before))
-			if result is not None:
-				self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL lte-uesoftmodem || true', '\$', 5)
-				time.sleep(2)
-		self.command('rm -f my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
-=======
-		#to use daemon on CentOS we need to source the function
-		#linux_distro = platform.linux_distribution()[0]
-		#if re.match('(.*)CentOS(.*)', linux_distro, re.IGNORECASE):
-			#self.command('source /etc/init.d/functions', '\$', 5)
-		#self.command('echo ' + self.UEPassword + ' | sudo -S daemon --name=ue' + str(self.UE_instance) + '_daemon --stop', '\$', 5)
-		self.command('rm -f my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT -r .*-uesoftmodem || true', '\$', 5)
-		time.sleep(5)
-		self.command('stdbuf -o0  ps -aux | grep uesoftmodem | grep -v grep', '\$', 5)
 		result = re.search('-uesoftmodem', str(self.ssh.before))
 		if result is not None:
-			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL -r .*-uesoftmodem || true', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT -r .*-uesoftmodem || true', '\$', 5)
 			time.sleep(5)
->>>>>>> origin/develop-nr
+			self.command('stdbuf -o0  ps -aux | grep uesoftmodem | grep -v grep', '\$', 5)
+			result = re.search('-uesoftmodem', str(self.ssh.before))
+			if result is not None:
+				self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL -r .*-uesoftmodem || true', '\$', 5)
+				time.sleep(5)
+		self.command('rm -f my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.close()
 		result = re.search('ue_', str(self.UELogFile))
 		if result is not None:
 			copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
 			if (copyin_res == -1):
 				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
-<<<<<<< HEAD
 				self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
 				self.CreateHtmlTestRow('N/A', 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
-=======
-				optionsMsg = '<pre style="background-color:white">Could not copy UE logfile to analyze it!</pre>'
-				self.CreateHtmlTestRow(optionsMsg, 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
->>>>>>> origin/develop-nr
 				self.UELogFile = ''
 				return
 			logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
-<<<<<<< HEAD
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			if result is not None:
 				ueAction = 'Sniffing'
@@ -2941,23 +2838,6 @@ class SSHConnection():
 		else:
 			self.htmlUEFailureMsg = 'No Log File to analyze!'
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-=======
-			if (logStatus < 0):
-				optionsMsg = '<pre style="background-color:white"><b>Sniffing Unsuccessful</b>\n'
-				optionsMsg += self.htmlUEFailureMsg
-				optionsMsg += '</pre>'
-				self.CreateHtmlTestRow(optionsMsg, 'KO', logStatus, 'UE')
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
-			else:
-				optionsMsg = '<pre style="background-color:white"><b>Sniffing Successful</b>\n'
-				optionsMsg += self.htmlUEFailureMsg
-				optionsMsg += '</pre>'
-				self.CreateHtmlTestRow(optionsMsg, 'OK', ALL_PROCESSES_OK)
-			self.UELogFile = ''
-		else:
-			self.CreateHtmlTestRow('<pre style="background-color:white">No Log File to analyze</pre>', 'OK', ALL_PROCESSES_OK)
->>>>>>> origin/develop-nr
 
 	def AutoTerminateUEandeNB(self):
 		if (self.ADBIPAddress != 'none'):

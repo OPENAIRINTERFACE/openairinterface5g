@@ -1428,9 +1428,9 @@ static void* ru_thread( void* param ) {
   }
   else{
     // Start IF device if any
-    if (ru->start_if) {
+    if (ru->nr_start_if) {
       LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
-      AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
+      AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
       if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
       else ret = attach_rru(ru);
       AssertFatal(ret==0,"Cannot connect to remote radio\n");
@@ -1671,7 +1671,7 @@ void *ru_thread_synch(void *arg) {
 }
 */
  
-int start_if(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB) {
+int nr_start_if(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB) {
   return(ru->ifdevice.trx_start_func(&ru->ifdevice));
 }
 
@@ -2067,7 +2067,7 @@ void set_function_spec_param(RU_t *ru)
       ru->feprx                 = NULL;                   // nothing (this is a time-domain signal)
       ru->feptx_ofdm            = NULL;                   // nothing (this is a time-domain signal)
       ru->feptx_prec            = NULL;                   // nothing (this is a time-domain signal)
-      ru->start_if              = start_if;               // need to start the if interface for if5
+      ru->nr_start_if           = nr_start_if;            // need to start the if interface for if5
       ru->ifdevice.host_type    = RRU_HOST;
       ru->rfdevice.host_type    = RRU_HOST;
       ru->ifdevice.eth_params   = &ru->eth_params;
@@ -2092,7 +2092,7 @@ void set_function_spec_param(RU_t *ru)
       ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
       ru->feptx_ofdm            = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
       ru->feptx_prec            = NULL;
-      ru->start_if              = start_if;                 // need to start the if interface for if4p5
+      ru->nr_start_if           = nr_start_if;              // need to start the if interface for if4p5
       ru->ifdevice.host_type    = RRU_HOST;
       ru->rfdevice.host_type    = RRU_HOST;
       ru->ifdevice.eth_params   = &ru->eth_params;
@@ -2116,7 +2116,7 @@ void set_function_spec_param(RU_t *ru)
       ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
       ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
       ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
-      ru->start_if             = NULL;                    // no if interface
+      ru->nr_start_if          = NULL;                    // no if interface
       ru->rfdevice.host_type   = RAU_HOST;
     }
     ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
@@ -2149,7 +2149,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     ru->start_rf               = NULL;                 // no local RF
     ru->stop_rf                = NULL;
-    ru->start_if               = start_if;             // need to start if interface for IF5
+    ru->nr_start_if            = nr_start_if;          // need to start if interface for IF5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;
     ru->ifdevice.configure_rru = configure_ru;
@@ -2174,7 +2174,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_north_asynch_in     = NULL;
     ru->start_rf               = NULL;                // no local RF
     ru->stop_rf                = NULL;
-    ru->start_if               = start_if;            // need to start if interface for IF4p5
+    ru->nr_start_if            = nr_start_if;         // need to start if interface for IF4p5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;
     ru->ifdevice.configure_rru = configure_ru;

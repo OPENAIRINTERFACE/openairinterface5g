@@ -531,7 +531,7 @@ typedef struct PHY_VARS_gNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   uint8_t              configured;
-  gNB_L1_proc_t           proc;
+  gNB_L1_proc_t        proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;
@@ -541,13 +541,13 @@ typedef struct PHY_VARS_gNB_s {
   /// Ethernet parameters for fronthaul interface
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
-  int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB);
+  int                  (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
   uint8_t              local_flag;
   nfapi_nr_config_request_t  gNB_config;
-  NR_DL_FRAME_PARMS   frame_parms;
+  NR_DL_FRAME_PARMS    frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
-  NR_IF_Module_t          *if_inst;
-  NR_UL_IND_t             UL_INFO;
+  NR_IF_Module_t       *if_inst;
+  NR_UL_IND_t          UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
@@ -564,24 +564,24 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t         Sched_INFO;
-  NR_gNB_PDCCH        pdcch_vars;
-  NR_gNB_PBCH         pbch;
-  LTE_eNB_PHICH       phich_vars[2];
+  Sched_Rsp_t          Sched_INFO;
+  NR_gNB_PDCCH         pdcch_vars;
+  NR_gNB_PBCH          pbch;
+  LTE_eNB_PHICH        phich_vars[2];
 
-  NR_gNB_COMMON       common_vars;
-  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PUSCH      *pusch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PRACH       prach_vars;
-  NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
+  NR_gNB_COMMON        common_vars;
+  LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PUSCH        *pusch_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PRACH        prach_vars;
+  NR_gNB_DLSCH_t       *dlsch[NUMBER_OF_UE_MAX][2];    // Nusers times two spatial streams
+  NR_gNB_ULSCH_t       *ulsch[NUMBER_OF_UE_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
   // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA
-  NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
-  NR_gNB_DLSCH_t     *dlsch_MCH;
-  NR_gNB_DLSCH_t     *dlsch_PCH;
-  LTE_eNB_UE_stats    UE_stats[NUMBER_OF_UE_MAX];
-  LTE_eNB_UE_stats   *UE_stats_ptr[NUMBER_OF_UE_MAX];
+  NR_gNB_DLSCH_t       *dlsch_SI,*dlsch_ra,*dlsch_p;
+  NR_gNB_DLSCH_t       *dlsch_MCH;
+  NR_gNB_DLSCH_t       *dlsch_PCH;
+  LTE_eNB_UE_stats     UE_stats[NUMBER_OF_UE_MAX];
+  LTE_eNB_UE_stats     *UE_stats_ptr[NUMBER_OF_UE_MAX];
 
   uint8_t pbch_configured;
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
