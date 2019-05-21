@@ -29,6 +29,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+//#include "common/utils/threadPool/thread-pool.h"
 #include "common/utils/load_module_shlib.h"
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -80,6 +81,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
+//extern void initTpool(char *params,tpool_t *pool, bool performanceMeas);
 
 /* Forms and Objects */
 
@@ -714,7 +716,7 @@ int main( int argc, char **argv ) {
     LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
     get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
- 
+
   }
 
   NB_UE_INST=1;
