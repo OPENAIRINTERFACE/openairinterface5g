@@ -465,14 +465,13 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       }
     }
 
-    boolean_t first_packet_state=false,last_packet_state=false,first_packet_has_timespec=false;
+    boolean_t first_packet_state=false,last_packet_state=false;
 
     if (flags == 2) { // start of burst
       //      s->tx_md.start_of_burst = true;
       //      s->tx_md.end_of_burst = false;
       first_packet_state = true;
       last_packet_state = false;
-      first_packet_has_timespec=true;
     } else if (flags == 3) { // end of burst
       //s->tx_md.start_of_burst = false;
       //s->tx_md.end_of_burst = true;
@@ -483,7 +482,6 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
     //  s->tx_md.end_of_burst = true;
       first_packet_state = true;
       last_packet_state = true;
-      first_packet_has_timespec=true;
     } else if (flags==1) { // middle of burst
     //  s->tx_md.start_of_burst = false;
     //  s->tx_md.end_of_burst = false;
@@ -497,7 +495,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
      first_packet_state=false;
      last_packet_state=true;
     }
-    s->tx_md.has_time_spec  = first_packet_has_timespec;
+    s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = first_packet_state; 
     s->tx_md.end_of_burst   = last_packet_state;
     s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
