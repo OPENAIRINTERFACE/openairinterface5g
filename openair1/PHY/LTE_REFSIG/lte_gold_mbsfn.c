@@ -97,7 +97,7 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_khz_1dot25_table[10][150],uint16_t Nid_mbsfn){
-  unsigned char sfn,l;
+  unsigned char sfn;
   unsigned int n,x1,x2;//,x1tmp,x2tmp;
 
   for (sfn=0; sfn<10; sfn++) {

@@ -146,6 +146,10 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
                     int subframe,
                     unsigned char l);
 
+int lte_dl_mbsfn_khz_1dot25_rx(PHY_VARS_UE *ue,
+                    int *output,
+                    int subframe);
+
 
 
 

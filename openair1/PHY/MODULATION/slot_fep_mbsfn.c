@@ -216,7 +216,7 @@ int slot_fep_mbsfn_khz_1dot25(PHY_VARS_UE *ue,
   uint8_t eNB_id = 0;//ue_common_vars->eNb_id;
 
   unsigned char aa;
-  unsigned char frame_type = frame_parms->frame_type; // Frame Type: 0 - FDD, 1 - TDD;
+  //unsigned char frame_type = frame_parms->frame_type; // Frame Type: 0 - FDD, 1 - TDD;
   unsigned int nb_prefix_samples;
   int ofdm_symbol_size;
   unsigned int subframe_offset;

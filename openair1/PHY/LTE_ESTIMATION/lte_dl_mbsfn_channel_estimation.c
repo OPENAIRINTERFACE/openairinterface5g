@@ -793,17 +793,14 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
 
 
   int pilot_khz_1dot25[600] __attribute__((aligned(16)));
-  unsigned char aarx,aa;
-  unsigned int rb;
+  unsigned char aarx/*,aa*/;
+  //unsigned int rb;
   int16_t ch[2];
-  short *pil,*rxF,*dl_ch,*ch0,*ch1,*ch11,*chp,*ch_prev;
+  short *pil,*rxF,*dl_ch/*,*ch0,*ch1,*ch11,*chp,*ch_prev*/;
   int ch_offset,symbol_offset;
   int pilot_cnt;
 
-  int16_t *f,*f2,*fl,*f2l2,*fr,*f2r2,*f2_dc,*f_dc;
-  unsigned int ofdm_symbol_size;
-
-  unsigned int m,s;
+  int16_t *f,*f2,*fl,*f2l2,*fr,*f2r2/*,*f2_dc,*f_dc*/;
 
   unsigned int k;
 
@@ -816,7 +813,7 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
   ch_offset     = 0;//(l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = 0;//ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
 
-  AssertFatal( ue->frame_parms.N_RB_DL==25,"OFDM symbol size %d not yet supported for FeMBMS %d\n",ue->frame_parms.N_RB_DL);
+  AssertFatal( ue->frame_parms.N_RB_DL==25,"OFDM symbol size %d not yet supported for FeMBMS\n",ue->frame_parms.N_RB_DL);
 
   if( (subframe&0x1) == 0){
         f=filt24_0_khz_1dot25;
@@ -825,8 +822,8 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
         f2l2=filt24_2_khz_1dot25;
         fr=filt24_0r2_khz_1dot25;
         f2r2=filt24_2r_khz_1dot25;
-        f_dc=filt24_0_dcr_khz_1dot25;
-        f2_dc=filt24_2_dcl_khz_1dot25;
+        //f_dc=filt24_0_dcr_khz_1dot25;
+        //f2_dc=filt24_2_dcl_khz_1dot25;
    }else{
     	f=filt24_0_khz_1dot25;
         f2=filt24_2_khz_1dot25;
@@ -834,8 +831,8 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
         f2l2=filt24_2_khz_1dot25;
         fr=filt24_0r2_khz_1dot25;
         f2r2=filt24_2r_khz_1dot25;
-        f_dc=filt24_0_dcr_khz_1dot25;
-        f2_dc=filt24_2_dcl_khz_1dot25;
+        //f_dc=filt24_0_dcr_khz_1dot25;
+        //f2_dc=filt24_2_dcl_khz_1dot25;
    }
 
 
@@ -852,10 +849,8 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size_khz_1dot25));
 
-    int shift;
     if( (subframe&0x1) == 0){
         rxF+=0;
-        shift=0;
         k=0;
     }else{
         rxF+=6;//2*3;
