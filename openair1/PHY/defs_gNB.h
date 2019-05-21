@@ -234,8 +234,6 @@ typedef struct {
   int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
-  /// Number of soft channel bits after code block concatenation (38.212 V15.4.0 section 5.5)
-  uint32_t G;
   //////////////////////////////////////////////////////////////
 
 

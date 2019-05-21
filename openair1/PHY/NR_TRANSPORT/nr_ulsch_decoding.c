@@ -233,7 +233,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
 			  /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
 			  //int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
 			  ulsch->harq_processes[i]->E=0;
-			  ulsch->harq_processes[i]->G=0;
 
 
 			  ulsch->harq_processes[i]->n_DMRS=0;
@@ -346,7 +345,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   ret = ulsch->max_ldpc_iterations;
   
   G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
-
+  // G = 0;
   // G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers);
 
   LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
@@ -585,10 +584,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                          p_procTime);
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("Segment %d CRC OK\n",r);
+        LOG_I(PHY, "Segment %d CRC OK\n",r);
         ret = 2;
       } else {
-        printf("CRC NOK\n");
+        LOG_I(PHY, "CRC NOK\n");
         ret = 1+ulsch->max_ldpc_iterations;
       }
     
@@ -598,7 +597,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       }
 
       ret=no_iteration_ldpc;
-
+      
       for (int m=0; m < Kr>>3; m ++) {
         harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
       }
