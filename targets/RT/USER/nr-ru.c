@@ -1285,6 +1285,7 @@ static void* ru_thread_tx( void* param ) {
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   
+  uhd_set_thread_priority_fun();
 
   while (!oai_exit) { 
  
