@@ -52,9 +52,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   ncoef = 32767 - coef;
 
-//#ifdef DEBUG_PHY
-  LOG_D(PHY,"AbsSubframe %d.%d: rx_offset (before) = %d\n",ue->proc.proc_rxtx[0].frame_rx%1024,subframe,ue->rx_offset);
-//#endif //DEBUG_PHY
+  LOG_D(PHY,"AbsSubframe %d: rx_offset (before) = %d\n",subframe,ue->rx_offset);
 
 
   // we only use channel estimates from tx antenna 0 here
@@ -62,8 +60,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[(i<<1)];
-      Im = ((int16_t*)ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id][aa])[1+(i<<1)];
+      Re = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
+      Im = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -122,8 +120,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
 
       #ifdef DEBUG_PHY
-      LOG_D(PHY,"AbsSubframe %d.%d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
-              ue->proc.proc_rxtx[ue->current_thread_id[subframe]].frame_rx,
+      LOG_D(PHY,"AbsSubframe %d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
               subframe,
               ue->current_thread_id[subframe],
               diff,

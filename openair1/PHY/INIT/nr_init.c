@@ -33,12 +33,14 @@
 #include "assertions.h"
 #include <math.h>
 
+#include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
 extern int32_t get_uldl_offset(int nr_bandP);
+extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 int l1_north_init_gNB() {
   int i,j;
@@ -77,12 +79,14 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
                     unsigned char abstraction_flag) {
   // shortcuts
   NR_DL_FRAME_PARMS *const fp       = &gNB->frame_parms;
-  nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
+  nfapi_nr_config_request_t *cfg    = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  LTE_eNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
-  LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
-  LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;
+  LTE_eNB_PUSCH **const pusch_vars  = gNB->pusch_vars;
+  LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
+  LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;
+
   int i, UE_id;
+
   LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
   gNB->total_dlsch_bitrate = 0;
   gNB->total_transmitted_bits = 0;
@@ -110,7 +114,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   init_dfts();
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
-  // Polar encoder init for PBCH
   //PDCCH DMRS init
   gNB->nr_gold_pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
@@ -148,6 +151,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   nr_init_pdsch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
+
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
@@ -167,14 +171,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   gNB->first_run_I0_measurements =
     1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
   common_vars->rxdata  = (int32_t **)NULL;
-  common_vars->txdataF = (int32_t **)malloc16(15*sizeof(int32_t *));
-  common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t *));
+  common_vars->txdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
+  common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t*));
 
-  for (i=0; i<15; i++) {
-    common_vars->txdataF[i] = (int32_t *)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t) );
-    LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
-          i,common_vars->txdataF[i],
-          fp->samples_per_frame_wCP*sizeof(int32_t));
+  for (i=0;i<15;i++){
+      common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t) ); // [hna] samples_per_frame without CP
+
+      LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
+            i,common_vars->txdataF[i],
+            fp->samples_per_frame_wCP*sizeof(int32_t));
   }
 
   // Channel estimates for SRS
@@ -357,7 +362,9 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell) {
+
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst) {
+
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
   //overwrite for new NR parameters
@@ -372,15 +379,17 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.physical_cell_id.value=Nid_cell;
+  gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
   gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
   gNB->mac_enabled     = 1;
-  fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
   nr_init_frame_parms(gNB_config, fp);
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
+
 }
 
 
@@ -398,6 +407,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
   gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20);
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
+  gNB_config->sch_config.ssb_scg_position_in_burst.value= phy_config->cfg->sch_config.ssb_scg_position_in_burst.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
     gNB_config->subframe_config.duplex_mode.value    = TDD;
@@ -408,7 +418,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
-  fp->threequarter_fs                    = 0;
+  fp->threequarter_fs                    = openair0_cfg[0].threequarter_fs;
   LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u)\n",
         Mod_id,
         CC_id,
@@ -417,6 +427,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
         gNB_config->rf_config.ul_carrier_bandwidth.value,
         gNB_config->sch_config.physical_cell_id.value,
         fp->dl_CarrierFreq );
+
   nr_init_frame_parms(gNB_config, fp);
 
   if (RC.gNB[Mod_id][CC_id]->configured == 1) {
@@ -436,6 +447,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_I(PHY, "Initialise nr transport\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
 
     for (j=0; j<2; j++) {
@@ -445,29 +457,38 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
         LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
         exit(-1);
       }/* else {
-
-  gNB->dlsch[i][j]->rnti=0;
-  LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
+        gNB->dlsch[i][j]->rnti=0;
+        LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
       }*/
+
+      ///////////////////////// Initializing gNB ULSCH /////////////////////////
+      LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+
+      // ULSCH for RA
+      if(i==0) {
+        gNB->ulsch[i][j] = new_gNB_ulsch(5, fp->N_RB_UL, 0);
+
+        if (!gNB->ulsch[i][j]) {
+          LOG_E(PHY,"Can't get gNB ulsch structures\n");
+          exit(-1);
+        }
+      }
+
+      // ULSCH for data
+      gNB->ulsch[i+1][j] = new_gNB_ulsch(5, fp->N_RB_UL, 0);
+
+      if (!gNB->ulsch[i+1][j]) {
+        LOG_E(PHY,"Can't get gNB ulsch structures\n");
+        exit(-1);
+      }
+      //////////////////////////////////////////////////////////////////////////
     }
 
-    //LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-    //gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
-    /*if (!gNB->ulsch[1+i]) {
-      LOG_E(PHY,"Can't get gNB ulsch structures\n");
-      exit(-1);
-    }*/
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
     //gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 
-  // ULSCH for RA
-  //gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
-  /*if (!gNB->ulsch[0]) {
-    LOG_E(PHY,"Can't get gNB ulsch structures\n");
-    exit(-1);
-  }*/
   gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
   LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
   gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);

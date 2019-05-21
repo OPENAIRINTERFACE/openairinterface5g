@@ -21,19 +21,16 @@
 
 /*!\file PHY/CODING/nr_polar_init.h
  * \brief
- * \author Turker Yilmaz
+ * \author Turker Yilmaz, Raymond Knopp
  * \date 2018
  * \version 0.1
  * \company EURECOM
- * \email turker.yilmaz@eurecom.fr
+ * \email turker.yilmaz@eurecom.fr, raymond.knopp@eurecom.fr
  * \note
  * \warning
 */
 
-#include "nrPolar_tools/nr_polar_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
 static int intcmp(const void *p1,const void *p2) {
@@ -56,7 +53,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
 
   //  printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
   //Else, initialize and add node to the end of the linked list.
-  t_nrPolar_params *newPolarInitNode = malloc(sizeof(t_nrPolar_params));
+  t_nrPolar_params *newPolarInitNode = calloc(sizeof(t_nrPolar_params),1);
 
   if (newPolarInitNode != NULL) {
     newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
@@ -95,7 +92,9 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
     }
 
     newPolarInitNode->K = newPolarInitNode->payloadBits + newPolarInitNode->crcParityBits; // Number of bits to encode.
-    newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K, newPolarInitNode->encoderLength, newPolarInitNode->n_max);
+    newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K,
+    											 newPolarInitNode->encoderLength,
+												 newPolarInitNode->n_max);
     newPolarInitNode->n = log2(newPolarInitNode->N);
     newPolarInitNode->G_N = nr_polar_kronecker_power_matrices(newPolarInitNode->n);
     //polar_encoder vectors:
@@ -182,9 +181,9 @@ void nr_polar_print_polarParams(t_nrPolar_params *polarParams) {
   return;
 }
 
-t_nrPolar_params *nr_polar_params ( int8_t messageType,
-                                    uint16_t messageLength,
-                                    uint8_t aggregation_level) {
+t_nrPolar_params *nr_polar_params (int8_t messageType,
+                                   uint16_t messageLength,
+                                   uint8_t aggregation_level) {
   static t_nrPolar_params *polarList = NULL;
   nr_polar_init(&polarList, messageType,messageLength,aggregation_level);
   t_nrPolar_params *polarParams=polarList;

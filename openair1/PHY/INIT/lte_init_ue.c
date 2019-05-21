@@ -355,7 +355,9 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 #endif
 
 
-void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,
+						int CC_id,
+						uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 

@@ -150,7 +150,7 @@ void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_i
 *
 *********************************************************************/
 
-void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, uint8_t number_harq_processes_pusch)
+void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int thread_id, int code_word_idx, uint8_t number_harq_processes_pusch)
 {
   NR_UE_ULSCH_t *ulsch;
 
@@ -160,7 +160,7 @@ void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, uint8_t number_h
 
     memset(ulsch,0,sizeof(NR_UE_ULSCH_t));
 
-    ue->ulsch[gNB_id] = ulsch;
+    ue->ulsch[thread_id][gNB_id][code_word_idx] = ulsch;
   }
   else {
     LOG_E(PHY, "Fatal memory allocation problem at line %d in function %s of file %s \n", __LINE__ , __func__, __FILE__);
@@ -185,7 +185,7 @@ void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, uint8_t number_h
   }
 
   for (int slot_tx = 0; slot_tx < NR_MAX_SLOTS_PER_FRAME; slot_tx++) {
-    ue->ulsch[gNB_id]->harq_process_id[slot_tx] = NR_MAX_HARQ_PROCESSES;
+    ue->ulsch[thread_id][gNB_id][code_word_idx]->harq_process_id[slot_tx] = NR_MAX_HARQ_PROCESSES;
   }
 }
 
@@ -202,9 +202,9 @@ void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, uint8_t number_h
 *
 *********************************************************************/
 
-void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id)
+void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int thread_id, int code_word_idx)
 {
-  NR_UE_ULSCH_t *ulsch = ue->ulsch[gNB_id];
+  NR_UE_ULSCH_t *ulsch = ue->ulsch[thread_id][gNB_id][code_word_idx];
 
   for (int process_id = 0; process_id < ulsch->number_harq_processes_for_pusch; process_id++) {
 
@@ -215,7 +215,7 @@ void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id)
 
   free16(ulsch, sizeof(NR_UE_ULSCH_t));
 
-  ue->ulsch[gNB_id] = NULL;
+  ue->ulsch[thread_id][gNB_id][code_word_idx] = NULL;
 }
 
 /*******************************************************************

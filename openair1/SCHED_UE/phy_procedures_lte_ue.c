@@ -36,7 +36,7 @@
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
 #include <sched.h>
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/nr-uesoftmodem.h"
 
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "SCHED_UE/sched_UE.h"
@@ -5116,13 +5116,13 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
     if (msg_p != NULL) {
       switch (ITTI_MSG_ID(msg_p)) {
       case PHY_FIND_CELL_REQ:
-  LOG_I(PHY, "[UE %d] Received %s\n", ITTI_MSG_INSTANCE (msg_p) - NB_eNB_INST, ITTI_MSG_NAME (msg_p));
+  LOG_I(PHY, "[UE ] Received %s\n", ITTI_MSG_NAME (msg_p));
 
   /* TODO process the message */
   break;
 
       default:
-  LOG_E(PHY, "[UE %d] Received unexpected message %s\n", ITTI_MSG_INSTANCE (msg_p) - NB_eNB_INST, ITTI_MSG_NAME (msg_p));
+  LOG_E(PHY, "[UE %d] Received unexpected message %s\n", ITTI_MSG_INSTANCE (msg_p) , ITTI_MSG_NAME (msg_p));
   break;
       }
 

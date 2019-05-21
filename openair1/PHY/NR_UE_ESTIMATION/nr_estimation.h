@@ -43,30 +43,35 @@
 \param symbol symbol within frame
 */
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_id,
 				uint8_t eNB_offset,
 				unsigned char Ns,
-				unsigned char l,
 				unsigned char symbol,
 				unsigned short coreset_start_subcarrier,
 				unsigned short nb_rb_coreset);
 
+int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
+                             uint8_t eNB_offset,
+                             unsigned char Ns,
+                             unsigned char symbol,
+			     int dmrss,
+			     NR_UE_SSB *current_ssb);
+
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_id,
-                              uint8_t eNB_offset,
-                              unsigned char Ns,
-                              unsigned char l,
-                              unsigned char symbol);
+                               uint8_t eNB_offset,
+                               unsigned char Ns,
+                               unsigned char symbol,
+			       int dmrss,
+			       uint8_t ssb_index,
+			       uint8_t n_hf);
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned short p,
-                              unsigned char l,
                               unsigned char symbol,
-							  unsigned short bwp_start_subcarrier,
-							  unsigned short nb_rb_pdsch);
+			      unsigned short bwp_start_subcarrier,
+			      unsigned short nb_rb_pdsch);
+
 							  
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_NR_UE *ue,

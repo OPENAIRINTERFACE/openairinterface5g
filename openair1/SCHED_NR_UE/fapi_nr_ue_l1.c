@@ -55,8 +55,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
-    NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
-    NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+    NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
+    //NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
     PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
         
     //        PUCCH_ConfigCommon_nr_t    *pucch_config_common = PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0];
@@ -106,32 +106,27 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	  uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
 	  dlsch0->current_harq_pid = current_harq_pid;
 	  dlsch0->active = 1;
+	  dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
                     
 	  //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
                     
-	  NR_DL_UE_HARQ_t dlsch0_harq = *(dlsch0->harq_processes[current_harq_pid]);
+	  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
                     
-	  //dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
-                    
-	  dlsch0_harq.nb_rb = dlsch_config_pdu->number_rbs;
-	  dlsch0_harq.start_rb = dlsch_config_pdu->start_rb;
-	  dlsch0_harq.nb_symbols = dlsch_config_pdu->number_symbols;
-	  dlsch0_harq.start_symbol = dlsch_config_pdu->start_symbol;
-	  dlsch0_harq.mcs = dlsch_config_pdu->mcs;
-	  dlsch0_harq.DCINdi = dlsch_config_pdu->ndi;
-	  dlsch0_harq.rvidx = dlsch_config_pdu->rv;
+	  dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
+	  dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
+	  dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
+	  dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+	  dlsch0_harq->mcs = dlsch_config_pdu->mcs;
+	  dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
+	  dlsch0_harq->rvidx = dlsch_config_pdu->rv;
 	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-	  dlsch0_harq.harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-	  dlsch0_harq.harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-	  printf(">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq.mcs);
-	  //for (int j = 0 ; j<1000; j++) printf("\nk = %d",j);
+	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+	  dlsch0_harq->Nl=1;
+	  dlsch0_harq->status = ACTIVE;
+	  LOG_D(MAC,">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
 
-#if 0
-	  dlsch0->harq_processes[current_harq_pid]->mcs = dlsch_config_pdu->mcs;
-	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-	  //pdlsch0->rnti             = rnti;
-#endif
 	}
       }
     }else{
@@ -193,11 +188,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH){
 	  // prach config pdu
 	  fapi_nr_ul_config_prach_pdu *prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-	  frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
+	  /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
 	  frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
 	  frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
 	  frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;
+	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
 	  prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
 	}
       }
@@ -220,19 +215,18 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   if(phy_config != NULL){
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
-      printf("[L1][IF module][PHY CONFIG]\n");
-      printf("subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
-      printf("ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
-      printf("dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
-      printf("pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
-      printf("cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
-      printf("intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
-      printf("system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
-      printf("ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
-      printf("half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
-      printf("-------------------------------\n");
+      LOG_I(MAC,"[L1][IF module][PHY CONFIG]\n");
+      LOG_I(MAC,"subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
+      LOG_I(MAC,"ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
+      LOG_I(MAC,"dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
+      LOG_I(MAC,"pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
+      LOG_I(MAC,"cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
+      LOG_I(MAC,"intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
+      LOG_I(MAC,"system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
+      LOG_I(MAC,"ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
+      LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
+      LOG_I(MAC,"-------------------------------\n");
 
-      PHY_vars_UE_g[0][0]->proc.proc_rxtx[0].frame_rx = phy_config->config_req.pbch_config.system_frame_number;
     }
         
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_COMMON){
@@ -252,7 +246,7 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
     }
   }
     
-
+  
 
   return 0;
 }

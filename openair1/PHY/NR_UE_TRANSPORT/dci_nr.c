@@ -332,7 +332,9 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
   //uint8_t rb_count_bit;
   uint8_t i, j, aarx, bitcnt_coreset_freq_dom=0;
   int32_t *dl_ch0, *dl_ch0_ext, *rxF, *rxF_ext;
+#ifdef NR_PDCCH_DCI_DEBUG
   int nushiftmod3 = frame_parms->nushift % 3;
+#endif
   uint8_t symbol_mod;
   symbol_mod = (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol;
   c_rb = n_BWP_start; // c_rb is the common resource block: RB within the BWP
@@ -809,8 +811,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // indicates the number of active CORESETs for the current BWP to decode PDCCH: max is 3 (this variable is not useful here, to be removed)
   //uint8_t  coreset_nbr_act;
   // indicates the number of REG contained in the PDCCH (number of RBs * number of symbols, in CORESET)
-  uint8_t  coreset_nbr_reg;
-  uint32_t coreset_C;
   uint32_t coreset_nbr_rb = 0;
   // for (int j=0; j < coreset_nbr_act; j++) {
   // for each active CORESET (max number of active CORESETs in a BWP is 3),
@@ -829,9 +829,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #ifdef NR_PDCCH_DCI_DEBUG
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%ld,%lx), coreset_nbr_rb=%d\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
 #endif
-  coreset_nbr_reg = coreset_time_dur * coreset_nbr_rb;
-  coreset_C = (uint32_t)(coreset_nbr_reg / (reg_bundle_size_L * coreset_interleaver_size_R));
 #ifdef NR_PDCCH_DCI_DEBUG
+  uint8_t  coreset_nbr_reg = coreset_time_dur * coreset_nbr_rb;
+  uint32_t coreset_C = (uint32_t)(coreset_nbr_reg / (reg_bundle_size_L * coreset_interleaver_size_R));
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_nbr_rb=%d, coreset_nbr_reg=%d, coreset_C=(%d/(%d*%d))=%d\n",
          coreset_nbr_rb, coreset_nbr_reg, coreset_nbr_reg, reg_bundle_size_L,coreset_interleaver_size_R, coreset_C);
 #endif
@@ -843,7 +843,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 #endif
     nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
+                                pdcch_vars[eNB_id]->dl_ch_estimates,
                                 pdcch_vars[eNB_id]->rxdataF_ext,
                                 pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                                 s,
@@ -1418,27 +1418,25 @@ void nr_dci_decoding_procedure0(int s,
         *format_found=_format_2_3_found;
       }
 
-      //#ifdef NR_PDCCH_DCI_DEBUG
+
+#ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+#endif
 
-      //#endif
       if (*format_found!=255) {
         dci_alloc[*dci_cnt].dci_length = sizeof_bits;
         dci_alloc[*dci_cnt].rnti = crc;
         dci_alloc[*dci_cnt].L = L;
         dci_alloc[*dci_cnt].firstCCE = CCEind;
-        dci_alloc[*dci_cnt].dci_pdu[0] = dci_estimation[0];
-        dci_alloc[*dci_cnt].dci_pdu[1] = dci_estimation[1];
-        dci_alloc[*dci_cnt].dci_pdu[2] = dci_estimation[2];
-        dci_alloc[*dci_cnt].dci_pdu[3] = dci_estimation[3];
-        //#ifdef NR_PDCCH_DCI_DEBUG
+        memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_estimation,8);
+
+#ifdef NR_PDCCH_DCI_DEBUG
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>0x%x, sizeof_bits %d, sizeof_bytes %d \n",
                 dci_alloc[*dci_cnt].rnti, dci_alloc[*dci_cnt].dci_length, sizeof_bytes);
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] 0x%lx pdu[1] 0x%lx \n",
                 *dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1]);
-
-        //#endif
+#endif
         if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)) {
           if ((*crc_scrambled == _p_rnti) || (*crc_scrambled == _si_rnti) || (*crc_scrambled == _ra_rnti)) {
             dci_alloc[*dci_cnt].format = format1_0;

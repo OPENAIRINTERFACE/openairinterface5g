@@ -27,12 +27,12 @@
  */
 
 #include "flexran_agent.h"
+#include <common/utils/system.h>
 
 #include <arpa/inet.h>
 
 void *send_thread(void *args);
 void *receive_thread(void *args);
-pthread_t new_thread(void *(*f)(void *), void *b);
 Protocol__FlexranMessage *flexran_agent_timeout(void* args);
 
 
@@ -145,38 +145,6 @@ error:
 }
 
 
-/* utility function to create a thread */
-pthread_t new_thread(void *(*f)(void *), void *b) {
-  pthread_t t;
-  pthread_attr_t att;
-
-  if (pthread_attr_init(&att)){ 
-    fprintf(stderr, "pthread_attr_init err\n"); 
-    exit(1); 
-  }
-
-  struct sched_param sched_param_recv_thread;
-
-  sched_param_recv_thread.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
-  pthread_attr_setschedparam(&att, &sched_param_recv_thread);
-  pthread_attr_setschedpolicy(&att, SCHED_FIFO);
-
-  if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED)) { 
-    fprintf(stderr, "pthread_attr_setdetachstate err\n"); 
-    exit(1); 
-  }
-  if (pthread_create(&t, &att, f, b)) { 
-    fprintf(stderr, "pthread_create err\n"); 
-    exit(1); 
-  }
-  if (pthread_attr_destroy(&att)) { 
-    fprintf(stderr, "pthread_attr_destroy err\n"); 
-    exit(1); 
-  }
-
-  return t;
-}
-
 int channel_container_init = 0;
 int flexran_agent_start(mid_t mod_id)
 {
@@ -227,8 +195,8 @@ int flexran_agent_start(mid_t mod_id)
 
   /*Initialize the continuous stats update mechanism*/
   flexran_agent_init_cont_stats_update(mod_id);
-  
-  new_thread(receive_thread, flexran);
+  pthread_t t; 
+ threadCreate(&t, receive_thread, flexran, "flexran", -1, OAI_PRIORITY_RT);
 
   /*Initialize and register the mac xface. Must be modified later
    *for more flexibility in agent management */

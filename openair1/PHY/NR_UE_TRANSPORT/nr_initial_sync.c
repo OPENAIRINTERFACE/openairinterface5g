@@ -35,6 +35,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
 
@@ -52,61 +53,126 @@ int cnt=0;
 
 #define DEBUG_INITIAL_SYNCH
 
-int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
+
+// create a new node of SSB structure
+NR_UE_SSB* create_ssb_node(uint8_t  i, uint8_t  h) {
+
+  NR_UE_SSB *new_node = (NR_UE_SSB*)malloc(sizeof(NR_UE_SSB));
+  new_node->i_ssb = i;
+  new_node->n_hf = h;
+  new_node->c_re = 0;
+  new_node->c_im = 0;
+  new_node->metric = 0;
+  new_node->next_ssb = NULL;
+
+  return new_node;
+}
+
+
+// insertion of the structure in the ordered list (highest metric first)
+NR_UE_SSB* insert_into_list(NR_UE_SSB *head, NR_UE_SSB *node) {
+
+  if (node->metric > head->metric) {
+    node->next_ssb = head;
+    head = node;
+    return head;
+  }
+
+  NR_UE_SSB *current = head;
+  while (current->next_ssb !=NULL) {
+    NR_UE_SSB *temp=current->next_ssb;
+    if(node->metric > temp->metric) {
+      node->next_ssb = temp;
+      current->next_ssb = node;
+      return head;
+    }
+    else
+      current = temp;
+  }
+  current->next_ssb = node;
+
+  return head;
+}
+
+
+void free_list(NR_UE_SSB *node) {
+  if (node->next_ssb != NULL)
+    free_list(node->next_ssb);
+  free(node);
+}
+
+
+int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
 
+  NR_UE_SSB *best_ssb = NULL;
+  NR_UE_SSB *current_ssb;
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
         ue->rx_offset);
 #endif
 
-  // save the nb_prefix_samples0 since we are not synchronized to subframes yet and the SSB has all symbols with nb_prefix_samples
-  int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
-  frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
+  uint8_t  N_L = (frame_parms->Lmax == 4)? 4:8;
+  uint8_t  N_hf = (frame_parms->Lmax == 4)? 2:1;
 
+  // loops over possible pbch dmrs cases to retrive best estimated i_ssb (and n_hf for Lmax=4) for multiple ssb detection
+  for (int hf = 0; hf < N_hf; hf++) {
+    for (int l = 0; l < N_L ; l++) {
 
-  //symbol 1
-  nr_slot_fep(ue,
-	      1,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
-  
-  //symbol 2
-  nr_slot_fep(ue,
-	      2,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
+      // initialization of structure
+      current_ssb = create_ssb_node(l,hf);
 
-  //symbol 3
-  nr_slot_fep(ue,
-	      3,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
+#if UE_TIMING_TRACE
+      start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+      // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
+      for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+          nr_pbch_dmrs_correlation(ue,0,0,i,i-pbch_initial_symbol,current_ssb);
+#if UE_TIMING_TRACE
+      stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+      
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      
+      // generate a list of SSB structures
+      if (best_ssb == NULL)
+        best_ssb = current_ssb;
+      else
+        best_ssb = insert_into_list(best_ssb,current_ssb);
 
-  //put back nb_prefix_samples0
-  frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
-  
-  
-  ret = nr_rx_pbch(ue,
-		   &ue->proc.proc_rxtx[0],
-		   ue->pbch_vars[0],
-		   frame_parms,
-		   0,
-		   SISO,
-		   ue->high_speed_flag);
-  
+    }
+  }
+
+  NR_UE_SSB *temp_ptr=best_ssb;
+  while (ret!=0 && temp_ptr != NULL) {
+
+#if UE_TIMING_TRACE
+    start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+  // computing channel estimation for selected best ssb
+    for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
+#if UE_TIMING_TRACE
+    stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+
+    ret = nr_rx_pbch(ue,
+	             proc,
+		     ue->pbch_vars[0],
+		     frame_parms,
+		     0,
+		     temp_ptr->i_ssb,
+                     SISO,
+                     ue->high_speed_flag);
+
+    temp_ptr=temp_ptr->next_ssb;
+  }
+
+  free_list(best_ssb);
+
   
   if (ret==0) {
     
@@ -122,11 +188,6 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
     //    ue->pbch_vars[0]->decoded_output[0] = ue->pbch_vars[0]->decoded_output[2];
     //    ue->pbch_vars[0]->decoded_output[2] = dummy;
 
-    for(int i=0; i<RX_NB_TH;i++)
-    {
-
-        ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
-    }
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully\n",ue->Mod_id);
 #endif
@@ -140,10 +201,10 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
-int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
-  int32_t sync_pos, sync_pos_slot; // k_ssb, N_ssb_crb, sync_pos2,
+  int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
@@ -186,20 +247,17 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
-  sync_pos_slot = (fp->samples_per_subframe/fp->slots_per_subframe) - 10*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+  if (sync_pos >= fp->nb_prefix_samples)
+    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
+  else
+    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
 
-  if (sync_pos >= fp->nb_prefix_samples){
-    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;}
-  else{
-    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;}
-    
-  ue->rx_offset = ue->ssb_offset - sync_pos_slot;
 
   //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
-  LOG_I(PHY,"sync_pos %d ssb_offset %d sync_pos_slot %d \n",sync_pos,ue->ssb_offset,sync_pos_slot);
+  LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
 
   // digital compensation of FFO for SSB symbols
@@ -224,6 +282,22 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* check that SSS/PBCH block is continuous inside the received buffer */
   if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
+    /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
+    /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
+    /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
+    /* symbol number are from beginning of SS/PBCH blocks as below:  */
+    /*    Signal            PSS  PBCH  SSS  PBCH                     */
+    /*    symbol number      0     1    2    3                       */
+    /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
+    /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
+
+    for(int i=0; i<4;i++)
+      nr_slot_fep(ue,
+	          i,
+	          0,
+	          ue->ssb_offset,
+	          0);
+
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
@@ -234,15 +308,22 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
 
     nr_gold_pbch(ue);
-    ret = nr_pbch_detection(ue,mode);
-    
+    ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
+
+    if (ret == 0) {
+      // sync at symbol ue->symbol_offset
+      // computing the offset wrt the beginning of the frame
+      sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+    }   
+
     nr_gold_pdcch(ue,0, 2);
     /*
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;
 	  
-    nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
-    nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
     fp->nb_prefix_samples0 = nb_prefix_samples0;	
 
     LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
@@ -259,7 +340,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   }
   else {
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
+    LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d\n", sync_pos);
 #endif
   }
   }
@@ -292,9 +373,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     if (ue->UE_scan_carrier == 0) {
 
     #if UE_AUTOTEST_TRACE
-      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
-              ue->proc.proc_rxtx[0].frame_rx,
               ue->rx_offset,
               ue->common_vars.freq_offset );
     #endif
@@ -305,30 +385,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     }
 
-#if DISABLE_LOG_X
-    printf("[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
-	  10*log10(ue->measurements.rssi),
-	  ue->rx_total_gain_dB,
-	  ue->measurements.n0_power_tot_dBm,
-	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
-	  (10*log10(ue->measurements.rsrq[0])));
-
-
-    printf("[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
-	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  duplex_string[fp->frame_type],
-	  prefix_string[fp->Ncp],
-	  fp->Nid_cell,
-	  fp->N_RB_DL,
-	  fp->phich_config_common.phich_duration,
-	  phich_string[fp->phich_config_common.phich_resource],
-	  fp->nb_antenna_ports_eNB);
-#else
-    LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
+    LOG_I(PHY, "[UE %d] RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
 	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
 	  10*log10(ue->measurements.rssi),
 	  ue->rx_total_gain_dB,
@@ -346,22 +403,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 	  fp->phich_config_common.phich_duration,
 	  phich_string[fp->phich_config_common.phich_resource],
 	  fp->nb_antenna_ports_eNB);*/
-#endif
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-#  if DISABLE_LOG_X
-    printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+    LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
 	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
-#  else
-    LOG_I(PHY, "[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
-	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
-	  ue->common_vars.freq_offset);
-#  endif
 #endif
   } else {
 #ifdef DEBUG_INITIAL_SYNC

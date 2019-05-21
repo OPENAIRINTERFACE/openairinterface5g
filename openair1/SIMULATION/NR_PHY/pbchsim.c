@@ -43,6 +43,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #include "SCHED_NR/sched_nr.h"
 
@@ -79,6 +80,7 @@ void exit_function(const char* file, const char* function, const int line,const 
 
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {
@@ -91,13 +93,13 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim = 0.0;
+  //double iqim = 0.0;
   double ip =0.0;
-  unsigned char pbch_pdu[6];
+  //unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
-  uint8_t write_output_file=0;
+  //uint8_t write_output_file=0;
   //int result;
   //int freq_offset;
   //  int subframe_offset;
@@ -105,11 +107,12 @@ int main(int argc, char **argv)
   int trial,n_trials=1,n_errors=0,n_errors_payload=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
+  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
 
-  uint8_t extended_prefix_flag=0;
-  int8_t interf1=-21,interf2=-21;
+  //uint8_t extended_prefix_flag=0;
+  //int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
 
@@ -124,10 +127,10 @@ int main(int argc, char **argv)
 
   int N_RB_DL=273,mu=1;
 
-  unsigned char frame_type = 0;
+  //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=0;
+  int frame=0;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -148,9 +151,9 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
-    case 'f':
+    /*case 'f':
       write_output_file=1;
       output_fd = fopen(optarg,"w");
 
@@ -159,11 +162,11 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
-      break;
+      break;*/
 
-    case 'd':
+    /*case 'd':
       frame_type = 1;
-      break;
+      break;*/
 
     case 'g':
       switch((char)*optarg) {
@@ -202,13 +205,13 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'i':
+    /*case 'i':
       interf1=atoi(optarg);
       break;
 
     case 'j':
       interf2=atoi(optarg);
-      break;
+      break;*/
 
     case 'n':
       n_trials = atoi(optarg);
@@ -235,9 +238,9 @@ int main(int argc, char **argv)
       Td= atof(optarg);
       break;
       */
-    case 'p':
+    /*case 'p':
       extended_prefix_flag=1;
-      break;
+      break;*/
 
       /*
       case 'r':
@@ -280,6 +283,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'N':
       Nid_cell = atoi(optarg);
       break;
@@ -320,8 +327,8 @@ int main(int argc, char **argv)
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
              argv[0]);
       printf("-h This message\n");
-      printf("-p Use extended prefix mode\n");
-      printf("-d Use TDD\n");
+      //printf("-p Use extended prefix mode\n");
+      //printf("-d Use TDD\n");
       printf("-n Number of frames to simulate\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
@@ -330,15 +337,16 @@ int main(int argc, char **argv)
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-      printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-o Carrier frequency offset in Hz\n");
+      printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //    printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-      printf("-f Output filename (.txt format) for Pe/SNR results\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       exit (-1);
       break;
@@ -365,33 +373,39 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
+  frame_parms->nushift = Nid_cell%4;
+  frame_parms->ssb_type = nr_ssb_type_C;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
-  double fs,bw,scs,eps;
+  uint8_t n_hf = gNB_config->sch_config.half_frame_index.value;
 
-  if (mu == 1 && N_RB_DL == 217) { 
-    fs = 122.88e6;
-    bw = 80e6;
-    scs = 30000;
-  }					       
-  else if (mu == 1 && N_RB_DL == 245) {
-    fs = 122.88e6;
-    bw = 90e6;
-    scs = 30000;
+  double fs,bw,scs,eps;
+  
+  switch (mu) {
+    case 1:
+	scs = 30000;
+	if (N_RB_DL == 217) { 
+	    fs = 122.88e6;
+	    bw = 80e6;
+	    
+	}					       
+	else if (N_RB_DL == 245) {
+	    fs = 122.88e6;
+	    bw = 90e6;
+	}
+	else if (N_RB_DL == 273) {
+	    fs = 122.88e6;
+	    bw = 100e6;
+	}
+	else if (N_RB_DL == 106) { 
+	    fs = 61.44e6;
+	    bw = 40e6;
+	}
+	else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+	break;
   }
-  else if (mu == 1 && N_RB_DL == 273) {
-    fs = 122.88e6;
-    bw = 100e6;
-    scs = 30000;
-  }
-  else if (mu == 1 && N_RB_DL == 106) { 
-    fs = 61.44e6;
-    bw = 40e6;
-    scs = 30000;
-  }
-  else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
 
   // cfo with respect to sub-carrier spacing
   eps = cfo/scs;
@@ -476,31 +490,38 @@ int main(int argc, char **argv)
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
-    nr_common_signal_procedures (gNB,frame,subframe);
 
-	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
-	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-
-    //TODO: loop over slots
-    for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		     txdata[aa],
-		     frame_parms->ofdm_symbol_size,
-		     12,
-		     frame_parms->nb_prefix_samples,
-		     CYCLIC_PREFIX);
-      } else {
-	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			     txdata[aa],
-			     14,
-			     frame_parms);
+    for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
+      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
+	memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
+      
+      nr_common_signal_procedures (gNB,frame,slot);
+      
+      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+	if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+	  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+		       &txdata[aa][slot*frame_parms->samples_per_slot],
+		       frame_parms->ofdm_symbol_size,
+		       12,
+		       frame_parms->nb_prefix_samples,
+		       CYCLIC_PREFIX);
+	} else {
+	  nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+			       &txdata[aa][slot*frame_parms->samples_per_slot],
+			       14,
+			       frame_parms);
+	}
       }
     }
+
+    LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+    if (gNB->frame_parms.nb_antennas_tx>1)
+      LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+
+
   } else {
     printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
-    
+    UE->UE_fo_compensation = 1; // perform fo compensation when samples from file are used
     if (fread(txdata[0],
 	      sizeof(int32_t),
 	      frame_length_complex_samples,
@@ -517,10 +538,9 @@ int main(int argc, char **argv)
   if (output_fd) 
     fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
 
-  int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
-
-  //  printf("txlev %d (%f)\n",txlev,10*log10(txlev));
+  /*int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+		  	  	  	  	    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+  printf("txlev %d (%f)\n",txlev,10*log10(txlev));*/
 
 
   for (i=0; i<frame_length_complex_samples; i++) {
@@ -536,7 +556,6 @@ int main(int argc, char **argv)
     n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
-
       // multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
@@ -575,52 +594,43 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_frame,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
       }
 
       if (UE->is_synchronized == 0) {
-	ret = nr_initial_sync(UE, normal_txrx);
+	UE_nr_rxtx_proc_t proc={0};
+	ret = nr_initial_sync(&proc, UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
       else {
 	UE->rx_offset=0;
-	//symbol 1
-	nr_slot_fep(UE,
-		    5,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
 	
-	//symbol 2
-	nr_slot_fep(UE,
-		    6,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
-	
-	//symbol 3
-	nr_slot_fep(UE,
-		    7,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
-	 
-	ret = nr_rx_pbch(UE,
-			 &UE->proc.proc_rxtx[0],
-			 UE->pbch_vars[0],
-			 frame_parms,
-			 0,
-			 SISO,
-			 UE->high_speed_flag);
+	uint8_t ssb_index = 0;
+        while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
+
+	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
+	  nr_slot_fep(UE,
+	  	      i,
+		      0,
+		      0,
+		      0);
+
+          nr_pbch_channel_estimation(UE,0,0,i,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+        }
+	UE_nr_rxtx_proc_t proc={0};
+
+        ret = nr_rx_pbch(UE,
+	                 &proc,
+		         UE->pbch_vars[0],
+		         frame_parms,
+		         0,
+		         ssb_index%8,
+                         SISO,
+                         UE->high_speed_flag);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
@@ -643,11 +653,11 @@ int main(int argc, char **argv)
 	if (ret!=0) n_errors++;
       }
     } //noise trials
-
     printf("SNR %f: trials %d, n_errors_crc = %d, n_errors_payload %d\n", SNR,n_trials,n_errors,n_errors_payload);
 
     if (((float)n_errors/(float)n_trials <= target_error_rate) && (n_errors_payload==0)) {
       printf("PBCH test OK\n");
+      printf("Synchronization obtained for i_ssb = %d\n",UE->rx_ind.rx_indication_body[0].mib_pdu.ssb_index);
       break;
     }
       
@@ -679,6 +689,3 @@ int main(int argc, char **argv)
   return(n_errors);
 
 }
-
-
-

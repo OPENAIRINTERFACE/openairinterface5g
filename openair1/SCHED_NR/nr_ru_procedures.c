@@ -41,6 +41,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -49,9 +50,6 @@
 #include "msc.h"
 
 #include <time.h>
-
-#include "targets/RT/USER/rt_wrapper.h"
-
 // RU OFDM Modulator gNodeB
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
@@ -179,7 +177,6 @@ static void *nr_feptx_thread(void *param) {
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
 
-  thread_top_init("nr_feptx_thread",0,870000,1000000,1000000);
 
   while (!oai_exit) {
 
@@ -196,7 +193,7 @@ static void *nr_feptx_thread(void *param) {
   return(NULL);
 }
 
-void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
+void nr_init_feptx_thread(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
 
@@ -205,7 +202,7 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
   pthread_mutex_init( &proc->mutex_feptx, NULL);
   pthread_cond_init( &proc->cond_feptx, NULL);
 
-  pthread_create(&proc->pthread_feptx, attr_feptx, nr_feptx_thread, (void*)ru);
+  threadCreate(&proc->pthread_feptx, nr_feptx_thread, (void*)ru, "feptx", -1, OAI_PRIORITY_RT);
 
 
 }

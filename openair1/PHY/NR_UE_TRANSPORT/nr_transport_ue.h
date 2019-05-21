@@ -102,6 +102,8 @@ typedef struct {
   uint16_t first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
+  /// number of layers
+  uint8_t Nl;
   /// Last TPC command
   uint8_t TPC;
   /// Transport block size
@@ -110,20 +112,24 @@ typedef struct {
   uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
-  /// Pointer to the payload
-  uint8_t *b;
-  /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
   /// MCS format of this ULSCH
   uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
+  /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
+  unsigned char *a;
+  /// Pointer to the payload + CRC 
+  uint8_t *b;
+  /// Pointers to transport block segments
+  uint8_t *c[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs
-  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][3*8448];
-  /// Interleaver outputs
-  uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*8448];
+  uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
+  /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
+  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
+  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments
@@ -158,6 +164,8 @@ typedef struct {
 typedef struct {
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
+  /// number of DMRS resource elements
+  uint8_t nb_re_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
@@ -168,6 +176,7 @@ typedef struct {
   // UL number of harq processes
   uint8_t number_harq_processes_for_pusch;
 #endif 
+  /*
   /// Pointer to CQI data (+1 for 8 bits crc)
   uint8_t o[1+MAX_CQI_BYTES];
   /// Length of CQI data (bits)
@@ -180,22 +189,25 @@ typedef struct {
   uint8_t O_RI;
   /// Pointer to ACK
   uint8_t o_ACK[4];
+  */
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   uint8_t O_CQI_MIN;
   /// ACK/NAK Bundling flag
   uint8_t bundling;
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS];
+  /// Concatenated "g"-sequences (for definition see 36-212 V15.4.0 2018-12, p.31)
+  uint8_t g[MAX_NUM_NR_CHANNEL_BITS];
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t h[MAX_NUM_CHANNEL_BITS];
+  uint8_t h[MAX_NUM_NR_CHANNEL_BITS];
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  uint8_t b_tilde[MAX_NUM_CHANNEL_BITS];
+  uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d[MAX_NUM_RE];
+  int32_t d[MAX_NUM_NR_RE];
   /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
-  int32_t z[MAX_NUM_RE];
+  int32_t z[MAX_NUM_NR_RE];
+  /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
+  
   /// coded and interleaved CQI bits
   uint8_t o_w[(MAX_CQI_BITS+8)*3];
   /// coded CQI bits
@@ -204,6 +216,7 @@ typedef struct {
   uint8_t q_ACK[MAX_ACK_PAYLOAD];
   /// coded RI bits
   uint8_t q_RI[MAX_RI_PAYLOAD];
+  */
   /// beta_offset_cqi times 8
   uint16_t beta_offset_cqi_times8;
   /// beta_offset_ri times 8
@@ -229,11 +242,11 @@ typedef struct {
   /// num active cba group
   uint8_t num_active_cba_groups;
   /// num dci found for cba
-  uint8_t num_cba_dci[10];
+  //uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
-  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
+  //uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
   /// UL max-harq-retransmission
-  uint8_t Mlimit;
+  uint16_t Mlimit;
 } NR_UE_ULSCH_t;
 
 typedef struct {
@@ -260,11 +273,11 @@ typedef struct {
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
-  MIMO_mode_t mimo_mode;
+  MIMO_nrmode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// LDPC processing buffers

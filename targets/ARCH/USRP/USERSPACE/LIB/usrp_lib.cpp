@@ -299,6 +299,7 @@ static int trx_usrp_start(openair0_device *device) {
 
   if (u_sf_mode != 2) { // not replay mode
 #endif
+    uhd::set_thread_priority_safe(1.0);
     usrp_state_t *s = (usrp_state_t *)device->priv;
     // setup GPIO for TDD, GPIO(4) = ATR_RX
     //set data direction register (DDR) to output
@@ -597,10 +598,10 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
         for (int i=0; i<cc; i++) buff_ptrs.push_back(buff[i]);
 
-        samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+        samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md,1.0);
       } else {
         // receive a single channel (e.g. from connector RF A)
-        samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
+        samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md,1.0);
       }
     }
 
@@ -1038,7 +1039,6 @@ extern "C" {
                 << use_mmap << std::endl;
     } else {
 #endif
-      uhd::set_thread_priority_safe(1.0);
       usrp_state_t *s = (usrp_state_t *)calloc(sizeof(usrp_state_t),1);
 
       if (openair0_cfg[0].clock_source==gpsdo)
@@ -1102,6 +1102,9 @@ extern "C" {
         device->type=USRP_X300_DEV;
         usrp_master_clock = 184.32e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+	// USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
+	if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
+		LOG_W(HW,"Can't set kernel paramters for X3xx\n");
       }
 
       s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1128,7 +1131,15 @@ extern "C" {
             openair0_cfg[0].rx_bw                 = 80e6;
             break;
 
-          case 61440000:
+          case 92160000:
+            // from usrp_time_offset
+            //openair0_cfg[0].samples_per_packet    = 2048;
+            openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+            openair0_cfg[0].tx_bw                 = 80e6;
+            openair0_cfg[0].rx_bw                 = 80e6;
+            break;
+            
+	  case 61440000:
             // from usrp_time_offset
             //openair0_cfg[0].samples_per_packet    = 2048;
             openair0_cfg[0].tx_sample_advance     = 15;

@@ -30,11 +30,12 @@
  * \warning
  */
 
-#ifndef __LAYER2_MAC_PROTO_H__
-#define __LAYER2_MAC_PROTO_H__
+#ifndef __LAYER2_MAC_UE_PROTO_H__
+#define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
 #include "mac.h"
+#include <openair1/PHY/defs_nr_UE.h>
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
@@ -46,6 +47,7 @@
    \param pdu_length     length of pdu
    \param cell_id        cell id */
 int8_t nr_ue_decode_mib(
+    UE_nr_rxtx_proc_t *proc,
     module_id_t module_id, 
     int cc_id, 
     uint8_t gNB_index, 

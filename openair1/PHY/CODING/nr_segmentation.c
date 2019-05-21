@@ -34,7 +34,7 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int B,
                      unsigned int *C,
                      unsigned int *K,
-					 unsigned int *Zout,
+                     unsigned int *Zout, // [hna] Zout is Zc
                      unsigned int *F)
 {
 

@@ -34,6 +34,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/INIT/phy_init.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
@@ -413,6 +414,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t eNB_id,
+                uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 uint32_t high_speed_flag) {
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
@@ -423,10 +425,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
-  uint8_t nushift;
+  uint8_t nushift,n_hf,ssb_index;
   uint16_t M;
-  uint8_t Lmax=8; //to update
-  uint8_t ssb_index=0;
+  uint8_t Lmax=frame_parms->Lmax; 
   //uint16_t crc;
   //unsigned short idx_demod =0;
   uint32_t decoderState=0;
@@ -435,27 +436,27 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //time_stats_t path_metric,sorting,update_LLR;
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
-  int subframe_rx = proc->subframe_rx;
+
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
   // clear LLR buffer
   memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
-    symbol_offset=4;
+    symbol_offset=ue->symbol_offset;
   else
     symbol_offset=0;
 
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   for (symbol=1; symbol<4; symbol++) {
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
-                    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
+    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF,
+                    nr_ue_pbch_vars->dl_ch_estimates,
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
                     symbol,
@@ -526,7 +527,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
   //un-scrambling
   M =  NR_POLAR_PBCH_E;
-  nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
+  nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
@@ -570,6 +571,16 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
+  n_hf = ((xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+
+  ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
+  if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
+    for (int i=0; i<3; i++)
+      ssb_index += (((xtra_byte>>(7-i))&0x01)<<(3+i));
+  }
+
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+
 #ifdef DEBUG_PBCH
   printf("xtra_byte %x payload %x\n", xtra_byte, payload);
 
@@ -577,14 +588,15 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     //     printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
     printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
   }
-
 #endif
+
   ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
+  ue->dl_indication.proc=proc;
   //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
   ue->rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
   ue->rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];
   ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits = xtra_byte;
-  ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
+  ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
   ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
   ue->rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
   ue->rx_ind.number_pdus = 1;

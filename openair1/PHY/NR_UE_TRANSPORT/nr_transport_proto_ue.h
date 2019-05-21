@@ -61,10 +61,10 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
 NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void free_ue_ulsch(NR_UE_ULSCH_t *ulsch);
+void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch);
 
 
-NR_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
 void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
 
@@ -113,6 +113,7 @@ int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                             int32_t **rho_i,
                             int16_t *dlsch_llr,
                             uint8_t symbol,
+							uint32_t len,
                             uint8_t first_symbol_flag,
                             uint16_t nb_rb,
                             uint16_t pbch_pss_sss_adj,
@@ -268,6 +269,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rho_i,
                           short *dlsch_llr,
                           unsigned char symbol,
+						  uint32_t len,
                           unsigned char first_symbol_flag,
                           unsigned short nb_rb,
                           uint16_t pbch_pss_sss_adjust,
@@ -464,6 +466,7 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rho_i,
                           short *dlsch_llr,
                           unsigned char symbol,
+						  uint32_t len,
                           unsigned char first_symbol_flag,
                           unsigned short nb_rb,
                           uint16_t pbch_pss_sss_adjust,
@@ -486,6 +489,7 @@ int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    int32_t **rxdataF_comp,
                    int16_t *dlsch_llr,
                    uint8_t symbol,
+				   uint32_t len,
 				   uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint8_t beamforming_mode);
@@ -520,6 +524,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int16_t *dlsch_llr,
                      int32_t **dl_ch_mag,
                      uint8_t symbol,
+					 uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      int16_t **llr32p,
@@ -568,6 +573,7 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t **dl_ch_mag,
                      int32_t **dl_ch_magb,
                      uint8_t symbol,
+					 uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint32_t llr_offset,
@@ -722,8 +728,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         int **dl_ch_estimates_ext,
                                         unsigned short pmi,
                                         unsigned char *pmi_ext,
-                                        unsigned int *rb_alloc,
                                         unsigned char symbol,
+										uint8_t pilots,
 										unsigned short start_rb,
 										unsigned short nb_pdsch_rb,
                                         unsigned char nr_tti_rx,
@@ -753,18 +759,20 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
-uint16_t dlsch_extract_rbs_dual(int32_t **rxdataF,
-                                int32_t **dl_ch_estimates,
-                                int32_t **rxdataF_ext,
-                                int32_t **dl_ch_estimates_ext,
-                                uint16_t pmi,
-                                uint8_t *pmi_ext,
-                                uint32_t *rb_alloc,
-                                uint8_t symbol,
-                                uint8_t subframe,
-                                uint32_t high_speed_flag,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                MIMO_mode_t mimo_mode);
+unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
+                                      int **dl_ch_estimates,
+                                      int **rxdataF_ext,
+                                      int **dl_ch_estimates_ext,
+                                      unsigned short pmi,
+                                      unsigned char *pmi_ext,
+                                      unsigned char symbol,
+									  uint8_t pilots,
+									  unsigned short start_rb,
+									  unsigned short nb_rb_pdsch,
+                                      unsigned char nr_tti_rx,
+                                      uint32_t high_speed_flag,
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      MIMO_mode_t mimo_mode);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,
@@ -820,13 +828,28 @@ void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 int32_t **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 uint8_t symbol,
+								uint8_t start_symbol,
                                 uint8_t first_symbol_flag,
                                 uint8_t mod_order,
                                 uint16_t nb_rb,
                                 uint8_t output_shift,
                                 PHY_NR_MEASUREMENTS *phy_measurements);
 
+void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
+                                     int **dl_ch_estimates_ext,
+                                     int **dl_ch_mag,
+                                     int **dl_ch_magb,
+                                     int **rxdataF_comp,
+                                     int **rho,
+                                     unsigned char n_tx,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     unsigned char output_shift,
+                                     int length,
+                                     int start_point);
+
 void nr_dlsch_deinterleaving(uint8_t symbol,
+							uint8_t start_symbol,
 							uint16_t L,
 							uint16_t *llr,
 							uint16_t *llr_deint,
@@ -880,6 +903,26 @@ void dlsch_channel_level_TM34_meas(int *ch00,
                                    int *avg_0,
                                    int *avg_1,
                                    unsigned short nb_rb);
+
+void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point);
+
+void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
+                              int **rxdataF_comp_i,
+                              int **rho,
+                              int **rho_i,
+                              int **dl_ch_mag,
+                              int **dl_ch_magb,
+                              int **dl_ch_mag_i,
+                              int **dl_ch_magb_i,
+                              unsigned char n_tx,
+                              unsigned char n_rx,
+                              int length,
+                              int start_point);
 
 void det_HhH(int32_t *after_mf_00,
              int32_t *after_mf_01,
@@ -939,11 +982,12 @@ void dlsch_channel_compensation_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param pilots_flag Flag to indicate pilots in symbol
     @param nb_rb Number of allocated RBs
 */
-void nr_dlsch_channel_level(int32_t **dl_ch_estimates_ext,
+void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
-                         uint8_t pilots_flag,
-                         uint16_t nb_rb);
+                         uint8_t symbol,
+						 uint32_t len,
+                         unsigned short nb_rb);
 
 
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
@@ -972,7 +1016,8 @@ void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
 void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          NR_UE_DLSCH_t **dlsch_ue,
-                         uint8_t symbol_mod,
+                         uint8_t symbol,
+						 uint8_t start_symbol,
                          uint16_t nb_rb);
 
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
@@ -1005,6 +1050,25 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
+
+int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
+                     NR_DL_FRAME_PARMS* frame_parms,
+                     uint8_t harq_pid);
+
+/*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
+  @param[in] in Pointer to input bits
+  @param[in] size of input bits
+  @param[in] Nid cell id
+  @param[in] n_RNTI CRNTI
+  @param[out] out the scrambled bits
+*/
+
+void nr_pusch_codeword_scrambling(uint8_t *in,
+                         uint16_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
+                         uint32_t* out);
+
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,
@@ -1122,8 +1186,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
+                     uint8_t i_ssb,
 		     MIMO_mode_t mimo_mode,
 		     uint32_t high_speed_flag);
+
+int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
+		      PHY_VARS_NR_UE *ue,
+		      int pbch_initial_symbol,
+		      runmode_t mode);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,
@@ -1409,7 +1479,8 @@ void generate_RIV_tables(void);
   @param phy_vars_ue Pointer to UE variables
   @param mode current running mode
 */
-int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
+                    PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 
 
 /*!
@@ -1675,7 +1746,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint8_t eNB_id,
         int frame,
         uint8_t nr_tti_rx,
-        uint32_t dci_pdu[4],
+        uint64_t dci_pdu[2],
         uint16_t rnti,
         uint8_t dci_length,
         NR_DCI_format_t dci_format,
@@ -1707,16 +1778,31 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) ;
 
 uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-						 uint16_t nb_symb_sch,
-                         uint8_t nr_tti_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
+			    short *dlsch_llr,
+			    NR_DL_FRAME_PARMS *frame_parms,
+			    NR_UE_DLSCH_t *dlsch,
+			    NR_DL_UE_HARQ_t *harq_process,
+			    uint32_t frame,
+			    uint16_t nb_symb_sch,
+			    uint8_t nr_tti_rx,
+			    uint8_t harq_pid,
+			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
+
+int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
+			uint8_t eNB_id,
+			lte_frame_type_t frame_type,
+			uint8_t dci_length,
+			uint16_t rnti,
+			uint64_t dci_pdu[2],
+			fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
+			uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+			NR_DCI_format_t dci_format,
+			uint8_t nr_tti_rx,
+			uint16_t n_RB_ULBWP,
+			uint16_t n_RB_DLBWP,
+			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+
 
 /**@}*/
 #endif

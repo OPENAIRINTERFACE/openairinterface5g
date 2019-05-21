@@ -103,6 +103,7 @@ void exit_function(const char *file, const char *function, const int line,
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 char quantize(double D, double x, unsigned char B) {
 	double qxd;
@@ -131,21 +132,22 @@ int main(int argc, char **argv) {
 	//  int sync_pos, sync_pos_slot;
 	//  FILE *rx_frame_file;
 	FILE *output_fd = NULL;
-	uint8_t write_output_file = 0;
+	//uint8_t write_output_file = 0;
 	//  int subframe_offset;
 	//  char fname[40], vname[40];
 	int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
-	uint8_t transmission_mode = 1, n_tx = 1, n_rx = 1;
+	uint8_t n_tx = 1, n_rx = 1;
+	//uint8_t transmission_mode = 1;
 	uint16_t Nid_cell = 0;
 	channel_desc_t *gNB2UE;
 	uint8_t extended_prefix_flag = 0;
-	int8_t interf1 = -21, interf2 = -21;
+	//int8_t interf1 = -21, interf2 = -21;
 	FILE *input_fd = NULL, *pbch_file_fd = NULL;
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
 	uint16_t N_RB_DL = 106, mu = 1;
-	unsigned char frame_type = 0;
+	//unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
 	int frame = 0, subframe = 0;
 	int frame_length_complex_samples;
@@ -160,7 +162,7 @@ int main(int argc, char **argv) {
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
 	float target_error_rate = 0.01;
-
+        uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
@@ -174,9 +176,9 @@ int main(int argc, char **argv) {
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:N:F:R:P:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
-		case 'f':
+		/*case 'f':
 			write_output_file = 1;
 			output_fd = fopen(optarg, "w");
 
@@ -185,11 +187,11 @@ int main(int argc, char **argv) {
 				exit(-1);
 			}
 
-			break;
+			break;*/
 
-		case 'd':
+		/*case 'd':
 			frame_type = 1;
-			break;
+			break;*/
 
 		case 'g':
 			switch ((char) *optarg) {
@@ -228,13 +230,13 @@ int main(int argc, char **argv) {
 
 			break;
 
-		case 'i':
+		/*case 'i':
 			interf1 = atoi(optarg);
 			break;
 
 		case 'j':
 			interf2 = atoi(optarg);
-			break;
+			break;*/
 
 		case 'n':
 			n_trials = atoi(optarg);
@@ -285,6 +287,10 @@ int main(int argc, char **argv) {
 
 			break;
 
+	        case 'M':
+      			SSB_positions = atoi(optarg);
+			break;		    
+
 		case 'N':
 			Nid_cell = atoi(optarg);
 			break;
@@ -311,6 +317,10 @@ int main(int argc, char **argv) {
 
 			break;
 
+		case 'L':
+		  loglvl = atoi(optarg);
+		  break;
+
 		case 'm':
 			Imcs = atoi(optarg);
 			break;
@@ -323,32 +333,33 @@ int main(int argc, char **argv) {
 			nb_rb = atoi(optarg);
 			break;
 
-		case 'x':
+		/*case 'x':
 			transmission_mode = atoi(optarg);
-			break;
+			break;*/
 
 		default:
 		case 'h':
 			printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
 			printf("-h This message\n");
 			printf("-p Use extended prefix mode\n");
-			printf("-d Use TDD\n");
+			//printf("-d Use TDD\n");
 			printf("-n Number of frames to simulate\n");
 			printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 			printf("-S Ending SNR, runs from SNR0 to SNR1\n");
 			printf("-t Delay spread for multipath channel\n");
 			printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
-			printf("-x Transmission mode (1,2,6 for the moment)\n");
+			//printf("-x Transmission mode (1,2,6 for the moment)\n");
 			printf("-y Number of TX antennas used in eNB\n");
 			printf("-z Number of RX antennas used in UE\n");
-			printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-			printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+			//printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+			//printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+  		    printf("-M Multiple SSB positions in burst\n");
 			printf("-N Nid_cell\n");
 			printf("-R N_RB_DL\n");
 			printf("-O oversampling factor (1,2,4,8,16)\n");
 			printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-			//    printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-			printf("-f Output filename (.txt format) for Pe/SNR results\n");
+			//printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+			//printf("-f Output filename (.txt format) for Pe/SNR results\n");
 			printf("-F Input filename (.txt format) for RX conformance testing\n");
 			exit(-1);
 			break;
@@ -383,7 +394,7 @@ int main(int argc, char **argv) {
 	frame_parms->N_RB_DL = N_RB_DL;
 	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
-	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
+	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell,SSB_positions);
 	phy_init_nr_gNB(gNB, 0, 0);
 	//init_eNB_afterRU();
 	frame_length_complex_samples = frame_parms->samples_per_subframe;
@@ -404,7 +415,7 @@ int main(int argc, char **argv) {
 		r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
 		bzero(r_im[i], frame_length_complex_samples * sizeof(double));
 		txdata[i] = malloc(frame_length_complex_samples * sizeof(int));
-		bzero(r_re[i], frame_length_complex_samples * sizeof(int));
+		bzero(r_re[i], frame_length_complex_samples * sizeof(int)); // [hna] r_re should be txdata
 	}
 
 	if (pbch_file_fd != NULL) {
@@ -480,16 +491,16 @@ int main(int argc, char **argv) {
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384);
+	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;
-	unsigned char *estimated_output;
+	//unsigned char *estimated_output;
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
@@ -505,7 +516,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
-	estimated_output = harq_process->b;
+	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);

@@ -36,10 +36,20 @@
 
 void mac_top_init_gNB(void);
 
+void config_common(int Mod_idP,
+                   int CC_idP,
+				   int Nid_cell,
+                   int nr_bandP,
+				   uint64_t ssb_pattern,
+                   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP);
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
+						   int cellid,
                            int p_gNB,
                            int nr_bandP,
+                           uint64_t ssb_pattern,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
@@ -64,6 +74,10 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
+
+void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP);
 
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
@@ -99,5 +113,21 @@ int get_spf(nfapi_nr_config_request_t *cfg);
 int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
+
+void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
+
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
+
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
+
+void config_nr_mib(int Mod_idP, 
+                int CC_idP,
+                int p_gNBP,
+                int subCarrierSpacingCommon, 
+                uint32_t ssb_SubcarrierOffset,
+                int dmrs_TypeA_Position,
+                uint32_t pdcch_ConfigSIB1,
+                int cellBarred,
+                int intraFreqReselection);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

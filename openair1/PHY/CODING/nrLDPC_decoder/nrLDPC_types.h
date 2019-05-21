@@ -31,7 +31,7 @@
 #ifndef __NR_LDPC_TYPES__H__
 #define __NR_LDPC_TYPES__H__
 
-#include "./nrLDPC_tools/time_meas.h"
+#include "PHY/TOOLS/time_meas.h"
 
 // ==============================================================================
 // TYPES

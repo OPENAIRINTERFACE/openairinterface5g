@@ -46,7 +46,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   uint8_t bsize = pdcch_params->reg_bundle_size;
   uint8_t R = pdcch_params->interleaver_size;
   uint16_t N_reg = pdcch_params->n_rb * pdcch_params->n_symb;
-  uint16_t Y, N_cce, M_s_max, n_CI=0, tmp, C;
+  uint16_t Y, N_cce, M_s_max, n_CI=0, tmp, C=0;
   uint16_t n_RNTI = (pdcch_params->search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params->rnti:0;
   uint32_t A[3]={39827,39829,39839};
 
@@ -64,9 +64,9 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   }
 
   if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-    AssertFatal((N_reg%(bsize*R))==0, "CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %d, bsize %d R %d)\n",
-    N_reg, bsize, R);
-    C = N_reg/(bsize*R);
+	  uint16_t assertFatalCond = (N_reg%(bsize*R));
+	  AssertFatal(assertFatalCond == 0,"CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %us, bsize %d R %d)\n",N_reg, bsize, R);
+	  C = N_reg/(bsize*R);
   }
 
   tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % CEILIDIV(N_cce,L));
