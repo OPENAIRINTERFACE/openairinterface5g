@@ -1298,7 +1298,7 @@ static void *ru_thread_tx( void *param ) {
         if (L1_proc->instance_cnt_RUs==-1) {
            AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
                        "ERROR pthread_cond_signal for gNB_L1_thread\n");
-        } else AssertFatal(1==0,"gNB TX thread is not ready\n");
+        } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         L1_proc->instance_cnt_RUs = 0;
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
         AssertFatal((ret=pthread_mutex_unlock(&L1_proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
