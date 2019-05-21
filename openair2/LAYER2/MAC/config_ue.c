@@ -571,12 +571,11 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 
 #endif
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if(nonMBSFN_SubframeConfig!=NULL) {
     	LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
 	  Mod_idP);
-	phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0,	
-					nonMBSFN_SubframeConfig);
+	phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0, nonMBSFN_SubframeConfig);
   }
 #endif
 

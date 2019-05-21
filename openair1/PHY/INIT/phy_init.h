@@ -35,6 +35,9 @@
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "LTE_SCellToAddMod-r10.h"
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
@@ -257,9 +260,9 @@ void phy_config_sib13_ue(module_id_t Mod_id,
                          int CC_id,uint8_t CH_index,int mbsfn_Area_idx,
                          long mbsfn_AreaId_r9);
 
-/*void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
+void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
-			struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig);*/
+			struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig);
 
 /**
 \brief Configure eNB MBSFN common parameters.

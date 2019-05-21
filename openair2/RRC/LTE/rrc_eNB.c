@@ -149,8 +149,8 @@ init_SI(
 #endif
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
-if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
   LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
         (int)configuration->N_RB_DL[CC_id]);
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
