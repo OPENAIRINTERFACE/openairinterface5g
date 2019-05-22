@@ -402,7 +402,6 @@ function report_test {
                     echo "        </pre></td>" >> ./test_simulator_results.html
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-
                 PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_ping_ue.txt 2> /dev/null`
                 analyzePingFiles
         

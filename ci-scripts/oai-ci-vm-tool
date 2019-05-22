@@ -301,7 +301,7 @@ case $key in
     ARCHIVES_LOC=enb_eth
     LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    BUILD_OPTIONS="--eNB -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -312,7 +312,7 @@ case $key in
     ARCHIVES_LOC=ue_eth
     LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=10
-    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+    BUILD_OPTIONS="--UE -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -374,7 +374,7 @@ case $key in
         LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=10
         BUILD_OPTIONS="--phy_simulators"
-	    VM_MEMORY=8192
+	VM_MEMORY=8192
         RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -410,7 +410,7 @@ case $key in
         ARCHIVES_LOC=enb_eth
         LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        BUILD_OPTIONS="--eNB -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         ue-ethernet)
@@ -420,7 +420,7 @@ case $key in
         ARCHIVES_LOC=ue_eth
         LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=10
-        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        BUILD_OPTIONS="--UE -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         flexran-rtc)
@@ -649,8 +649,6 @@ then
         echo "STATUS seems OK"
         exit $STATUS
     fi
-    # end to comment out for L1-simulator
-    
     # Comment out or delete the following lines if you want to run RF-simulator in your branch and/or merge request
     if [[ $VM_NAME =~ .*-rf-sim.* ]]
     then

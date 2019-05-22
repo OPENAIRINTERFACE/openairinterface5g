@@ -467,12 +467,12 @@ function install_epc_on_vm {
         if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim-develop.zip ]
         then
             echo "############################################################"
-            echo "Destroying VM"
+            echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
             echo "############################################################"
-            uvt-kvm destroy $VM_NAME
-            ssh-keygen -R $VM_IP_ADDR
+            LTEBOX=1
         fi
-        rm -f $VM_CMDS
+    fi
+    # Here we could have other types of EPC detection
 
     # Do we need to start the EPC VM
     echo "EPC_VM_CMD_FILE     = $LOC_EPC_VM_CMDS"
@@ -606,10 +606,9 @@ function start_epc {
             CONNECTED=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
             if [ $CONNECTED -eq 1 ]
             then
-                echo "############################################################"
-                echo "Doing some adaptation on UE side"
-                echo "############################################################"
-                ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < /opt/ltebox-archives/adapt_ue_sim.txt
+                i="100"
+            else
+                i=$[$i+1]
             fi
         done
         rm $LOC_EPC_VM_CMDS
@@ -619,15 +618,9 @@ function start_epc {
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
-        get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+    fi
 
-        echo "############################################################"
-        echo "Pinging the UE"
-        echo "############################################################"
-        PING_LOG_FILE=fdd_05MHz_ping_ue.txt
-        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
-        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+    # HERE ADD ANY INSTALL ACTIONS FOR ANOTHER EPC
 
 }
 
