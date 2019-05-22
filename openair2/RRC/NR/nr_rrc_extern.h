@@ -39,7 +39,7 @@ extern UE_RRC_INST *UE_rrc_inst;
 
 extern uint8_t DRB2LCHAN[8];
 
-extern LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue;
+extern NR_LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue;
 extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
 
 

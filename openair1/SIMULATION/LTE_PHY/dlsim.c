@@ -192,7 +192,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
       // snr=pow(10.0,.1*SNR);
       fprintf(csv_fd,"%f,",SNR);
 
-      for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+      for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
         for (aarx=0; aarx<eNB2UE[0]->nb_rx; aarx++) {
           for (aatx=0; aatx<eNB2UE[0]->nb_tx; aatx++) {
             channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].x;
@@ -203,9 +203,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
       }
 
       if(num_rounds>1) {
-        freq_channel(eNB2UE[1], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+        freq_channel(eNB2UE[1], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-        for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+        for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[1]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[1]->nb_tx; aatx++) {
               channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].x;
@@ -215,9 +215,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
           }
         }
 
-        freq_channel(eNB2UE[2], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+        freq_channel(eNB2UE[2], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-        for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+        for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[2]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[2]->nb_tx; aatx++) {
               channelx = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].x;
@@ -227,9 +227,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
           }
         }
 
-        freq_channel(eNB2UE[3], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+        freq_channel(eNB2UE[3], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-        for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+        for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
           for (aarx=0; aarx<eNB2UE[3]->nb_rx; aarx++) {
             for (aatx=0; aatx<eNB2UE[3]->nb_tx; aatx++) {
               channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].x;
@@ -990,7 +990,7 @@ int main(int argc, char **argv) {
 
   if ((transmission_mode==1) || (transmission_mode==7)) {
     for (aa=0; aa<ru->nb_tx; aa++)
-    	for (re=0; re<ru->frame_parms.ofdm_symbol_size; re++)
+    	for (re=0; re<ru->frame_parms->ofdm_symbol_size; re++)
     		ru->beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx;
   }
 

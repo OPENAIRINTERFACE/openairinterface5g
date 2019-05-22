@@ -52,12 +52,12 @@
   #include "LTE_UL-CCCH-Message.h"
   #include "LTE_UL-DCCH-Message.h"
 
-  typedef BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
-  typedef DL_CCCH_Message_t       RrcDlCcchMessage;
-  typedef DL_DCCH_Message_t       RrcDlDcchMessage;
-  typedef UE_EUTRA_Capability_t   RrcUeEutraCapability;
-  typedef UL_CCCH_Message_t       RrcUlCcchMessage;
-  typedef UL_DCCH_Message_t       RrcUlDcchMessage;
+  typedef LTE_BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
+  typedef LTE_DL_CCCH_Message_t       RrcDlCcchMessage;
+  typedef LTE_DL_DCCH_Message_t       RrcDlDcchMessage;
+  typedef LTE_UE_EUTRA_Capability_t   RrcUeEutraCapability;
+  typedef LTE_UL_CCCH_Message_t       RrcUlCcchMessage;
+  typedef LTE_UL_DCCH_Message_t       RrcUlDcchMessage;
 #endif
 
 //-------------------------------------------------------------------------------------------//

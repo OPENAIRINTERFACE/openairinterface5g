@@ -650,7 +650,7 @@ int main( int argc, char **argv ) {
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
 
-  if ( load_configmodule(argc,argv) == NULL) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 

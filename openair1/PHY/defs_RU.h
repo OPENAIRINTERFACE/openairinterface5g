@@ -34,6 +34,11 @@
 #define __PHY_DEFS_RU__H__
 
 
+#include "common_lib.h"
+#include "openairinterface5g_limits.h"
+#include "PHY/TOOLS/time_meas.h"
+
+
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
 
@@ -127,7 +132,7 @@ typedef struct RU_proc_t_s {
   int tti_tx;
   /// subframe to act upon for reception of prach
   int subframe_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
 #endif
@@ -135,11 +140,17 @@ typedef struct RU_proc_t_s {
   int frame_rx;
   /// frame to act upon for transmission
   int frame_tx;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    /// subframe to act upon for transmission
+    int subframe_tx;
+    /// subframe to act upon for reception
+    int subframe_rx;
+#endif
   /// unwrapped frame count
   int frame_tx_unwrap;
   /// frame to act upon for reception of prach
   int frame_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for reception of prach
   int frame_prach_br;
 #endif
@@ -151,7 +162,7 @@ typedef struct RU_proc_t_s {
   int instance_cnt_FH1;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach_br;
 #endif
@@ -174,7 +185,7 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_FH1;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for RU prach processing thread BL/CE UEs
   pthread_t pthread_prach_br;
 #endif
@@ -197,7 +208,7 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_FH1;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for RU prach BL/CE UEs
   pthread_attr_t attr_prach_br;
 #endif
@@ -229,7 +240,7 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_FH1;
   /// condition variable for RU prach thread
   pthread_cond_t cond_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for RU prach thread BL/CE UEs
   pthread_cond_t cond_prach_br;
 #endif
@@ -252,7 +263,7 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_FH1;
   /// mutex for RU prach
   pthread_mutex_t mutex_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for RU prach BL/CE UEs
   pthread_mutex_t mutex_prach_br;
 #endif

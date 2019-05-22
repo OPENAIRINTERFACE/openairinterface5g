@@ -954,7 +954,7 @@ int main( int argc, char **argv ) {
   start_background_system();
 
   ///static configuration for NR at the moment
-  if ( load_configmodule(argc,argv) == NULL) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 

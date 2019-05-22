@@ -403,13 +403,6 @@ typedef struct __attribute__ ((__packed__)) MessageDef_s {
 
 #define INSTANCE_DEFAULT    (UINT16_MAX - 1)
 
-/* already defined in common/utils/time_utils.h*/
-/*
-static inline int64_t clock_difftime_ns(struct timespec start, struct timespec end) {
-  return (int64_t)( end.tv_sec-start.tv_sec) * (int64_t)(1000*1000*1000) + end.tv_nsec-start.tv_nsec;
-}
-*/
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1309,7 +1309,8 @@ initiate_ra_proc(module_id_t module_idP,
                  frame_t frameP,
                  sub_frame_t subframeP,
                  uint16_t preamble_index,
-                 int16_t timing_offset, uint16_t ra_rnti
+                 int16_t timing_offset,
+				 uint16_t ra_rnti
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   , uint8_t rach_resource_type
 #endif

@@ -55,6 +55,7 @@
 //#include "RRCConnectionSetupComplete.h"
 //#include "RRCConnectionRequest.h"
 //#include "RRCConnectionReestablishmentRequest.h"
+#include "NR_RRCReestablishmentRequest.h"
 //#include "BCCH-DL-SCH-Message.h"
 #include "NR_BCCH-BCH-Message.h"
 //#include "MCCH-Message.h"
@@ -64,9 +65,9 @@
 //#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_MeasResults.h"
-#include "NR_MeasResults.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
+#include "NR_EstablishmentCause.h"
 //-------------------
 
 #if defined(ENABLE_ITTI)
@@ -262,22 +263,22 @@ typedef struct gNB_RRC_UE_s {
 #if defined(Rel10) || defined(Rel14)
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
-  SRB_ToAddModList_t*                SRB_configList;
-  SRB_ToAddModList_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  DRB_ToAddModList_t*                DRB_configList;
-  DRB_ToAddModList_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  DRB_ToReleaseList_t*               DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_SRB_ToAddModList_t*             SRB_configList;
+  NR_SRB_ToAddModList_t*             SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToAddModList_t*             DRB_configList;
+  NR_DRB_ToAddModList_t*             DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToReleaseList_t*            DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
   SRB_INFO                           SI;
   SRB_INFO                           Srb0;
   SRB_INFO_TABLE_ENTRY               Srb1;
   SRB_INFO_TABLE_ENTRY               Srb2;
-  MeasConfig_t*                      measConfig;
+  NR_MeasConfig_t*                   measConfig;
   HANDOVER_INFO*                     handover_info;
-  MeasResults_t*                     measResults;
+  NR_MeasResults_t*                  measResults;
 
-  UE_EUTRA_Capability_t*             UE_Capability;
+  NR_UE_NR_Capability_t*             UE_Capability;
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -288,8 +289,8 @@ typedef struct gNB_RRC_UE_s {
   int8_t  nh_ncc;
 #endif
   /* Used integrity/ciphering algorithms */
-  CipheringAlgorithm_r12_t                          ciphering_algorithm;
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+  NR_CipheringAlgorithm_t            ciphering_algorithm;
+  e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
   uint8_t                            Status;
   rnti_t                             rnti;
@@ -298,10 +299,10 @@ typedef struct gNB_RRC_UE_s {
 #if defined(ENABLE_ITTI)
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
-  EstablishmentCause_t               establishment_cause;
+  NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t             reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;

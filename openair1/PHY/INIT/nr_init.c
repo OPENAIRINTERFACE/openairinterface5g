@@ -25,11 +25,12 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "RadioResourceConfigCommonSIB.h"
+/*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "MBSFN-SubframeConfigList.h"*/
+#include "openair1/PHY/defs_RU.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "MBSFN-SubframeConfigList.h"
 #include "assertions.h"
 #include <math.h>
 

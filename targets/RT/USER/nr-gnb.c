@@ -33,8 +33,6 @@
 #define _GNU_SOURCE
 #include <pthread.h>
 
-#include "time_utils.h"
-
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "rt_wrapper.h"

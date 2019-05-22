@@ -101,14 +101,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     fp    = &(eNB->frame_parms);
     nb_rx = fp->nb_antennas_rx;
   } else {
-    fp    = &(ru->frame_parms);
+    fp    = (ru->frame_parms);
     nb_rx = ru->nb_rx;
   }
   AssertFatal(fp!=NULL,"rx_prach called without valid RU or eNB descriptor\n");
 
   frame_type          = fp->frame_type;
 
-  frame_type          = fp->frame_type;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (br_flag == 1) {

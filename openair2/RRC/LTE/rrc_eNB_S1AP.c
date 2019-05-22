@@ -28,25 +28,24 @@
  * \email: navid.nikaein@eurecom.fr
  */
 
-# include "rrc_defs.h"
-# include "rrc_extern.h"
-# include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-# include "RRC/LTE/MESSAGES/asn1_msg.h"
-# include "rrc_eNB_UE_context.h"
-# include "rrc_eNB_S1AP.h"
-# include "enb_config.h"
-# include "common/ran_context.h"
-# include "gtpv1u.h"
+#include "rrc_defs.h"
+#include "rrc_extern.h"
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "RRC/LTE/MESSAGES/asn1_msg.h"
+#include "rrc_eNB_UE_context.h"
+#include "rrc_eNB_S1AP.h"
+#include "enb_config.h"
+#include "common/ran_context.h"
+#include "gtpv1u.h"
 
-# include "s1ap_eNB_defs.h"
-# include "s1ap_eNB_management_procedures.h"
-# include "s1ap_eNB_ue_context.h"
+#include "s1ap_eNB.h"
+#include "s1ap_eNB_defs.h"
+#include "s1ap_eNB_management_procedures.h"
+#include "s1ap_eNB_ue_context.h"
 #include "asn1_conversions.h"
 #include "intertask_interface.h"
 #include "pdcp.h"
 #include "pdcp_primitives.h"
-#include "s1ap_eNB.h"
-
 
 #include "UTIL/OSA/osa_defs.h"
 #include "msc.h"
@@ -429,7 +428,7 @@ static e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_inte
 int
 rrc_eNB_process_security(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t          *const ue_context_pP,
+  rrc_eNB_ue_context_t *const ue_context_pP,
   security_capabilities_t *security_capabilities_pP
 ) {
   boolean_t                                             changed = FALSE;

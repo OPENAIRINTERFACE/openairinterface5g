@@ -61,16 +61,16 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
     UL_info->rach_ind.rach_indication_body.number_of_preambles=0;
     LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SF:%d\n",UL_info->frame,UL_info->slot, NFAPI_SFNSF2DEC(UL_info->rach_ind.sfn_sf));
     initiate_ra_proc(UL_info->module_id,
-         UL_info->CC_id,
-         NFAPI_SFNSF2SFN(UL_info->rach_ind.sfn_sf),
-         NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
-         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
-         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
+    		         UL_info->CC_id,
+					 NFAPI_SFNSF2SFN(UL_info->rach_ind.sfn_sf),
+					 NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
+					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
+					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
+					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-         ,0
+                    ,0
 #endif
-         );
+                     );
   }
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))

@@ -30,15 +30,13 @@
 * \warning
 */
 
+#include <time.h>
 #include "PHY/defs_eNB.h"
 #include "PHY/TOOLS/alaw_lut.h"
-
-
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include <intertask_interface.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "common/utils/time_utils.h"
 //#define DEBUG_DL_MOBIPASS
 //#define DEBUG_UL_MOBIPASS
 #define SUBFRAME_SKIP_NUM_MOBIPASS 8
@@ -52,6 +50,23 @@ int dummy_cnt = 0;
 int subframe_skip_extra = 0;
 int start_flag = 1;
 int offset_cnt = 1;
+
+static inline int64_t clock_difftime_ns(struct timespec start, struct timespec end)
+{
+  struct timespec temp;
+  int64_t temp_ns;
+
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  temp_ns = (int64_t)(temp.tv_sec) * (int64_t)1000000000 + (temp.tv_nsec);
+  return temp_ns;
+}
+
 void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t *seqno, uint16_t packet_type) {      
   
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;

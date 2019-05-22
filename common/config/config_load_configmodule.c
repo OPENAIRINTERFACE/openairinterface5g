@@ -181,7 +181,10 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
   return numdefvals;
 }
 
-configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags) {
+configmodule_interface_t *load_configmodule(int argc,
+		                                    char **argv,
+											uint32_t initflags)
+{
   char *cfgparam=NULL;
   char *modeparams=NULL;
   char *cfgmode=NULL;
@@ -193,7 +196,8 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
 
   /* first parse the command line to look for the -O option */
   for (i = 0; i<argc; i++) {
-    if (strlen(argv[i]) < 2) continue;
+    if (strlen(argv[i]) < 2)
+    	continue;
 
     if ( argv[i][1] == 'O' && i < (argc -1)) {
       cfgparam = argv[i+1];
@@ -223,7 +227,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
   if (cfgparam == NULL) {
     tmpflags = tmpflags | CONFIG_NOOOPT;
 
-    if ( initflags &  CONFIG_ENABLECMDLINEONLY) {
+    if ( initflags & CONFIG_ENABLECMDLINEONLY) {
       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
     } else {
       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
