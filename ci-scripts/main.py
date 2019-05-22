@@ -1,3 +1,4 @@
+# /*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -3795,10 +3796,10 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
-        if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
-                Usage()
-                sys.exit('Insufficient Parameter')
-        SSH.LogCollectOAIUE()
+	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		Usage()
+		sys.exit('Insufficient Parameter')
+	SSH.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
 		Usage()
@@ -3836,7 +3837,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
-        # if no parameters for XML file, use default value
+	# if no parameters for XML file, use default value
 	if (SSH.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
