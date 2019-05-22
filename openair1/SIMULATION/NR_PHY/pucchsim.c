@@ -92,9 +92,6 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim = 0.0;
-  double ip =0.0;
-  unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
@@ -103,7 +100,7 @@ int main(int argc, char **argv)
   //int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors=0,n_errors_payload=0;
+  int trial,n_trials=1,n_errors=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
@@ -135,12 +132,7 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
 
-  int ret, payload_ret=0;
-  int run_initial_sync=0;
-
   int loglvl=OAILOG_WARNING;
-
-  float target_error_rate = 0.01;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -307,11 +299,6 @@ int main(int argc, char **argv)
         printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
 
       break;
-      
-    case 'I':
-      run_initial_sync=1;
-      target_error_rate=0.1;
-      break;
 
     case 'L':
       loglvl = atoi(optarg);
@@ -458,8 +445,6 @@ int main(int argc, char **argv)
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   //phy_init_nr_top(UE); //called from init_nr_ue_signal
-/*  if (run_initial_sync==1)  UE->is_synchronized = 0;
-  else                      UE->is_synchronized = 1;   */
                       
   UE->perfect_ce = 0;
 
@@ -478,7 +463,7 @@ int main(int argc, char **argv)
 // pucch_config_common_nr should assign values for this if not done before structure in ue being used by functions
   uint8_t actual_payload=0,payload_received;//payload bits b7b6...b2b1b0 where b7..b3=0 b2b1=HARQ b0 is SR. payload maximum value is 7
   uint8_t mcs; 
-  int nr_bit=1;
+  int nr_bit=1; // maximum value possible is 2
 /*if(nr_bit==1){
        mcs=table1_mcs[actual_payload];
        }
@@ -494,7 +479,6 @@ int main(int argc, char **argv)
   printf("\nsnr1=%f\n",snr1);
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     n_errors = 0;
-    n_errors_payload = 0;
     sigma2_dB = 20*log10((double)amp/32767)-SNR;
     sigma2 = pow(10,sigma2_dB/10);
     printf("entering SNR value %f\n",SNR);

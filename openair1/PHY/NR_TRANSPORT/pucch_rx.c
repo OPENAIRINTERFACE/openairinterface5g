@@ -31,12 +31,12 @@ void nr_decode_pucch0( int32_t **rxdataF,
                         uint16_t startingPRB,				   // should come from resource set
 			uint8_t nr_bit) {                                 // is number of UCI bits to be decoded
   int nr_sequences;
-  uint8_t *mcs;
+  const uint8_t *mcs;
   if(nr_bit==1){
     mcs=table1_mcs;
     nr_sequences=4;
   }
-  else if(nr_bit==2){
+  else{
     mcs=table2_mcs;
     nr_sequences=8;
   }

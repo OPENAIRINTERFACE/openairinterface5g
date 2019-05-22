@@ -96,6 +96,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
 
   if (PUCCH_GroupHopping == enable) { // PUCCH_GroupHopping 'enabled'
     c_init = floor(n_id/30); // we initialize c_init to calculate u,v according to 6.3.2.2.1 of 38.211
+    s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
     for (int m=0; m<8; m++) {
       while(minShift >= l) {
         s = lte_gold_generic(&x1, &c_init, 0);
@@ -118,6 +119,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
 
   if (PUCCH_GroupHopping == disable) { // PUCCH_GroupHopping 'disabled'
     c_init = (1<<5)*floor(n_id/30)+(n_id%30); // we initialize c_init to calculate u,v
+    s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
     f_ss = n_id%30;
     l = 32, minShift = (2*nr_tti_tx+n_hop);
 
