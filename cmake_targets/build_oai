@@ -58,6 +58,7 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
+BUILD_COVERITY_SCAN=0
 T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
@@ -128,6 +129,8 @@ Options
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
 --build-doxygen
    Builds doxygen based documentation.
+--build-coverity-scan
+   Builds Coverity-Scan objects for upload
 --disable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
@@ -277,6 +280,10 @@ function main() {
 	    BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
+       --build-coverity-scan)
+           BUILD_COVERITY_SCAN=1
+            echo_info "Will build Coverity-Scan objects for upload"
+            shift;;
        --disable-deadline)
             FORCE_DEADLINE_SCHEDULER_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
@@ -307,7 +314,7 @@ function main() {
             shift 1;;
         --ue-timing)
             UE_TIMING_TRACE="True"
- x           echo_info "Enabling UE timing trace"
+            echo_info "Enabling UE timing trace"
             shift 1;;
         --uhd-images-dir)
             UHD_IMAGES_DIR=$2
@@ -345,7 +352,20 @@ function main() {
             break;;
    esac
   done
-  
+
+  #########################################################
+  # check if cov-build is installed
+  #########################################################
+  if [ "$BUILD_COVERITY_SCAN" == "1" ] ; then
+      echo_info "Checking cov-build is installed"
+      IS_INSTALLED=`which cov-build | grep -c cov-build || true`
+      if [ $IS_INSTALLED -eq 1 ] ; then
+          echo_info "Found cov-build"
+      else
+          echo_fatal "Did NOT find cov-build in PATH!"
+      fi
+  fi
+
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
   #########################################################
