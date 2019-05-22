@@ -52,7 +52,7 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
+openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
@@ -106,6 +106,7 @@ int main(int argc, char **argv)
   int trial,n_trials=1,n_errors=0,n_errors_payload=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
+  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
 
@@ -367,7 +368,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
   double fs,bw,scs,eps;
