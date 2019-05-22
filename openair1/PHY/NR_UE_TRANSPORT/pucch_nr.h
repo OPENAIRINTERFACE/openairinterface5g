@@ -42,15 +42,26 @@
 #include "T.h"
 #define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
-void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_nr.puch_GroupHopping,
-                                //uint8_t PUCCH_GroupHopping,
-                                PHY_VARS_NR_UE *ue,
-                                //uint32_t n_id,
+void nr_decode_pucch0( int32_t **rxdataF,
+			pucch_GroupHopping_t PUCCH_GroupHopping,
+                        uint32_t n_id,                                       //PHY_VARS_gNB *gNB, generally rxdataf is in gNB->common_vars
+                        uint8_t *payload,
+                        NR_DL_FRAME_PARMS *frame_parms,
+                        int16_t amp,
+                        int nr_tti_tx,
+                        uint8_t m0,                                          // should come from resource set
+                        uint8_t nrofSymbols,				    // should come from resource set	
+                        uint8_t startingSymbolIndex,			    // should come from resource set
+                        uint16_t startingPRB,				   // should come from resource set
+			uint8_t nr_bit);
+
+void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
+                                uint32_t n_id,
                                 uint8_t n_hop,
                                 int nr_tti_tx,
                                 uint8_t *u,
                                 uint8_t *v);
-double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
+double nr_cyclic_shift_hopping(uint32_t n_id,
                                uint8_t m0,
                                uint8_t mcs,
                                uint8_t lnormal,
@@ -111,6 +122,11 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                           uint8_t nr_bit,
                           uint8_t occ_length_format4,
                           uint8_t occ_index_format4);
+
+// tables for mcs values for different payloads 
+ static const uint8_t table1_mcs[]={0,3,6,9};
+ static const uint8_t table2_mcs[]={0,1,3,4,6,7,9,10};
+
   /*
    * The following tables implement TS 38.211 Subclause 5.2.2.2 Base sequences of length less than 36 (rows->u {0,1,..,29} / columns->n {0,1,...,M_ZC-1)
    * Where base sequence r_u_v(n)=exp[j*phi(n)*pi/4] 0<=n<=M_ZC-1 and M_ZC={6,12,18,24}
