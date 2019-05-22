@@ -1522,6 +1522,12 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
+	def PingNoS1_wrong_exit(self, qMsg):
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">OAI UE ping result\n' + qMsg + '</pre>'
+		html_queue.put(html_cell)
+		self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+
 	def PingNoS1(self):
 		check_eNB = True
 		check_OAI_UE = True
@@ -1554,21 +1560,25 @@ class SSHConnection():
 			if ping_status < 0:
 				message = 'Ping with OAI UE crashed due to TIMEOUT!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
