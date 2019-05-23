@@ -402,13 +402,14 @@ static void *L1_thread( void *param ) {
       if (rxtx(eNB,proc,thread_name) < 0) break;
     }
 
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)              phy_procedures_eNB_TX(eNB, proc, 1);
-
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
 
     if (NFAPI_MODE!=NFAPI_MODE_VNF) {
       if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB);
-      else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)     wakeup_txfh(proc,eNB);
+      else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) {
+        phy_procedures_eNB_TX(eNB, proc, 1);
+        wakeup_txfh(proc,eNB);
+      }
     }
   } // while !oai_exit
 
