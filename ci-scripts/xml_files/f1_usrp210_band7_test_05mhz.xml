@@ -68,30 +68,30 @@
 		<desc>Terminate UE</desc>
 	</testCase>
 
-        <testCase id="040301">
-                <class>Attach_UE</class>
-                <desc>Attach UE</desc>
-        </testCase>
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
 
-        <testCase id="040401">
-                <class>Detach_UE</class>
-                <desc>Detach UE</desc>
-        </testCase>
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
 
-        <testCase id="040541">
-                <class>Ping</class>
-                <desc>ping (5MHz - 20 sec)</desc>
-                <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>5</ping_packetloss_threshold>
-        </testCase>
+	<testCase id="040541">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
 
-        <testCase id="040601">
+	<testCase id="040601">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
-        </testCase>
+	</testCase>
 
 	<testCase id="040641">
 		<class>Iperf</class>

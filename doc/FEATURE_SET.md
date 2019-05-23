@@ -122,6 +122,7 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 - eMBMS for multicast and broadcast (experimental)
 - Handover (experimental)
 - Paging (soon)
+- RRC inactivity timer (release of UE after a period of data inactivity)
 
 ## eNB X2AP ##
 

@@ -508,26 +508,26 @@ function report_test {
                     NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
                     NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
                     NB_ENB_SYNCED_WITH_UE=`egrep -c "Sending NFAPI_START_RESPONSE" $UE_LOG`
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 3 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 2 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                     else
                         echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                     fi
                     echo "        <td><pre>" >> ./test_simulator_results.html
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ]
                     then
                         echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
                     else
                         echo "<font color = \"red\"><b>- eNB NEVER got sync</b></font>" >> ./test_simulator_results.html
                     fi
-                    if [ $NB_UE_GOT_SYNC -eq 3 ]
+                    if [ $NB_UE_GOT_SYNC -gt 2 ]
                     then
                         echo "<font color = \"blue\">- UE --> got sync</font>" >> ./test_simulator_results.html
                     else
                         echo "<font color = \"red\"><b>- UE NEVER got sync</b></font>" >> ./test_simulator_results.html
                     fi
-                    if [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
                         echo "<font color = \"blue\">- UE attached to eNB</font>" >> ./test_simulator_results.html
                     else
