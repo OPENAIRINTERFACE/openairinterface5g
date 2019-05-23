@@ -204,9 +204,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
-
+  if (NFAPI_MODE==NFAPI_MODE_VNF) {
   release_UE_in_freeList(eNB->Mod_id);
-
+  }
   // UE-specific RX processing for subframe n
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     phy_procedures_eNB_uespec_RX(eNB, proc);
