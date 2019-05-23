@@ -64,6 +64,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -490,9 +491,11 @@ void init_pdcp(void) {
   if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-        (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
     if (IS_SOFTMODEM_NOS1)
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+
     pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
@@ -580,9 +583,9 @@ int main( int argc, char **argv ) {
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
-
     /* Start the agent. If it is turned off in the configuration, it won't start */
     RCconfig_flexran();
+
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
@@ -708,6 +711,8 @@ int main( int argc, char **argv ) {
   fflush(stderr);
   // end of CI modifications
   //getchar();
+  if(IS_SOFTMODEM_DOFORMS)
+     load_softscope("enb");
   itti_wait_tasks_end();
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
@@ -715,6 +720,9 @@ int main( int argc, char **argv ) {
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
     int UE_id;
+    if(IS_SOFTMODEM_DOFORMS)
+      end_forms();
+
     LOG_I(ENB_APP,"stopping MODEM threads\n");
     stop_eNB(NB_eNB_INST);
     stop_RU(RC.nb_RU);

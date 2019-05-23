@@ -55,7 +55,6 @@
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
 #include "proto_agent.h"
-#define RRC_INACTIVITY_THRESH 0
 
 extern uint16_t sf_ahead;
 extern void set_parallel_conf(char *parallel_conf);
@@ -388,7 +387,9 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
         for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = RRC_INACTIVITY_THRESH; // set to 0 to deactivate
+        //RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = RRC_INACTIVITY_THRESH; // set to 0 to deactivate
+        // In the configuration file it is in seconds. For RRC it has to be in milliseconds
+        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = (*ENBParamList.paramarray[i][ENB_RRC_INACTIVITY_THRES_IDX].uptr) * 1000;
         RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
         RRC_CONFIGURATION_REQ (msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
@@ -417,6 +418,22 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                       "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
                       RRC_CONFIGURATION_REQ(msg_p).mnc[l]);
         }
+
+        /* measurement reports enabled? */
+        if (ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr != NULL &&
+            *(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr) != NULL &&
+            !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr), "yes"))
+          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 1;
+        else
+          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 0;
+
+        /* x2 enabled? */
+        if (ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr != NULL &&
+            *(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr) != NULL &&
+            !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr), "yes"))
+          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 1;
+        else
+          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 0;
 
         // Parse optional physical parameters
         config_getlist( &CCsParamList,NULL,0,enbpath);

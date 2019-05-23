@@ -416,6 +416,11 @@ pipeline {
                                 }
                             }
                         }
+                        stage ("Destroy all Virtual Machines") {
+                            steps {
+                                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+                        }
                     }
                 }
                 stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
@@ -459,6 +464,7 @@ pipeline {
                 stage ("Test IF4p5 - FDD - Band 7 - B210") {
                     steps {
                         script {
+                            sh "sleep 60"
                             triggerSlaveJob ('eNB-CI-IF4p5-FDD-Band7-B210', 'Test-IF4p5-FDD-Band7')
                         }
                     }
@@ -478,6 +484,7 @@ pipeline {
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
                     steps {
                         script {
+                            sh "sleep 60"
                             triggerSlaveJob ('eNB-CI-IF4p5-TDD-Band40-B210', 'Test-IF4p5-TDD-Band40')
                         }
                     }
@@ -574,11 +581,6 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-        stage ("Destroy all Virtual Machines") {
-            steps {
-                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
     }

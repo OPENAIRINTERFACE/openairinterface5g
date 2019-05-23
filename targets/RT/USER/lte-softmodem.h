@@ -181,7 +181,6 @@
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
 #define CHAIN_OFFSET        softmodem_params.chain_offset
-#define DO_FORMS            softmodem_params.do_forms
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
@@ -199,7 +198,7 @@
     {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
     {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
     {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&CHAIN_OFFSET,                 defintval:0,                    TYPE_INT,       0},                     \
-    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&DO_FORMS,         defintval:0,                    TYPE_INT8,      0},                     \
+    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
@@ -249,6 +248,7 @@
 #define SOFTMODEM_RFSIM_BIT           (1<<10)
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
+#define SOFTMODEM_DOFORMS_BIT         (1<<15)
 typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
@@ -259,7 +259,6 @@ typedef struct {
   int            wait_for_sync; //eNodeB only
   int            single_thread_flag; //eNodeB only
   int            chain_offset;
-  uint32_t       do_forms;
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
@@ -274,6 +273,7 @@ typedef struct {
 #define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
+#define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern void get_common_options(void);

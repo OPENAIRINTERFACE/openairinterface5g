@@ -24,7 +24,7 @@
 	<htmlTabRef>build-tab</htmlTabRef>
 	<htmlTabName>Build</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
-        <TestCaseRequestedList>
+	<TestCaseRequestedList>
  010101
  050101 060101 070101
 	</TestCaseRequestedList>
@@ -34,13 +34,13 @@
 	<testCase id="010101">
 		<class>Build_eNB</class>
 		<desc>Build eNB (USRP -- Ethernet Fronthaul)</desc>
-		<Build_eNB_args>-t ETHERNET -w USRP -c --eNB</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
 
-        <testCase id="050101">
+	<testCase id="050101">
 		<class>Initialize_HSS</class>
 		<desc>Initialize HSS</desc>
-        </testCase>
+	</testCase>
 
 	<testCase id="060101">
 		<class>Initialize_MME</class>

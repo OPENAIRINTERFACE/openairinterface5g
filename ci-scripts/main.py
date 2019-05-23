@@ -1,3 +1,4 @@
+# /*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -144,6 +145,9 @@ class SSHConnection():
 		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
+		self.flexranCtrlInstalled = False
+		self.flexranCtrlStarted = False
+		self.expectedNbOfConnectedUEs = 0
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -335,12 +339,24 @@ class SSHConnection():
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 600)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		buildStatus = True
+		result = re.search('lte-softmodem', str(self.ssh.before))
+		if result is None:
+			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+		if buildStatus:
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+		else:
+			logging.error('\u001B[1m Building OAI eNB Failed\u001B[0m')
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'KO', ALL_PROCESSES_OK)
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def BuildOAIUE(self):
 		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -371,13 +387,24 @@ class SSHConnection():
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 600)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls lte_build_oai/build', '\$', 3)
+		buildStatus = True
+		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		if result is None:
+			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-
+		if buildStatus:
+			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+		else:
+			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
+			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -437,6 +464,37 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
 		self.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
+
+	def CheckFlexranCtrlInstallation(self):
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			return
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
+		result = re.search('/opt/flexran_rtc/build/rt_controller', str(self.ssh.before))
+		if result is not None:
+			self.flexranCtrlInstalled = True
+			logging.debug('Flexran Controller is installed')
+		self.close()
+
+	def InitializeFlexranCtrl(self):
+		if self.flexranCtrlInstalled == False:
+			return
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('cd /opt/flexran_rtc', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f log/*.log', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
+		self.command('ps -aux | grep --color=never rt_controller', '\$', 5)
+		result = re.search('rt_controller -c ', str(self.ssh.before))
+		if result is not None:
+			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
+			self.flexranCtrlStarted = True
+		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def InitializeeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
@@ -501,6 +559,10 @@ class SSHConnection():
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
+		else:
+			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
@@ -568,6 +630,9 @@ class SSHConnection():
 		logging.debug('send adb commands')
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+
 			# The following commands are deprecated since we no longer work on Android 7+
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
@@ -1149,6 +1214,54 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def DataDisableUE_common(self, device_id):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data disable', '\$', 60)
+			logging.debug('\u001B[1mUE (' + device_id + ') Disabled Data Service\u001B[0m')
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def DataDisableUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		multi_jobs = []
+		for device_id in self.UEDevices:
+			p = Process(target = self.DataDisableUE_common, args = (device_id,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
+	def DataEnableUE_common(self, device_id):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+			logging.debug('\u001B[1mUE (' + device_id + ') Enabled Data Service\u001B[0m')
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def DataEnableUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		multi_jobs = []
+		for device_id in self.UEDevices:
+			p = Process(target = self.DataEnableUE_common, args = (device_id,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
@@ -1174,6 +1287,118 @@ class SSHConnection():
 				logging.debug('\u001B[1;37;41m CAT-M UE Not Found! \u001B[0m')
 				sys.exit(1)
 		self.close()
+
+	def CheckUEStatus_common(self, lock, device_id, statusQueue):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry', '\$', 15)
+			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', str(self.ssh.before))
+			serviceState = 'Service State: UNKNOWN'
+			if result is not None:
+				lServiceState = int(result.group('serviceState'))
+				if lServiceState == 3:
+					serviceState = 'Service State: RADIO_POWERED_OFF'
+				if lServiceState == 1:
+					serviceState = 'Service State: OUT_OF_SERVICE'
+				if lServiceState == 0:
+					serviceState = 'Service State: IN_SERVICE'
+				if lServiceState == 2:
+					serviceState = 'Service State: EMERGENCY_ONLY'
+			result = re.search('mDataConnectionState=(?P<dataConnectionState>[0-9]+)', str(self.ssh.before))
+			dataConnectionState = 'Data State:    UNKNOWN'
+			if result is not None:
+				lDataConnectionState = int(result.group('dataConnectionState'))
+				if lDataConnectionState == 0:
+					dataConnectionState = 'Data State:    DISCONNECTED'
+				if lDataConnectionState == 1:
+					dataConnectionState = 'Data State:    CONNECTING'
+				if lDataConnectionState == 2:
+					dataConnectionState = 'Data State:    CONNECTED'
+				if lDataConnectionState == 3:
+					dataConnectionState = 'Data State:    SUSPENDED'
+			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', str(self.ssh.before))
+			dataConnectionReason = 'Data Reason:   UNKNOWN'
+			if result is not None:
+				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m Status Check (' + str(device_id) + ') \u001B[0m')
+			logging.debug('\u001B[1;34m    ' + serviceState + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + dataConnectionState + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + dataConnectionReason + '\u001B[0m')
+			statusQueue.put(0)
+			statusQueue.put(device_id)
+			qMsg = serviceState + '\n' + dataConnectionState + '\n' + dataConnectionReason
+			statusQueue.put(qMsg)
+			lock.release()
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def CheckStatusUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		check_eNB = True
+		check_OAI_UE = False
+		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
+		multi_jobs = []
+		lock = Lock()
+		status_queue = SimpleQueue()
+		for device_id in self.UEDevices:
+			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('cd /opt/flexran_rtc', '\$', 5)
+			self.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
+			self.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
+			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', str(self.ssh.before))
+			passStatus = True
+			if result is not None:
+				nb_ues = int(result.group('nb_ues'))
+				htmlOptions = 'Nb Connected UE(s) to eNB = ' + str(nb_ues)
+				logging.debug('\u001B[1;37;44m ' + htmlOptions + ' \u001B[0m')
+				if self.expectedNbOfConnectedUEs > -1:
+					if nb_ues != self.expectedNbOfConnectedUEs:
+						passStatus = False
+			else:
+				htmlOptions = 'N/A'
+			self.close()
+		else:
+			passStatus = True
+			htmlOptions = 'N/A'
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow(htmlOptions, 'KO', ALL_PROCESSES_OK)
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
+		else:
+			check_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					check_status = False
+				device_id = status_queue.get()
+				message = status_queue.get()
+				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
+				html_queue.put(html_cell)
+			if check_status and passStatus:
+				self.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
 
 	def GetAllUEIPAddresses(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -1301,6 +1526,12 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
+	def PingNoS1_wrong_exit(self, qMsg):
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">OAI UE ping result\n' + qMsg + '</pre>'
+		html_queue.put(html_cell)
+		self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+
 	def PingNoS1(self):
 		check_eNB = True
 		check_OAI_UE = True
@@ -1333,21 +1564,25 @@ class SSHConnection():
 			if ping_status < 0:
 				message = 'Ping with OAI UE crashed due to TIMEOUT!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.PingNoS1_wrong_exit(message)
 				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
@@ -2145,6 +2380,8 @@ class SSHConnection():
 					if logStatus < 0:
 						result = logStatus
 					self.eNBLogFile = ''
+				if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+					self.TerminateFlexranCtrl()
 			return result
 
 	def CheckOAIUEProcessExist(self, initialize_OAI_UE_flag):
@@ -2311,7 +2548,7 @@ class SSHConnection():
 			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
-			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
+			result = re.search('Generate LTE_RRCConnectionRelease|Generate RRCConnectionRelease', str(line))
 			if result is not None:
 				rrcReleaseRequest += 1
 			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
@@ -2664,7 +2901,6 @@ class SSHConnection():
 		else:
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('cd scripts', '\$', 5)
-			self.command('rm -f ./kill_hss.sh', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
@@ -2701,9 +2937,25 @@ class SSHConnection():
 		self.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def TerminateFlexranCtrl(self):
+		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
+			return
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
+		time.sleep(1)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
+		time.sleep(1)
+		self.close()
+		self.flexranCtrlStarted = False
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
 	def TerminateUE_common(self, device_id):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# back in airplane mode on (ie radio off)
 			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
 
@@ -3306,7 +3558,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3332,6 +3584,13 @@ def GetParametersFromXML(action):
 			SSH.nbMaxUEtoAttach = -1
 		else:
 			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	if action == 'CheckStatusUE':
+		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
+		if (expectedNBUE is None):
+			SSH.expectedNbOfConnectedUEs = -1
+		else:
+			SSH.expectedNbOfConnectedUEs = int(expectedNBUE)
 
 	if action == 'Build_OAI_UE':
 		SSH.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
@@ -3551,10 +3810,10 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
-        if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
-                Usage()
-                sys.exit('Insufficient Parameter')
-        SSH.LogCollectOAIUE()
+	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		Usage()
+		sys.exit('Insufficient Parameter')
+	SSH.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
 		Usage()
@@ -3592,7 +3851,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
-        # if no parameters for XML file, use default value
+	# if no parameters for XML file, use default value
 	if (SSH.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
@@ -3630,6 +3889,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
+	SSH.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -3656,7 +3916,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				continue
 			SSH.ShowTestID()
 			GetParametersFromXML(action)
-			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE':
+			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
 				if (SSH.ADBIPAddress != 'none'):
 					terminate_ue_flag = False
 					SSH.GetAllUEDevices(terminate_ue_flag)
@@ -3674,6 +3934,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.AttachUE()
 			elif action == 'Detach_UE':
 				SSH.DetachUE()
+			elif action == 'DataDisable_UE':
+				SSH.DataDisableUE()
+			elif action == 'DataEnable_UE':
+				SSH.DataEnableUE()
+			elif action == 'CheckStatusUE':
+				SSH.CheckStatusUE()
 			elif action == 'Build_OAI_UE':
 				SSH.BuildOAIUE()
 			elif action == 'Initialize_OAI_UE':
@@ -3708,6 +3974,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.InitializeSPGW()
 			elif action == 'Terminate_SPGW':
 				SSH.TerminateSPGW()
+			elif action == 'Initialize_FlexranCtrl':
+				SSH.InitializeFlexranCtrl()
+			elif action == 'Terminate_FlexranCtrl':
+				SSH.TerminateFlexranCtrl()
 			elif action == 'IdleSleep':
 				SSH.IdleSleep()
 			else:
