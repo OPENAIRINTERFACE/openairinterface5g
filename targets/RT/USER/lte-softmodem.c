@@ -713,7 +713,7 @@ int main( int argc, char **argv ) {
   }
 
   /* start threads if only L1 or not a CU */
-  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
+  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
