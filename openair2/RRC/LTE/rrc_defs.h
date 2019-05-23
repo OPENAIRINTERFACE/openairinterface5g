@@ -826,6 +826,9 @@ typedef struct eNB_RRC_INST_s {
   /// NR cell id
   uint64_t nr_cellid;
 
+  // X2 handover controlled by network
+  int x2_ho_net_control;
+
   // Neighborouring cells id
   int num_neigh_cells;
   int num_neigh_cells_cc[MAX_NUM_CCs];

@@ -832,6 +832,9 @@ void flexran_agent_fill_rrc_cell_config(mid_t mod_id, uint8_t cc_id,
   } else {
     conf->n_plmn_id = 0;
   }
+
+  conf->x2_ho_net_control = flexran_get_x2_ho_net_control(mod_id);
+  conf->has_x2_ho_net_control = 1;
 }
 
 int flexran_agent_unregister_rrc_xface(mid_t mod_id)

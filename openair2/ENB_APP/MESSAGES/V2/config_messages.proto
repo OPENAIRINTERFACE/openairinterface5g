@@ -45,6 +45,7 @@ message flex_cell_config {
 	repeated flex_plmn plmn_id = 40;                   // The PLMN cell id of this cell
 
 	optional flex_slice_config slice_config = 42;
+        optional bool x2_ho_net_control = 43;
 }
 
 message flex_slice_config {

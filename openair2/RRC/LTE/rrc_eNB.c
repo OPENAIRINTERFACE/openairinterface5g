@@ -4515,6 +4515,9 @@ rrc_eNB_process_MeasurementReport(
   if (!RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2)
     return;
 
+  if (RC.rrc[ctxt_pP->module_id]->x2_ho_net_control)
+    return;
+
   LOG_D(RRC, "A3 event is triggered...\n");
 
   /* if the UE is not in handover mode, start handover procedure */

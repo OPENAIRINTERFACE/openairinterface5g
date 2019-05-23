@@ -2082,6 +2082,18 @@ int flexran_set_rrc_a3_event_reportOnLeave(mid_t mod_id, rnti_t rnti, int report
   return 0;
 }
 
+int flexran_set_x2_ho_net_control(mid_t mod_id, int x2_ho_net_control) {
+  if (!rrc_is_present(mod_id)) return -1;
+  if (!((x2_ho_net_control == 0) || (x2_ho_net_control == 1))) return -1;
+  RC.rrc[mod_id]->x2_ho_net_control = x2_ho_net_control;
+  return 0;
+}
+
+int flexran_get_x2_ho_net_control(mid_t mod_id) {
+  if (!rrc_is_present(mod_id)) return -1;
+  return RC.rrc[mod_id]->x2_ho_net_control;
+}
+
 uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id) {
   if (!rrc_is_present(mod_id)) return 0;
   return RC.rrc[mod_id]->configuration.num_plmn;

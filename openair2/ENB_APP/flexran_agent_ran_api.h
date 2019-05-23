@@ -630,6 +630,12 @@ uint16_t flexran_get_rrc_mnc(mid_t mod_id, uint8_t index);
 /* Get index'th MNC's digit length broadcasted in SIB1 */
 uint8_t flexran_get_rrc_mnc_digit_length(mid_t mod_id, uint8_t index);
 
+/* Get X2 handover controlled by network */
+int flexran_get_x2_ho_net_control(mid_t mod_id);
+
+/* Set X2 handover controlled by network */
+int flexran_set_x2_ho_net_control(mid_t mod_id, int x2_ho_net_control);
+
 /* Get number of adjacent cells via X2 interface */
 int flexran_get_rrc_num_adj_cells(mid_t mod_id);
 /************************** Slice configuration **************************/
