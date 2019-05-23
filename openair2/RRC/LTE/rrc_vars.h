@@ -45,7 +45,7 @@ UE_RRC_INST *UE_rrc_inst = NULL;
 uint8_t DRB2LCHAN[8];
 
 long logicalChannelGroup0 = 0;
-long  logicalChannelSR_Mask_r9=0;
+long logicalChannelSR_Mask_r9=0;
 
 struct LTE_LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
          LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,

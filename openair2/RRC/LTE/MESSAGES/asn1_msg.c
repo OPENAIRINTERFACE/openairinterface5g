@@ -2203,28 +2203,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
                                    buffer,
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
-
-#if defined(ENABLE_ITTI)
-# if !defined(DISABLE_XER_SPRINT)
-  {
-    char        message_string[20000];
-    size_t      message_string_size;
-
-    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_CCCH_Message, (void *) &ul_ccch_msg)) > 0) {
-      MessageDef *msg_p;
-
-      msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_CCCH, message_string_size + sizeof (IttiMsgText));
-      msg_p->ittiMsg.rrc_ul_ccch.size = message_string_size;
-      memcpy(&msg_p->ittiMsg.rrc_ul_ccch.text, message_string, message_string_size);
-
-      itti_send_msg_to_task(TASK_UNKNOWN, NB_eNB_INST + Mod_id, msg_p);
-    }
-  }
-# endif
-#endif
-
-  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-
+  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -4483,15 +4462,15 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
     InterFreqBandInfo[3][3].interFreqNeedForGaps = 0;
     UE_EUTRA_Capability->accessStratumRelease = 0;//AccessStratumRelease_rel8;
     UE_EUTRA_Capability->ue_Category          = 4;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0001=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0002=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0001_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0002_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104_r15=0;
     UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = &maxNumberROHC_ContextSessions;
     UE_EUTRA_Capability->phyLayerParameters.ue_TxAntennaSelectionSupported = 0;
     UE_EUTRA_Capability->phyLayerParameters.ue_SpecificRefSigsSupported    = 0;

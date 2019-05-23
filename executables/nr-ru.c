@@ -2146,7 +2146,7 @@ void stop_RU(int nb_ru) {
 void RCconfig_RU(void) {
   int               j                             = 0;
   int               i                             = 0;
-  paramdef_t RUParams[] = RUPARAMS_DESC;
+  paramdef_t RUParams[] = GNBRUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
 

@@ -40,7 +40,7 @@
 #include "LTE_SL-CP-Len-r12.h"
 #include "LTE_SL-PeriodComm-r12.h"
 #include "LTE_SL-DiscResourcePool-r12.h"
-
+#include "NR_RACH-ConfigCommon.h"
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
@@ -484,7 +484,7 @@ typedef struct NRRrcConfigurationReq_s {
   uint32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen[MAX_NUM_CCs];
   BOOLEAN_t               rach_groupBconfigured[MAX_NUM_CCs];
   long                    rach_ra_Msg3SizeGroupA[MAX_NUM_CCs];
-  long                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
+  e_NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
   long                    rach_numberOfRA_PreamblesGroupA[MAX_NUM_CCs];
   long                    rach_ra_ContentionResolutionTimer[MAX_NUM_CCs];
   long                    rsrp_ThresholdSSB[MAX_NUM_CCs];

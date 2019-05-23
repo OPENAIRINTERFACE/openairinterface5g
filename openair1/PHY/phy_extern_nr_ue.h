@@ -62,7 +62,7 @@ extern unsigned char NB_RU;
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 

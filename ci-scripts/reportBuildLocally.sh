@@ -574,25 +574,31 @@ function report_build {
     summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
     summary_table_row "DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
     summary_table_row "UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
-    summary_table_row "Coding - Release 15" ./archives/phy_sim/coding.Rel15.txt "Built target coding" ./phy_sim_row3.html
     if [ -f ./archives/phy_sim/ldpctest.Rel15.txt ]
     then
-        summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target ldpctest" ./phy_sim_row4.html
+        summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target ldpctest" ./phy_sim_row3.html
     fi
     if [ -f ./archives/phy_sim/polartest.Rel15.txt ]
     then
-        summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target polartest" ./phy_sim_row5.html
+        summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target polartest" ./phy_sim_row4.html
     fi
     if [ -f ./archives/phy_sim/nr_pbchsim.Rel15.txt ]
     then
-        summary_table_row "PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row6.html
+        summary_table_row "PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row5.html
     fi
     if [ -f ./archives/phy_sim/nr_dlschsim.Rel15.txt ]
     then
-        summary_table_row "DLSCH Test - Release 15" ./archives/phy_sim/nr_dlschsim.Rel15.txt "Built target nr_dlschsim" ./phy_sim_row7.html
+        summary_table_row "DLSCH Test - Release 15" ./archives/phy_sim/nr_dlschsim.Rel15.txt "Built target nr_dlschsim" ./phy_sim_row6.html
+    fi
+    if [ -f ./archives/phy_sim/smallblocktest.Rel15.txt ]
+    then
+        summary_table_row "Small Block Test - Release 15" ./archives/phy_sim/smallblocktest.Rel15.txt "Built target smallblocktest" ./phy_sim_row7.html
+    fi
+    if [ -f ./archives/phy_sim/nr_dlsim.Rel15.txt ]
+    then
+        summary_table_row "NR DL Simulator - Release 15" ./archives/phy_sim/nr_dlsim.Rel15.txt "Built target nr_dlsim" ./phy_sim_row8.html
     fi
     summary_table_footer
-
 
     if [ -f archives/gnb_usrp/nr-softmodem.Rel15.txt ]
     then
@@ -666,7 +672,7 @@ function report_build {
             cat $DETAILS_TABLE >> ./build_results.html
         done
     fi
-    if [ -f ./phy_sim_row1.html ] || [ -f ./phy_sim_row2.html ] || [ -f ./phy_sim_row3.html ]
+    if [ -f ./phy_sim_row1.html ] || [ -f ./phy_sim_row2.html ] || [ -f ./phy_sim_row3.html ] || [ -f ./phy_sim_row4.html ] || [ -f ./phy_sim_row5.html ] || [ -f ./phy_sim_row6.html ] || [ -f ./phy_sim_row7.html ] || [ -f ./phy_sim_row8.html ]
     then
         for DETAILS_TABLE in `ls ./phy_sim_row*.html`
         do

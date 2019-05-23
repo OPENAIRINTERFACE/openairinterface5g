@@ -177,6 +177,7 @@ set(CMAKE_CXX_FLAGS
 	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D${MKVER}"
 )
 
+add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
@@ -282,11 +283,10 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
+
 # RRC
 ######
-
 add_list2_option(RRC_ASN1_VERSION "Rel15" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
-
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   make_version(LTE_RRC_VERSION 8 6 0)
@@ -311,8 +311,8 @@ elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
   make_version(LTE_RRC_VERSION 14 7 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.7.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
-  make_version(LTE_RRC_VERSION 15 2 2)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.2.2.asn1)
+  make_version(LTE_RRC_VERSION 15 3 0)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.3.0.asn1)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DLTE_RRC_VERSION=${LTE_RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
@@ -337,9 +337,9 @@ add_library(RRC_LIB ${rrc_source}
 add_dependencies(RRC_LIB rrc_flag)
 include_directories ("${RRC_FULL_DIR}")
 
+
 #NR RRC
 #######
-
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
@@ -2823,6 +2823,7 @@ if (${T_TRACER})
         dlsim_tm4 nr_dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim ulsim ldpctest polartest
         cu_test du_test
+        
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP_LIB
         F1AP params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif
@@ -2965,7 +2966,3 @@ ADD_CUSTOM_TARGET(oarf
 )
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
-
-
-
-

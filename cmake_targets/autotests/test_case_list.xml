@@ -1019,14 +1019,14 @@
       <main_exec> $OPENAIR_DIR/targets/bin/ldpctest.Rel15</main_exec>
       <main_exec_args>-l3872 -s10 -n100
                       -l4224 -s10 -n100
-		      -l4576 -s10 -n100
-		      -l4928 -s10 -n100
-		      -l5280 -s10 -n100
-		      -l5632 -s10 -n100
-		      -l6336 -s10 -n100
-		      -l7040 -s10 -n100
-		      -l7744 -s10 -n100
-		      -l8448 -s10 -n100</main_exec_args>
+		              -l4576 -s10 -n100
+	        	      -l4928 -s10 -n100
+	        	      -l5280 -s10 -n100
+	        	      -l5632 -s10 -n100
+	        	      -l6336 -s10 -n100
+	        	      -l7040 -s10 -n100
+	        	      -l7744 -s10 -n100
+	        	      -l8448 -s10 -n100</main_exec_args>
       <tags>ldpctest.test1 ldpctest.test2 ldpctest.test3 ldpctest.test4 ldpctest.test5 ldpctest.test6 ldpctest.test7 ldpctest.test8 ldpctest.test9 ldpctest.test10</tags>
       <search_expr_true>BLER 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1067,9 +1067,9 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
       <main_exec_args>-s0 -S1 -n1000 -R106
                       -s0 -S1 -n10 -I -R106
-		      -s0 -S1 -n1000 -R217
+		              -s0 -S1 -n1000 -R217
                       -s0 -S1 -n10 -I -R217
-		      -s0 -S1 -n1000 -R273
+		              -s0 -S1 -n1000 -R273
                       -s0 -S1 -n10 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
@@ -1089,8 +1089,8 @@
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
       <main_exec_args>-n100 -R106
-		      -n100 -R217
-		      -n100 -R273</main_exec_args>
+		              -n100 -R217
+		              -n100 -R273</main_exec_args>
       <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3</tags>
       <search_expr_true>PDCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1130,9 +1130,9 @@
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/smallblocktest.Rel15</main_exec>
       <main_exec_args>-l 3 -s -4 -d 1 -i 10000
-      -l 6 -s -4 -d 1 -i 10000
-      -l 7 -s -4 -d 1 -i 10000
-      -l 11 -s -4 -d 1 -i 10000</main_exec_args>
+                      -l 6 -s -4 -d 1 -i 10000
+                      -l 7 -s -4 -d 1 -i 10000
+                      -l 11 -s -4 -d 1 -i 10000</main_exec_args>
       <tags>smallblocktest.test1 smallblocktest.test2 smallblocktest.test3 smallblocktest.test4</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

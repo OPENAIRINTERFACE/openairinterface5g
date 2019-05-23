@@ -39,13 +39,14 @@ extern UE_RRC_INST *UE_rrc_inst;
 
 extern uint8_t DRB2LCHAN[8];
 
-extern NR_LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue;
-extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
+extern NR_LogicalChannelConfig_t NR_SRB1_logicalChannelConfig_defaultValue;
+extern NR_LogicalChannelConfig_t NR_SRB2_logicalChannelConfig_defaultValue;
+extern NR_LogicalChannelConfig_t NR_SRB3_logicalChannelConfig_defaultValue;
 
 
 extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int);
 

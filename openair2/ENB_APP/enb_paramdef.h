@@ -35,27 +35,15 @@
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
 
-
-
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
 #define ENB_CONFIG_STRING_CC_NODE_TIMING                                "node_timing"   
 #define ENB_CONFIG_STRING_CC_NODE_SYNCH_REF                             "node_synch_ref"   
-
 
 // OTG config per ENB-UE DL
 #define ENB_CONF_STRING_OTG_CONFIG                         "otg_config"
 #define ENB_CONF_STRING_OTG_UE_ID                          "ue_id"
 #define ENB_CONF_STRING_OTG_APP_TYPE                       "app_type"
 #define ENB_CONF_STRING_OTG_BG_TRAFFIC                     "bg_traffic"
-
-
-
-
-
-
-
-
-
 
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long

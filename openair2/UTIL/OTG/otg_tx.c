@@ -36,7 +36,7 @@
 #include "otg_externs.h"
 
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 
 
 // char string for payload gen

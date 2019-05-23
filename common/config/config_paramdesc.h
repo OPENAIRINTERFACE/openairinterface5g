@@ -34,9 +34,6 @@
 #define INCLUDE_CONFIG_PARAMDESC_H
 
 
-
-
-
 #define MAX_OPTNAME_SIZE 64
 #define CONFIG_MAXOPTLENGTH 512 /* max full option length, full option name exemple: (prefix1.[<index>].prefix2.optname */
 
