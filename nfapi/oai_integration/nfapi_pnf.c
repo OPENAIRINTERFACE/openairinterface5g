@@ -197,19 +197,19 @@ static pthread_t pnf_start_pthread;
 int nfapitooai_level(int nfapi_level) {
   switch(nfapi_level) {
     case NFAPI_TRACE_ERROR:
-      return LOG_ERR;
+      return OAILOG_ERR;
 
     case NFAPI_TRACE_WARN:
-      return LOG_WARNING;
+      return OAILOG_WARNING;
 
     case NFAPI_TRACE_NOTE:
-      return LOG_INFO;
+      return OAILOG_INFO;
 
     case NFAPI_TRACE_INFO:
-      return LOG_DEBUG;
+      return OAILOG_DEBUG;
   }
 
-  return LOG_ERR;
+  return OAILOG_ERR;
 }
 
 void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char *message, ...) {
