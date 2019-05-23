@@ -181,6 +181,9 @@ typedef struct RrcConfigurationReq_s {
   uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t             num_plmn;
 
+  int                 enable_measurement_reports;
+  int                 enable_x2;
+
   uint32_t            rrc_inactivity_timer_thres; // for testing, maybe change later
 
   paging_drx_t            default_drx;

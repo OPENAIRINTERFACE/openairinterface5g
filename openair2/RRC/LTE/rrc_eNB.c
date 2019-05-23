@@ -1586,7 +1586,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   /* for no gcc warnings */
   (void)dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
-  int                                    x2_enabled;
+  int                                    measurements_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
@@ -1998,7 +1998,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     dedicatedInfoNASList = NULL;
   }
 
-  x2_enabled = is_x2ap_enabled();
+  measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
+                         RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
 
   // send LTE_RRCConnectionReconfiguration
   memset(buffer, 0, RRC_BUF_SIZE);
@@ -2013,9 +2014,9 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 //#ifdef EXMIMO_IOT
 //                                         NULL, NULL, NULL,NULL,
 //#else
-                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL, // MeasObj_list,
-                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL, // ReportConfig_list,
-                                         x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL, //quantityConfig,
+                                         measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL, // MeasObj_list,
+                                         measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL, // ReportConfig_list,
+                                         measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL, //quantityConfig,
                                          (LTE_MeasIdToAddModList_t *)NULL,
 //#endif
                                          (LTE_MAC_MainConfig_t *)ue_context_pP->ue_context.mac_MainConfig,
@@ -2924,7 +2925,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   /* For no gcc warnings */
   (void) dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
-  int                                    x2_enabled;
+  int                                    measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
   uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
   LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
@@ -3466,7 +3467,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     dedicatedInfoNASList = NULL;
   }
 
-  x2_enabled = is_x2ap_enabled();
+  measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
+                         RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
@@ -3478,10 +3480,10 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                                          (LTE_DRB_ToReleaseList_t *) NULL, // DRB2_list,
                                          (struct LTE_SPS_Config *) NULL,   // *sps_Config,
                                          (struct LTE_PhysicalConfigDedicated *) *physicalConfigDedicated,
-                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *) MeasObj_list : NULL,
-                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *) ReportConfig_list : NULL,
-                                         x2_enabled ? (LTE_QuantityConfig_t *) quantityConfig : NULL,
-                                         x2_enabled ? (LTE_MeasIdToAddModList_t *) MeasId_list : NULL,
+                                         measurements_enabled ? (LTE_MeasObjectToAddModList_t *) MeasObj_list : NULL,
+                                         measurements_enabled ? (LTE_ReportConfigToAddModList_t *) ReportConfig_list : NULL,
+                                         measurements_enabled ? (LTE_QuantityConfig_t *) quantityConfig : NULL,
+                                         measurements_enabled ? (LTE_MeasIdToAddModList_t *) MeasId_list : NULL,
                                          (LTE_MAC_MainConfig_t *) mac_MainConfig,
                                          (LTE_MeasGapConfig_t *) NULL,
                                          (LTE_MobilityControlInfo_t *) NULL,
@@ -3599,7 +3601,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   /* for no gcc warnings */
   (void)dedicatedInfoNas;
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
-  int                                    x2_enabled;
+  int                                    measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
 #ifdef CBA
   //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
@@ -3969,7 +3971,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     dedicatedInfoNASList = NULL;
   }
 
-  x2_enabled = is_x2ap_enabled();
+  measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
+                         RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
 
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionReconfiguration(ctxt_pP,
@@ -3983,10 +3986,10 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                          // #ifdef EXMIMO_IOT
                                          //                                          NULL, NULL, NULL,NULL,
                                          // #else
-                                         x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
-                                         x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
-                                         x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
-                                         x2_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
+                                         measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
+                                         measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
+                                         measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
+                                         measurements_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
                                          // #endif
                                          (LTE_MAC_MainConfig_t *)mac_MainConfig,
                                          (LTE_MeasGapConfig_t *)NULL,
@@ -4234,7 +4237,7 @@ rrc_eNB_process_MeasurementReport(
     return;
 
   /* if X2AP is disabled, do nothing */
-  if (!is_x2ap_enabled())
+  if (!RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2)
     return;
 
   LOG_D(RRC, "A3 event is triggered...\n");
@@ -4624,7 +4627,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   /* for no gcc warnings */
   (void)dedicatedInfoNas;
   LTE_C_RNTI_t                       *cba_RNTI                         = NULL;
-  int                                x2_enabled;
+  int                                measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
 #ifdef CBA
   //struct PUSCH_CBAConfigDedicated_vlola  *pusch_CBAConfigDedicated_vlola;
@@ -5525,7 +5528,8 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
 
 #endif
 
-  x2_enabled = is_x2ap_enabled();
+  measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
+                         RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
 
   memset(buffer, 0, RRC_BUF_SIZE);
   char rrc_buf[1000 /* arbitrary, should be big enough, has to be less than size of return buf by a few bits/bytes */];
@@ -5541,10 +5545,10 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
              //#ifdef EXMIMO_IOT
              //                                         NULL, NULL, NULL,NULL,
              //#else
-             x2_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
-             x2_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
-             x2_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
-             x2_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
+             measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
+             measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
+             measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,
+             measurements_enabled ? (LTE_MeasIdToAddModList_t *)MeasId_list : NULL,
              //#endif
              (LTE_MAC_MainConfig_t *)mac_MainConfig,
              (LTE_MeasGapConfig_t *)NULL,
@@ -7760,7 +7764,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_IN);
 
-  if (is_x2ap_enabled()) {
+  if (RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2) {
     /* send a tick to x2ap */
     msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_SUBFRAME_PROCESS);
     itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);

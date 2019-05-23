@@ -257,23 +257,28 @@ rrc_eNB_S1AP_get_ue_ids(
         }
 
         if (ue_desc_p != NULL) {
-          result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
+          if (ue_desc_p->ue_initial_id != UE_INITIAL_ID_INVALID) {
+            result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
 
-          if (result != NULL) {
-            ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
+            if (result != NULL) {
+              ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
 
-            if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
-              ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-            } else {
-              LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
-                    rrc_instance_pP - RC.rrc[0],
-                    (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
-                    eNB_ue_s1ap_id,
-                    result->ue_rnti);
+              if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
+                ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+              } else {
+                LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
+                      rrc_instance_pP - RC.rrc[0],
+                      (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
+                      eNB_ue_s1ap_id,
+                      result->ue_rnti);
+              }
             }
+          } else {
+            LOG_E(S1AP, "[eNB %ld] S1AP context found but ue_initial_id is invalid (0)\n", rrc_instance_pP - RC.rrc[0]);
+            return NULL;
           }
         } else {
-          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even when looking at S1AP context\n",
+          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", because ue_initial_id is invalid in S1AP context\n",
                 rrc_instance_pP - RC.rrc[0],
                 eNB_ue_s1ap_id);
           return NULL;

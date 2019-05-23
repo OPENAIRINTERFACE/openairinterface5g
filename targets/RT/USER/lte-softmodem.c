@@ -64,6 +64,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -90,22 +91,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "system.h"
 
-#ifdef XFORMS
-  #include "PHY/TOOLS/lte_phy_scope.h"
-  #include "stats.h"
-#endif
+
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
-#ifdef XFORMS
-  // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-  // at eNB 0, an UL scope for every UE
-  FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-  FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-  char title[255];
-  unsigned char                   scope_enb_num_ue = 2;
-  static pthread_t                forms_thread; //xforms
-#endif //XFORMS
 
 
 pthread_cond_t nfapi_sync_cond;
@@ -163,12 +151,8 @@ char channels[128] = "0";
 
 int                      rx_input_level_dBm;
 
-#ifdef XFORMS
-  extern int                      otg_enabled;
-#else
-  int                             otg_enabled;
-#endif
-//int                             number_of_cards =   1;
+
+int                             otg_enabled;
 
 
 uint8_t exit_missed_slots=1;
@@ -301,75 +285,6 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-#ifdef XFORMS
-
-
-void reset_stats(FL_OBJECT *button, long arg) {
-  int i,j,k;
-  PHY_VARS_eNB *phy_vars_eNB = RC.eNB[0][0];
-
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_eNB->dlsch[i][0]->Mlimit; j++) {
-        phy_vars_eNB->UE_stats[i].dlsch_NAK[k][j]=0;
-        phy_vars_eNB->UE_stats[i].dlsch_ACK[k][j]=0;
-        phy_vars_eNB->UE_stats[i].dlsch_trials[k][j]=0;
-      }
-
-      phy_vars_eNB->UE_stats[i].dlsch_l2_errors[k]=0;
-      phy_vars_eNB->UE_stats[i].ulsch_errors[k]=0;
-      phy_vars_eNB->UE_stats[i].ulsch_consecutive_errors=0;
-      phy_vars_eNB->UE_stats[i].dlsch_sliding_cnt=0;
-      phy_vars_eNB->UE_stats[i].dlsch_NAK_round0=0;
-      phy_vars_eNB->UE_stats[i].dlsch_mcs_offset=0;
-    }
-  }
-}
-
-static void *scope_thread(void *arg) {
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *eNB_stats;
-# endif
-  struct sched_param sched_param;
-  int UE_id, CC_id;
-  int ue_cnt=0;
-  sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
-  sched_setscheduler(0, SCHED_FIFO,&sched_param);
-  printf("Scope thread has priority %d\n",sched_param.sched_priority);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  eNB_stats = fopen("eNB_stats.txt", "w");
-#endif
-
-  while (!oai_exit) {
-    ue_cnt=0;
-
-    for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        if ((ue_cnt<scope_enb_num_ue)) {
-          phy_scope_eNB(form_enb[CC_id][ue_cnt],
-                        RC.eNB[0][CC_id],
-                        UE_id);
-          ue_cnt++;
-        }
-      }
-    }
-
-    sleep(1);
-  }
-
-  //  printf("%s",stats_buffer);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-
-  if (eNB_stats) {
-    rewind (eNB_stats);
-    fwrite (stats_buffer, 1, len, eNB_stats);
-    fclose (eNB_stats);
-  }
-
-# endif
-  pthread_exit((void *)arg);
-}
-#endif
 
 
 static void get_options(void) {
@@ -579,9 +494,11 @@ void init_pdcp(void) {
   if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-        (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
     if (IS_SOFTMODEM_NOS1)
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+
     pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
@@ -608,14 +525,8 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main( int argc, char **argv ) {
   int i;
-#if defined (XFORMS)
-  void *status;
-#endif
   int CC_id = 0;
   int ru_id;
-#if defined (XFORMS)
-  int ret;
-#endif
 
   if ( load_configmodule(argc,argv,0) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
@@ -675,9 +586,9 @@ int main( int argc, char **argv ) {
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
-
     /* Start the agent. If it is turned off in the configuration, it won't start */
     RCconfig_flexran();
+
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
@@ -718,42 +629,9 @@ int main( int argc, char **argv ) {
     mlockall(MCL_CURRENT | MCL_FUTURE);
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
-#ifdef XFORMS
-    int UE_id;
-    printf("XFORMS\n");
 
-    if (get_softmodem_params()->do_forms==1) {
-      fl_initialize (&argc, argv, NULL, 0, 0);
-      form_stats_l2 = create_form_stats_form();
-      fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
-      form_stats = create_form_stats_form();
-      fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
 
-      for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-        for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-          form_enb[CC_id][UE_id] = create_lte_phy_scope_enb();
-          sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-          fl_show_form (form_enb[CC_id][UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-          if (otg_enabled) {
-            fl_set_button(form_enb[CC_id][UE_id]->button_0,1);
-            fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic ON");
-          } else {
-            fl_set_button(form_enb[CC_id][UE_id]->button_0,0);
-            fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic OFF");
-          }
-        } // CC_id
-      } // UE_id
-
-      ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-
-      if (ret == 0)
-        pthread_setname_np( forms_thread, "xforms" );
-
-      printf("Scope thread created, ret=%d\n",ret);
-    }
-
-#endif
     rt_sleep_ns(10*100000000ULL);
 
     if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
@@ -839,32 +717,17 @@ int main( int argc, char **argv ) {
   fflush(stderr);
   // end of CI modifications
   //getchar();
+  if(IS_SOFTMODEM_DOFORMS)
+     load_softscope("enb");
   itti_wait_tasks_end();
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
-    int UE_id;
-#ifdef XFORMS
-    printf("waiting for XFORMS thread\n");
+    if(IS_SOFTMODEM_DOFORMS)
+      end_forms();
 
-    if (get_softmodem_params()->do_forms==1) {
-      pthread_join(forms_thread,&status);
-      fl_hide_form(form_stats->stats_form);
-      fl_free_form(form_stats->stats_form);
-      fl_hide_form(form_stats_l2->stats_form);
-      fl_free_form(form_stats_l2->stats_form);
-
-      for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-        for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-          fl_hide_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
-          fl_free_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
-        }
-      }
-    }
-
-#endif
     LOG_I(ENB_APP,"stopping MODEM threads\n");
     stop_eNB(NB_eNB_INST);
     stop_RU(RC.nb_RU);

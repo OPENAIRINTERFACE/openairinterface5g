@@ -177,10 +177,15 @@ compilations() {
   set +e
   {
     rm -f $3
-    if [ "$VERBOSE_COMPILE" == "1" ]; then
-       make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+    if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
+        COV_SCAN_PREFIX="cov-build --dir cov-int"
     else
-       make -j`nproc` $2
+        COV_SCAN_PREFIX=""
+    fi
+    if [ "$VERBOSE_COMPILE" == "1" ]; then
+       $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+    else
+       $COV_SCAN_PREFIX make -j`nproc` $2
     fi
 
   } > $dlog/$2.$REL.txt 2>&1

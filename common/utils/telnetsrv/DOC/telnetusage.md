@@ -5,7 +5,7 @@ By default the embedded telnet server, which is implemented in a shared library,
  cd \<oai repository\>/openairinterface5g
  source oaienv
  cd cmake_targets
- ./build_oai  --build-telnetsrv
+ ./build_oai  --build-lib telnetsrv
 ```
 
 This will create the `libtelnetsrv.so` file in the `targets/bin` and `cmake_targets/lte_build_oai/build` sub directories of the oai repository.
@@ -23,6 +23,7 @@ Below are  examples of telnet sessions:
 *  [using the loop command](telnetloop.md)
 *  [loader command](telnetloader.md)
 *  [log command](telnetlog.md)
+*  [measur command](telnetmeasur.md)
 
 # telnet server parameters
 The telnet server is using the [oai configuration module](Config/Rtusage). Telnet parameters must be specified in the `telnetsrv` section. Some parameters can be modified via the telnet telnet server command, as specified in the last column of the following table.
