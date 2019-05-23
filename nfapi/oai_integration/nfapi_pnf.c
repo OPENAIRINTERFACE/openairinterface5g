@@ -1366,7 +1366,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
 
   if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    nfapi_setmode(NFAPI_PNF);  // PNF!
+    nfapi_setmode(NFAPI_MODE_PNF);  // PNF!
   }
 
   nfapi_pnf_config_t *config = nfapi_pnf_config_create();
