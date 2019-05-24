@@ -1,10 +1,9 @@
 #include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
 #include "nr_transport_proto.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/defs_nr_common.h"
-
-short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 {

@@ -42,6 +42,7 @@
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 #include "LAYER2/MAC/mac_vars.h"
 #include "LAYER2/MAC/mac_proto.h"

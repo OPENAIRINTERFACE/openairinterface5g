@@ -54,6 +54,7 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "PHY/phy_vars.h"
 
 //#include "PHY/MODULATION/modulation_common.h"
 //#include "common/config/config_load_configmodule.h"
@@ -102,22 +103,23 @@ NR_IF_Module_init(int Mod_id) {
   return (NULL);
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
-
-    return 0;
-}
-
-short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
-
-
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   const char *msg = s == NULL ? "no comment" : s;
   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
   exit(-1);
 }
 
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
+			      const int             CC_id,
+			      const uint8_t         gNB_index,
+			      const int8_t          channel,
+			      const uint8_t*        pduP,
+			      const sdu_size_t      pdu_len)
+{
+  return 0;
+}
+
 // needed for some functions
-PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 

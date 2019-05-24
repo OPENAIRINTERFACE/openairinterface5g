@@ -43,6 +43,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/phy_vars.h"
 
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
@@ -98,18 +99,16 @@ void exit_function(const char* file, const char* function, const int line,const 
    exit(-1); 
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
-
-    return 0;
-}
-
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 			      const int             CC_id,
 			      const uint8_t         gNB_index,
 			      const int8_t          channel,
 			      const uint8_t*        pduP,
 			      const sdu_size_t      pdu_len)
-{return(0);}
+{
+  return 0;
+}
+
 int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
@@ -126,8 +125,6 @@ void config_common(int Mod_idP,
 
 
 // needed for some functions
-PHY_VARS_NR_UE ***PHY_vars_UE_g;
-short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)

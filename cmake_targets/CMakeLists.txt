@@ -1218,6 +1218,7 @@ set(PHY_SRC_RU
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_ul.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_nr.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ul_7_5_kHz.c
   ${OPENAIR1_DIR}/PHY/MODULATION/gen_75KHz.cpp
   ${OPENAIR1_DIR}/PHY/MODULATION/beamforming.c
@@ -1321,6 +1322,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sch_dmrs.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_prach.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
@@ -2583,7 +2585,7 @@ add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${T_SOURCE})
-target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
