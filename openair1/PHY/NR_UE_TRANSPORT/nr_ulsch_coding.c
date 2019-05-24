@@ -39,7 +39,6 @@
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 
 
 

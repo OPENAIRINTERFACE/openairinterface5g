@@ -33,7 +33,7 @@
 #define __NR_TRANSPORT_PROTO_UE__H__
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/defs.h"
-//#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include <math.h>
 #include "nfapi_interface.h"
 
@@ -1278,14 +1278,6 @@ uint16_t dci_decoding_procedure_emul(NR_UE_PDCCH **lte_ue_pdcch_vars,
                                      DCI_ALLOC_t *dci_alloc_rx,
                                      int16_t eNB_id);
 
-/** \brief Compute Q (modulation order) based on I_MCS PDSCH.  Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS */
-uint8_t get_Qm(uint8_t I_MCS);
-
-/** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
-    @param I_MCS */
-uint8_t get_Qm_ul(uint8_t I_MCS);
-
 /** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 uint8_t get_I_TBS(uint8_t I_MCS);
@@ -1333,8 +1325,6 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
    @returns number of physical resource blocks
 */
 uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
-
-int get_G(NR_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
 int adjust_G(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
 int adjust_G2(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
@@ -1801,8 +1791,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              RX_type_t rx_type,
              unsigned char i_mod,
 		unsigned char harq_pid);
-
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) ;
 
 uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    short *dlsch_llr,

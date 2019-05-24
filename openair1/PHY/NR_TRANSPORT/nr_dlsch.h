@@ -53,14 +53,6 @@ void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 
 void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type);
 
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
-
-void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                nfapi_nr_config_request_t config);
-
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint16_t size,
                          uint8_t q,
@@ -83,12 +75,6 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS *frame_parms,
                           nfapi_nr_config_request_t *config);
-
-/** \brief Computes available bits G.
-    @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm, uint8_t Nl);
-
-uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 
 void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
