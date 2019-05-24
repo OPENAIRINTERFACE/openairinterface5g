@@ -36,11 +36,7 @@ The oai softmodem supports many use cases, and new ones are regularly added. Mos
 - all simulators, with exception of PHY simulators, which are distinct executables.
 
 
-Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the 
-
-[table]: BUILD.md	"`build_oai` options"
-
-At the end of this page to know the status of `buid_oai` options which are not described hereafter.
+Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the [table](BUILD.md	"`build_oai` options") At the end of this page to know the status of `buid_oai` options which are not described hereafter.
 
 # Building PHY Simulators
 
@@ -53,7 +49,7 @@ After downloading the source files, a single build command can be used to get th
 ```
 cd <your oai installation directory>/openairinterface5g/
 source oaienv
-cd ../cmake_targets/
+cd cmake_targets/
 ./build_oai -I -w USRP --eNB --UE
 ```
 
@@ -78,9 +74,15 @@ or
 
 `./build_oai  --build-lib telnetsrv`
 
+You can get documentation about the telnet server  [here](common/utils/telnetsrv/DOC/telnetsrv.doc)
+
 ## USRP record player
 
 The USRP record player today needs a specific build. Work to make it available as a run time option is under consideration
+
+## Other optional libraries
+
+Using the help option of the build script you can get the list of available optional libraries. Those which haven't been mentioned above are known to need more tests and documentation
 
 # `build_oai` options
 
@@ -89,7 +91,7 @@ The USRP record player today needs a specific build. Work to make it available a
 | -h                                                          | maintained                                  | get help                                                     |
 | -c                                                          | maintained                                  | erase all previously built files for this target before starting the new build. |
 | -C                                                          | maintained, needs improvement               | erase all previously built files for any target before starting the new build. |
-| --verbose-compile                                           | maintained                                  |                                                              |
+| --verbose-compile                                           | maintained                                  | get compilation messages, as when running `make` or `gcc` directly. |
 | --cflags_processor                                          | maintained                                  | used to pass options to the compiler                         |
 | --clean-kernel                                              | unknown                                     | no code in the script corresponding to this option           |
 | --install-system-files                                      | maintained                                  | install oai built binaries in linux system files repositories |
