@@ -240,12 +240,12 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     
     rxF       = (int16_t *)&rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
-    rxF_ext   = (int16_t *)&rxdataF_ext[aarx][rxdataF_ext_offset];
+    rxF_ext   = (int16_t *)&rxdataF_ext[aarx][symbol * nb_re_pusch]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
 
     for (re = 0; re < nb_re_pusch; re++) {
 
-      if ( (is_dmrs_symbol && ((re&1) != frame_parms->nushift))    ||    (is_dmrs_symbol == 0) ) { // [hna] (re&1) != frame_parms->nushift) assuming only dmrs type 1 and mapping type A
-
+      if ( (is_dmrs_symbol && ((re&1) != 0))    ||    (is_dmrs_symbol == 0) ) { // [hna] (re&1) != frame_parms->nushift) assuming only dmrs type 1 and mapping type A
+                                                                                // frame_parms->nushift should be initialized with 0
         rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
         rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
         rxF_ext_index = rxF_ext_index + 2;
@@ -290,21 +290,21 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                               frame_parms);
 
 #ifdef NR_SC_FDMA
-  nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[gNB->pusch_vars[UE_id]->rxdataF_ext_offset], nb_re_pusch);
+  nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->number_rbs * NR_NB_SC_PER_RB], nb_re_pusch);
 #endif
 
   //----------------------------------------------------------
   //-------------------- LLRs computation --------------------
   //----------------------------------------------------------
   
-  nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_ext[0][gNB->pusch_vars[UE_id]->rxdataF_ext_offset],
+  nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_ext[0][symbol * rel15_ul->number_rbs * NR_NB_SC_PER_RB],
                        gNB->pusch_vars[UE_id]->ul_ch_mag,
                        gNB->pusch_vars[UE_id]->ul_ch_magb,
                        &gNB->pusch_vars[UE_id]->llr[gNB->pusch_vars[UE_id]->rxdataF_ext_offset * rel15_ul->Qm],
                        nb_re_pusch,
                        symbol,
                        rel15_ul->Qm);
-  
+
   gNB->pusch_vars[UE_id]->rxdataF_ext_offset = gNB->pusch_vars[UE_id]->rxdataF_ext_offset +  nb_re_pusch;
   
 }

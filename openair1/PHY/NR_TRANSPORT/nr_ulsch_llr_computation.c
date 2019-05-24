@@ -35,9 +35,9 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
 
-__m128i  xmm0 __attribute__ ((aligned(16)));
-__m128i  xmm1 __attribute__ ((aligned(16)));
-__m128i  xmm2 __attribute__ ((aligned(16)));
+__m128i  xmm0 __attribute__ ((aligned(32)));
+__m128i  xmm1 __attribute__ ((aligned(32)));
+__m128i  xmm2 __attribute__ ((aligned(32)));
 
 
 //----------------------------------------------------------------------------------------------
