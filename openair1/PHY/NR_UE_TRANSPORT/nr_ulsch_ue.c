@@ -34,8 +34,10 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/MODULATION/modulation_common.h"
 #include "common/utils/assertions.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/TOOLS/tools_defs.h"
 

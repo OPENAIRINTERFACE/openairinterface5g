@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 void nr_ulsch_unscrambling(int16_t* llr,
                          uint32_t size,

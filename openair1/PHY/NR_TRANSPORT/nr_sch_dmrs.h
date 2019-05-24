@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include "PHY/defs_gNB.h"
+#include "PHY/defs_nr_common.h"
 
 #define NR_PDSCH_DMRS_ANTENNA_PORT0 1000
 #define NR_PDSCH_DMRS_NB_ANTENNA_PORTS 12
