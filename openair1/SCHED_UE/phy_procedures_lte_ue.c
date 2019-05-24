@@ -2308,7 +2308,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
     //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms)){
-    	 	pbch_tx_ant = rx_pbch(&ue->common_vars,
+    	 	pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
                           ue->pbch_vars[eNB_id],
                           &ue->frame_parms,
                           eNB_id,
