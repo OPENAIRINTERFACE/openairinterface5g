@@ -36,7 +36,7 @@ The oai softmodem supports many use cases, and new ones are regularly added. Mos
 - all simulators, with exception of PHY simulators, which are distinct executables.
 
 
-Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the [table](BUILD.md	"`build_oai` options") At the end of this page to know the status of `buid_oai` options which are not described hereafter.
+Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the [table](BUILD.md "build_oai options") At the end of this page to know the status of `buid_oai` options which are not described hereafter.
 
 # Building PHY Simulators
 
@@ -74,7 +74,7 @@ or
 
 `./build_oai  --build-lib telnetsrv`
 
-You can get documentation about the telnet server  [here](common/utils/telnetsrv/DOC/telnetsrv.doc)
+You can get documentation about the telnet server  [here](common/utils/telnetsrv/DOC/telnetsrv.md)
 
 ## USRP record player
 
