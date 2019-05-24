@@ -449,7 +449,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       if (ue->frame_parms.frame_type==FDD) {
 	ue->N_TA_offset = 0;
       }
-      }
     }
 
     LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
