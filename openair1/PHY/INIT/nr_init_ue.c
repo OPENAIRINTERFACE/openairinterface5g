@@ -36,7 +36,8 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/pss_nr.h"
-#include "openair1/PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 

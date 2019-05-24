@@ -25,7 +25,6 @@
 #define __NR_REFSIG__H__
 
 #include "PHY/defs_gNB.h"
-#include "PHY/defs_nr_UE.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 
@@ -39,6 +38,5 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
  */
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
-void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue, uint16_t *N_n_scid, uint8_t n_scid);
 
 #endif
