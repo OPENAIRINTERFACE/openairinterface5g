@@ -207,7 +207,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
 
-  prach_vars->rxsigF[0]        = (int16_t **)malloc16_clear(64*sizeof(int16_t *));
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     //FIXME

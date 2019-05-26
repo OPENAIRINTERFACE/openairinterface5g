@@ -93,7 +93,6 @@ int nr_phy_init_RU(RU_t *ru) {
     //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
     //		"nb_antennas_rx too large");
     ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
-    for (j=0;j<4;j++) ru->prach_rxsigF_br[j] = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
 
     for (i=0; i<ru->nb_rx; i++) {
       ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
@@ -172,9 +171,6 @@ void nr_phy_free_RU(RU_t *ru)
     for (i = 0; i < ru->nb_rx; i++) {
       free_and_zero(ru->prach_rxsigF[i]);
     }
-    for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j]);
-    free_and_zero(ru->prach_rxsigF);
-    /* ru->prach_rxsigF_br is not allocated -> don't free */
 
     for (i = 0; i < RC.nb_nr_L1_inst; i++) {
       for (p = 0; p < 15; p++) {
