@@ -68,8 +68,8 @@
 #include "PHY/INIT/phy_init.h"
 
 
-void feptx_ofdm(RU_t *ru);
-void feptx_prec(RU_t *ru);
+void feptx_ofdm(RU_t *ru,int frame,int subframe);
+void feptx_prec(RU_t *ru,int frame,int subframe);
 
 double cpuf;
 
@@ -1440,6 +1440,7 @@ int main(int argc, char **argv)
   }
 
   eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[0];//UE->current_thread_id[subframe]];
+  proc_eNB->frame_tx = 0;
 
   if (input_fd==NULL) {
 
@@ -1652,8 +1653,8 @@ int main(int argc, char **argv)
 
 	    ru->proc.tti_tx=subframe;
 	    memcpy((void*)ru->frame_parms,(void*)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-	    feptx_prec(ru);
-	    feptx_ofdm(ru);
+	    feptx_prec(ru,proc_eNB->frame_tx,subframe);
+	    feptx_ofdm(ru,proc_eNB->frame_tx,subframe);
 
 	    stop_meas(&eNB->ofdm_mod_stats);
 
@@ -1671,8 +1672,8 @@ int main(int argc, char **argv)
 
 
 	    ru->proc.tti_tx=(subframe+1)%10;
-	    feptx_prec(ru);
-	    feptx_ofdm(ru);
+	    feptx_prec(ru,proc_eNB->frame_tx,subframe+1);
+	    feptx_ofdm(ru,proc_eNB->frame_tx,subframe+1);
 
 
 	    proc_eNB->frame_tx++;
