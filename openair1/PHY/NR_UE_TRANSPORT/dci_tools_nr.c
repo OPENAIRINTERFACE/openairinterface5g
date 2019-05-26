@@ -1085,78 +1085,12 @@ uint8_t nr_subframe2harq_pid(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8
   uint8_t ret = 255;
   uint8_t subframe = nr_tti_rx>>((int)(log2 (frame_parms->ttis_per_subframe)));
 
+  AssertFatal(1==0,"Not ready for this ...\n");
   if (frame_parms->frame_type == FDD) {
-    ret = (((frame<<1)+nr_tti_rx)&7);
+
   } else {
 
-    switch (frame_parms->tdd_config) {
 
-    case 1:
-      if ((subframe==2) ||
-          (subframe==3) ||
-          (subframe==7) ||
-          (subframe==8))
-        switch (subframe) {
-        case 2:
-        case 3:
-          ret = (subframe-2);
-          break;
-
-        case 7:
-        case 8:
-          ret = (subframe-5);
-          break;
-
-        default:
-          LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-          ret = (255);
-          break;
-        }
-
-      break;
-
-    case 2:
-      if ((subframe!=2) && (subframe!=7)) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-        //mac_xface->macphy_exit("subframe2_harq_pid, Illegal subframe");
-        ret = (255);
-      }
-
-      ret = (subframe/7);
-      break;
-
-    case 3:
-      if ((subframe<2) || (subframe>4)) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-        ret = (255);
-      }
-
-      ret = (subframe-2);
-      break;
-
-    case 4:
-      if ((subframe<2) || (subframe>3)) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-        ret = (255);
-      }
-
-      ret = (subframe-2);
-      break;
-
-    case 5:
-      if (subframe!=2) {
-        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-        ret = (255);
-      }
-
-      ret = (subframe-2);
-      break;
-
-    default:
-      LOG_E(PHY,"subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
-      ret = (255);
-
-    }
   }
 
   if (ret == 255) {
@@ -1171,46 +1105,16 @@ uint8_t nr_pdcch_alloc2ul_subframe(NR_DL_FRAME_PARMS *frame_parms,uint8_t n)
 {
   uint8_t ul_subframe = 255;
 
-  if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_subframe = ((n+6)%10);
-  else if ((frame_parms->frame_type == TDD) &&
-           (frame_parms->tdd_config == 6) &&
-           ((n==0)||(n==1)||(n==5)||(n==6)))
-    ul_subframe = ((n+7)%10);
-  else if ((frame_parms->frame_type == TDD) &&
-           (frame_parms->tdd_config == 6) &&
-           (n==9)) // tdd_config 6 SF 9
-    ul_subframe = ((n+5)%10);
-  else
-    ul_subframe = ((n+4)%10);
+  AssertFatal(1==0,"Not ready for this\n");
 
-  LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
-  return ul_subframe;
 }
 
 uint32_t nr_pdcch_alloc2ul_frame(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
 {
   uint32_t ul_frame = 255;
 
-  if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_frame = (frame + (n==1 ? 0 : 1));
-  else if ((frame_parms->frame_type == TDD) &&
-           (frame_parms->tdd_config == 6) &&
-           ((n==0)||(n==1)||(n==5)||(n==6)))
-    ul_frame = (frame + (n>=5 ? 1 : 0));
-  else if ((frame_parms->frame_type == TDD) &&
-           (frame_parms->tdd_config == 6) &&
-           (n==9)) // tdd_config 6 SF 9
-    ul_frame = (frame+1);
-  else
-    ul_frame = (frame+(n>=6 ? 1 : 0));
+  AssertFatal(1==0,"Not ready for this\n");
 
-  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
-  return ul_frame;
 
 }
 

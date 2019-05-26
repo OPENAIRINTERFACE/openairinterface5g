@@ -83,7 +83,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH **const pusch_vars  = gNB->pusch_vars;
   LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
-  LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;
+  NR_gNB_PRACH *const prach_vars   = &gNB->prach_vars;
 
   int i, UE_id;
 
@@ -204,10 +204,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   // PRACH
   prach_vars->prachF = (int16_t *)malloc16_clear( 1024*2*sizeof(int16_t) );
-  // assume maximum of 64 RX antennas for PRACH receiver
-  prach_vars->prach_ifft[0]    = (int32_t **)malloc16_clear(64*sizeof(int32_t *));
 
-  for (i=0; i<64; i++) prach_vars->prach_ifft[0][i]    = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
+  prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
 
   prach_vars->rxsigF[0]        = (int16_t **)malloc16_clear(64*sizeof(int16_t *));
 

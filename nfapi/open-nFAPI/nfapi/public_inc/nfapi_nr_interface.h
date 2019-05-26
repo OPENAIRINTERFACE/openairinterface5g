@@ -528,7 +528,7 @@ typedef struct{
   uint16_t   srs_monitoring_periodicity;
   uint16_t   slot_monitoring_periodicity;
   uint16_t   slot_monitoring_offset;
-  uint16_t  monitoring_symbols_in_slot;
+  uint32_t  monitoring_symbols_in_slot;
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
 

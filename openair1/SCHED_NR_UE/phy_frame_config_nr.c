@@ -78,12 +78,12 @@ int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeri
 
   int nb_periods_per_frame = (FRAME_DURATION_MICRO_SEC/dl_UL_TransmissionPeriodicity);
 
-  int nb_slots_per_period = (frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
+  int nb_slots_per_period = ((1<<frame_parms->numerology_index) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
 
-  if (nb_slots_per_period != (nrofDownlinkSlots + nrofUplinkSlots)) {
-    LOG_E(PHY,"set_tdd_configuration_nr: given period is inconsistent with current tdd configuration \n");
-    return (-1);
-  }
+  AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots + 1),
+	      "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d \n",
+	      nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
+  AssertFatal(nrofDownlinkSymbols + nrofUplinkSymbols < 14,"illegal symbol configuration DL %d, UL %d\n",nrofDownlinkSymbols,nrofUplinkSymbols);
 
   while(slot_number != nb_slots_to_set) {
 

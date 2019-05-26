@@ -1474,7 +1474,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
     LOG_I(PHY,"mode %d\n",mode);
 
     if ((ue->mac_enabled==1) && (mode != calib_prach_tx)) {
-      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(ue->Mod_id,ue->CC_id,eNB_id);
+      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_nr_PL(ue,eNB_id);
     }
     else {
       ue->tx_power_dBm[nr_tti_tx] = ue->tx_power_max_dBm;
@@ -1486,7 +1486,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
 	  frame_tx,
 	  nr_tti_tx,
 	  ue->prach_resources[eNB_id]->ra_PreambleIndex,
-	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+	  get_nr_PL(ue,eNB_id),
 	  ue->tx_power_dBm[nr_tti_tx],
 	  ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 	  ue->prach_resources[eNB_id]->ra_TDD_map_index,
@@ -1518,7 +1518,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
     //      stop_meas(&ue->tx_prach);
     LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
 	  ue->Mod_id,
-	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+	  get_nr_PL(ue,eNB_id),
 	  ue->tx_power_dBm[nr_tti_tx],
 	  dB_fixed(prach_power),
 	  ue->prach_vars[eNB_id]->amp);
@@ -1537,8 +1537,8 @@ if (ue->prach_resources[eNB_id]!=NULL) {
 LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, nr_tti_rx %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
       ue->Mod_id,frame_tx,nr_tti_tx,eNB_id,
       ue->prach_resources[eNB_id]->ra_PreambleIndex,
-      ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(ue->Mod_id,ue->CC_id,eNB_id),
-      get_PL(ue->Mod_id,ue->CC_id,eNB_id));
+      ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_nr_PL(ue,eNB_id),
+      get_nr_PL(ue,eNB_id));
 
 }
 
@@ -1932,7 +1932,7 @@ if (abstraction_flag == 0) {
 #endif
 #if T_TRACER
   T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-    T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
+    T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_nr_PL(ue,eNB_id)),T_INT(nb_rb));
 #endif
 
 #ifdef UE_DEBUG_TRACE
@@ -2306,7 +2306,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_nr_PL(ue,eNB_id)));
 #endif
 
 #ifdef UE_DEBUG_TRACE
@@ -2414,7 +2414,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_nr_PL(ue,eNB_id)));
 #endif
 #ifdef UE_DEBUG_TRACE
       LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI or CQI), Po_PUCCH %d, isShortenPucch %d, amp %d\n",

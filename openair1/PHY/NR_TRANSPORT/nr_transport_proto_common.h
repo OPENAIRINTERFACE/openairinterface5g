@@ -1804,7 +1804,5 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
 
 
-int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf );
-
 /**@}*/
 #endif

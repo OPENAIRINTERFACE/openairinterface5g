@@ -5692,6 +5692,18 @@ void dft6144(int16_t *input, int16_t *output,int scale)
 
 }
 
+int16_t twa9216[6144] __attribute__((aligned(32)));
+int16_t twb9216[6144] __attribute__((aligned(32)));
+// 3072 x 3
+void dft9216(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+void idft9216(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
 
 int16_t twa12288[8192] __attribute__((aligned(32)));
 int16_t twb12288[8192] __attribute__((aligned(32)));
@@ -6042,6 +6054,59 @@ void idft24576(int16_t *input, int16_t *output,int scale)
   }
 }
 
+int16_t twa36864[24576] __attribute__((aligned(32)));
+int16_t twb36884[24576] __attribute__((aligned(32)));
+// 12288 x 3
+void dft36864(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+void idft36864(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+int16_t twa49152[32768] __attribute__((aligned(32)));
+int16_t twb49152[32768] __attribute__((aligned(32)));
+// 16384 x 3
+void dft49152(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+void idft49152(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+int16_t twa73728[49152] __attribute__((aligned(32)));
+int16_t twb73728[49152] __attribute__((aligned(32)));
+// 24576 x 3
+void dft73728(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+void idft73728(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+
+int16_t twa98304[49152] __attribute__((aligned(32)));
+int16_t twb98304[49152] __attribute__((aligned(32)));
+// 32768 x 3
+void dft98304(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+void idft98304(int16_t *input, int16_t *output,int scale) {
+
+  AssertFatal(1==0,"Need to do this ..\n");
+}
+
+ 
 ///  THIS SECTION IS FOR ALL PUSCH DFTS (i.e. radix 2^a * 3^b * 4^c * 5^d)
 ///  They use twiddles for 4-way parallel DFTS (i.e. 4 DFTS with interleaved input/output)
 

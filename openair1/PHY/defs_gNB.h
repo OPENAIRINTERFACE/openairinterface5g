@@ -171,6 +171,17 @@ typedef struct {
   int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
 
+typedef struct {
+  /// \brief ?.
+  /// first index: ? [0..1023] (hard coded)
+  int16_t *prachF;
+  /// \brief ?.
+  /// second index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// third index: frequency-domain sample [0..ofdm_symbol_size*12[
+  int16_t **rxsigF;
+  /// \brief local buffer to compute prach_ifft
+  int32_t *prach_ifft;
+} NR_gNB_PRACH;
 
 typedef struct {
   /// Nfapi ULSCH PDU
@@ -573,7 +584,7 @@ typedef struct PHY_VARS_gNB_s {
   LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PUSCH      *pusch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PRACH       prach_vars;
+  NR_gNB_PRACH       prach_vars;
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
   // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA
@@ -605,6 +616,9 @@ typedef struct PHY_VARS_gNB_s {
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
+
+  /// PRACH root sequence
+  uint32_t X_u[64][839];
 
   uint32_t max_peak_val;
 

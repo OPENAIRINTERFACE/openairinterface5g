@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,31 +18,20 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+#include "PHY/defs_nr_UE.h"
 
-/*! \file PHY/NR_TRANSPORT/nr_transport_proto_common.h
-* \brief Prototypes of functions common to gNB and NR UE
-* \author
-* \date 2019
-* \version 0.1
-* \company Eurecom
-* \email:
-* \note
-* \warning
-*/
-
-#ifndef __NR_TRANSPORT_COMMON_PROTO__H__
-#define __NR_TRANSPORT_COMMON_PROTO__H__
+int16_t get_nr_PL(PHY_VARS_NR_UE *ue,uint8_t gNB_index)
+{
 
 
 
-// Functions below implement minor procedures from 38-214
+  LOG_D(PHY,"get_PL : rsrp %f dBm/RE (%f), eNB power %d dBm/RE\n",
+        (1.0*dB_fixed_times10(ue->measurements.rsrp[gNB_index])-(10.0*ue->rx_total_gain_dB))/10.0,
+        10*log10((double)ue->measurements.rsrp[gNB_index]),
+        ue->frame_parms.ss_PBCH_BlockPower);
 
-/** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.
-    @param I_MCS */
-uint8_t get_nr_Qm(uint8_t I_MCS);
-
-/** \brief Computes Q based on I_MCS PUSCH. Implements Table 6.1.4.1-1 from 38.214.
-    @param I_MCS */
-uint8_t get_nr_Qm_ul(uint8_t I_MCS);
-
-#endif
+  return((int16_t)(((10*ue->rx_total_gain_dB) -
+                    dB_fixed_times10(ue->measurements.rsrp[gNB_index])+
+                    //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
+                    (ue->frame_parms.ss_PBCH_BlockPower*10))/10));
+}
