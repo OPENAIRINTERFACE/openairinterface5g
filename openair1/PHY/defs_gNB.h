@@ -144,11 +144,11 @@ typedef struct {
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
-  uint8_t subframe_tx[10];
+  uint8_t slot_tx[80];
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
-  uint8_t harq_ids[10];
+  uint8_t harq_ids[2][80];
   /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
   uint8_t ra_window_size;
   /// First-round error threshold for fine-grain rate adaptation
@@ -382,12 +382,14 @@ typedef struct {
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
 
-  /// \internal This variable is protected by \ref mutex_RUs.
+  /// \internal This variable is protected by \ref mutex_RUs_tx.
   int instance_cnt_RUs;
   /// condition variable for tx processing thread
   pthread_cond_t cond_RUs;
-  /// mutex for RXn-TXnp4 processing thread
+  /// mutex for L1 RXTX processing thread
   pthread_mutex_t mutex_RUs;
+  /// mutex for L1 TX FH synchronization
+  pthread_mutex_t mutex_RUs_tx;
 } gNB_L1_rxtx_proc_t;
 
 
@@ -497,30 +499,30 @@ typedef struct {
   short n0_subband_power_tot_dBm[100];
   // gNB measurements (per user)
   //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
+  unsigned int   rx_spatial_power[NUMBER_OF_NR_DLSCH_MAX][2][2];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
+  unsigned short rx_spatial_power_dB[NUMBER_OF_NR_DLSCH_MAX][2][2];
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
+  short          rx_rssi_dBm[NUMBER_OF_NR_DLSCH_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation[NUMBER_OF_NR_DLSCH_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation_dB[NUMBER_OF_NR_DLSCH_MAX][2];
 
   /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB];
+  int            wideband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB];
+  int            wideband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
+  char           wideband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
   /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
+  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][100];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
+  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
@@ -570,19 +572,19 @@ typedef struct PHY_VARS_gNB_s {
   LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;
-  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
+/*  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PUSCH      *pusch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PRACH       prach_vars;
-  NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
+  LTE_eNB_PRACH       prach_vars;*/
+  NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
+  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
   // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
-  NR_gNB_DLSCH_t     *dlsch_MCH;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+/*
   LTE_eNB_UE_stats    UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats   *UE_stats_ptr[NUMBER_OF_UE_MAX];
-
+*/
   uint8_t pbch_configured;
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char gNB_generate_rar;

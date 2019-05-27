@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
 	uint16_t N_RB_DL = 106, mu = 1;
 	//unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
-	int frame = 0, subframe = 0;
+	int frame = 0, slot = 0;
 	int frame_length_complex_samples;
 	//int frame_length_complex_samples_no_prefix;
 	NR_DL_FRAME_PARMS *frame_parms;
@@ -528,7 +528,7 @@ int main(int argc, char **argv) {
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
 	if (input_fd == NULL) {
-		nr_dlsch_encoding(test_input, subframe, dlsch, frame_parms);
+		nr_dlsch_encoding(test_input, frame, slot, dlsch, frame_parms);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -583,7 +583,7 @@ int main(int argc, char **argv) {
 #endif
 			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
-					subframe, harq_pid, is_crnti, llr8_flag);
+					slot,harq_pid, is_crnti, llr8_flag);
 
 			if (ret > dlsch0_ue->max_ldpc_iterations)
 				n_errors++;

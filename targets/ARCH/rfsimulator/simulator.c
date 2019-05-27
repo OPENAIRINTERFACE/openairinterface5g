@@ -3,6 +3,12 @@
   copyleft: OpenAirInterface Software Alliance and it's licence
 */
 
+/* 
+ * Open issues and limitations
+ * The read and write should be called in the same thread, that is not new USRP UHD design
+ * When the opposite side switch from passive reading to active R+Write, the synchro is not fully deterministic
+ */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -28,7 +34,7 @@
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
-#define sample_t uint32_t // 2*16 bits complex number
+#define sample_t uint32_t //2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
@@ -111,7 +117,7 @@ void setblocking(int sock, enum blocking_t active) {
   AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
 }
 
-static bool flushInput(rfsimulator_state_t *t);
+static bool flushInput(rfsimulator_state_t *t, int timeout);
 
 void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
   if (t->saveIQfile != -1) {
@@ -134,7 +140,9 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
         continue;
 
       if(errno==EAGAIN) {
-        flushInput(t);
+	// The opposite side is saturated
+	// we read incoming sockets meawhile waiting
+        flushInput(t, 5);
         continue;
       } else
         return;
@@ -229,14 +237,17 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
   lastW=timestamp;
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
+  // Let's verify we don't have incoming data
+  // This is mandatory when the opposite side don't transmit
+  flushInput(t, 0);
   return nsamps;
 }
 
-static bool flushInput(rfsimulator_state_t *t) {
+static bool flushInput(rfsimulator_state_t *t, int timeout) {
   // Process all incoming events on sockets
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {0};
-  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, 20);
+  int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {
     if ( errno==EINTR || errno==EAGAIN )
@@ -356,7 +367,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
-    if (!flushInput(t)) {
+    if (!flushInput(t, 10)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
@@ -385,7 +396,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
           ptr->lastReceivedTS,
           t->nextTimestamp+nsamps);
         */
-        flushInput(t);
+        flushInput(t, 3);
     } while (have_to_wait);
   }
 

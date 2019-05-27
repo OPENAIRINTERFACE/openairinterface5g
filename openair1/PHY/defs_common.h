@@ -1016,6 +1016,35 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
   return(0);
 }
 
+static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name,uint32_t time_ns) {
+  int rc;
+  int waitret=0;
+  if ((rc = pthread_mutex_lock(mutex)) != 0) {
+    LOG_E(PHY, "[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+
+  struct timespec now,abstime;
+
+  while (*instance_cnt < 0) {
+    clock_gettime(CLOCK_REALTIME,&now);
+    // most of the time the thread is waiting here
+    // proc->instance_cnt_rxtx is -1
+    abstime.tv_sec=now.tv_sec;
+    abstime.tv_nsec = now.tv_nsec + time_ns;
+    if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime))==ETIMEDOUT) break; // this unlocks mutex_rxtx while waiting and then locks it again
+    
+  }
+
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(waitret);
+}
 static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
   int rc;
   if ((rc = pthread_mutex_lock(mutex)) != 0) {
@@ -1048,7 +1077,7 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
     return(-1);
   }
 
-  *instance_cnt=*instance_cnt-1;
+  *instance_cnt=-1;
 
   if (pthread_mutex_unlock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);

@@ -83,9 +83,9 @@ void config_common(int Mod_idP,
 		   int cellid,
                    int nr_bandP,
                    uint64_t ssb_pattern,
+		   uint16_t ssb_periodicity,
 		   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-                  ){
+                   uint32_t dl_BandwidthP){
 
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[CC_idP];
 
@@ -93,6 +93,7 @@ void config_common(int Mod_idP,
 
   cfg->sch_config.physical_cell_id.value = cellid;
   cfg->sch_config.ssb_scg_position_in_burst.value = ssb_pattern;
+  cfg->sch_config.ssb_periodicity.value = ssb_periodicity;
 
   // FDD
   cfg->subframe_config.duplex_mode.value                          = 1;
@@ -137,12 +138,37 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int p_gNB,
                            int nr_bandP,
 			   uint64_t ssb_pattern,
+                           uint16_t ssb_enum_periodicity,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
                            NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            ){
 
+
+  uint16_t ssb_periodicity;
+
+  switch (ssb_enum_periodicity) {
+    case 0:
+      ssb_periodicity = 5;
+      break;
+    case 1:
+      ssb_periodicity = 10;
+      break;
+    case 2:
+      ssb_periodicity = 20;
+      break;
+    case 3:
+      ssb_periodicity = 40;
+      break;
+    case 4:
+      ssb_periodicity = 80;
+      break;
+    case 5:
+      ssb_periodicity = 160;
+      break;
+
+  }      
 
   if( mib != NULL ){
     config_nr_mib(Mod_idP, 
@@ -168,6 +194,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 		  cellid,
                   nr_bandP,
 		  ssb_pattern,
+                  ssb_periodicity,
                   dl_CarrierFreqP,
                   dl_BandwidthP
                   );  

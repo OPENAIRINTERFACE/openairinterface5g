@@ -113,7 +113,8 @@ void config_common(int Mod_idP,
                    int CC_idP,
 		   int Nid_cell,
                    int nr_bandP,
-		   uint64_t ssb_pattern,
+		   uint64_t SSB_positions,
+		   uint16_t ssb_periodicity,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
 		   );
@@ -166,7 +167,7 @@ int main(int argc, char **argv)
   //int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
-  uint64_t ssb_pattern = 0x01;
+  uint16_t ssb_periodicity = 10;
 
   //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -177,7 +178,6 @@ int main(int argc, char **argv)
   int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
-  gNB_L1_rxtx_proc_t gNB_proc;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
@@ -520,7 +520,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
+  config_common(0,0,Nid_cell,78,SSB_positions,ssb_periodicity,(uint64_t)3640000000L,N_RB_DL);
   config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
 
   nr_l2_init_ue();
@@ -554,9 +554,7 @@ int main(int argc, char **argv)
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
 
-    gNB_proc.frame_tx = frame;
-    gNB_proc.slot_tx  = slot;
-    phy_procedures_gNB_TX(gNB,&gNB_proc,0);
+    phy_procedures_gNB_TX(gNB,frame,slot,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
 
@@ -681,6 +679,10 @@ int main(int argc, char **argv)
   UE_mac->scheduled_response.frame = frame;
   UE_mac->scheduled_response.slot = slot;
 
+  UE_mac->phy_config.config_req.pbch_config.system_frame_number = frame;
+  UE_mac->phy_config.config_req.pbch_config.ssb_index = 0;
+  UE_mac->phy_config.config_req.pbch_config.half_frame_bit = 0;
+
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
@@ -712,7 +714,7 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, normal_txrx);
+	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
@@ -731,7 +733,8 @@ int main(int argc, char **argv)
 			       &UE_proc,
 			       0,
 			       do_pdcch_flag,
-			       normal_txrx);
+			       normal_txrx,
+			       UE_mac->phy_config.config_req.pbch_config);
 
 	if (n_trials==1) {
 	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);

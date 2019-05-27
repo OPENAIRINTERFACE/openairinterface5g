@@ -30,6 +30,8 @@
  * \warning
  */
 #include "fapi_nr_l1.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req);
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req);
@@ -37,7 +39,6 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req);
 extern uint8_t nfapi_mode;
 
 void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
-                             gNB_L1_rxtx_proc_t *proc,
                              nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
                              uint8_t *sdu)
 {
@@ -45,7 +46,7 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
   AssertFatal(dl_config_pdu->bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
               dl_config_pdu->bch_pdu_rel15.length);
 
-  LOG_I(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
+  LOG_D(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
   gNB->pbch_pdu[0] = sdu[2];
   gNB->pbch_pdu[1] = sdu[1];
   gNB->pbch_pdu[2] = sdu[0];
@@ -56,25 +57,33 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 int frame, int slot,
-                                gNB_L1_rxtx_proc_t *proc,
-                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
-                                nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu)
-{
+                                nfapi_nr_dl_config_dci_dl_pdu *dci_dl_pdu) {
   int idx                        = slot&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
 
-  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, slot, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
-  nr_fill_dci_and_dlsch(gNB,frame,slot,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu,&dl_config_dlsch_pdu->dlsch_pdu);
+  nr_fill_dci(gNB,frame,slot,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],dci_dl_pdu);
 
-  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+
+  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, slot, idx, pdcch_vars->num_dci);
 }
 
 
+void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+                            nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                            uint8_t *sdu)
+{
+
+
+  nr_fill_dlsch(gNB,frame,slot,dlsch_pdu,sdu);
+
+}
+
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
+
   PHY_VARS_gNB *gNB;
-  gNB_L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
   uint8_t                       CC_id        = Sched_INFO->CC_id;
@@ -88,12 +97,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB[Mod_id][CC_id]!=NULL,"RC.gNB[%d][%d] is null\n",Mod_id,CC_id);
 
   gNB         = RC.gNB[Mod_id][CC_id];
-  proc        = &gNB->proc.L1_proc;
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
-  nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu;
  
   int i;
 
@@ -112,7 +119,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
-    printf("NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
         AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
@@ -123,22 +129,31 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         do_oai=1;
 
         handle_nr_nfapi_bch_pdu(gNB,
-                                proc,
                                 dl_config_pdu,
                                 TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu_rel15.pdu_index].segments[0].segment_data);
       break;
 
       case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
-        dl_config_dlsch_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[++i];
         handle_nfapi_nr_dci_dl_pdu(gNB,
                                    frame, slot,
-                                   proc,
-                                   dl_config_pdu,
-                                   dl_config_dlsch_pdu);
+                                   &dl_config_pdu->dci_dl_pdu);
         gNB->pdcch_vars.num_dci++;
         gNB->pdcch_vars.num_pdsch_rnti++;
         do_oai=1;
       break;
+      case NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE:
+
+      {
+        nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel15;
+        uint16_t pdu_index = dlsch_pdu_rel15->pdu_index;
+        uint16_t tx_pdus = TX_req->tx_request_body.number_of_pdus;
+        uint16_t invalid_pdu = pdu_index == -1;
+        uint8_t *sdu = invalid_pdu ? NULL : pdu_index >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pdu_index].segments[0].segment_data;
+
+        AssertFatal(sdu!=NULL,"sdu is null, pdu_index %d, tx_pdus %d\n",pdu_index,tx_pdus);
+        handle_nr_nfapi_dlsch_pdu(gNB,frame,slot,&dl_config_pdu->dlsch_pdu, sdu);
+        do_oai=1;
+      }
     }
   }
   
