@@ -497,6 +497,8 @@ int main(int argc, char **argv)
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
 
+      printf("available_bits = %d\n",available_bits);
+
       for (i = 0; i < available_bits; i++) {
         
         if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) || 
@@ -510,6 +512,7 @@ int main(int argc, char **argv)
         }
 
       }
+
 
       for (i = 0; i < TBS; i++) {
 

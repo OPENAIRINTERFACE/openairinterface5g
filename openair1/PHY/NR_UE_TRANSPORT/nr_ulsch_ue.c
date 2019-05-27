@@ -43,6 +43,7 @@
 #include "PHY/TOOLS/tools_defs.h"
 
 //#define DEBUG_SCFDMA
+//#define DEBUG_PUSCH_MAPPING
 
 
 int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
@@ -342,6 +343,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
             dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
           #endif
+
 
           dmrs_idx++;
           k_prime++;
