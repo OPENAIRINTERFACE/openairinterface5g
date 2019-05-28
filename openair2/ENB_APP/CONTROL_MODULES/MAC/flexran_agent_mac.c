@@ -1033,6 +1033,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   if (sf_trigger_msg != NULL) {
     for (i = 0; i < sf_trigger_msg->n_dl_info; i++) {
       free(sf_trigger_msg->dl_info[i]->harq_status);
+      free(sf_trigger_msg->dl_info[i]);
     }
     for (i = 0; i < sf_trigger_msg->n_ul_info; i++) {
       free(sf_trigger_msg->ul_info[i]);
