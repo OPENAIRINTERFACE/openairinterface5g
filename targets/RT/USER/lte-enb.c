@@ -920,10 +920,12 @@ void init_eNB_proc(int inst) {
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, L1_proc_tx);
     }
 
-    pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
+    if (NFAPI_MODE!=NFAPI_MODE_VNF) {
+      pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
+      pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
 #endif
+    }
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
     if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
@@ -1083,6 +1085,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   LOG_I(PHY, "Initialise transport\n");
 
+if (NFAPI_MODE!=NFAPI_MODE_VNF) {
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
 
@@ -1125,6 +1128,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   LOG_D(PHY,"eNB %d.%d : RA %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_ra);
   eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
   LOG_D(PHY,"eNB %d.%d : MCH %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_MCH);
+}
   eNB->rx_total_gain_dB=130;
 
   for(i=0; i<NUMBER_OF_UE_MAX; i++)

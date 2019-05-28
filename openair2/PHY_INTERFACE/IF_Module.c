@@ -573,10 +573,8 @@ void UL_indication(UL_IND_t *UL_info) {
   int          CC_id       = UL_info->CC_id;
   Sched_Rsp_t  *sched_info = &Sched_INFO[module_id][CC_id];
   IF_Module_t  *ifi        = if_inst[module_id];
-  eNB_MAC_INST *mac        = NULL;
-  if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    mac = RC.mac[module_id];
-  }
+  eNB_MAC_INST *mac        = RC.mac[module_id];
+
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
         UL_info->frame,UL_info->subframe,
         module_id,CC_id,
@@ -598,16 +596,16 @@ void UL_indication(UL_IND_t *UL_info) {
     }
 
     ifi->CC_mask |= (1<<CC_id);
+  }
 
   // clear DL/UL info for new scheduling round
   clear_nfapi_information(RC.mac[module_id],CC_id,
                           UL_info->frame,UL_info->subframe);
-  }
   handle_rach(UL_info);
   handle_sr(UL_info);
   handle_cqi(UL_info);
   handle_harq(UL_info);
-  if (NFAPI_MODE != NFAPI_MODE_PNF) {
+
   // clear HI prior to handling ULSCH
   uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_id], UL_info->subframe);
 
@@ -615,7 +613,7 @@ void UL_indication(UL_IND_t *UL_info) {
     mac->HI_DCI0_req[CC_id][(UL_info->subframe+sf_ahead_dl)%10].hi_dci0_request_body.number_of_hi                     = 0;
     LOG_D(MAC,"current (%d,%d) clear HI_DCI0_req[0][%d]\n",UL_info->frame,UL_info->subframe,(UL_info->subframe+sf_ahead_dl)%10);
   }
-  }
+
   handle_ulsch(UL_info);
 
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
