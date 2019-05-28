@@ -41,7 +41,7 @@
 
 int parse_stringlist(paramdef_t *cfgoptions, char *val) {
   char *atoken;
-  char *tokctx;
+  char *tokctx = NULL;
   char *tmpval=strdup(val);
   int   numelt=0;
   cfgoptions->numelt=0;
