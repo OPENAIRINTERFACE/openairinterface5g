@@ -1192,8 +1192,10 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
   ul_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    free(ul_mac_config_msg);
     goto error;
+  }
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG;
   (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
