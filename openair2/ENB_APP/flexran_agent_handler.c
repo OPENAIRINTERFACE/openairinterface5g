@@ -746,7 +746,7 @@ err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id,
     goto error;
   }
 
-  Protocol__FlexranMessage *req_msg;
+  Protocol__FlexranMessage *req_msg = NULL;
 
   flexran_agent_stats_request(mod_id, xid, stats_req, &req_msg);
   stats_context[mod_id].stats_req = req_msg;
