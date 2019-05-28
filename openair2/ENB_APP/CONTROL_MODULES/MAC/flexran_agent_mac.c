@@ -407,14 +407,18 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             //Provide a report for each pending paging message
                             Protocol__FlexPagingInfo **p_info;
                             p_info = malloc(sizeof(Protocol__FlexPagingInfo *) * paging_report->n_paging_info);
-                            if (p_info == NULL)
+                            if (p_info == NULL){
+                              free(paging_report);
                               goto error;
+                            }
 
                             for (j = 0; j < paging_report->n_paging_info; j++) {
 
                                     p_info[j] = malloc(sizeof(Protocol__FlexPagingInfo));
-                                    if(p_info[j] == NULL)
+                                    if(p_info[j] == NULL){
+                                      free(paging_report);
                                       goto error;
+                                    }
                                     protocol__flex_paging_info__init(p_info[j]);
                                     //TODO: Set paging index. This index is the same that will be used for the scheduling of the
                                     //paging message by the controller
