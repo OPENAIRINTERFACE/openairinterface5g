@@ -2572,6 +2572,7 @@ int RCconfig_parallel(void) {
     set_worker_conf(worker_conf);
   }
 
+  free(worker_conf);
   return 0;
 }
 
