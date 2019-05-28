@@ -1214,6 +1214,10 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
   return 0;
 
  error:
+  if(header){
+      free(header);
+      header = NULL;
+  }
   return -1;
 }
 
