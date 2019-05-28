@@ -1088,6 +1088,7 @@ int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMess
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL) {
+    free(dl_mac_config_msg);
     free(header);
     goto error;
   }
