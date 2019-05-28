@@ -934,6 +934,13 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
     LOG_I(FLEXRAN_AGENT, "Scheduler could not be loaded\n");
   }
 
+  if (flexran_agent_get_mac_xface(mod_id)) {
+    if (flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib != lib) {
+      dlclose(lib);
+    }
+  } else {
+    dlclose(lib);
+  }
   return 0;
 
  error:
