@@ -470,6 +470,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                               ul_report[j] = malloc(sizeof(Protocol__FlexUlCqi));
                               if(ul_report[j] == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(ul_report[k]);
+                                }
+                                free(ul_report);
                                 free(full_ul_report);
                                 goto error;
                               }
@@ -484,6 +488,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               uint32_t *sinr_meas;
                               sinr_meas = (uint32_t *) malloc(sizeof(uint32_t) * ul_report[j]->n_sinr);
                               if (sinr_meas == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(ul_report[k]);
+                                }
+                                free(ul_report);
                                 free(full_ul_report);
                                 goto error;
                               }
