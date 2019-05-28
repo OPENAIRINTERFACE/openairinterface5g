@@ -2872,6 +2872,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         memset((void *)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
         hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
         hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+        hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag                            = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
@@ -3028,6 +3029,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         memset((void *)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
         hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
         hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+        hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag                            = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
