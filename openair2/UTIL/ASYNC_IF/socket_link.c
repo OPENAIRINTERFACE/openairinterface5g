@@ -402,7 +402,7 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
   LOG_D(PROTO_AGENT,"UDP RECEIVE\n");
 
   struct sockaddr_in client;
-  socklen_t slen;
+  socklen_t slen = 0;
   int   l;
 
   l = recvfrom(socket_fd, buf, size, 0, (struct sockaddr *) &client, &slen);
