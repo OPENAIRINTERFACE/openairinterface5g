@@ -44,6 +44,8 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   int size;
   Protocol__FlexranMessage *msg = NULL;
   Protocol__FlexHeader *header = NULL;
+  Protocol__FlexUeStateChange *ue_state_change_msg = NULL;
+  Protocol__FlexUeConfig *config = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code=0;
@@ -53,7 +55,6 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UE_STATE_CHANGE, &header) != 0)
     goto error;
 
-  Protocol__FlexUeStateChange *ue_state_change_msg;
   ue_state_change_msg = malloc(sizeof(Protocol__FlexUeStateChange));
   if(ue_state_change_msg == NULL) {
     goto error;
@@ -62,7 +63,6 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   ue_state_change_msg->has_type = 1;
   ue_state_change_msg->type = state_change;
 
-  Protocol__FlexUeConfig *config;
   config = malloc(sizeof(Protocol__FlexUeConfig));
   if (config == NULL) {
     goto error;
@@ -111,6 +111,15 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
            err_code, rnti);
   if (header){
     free(header);
+  }
+  if (ue_state_change_msg) {
+    free(ue_state_change_msg);
+  }
+  if (config) {
+    free(config);
+  }
+  if (msg) {
+    free(msg);
   }
 }
 
