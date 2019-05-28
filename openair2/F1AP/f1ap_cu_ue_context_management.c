@@ -95,6 +95,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_NRCGI;
   /* - nRCGI */
   F1AP_NRCGI_t nRCGI;
+  memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
   MCC_MNC_TO_PLMNID(f1ap_ue_context_setup_req->mcc,
                     f1ap_ue_context_setup_req->mnc,
                     f1ap_ue_context_setup_req->mnc_digit_length,
