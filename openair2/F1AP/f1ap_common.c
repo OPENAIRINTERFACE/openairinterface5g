@@ -177,7 +177,7 @@ int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
                          module_id_t       du_ue_f1ap_id,
                          module_id_t       cu_ue_f1ap_id) {
   module_id_t f1ap_uid = f1ap_get_du_uid(f1_inst,du_ue_f1ap_id);
-  if (f1ap_uid < 0) return -1;
+  if (f1ap_uid < 0 || f1ap_uid >= MAX_MOBILES_PER_ENB) return -1;
   f1_inst->f1ap_ue[f1ap_uid].cu_ue_f1ap_id = cu_ue_f1ap_id;
   LOG_I(F1AP, "Adding cu_ue_f1ap_id %d for UE with RNTI %x\n", cu_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
   return 0;
