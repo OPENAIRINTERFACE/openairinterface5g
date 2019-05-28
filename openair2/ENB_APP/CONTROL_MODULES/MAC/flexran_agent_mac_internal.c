@@ -303,6 +303,20 @@ Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * origi
   return full_ul_report;
   
   error:
+    if (full_ul_report){
+      if (ul_report){
+        for (i = 0; i < full_ul_report->n_cqi_meas; i++){
+          if (ul_report[i]){
+            if ( ul_report[i]->sinr ){
+              free(ul_report[i]->sinr);
+            }
+            free(ul_report[i]);
+          }
+        }
+        free(ul_report);
+      }
+      free(full_ul_report);
+    }
     return NULL;
 }
 
