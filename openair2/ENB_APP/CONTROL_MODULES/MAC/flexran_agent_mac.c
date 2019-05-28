@@ -461,14 +461,18 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                       full_ul_report->n_cqi_meas = 1;
                       Protocol__FlexUlCqi **ul_report;
                       ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
-                      if(ul_report == NULL)
+                      if(ul_report == NULL) {
+                        free(full_ul_report);
                         goto error;
+                      }
                       //Fill each UL report of the UE for each of the configured report types
                       for(j = 0; j < full_ul_report->n_cqi_meas; j++) {
 
                               ul_report[j] = malloc(sizeof(Protocol__FlexUlCqi));
-                              if(ul_report[j] == NULL)
-                              goto error;
+                              if(ul_report[j] == NULL) {
+                                free(full_ul_report);
+                                goto error;
+                              }
                               protocol__flex_ul_cqi__init(ul_report[j]);
                               //TODO: Set the type of the UL report. As an example set it to SRS UL report
                               // See enum flex_ul_cqi_type in FlexRAN specification for more details
@@ -479,8 +483,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               ul_report[j]->n_sinr = 0;
                               uint32_t *sinr_meas;
                               sinr_meas = (uint32_t *) malloc(sizeof(uint32_t) * ul_report[j]->n_sinr);
-                              if (sinr_meas == NULL)
+                              if (sinr_meas == NULL) {
+                                free(full_ul_report);
                                 goto error;
+                              }
                               //TODO:Set the SINR measurements for the specified type
                               for (k = 0; k < ul_report[j]->n_sinr; k++) {
                                       sinr_meas[k] = 10;
