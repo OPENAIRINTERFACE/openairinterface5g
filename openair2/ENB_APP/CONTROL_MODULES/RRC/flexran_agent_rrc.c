@@ -409,8 +409,13 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
           for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
 
               eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
-              if (eutra_meas[j] == NULL)
+              if (eutra_meas[j] == NULL) {
+                for (int k = 0 ; k < j ; k++) {
+                  free(eutra_meas[k]);
+                }
+                free(eutra_meas);
                 goto error;
+              }
 
               protocol__flex_eutra_measurements__init(eutra_meas[j]);
 
