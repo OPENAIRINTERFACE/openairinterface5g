@@ -311,7 +311,10 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
            report_config.ue_report_type[0].ue_report_flags = ue_flags;
         }
         request_config.config = &report_config;
-        flexran_agent_stats_request(enb_id, xid, &request_config, &timer_msg);
+        if (flexran_agent_stats_request(enb_id, xid, &request_config, &timer_msg) == -1) {
+          err_code = -100;
+          goto error;
+        }
         /* Create a timer */
         long timer_id = 0;
         flexran_agent_timer_args_t *timer_args = malloc(sizeof(flexran_agent_timer_args_t));
