@@ -449,8 +449,10 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   
 
   ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *) * report_config->nr_ue);
-          if (ue_report == NULL)
+          if (ue_report == NULL) {
+            free(stats_reply_msg);
             goto error;
+          }
   
   for (i = 0; i < report_config->nr_ue; i++) {
 
@@ -468,14 +470,18 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
   
   cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *) * report_config->nr_cc);
-  if (cell_report == NULL)
+  if (cell_report == NULL) {
+    free(stats_reply_msg);
     goto error;
+  }
   
   for (i = 0; i < report_config->nr_cc; i++) {
 
       cell_report[i] = malloc(sizeof(Protocol__FlexCellStatsReport));
-      if(cell_report[i] == NULL)
+      if(cell_report[i] == NULL) {
+          free(stats_reply_msg);
           goto error;
+      }
 
       protocol__flex_cell_stats_report__init(cell_report[i]);
       cell_report[i]->carrier_index = report_config->cc_report_type[i].cc_id;
@@ -488,6 +494,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_mac_xface(enb_id)
       && flexran_agent_mac_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    free(stats_reply_msg);
     goto error;
   }
 
@@ -495,6 +502,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_rrc_xface(enb_id)
       && flexran_agent_rrc_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    free(stats_reply_msg);
     goto error;
   }
 
@@ -502,6 +510,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_pdcp_xface(enb_id)
       && flexran_agent_pdcp_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    free(stats_reply_msg);
     goto error;
   }
 
@@ -510,8 +519,10 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   stats_reply_msg->ue_report = ue_report;
 
  *msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    free(stats_reply_msg);
     goto error;
+  }
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG;
   (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
