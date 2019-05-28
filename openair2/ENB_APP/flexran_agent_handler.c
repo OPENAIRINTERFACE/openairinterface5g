@@ -293,7 +293,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       /* Check if request was periodical */
       if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_PERIODICAL) {
         /* Create a one off flexran message as an argument for the periodical task */
-        Protocol__FlexranMessage *timer_msg;
+        Protocol__FlexranMessage *timer_msg = NULL;
         stats_request_config_t request_config;
         request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
         request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
