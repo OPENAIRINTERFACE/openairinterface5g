@@ -151,6 +151,15 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
   return msg;
   
  error:
+   if (stats_reply_msg) {
+     if (stats_reply_msg->ue_report) {
+       free(stats_reply_msg->ue_report);
+     }
+     if (stats_reply_msg->cell_report) {
+       free(stats_reply_msg->cell_report);
+     }
+     free(stats_reply_msg);
+   }
    return NULL;
 }
 
