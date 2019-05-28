@@ -122,8 +122,13 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
 
                               rlc_reports[j] = malloc(sizeof(Protocol__FlexRlcBsr));
-                              if (rlc_reports[j] == NULL)
+                              if (rlc_reports[j] == NULL){
+                                 for (k = 0; k < j; k++){
+                                   free(rlc_reports[k]);
+                                 }
+                                 free(rlc_reports);
                                  goto error;
+                              }
                               protocol__flex_rlc_bsr__init(rlc_reports[j]);
                               rlc_reports[j]->lc_id = j+1;
                               rlc_reports[j]->has_lc_id = 1;
