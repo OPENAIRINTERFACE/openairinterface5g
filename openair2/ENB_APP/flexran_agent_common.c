@@ -746,7 +746,13 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
     for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++) {
       cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
 
-      if (!cell_conf[i]) goto error;
+      if (!cell_conf[i]) {
+        for (int j = 0; j < i; j++) {
+          free(cell_conf[j]);
+        }
+        free(cell_conf);
+        goto error;
+      }
 
       protocol__flex_cell_config__init(cell_conf[i]);
 
@@ -768,8 +774,13 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    for (int k = 0; k < enb_config_reply_msg->n_cell_config; k++) {
+      free(cell_conf[k]);
+    }
+    free(cell_conf);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
