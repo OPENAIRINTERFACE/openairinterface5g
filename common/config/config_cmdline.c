@@ -214,7 +214,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
 
     /* first check help options, either --help, -h or --help_<section> */
     if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
-      char *tokctx;
+      char *tokctx = NULL;
       pp=strtok_r(oneargv, "_",&tokctx);
       config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
 
