@@ -1430,7 +1430,7 @@ void vnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 						NFAPI_TRACE(NFAPI_TRACE_NOTE, "Failed to allocate VNF_P7 reassemby buffer len:%d\n", length);
 						return;
 					}
-
+                                       memset(phy->reassembly_buffer, 0, length);
 					phy->reassembly_buffer_size = length;
 				}
 

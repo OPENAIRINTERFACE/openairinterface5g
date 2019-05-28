@@ -81,13 +81,22 @@ void* nfapi_p7_allocate(size_t size, nfapi_p7_codec_config_t* config)
 	if(size == 0)
 		return 0;
 
+       void* buffer_p = NULL;
 	if(config && config->allocate)
 	{
-		return (config->allocate)(size);
+               buffer_p = (config->allocate)(size);
+               if(buffer_p != NULL){
+               memset(buffer_p,0,size);
+               }
+               return buffer_p;
 	}
 	else
 	{
-		return calloc(1, size);
+               buffer_p = calloc(1, size);
+               if(buffer_p != NULL){
+               memset(buffer_p,0,size);
+               }
+               return buffer_p;
 	}
 }
 
