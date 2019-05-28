@@ -99,8 +99,8 @@ int opt_enabled=0;
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
-static char *in_ip;
-static char *in_path;
+char in_ip[40];
+char in_path[FILENAME_MAX];
 FILE *file_fd = NULL;
 pcap_hdr_t file_header = {
   0xa1b2c3d4,   /* magic number */
@@ -439,9 +439,8 @@ int init_opt(void) {
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
   uint16_t in_port;
-  config_set_checkfunctions(opt_params, opt_checkParams,
-                            sizeof(opt_params)/sizeof(paramdef_t));
-  config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
+  config_set_checkfunctions(opt_params, opt_checkParams, sizeof(opt_params)/sizeof(paramdef_t));
+  config_get(opt_params, sizeof(opt_params)/sizeof(paramdef_t), OPT_CONFIGPREFIX);
   subframesSinceCaptureStart = 0;
   int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
 

@@ -47,7 +47,7 @@
 
 #include "SCHED_NR/sched_nr.h"
 
-
+//#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -199,7 +199,7 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model! Exiting.\n");
         exit(-1);
       }
 
@@ -219,18 +219,24 @@ int main(int argc, char **argv)
 
     case 'o':
       cfo = atof(optarg);
-      msg("Setting CFO to %f Hz\n",cfo);
+#ifdef DEBUG_NR_PBCHSIM
+      printf("Setting CFO to %f Hz\n",cfo);
+#endif
       break;
 
     case 's':
       snr0 = atof(optarg);
-      msg("Setting SNR0 to %f\n",snr0);
+#ifdef DEBUG_NR_PBCHSIM
+      printf("Setting SNR0 to %f\n",snr0);
+#endif
       break;
 
     case 'S':
       snr1 = atof(optarg);
       snr1set=1;
-      msg("Setting SNR1 to %f\n",snr1);
+#ifdef DEBUG_NR_PBCHSIM
+      printf("Setting SNR1 to %f\n",snr1);
+#endif
       break;
 
       /*
@@ -254,10 +260,8 @@ int main(int argc, char **argv)
     case 'x':
       transmission_mode=atoi(optarg);
 
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+      if ((transmission_mode!=1) && (transmission_mode!=2) && (transmission_mode!=6)) {
+        printf("Unsupported transmission mode %d. Exiting.\n",transmission_mode);
         exit(-1);
       }
 
@@ -267,7 +271,7 @@ int main(int argc, char **argv)
       n_tx=atoi(optarg);
 
       if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
+    	printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
         exit(-1);
       }
 
@@ -277,7 +281,7 @@ int main(int argc, char **argv)
       n_rx=atoi(optarg);
 
       if ((n_rx==0) || (n_rx>2)) {
-        msg("Unsupported number of rx antennas %d\n",n_rx);
+    	printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
         exit(-1);
       }
 
@@ -299,7 +303,7 @@ int main(int argc, char **argv)
       input_fd = fopen(optarg,"r");
 
       if (input_fd==NULL) {
-        printf("Problem with filename %s\n",optarg);
+        printf("Problem with filename %s. Exiting.\n", optarg);
         exit(-1);
       }
 
@@ -431,7 +435,7 @@ int main(int argc, char **argv)
                                 0);
 
   if (gNB2UE==NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+	printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
@@ -492,32 +496,31 @@ int main(int argc, char **argv)
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
     for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
-      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
-	memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
+    	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
+    		memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
       
-      nr_common_signal_procedures (gNB,frame,slot);
+    	nr_common_signal_procedures (gNB,frame,slot);
       
-      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-	if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-	  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		       &txdata[aa][slot*frame_parms->samples_per_slot],
-		       frame_parms->ofdm_symbol_size,
-		       12,
-		       frame_parms->nb_prefix_samples,
-		       CYCLIC_PREFIX);
-	} else {
-	  nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			       &txdata[aa][slot*frame_parms->samples_per_slot],
-			       14,
-			       frame_parms);
-	}
-      }
+    	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+    		if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+    			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+    					&txdata[aa][slot*frame_parms->samples_per_slot],
+						frame_parms->ofdm_symbol_size,
+						12,
+						frame_parms->nb_prefix_samples,
+						CYCLIC_PREFIX);
+    		} else {
+    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+    					&txdata[aa][slot*frame_parms->samples_per_slot],
+						14,
+						frame_parms);
+    		}
+    	}
     }
 
     LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
     if (gNB->frame_parms.nb_antennas_tx>1)
       LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-
 
   } else {
     printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);

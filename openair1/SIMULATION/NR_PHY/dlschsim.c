@@ -52,7 +52,7 @@
 //#include "UTIL/LISTS/list.h"
 //#include "common/ran_context.h"
 
-//#define DEBUG_DLSCHSIM
+//#define DEBUG_NR_DLSCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -93,8 +93,8 @@ NR_IF_Module_init(int Mod_id) {
 	return (NULL);
 }
 
-void exit_function(const char *file, const char *function, const int line,
-		const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s)
+{
 	const char *msg = s == NULL ? "no comment" : s;
 	printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
 	exit(-1);
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
 				break;
 
 			default:
-				msg("Unsupported channel model!\n");
+				printf("Unsupported channel model! Exiting.\n");
 				exit(-1);
 			}
 
@@ -244,13 +244,18 @@ int main(int argc, char **argv) {
 
 		case 's':
 			snr0 = atof(optarg);
-			msg("Setting SNR0 to %f\n", snr0);
+#ifdef DEBUG_NR_DLSCHSIM
+			printf("Setting SNR0 to %f\n", snr0);
+#endif
 			break;
 
 		case 'S':
 			snr1 = atof(optarg);
 			snr1set = 1;
 			msg("Setting SNR1 to %f\n", snr1);
+#ifdef DEBUG_NR_DLSCHSIM
+			printf("Setting SNR1 to %f\n", snr1);
+#endif
 			break;
 
 		case 'p':
@@ -271,7 +276,7 @@ int main(int argc, char **argv) {
 			n_tx = atoi(optarg);
 
 			if ((n_tx == 0) || (n_tx > 2)) {
-				msg("Unsupported number of tx antennas %d\n", n_tx);
+				printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
 				exit(-1);
 			}
 
@@ -281,7 +286,7 @@ int main(int argc, char **argv) {
 			n_rx = atoi(optarg);
 
 			if ((n_rx == 0) || (n_rx > 2)) {
-				msg("Unsupported number of rx antennas %d\n", n_rx);
+				printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
 				exit(-1);
 			}
 
@@ -303,7 +308,7 @@ int main(int argc, char **argv) {
 			input_fd = fopen(optarg, "r");
 
 			if (input_fd == NULL) {
-				printf("Problem with filename %s\n", optarg);
+				printf("Problem with filename %s. Exiting.\n", optarg);
 				exit(-1);
 			}
 
@@ -379,7 +384,7 @@ int main(int argc, char **argv) {
 				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
-		msg("Problem generating channel model. Exiting.\n");
+		printf("Problem generating channel model. Exiting.\n");
 		exit(-1);
 	}
 
@@ -518,7 +523,7 @@ int main(int argc, char **argv) {
 
 	//estimated_output = harq_process->b;
 
-#ifdef DEBUG_DLSCHSIM
+#ifdef DEBUG_NR_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
 

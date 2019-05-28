@@ -53,6 +53,7 @@
 #include "liblfds611.h"
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -140,7 +141,7 @@ pdcp_netlink_init(
      * When the netlink fifo is full, packets are silently dropped, this behaviour
      * should be avoided if we want a reliable link.
      */
-    threadCreate(&pdcp_netlink_thread, pdcp_netlink_thread_fct,  "PDCP netlink", -1, OAI_PRIORITY_RT_LOW );
+    threadCreate(&pdcp_netlink_thread, pdcp_netlink_thread_fct, (void*)NULL, "PDCP netlink", -1, OAI_PRIORITY_RT_LOW );
   }
 
   return 0;

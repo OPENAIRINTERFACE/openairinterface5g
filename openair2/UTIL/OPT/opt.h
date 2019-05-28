@@ -105,15 +105,24 @@ typedef enum radio_type_e {
   RADIO_TYPE_MAX
 } radio_type_t;
 
-
+extern trace_mode_t opt_type;
+extern char in_ip[40];
+extern char in_path[FILENAME_MAX];
 
 /**
  * function def
 */
 
-void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
-               int oob_event, int oob_event_value);
+void trace_pdu(int direction,
+		       uint8_t *pdu_buffer,
+			   unsigned int pdu_buffer_size,
+               int ueid,
+			   int rntiType,
+			   int rnti,
+			   uint16_t sysFrame,
+			   uint8_t subframe,
+               int oob_event,
+			   int oob_event_value);
 
 int init_opt(void);
 

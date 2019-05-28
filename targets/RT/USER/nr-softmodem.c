@@ -833,8 +833,8 @@ int stop_L1L2(module_id_t gnb_id)
   terminate_task(TASK_L2L1, gnb_id);
   LOG_I(ENB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
-  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", gnb_id);
-  kill_RU_proc(gnb_id);
+  LOG_I(ENB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
+  kill_NR_RU_proc(gnb_id);
   oai_exit = 0;
   for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {
     //free_transport(RC.gNB[gnb_id][cc_id]);

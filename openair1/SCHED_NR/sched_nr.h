@@ -52,9 +52,9 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 				  nr_frequency_range_e freq_range,
 				  uint8_t rmsi_pdcch_config,
 				  uint8_t ssb_idx,
-          uint8_t k_ssb,
-          uint16_t sfn_ssb,
-          uint8_t n_ssb,
+                  uint8_t k_ssb,
+                  uint16_t sfn_ssb,
+                  uint8_t n_ssb,
 				  uint16_t nb_slots_per_frame,
 				  uint16_t N_RB);
 

@@ -87,11 +87,15 @@
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
-/* these variables have to be defined before including ENB_APP/enb_paramdef.h */
+/* these variables have to be defined before including ENB_APP/enb_paramdef.h and GNB_APP/gnb_paramdef.h */
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 
+static int DEFNRBANDS[] = {7};
+static int DEFGNBS[] = {0};
+
 #include "ENB_APP/enb_paramdef.h"
+#include "GNB_APP/gnb_paramdef.h"
 #include "common/config/config_userapi.h"
 
 #ifndef OPENAIR2
@@ -1792,7 +1796,7 @@ void init_RU_proc(RU_t *ru) {
   
 }
 
-void kill_RU_proc(int inst)
+void kill_NR_RU_proc(int inst)
 {
   RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
@@ -2294,7 +2298,7 @@ void stop_RU(int nb_ru)
 {
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
-    kill_RU_proc(inst);
+    kill_NR_RU_proc(inst);
   }
 }
 

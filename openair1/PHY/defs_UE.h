@@ -105,9 +105,9 @@
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// index of the current UE RX/TX proc
-  int                  proc_id;
+  int proc_id;
   /// Component Carrier index
-  uint8_t              CC_id;
+  uint8_t CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for transmission

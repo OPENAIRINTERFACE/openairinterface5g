@@ -48,12 +48,12 @@
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "LAYER2/MAC/mac_vars.h"
-
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
+#include "SIMULATION/TOOLS/sim.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -91,7 +91,7 @@ unsigned short config_frames[4] = {2,9,11,13};
   // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
   // at eNB 0, an UL scope for every UE
 
-  FD_phy_scope_gnb *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+  FD_phy_scope_gnb               *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   unsigned char                   scope_enb_num_ue = 2;
@@ -144,11 +144,11 @@ FILE *input_fd=NULL;
 
 
 #if MAX_NUM_CCs == 1
-rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
+rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0}};
 double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0}};
 #else
-rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain},{max_gain,max_gain,max_gain,max_gain}};
+rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain},{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0},{20,0,0,0}};
 double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0},{20,0,0,0}};
 #endif
@@ -574,8 +574,8 @@ static void get_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv;
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+  paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
   if (strlen(in_path) > 0) {
@@ -858,8 +858,8 @@ int stop_L1L2(module_id_t gnb_id) {
   terminate_task(TASK_L2L1, gnb_id);
   LOG_I(ENB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
-  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", gnb_id);
-  kill_RU_proc(gnb_id);
+  LOG_I(ENB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
+  kill_NR_RU_proc(gnb_id);
   oai_exit = 0;
 
   for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {

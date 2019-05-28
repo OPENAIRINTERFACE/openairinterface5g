@@ -53,7 +53,7 @@
 #else
   #ifdef OPENAIR2
     #if ENABLE_RAL
-      #include "collection/hashtable/hashtable.h"
+      #include "common/utils/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
       #include "UTIL/queue.h"
     #endif

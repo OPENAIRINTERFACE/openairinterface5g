@@ -236,7 +236,7 @@ extern void kill_gNB_proc(int inst);
 extern void init_RU(const char*);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
-extern void kill_RU_proc(int inst);
+extern void kill_NR_RU_proc(int inst);
 extern void set_function_spec_param(RU_t *ru);
 
 extern void reset_opp_meas(void);
