@@ -383,6 +383,18 @@ Protocol__FlexPagingBufferReport * copy_paging_buffer_report(Protocol__FlexPagin
 
  error:
   /*TODO: free memory properly*/
+  if (copy){
+    if (p_info){
+      for (i = 0; i < copy->n_paging_info; i++){
+        if (p_info[i]){
+          free(p_info[i]);
+        }
+      }
+      free(p_info);
+    }
+    free(copy);
+    copy = NULL;
+  }
   return NULL;
 }
 
