@@ -1075,6 +1075,7 @@ int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMess
   Protocol__FlexDlMacConfig *dl_mac_config_msg;
   dl_mac_config_msg = malloc(sizeof(Protocol__FlexDlMacConfig));
   if (dl_mac_config_msg == NULL) {
+    free(header);
     goto error;
   }
   protocol__flex_dl_mac_config__init(dl_mac_config_msg);
@@ -1084,8 +1085,10 @@ int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMess
   dl_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    free(header);
     goto error;
+  }
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG;
   (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
