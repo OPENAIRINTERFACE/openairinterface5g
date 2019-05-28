@@ -514,8 +514,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     // Fill the config for each UE
     for (int i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
       lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
-
-      if (!lc_ue_config[i]) goto error;
+      if (!lc_ue_config[i]){
+        for (int j = 0; j < i; j++){
+          free(lc_ue_config[j]);
+        }
+        free(lc_ue_config);
+        goto error;
+      }
 
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
       const int UE_id = flexran_get_mac_ue_id(mod_id, i);
@@ -527,8 +532,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if (*msg == NULL)
+  if (*msg == NULL){
+    for (int k = 0; k < lc_config_reply_msg->n_lc_ue_config; k++){
+      free(lc_ue_config[k]);
+    }
+    free(lc_ue_config);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
