@@ -470,6 +470,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
 
       /* sCell_ID */
       F1AP_NRCGI_t nRCGI;  // issue here
+      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
       MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
 
       NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
