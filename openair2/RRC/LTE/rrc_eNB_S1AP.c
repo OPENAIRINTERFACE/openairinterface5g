@@ -846,6 +846,7 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
   uint8_t srb_id;
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
+  memset(&ctxt, 0, sizeof(protocol_ctxt_t));
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
