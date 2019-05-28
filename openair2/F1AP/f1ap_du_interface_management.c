@@ -169,6 +169,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
+        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
         LOG_D(F1AP, "plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
