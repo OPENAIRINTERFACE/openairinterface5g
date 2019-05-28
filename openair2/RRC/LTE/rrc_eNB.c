@@ -8303,6 +8303,7 @@ LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t *
 LTE_SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool( const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP,  int n_discoveryMessages ) {
   //TODO
   LTE_SL_DiscConfig_r12_t  sl_DiscConfig;
+  memset(&sl_DiscConfig,0,sizeof(LTE_SL_DiscConfig_r12_t));
   sl_DiscConfig.discTxResources_r12 = CALLOC(1,sizeof(*sl_DiscConfig.discTxResources_r12));
   sl_DiscConfig.discTxResources_r12->present = LTE_SL_DiscConfig_r12__discTxResources_r12_PR_setup;
   sl_DiscConfig.discTxResources_r12->choice.setup.present = LTE_SL_DiscConfig_r12__discTxResources_r12__setup_PR_scheduled_r12;
