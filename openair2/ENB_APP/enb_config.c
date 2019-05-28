@@ -2573,6 +2573,7 @@ int RCconfig_parallel(void) {
   }
 
   free(worker_conf);
+  free(parallel_conf);
   return 0;
 }
 
