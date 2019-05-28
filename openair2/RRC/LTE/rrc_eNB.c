@@ -8166,7 +8166,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 //-----------------------------------------------------------------------------
 {
   uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size = -1;
+  uint16_t                            size = 0;
   memset(buffer, 0, RRC_BUF_SIZE);
 
   // allocate dedicated pools for UE -sl-CommConfig/sl-DiscConfig (sl-V2X-ConfigDedicated)
