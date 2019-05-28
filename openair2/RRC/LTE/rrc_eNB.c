@@ -7736,9 +7736,9 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
             &ctxt,
             RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
 
-      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
+      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
         LOG_I(RRC, "CCCH message has size %d > %d\n",
-              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
         break;
       }
 
