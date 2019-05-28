@@ -810,6 +810,8 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
   Protocol__FlexRrcTriggering *triggering = input->rrc_triggering;
   agent_reconf_rrc *reconf_param = malloc(sizeof(agent_reconf_rrc));
   reconf_param->trigger_policy = triggering->rrc_trigger;
+  reconf_param->report_interval = 0;
+  reconf_param->report_amount = 0;
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)) {
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
