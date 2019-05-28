@@ -1316,7 +1316,7 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
 
 void flexran_agent_send_sr_info(mid_t mod_id) {
   int size;
-  Protocol__FlexranMessage *msg;
+  Protocol__FlexranMessage *msg = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code;
