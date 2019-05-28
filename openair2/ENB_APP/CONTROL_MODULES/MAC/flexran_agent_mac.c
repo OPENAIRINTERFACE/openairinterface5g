@@ -598,8 +598,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                             Protocol__FlexMacSdusDl ** mac_sdus;
                             mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id));
-                            if (mac_sdus == NULL)
+                            if (mac_sdus == NULL) {
+                                free(macstats);
                                 goto error;
+                            }
 
                             macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id);
 
