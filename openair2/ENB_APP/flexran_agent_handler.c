@@ -521,6 +521,9 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
 error :
   LOG_E(FLEXRAN_AGENT, "errno %d occured\n", err_code);
+  if (header){
+    free(header);
+  }
   return err_code;
 
 }
