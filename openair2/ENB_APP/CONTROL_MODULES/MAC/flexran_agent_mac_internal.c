@@ -233,6 +233,12 @@ Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport *
   return copy;
 
  error:
+  if (copy){
+    if (copy->bsr){
+      free(copy->bsr);
+    }
+    free(copy);
+  }
   return NULL;
 }
 
