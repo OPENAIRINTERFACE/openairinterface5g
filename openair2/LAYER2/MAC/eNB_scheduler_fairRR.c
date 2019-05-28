@@ -1013,7 +1013,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
          eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
        */
       if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-        eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+        eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       } else {
         eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       }
