@@ -185,8 +185,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         //Create the actual CSI reports.
                         Protocol__FlexDlCsi **csi_reports;
                         csi_reports = malloc(sizeof(Protocol__FlexDlCsi *)*dl_report->n_csi_report);
-                        if (csi_reports == NULL)
+                        if (csi_reports == NULL) {
+                          free(dl_report);
                           goto error;
+                        }
                         for (j = 0; j < dl_report->n_csi_report; j++) {
 
                               csi_reports[j] = malloc(sizeof(Protocol__FlexDlCsi));
