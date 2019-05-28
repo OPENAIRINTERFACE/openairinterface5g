@@ -103,11 +103,15 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   }
 
   LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
+  free(header);
   return;
  error:
   if (err_code != 0)
      LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d for RNTI %x\n",
            err_code, rnti);
+  if (header){
+    free(header);
+  }
 }
 
 
