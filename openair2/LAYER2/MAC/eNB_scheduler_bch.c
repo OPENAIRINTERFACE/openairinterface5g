@@ -702,6 +702,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		    LOG_D(MAC, "Frame %d: Subframe %d : Adding common DCI for S_RNTI\n", frameP, subframeP);
 		    dl_req->number_dci++;
 		    dl_req->number_pdu++;
+                    dl_req->tl.tag   = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 		    dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 		    memset((void *) dl_config_pdu, 0,
 			   sizeof(nfapi_dl_config_request_pdu_t));
