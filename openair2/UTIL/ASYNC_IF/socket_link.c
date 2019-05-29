@@ -53,7 +53,6 @@ socket_link_t *new_link_server(int port)
   int no_delay;
 
   
-  memset(&addr,0,sizeof(struct sockaddr_in));
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
