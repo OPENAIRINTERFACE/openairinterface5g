@@ -1189,12 +1189,22 @@ void wakeup_L1s(RU_t *ru) {
 }
 inline int wakeup_prach_ru(RU_t *ru) {
   int ret;
-  struct timespec wait;
+  /*struct timespec wait;
   int time_ns = 5000000L;
 
   clock_gettime(CLOCK_REALTIME,&wait);
   wait.tv_nsec += time_ns;
   AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_prach,&wait))==ETIMEDOUT,"[RU] ERROR pthread_mutex_lock for RU prach thread (IC %d)\n", ru->proc.instance_cnt_prach);
+*/
+  struct timespec wait;
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  if (pthread_mutex_timedlock(&ru->proc.mutex_prach,&wait) !=0) {
+    LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for RU prach thread (IC %d)\n", ru->proc.instance_cnt_prach);
+    exit_fun( "error locking mutex_rxtx" );
+    return(-1);
+  }
 
   if (ru->proc.instance_cnt_prach==-1) {
     ++ru->proc.instance_cnt_prach;

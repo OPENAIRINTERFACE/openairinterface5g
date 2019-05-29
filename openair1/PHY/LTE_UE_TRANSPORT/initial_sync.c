@@ -449,6 +449,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       if (ue->frame_parms.frame_type==FDD) {
 	ue->N_TA_offset = 0;
       }
+      else {
+	if (ue->frame_parms.N_RB_DL == 100)
+	  ue->N_TA_offset = 624;
+	else if (ue->frame_parms.N_RB_DL == 50)
+	  ue->N_TA_offset = 624/2;
+	else if (ue->frame_parms.N_RB_DL == 25)
+	  ue->N_TA_offset = 624/4;
+	  
+      }
     }
 
     LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
