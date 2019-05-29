@@ -75,7 +75,6 @@ static int get_connection(char *addr, int port) {
   socklen_t alen;
   int s, t;
   printf("T tracer: waiting for connection on %s:%d\n", addr, port);
-  memset(&a,0,sizeof(struct sockaddr_in));
   s = socket(AF_INET, SOCK_STREAM, 0);
 
   if (s == -1) {
