@@ -680,10 +680,125 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
  error:
 
-  if (cell_report != NULL)
-        free(cell_report);
-  if (ue_report != NULL)
-        free(ue_report);
+  if (cell_report != NULL) {
+    if (report_config->nr_cc > 0) {
+      for (i = 0; i < report_config->nr_cc; i++) {
+        if (cell_report[i]->noise_inter_report != NULL) {
+          free(cell_report[i]->noise_inter_report);
+          cell_report[i]->noise_inter_report = NULL;
+        }
+      }
+    }
+    free(cell_report);
+    cell_report = NULL;
+  }
+
+  if (ue_report != NULL) {
+    if (report_config->nr_ue > 0) {
+      for (i = 0; i < report_config->nr_ue; i++) {
+        if (ue_report[i]->bsr != NULL) {
+          free(ue_report[i]->bsr);
+          ue_report[i]->bsr = NULL;
+        }
+        if (ue_report[i]->rlc_report != NULL) {
+          for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
+            if (ue_report[i]->rlc_report[j] != NULL) {
+              free(ue_report[i]->rlc_report[j]);
+              ue_report[i]->rlc_report[j] = NULL;
+            }
+          }
+          free(ue_report[i]->rlc_report);
+          ue_report[i]->rlc_report = NULL;
+        }
+        if (ue_report[i]->dl_cqi_report != NULL) {
+          if (ue_report[i]->dl_cqi_report->csi_report != NULL) {
+            for (j = 0; j < ue_report[i]->dl_cqi_report->n_csi_report; j++) {
+              if (ue_report[i]->dl_cqi_report->csi_report[j] != NULL) {
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p10csi != NULL) {
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p10csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p10csi = NULL;
+                }
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p11csi != NULL) {
+                  if (ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi != NULL) {
+                    free(ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi);
+                    ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi = NULL;
+                  }
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p11csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p11csi = NULL;
+                }
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p20csi != NULL) {
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p20csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p20csi = NULL;
+                }
+                free(ue_report[i]->dl_cqi_report->csi_report[j]);
+                ue_report[i]->dl_cqi_report->csi_report[j] = NULL;
+              }
+            }
+            free(ue_report[i]->dl_cqi_report->csi_report);
+            ue_report[i]->dl_cqi_report->csi_report = NULL;
+          }
+          free(ue_report[i]->dl_cqi_report);
+          ue_report[i]->dl_cqi_report = NULL;
+        }
+        if (ue_report[i]->pbr != NULL) {
+          if (ue_report[i]->pbr->paging_info != NULL) {
+            for (j = 0; j < ue_report[i]->pbr->n_paging_info; j++) {
+              free(ue_report[i]->pbr->paging_info[j]);
+              ue_report[i]->pbr->paging_info[j] = NULL;
+            }
+            free(ue_report[i]->pbr->paging_info);
+            ue_report[i]->pbr->paging_info = NULL;
+          }
+          free(ue_report[i]->pbr);
+          ue_report[i]->pbr = NULL;
+        }
+        if (ue_report[i]->ul_cqi_report != NULL) {
+          if (ue_report[i]->ul_cqi_report->cqi_meas != NULL) {
+            for (j = 0; j < ue_report[i]->ul_cqi_report->n_cqi_meas; j++) {
+              if (ue_report[i]->ul_cqi_report->cqi_meas[j] != NULL) {
+                if (ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr != NULL) {
+                  free(ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr);
+                  ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr = NULL;
+                }
+                free(ue_report[i]->ul_cqi_report->cqi_meas[j]);
+                ue_report[i]->ul_cqi_report->cqi_meas[j] = NULL;
+              }
+            }
+            free(ue_report[i]->ul_cqi_report->cqi_meas);
+            ue_report[i]->ul_cqi_report->cqi_meas = NULL;
+          }
+          if (ue_report[i]->ul_cqi_report->pucch_dbm != NULL) {
+            for (j = 0; j < MAX_NUM_CCs; j++) {
+              if (ue_report[i]->ul_cqi_report->pucch_dbm[j] != NULL) {
+                free(ue_report[i]->ul_cqi_report->pucch_dbm[j]);
+                ue_report[i]->ul_cqi_report->pucch_dbm[j] = NULL;
+              }
+            }
+            free(ue_report[i]->ul_cqi_report->pucch_dbm);
+            ue_report[i]->ul_cqi_report->pucch_dbm = NULL;
+          }
+          free(ue_report[i]->ul_cqi_report);
+          ue_report[i]->ul_cqi_report = NULL;
+        }
+        if (ue_report[i]->mac_stats != NULL) {
+          if (ue_report[i]->mac_stats->mac_sdus_dl != NULL) {
+            for (j = 0; j < ue_report[i]->mac_stats->n_mac_sdus_dl; j++) {
+              if (ue_report[i]->mac_stats->mac_sdus_dl[j] != NULL) {
+                free(ue_report[i]->mac_stats->mac_sdus_dl[j]);
+                ue_report[i]->mac_stats->mac_sdus_dl[j] = NULL;
+              }
+            }
+            free(ue_report[i]->mac_stats->mac_sdus_dl);
+            ue_report[i]->mac_stats->mac_sdus_dl = NULL;
+          }
+          free(ue_report[i]->mac_stats);
+          ue_report[i]->mac_stats = NULL;
+        }
+      }
+    }
+    free(ue_report);
+    ue_report = NULL;
+  }
 
   return -1;
 }
