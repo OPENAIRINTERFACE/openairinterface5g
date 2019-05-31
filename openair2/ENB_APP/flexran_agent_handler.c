@@ -423,19 +423,21 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg){
 
   Protocol__FlexHeader *header = NULL;
+  Protocol__FlexUeStatsReport **ue_report = NULL;
+  Protocol__FlexCellStatsReport **cell_report = NULL;
+  Protocol__FlexStatsReply *stats_reply_msg = NULL;
   err_code_t err_code = PROTOCOL__FLEXRAN_ERR__UNEXPECTED;
   int i,j;
 
-  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0)
+  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
     goto error;
-
-  
-  Protocol__FlexStatsReply *stats_reply_msg;
+  }
 
   stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
 
-  if (stats_reply_msg == NULL)
+  if (stats_reply_msg == NULL) {
     goto error;
+  }
 
   protocol__flex_stats_reply__init(stats_reply_msg);
   stats_reply_msg->header = header;
@@ -445,18 +447,18 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
   // UE report
 
-  Protocol__FlexUeStatsReport **ue_report = NULL;
-  
-
   ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *) * report_config->nr_ue);
-          if (ue_report == NULL) {
-            free(stats_reply_msg);
-            goto error;
-          }
+
+  if (ue_report == NULL) {
+    goto error;
+  }
   
   for (i = 0; i < report_config->nr_ue; i++) {
 
       ue_report[i] = malloc(sizeof(Protocol__FlexUeStatsReport));
+      if (ue_report[i] == NULL) {
+        goto error;
+      }
       protocol__flex_ue_stats_report__init(ue_report[i]);
       ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
       ue_report[i]->has_rnti = 1;
@@ -465,17 +467,9 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   }
 
   // cell rpoert 
-
-  Protocol__FlexCellStatsReport **cell_report;
-
   
   cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *) * report_config->nr_cc);
   if (cell_report == NULL) {
-    for (j = 0; j < report_config->nr_ue; j++) {
-      free(ue_report[j]);
-    }
-    free(ue_report);
-    free(stats_reply_msg);
     goto error;
   }
   
@@ -483,11 +477,6 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
       cell_report[i] = malloc(sizeof(Protocol__FlexCellStatsReport));
       if(cell_report[i] == NULL) {
-          for (j = 0; j < report_config->nr_ue; j++) {
-            free(ue_report[j]);
-          }
-          free(ue_report);
-          free(stats_reply_msg);
           goto error;
       }
 
@@ -502,11 +491,6 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_mac_xface(enb_id)
       && flexran_agent_mac_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-    for (j = 0; j < report_config->nr_ue; j++) {
-      free(ue_report[j]);
-    }
-    free(ue_report);
-    free(stats_reply_msg);
     goto error;
   }
 
@@ -514,11 +498,6 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_rrc_xface(enb_id)
       && flexran_agent_rrc_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-    for (j = 0; j < report_config->nr_ue; j++) {
-      free(ue_report[j]);
-    }
-    free(ue_report);
-    free(stats_reply_msg);
     goto error;
   }
 
@@ -526,11 +505,6 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
   if (flexran_agent_get_pdcp_xface(enb_id)
       && flexran_agent_pdcp_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-    for (j = 0; j < report_config->nr_ue; j++) {
-      free(ue_report[j]);
-    }
-    free(ue_report);
-    free(stats_reply_msg);
     goto error;
   }
 
@@ -540,11 +514,6 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
  *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL) {
-    for (j = 0; j < report_config->nr_ue; j++) {
-      free(ue_report[j]);
-    }
-    free(ue_report);
-    free(stats_reply_msg);
     goto error;
   }
   protocol__flexran_message__init(*msg);
@@ -556,11 +525,40 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
 error :
   LOG_E(FLEXRAN_AGENT, "errno %d occured\n", err_code);
-  if (header){
-    free(header);
-  }
-  return err_code;
 
+  if (header != NULL) {
+    free(header);
+    header = NULL;
+  }
+
+  if (stats_reply_msg != NULL) {
+    free(stats_reply_msg);
+    stats_reply_msg = NULL;
+  }
+
+  if (ue_report != NULL) {
+    for (j = 0; j < report_config->nr_ue; j++) {
+      if (ue_report[j] != NULL) {
+        free(ue_report[j]);
+        ue_report[j] = NULL;
+      }
+    }
+    free(ue_report);
+    ue_report = NULL;
+  }
+
+  if (cell_report != NULL) {
+    for (j = 0; j < report_config->nr_cc; j++) {
+      if (cell_report[j] != NULL) {
+        free(cell_report[j]);
+        cell_report[j] = NULL;
+      }
+    }
+    free(cell_report);
+    cell_report = NULL;
+  }
+
+  return err_code;
 }
 
 /*
