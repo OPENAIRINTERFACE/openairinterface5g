@@ -3916,15 +3916,15 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 
-  if (quantityConfig->quantityConfigEUTRA){
-    if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ){
-      free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
-    }
-    if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP){
-      free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
-    }
-    free(quantityConfig->quantityConfigEUTRA);
-  }
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
   free(quantityConfig);
   quantityConfig = NULL;
 
