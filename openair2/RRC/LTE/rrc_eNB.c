@@ -3928,10 +3928,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   free(quantityConfig);
   quantityConfig = NULL;
 
-  if(mac_MainConfig->ul_SCH_Config){
-    free(mac_MainConfig->ul_SCH_Config);
-    mac_MainConfig->ul_SCH_Config = NULL;
-  }
+  free(mac_MainConfig->ul_SCH_Config);
+  mac_MainConfig->ul_SCH_Config = NULL;
+
   if(mac_MainConfig->phr_Config){
     free(mac_MainConfig->phr_Config);
     mac_MainConfig->phr_Config = NULL;
