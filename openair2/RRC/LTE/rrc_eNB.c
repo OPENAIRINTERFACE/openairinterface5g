@@ -3915,18 +3915,18 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     size,
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
-  if (quantityConfig){
-    if (quantityConfig->quantityConfigEUTRA){
-      if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ){
-        free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
-      }
-      if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP){
-        free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
-      }
-      free(quantityConfig->quantityConfigEUTRA);
+
+  if (quantityConfig->quantityConfigEUTRA){
+    if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ){
+      free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
     }
-    free(quantityConfig);
+    if (quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP){
+      free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+    }
+    free(quantityConfig->quantityConfigEUTRA);
   }
+  free(quantityConfig);
+  quantityConfig = NULL;
 
   if(mac_MainConfig){
       if(mac_MainConfig->ul_SCH_Config){
