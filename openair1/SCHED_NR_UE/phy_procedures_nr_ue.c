@@ -2959,6 +2959,10 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 	 nr_tti_rx,nb_searchspace_total);
   #endif
 
+  //FK: we define dci_ind and dl_indication as local variables, this way the call to the mac should be thread safe
+  fapi_nr_dci_indication_t dci_ind;
+  nr_downlink_indication_t dl_indication;
+  
   // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
   //int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
   unsigned int dci_cnt=0;
@@ -3151,7 +3155,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
     //emos_dump_UE.dci_cnt[nr_tti_rx] = dci_cnt;
 #endif
 
-    ue->dci_ind.number_of_dcis = dci_cnt;
+    dci_ind.number_of_dcis = dci_cnt;
 
     for (int i=0; i<dci_cnt; i++) {
       /*
@@ -3191,12 +3195,12 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 	
 	LOG_D(PHY,"<-NR_PDCCH_PHY_PROCEDURES_UE (nr_ue_pdcch_procedures)-> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",dci_alloc_rx[i].format,dci_alloc_rx[i].rnti,dci_alloc_rx[i].dci_length,dci_alloc_rx[i].dci_pdu[0],dci_alloc_rx[i].dci_pdu[1]);
 	
-	memset(&ue->dci_ind.dci_list[i].dci,0,sizeof(fapi_nr_dci_pdu_rel15_t));
+	memset(&dci_ind.dci_list[i].dci,0,sizeof(fapi_nr_dci_pdu_rel15_t));
 	
-	ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
-	ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
-	ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
-	ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
+	dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
+	dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+	dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
+	dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
 	
 	status = nr_extract_dci_info(ue,
 				     eNB_id,
@@ -3204,7 +3208,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 				     dci_alloc_rx[i].dci_length,
 				     dci_alloc_rx[i].rnti,
 				     dci_alloc_rx[i].dci_pdu,
-				     &ue->dci_ind.dci_list[i].dci,
+				     &dci_ind.dci_list[i].dci,
 				     dci_fields_sizes_cnt[i],
 				     dci_alloc_rx[i].format,
 				     nr_tti_rx,
@@ -3246,16 +3250,16 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
       } // end for loop dci_cnt
 
     // fill dl_indication message
-    ue->dl_indication.module_id = ue->Mod_id;
-    ue->dl_indication.cc_id = ue->CC_id;
-    ue->dl_indication.gNB_index = eNB_id;
-    ue->dl_indication.frame = frame_rx;
-    ue->dl_indication.slot = nr_tti_rx;
-    ue->dl_indication.rx_ind = NULL; //no data, only dci for now
-    ue->dl_indication.dci_ind = &ue->dci_ind; 
+    dl_indication.module_id = ue->Mod_id;
+    dl_indication.cc_id = ue->CC_id;
+    dl_indication.gNB_index = eNB_id;
+    dl_indication.frame = frame_rx;
+    dl_indication.slot = nr_tti_rx;
+    dl_indication.rx_ind = NULL; //no data, only dci for now
+    dl_indication.dci_ind = &dci_ind; 
     
     //  send to mac
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    ue->if_inst->dl_indication(&dl_indication);
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_rx_pdcch_stats);
