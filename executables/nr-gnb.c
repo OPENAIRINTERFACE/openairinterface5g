@@ -686,57 +686,56 @@ void init_gNB_proc(int inst) {
   gNB_L1_rxtx_proc_t *L1_proc,*L1_proc_tx;
   LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
 
-  for (CC_id=0; CC_id<RC.nb_nr_CC[inst]; CC_id++) {
-    gNB = RC.gNB[inst][CC_id];
+  gNB = RC.gNB[inst];
 #ifndef OCP_FRAMEWORK
-    LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
+  LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
 #endif
-    proc = &gNB->proc;
-    L1_proc                        = &proc->L1_proc;
-    L1_proc_tx                     = &proc->L1_proc_tx;
-    L1_proc->instance_cnt          = -1;
-    L1_proc_tx->instance_cnt       = -1;
-    L1_proc->instance_cnt_RUs      = 0;
-    L1_proc_tx->instance_cnt_RUs   = 0;
-    proc->instance_cnt_prach       = -1;
-    proc->instance_cnt_asynch_rxtx = -1;
-    proc->CC_id                    = CC_id;
-    proc->first_rx                 =1;
-    proc->first_tx                 =1;
-    proc->RU_mask                  =0;
-    proc->RU_mask_tx               = (1<<gNB->num_RU)-1;
-    proc->RU_mask_prach            =0;
-    pthread_mutex_init( &gNB->UL_INFO_mutex, NULL);
-    pthread_mutex_init( &L1_proc->mutex, NULL);
-    pthread_mutex_init( &L1_proc_tx->mutex, NULL);
-    pthread_cond_init( &L1_proc->cond, NULL);
-    pthread_cond_init( &L1_proc_tx->cond, NULL);
-    pthread_mutex_init( &proc->mutex_prach, NULL);
-    pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
-    pthread_mutex_init( &proc->mutex_RU,NULL);
-    pthread_mutex_init( &proc->mutex_RU_tx,NULL);
-    pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
-    pthread_cond_init( &proc->cond_prach, NULL);
-    pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
-    LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
-
-    if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
-      threadCreate( &L1_proc->pthread, gNB_L1_thread, gNB, "L1_proc", -1, OAI_PRIORITY_RT );
-      threadCreate( &L1_proc_tx->pthread, gNB_L1_thread_tx, gNB,"L1_proc_tx", -1, OAI_PRIORITY_RT);
-    }
-
-    //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
-    char name[16];
-
-    if (gNB->single_thread_flag==0) {
-      snprintf( name, sizeof(name), "L1 %d", i );
-      pthread_setname_np( L1_proc->pthread, name );
-      snprintf( name, sizeof(name), "L1TX %d", i );
-      pthread_setname_np( L1_proc_tx->pthread, name );
-    }
-
-    AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+  proc = &gNB->proc;
+  L1_proc                        = &proc->L1_proc;
+  L1_proc_tx                     = &proc->L1_proc_tx;
+  L1_proc->instance_cnt          = -1;
+  L1_proc_tx->instance_cnt       = -1;
+  L1_proc->instance_cnt_RUs      = 0;
+  L1_proc_tx->instance_cnt_RUs   = 0;
+  proc->instance_cnt_prach       = -1;
+  proc->instance_cnt_asynch_rxtx = -1;
+  proc->CC_id                    = 0;
+  proc->first_rx                 =1;
+  proc->first_tx                 =1;
+  proc->RU_mask                  =0;
+  proc->RU_mask_tx               = (1<<gNB->num_RU)-1;
+  proc->RU_mask_prach            =0;
+  pthread_mutex_init( &gNB->UL_INFO_mutex, NULL);
+  pthread_mutex_init( &L1_proc->mutex, NULL);
+  pthread_mutex_init( &L1_proc_tx->mutex, NULL);
+  pthread_cond_init( &L1_proc->cond, NULL);
+  pthread_cond_init( &L1_proc_tx->cond, NULL);
+  pthread_mutex_init( &proc->mutex_prach, NULL);
+  pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
+  pthread_mutex_init( &proc->mutex_RU,NULL);
+  pthread_mutex_init( &proc->mutex_RU_tx,NULL);
+  pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
+  pthread_cond_init( &proc->cond_prach, NULL);
+  pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
+  LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
+  
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
+    threadCreate( &L1_proc->pthread, gNB_L1_thread, gNB, "L1_proc", -1, OAI_PRIORITY_RT );
+    threadCreate( &L1_proc_tx->pthread, gNB_L1_thread_tx, gNB,"L1_proc_tx", -1, OAI_PRIORITY_RT);
   }
+  
+  //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
+  char name[16];
+  
+  if (gNB->single_thread_flag==0) {
+    snprintf( name, sizeof(name), "L1 %d", i );
+    pthread_setname_np( L1_proc->pthread, name );
+    snprintf( name, sizeof(name), "L1TX %d", i );
+    pthread_setname_np( L1_proc_tx->pthread, name );
+  }
+  
+  AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+
 
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
@@ -755,52 +754,51 @@ void kill_gNB_proc(int inst) {
   gNB_L1_proc_t *proc;
   gNB_L1_rxtx_proc_t *L1_proc, *L1_proc_tx;
 
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    gNB=RC.gNB[inst][CC_id];
-    proc = &gNB->proc;
-    L1_proc     = &proc->L1_proc;
-    L1_proc_tx  = &proc->L1_proc_tx;
-    LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
-
-    if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
-      pthread_mutex_lock(&L1_proc->mutex);
-      L1_proc->instance_cnt = 0;
-      pthread_cond_signal(&L1_proc->cond);
-      pthread_mutex_unlock(&L1_proc->mutex);
-      pthread_mutex_lock(&L1_proc_tx->mutex);
-      L1_proc_tx->instance_cnt = 0;
-      pthread_cond_signal(&L1_proc_tx->cond);
-      pthread_mutex_unlock(&L1_proc_tx->mutex);
-    }
-
-    proc->instance_cnt_prach = 0;
-    pthread_cond_signal( &proc->cond_prach );
-    pthread_cond_signal( &proc->cond_asynch_rxtx );
-    pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
-    //    LOG_D(PHY, "joining pthread_prach\n");
-    //    pthread_join( proc->pthread_prach, (void**)&status );
-    LOG_I(PHY, "Destroying prach mutex/cond\n");
-    pthread_mutex_destroy( &proc->mutex_prach );
-    pthread_cond_destroy( &proc->cond_prach );
-    LOG_I(PHY, "Destroying UL_INFO mutex\n");
-    pthread_mutex_destroy(&gNB->UL_INFO_mutex);
-
-    if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
-      LOG_I(PHY, "Joining L1_proc mutex/cond\n");
-      pthread_join( L1_proc->pthread, (void **)&status );
-      LOG_I(PHY, "Joining L1_proc_tx mutex/cond\n");
-      pthread_join( L1_proc_tx->pthread, (void **)&status );
-    }
-
-    LOG_I(PHY, "Destroying L1_proc mutex/cond\n");
-    pthread_mutex_destroy( &L1_proc->mutex );
-    pthread_cond_destroy( &L1_proc->cond );
-    LOG_I(PHY, "Destroying L1_proc_tx mutex/cond\n");
-    pthread_mutex_destroy( &L1_proc_tx->mutex );
-    pthread_cond_destroy( &L1_proc_tx->cond );
-    pthread_mutex_destroy( &proc->mutex_RU );
-    pthread_mutex_destroy( &proc->mutex_RU_tx );
+  gNB=RC.gNB[inst];
+  proc = &gNB->proc;
+  L1_proc     = &proc->L1_proc;
+  L1_proc_tx  = &proc->L1_proc_tx;
+  LOG_I(PHY, "Killing TX CC_id %d inst %d\n",inst );
+  
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
+    pthread_mutex_lock(&L1_proc->mutex);
+    L1_proc->instance_cnt = 0;
+    pthread_cond_signal(&L1_proc->cond);
+    pthread_mutex_unlock(&L1_proc->mutex);
+    pthread_mutex_lock(&L1_proc_tx->mutex);
+    L1_proc_tx->instance_cnt = 0;
+    pthread_cond_signal(&L1_proc_tx->cond);
+    pthread_mutex_unlock(&L1_proc_tx->mutex);
   }
+  
+  proc->instance_cnt_prach = 0;
+  pthread_cond_signal( &proc->cond_prach );
+  pthread_cond_signal( &proc->cond_asynch_rxtx );
+  pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
+  //    LOG_D(PHY, "joining pthread_prach\n");
+  //    pthread_join( proc->pthread_prach, (void**)&status );
+  LOG_I(PHY, "Destroying prach mutex/cond\n");
+  pthread_mutex_destroy( &proc->mutex_prach );
+  pthread_cond_destroy( &proc->cond_prach );
+  LOG_I(PHY, "Destroying UL_INFO mutex\n");
+  pthread_mutex_destroy(&gNB->UL_INFO_mutex);
+  
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
+    LOG_I(PHY, "Joining L1_proc mutex/cond\n");
+    pthread_join( L1_proc->pthread, (void **)&status );
+    LOG_I(PHY, "Joining L1_proc_tx mutex/cond\n");
+    pthread_join( L1_proc_tx->pthread, (void **)&status );
+  }
+  
+  LOG_I(PHY, "Destroying L1_proc mutex/cond\n");
+  pthread_mutex_destroy( &L1_proc->mutex );
+  pthread_cond_destroy( &L1_proc->cond );
+  LOG_I(PHY, "Destroying L1_proc_tx mutex/cond\n");
+  pthread_mutex_destroy( &L1_proc_tx->mutex );
+  pthread_cond_destroy( &L1_proc_tx->cond );
+  pthread_mutex_destroy( &proc->mutex_RU );
+  pthread_mutex_destroy( &proc->mutex_RU_tx );
+  
 }
 
 
@@ -837,45 +835,43 @@ void init_eNB_afterRU(void) {
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
-    LOG_I(PHY,"RC.nb_nr_CC[inst]:%d\n", RC.nb_nr_CC[inst]);
 
-    for (CC_id=0; CC_id<RC.nb_nr_CC[inst]; CC_id++) {
-      LOG_I(PHY,"RC.nb_nr_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.gNB[inst][CC_id]);
-      gNB                                  =  RC.gNB[inst][CC_id];
-      phy_init_nr_gNB(gNB,0,0);
-
-      // map antennas and PRACH signals to gNB RX
-      if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
-
-      LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-      //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
-      gNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
-      LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
-
-      for (ru_id=0,aa=0; ru_id<gNB->num_RU; ru_id++) {
-        AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
-                    "RU %d : common.rxdataF is NULL\n",
-                    gNB->RU_list[ru_id]->idx);
-        AssertFatal(gNB->RU_list[ru_id]->prach_rxsigF!=NULL,
-                    "RU %d : prach_rxsigF is NULL\n",
-                    gNB->RU_list[ru_id]->idx);
-
-        for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
-          LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-          gNB->prach_vars.rxsigF[0][aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
-          gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
-        }
+    LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, CC_id, RC.gNB[inst]);
+    gNB                                  =  RC.gNB[inst];
+    phy_init_nr_gNB(gNB,0,0);
+    
+    // map antennas and PRACH signals to gNB RX
+    if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
+    
+    LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
+    //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
+    gNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
+    LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
+    
+    for (ru_id=0,aa=0; ru_id<gNB->num_RU; ru_id++) {
+      AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
+		  "RU %d : common.rxdataF is NULL\n",
+		  gNB->RU_list[ru_id]->idx);
+      AssertFatal(gNB->RU_list[ru_id]->prach_rxsigF!=NULL,
+		  "RU %d : prach_rxsigF is NULL\n",
+		  gNB->RU_list[ru_id]->idx);
+      
+      for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
+	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
+	gNB->prach_vars.rxsigF[0][aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
-
-      /* TODO: review this code, there is something wrong.
-       * In monolithic mode, we come here with nb_antennas_rx == 0
-       * (not tested in other modes).
-       */
-      //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
-
-    init_gNB_proc(inst);
+    
+    /* TODO: review this code, there is something wrong.
+     * In monolithic mode, we come here with nb_antennas_rx == 0
+     * (not tested in other modes).
+     */
+    //init_precoding_weights(RC.gNB[inst]);
   }
+  
+  init_gNB_proc(inst);
+
 
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
@@ -886,48 +882,49 @@ void init_eNB_afterRU(void) {
 }
 
 void init_gNB(int single_thread_flag,int wait_for_sync) {
-  int CC_id;
+
   int inst;
   PHY_VARS_gNB *gNB;
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure about to allocated RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC[0]:%d\n",RC.nb_nr_L1_inst,RC.nb_nr_L1_CC[0]);
+  LOG_I(PHY,"[nr-softmodem.c] gNB (%p) structure about to allocated RC.nb_nr_L1_inst:%d\n",RC.gNB,RC.nb_nr_L1_inst);
 
-  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB ***) malloc(RC.nb_nr_L1_inst*sizeof(PHY_VARS_gNB **));
+  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB **) malloc((1+RC.nb_nr_L1_inst)*sizeof(PHY_VARS_gNB *));
 
-  LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB allocated\n");
+  LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
 
   for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
-    if (RC.gNB[inst] == NULL) RC.gNB[inst] = (PHY_VARS_gNB **) malloc(RC.nb_nr_CC[inst]*sizeof(PHY_VARS_gNB *));
-
-    for (CC_id=0; CC_id<RC.nb_nr_L1_CC[inst]; CC_id++) {
-      if (RC.gNB[inst][CC_id] == NULL) RC.gNB[inst][CC_id] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
-
-      gNB                     = RC.gNB[inst][CC_id];
-      gNB->abstraction_flag   = 0;
-      gNB->single_thread_flag = single_thread_flag;
-      /*nr_polar_init(&gNB->nrPolar_params,
-                NR_POLAR_PBCH_MESSAGE_TYPE,
-          NR_POLAR_PBCH_PAYLOAD_BITS,
-          NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
-      LOG_I(PHY,"Initializing gNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
-#ifndef OCP_FRAMEWORK
-      LOG_I(PHY,"Initializing gNB %d CC_id %d\n",inst,CC_id);
-#endif
-      LOG_I(PHY,"Registering with MAC interface module\n");
-      AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
-      gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
-      gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
-      memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-      memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
-      LOG_I(PHY,"Setting indication lists\n");
-      gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
-      gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
-      gNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = gNB->sr_pdu_list;
-      gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
-      gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
-      gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;
-      gNB->prach_energy_counter = 0;
+    if (RC.gNB[inst] == NULL) {
+      RC.gNB[inst] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
+      memset((void*)RC.gNB[inst],0,sizeof(PHY_VARS_gNB));
     }
+    LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    gNB                     = RC.gNB[inst];
+    gNB->abstraction_flag   = 0;
+    gNB->single_thread_flag = single_thread_flag;
+    /*nr_polar_init(&gNB->nrPolar_params,
+      NR_POLAR_PBCH_MESSAGE_TYPE,
+      NR_POLAR_PBCH_PAYLOAD_BITS,
+      NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
+    LOG_I(PHY,"Initializing gNB %d single_thread_flag:%d\n",inst,gNB->single_thread_flag);
+#ifndef OCP_FRAMEWORK
+    LOG_I(PHY,"Initializing gNB %d\n",inst);
+#endif
+    LOG_I(PHY,"Registering with MAC interface module (before %p)\n",gNB->if_inst);
+    AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
+    LOG_I(PHY,"Registering with MAC interface module (after %p)\n",gNB->if_inst);
+    gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
+    gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
+    memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
+    memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
+    LOG_I(PHY,"Setting indication lists\n");
+    gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
+    gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
+    gNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = gNB->sr_pdu_list;
+    gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
+    gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
+    gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;
+    gNB->prach_energy_counter = 0;
   }
+  
 
   LOG_I(PHY,"[nr-softmodem.c] gNB structure allocated\n");
 }

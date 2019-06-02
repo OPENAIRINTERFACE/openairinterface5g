@@ -37,23 +37,11 @@
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
-                   int CC_idP,
-				   int Nid_cell,
-                   int nr_bandP,
-				   uint64_t ssb_pattern,
-                   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP);
-
+		   NR_ServingCellConfigCommon_t *scc
+		   );
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
-                           int CC_id,
-						   int cellid,
-                           int p_gNB,
-                           int nr_bandP,
-                           uint64_t ssb_pattern,
-                           uint64_t dl_CarrierFreqP,
-                           int dl_BandwidthP,
-                           NR_BCCH_BCH_Message_t *mib,
-                           NR_ServingCellConfigCommon_t *servingcellconfigcommon
+			   int ssb_SubcarrierOffset,
+                           NR_ServingCellConfigCommon_t *scc
                            );
 
 int  is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slotP);
@@ -121,13 +109,10 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 void config_nr_mib(int Mod_idP, 
-                int CC_idP,
-                int p_gNBP,
-                int subCarrierSpacingCommon, 
-                uint32_t ssb_SubcarrierOffset,
-                int dmrs_TypeA_Position,
-                uint32_t pdcch_ConfigSIB1,
-                int cellBarred,
-                int intraFreqReselection);
+		   int subCarrierSpacingCommon, 
+		   uint32_t ssb_SubcarrierOffset,
+		   int dmrs_TypeA_Position,
+		   uint32_t pdcch_ConfigSIB1
+		   );
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

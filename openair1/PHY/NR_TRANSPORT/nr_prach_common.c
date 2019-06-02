@@ -141,7 +141,14 @@ int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t 
 }
 
 
+int do_prach_rx(NR_DL_FRAME_PARMS *fp,int frame,int slot) {
 
+  int subframe = slot / fp->slots_per_subframe;
+  // when were in the last slot of the subframe and this is a PRACH subframe ,return 1
+  if (((slot%fp->slots_per_subframe) == fp->slots_per_subframe-1)&&
+      (is_nr_prach_subframe(fp,frame,subframe))) return (1);
+  else return(0);
+}
 
 uint16_t get_nr_prach_fmt(int prach_ConfigIndex,lte_frame_type_t frame_type, nr_frequency_range_e fr)
 {

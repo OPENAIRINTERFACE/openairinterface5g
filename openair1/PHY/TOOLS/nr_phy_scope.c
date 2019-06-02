@@ -853,7 +853,7 @@ typedef struct {
 } FD_stats_form;
 
 void reset_stats_gNB(FL_OBJECT *button, long arg) {
-  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
+  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0];
 
   for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (int k=0; k<8; k++) { //harq_processes
@@ -882,7 +882,7 @@ static void *scope_thread(void *arg) {
       for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         if ((ue_cnt<scope_enb_num_ue)) 
           //this function needs to be written
-          phy_scope_gNB(form_gnb[CC_id][ue_cnt], RC.gNB[0][CC_id], UE_id);
+          phy_scope_gNB(form_gnb[CC_id][ue_cnt], RC.gNB[0], UE_id);
 	ue_cnt++;
       }
     }

@@ -71,21 +71,15 @@
 #   include "UTIL/OSA/osa_defs.h"
 #endif
 
-#if defined(ENABLE_USE_MME)
 #   include "rrc_eNB_S1AP.h"
 #   include "rrc_eNB_GTPV1U.h"
-#   if defined(ENABLE_ITTI)
-#   else
-#      include "../../S1AP/s1ap_eNB.h"
-#   endif
-#endif
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
 
-#if defined(ENABLE_ITTI)
+
 #   include "intertask_interface.h"
-#endif
+
 
 #if ENABLE_RAL
 #   include "rrc_eNB_ral.h"
@@ -118,12 +112,10 @@ void openair_nr_rrc_on(const protocol_ctxt_t* const ctxt_pP){
   
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
 
-  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
-    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
-  }
+  rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier.SI, BCCH, 1);
+  RC.nrrrc[ctxt_pP->module_id]->carrier.SI.Active = 1;
+  rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier.Srb0, CCCH, 1);
+  RC.nrrrc[ctxt_pP->module_id]->carrier.Srb0.Active = 1;
 
 }
 
@@ -206,8 +198,7 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
                        physicalcellgroup_config);
 
 
-  do_SpCellConfig(ctxt_pP->module_id,
-                  ue_context_pP->ue_context.primaryCC_id,
+  do_SpCellConfig(RC.nrrrc[ctxt_pP->module_id],
                   spCellConfig);
 
 
@@ -216,60 +207,23 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
-                       const int              CC_id
-                       #if defined(ENABLE_ITTI)
-                       ,
-                       gNB_RrcConfigurationReq * configuration
-                       #endif
-                      ){
-  //int                                 i;
+static void init_NR_SI(gNB_RRC_INST *rrc) {
+
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
-  // copy basic parameters
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB           = configuration->nb_antenna_ports[CC_id];
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->DL_prefix_type[CC_id];
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Ncp_UL          = configuration->UL_prefix_type[CC_id];
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
 
-  ///MIB
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = 0;
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].MIB             = (uint8_t*) malloc16(4);
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = do_MIB_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],0,
-                                                                            #ifdef ENABLE_ITTI
-                                                                            configuration->MIB_ssb_SubcarrierOffset[CC_id],
-                                                                            configuration->pdcch_ConfigSIB1[CC_id],
-                                                                            configuration->MIB_subCarrierSpacingCommon[CC_id],
-                                                                            configuration->MIB_dmrs_TypeA_Position[CC_id]
-                                                                            #else
-                                                                            0,0,15,2
-                                                                            #endif
-                                                                            );
 
-  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                             CC_id,
-                             #if defined(ENABLE_ITTI)
-                             configuration,
-                             #endif
-                             1
-                             );
+  rrc->carrier.MIB             = (uint8_t*) malloc16(4);
+  rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
+
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         CC_id,
-			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
-                         RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB,
-                         configuration->nr_band[CC_id],
-			 configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id],
-                         RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
-                         configuration->N_RB_DL[CC_id],
-                         (NR_BCCH_BCH_Message_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].mib,
-                         (NR_ServingCellConfigCommon_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].servingcellconfigcommon
+  rrc_mac_config_req_gNB(rrc->module_id,
+			 rrc->carrier.ssb_SubcarrierOffset,
+                         (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon
                          );
 }
 
@@ -277,73 +231,41 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq* configuration){
   protocol_ctxt_t      ctxt;
   int                  CC_id;
+  gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
+
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
 
   #if OCP_FRAMEWORK
-    while ( RC.nrrrc[gnb_mod_idP] == NULL ) {
-      LOG_E(NR_RRC, "RC.nrrrc not yet initialized, waiting 1 second\n");
-      sleep(1);
-    }
-  #endif 
-    AssertFatal(RC.nrrrc[gnb_mod_idP] != NULL, "RC.nrrrc not initialized!");
-    AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
-  #ifdef ENABLE_ITTI
-    AssertFatal(configuration!=NULL,"configuration input is null\n");
-  #endif
-
-  RC.nrrrc[ctxt.module_id]->Nb_ue = 0;
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    RC.nrrrc[ctxt.module_id]->carrier[CC_id].Srb0.Active = 0;
+  while (rrc == NULL ) {
+    LOG_E(NR_RRC, "RC.nrrrc not yet initialized, waiting 1 second\n");
+    sleep(1);
   }
+#endif 
+  AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
+  AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
+  AssertFatal(configuration!=NULL,"configuration input is null\n");
+  
+  rrc->module_id = gnb_mod_idP;
+  rrc->Nb_ue = 0;
+  
+  rrc->carrier.Srb0.Active = 0;
 
-  uid_linear_allocator_init(&RC.nrrrc[ctxt.module_id]->uid_allocator);
-  RB_INIT(&RC.nrrrc[ctxt.module_id]->rrc_ue_head);
+  uid_linear_allocator_init(&rrc->uid_allocator);
+  RB_INIT(&rrc->rrc_ue_head);
 
-  RC.nrrrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  RC.nrrrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
 
-  memcpy(&RC.nrrrc[ctxt.module_id]->configuration,configuration,sizeof(gNB_RrcConfigurationReq));
-
+  rrc->carrier.servingcellconfigcommon = configuration->scc;
   /// System Information INIT
 
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
 
-  #ifdef CBA
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    for (j = 0; j < NUM_MAX_CBA_GROUP; j++) {
-      RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[j] = CBA_OFFSET + j;
-    }
-
-    if (RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups > NUM_MAX_CBA_GROUP) {
-      RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups = NUM_MAX_CBA_GROUP;
-    }
-
-    LOG_D(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_FMT" Initialization of 4 cba_RNTI values (%x %x %x %x) num active groups %d\n",
-          PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt),
-          gnb_mod_idP, RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[0],
-          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[1],
-          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[2],
-          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[3],
-          RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups);
-  }
-
-  #endif
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    init_NR_SI(&ctxt,
-              CC_id
-              #if defined(ENABLE_ITTI)
-              ,configuration
-              #endif
-              );
-  }//END for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+  init_NR_SI(rrc);
 
   rrc_init_nr_global_param();
 
@@ -357,7 +279,6 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
-#if defined(ENABLE_ITTI)
 
 void* rrc_gnb_task(void* args_p){
   MessageDef                         *msg_p;
@@ -466,4 +387,3 @@ void* rrc_gnb_task(void* args_p){
   }
 }
 
-#endif //END #if defined(ENABLE_ITTI)

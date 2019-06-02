@@ -1010,6 +1010,7 @@ set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/fapi_nr_l1.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_gNB.c
+  ${OPENAIR1_DIR}/SCHED_NR/nr_prach_procedures.c
 )
 add_library(SCHED_NR_LIB ${SCHED_NR_SRC})
 

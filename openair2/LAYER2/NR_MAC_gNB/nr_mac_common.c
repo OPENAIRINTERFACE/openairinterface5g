@@ -143,6 +143,20 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
   for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
   AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
  
+  LOG_I(PHY,"Computing dl_frequency (pointA %d => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %d))\n",dl_nrarfcn,1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal),nr_bandtable[i].dl_min,i,nr_bandtable[i].N_OFFs_DL); 
   return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+	  
+}
+
+uint64_t get_nr_uldl_offset(int nr_bandP)
+{
+
+  int i;
+
+  
+  AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
+  for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
+
+  return 1000*(nr_bandtable[i].dl_min -nr_bandtable[i].ul_min);
 	  
 }

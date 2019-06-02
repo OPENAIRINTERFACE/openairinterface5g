@@ -1409,12 +1409,12 @@ static void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-    LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+    LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
           proc->frame_rx,proc->tti_rx,
           proc->frame_tx,proc->tti_tx,
-          RC.gNB[0][0]->proc.frame_rx,RC.gNB[0][0]->proc.slot_rx,
-          RC.gNB[0][0]->proc.frame_tx);
+          RC.gNB[0]->proc.frame_rx,RC.gNB[0]->proc.slot_rx,
+	  RC.gNB[0]->proc.frame_tx);
     /*
           LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
               ru->do_prach,
@@ -2068,10 +2068,6 @@ void init_RU(char *rf_config_file) {
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
 
-  if (RC.nb_nr_CC != 0)
-    for (i=0; i<RC.nb_nr_L1_inst; i++)
-      for (CC_id=0; CC_id<RC.nb_nr_CC[i]; CC_id++) RC.gNB[i][CC_id]->num_RU=0;
-
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
 
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
@@ -2084,11 +2080,11 @@ void init_RU(char *rf_config_file) {
     // NOTE: multiple CC_id are not handled here yet!
 
     if (ru->num_gNB > 0) {
-      LOG_D(PHY, "%s() RC.ru[%d].num_gNB:%d ru->gNB_list[0]:%p RC.gNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_gNB, ru->gNB_list[0], RC.gNB[0][0], ru->rf_config_file);
+      LOG_D(PHY, "%s() RC.ru[%d].num_gNB:%d ru->gNB_list[0]:%p RC.gNB[0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_gNB, ru->gNB_list[0], RC.gNB[0], ru->rf_config_file);
 
       if (ru->gNB_list[0] == 0) {
         LOG_E(PHY,"%s() DJP - ru->gNB_list ru->num_gNB are not initialized - so do it manually\n", __FUNCTION__);
-        ru->gNB_list[0] = RC.gNB[0][0];
+        ru->gNB_list[0] = RC.gNB[0];
         ru->num_gNB=1;
         //
         // DJP - feptx_prec() / feptx_ofdm() parses the gNB_list (based on num_gNB) and copies the txdata_F to txdata in RU
@@ -2169,7 +2165,7 @@ void RCconfig_RU(void) {
       else
         RC.ru[j]->num_gNB                           = 0;
 
-      for (i=0; i<RC.ru[j]->num_gNB; i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];
+      for (i=0; i<RC.ru[j]->num_gNB; i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]];
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));

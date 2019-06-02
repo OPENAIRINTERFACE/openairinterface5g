@@ -379,18 +379,10 @@ typedef struct {
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
-  //implicit parameters needed
-  int                                       physCellId;
-  int                                       Ncp; //cyclic prefix for DL
-  int								                        Ncp_UL; //cyclic prefix for UL
-  int                                       p_gNB; //number of tx antenna port
-  int								                        p_rx_gNB; //number of receiving antenna ports
-  uint64_t                                  dl_CarrierFreq; //detected by the UE
-  uint64_t                                  ul_CarrierFreq; //detected by the UE
-  
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
-  
+
+  int ssb_SubcarrierOffset;                  
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
 
@@ -405,8 +397,9 @@ typedef struct {
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
+  int                                                 module_id;
   eth_params_t                                        eth_params_s;
-  rrc_gNB_carrier_data_t                              carrier[MAX_NUM_CCs];
+  rrc_gNB_carrier_data_t                              carrier;
   uid_allocator_t                                     uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   
@@ -414,11 +407,6 @@ typedef struct gNB_RRC_INST_s {
 
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
-
-  //RRC configuration
-#if defined(ENABLE_ITTI)
-  gNB_RrcConfigurationReq                             configuration;//rrc_messages_types.h
-#endif
 
   // other PLMN parameters
   /// Mobile country code

@@ -66,7 +66,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   NR_BCCH_BCH_Message_t *mib;
   
   rrc     = RC.nrrrc[Mod_idP];
-  carrier = &rrc->carrier[0];
+  carrier = &rrc->carrier;
   mib     = &carrier->mib;
 
   if( (Srb_id & RAB_OFFSET ) == MIBCH) {

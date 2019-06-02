@@ -244,3 +244,13 @@ void nr_feptx_ofdm(RU_t *ru) {
 	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
 }
+
+void nr_feprx(RU_t *ru) {
+
+  // PRACH component
+  int frame=ru->proc.frame_rx, slot=ru->proc.tti_rx;
+ 
+  if (do_prach_rx(ru->nr_frame_parms,frame,slot)) rx_nr_prach_ru(ru,
+								 frame,
+								 slot/ru->nr_frame_parms->slots_per_subframe);
+}

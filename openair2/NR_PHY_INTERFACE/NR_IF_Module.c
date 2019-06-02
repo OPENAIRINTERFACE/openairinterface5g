@@ -366,8 +366,12 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id){
   LOG_D(PHY,"Installing callbacks for IF_Module - UL_indication\n");
 
   if (if_inst[Mod_id]==NULL) {
+
+
     if_inst[Mod_id] = (NR_IF_Module_t*)malloc(sizeof(NR_IF_Module_t));
     memset((void*)if_inst[Mod_id],0,sizeof(NR_IF_Module_t));
+
+    LOG_I(MAC,"Allocating shared L1/L2 interface structure for instance %d @ %p\n",Mod_id,if_inst[Mod_id]);
 
     if_inst[Mod_id]->CC_mask=0;
     if_inst[Mod_id]->NR_UL_indication = NR_UL_indication;

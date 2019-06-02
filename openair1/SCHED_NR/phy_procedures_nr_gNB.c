@@ -183,3 +183,19 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
 }
+
+
+void phy_procedures_gNB_RX(PHY_VARS_gNB *gNB,
+                           int frame,int slot) {
+
+  NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_DL)) return;
+
+  //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
+
+
+  if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
+
+}

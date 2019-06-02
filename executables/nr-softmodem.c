@@ -373,7 +373,7 @@ void exit_function(const char *file, const char *function, const int line, const
 
 
 void reset_stats(FL_OBJECT *button, long arg) {
-  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
+  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0];
 
   for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (int k=0; k<8; k++) { //harq_processes
@@ -732,8 +732,8 @@ void init_openair0(void) {
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-     RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value,
-     RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value,
+     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
     openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_carrier_bandwidth.value;
@@ -741,8 +741,8 @@ void init_openair0(void) {
     openair0_cfg[card].clock_source = clock_source;
 
 
-    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
 
     for (i=0; i<4; i++) {
 
@@ -758,7 +758,7 @@ void init_openair0(void) {
 
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = RC.gNB[0][0]->rx_total_gain_dB;
+      openair0_cfg[card].rx_gain[i] = RC.gNB[0]->rx_total_gain_dB;
 
 
       openair0_cfg[card].configFilename = rf_config_file;
@@ -796,13 +796,10 @@ void wait_gNBs(void) {
     waiting=0;
 
     for (i=0; i<RC.nb_nr_L1_inst; i++) {
-      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_nr_L1_CC[i]);
 
-      for (j=0; j<RC.nb_nr_L1_CC[i]; j++) {
-        if (RC.gNB[i][j]->configured==0) {
-          waiting=1;
-          break;
-        }
+      if (RC.gNB[i]->configured==0) {
+	waiting=1;
+	break;
       }
     }
   }
@@ -862,10 +859,9 @@ int stop_L1L2(module_id_t gnb_id) {
   kill_RU_proc(gnb_id);
   oai_exit = 0;
 
-  for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {
-    //free_transport(RC.gNB[gnb_id][cc_id]);
-    phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
-  }
+    //free_transport(RC.gNB[gnb_id]);
+  phy_free_nr_gNB(RC.gNB[gnb_id]);
+
 
   nr_phy_free_RU(RC.ru[gnb_id]);
   free_lte_top();
@@ -883,14 +879,13 @@ int restart_L1L2(module_id_t gnb_id) {
   /* block threads */
   sync_var = -1;
 
-  for (cc_id = 0; cc_id < RC.nb_nr_L1_CC[gnb_id]; cc_id++) {
-    RC.gNB[gnb_id][cc_id]->configured = 0;
-  }
+  RC.gNB[gnb_id]->configured = 0;
+  
 
   RC.ru_mask |= (1 << ru->idx);
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
@@ -1013,7 +1008,7 @@ int main( int argc, char **argv ) {
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-#if defined(ENABLE_ITTI)
+
 
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
@@ -1023,14 +1018,16 @@ int main( int argc, char **argv ) {
     RCconfig_L1();
   }
 
-#endif
+
+  
   /* Start the agent. If it is turned off in the configuration, it won't start */
+  /*
   RCconfig_nr_flexran();
 
   for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
-
+*/
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
@@ -1201,10 +1198,8 @@ int main( int argc, char **argv ) {
   /* release memory used by the RU/gNB threads (incomplete), after all
    * threads have been stopped (they partially use the same memory) */
   for (int inst = 0; inst < NB_gNB_INST; inst++) {
-    for (int cc_id = 0; cc_id < RC.nb_nr_CC[inst]; cc_id++) {
-      //free_transport(RC.gNB[inst][cc_id]);
-      phy_free_nr_gNB(RC.gNB[inst][cc_id]);
-    }
+      //free_transport(RC.gNB[inst]);
+      phy_free_nr_gNB(RC.gNB[inst]);
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {
