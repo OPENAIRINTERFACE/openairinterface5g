@@ -431,7 +431,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
       if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
-      else
+      else 
 #endif
         harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
 

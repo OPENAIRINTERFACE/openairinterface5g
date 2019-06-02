@@ -148,7 +148,7 @@ int attach_rru(RU_t *ru) {
   RRU_CONFIG_msg_t rru_config_msg;
   int received_capabilities=0;
   wait_eNBs();
-
+  LOG_ENTER(PHY);
   // Wait for capabilities
   while (received_capabilities==0) {
     memset((void *)&rru_config_msg,0,sizeof(rru_config_msg));
@@ -208,7 +208,7 @@ int connect_rau(RU_t *ru) {
   RRU_capabilities_t *cap;
   int                i;
   int                len;
-
+  LOG_ENTER(PHY);
   // wait for RAU_tick
   while (tick_received == 0) {
     msg_len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE;
@@ -299,7 +299,7 @@ int connect_rau(RU_t *ru) {
 // southbound IF5 fronthaul for 16-bit OAI format
 static inline void fh_if5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-
+  LOG_ENTER(PHY);
   send_IF5(ru, ru->proc.timestamp_tx, ru->proc.subframe_tx, &ru->seqno, IF5_RRH_GW_DL);
 }
 
@@ -315,7 +315,7 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
-
+  LOG_ENTER(PHY);
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL)
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
 }
@@ -327,6 +327,7 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
 void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
+    LOG_ENTER(PHY);
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL);
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
@@ -358,14 +359,14 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
-
+  LOG_ENTER(PHY);
   if ((fp->frame_type == TDD) && (subframe_select(fp,*subframe)==SF_S))
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;
   else
     symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
-
+  LOG_D(PHY,"start rcv IF4p5 \n");
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
 
@@ -382,6 +383,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
 
     LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);
+  LOG_D(PHY,"Done rcv IF4p5 \n");
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
   proc->subframe_rx  = sf;
@@ -482,6 +484,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_mask   = (1<<fp->symbols_per_tti)-1;
   prach_rx      = 0;
 
+    LOG_D(PHY,"start rcv IF4p5 \n");
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(ru, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
 
@@ -578,6 +581,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full;
   int subframe_tx,frame_tx;
+  LOG_ENTER(PHY);
   LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
   symbol_number = 0;
   symbol_mask = 0;
@@ -643,7 +647,7 @@ void fh_if4p5_north_out(RU_t *ru) {
   RU_proc_t *proc=&ru->proc;
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   const int subframe     = proc->subframe_rx;
-
+  LOG_ENTER(PHY);
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
@@ -712,6 +716,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   unsigned int rxs;
   int i;
   openair0_timestamp ts=0,old_ts=0;
+  LOG_ENTER(PHY);
+  LOG_D(PHY,"%s:%d start rx_rf \n", __FILE__,__LINE__);
 
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void *)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
@@ -820,6 +826,7 @@ void tx_rf(RU_t *ru) {
   lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
   lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
   int sf_extension = 0;
+  LOG_D(PHY,"start tx_rf \n");
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
@@ -935,6 +942,7 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   printf( "devices ok (ru_thread_asynch_rx)\n");
 
   while (!oai_exit) {
+      LOG_ENTER(PHY);
     if (oai_exit) break;
 
     if (subframe==9) {
@@ -968,7 +976,7 @@ void wakeup_slaves(RU_proc_t *proc) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
+  LOG_ENTER(PHY);
   for (i=0; i<proc->num_slaves; i++) {
     RU_proc_t *slave_proc = proc->slave_proc[i];
 
@@ -1029,7 +1037,7 @@ static void *ru_thread_prach( void *param ) {
     if (oai_exit) break;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );
-
+  LOG_ENTER(PHY);
     if (ru->eNB_list[0]) {
       prach_procedures(
         ru->eNB_list[0]
@@ -1075,7 +1083,7 @@ static void *ru_thread_prach_br( void *param ) {
     if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"ru_prach_thread_br") < 0) break;
 
     if (oai_exit) break;
-
+  LOG_ENTER(PHY);
     rx_prach(NULL,
              ru,
              NULL,
@@ -1098,7 +1106,7 @@ int wakeup_synch(RU_t *ru) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
+  LOG_ENTER(PHY);
   // wake up synch thread
   // lock the synch mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&ru->proc.mutex_synch,&wait) != 0) {
@@ -1135,7 +1143,7 @@ void do_ru_synch(RU_t *ru) {
 
   double temp_freq1 = ru->rfdevice.openair0_cfg->rx_freq[0];
   double temp_freq2 = ru->rfdevice.openair0_cfg->tx_freq[0];
-
+  LOG_ENTER(PHY);
   for (i=0; i<4; i++) {
     ru->rfdevice.openair0_cfg->rx_freq[i] = ru->rfdevice.openair0_cfg->tx_freq[i];
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
@@ -1198,7 +1206,7 @@ void wakeup_L1s(RU_t *ru) {
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
   LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
-
+  LOG_ENTER(PHY);
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
     char string[20];
@@ -1496,7 +1504,7 @@ static void *ru_thread_tx( void *param ) {
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
 
     if (oai_exit) break;
-
+  LOG_ENTER(PHY);
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
 
@@ -1644,7 +1652,7 @@ static void *ru_thread( void *param ) {
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD,sched_getcpu());
-
+  LOG_ENTER(PHY);
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
     if (subframe==9) {

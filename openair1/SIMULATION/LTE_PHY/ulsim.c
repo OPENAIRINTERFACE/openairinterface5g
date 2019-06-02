@@ -1354,7 +1354,7 @@ int main(int argc, char **argv) {
         printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
         printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
         printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
-        printf("|__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
+        printf("    |__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
                eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ?
                eNB->ulsch[0]->harq_processes[harq_pid]->Kminus :
                eNB->ulsch[0]->harq_processes[harq_pid]->Kplus,
