@@ -86,7 +86,7 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
 uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
   return (0);
 }
-int32_t get_uldl_offset(int eutra_bandP) {
+int32_t get_nr_uldl_offset(int eutra_bandP) {
   return (0);
 }
 

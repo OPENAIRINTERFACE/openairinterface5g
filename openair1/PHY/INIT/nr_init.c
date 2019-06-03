@@ -471,21 +471,10 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     //gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 
-  gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
-  LOG_D(PHY,"gNB %d : SI %p\n",gNB->Mod_id,gNB->dlsch_SI);
-  gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
-  LOG_D(PHY,"gNB %d : RA %p\n",gNB->Mod_id,gNB->dlsch_ra);
-  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
-  LOG_D(PHY,"gNB %d : MCH %p\n",gNB->Mod_id,gNB->dlsch_MCH);
-
   gNB->rx_total_gain_dB=130;
 
   for(i=0; i<NUMBER_OF_UE_MAX; i++)
     gNB->mu_mimo_mode[i].dl_pow_off = 2;
 
-  gNB->check_for_total_transmissions = 0;
-  gNB->check_for_MUMIMO_transmissions = 0;
-  gNB->FULL_MUMIMO_transmissions = 0;
-  gNB->check_for_SUMIMO_transmissions = 0;
   //fp->pucch_config_common.deltaPUCCH_Shift = 1;
 }

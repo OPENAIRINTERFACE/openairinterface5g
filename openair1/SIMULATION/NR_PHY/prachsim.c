@@ -70,7 +70,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
   return 0;
 }
 
-int32_t get_uldl_offset(int nr_bandP) {return(0);}
+int32_t get_nr_uldl_offset(int nr_bandP) {return(0);}
 
 openair0_config_t openair0_cfg[MAX_CARDS];
 int nfapi_mode=0;
