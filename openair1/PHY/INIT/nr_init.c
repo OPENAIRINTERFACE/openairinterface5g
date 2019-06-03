@@ -182,13 +182,13 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     srs_vars[UE_id].srs = (int32_t *)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
   }
-
+*/
   // PRACH
   prach_vars->prachF = (int16_t *)malloc16_clear( 1024*2*sizeof(int16_t) );
 
   prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
 
-
+/*
   for (int ulsch_id=0; ulsch_id<NUMBER_OF_NR_ULSCH_MAX; ulsch_id++) {
     //FIXME
 

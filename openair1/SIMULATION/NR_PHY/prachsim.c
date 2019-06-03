@@ -72,6 +72,8 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
 
 int32_t get_nr_uldl_offset(int nr_bandP) {return(0);}
 
+int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
+
 openair0_config_t openair0_cfg[MAX_CARDS];
 int nfapi_mode=0;
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
@@ -346,17 +348,16 @@ int main(int argc, char **argv)
       snr1 = snr0+5.0;
   }
 
-  RC.gNB = (PHY_VARS_gNB***) malloc(2*sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB**) malloc(2*sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  memset(RC.gNB[0][0],0,sizeof(PHY_VARS_gNB));
+  RC.gNB = (PHY_VARS_gNB**) malloc(2*sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  memset(RC.gNB[0],0,sizeof(PHY_VARS_gNB));
 
   RC.ru = (RU_t**) malloc(2*sizeof(RU_t *));
   RC.ru[0] = (RU_t*) malloc(sizeof(RU_t ));
   memset(RC.ru[0],0,sizeof(RU_t));
   RC.nb_RU = 1;
 
-  gNB = RC.gNB[0][0];
+  gNB = RC.gNB[0];
   RU = RC.ru[0];
 
 
