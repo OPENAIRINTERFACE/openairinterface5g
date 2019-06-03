@@ -6,14 +6,12 @@
 #        define NUMBER_OF_gNB_MAX 1
 #        define NUMBER_OF_RU_MAX 2
 #        define NUMBER_OF_NR_RU_MAX 2
-#        define NUMBER_OF_NR_DLSCH_MAX 16
-#        define NUMBER_OF_NR_ULSCH_MAX 16
 #        ifndef PHYSIM
 #        ifndef UE_EXPANSION
-#                define NUMBER_OF_UE_MAX 4
-#                define NUMBER_OF_NR_UE_MAX 4
-#                define NUMBER_OF_CONNECTED_eNB_MAX 1
-#                define NUMBER_OF_CONNECTED_gNB_MAX 1
+#                define NUMBER_OF_UE_MAX 16
+#                define NUMBER_OF_NR_UE_MAX 16
+#                define NUMBER_OF_CONNECTED_eNB_MAX 3
+#                define NUMBER_OF_CONNECTED_gNB_MAX 3
 #        else
 #                define NUMBER_OF_UE_MAX 256
 #                define NUMBER_OF_NR_UE_MAX 256
