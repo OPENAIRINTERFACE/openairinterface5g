@@ -389,7 +389,7 @@ void reset_stats(FL_OBJECT *button, long arg)
 	phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
 	phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
 	phy_vars_gNB->UE_stats[i].dlsch_trials[k][j]=0;
-      }*/
+      }
 
       phy_vars_gNB->UE_stats[i].dlsch_l2_errors[k]=0;
       phy_vars_gNB->UE_stats[i].ulsch_errors[k]=0;
@@ -399,6 +399,7 @@ void reset_stats(FL_OBJECT *button, long arg)
       phy_vars_gNB->UE_stats[i].dlsch_sliding_cnt=0;
       phy_vars_gNB->UE_stats[i].dlsch_NAK_round0=0;
       phy_vars_gNB->UE_stats[i].dlsch_mcs_offset=0;
+*/
     }
   }
 }

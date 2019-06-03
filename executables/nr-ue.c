@@ -169,6 +169,7 @@ static void UE_synch(void *arg) {
   int freq_offset=0;
   UE->is_synchronized = 0;
 
+
   if (UE->UE_scan == 0) {
     get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
@@ -239,7 +240,7 @@ static void UE_synch(void *arg) {
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
-      if (nr_initial_sync( &syncD->proc, UE, UE->mode ) == 0) {
+      if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
@@ -348,7 +349,7 @@ static void UE_synch(void *arg) {
   }
 }
 
-void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   // Process Rx data for one sub-frame
   if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
     //clean previous FAPI MESSAGE
@@ -376,9 +377,9 @@ void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, UE_mac->phy_config.config_req.pbch_config);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
-    //            printf(">>> nr_ue_pdcch_procedures ended\n");
+    //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
   }
 
@@ -413,7 +414,7 @@ void UE_processing(void *arg) {
   processingData_t *rxtxD=(processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
-  processSubframeRX(UE, proc);
+  processSlotRX(UE, proc);
   //printf(">>> mac ended\n");
   // Prepare the future Tx data
 #if 0
@@ -447,7 +448,7 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
     dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
-  for(int x=0; x<10; x++) {
+  for(int x=0; x<20; x++) {  // two frames for initial sync
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = ((void *)&UE->common_vars.rxdata[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
 
@@ -612,6 +613,7 @@ void *UE_thread(void *arg) {
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
+
 
     absolute_slot++;
     // whatever means thread_idx

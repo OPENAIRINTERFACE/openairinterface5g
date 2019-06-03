@@ -77,15 +77,14 @@ void config_nr_mib(int Mod_idP,
 void config_common(int Mod_idP, 
 		   NR_ServingCellConfigCommon_t *scc
                   ){
-
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[0];
 
   int mu = 1;
 
+
   cfg->sch_config.physical_cell_id.value = *scc->physCellId;
   cfg->sch_config.ssb_scg_position_in_burst.value = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
  
-
   // TDD
   cfg->subframe_config.duplex_mode.value                          = 1;
   cfg->subframe_config.duplex_mode.tl.tag = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
@@ -152,6 +151,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 		scc->dmrs_TypeA_Position,
 		*scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero * 16 + *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero
 		);
+
 
   AssertFatal(scc->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap, "SSB Bitmap is not 8-bits!\n");
 

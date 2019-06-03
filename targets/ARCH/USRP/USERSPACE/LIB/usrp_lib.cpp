@@ -98,6 +98,7 @@ typedef struct {
   int64_t rx_count;
   int wait_for_first_pps;
   int use_gps;
+  int first_tx;
   //! timestamp of RX packet
   openair0_timestamp rx_timestamp;
 
@@ -323,10 +324,10 @@ static int trx_usrp_start(openair0_device *device) {
 
     cmd.stream_now = false; // start at constant delay
     s->rx_stream->issue_stream_cmd(cmd);
-    s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
+    /*s->tx_md.time_spec = cmd.time_spec + uhd::time_spec_t(1-(double)s->tx_forward_nsamps/s->sample_rate);
     s->tx_md.has_time_spec = true;
     s->tx_md.start_of_burst = true;
-    s->tx_md.end_of_burst = false;
+    s->tx_md.end_of_burst = false;*/
     s->rx_count = 0;
     s->tx_count = 0;
     s->rx_timestamp = 0;
@@ -435,6 +436,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   if (u_sf_mode != 2) { // not replay mode
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
+
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
@@ -464,47 +466,54 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       }
     }
 
-    s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-    s->tx_md.has_time_spec = flags;
-
-    if(flags>0)
-      s->tx_md.has_time_spec = true;
-    else
-      s->tx_md.has_time_spec = false;
+    boolean_t first_packet_state=false,last_packet_state=false;
 
     if (flags == 2) { // start of burst
-      s->tx_md.start_of_burst = true;
-      s->tx_md.end_of_burst = false;
+      //      s->tx_md.start_of_burst = true;
+      //      s->tx_md.end_of_burst = false;
+      first_packet_state = true;
+      last_packet_state = false;
     } else if (flags == 3) { // end of burst
-      s->tx_md.start_of_burst = false;
-      s->tx_md.end_of_burst = true;
+      //s->tx_md.start_of_burst = false;
+      //s->tx_md.end_of_burst = true;
+      first_packet_state = false;
+      last_packet_state - true;
     } else if (flags == 4) { // start and end
-      s->tx_md.start_of_burst = true;
-      s->tx_md.end_of_burst = true;
+    //  s->tx_md.start_of_burst = true;
+    //  s->tx_md.end_of_burst = true;
+      first_packet_state = true;
+      last_packet_state = true;
     } else if (flags==1) { // middle of burst
-      s->tx_md.start_of_burst = false;
-      s->tx_md.end_of_burst = false;
+    //  s->tx_md.start_of_burst = false;
+    //  s->tx_md.end_of_burst = false;
+      first_packet_state = false;
+      last_packet_state = false;
     }
+    else if (flags==10) { // fail safe mode
+     // s->tx_md.has_time_spec = false;
+     // s->tx_md.start_of_burst = false;
+     // s->tx_md.end_of_burst = true;
+     first_packet_state=false;
+     last_packet_state=true;
+    }
+    s->tx_md.has_time_spec  = true;
+    s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state; 
+    s->tx_md.end_of_burst   = last_packet_state;
+    s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
-    if(flags==10) { // fail safe mode
-      s->tx_md.has_time_spec = false;
-      s->tx_md.start_of_burst = false;
-      s->tx_md.end_of_burst = true;
-    }
+    s->tx_count++;
 
     if (cc>1) {
-      std::vector<void *> buff_ptrs;
+       std::vector<void *> buff_ptrs;
 
-      for (int i=0; i<cc; i++)
-        buff_ptrs.push_back(buff_tx[i]);
+       for (int i=0; i<cc; i++)
+         buff_ptrs.push_back(&(((int16_t*)buff_tx[i])[0]));
 
-      ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
-    } else
-      ret = (int)s->tx_stream->send(buff_tx[0], nsamps, s->tx_md,1e-3);
+       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
+    } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
 
-    if (ret != nsamps)
-      LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
-
+     if (ret != nsamps) LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
+ 
 #if defined(USRP_REC_PLAY)
   } else {
     struct timespec req;
@@ -1087,7 +1096,7 @@ extern "C" {
         device->type = USRP_B200_DEV;
         usrp_master_clock = 30.72e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
+        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
       }
 
       if (device_adds[0].get("type") == "n3xx") {
@@ -1095,6 +1104,7 @@ extern "C" {
         device->type=USRP_X300_DEV; //treat it as X300 for now
         usrp_master_clock = 122.88e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+        //args += ", send_buff_size=33554432";
       }
 
       if (device_adds[0].get("type") == "x300") {
@@ -1115,6 +1125,7 @@ extern "C" {
       else
         s->usrp->set_clock_source("external");
 
+      
       if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
@@ -1335,6 +1346,7 @@ extern "C" {
         LOG_I(PHY,"  Actual TX gain: %f...\n", s->usrp->get_tx_gain(i));
         LOG_I(PHY,"  Actual TX bandwidth: %fM...\n", s->usrp->get_tx_bandwidth(i)/1e6);
         LOG_I(PHY,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
+	LOG_I(PHY,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
       }
 
       LOG_I(PHY,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());

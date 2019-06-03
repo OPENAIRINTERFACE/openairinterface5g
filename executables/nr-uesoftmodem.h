@@ -150,7 +150,7 @@
 /*                                            command line parameters common to eNodeB and UE                                                                                */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_PARAMS_DESC {  \
+#define CMDLINE_PARAMS_DESC_UE {  \
     {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&rf_config_file,    defstrval:NULL,                 TYPE_STRING,    sizeof(rf_config_file)}, \
     {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
     {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&phy_test,                     defintval:0,                    TYPE_INT,       0},                     \

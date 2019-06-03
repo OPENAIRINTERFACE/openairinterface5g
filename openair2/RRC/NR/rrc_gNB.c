@@ -219,7 +219,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
-  
+
 
   rrc_mac_config_req_gNB(rrc->module_id,
 			 rrc->carrier.ssb_SubcarrierOffset,

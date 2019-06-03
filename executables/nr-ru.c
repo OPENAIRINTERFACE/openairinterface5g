@@ -297,27 +297,27 @@ int connect_rau(RU_t *ru) {
 /* Southbound Fronthaul functions, RCC/RAU                   */
 
 // southbound IF5 fronthaul for 16-bit OAI format
-static inline void fh_if5_south_out(RU_t *ru) {
+static inline void fh_if5_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_RRH_GW_DL);
+  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
 }
 
 // southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru) {
+static inline void fh_if5_mobipass_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_MOBIPASS);
+  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_MOBIPASS);
 }
 
 // southbound IF4p5 fronthaul
-static inline void fh_if4p5_south_out(RU_t *ru) {
+static inline void fh_if4p5_south_out(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
   if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL)
-    send_IF4p5(ru,ru->proc.frame_tx, ru->proc.tti_tx, IF4p5_PDLFFT);
+    send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
@@ -564,9 +564,9 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot_tx );
   }
 
-  if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
+  if (ru->feptx_ofdm) ru->feptx_ofdm(ru,frame_tx,slot_tx);
 
-  if (ru->fh_south_out) ru->fh_south_out(ru);
+  if (ru->fh_south_out) ru->fh_south_out(ru,frame_tx,slot_tx,proc->timestamp_tx);
 }
 
 void fh_if5_north_out(RU_t *ru) {
@@ -657,7 +657,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     proc->timestamp_rx = 0;
   } else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_slot) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
+      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
@@ -669,7 +669,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   proc->timestamp_tx = proc->timestamp_rx+(sl_ahead*fp->samples_per_slot);
   proc->tti_tx  = (proc->tti_rx+sl_ahead)%fp->slots_per_frame;
   proc->frame_tx     = (proc->tti_rx>(fp->slots_per_frame-1-sl_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
+  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
         ru->idx,
         0,
         (unsigned long long int)proc->timestamp_rx,
@@ -707,16 +707,16 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru) {
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx];
   unsigned int txs;
   int i;
-  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->tti_tx),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_slot], fp->samples_per_slot * 4));
-  nr_subframe_t SF_type     = nr_slot_select(cfg,proc->tti_tx%fp->slots_per_frame);
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
+  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -742,23 +742,23 @@ void tx_rf(RU_t *ru) {
           flags = 4; // start of burst and end of burst (only one DL SF between two UL)
           sf_extension = ru->N_TA_offset<<1;
         } */
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
 
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_slot)-sf_extension];
+      txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                      timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
                                       txp,
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->tti_tx);
+          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
   }
@@ -1206,36 +1206,40 @@ static void *ru_thread_tx( void *param ) {
   char               filename[40];
   int                print_frame = 8;
   int                i = 0;
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  //CPU_SET(5, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //wait_sync("ru_thread_tx");
+  int                ret;
+  
+
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
 
   while (!oai_exit) {
     if (oai_exit) break;
 
-    LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
+    LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
 
+    AssertFatal((ret=pthread_mutex_lock(&proc->mutex_gNBs))==0,"mutex_lock return %d\n",ret);
+    int frame_tx=proc->frame_tx;
+    int tti_tx  =proc->tti_tx;
+    uint64_t timestamp_tx = proc->timestamp_tx;
+
+    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_gNBs))==0,"mutex_lock returns %d\n",ret);
+
     if (oai_exit) break;
 
-    //printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->tti_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
+    if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
 
     // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
 
     if(!emulate_rf) {
       // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,frame_tx,tti_tx,timestamp_tx);
 
       if (ru->fh_north_out) ru->fh_north_out(ru);
     } else {
@@ -1265,12 +1269,13 @@ static void *ru_thread_tx( void *param ) {
     }//else  emulate_rf
 
     release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_UE, proc->instance_cnt_gNBs);
 
     for(i = 0; i<ru->num_gNB; i++) {
       gNB       = ru->gNB_list[i];
       gNB_proc  = &gNB->proc;
       L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &gNB_proc->L1_proc_tx : &gNB_proc->L1_proc;
-      pthread_mutex_lock(&gNB_proc->mutex_RU_tx);
+      AssertFatal((ret=pthread_mutex_lock(&gNB_proc->mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
 
       for (int j=0; j<gNB->num_RU; j++) {
         if (ru == gNB->RU_list[j]) {
@@ -1283,20 +1288,21 @@ static void *ru_thread_tx( void *param ) {
       }
 
       if (gNB_proc->RU_mask_tx != (1<<gNB->num_RU)-1) {  // not all RUs have provided their information so return
-        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
-      } else { // all RUs TX are finished so send the ready signal to eNB processing
+        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
+      } else { // all RUs TX are finished so send the ready signal to gNB processing
         gNB_proc->RU_mask_tx = 0;
-        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
-        pthread_mutex_lock( &L1_proc->mutex_RUs);
-        L1_proc->instance_cnt_RUs = 0;
+        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
 
+        AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex_RUs_tx))==0,"mutex_lock returns %d\n",ret);
         // the thread can now be woken up
-        if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
-          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-          exit_fun( "ERROR pthread_cond_signal" );
-        }
+        if (L1_proc->instance_cnt_RUs==-1) {
+           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
+                       "ERROR pthread_cond_signal for gNB_L1_thread\n");
+        } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
+        L1_proc->instance_cnt_RUs = 0;
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
+        AssertFatal((ret=pthread_mutex_unlock(&L1_proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
 
-        pthread_mutex_unlock( &L1_proc->mutex_RUs );
       }
     }
   }
@@ -1320,6 +1326,8 @@ static void *ru_thread( void *param ) {
   ru_thread_status = 0;
   // set default return value
   sprintf(threadname,"ru_thread %d",ru->idx);
+
+
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
   if(emulate_rf) {
@@ -1430,23 +1438,23 @@ static void *ru_thread( void *param ) {
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
 
     // do RX front-end processing (frequency-shift, dft) if needed
-    if (ru->feprx) ru->feprx(ru);
+    if (ru->feprx) ru->feprx(ru,proc->tti_rx);
 
     // At this point, all information for subframe has been received on FH interface
 
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
 
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_eNB==0) {
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_gNB==0) {
       // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
+      if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
 
       // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
 
       if(!emulate_rf) {
         // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
 
         if (ru->fh_north_out) ru->fh_north_out(ru);
       } else {
@@ -1580,11 +1588,11 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
-extern void fep_full(RU_t *ru);
-extern void ru_fep_full_2thread(RU_t *ru);
-extern void nr_feptx_ofdm(RU_t *ru);
-extern void nr_feptx_ofdm_2thread(RU_t *ru);
-extern void feptx_prec(RU_t *ru);
+extern void fep_full(RU_t *ru,int slot);
+extern void ru_fep_full_2thread(RU_t *ru,int slot);
+extern void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
+extern void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
+extern void feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
 extern void init_fep_thread(RU_t *ru);
 extern void init_nr_feptx_thread(RU_t *ru);
 

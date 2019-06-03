@@ -393,7 +393,7 @@ static void get_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv=0;
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 

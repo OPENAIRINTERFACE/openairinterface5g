@@ -107,7 +107,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
                 nfapi_nr_config_request_t config) {
 
-  LOG_I(MAC, "TBS calculation\n");
+  LOG_D(MAC, "TBS calculation\n");
 
   nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
@@ -118,7 +118,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
   uint8_t Imcs = dlsch_rel15->mcs_idx;
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
-  LOG_I(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
+  LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t N_RE, Ninfo, Ninfo_prime, C, TBS=0, R;
   uint8_t table_idx, Qm, n, scale;
@@ -168,7 +168,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   dlsch_rel15->nb_re_dmrs = N_PRB_DMRS;
   dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
 
-  LOG_I(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d nb_symbols %d\n",
+  LOG_D(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d nb_symbols %d\n",
   TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale, dlsch_rel15->nb_mod_symbols);
 }
 
