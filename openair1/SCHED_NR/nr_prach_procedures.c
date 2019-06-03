@@ -124,8 +124,8 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int subframe) {
 	    gNB->preamble_list[0].preamble_rel8.timing_advance,
 	    gNB->preamble_list[0].preamble_rel8.preamble,
 	    gNB->preamble_list[0].preamble_rel8.rnti);
-      
-      oai_nfapi_nr_rach_ind(&gNB->UL_INFO.rach_ind);
+      AssertFatal(1==0,"shouldn't be here yet..\n"); 
+      //oai_nfapi_nr_rach_ind(&gNB->UL_INFO.rach_ind);
       
       gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles = 0;
     }
