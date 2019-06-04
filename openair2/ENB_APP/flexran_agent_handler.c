@@ -550,7 +550,6 @@ error :
     for (j = 0; j < report_config->nr_cc; j++) {
       if (cell_report[j] != NULL) {
         free(cell_report[j]);
-        cell_report[j] = NULL;
       }
     }
     free(cell_report);
