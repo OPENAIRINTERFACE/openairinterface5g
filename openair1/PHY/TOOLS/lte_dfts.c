@@ -38,7 +38,7 @@
 #include "tools_defs.h"
 #else
 #include "time_meas.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
@@ -2573,7 +2573,7 @@ const static int16_t tw64c[96] __attribute__((aligned(32))) = {
 #define simd256_q15_t __m256i
 #define shiftright_int16_simd256(a,shift) _mm256_srai_epi16(a,shift)
 #define set1_int16_simd256(a) _mm256_set1_epi16(a);
-#define mulhi_int16_simd256(a,b) _mm256_slli_epi16(_mm256_mulhi_epi16(a,b),1);
+#define mulhi_int16_simd256(a,b) _mm256_mulhrs_epi16(a,b); //_mm256_slli_epi16(_mm256_mulhi_epi16(a,b),1);
 #endif
 
 #elif defined(__arm__)
@@ -8927,9 +8927,9 @@ int main(int argc, char**argv)
 
   time_stats_t ts;
 #ifdef __AVX2__
-  simd256_q15_t x[4096],y[4096],tw0,tw1,tw2,tw3;
+  simd256_q15_t x[4096],x2[4096],y[4096],tw0,tw1,tw2,tw3;
 #else
-  simd_q15_t x[8192],y[8192],tw0,tw1,tw2,tw3;
+  simd_q15_t x[8192],x2[8192],y[8192],tw0,tw1,tw2,tw3;
 #endif
   int i;
   simd_q15_t *x128=(simd_q15_t*)x,*y128=(simd_q15_t*)y;
@@ -9416,8 +9416,8 @@ int main(int argc, char**argv)
   write_output("x3072.m","x3072",x,3072,1,1);
 
 
-  memset((void*)x,0,2048*sizeof(int32_t));
-  for (i=2;i<2402;i++) {
+  memset((void*)x,0,4096*sizeof(int32_t));
+  for (i=0;i<2400;i++) {
     if ((taus() & 1)==0)
       ((int16_t*)x)[i] = 364;
     else
@@ -9440,6 +9440,9 @@ int main(int argc, char**argv)
   printf("\n\n4096-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   LOG_M("y4096.m","y4096",y,4096,1,1);
   LOG_M("x4096.m","x4096",x,4096,1,1);
+
+  dft4096((int16_t *)y,(int16_t *)x2,1);
+  LOG_M("x4096_2.m","x4096_2",x2,4096,1,1);
 
 // NR 160Mhz, 434 PRB, 3/4 sampling
   memset((void*)x, 0, 6144*sizeof(int32_t));
