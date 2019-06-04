@@ -1099,10 +1099,15 @@ static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *
     // proc->instance_cnt_rxtx is -1
     abstime.tv_sec=now.tv_sec;
     abstime.tv_nsec = now.tv_nsec + time_ns;
-    if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime))==ETIMEDOUT) break; // this unlocks mutex_rxtx while waiting and then locks it again
+    if (abstime.tv_nsec >= 1000*1000*1000)
+    {
+      abstime.tv_nsec -= 1000*1000*1000;
+      abstime.tv_sec  += 1;
+    }
+    if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime)) == 0) break; // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
-  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
+  AssertFatal((rc = pthread_mutex_unlock(mutex)) == 0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
 
   return(0);
 }

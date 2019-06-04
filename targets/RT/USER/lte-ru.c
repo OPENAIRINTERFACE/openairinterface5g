@@ -862,7 +862,12 @@ void wakeup_slaves(RU_proc_t *proc) {
     // lock the FH mutex and make sure the thread is ready
     clock_gettime(CLOCK_REALTIME,&wait);
     wait.tv_nsec += time_ns;
-    AssertFatal((ret=pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait))==ETIMEDOUT,"ERROR pthread_mutex_lock for RU %d slave %d (IC %d)\n",proc->ru->idx,slave_proc->ru->idx,slave_proc->instance_cnt_FH);
+    if(wait.tv_nsec >= 1000*1000*1000)
+    {
+      wait.tv_nsec -= 1000*1000*1000;
+      wait.tv_sec  += 1;
+    }
+    AssertFatal((ret=pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait))==0,"ERROR pthread_mutex_lock for RU %d slave %d (IC %d)\n",proc->ru->idx,slave_proc->ru->idx,slave_proc->instance_cnt_FH);
 
     int cnt_slave            = ++slave_proc->instance_cnt_FH;
     slave_proc->frame_rx     = proc->frame_rx;
@@ -989,7 +994,12 @@ int wakeup_synch(RU_t *ru) {
   // lock the synch mutex and make sure the thread is readif (pthread_mutex_timedlock(&ru->proc.mutex_synch,&wait) != 0) {
   clock_gettime(CLOCK_REALTIME,&wait);
   wait.tv_nsec += time_ns;
-  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_synch,&wait))==ETIMEDOUT,"[RU] ERROR pthread_mutex_lock for RU synch thread (IC %d)\n", ru->proc.instance_cnt_synch );
+  if(wait.tv_nsec >= 1000*1000*1000)
+  {
+    wait.tv_nsec -= 1000*1000*1000;
+    wait.tv_sec  += 1;
+  }
+  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_synch,&wait)) == 0,"[RU] ERROR pthread_mutex_lock for RU synch thread (IC %d)\n", ru->proc.instance_cnt_synch );
 
   ++ru->proc.instance_cnt_synch;
 
@@ -1189,22 +1199,18 @@ void wakeup_L1s(RU_t *ru) {
 }
 inline int wakeup_prach_ru(RU_t *ru) {
   int ret;
-  /*struct timespec wait;
+  struct timespec wait;
   int time_ns = 5000000L;
 
   clock_gettime(CLOCK_REALTIME,&wait);
   wait.tv_nsec += time_ns;
-  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_prach,&wait))==ETIMEDOUT,"[RU] ERROR pthread_mutex_lock for RU prach thread (IC %d)\n", ru->proc.instance_cnt_prach);
-*/
-  struct timespec wait;
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
-  if (pthread_mutex_timedlock(&ru->proc.mutex_prach,&wait) !=0) {
-    LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for RU prach thread (IC %d)\n", ru->proc.instance_cnt_prach);
-    exit_fun( "error locking mutex_rxtx" );
-    return(-1);
+  if(wait.tv_nsec >= 1000*1000*1000)
+  {
+    wait.tv_nsec -= 1000*1000*1000;
+    wait.tv_sec  += 1;
   }
+  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_prach,&wait)) == 0,"[RU] ERROR pthread_mutex_lock for RU prach thread (IC %d)\n", ru->proc.instance_cnt_prach);
+
 
   if (ru->proc.instance_cnt_prach==-1) {
     ++ru->proc.instance_cnt_prach;
@@ -1235,7 +1241,12 @@ inline int wakeup_prach_ru_br(RU_t *ru) {
 
   clock_gettime(CLOCK_REALTIME,&wait);
   wait.tv_nsec += time_ns;
-  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_prach_br,&wait))==ETIMEDOUT,"[RU] ERROR pthread_mutex_lock for RU prach thread BR (IC %d)\n", ru->proc.instance_cnt_prach_br);
+  if(wait.tv_nsec >= 1000*1000*1000)
+  {
+    wait.tv_nsec -= 1000*1000*1000;
+    wait.tv_sec  += 1;
+  }
+  AssertFatal((ret=pthread_mutex_timedlock(&ru->proc.mutex_prach_br,&wait))==0,"[RU] ERROR pthread_mutex_lock for RU prach thread BR (IC %d)\n", ru->proc.instance_cnt_prach_br);
 
 
   if (ru->proc.instance_cnt_prach_br==-1) {
