@@ -540,7 +540,6 @@ error :
     for (j = 0; j < report_config->nr_ue; j++) {
       if (ue_report[j] != NULL) {
         free(ue_report[j]);
-        ue_report[j] = NULL;
       }
     }
     free(ue_report);
