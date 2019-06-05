@@ -594,19 +594,25 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 #endif
 
-  ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
-  ue->dl_indication.proc=proc;
-  //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
-  ue->rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-  ue->rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];
-  ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits = xtra_byte;
-  ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
-  ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
-  ue->rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
-  ue->rx_ind.number_pdus = 1;
+  nr_downlink_indication_t dl_indication;
+  fapi_nr_rx_indication_t rx_ind;
+    
+  dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
+  dl_indication.dci_ind = NULL; 
+  dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
+  dl_indication.module_id=proc->proc_id;
+  dl_indication.cc_id=proc->CC_id;
+
+  rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+  rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];
+  rx_ind.rx_indication_body[0].mib_pdu.additional_bits = xtra_byte;
+  rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
+  rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+  rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+  rx_ind.number_pdus = 1;
 
   if (ue->if_inst && ue->if_inst->dl_indication)
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    ue->if_inst->dl_indication(&dl_indication);
 
   return 0;
 }

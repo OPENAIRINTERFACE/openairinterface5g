@@ -49,10 +49,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
   uint8_t cc_id = scheduled_response->CC_id;
   uint32_t i;
   int slot = scheduled_response->slot;
-  uint8_t thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
 
   if(scheduled_response != NULL){
     // Note: we have to handle the thread IDs for this. To be revisited completely.
+    uint8_t thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
     NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
@@ -213,6 +213,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
+  fapi_nr_config_request_t nrUE_config = PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
+  
   if(phy_config != NULL){
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
       LOG_I(MAC,"[L1][IF module][PHY CONFIG]\n");
@@ -227,6 +229,8 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
       LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
       LOG_I(MAC,"-------------------------------\n");
 
+      memcpy(&nrUE_config.pbch_config,&phy_config->config_req.pbch_config,sizeof(fapi_nr_pbch_config_t));
+      
     }
         
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_COMMON){

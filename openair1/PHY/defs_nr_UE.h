@@ -918,18 +918,22 @@ typedef struct {
   NR_UE_COMMON    common_vars;
 
   nr_ue_if_module_t *if_inst;
-  nfapi_nr_config_request_t  nrUE_config;
 
-  nr_downlink_indication_t dl_indication;
-  nr_uplink_indication_t ul_indication;
+  //nfapi_nr_config_request_t  nrUE_config; <-- don't use config type for gNB!!!
+  fapi_nr_config_request_t nrUE_config;
+
+  // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
+  
+  //nr_downlink_indication_t dl_indication;
+  //nr_uplink_indication_t ul_indication;
   /// UE FAPI DCI request
-  nr_dcireq_t dcireq;
+  //nr_dcireq_t dcireq;
 
   // pointers to the next 2 strcutres are also included in dl_indictation
   /// UE FAPI indication for DLSCH reception
-  fapi_nr_rx_indication_t rx_ind;
+  //fapi_nr_rx_indication_t rx_ind;
   /// UE FAPI indication for DCI reception
-  fapi_nr_dci_indication_t dci_ind;
+  //fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
   uint8_t current_thread_id[40];
