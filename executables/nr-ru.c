@@ -303,13 +303,6 @@ static inline void fh_if5_south_out(RU_t *ru,int frame,int slot,uint64_t timesta
   send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
 }
 
-// southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
-  if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-
-  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_MOBIPASS);
-}
-
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
@@ -796,8 +789,6 @@ static void *ru_thread_asynch_rxtx( void *param ) {
 
     LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
 
-    // asynchronous receive from south (Mobipass)
-    if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
     else if (ru->fh_north_asynch_in) {
       if (nr_slot_select(&ru->gNB_list[0]->gNB_config,subframe)!=SF_UL)
@@ -2263,12 +2254,7 @@ void RCconfig_RU(void) {
           RC.ru[j]->if_south                     = REMOTE_IF4p5;
           RC.ru[j]->function                     = NGFI_RAU_IF4p5;
           RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if5_mobipass") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
-          RC.ru[j]->function                     = NGFI_RAU_IF5;
-          RC.ru[j]->if_timing                    = synch_to_other;
-          RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
-        }
+        } 
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
