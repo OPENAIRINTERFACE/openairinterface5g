@@ -2823,11 +2823,14 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
+
+  //Temporary hardcode the ssb_index instead of taking it from the previous Rx_indication which is wrong and
+  //it creates problem when we have multiple types of Rx_indications. Where should this value originate from?
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
-		   ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index,
+		   0,//ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.ssb_index, //Temporary for RFSIMULATOR
 		   SISO,
 		   ue->high_speed_flag);
 
@@ -3792,9 +3795,12 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
 
+
   harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
+
+
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -4019,6 +4025,27 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
 
       LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_tti_rx);
+
+      LOG_I(PHY, "harq_pid: %d, TBS expected dlsch0: %d, TBS expected dlsch1: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS, dlsch1->harq_processes[harq_pid]->TBS);
+      // fill dl_indication message
+      ue->dl_indication.module_id = ue->Mod_id;
+      ue->dl_indication.cc_id = ue->CC_id;
+      ue->dl_indication.gNB_index = eNB_id;
+      ue->dl_indication.frame = frame_rx;
+      ue->dl_indication.slot = nr_tti_rx;
+
+      ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
+      ue->dl_indication.proc=proc;
+
+      //ue->dl_indication.rx_ind = &dlsch1->harq_processes[harq_pid]->b; //no data, only dci for now
+      ue->rx_ind.rx_indication_body[ue->dl_indication.rx_ind->number_pdus].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+      ue->rx_ind.rx_indication_body[ue->dl_indication.rx_ind->number_pdus].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
+      ue->rx_ind.rx_indication_body[ue->dl_indication.rx_ind->number_pdus].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS>>3;
+      ue->rx_ind.number_pdus++;
+      ue->dl_indication.dci_ind = NULL; //&ue->dci_ind;
+      //  send to mac
+      if (ue->if_inst && ue->if_inst->dl_indication)
+      ue->if_inst->dl_indication(&ue->dl_indication);
     }
 
 
@@ -4508,10 +4535,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
     {
-      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
       uint8_t i_ssb = ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index;
       uint8_t n_hf = (((ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits)>>4)&0x01);
+
+      // Temporarily hardcode these values but probably the assignment based on the previous rx_ind is not the right way
+      i_ssb = 0;
+      n_hf = 0;
+
 
       for (int i=1; i<4; i++) {
 	nr_slot_fep(ue,
@@ -4535,6 +4567,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     
+	  LOG_I(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
 
 #if UE_TIMING_TRACE

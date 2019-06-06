@@ -402,7 +402,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     		    header_length_total);
 
     	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid,
-                                                         TBS, //not used
+                                                         TBS,
     						       (char *)&dlsch_buffer[sdu_length_total]
     #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                             ,0, 0
