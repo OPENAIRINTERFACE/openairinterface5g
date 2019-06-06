@@ -417,6 +417,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 uint32_t high_speed_flag) {
+
+  int Ns = proc->nr_tti_rx;
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
@@ -443,19 +445,21 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
-    symbol_offset=ue->symbol_offset;
+    symbol_offset=(ue->symbol_offset)%(frame_parms->symbols_per_slot);
   else
     symbol_offset=0;
 
+
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   for (symbol=1; symbol<4; symbol++) {
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF,
+
+    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF,
                     nr_ue_pbch_vars->dl_ch_estimates,
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,

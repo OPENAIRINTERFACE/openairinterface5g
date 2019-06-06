@@ -374,7 +374,7 @@ case $key in
         LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=8
         BUILD_OPTIONS="--phy_simulators"
-	VM_MEMORY=8192
+        VM_MEMORY=8192
         RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
         NBARGS=$[$NBARGS+256]
         ;;

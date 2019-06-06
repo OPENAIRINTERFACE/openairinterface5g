@@ -68,8 +68,8 @@
 #include "PHY/INIT/phy_init.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
-void feptx_ofdm(RU_t *ru);
-void feptx_prec(RU_t *ru);
+void feptx_ofdm(RU_t *ru,int frame,int subframe);
+void feptx_prec(RU_t *ru,int frame,int subframe);
 
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -1642,7 +1642,8 @@ int main(int argc, char **argv) {
       eNB->UE_stats[1].DL_pmi_single = 0;
   }
 
-  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
+  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc; //&eNB->proc.proc_rxtx[0]; //UE->current_thread_id[subframe]];
+  proc_eNB->frame_tx = 0;
 
   if (input_fd==NULL) {
     DL_req.dl_config_request_body.number_pdcch_ofdm_symbols = num_pdcch_symbols;
@@ -1847,8 +1848,8 @@ int main(int argc, char **argv) {
             start_meas(&eNB->ofdm_mod_stats);
             ru->proc.tti_tx=subframe;
             memcpy((void *)&ru->frame_parms,(void *)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-            feptx_prec(ru);
-            feptx_ofdm(ru);
+            feptx_prec(ru,proc_eNB->frame_tx,subframe);
+            feptx_ofdm(ru,proc_eNB->frame_tx,subframe);
             stop_meas(&eNB->ofdm_mod_stats);
             // generate next subframe for channel estimation
             DL_req.dl_config_request_body.number_dci=0;
@@ -1859,8 +1860,8 @@ int main(int argc, char **argv) {
             schedule_response(&sched_resp);
             phy_procedures_eNB_TX(eNB,proc_eNB,0);
             ru->proc.tti_tx=(subframe+1)%10;
-            feptx_prec(ru);
-            feptx_ofdm(ru);
+    	    feptx_prec(ru,proc_eNB->frame_tx,subframe+1);
+    	    feptx_ofdm(ru,proc_eNB->frame_tx,subframe+1);
             proc_eNB->frame_tx++;
             tx_lev = 0;
 

@@ -201,13 +201,14 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode, int n_frames)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
+  int is;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
@@ -222,10 +223,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
   nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
 
-  /*
-  write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
-  exit(-1);
-  */
+
 
   /*   Initial synchronisation
    *
@@ -242,26 +240,27 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
 
   cnt++;
   if (1){ // (cnt>100)
-    cnt =0;
+   cnt =0;
 
-  /* process pss search on received buffer */
-  sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
+   // initial sync performed on two successive frames, if pbch passes on first frame, no need to process second frame 
+   // only one frame is used for symulation tools
+   for(is=0; is<n_frames;is++) {
 
-  if (sync_pos >= fp->nb_prefix_samples)
-    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
-  else
-    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
+    /* process pss search on received buffer */
+    sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
 
-
-  //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
+    if (sync_pos >= fp->nb_prefix_samples)
+      ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
+    else
+      ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
 
 #ifdef DEBUG_INITIAL_SYNCH
-  LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
-  LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
+    LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
+    LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
 
-  // digital compensation of FFO for SSB symbols
-  if (ue->UE_fo_compensation){  
+    // digital compensation of FFO for SSB symbols
+    if (ue->UE_fo_compensation){  
 	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
 	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
@@ -276,11 +275,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
 		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
 	  }
 	}
-  }
+    }
 
-
-  /* check that SSS/PBCH block is continuous inside the received buffer */
-  if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
+    /* check that SSS/PBCH block is continuous inside the received buffer */
+    if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
     /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
     /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
@@ -291,33 +289,33 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
     /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
     /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
-    for(int i=0; i<4;i++)
-      nr_slot_fep(ue,
-	          i,
-	          0,
-	          ue->ssb_offset,
-	          0);
+      for(int i=0; i<4;i++)
+        nr_slot_fep(ue,
+	            i,
+	            0,
+	            ue->ssb_offset,
+	            0);
 
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"Calling sss detection (normal CP)\n");
+      LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
 
-    rx_sss_nr(ue,&metric_tdd_ncp,&phase_tdd_ncp);
+      rx_sss_nr(ue,&metric_tdd_ncp,&phase_tdd_ncp);
 
-    //FK: why do we need to do this again here?
-    //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
+      //FK: why do we need to do this again here?
+      //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
 
-    nr_gold_pbch(ue);
-    ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
+      nr_gold_pbch(ue);
+      ret = nr_pbch_detection(proc, ue,1,mode);  // start pbch detection at first symbol after pss
 
-    if (ret == 0) {
-      // sync at symbol ue->symbol_offset
-      // computing the offset wrt the beginning of the frame
-      sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-      ue->rx_offset = ue->ssb_offset - sync_pos_frame;
-    }   
+      if (ret == 0) {
+        // sync at symbol ue->symbol_offset
+        // computing the offset wrt the beginning of the frame
+        sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+      }   
 
-    nr_gold_pdcch(ue,0, 2);
+      nr_gold_pdcch(ue,0, 2);
     /*
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;
@@ -333,16 +331,20 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
               ue->common_vars.freq_offset );
     */
 
+
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, pbch %d\n",
-          fp->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,ret);
+      LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, pbch %d\n",
+            fp->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,ret);
 #endif
-  }
-  else {
+
+      }
+      else {
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d\n", sync_pos);
+       LOG_I(PHY,"TDD Normal prefix: SSS error condition: sync_pos %d\n", sync_pos);
 #endif
-  }
+      }
+      if (ret == 0) break;
+    }
   }
   else {
 	  ret = -1;
@@ -369,6 +371,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode)
     LOG_I(PHY, "[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
 #endif
     //#endif
+
+    ue->is_synchronized_on_frame = is; // to notify on which of the two frames sync was successful
 
     if (ue->UE_scan_carrier == 0) {
 

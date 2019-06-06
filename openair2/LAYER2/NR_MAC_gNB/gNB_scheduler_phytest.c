@@ -45,7 +45,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   uint8_t  CC_id;
 
   gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
-  //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
+  NR_COMMON_channels_t                *cc          = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
@@ -61,7 +61,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   int scs = get_dlscs(cfg);
   int slots_per_frame = get_spf(cfg);
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
+    LOG_D(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
 
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
@@ -115,7 +115,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdu_rel15->pucch_resource_indicator = 7;
     pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
 
-    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+    LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
@@ -145,7 +145,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
   nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
+  LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
   dlsch_pdu_rel15->start_symbol,
@@ -163,20 +163,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
   TX_req->segments[0].segment_length = 8;
+  TX_req->segments[0].segment_data   = &cc[CC_id].RAR_pdu.payload[0];
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
   nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
 
-  TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus+1];
-  TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
-  TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
-  TX_req->num_segments = 1;
-  TX_req->segments[0].segment_length = 8;
-  nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-  nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-  nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-  nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
     
   }
 }
@@ -206,7 +198,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   //int scs = get_dlscs(cfg);
   //int slots_per_frame = get_spf(cfg);
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    LOG_I(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
+    LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
 
     nfapi_nr_coreset_t* coreset = &nr_mac->coreset[CC_id][1];
     nfapi_nr_search_space_t* search_space = &nr_mac->search_space[CC_id][1];
@@ -259,7 +251,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     pdu_rel15->pucch_resource_indicator = 7;
     pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
 
-    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+    LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
@@ -273,7 +265,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
 
     //params_rel15->aggregation_level = 1;
-    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
+    LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
                 ss params : first symb %d, ss type %d\n",
                 params_rel15->rnti,
@@ -287,7 +279,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->first_symbol,
                 params_rel15->search_space_type);
   nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
+  LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
   dlsch_pdu_rel15->start_symbol,
@@ -301,20 +293,12 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   dl_req->number_pdu+=2;
 
   TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
-  TX_req->pdu_length = 6;
-  TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
-  TX_req->num_segments = 1;
-  TX_req->segments[0].segment_length = 8;
-  nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-  nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-  nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-  nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-
-  TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus+1];
   TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
-  TX_req->segments[0].segment_length = 8;
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
+
+  TX_req->segments[0].segment_length = dlsch_pdu_rel15->transport_block_size+2;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;

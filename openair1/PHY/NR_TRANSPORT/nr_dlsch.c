@@ -196,6 +196,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
+                          int     frame,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config) {
@@ -212,7 +213,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t encoded_length = nb_symbols*Qm;
 
   /// CRC, coding, interleaving and rate matching
-  nr_dlsch_encoding(harq->pdu, slot, &dlsch, &frame_parms);
+  AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
+  nr_dlsch_encoding(harq->pdu, frame,slot, &dlsch, &frame_parms);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
 for (int i=0; i<harq->B>>7; i++) {

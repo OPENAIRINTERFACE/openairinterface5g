@@ -710,7 +710,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t *const  ctxt_pP) 
       ctxt_pP->subframe,
       ctxt_pP->module_id);
 
-    for (dst_id = 0; dst_id<MAX_MOBILES_PER_ENB; dst_id++) {
+    for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
       ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
     }
   }

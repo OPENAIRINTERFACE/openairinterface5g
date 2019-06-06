@@ -2823,6 +2823,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
+
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
@@ -2832,6 +2833,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
 		   ue->high_speed_flag);
 
   if (ret==0) {
+
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 
 
@@ -4330,21 +4332,45 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 
+int is_pbch_in_slot(fapi_nr_pbch_config_t pbch_config, int frame, int slot, int periodicity, uint16_t slots_per_frame)  {
 
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
-						   UE_nr_rxtx_proc_t *proc,
-						   uint8_t eNB_id,
-						   uint8_t do_pdcch_flag,
-						   runmode_t mode)
-{
+  int ssb_slot_decoded = (pbch_config.ssb_index)/2;
+
+  if (periodicity == 5) {  
+    // check for pbch in corresponding slot each half frame
+    if (pbch_config.half_frame_bit)
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - slots_per_frame/2);
+    else
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + slots_per_frame/2);
+  }
+  else {
+    // if the current frame is supposed to contain ssb
+    if (!((frame-(pbch_config.system_frame_number))%(periodicity/10)))
+      return(slot == ssb_slot_decoded);
+    else
+      return 0;
+  }
+}
+
+
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
+			   uint8_t do_pdcch_flag,runmode_t mode,
+			   fapi_nr_pbch_config_t pbch_config) {
+
+
+
+  int l,l2;
+  int pilot1;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
+  int slot_pbch;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
   uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
   NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
+  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity; // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
   uint8_t dci_cnt = 0;
   
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
@@ -4510,18 +4536,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
+  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
 
-
-  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
+  // looking for pbch only in slot where it is supposed to be
+  if ((ue->decode_MIB == 1) && slot_pbch)
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-      uint8_t i_ssb = ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index;
-      uint8_t n_hf = (((ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits)>>4)&0x01);
-
       for (int i=1; i<4; i++) {
+
 	nr_slot_fep(ue,
-		    (ue->symbol_offset+i), //mu=1 case B
+		    (ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),
 		    nr_tti_rx,
 		    0,
 		    0);
@@ -4529,7 +4554,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,0,ue->symbol_offset+i,i-1,i_ssb,n_hf);
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config.ssb_index)&7,pbch_config.half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

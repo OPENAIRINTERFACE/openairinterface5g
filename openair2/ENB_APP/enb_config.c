@@ -57,7 +57,6 @@
 #include "proto_agent.h"
 #define RRC_INACTIVITY_THRESH 0
 
-extern uint16_t sf_ahead;
 extern void set_parallel_conf(char *parallel_conf);
 extern void set_worker_conf(char *worker_conf);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
@@ -141,7 +140,6 @@ void RCconfig_L1(void) {
       }
 
       if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
-        sf_ahead = 4; // Need 4 subframe gap between RX and TX
       } else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
         RC.eNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
         RC.eNB[j][0]->eth_params_n.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
@@ -151,7 +149,6 @@ void RCconfig_L1(void) {
         RC.eNB[j][0]->eth_params_n.my_portd                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
         RC.eNB[j][0]->eth_params_n.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
         RC.eNB[j][0]->eth_params_n.transp_preference        = ETH_UDP_MODE;
-        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
         RC.nb_macrlc_inst = 1;  // This is used by mac_top_init_eNB()
         // This is used by init_eNB_afterRU()
         RC.nb_CC = (int *)malloc((1+RC.nb_inst)*sizeof(int));
@@ -252,7 +249,6 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
         RC.mac[j]->eth_params_s.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTD_IDX].iptr);
         RC.mac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.mac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
-        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
         LOG_I(ENB_APP,"**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.mac[j]->eth_params_s.my_addr, RC.mac[j]->eth_params_s.my_portc);
         LOG_I(ENB_APP,"**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);

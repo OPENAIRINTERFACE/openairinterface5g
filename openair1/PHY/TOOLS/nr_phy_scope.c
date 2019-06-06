@@ -159,13 +159,13 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
   int16_t **rxsig_t;
-  int16_t **chest_t;
-  int16_t **chest_f;
-  int16_t *pusch_llr;
-  int32_t *pusch_comp;
-  int32_t *pucch1_comp;
-  int32_t *pucch1_thres;
-  int32_t *pucch1ab_comp;
+  int16_t **chest_t=NULL;
+  int16_t **chest_f=NULL;
+  int16_t *pusch_llr=NULL;
+  int32_t *pusch_comp=NULL;
+  int32_t *pucch1_comp=NULL;
+  int32_t *pucch1_thres=NULL;
+  int32_t *pucch1ab_comp=NULL;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
@@ -199,13 +199,14 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
 
   rxsig_t = (int16_t**) phy_vars_gnb->common_vars.rxdata;
   //chest_t = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
-  chest_t = (int16_t**) phy_vars_gnb->srs_vars[UE_id].srs_ch_estimates;
+  /*  chest_t = (int16_t**) phy_vars_gnb->srs_vars[UE_id].srs_ch_estimates;
   chest_f = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates;
   pusch_llr = (int16_t*) phy_vars_gnb->pusch_vars[UE_id]->llr;
   pusch_comp = (int32_t*) phy_vars_gnb->pusch_vars[UE_id]->rxdataF_comp;
   pucch1_comp = (int32_t*) phy_vars_gnb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t*) phy_vars_gnb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int32_t*) phy_vars_gnb->pucch1ab_stats[UE_id];
+  */
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -861,13 +862,13 @@ void reset_stats_gNB(FL_OBJECT *button, long arg) {
         phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
         phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
         phy_vars_gNB->UE_stats[i].dlsch_trials[k][j]=0;
-            }*/
+            }
       phy_vars_gNB->UE_stats[i].dlsch_l2_errors[k]=0;
       phy_vars_gNB->UE_stats[i].ulsch_errors[k]=0;
       phy_vars_gNB->UE_stats[i].ulsch_consecutive_errors=0;
       phy_vars_gNB->UE_stats[i].dlsch_sliding_cnt=0;
       phy_vars_gNB->UE_stats[i].dlsch_NAK_round0=0;
-      phy_vars_gNB->UE_stats[i].dlsch_mcs_offset=0;
+      phy_vars_gNB->UE_stats[i].dlsch_mcs_offset=0;*/
     }
   }
 }

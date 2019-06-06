@@ -130,6 +130,8 @@ typedef struct RU_proc_t_s {
   int tti_rx;
   /// subframe (LTE) / slot (NR) to act upon for transmission
   int tti_tx;
+  /// slot to pass to feptx worker thread
+  int slot_feptx;
   /// subframe to act upon for reception of prach
   int subframe_prach;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -399,17 +401,17 @@ typedef struct RU_t_s{
   /// if prach processing is to be performed in RU
   int do_prach;
   /// function pointer to synchronous RX fronthaul function (RRU,3GPP_eNB/3GPP_gNB)
-  void (*fh_south_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  void (*fh_south_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to synchronous TX fronthaul function
-  void (*fh_south_out)(struct RU_t_s *ru);
+  void (*fh_south_out)(struct RU_t_s *ru, int frame_tx, int tti_tx, uint64_t timestamp_tx);
   /// function pointer to synchronous RX fronthaul function (RRU)
-  void (*fh_north_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  void (*fh_north_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to synchronous RX fronthaul function (RRU)
   void (*fh_north_out)(struct RU_t_s *ru);
   /// function pointer to asynchronous fronthaul interface
-  void (*fh_north_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  void (*fh_north_asynch_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to asynchronous fronthaul interface
-  void (*fh_south_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
+  void (*fh_south_asynch_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to initialization function for radio interface
   int (*start_rf)(struct RU_t_s *ru);
   /// function pointer to release function for radio interface
@@ -418,11 +420,11 @@ typedef struct RU_t_s{
   int (*start_if)(struct RU_t_s *ru, struct PHY_VARS_eNB_s *eNB);
   int (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
   /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
-  void (*feprx)(struct RU_t_s *ru);
+  void (*feprx)(struct RU_t_s *ru, int subframe);
   /// function pointer to TX front-end processing routine (IDFTs and prefix removal or NULL)
-  void (*feptx_ofdm)(struct RU_t_s *ru);
+  void (*feptx_ofdm)(struct RU_t_s *ru, int frame_tx, int tti_tx);
   /// function pointer to TX front-end processing routine (PRECODING)
-  void (*feptx_prec)(struct RU_t_s *ru);
+  void (*feptx_prec)(struct RU_t_s *ru, int frame_tx, int tti_tx);
   /// function pointer to wakeup routine in lte-enb/nr-gnb.
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
   int (*nr_wakeup_rxtx)(struct PHY_VARS_gNB_s *gNB, struct RU_t_s *ru);

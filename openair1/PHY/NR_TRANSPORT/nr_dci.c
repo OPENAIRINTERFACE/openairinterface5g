@@ -187,12 +187,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   cset_start_symb = pdcch_params.first_symbol;
   cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
-  LOG_I(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+  LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
   // DMRS length is per OFDM symbol
   uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
                          (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
   uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-  LOG_I(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
+  LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
 
   /// DMRS QPSK modulation
   /*There is a need to shift from which index the pregenerated DMRS sequence is used
@@ -202,7 +202,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
 
     dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
-    LOG_I(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
+    LOG_D(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
   }
 
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {

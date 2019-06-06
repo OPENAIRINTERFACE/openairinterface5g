@@ -83,10 +83,10 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 
-extern void fep_full(RU_t *ru);
-extern void ru_fep_full_2thread(RU_t *ru);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+extern void fep_full(RU_t *ru, int subframe);
+extern void ru_fep_full_2thread(RU_t *ru, int subframe);
+//extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+//extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 
 nfapi_dl_config_request_t DL_req;
 nfapi_ul_config_request_t UL_req;
@@ -1145,7 +1145,7 @@ int main(int argc, char **argv) {
 
           start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
-          ru->feprx(ru);
+          ru->feprx(ru,subframe);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
           stop_meas(&eNB->phy_proc_rx);
 

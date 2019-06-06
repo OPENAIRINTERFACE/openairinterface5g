@@ -292,7 +292,7 @@ typedef struct {
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
+  /// - second index: sample [0..2*FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
   NR_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
@@ -880,8 +880,10 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE should enable estimation and compensation of frequency offset
   int UE_fo_compensation;
-  /// \brief Indicator that UE is synchronized to an eNB
+  /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
+  /// \brief Indicates on which frame is synchronized in a two frame synchronization
+  int is_synchronized_on_frame;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -1038,6 +1040,7 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  uint8_t	   ssb_periodicity;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
