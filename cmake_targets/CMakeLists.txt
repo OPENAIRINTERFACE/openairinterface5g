@@ -619,8 +619,6 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
-add_library(rfsimulator MODULE ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c)
-
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
@@ -2126,6 +2124,12 @@ add_library(gnbScope MODULE
   ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
   )
 target_link_libraries(gnbScope forms)
+
+add_library(rfsimulator MODULE 
+	${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
+	)
+target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
+
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 

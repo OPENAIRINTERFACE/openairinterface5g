@@ -3,7 +3,7 @@
   copyleft: OpenAirInterface Software Alliance and it's licence
 */
 
-/* 
+/*
  * Open issues and limitations
  * The read and write should be called in the same thread, that is not new USRP UHD design
  * When the opposite side switch from passive reading to active R+Write, the synchro is not fully deterministic
@@ -27,14 +27,23 @@
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
 #include "openair1/PHY/defs_UE.h"
+#include <openair1/SIMULATION/TOOLS/sim.h>
 
 #define PORT 4043 //TCP port for this simulator
 #define CirSize 3072000 // 100ms is enough
-#define sample_t uint32_t // 2*16 bits complex number
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
-#define sample_t uint32_t //2*16 bits complex number
+#define MAX_SIMULATION_CONNECTED_NODES 5
+#define GENERATE_CHANNEL 10 //each frame in DL
+
+// Fixme: datamodel, external variables in .h files, ...
+#include <common/ran_context.h>
+extern double snr_dB;
+extern RAN_CONTEXT_t RC;
+//
+
+pthread_mutex_t Sockmutex;
 
 typedef struct buffer_s {
   int conn_sock;
@@ -46,6 +55,7 @@ typedef struct buffer_s {
   uint64_t remainToTransfer;
   char *circularBufEnd;
   sample_t *circularBuf;
+  channel_desc_t *channel_model;
 } buffer_t;
 
 typedef struct {
@@ -55,7 +65,92 @@ typedef struct {
   char *ip;
   int saveIQfile;
   buffer_t buf[FD_SETSIZE];
+  int rx_num_channels;
+  int tx_num_channels;
+  double sample_rate;
+  double tx_bw;
 } rfsimulator_state_t;
+
+/*
+  Legacy study:
+  The parameters are:
+  gain&loss (decay, signal power, ...)
+  either a fixed gain in dB, a target power in dBm or ACG (automatic control gain) to a target average
+  => don't redo the AGC, as it was used in UE case, that must have a AGC inside the UE
+  will be better to handle the "set_gain()" called by UE to apply it's gain (enable test of UE power loop)
+  lin_amp = pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas);
+  a lot of operations in legacy, grouped in one simulation signal decay: txgain*decay*rxgain
+
+  multi_path (auto convolution, ISI, ...)
+  either we regenerate the channel (call again random_channel(desc,0)), or we keep it over subframes
+  legacy: we regenerate each sub frame in UL, and each frame only in DL
+*/
+void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+                 int rxAnt,
+                 channel_desc_t *channelDesc,
+                 int nbSamples,
+                 uint64_t TS
+               ) {
+  // channelDesc->path_loss_dB should contain the total path gain
+  // so, in actual RF: tx gain + path loss + rx gain (+antenna gain, ...)
+  // UE and NB gain control to be added
+  // Fixme: not sure when it is "volts" so dB is 20*log10(...) or "power", so dB is 10*log10(...)
+  const double pathLossLinear = pow(10,channelDesc->path_loss_dB/20.0);
+  // Energy in one sample to calibrate input noise
+  //Fixme: modified the N0W computation, not understand the origin value
+  const double KT=1.38e-23*290; //Boltzman*temperature
+  // sampling rate is linked to acquisition band (the input pass band filter)
+  const double noise_figure_watt = KT*channelDesc->sampling_rate;
+  // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
+  // the parameter "-s" is declared as SNR, but the input power is not well defined
+  // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
+  const double rxGain= 132.24 - snr_dB; 
+  const double noise_per_sample = sqrt(0.5*noise_figure_watt) * pow(10,rxGain/20);
+  
+  // Fixme: we don't fill the offset length samples at begining ?
+  // anyway, in today code, channel_offset=0
+  const int dd = abs(channelDesc->channel_offset);
+  const int nbTx=channelDesc->nb_tx;
+
+  for (int i=0; i<((int)nbSamples-dd); i++) {
+    struct complex16 *out_ptr=after_channel_sig+dd+i;
+    struct complex rx_tmp= {0};
+
+    for (int txAnt=0; txAnt < nbTx; txAnt++) {
+      const struct complex *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
+
+      //const struct complex *channelModelEnd=channelModel+channelDesc->channel_length;
+      for (int l = 0; l<(int)channelDesc->channel_length; l++) {
+        // let's assume TS+i >= l
+        // fixme: the rfsimulator current structure is interleaved antennas
+        // this has been designed to not have to wait a full block transmission
+        // but it is not very usefull
+        // it would be better to split out each antenna in a separate flow
+        // that will allow to mix ru antennas freely
+        struct complex16 tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
+        rx_tmp.x += tx16.r * channelModel[l].x - tx16.i * channelModel[l].y;
+        rx_tmp.y += tx16.i * channelModel[l].x + tx16.r * channelModel[l].y;
+      } //l
+    }
+
+    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
+    /*
+      printf("in: %d, out %d= %f*%f + %f*%f\n",
+      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x, 
+      pathLossLinear, noise_per_sample,gaussdouble(0.0,1.0));
+    */
+    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
+    out_ptr++;
+  }
+  
+  if ( (TS*nbTx)%CirSize+nbSamples <= CirSize )
+    // Cast to a wrong type for compatibility !
+    LOG_I(HW,"Input power %f, output power: %f, channel path loss %f, noise coeff: %f \n",
+	  10*log10((double)signal_energy((int32_t*)&input_sig[(TS*nbTx)%CirSize], nbSamples)),
+	  10*log10((double)signal_energy((int32_t*)after_channel_sig, nbSamples)),
+	  channelDesc->path_loss_dB,
+	  10*log10(noise_per_sample));
+}
 
 void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   buffer_t *ptr=&bridge->buf[sock];
@@ -73,12 +168,35 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ev.events = EPOLLIN | EPOLLRDHUP;
   ev.data.fd = sock;
   AssertFatal(epoll_ctl(bridge->epollfd, EPOLL_CTL_ADD,  sock, &ev) != -1, "");
+  // create channel simulation model for this mode reception
+  // snr_dB is pure global, coming from configuration paramter "-s"
+  // Fixme: referenceSignalPower should come from the right place
+  // but the datamodel is inconsistant
+  // legacy: RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower
+  // (must not come from ru[]->frame_parms as it doesn't belong to ru !!!)
+  // Legacy sets it as:
+  // ptr->channel_model->path_loss_dB = -132.24 + snr_dB - RC.ru[0]->frame_parms->pdsch_config_common.referenceSignalPower;
+  // we use directly the paramter passed on the command line ("-s")
+  // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
+  // Legacy changes directlty the variable channel_model->path_loss_dB place to place
+  // while calling new_channel_desc_scm() with path losses = 0
+  ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
+                                          AWGN,
+                                          bridge->sample_rate,
+                                          bridge->tx_bw,
+                                          0.0, // forgetting_factor
+                                          0, // maybe used for TA
+                                          0); // path_loss in dB
+  random_channel(ptr->channel_model,false);
 }
 
 void removeCirBuf(rfsimulator_state_t *bridge, int sock) {
   AssertFatal( epoll_ctl(bridge->epollfd, EPOLL_CTL_DEL,  sock, NULL) != -1, "");
   close(sock);
   free(bridge->buf[sock].circularBuf);
+  // Fixme: no free_channel_desc_scm(bridge->buf[sock].channel_model) implemented
+  // a lot of mem leaks
+  free(bridge->buf[sock].channel_model);
   memset(&bridge->buf[sock], 0, sizeof(buffer_t));
   bridge->buf[sock].conn_sock=-1;
 }
@@ -126,8 +244,7 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
   }
 
   AssertFatal(fd>=0 && _buf && count >0 && t,
-	      "Bug: %d/%p/%zd/%p", fd, _buf, count, t);
-
+              "Bug: %d/%p/%zd/%p", fd, _buf, count, t);
   char *buf = _buf;
   ssize_t l;
   setblocking(fd, notBlocking);
@@ -140,8 +257,8 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
         continue;
 
       if(errno==EAGAIN) {
-	// The opposite side is saturated
-	// we read incoming sockets meawhile waiting
+        // The opposite side is saturated
+        // we read incoming sockets meawhile waiting
         flushInput(t, 5);
         continue;
       } else
@@ -234,12 +351,15 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
         fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
     }
   }
+
   lastW=timestamp;
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   // Let's verify we don't have incoming data
   // This is mandatory when the opposite side don't transmit
+  // This is mandatory when the opposite side don't transmit
   flushInput(t, 0);
+  pthread_mutex_unlock(&Sockmutex);
   return nsamps;
 }
 
@@ -250,9 +370,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
   int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {
-    if ( errno==EINTR || errno==EAGAIN )
+    if ( errno==EINTR || errno==EAGAIN ) {
       return false;
-    else
+    } else
       AssertFatal(false,"error in epoll_wait\n");
   }
 
@@ -314,27 +434,31 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
         if ( b->lastReceivedTS != b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 
-          for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ )
-            for (int a=0; a < nbAnt; a++)
-              b->circularBuf[(index*nbAnt+a)%CirSize]=0;
+          for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
+            for (int a=0; a < nbAnt; a++) {
+              b->circularBuf[(index*nbAnt+a)%CirSize].r=0;
+              b->circularBuf[(index*nbAnt+a)%CirSize].i=0;
+            }
+          }
 
           LOG_W(HW,"gap of: %ld in reception\n", b->th.timestamp-b->lastReceivedTS );
         }
 
         b->lastReceivedTS=b->th.timestamp;
-	AssertFatal(lastW == -1 || ( abs((double)lastW-b->lastReceivedTS) < (double)CirSize),
-	  "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", lastW, b->lastReceivedTS);
+        AssertFatal(lastW == -1 || ( abs((double)lastW-b->lastReceivedTS) < (double)CirSize),
+                    "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", lastW, b->lastReceivedTS);
         b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
       if ( b->headerMode==false ) {
-	LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
+        LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
         b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
-	// First block in UE, resync with the eNB current TS
-	if ( t->nextTimestamp == 0 )
-	  t->nextTimestamp=b->lastReceivedTS-b->th.size;
-	
+
+        // First block in UE, resync with the eNB current TS
+        if ( t->nextTimestamp == 0 )
+          t->nextTimestamp=b->lastReceivedTS-b->th.size;
+
         if ( b->remainToTransfer==0) {
           LOG_D(HW,"Completed block reception: %ld\n", b->lastReceivedTS);
           b->headerMode=true;
@@ -351,10 +475,10 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
 
 int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, void **samplesVoid, int nsamps, int nbAnt) {
   if (nbAnt != 1) {
-    LOG_E(HW, "rfsimulator: only 1 antenna tested\n");
-    exit(1);
+    LOG_W(HW, "rfsimulator: only 1 antenna tested\n");
   }
 
+  pthread_mutex_lock(&Sockmutex);
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
   // deliver data from received data
@@ -374,6 +498,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       t->nextTimestamp+=nsamps;
       LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
       *ptimestamp = t->nextTimestamp-nsamps;
+      pthread_mutex_unlock(&Sockmutex);
       return nsamps;
     }
   } else {
@@ -384,11 +509,11 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
       for ( int sock=0; sock<FD_SETSIZE; sock++) {
         if ( t->buf[sock].circularBuf && t->buf[sock].alreadyRead )
-	  if ( t->buf[sock].lastReceivedTS == 0 ||
-	       (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
-	    have_to_wait=true;
-	    break;
-	  }
+          if ( t->buf[sock].lastReceivedTS == 0 ||
+               (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
+            have_to_wait=true;
+            break;
+          }
       }
 
       if (have_to_wait)
@@ -404,17 +529,26 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
   for (int a=0; a<nbAnt; a++)
     memset(samplesVoid[a],0,sampleToByte(nsamps,1));
 
-  // Add all input signal in the output buffer
+  // Add all input nodes signal in the output buffer
   for (int sock=0; sock<FD_SETSIZE; sock++) {
     buffer_t *ptr=&t->buf[sock];
 
     if ( ptr->circularBuf && ptr->alreadyRead ) {
-      for (int a=0; a<nbAnt; a++) {
-        sample_t *out=(sample_t *)samplesVoid[a];
+      bool reGenerateChannel=false;
 
-        for ( int i=0; i < nsamps; i++ )
-          out[i]+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize]<<1;
-      }
+      //fixme: when do we regenerate
+      // it seems legacy behavior is: never in UL, each frame in DL
+      if (reGenerateChannel)
+        random_channel(ptr->channel_model,0);
+
+      for (int a=0; a<nbAnt; a++) 
+	rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+                    a,
+                    ptr->channel_model,
+                    nsamps,
+                    t->nextTimestamp
+                  );
+      
     }
   }
 
@@ -424,10 +558,9 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         nsamps,
         *ptimestamp, t->nextTimestamp,
         signal_energy(samplesVoid[0], nsamps));
+  pthread_mutex_unlock(&Sockmutex);
   return nsamps;
 }
-
-
 int rfsimulator_request(openair0_device *device, void *msg, ssize_t msg_len) {
   abort();
   return 0;
@@ -452,11 +585,10 @@ int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cf
 int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
-
-
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   //set_log(HW,OAILOG_DEBUG);
+  set_log(TMR,OAILOG_DEBUG);
   //set_log(PHY,OAILOG_DEBUG);
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
@@ -465,12 +597,14 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     exit(1);
   }
 
+  pthread_mutex_init(&Sockmutex, NULL);
+
   if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
        strncasecmp(rfsimulator->ip,"server",3) == 0 )
     rfsimulator->typeStamp = ENB_MAGICDL_FDD;
   else
     rfsimulator->typeStamp = UE_MAGICDL_FDD;
-  
+
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL_FDD ? "(eg)NB" : "UE");
   char *saveF;
 
@@ -504,5 +638,12 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     rfsimulator->buf[i].conn_sock=-1;
 
   AssertFatal((rfsimulator->epollfd = epoll_create1(0)) != -1,"");
+  // initialize channel simulation
+  rfsimulator->tx_num_channels=openair0_cfg->tx_num_channels;
+  rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
+  rfsimulator->sample_rate=openair0_cfg->sample_rate;
+  rfsimulator->tx_bw=openair0_cfg->tx_bw;
+  randominit(0);
+  set_taus_seed(0);
   return 0;
 }
