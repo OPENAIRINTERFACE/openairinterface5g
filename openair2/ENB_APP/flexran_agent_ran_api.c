@@ -2119,6 +2119,34 @@ int flexran_get_rrc_num_adj_cells(mid_t mod_id) {
   return RC.rrc[mod_id]->num_neigh_cells;
 }
 
+int flexran_agent_rrc_gtp_num_e_rab(mid_t mod_id, rnti_t rnti) {
+  if (!rrc_is_present(mod_id)) return 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return 0;
+  return ue_context_p->ue_context.setup_e_rabs;
+}
+
+int flexran_agent_rrc_gtp_get_e_rab_id(mid_t mod_id, rnti_t rnti, int index) {
+  if (!rrc_is_present(mod_id)) return 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return 0;
+  return ue_context_p->ue_context.e_rab[index].param.e_rab_id;
+}
+
+int flexran_agent_rrc_gtp_get_teid_enb(mid_t mod_id, rnti_t rnti, int index) {
+  if (!rrc_is_present(mod_id)) return 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return 0;
+  return ue_context_p->ue_context.enb_gtp_teid[index];
+}
+
+int flexran_agent_rrc_gtp_get_teid_sgw(mid_t mod_id, rnti_t rnti, int index) {
+  if (!rrc_is_present(mod_id)) return 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+  if (!ue_context_p) return 0;
+  return ue_context_p->ue_context.e_rab[index].param.gtp_teid;
+}
+
 /**************************** SLICING ****************************/
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id)
 {

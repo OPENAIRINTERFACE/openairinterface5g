@@ -573,6 +573,79 @@ int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
   return 0;
 }
 
+int flexran_agent_rrc_gtp_stats_reply(mid_t mod_id,
+      const report_config_t *report_config,
+      Protocol__FlexUeStatsReport **ue_report,
+      Protocol__FlexCellStatsReport **cell_report) {
+  /* This function fills the GTP part of the statistics. The necessary
+   * information is, for our purposes, completely maintained in the RRC layer.
+   * It would be possible to add a GTP module that handles this, though. */
+  if (report_config->nr_ue > 0) {
+    rnti_t rntis[report_config->nr_ue];
+    flexran_get_rrc_rnti_list(mod_id, rntis, report_config->nr_ue);
+    for (int i = 0; i < report_config->nr_ue; i++) {
+      const rnti_t rnti = rntis[i];
+
+      /* Check flag for creation of buffer status report */
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_GTP_STATS) {
+
+        /* get number of rabs for this UE */
+        const int num_e_rab = flexran_agent_rrc_gtp_num_e_rab(mod_id, rnti);
+        Protocol__FlexGtpStats **gtp_stats = NULL;
+        if (num_e_rab > 0) {
+          gtp_stats = calloc(num_e_rab, sizeof(Protocol__FlexGtpStats *));
+          if (!gtp_stats) goto error;
+          for (int r = 0; r < num_e_rab; ++r) {
+            gtp_stats[r] = malloc(sizeof(Protocol__FlexGtpStats));
+            if (!gtp_stats[r]) goto error;
+            protocol__flex_gtp_stats__init(gtp_stats[r]);
+            gtp_stats[r]->e_rab_id = flexran_agent_rrc_gtp_get_e_rab_id(mod_id, rnti, r);
+            gtp_stats[r]->has_e_rab_id = 1;
+            gtp_stats[r]->teid_enb = flexran_agent_rrc_gtp_get_teid_enb(mod_id, rnti, r);
+            gtp_stats[r]->has_teid_enb = 1;
+            gtp_stats[r]->addr_enb = NULL;
+            gtp_stats[r]->teid_sgw = flexran_agent_rrc_gtp_get_teid_sgw(mod_id, rnti, r);
+            gtp_stats[r]->has_teid_sgw = 1;
+            gtp_stats[r]->addr_sgw = NULL;
+          }
+        }
+        ue_report[i]->n_gtp_stats = num_e_rab;
+        ue_report[i]->gtp_stats = gtp_stats;
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_GTP_STATS;
+      }
+    }
+  }
+  return 0;
+error:
+  for (int i = 0; i < report_config->nr_ue; i++) {
+    if (!ue_report[i]->gtp_stats) continue;
+    for (int r = 0; r < ue_report[i]->n_gtp_stats; ++r) {
+      if (ue_report[i]->gtp_stats[r]) {
+        free(ue_report[i]->gtp_stats[r]);
+        ue_report[i]->gtp_stats[r] = NULL;
+      }
+    }
+    free(ue_report[i]->gtp_stats);
+    ue_report[i]->gtp_stats = NULL;
+  }
+  return -1;
+}
+
+int flexran_agent_rrc_gtp_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
+  for (int i = 0; i < reply->n_ue_report; ++i) {
+    if (!reply->ue_report[i]->n_gtp_stats == 0) continue;
+
+    for (int r = 0; r < reply->ue_report[i]->n_gtp_stats; ++r) {
+      //if (reply->ue_report[i]->gtp_stats[r]->addr_enb)
+      //  free(reply->ue_report[i]->gtp_stats[r]->addr_enb);
+      //if (reply->ue_report[i]->gtp_stats[r]->addr_sgw)
+      //  free(reply->ue_report[i]->gtp_stats[r]->addr_sgw);
+      free(reply->ue_report[i]->gtp_stats[r]);
+    }
+  }
+  return 0;
+}
+
 void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
     Protocol__FlexUeConfig *ue_conf)
 {

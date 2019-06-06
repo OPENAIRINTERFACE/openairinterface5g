@@ -638,6 +638,19 @@ int flexran_set_x2_ho_net_control(mid_t mod_id, int x2_ho_net_control);
 
 /* Get number of adjacent cells via X2 interface */
 int flexran_get_rrc_num_adj_cells(mid_t mod_id);
+
+/* Get the number of E-RABs for UE */
+int flexran_agent_rrc_gtp_num_e_rab(mid_t mod_id, rnti_t rnti);
+
+/* Get the e-RAB ID for UE */
+int flexran_agent_rrc_gtp_get_e_rab_id(mid_t mod_id, rnti_t rnti, int index);
+
+/* Get the TEID at the eNB for UE */
+int flexran_agent_rrc_gtp_get_teid_enb(mid_t mod_id, rnti_t rnti, int index);
+
+/* Get the TEID at the SGW for UE */
+int flexran_agent_rrc_gtp_get_teid_sgw(mid_t mod_id, rnti_t rnti, int index);
+
 /************************** Slice configuration **************************/
 
 /* Get the DL slice ID for a UE */

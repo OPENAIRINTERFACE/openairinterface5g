@@ -511,7 +511,13 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
     goto error;
   }
 
-       
+  /* GTP reply split, currently performed through RRC module */
+  if (flexran_agent_get_rrc_xface(enb_id)
+      && flexran_agent_rrc_gtp_stats_reply(enb_id, report_config, ue_report, cell_report) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
+
   stats_reply_msg->cell_report = cell_report;
   stats_reply_msg->ue_report = ue_report;
 
