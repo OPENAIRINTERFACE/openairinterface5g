@@ -86,7 +86,7 @@ void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int subframe,gNB_L1_r
     //            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
     if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
     else                     dlsch1_harq->pdu                    = sdu;
-    LOG_I(PHY, "dlsch PDU filled \n");
+    LOG_I(PHY, "SFN/SF: %d/%d DLSCH PDU filled \n",frame, subframe);
 //  }
 
 }
@@ -182,7 +182,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
       //gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
       //TX_req = TX_req->tx_request_body.tx_pdu_list[TX_req->tx_request_body.number_of_pdus].segments[0].segment_data;
-      LOG_I(PHY, "Before calling handle_nr_nfapi_dlsch_pdu() \n \n \n \n");
+      //LOG_I(PHY, "Before calling handle_nr_nfapi_dlsch_pdu() \n \n \n \n");
       handle_nr_nfapi_dlsch_pdu(gNB, frame,slot,proc,
                             0,
                             TX_req->tx_request_body.tx_pdu_list[TX_req->tx_request_body.number_of_pdus].segments[0].segment_data);

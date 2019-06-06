@@ -281,7 +281,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
       TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;*/
 
-      dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
+
+      // Move this later for now
+      /*dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
           dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
           memset((void*)dl_config_dci_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
           dl_config_dci_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
@@ -357,19 +359,22 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                       params_rel15->first_symbol,
                       params_rel15->search_space_type);
         nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-	TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
-        LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
+	    // Hardcode it for now
+	    TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;*/
+        TBS = 6784;
+        /*LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
         dlsch_pdu_rel15->start_prb,
         dlsch_pdu_rel15->n_prb,
         dlsch_pdu_rel15->start_symbol,
         dlsch_pdu_rel15->nb_symbols,
         dlsch_pdu_rel15->nb_layers,
         dlsch_pdu_rel15->nb_codewords,
-        dlsch_pdu_rel15->mcs_idx);
+        dlsch_pdu_rel15->mcs_idx,
+        TBS);
 
         dl_req->number_dci++;
         dl_req->number_pdsch_rnti++;
-        dl_req->number_pdu+=2;
+        dl_req->number_pdu+=2;*/
 
     	for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
     	  // TODO: check if the lcid is active
@@ -486,6 +491,98 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     		//UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = 0;
     		DLSCH_pdu.payload[0][offset + sdu_length_total + j] = 0;
     	}
+
+    	dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
+          dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+          memset((void*)dl_config_dci_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
+          dl_config_dci_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
+          dl_config_dci_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dci_dl_pdu));
+
+          dl_config_dlsch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu+1];
+          memset((void*)dl_config_dlsch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
+          dl_config_dlsch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE;
+          dl_config_dlsch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dlsch_pdu));
+
+          nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_dci_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
+          nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_dci_pdu->dci_dl_pdu.pdcch_params_rel15;
+          nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15;
+
+          dlsch_pdu_rel15->start_prb = 0;
+          dlsch_pdu_rel15->n_prb = 50;
+          dlsch_pdu_rel15->start_symbol = 2;
+          dlsch_pdu_rel15->nb_symbols = 9;
+          dlsch_pdu_rel15->rnti = rnti;
+          dlsch_pdu_rel15->nb_layers =1;
+          dlsch_pdu_rel15->nb_codewords = 1;
+          dlsch_pdu_rel15->mcs_idx = 9;
+          dlsch_pdu_rel15->ndi = 1;
+          dlsch_pdu_rel15->redundancy_version = 0;
+
+          nr_configure_dci_from_pdcch_config(params_rel15,
+                                             coreset,
+                                             search_space,
+                                             *cfg,
+                                             dl_carrier_bandwidth);
+
+          pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
+          pdu_rel15->time_domain_assignment = 3; // row index used here instead of SLIV;
+          pdu_rel15->vrb_to_prb_mapping = 1;
+          pdu_rel15->mcs = 9;
+          pdu_rel15->tb_scaling = 1;
+
+          pdu_rel15->ra_preamble_index = 25;
+          pdu_rel15->format_indicator = 1;
+          pdu_rel15->ndi = 1;
+          pdu_rel15->rv = 0;
+          pdu_rel15->harq_pid = 0;
+          pdu_rel15->dai = 2;
+          pdu_rel15->tpc = 2;
+          pdu_rel15->pucch_resource_indicator = 7;
+          pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
+
+          LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+                      pdu_rel15->frequency_domain_assignment,
+                      pdu_rel15->time_domain_assignment,
+                      pdu_rel15->vrb_to_prb_mapping,
+                      pdu_rel15->mcs,
+                      pdu_rel15->tb_scaling,
+                      pdu_rel15->ndi,
+                      pdu_rel15->rv);
+
+          params_rel15->rnti = rnti;
+          params_rel15->rnti_type = NFAPI_NR_RNTI_C;
+          params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
+
+          //params_rel15->aggregation_level = 1;
+          LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
+                      coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
+                      ss params : first symb %d, ss type %d\n",
+                      params_rel15->rnti,
+                      params_rel15->rnti_type,
+                      params_rel15->config_type,
+                      params_rel15->dci_format,
+                      params_rel15->mux_pattern,
+                      params_rel15->n_rb,
+                      params_rel15->n_symb,
+                      params_rel15->rb_offset,
+                      params_rel15->first_symbol,
+                      params_rel15->search_space_type);
+        nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+	    // Hardcode it for now
+	    TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
+	    LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+        dlsch_pdu_rel15->start_prb,
+        dlsch_pdu_rel15->n_prb,
+        dlsch_pdu_rel15->start_symbol,
+        dlsch_pdu_rel15->nb_symbols,
+        dlsch_pdu_rel15->nb_layers,
+        dlsch_pdu_rel15->nb_codewords,
+        dlsch_pdu_rel15->mcs_idx,
+        TBS);
+
+        dl_req->number_dci++;
+        dl_req->number_pdsch_rnti++;
+        dl_req->number_pdu+=2;
 
 
   TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
