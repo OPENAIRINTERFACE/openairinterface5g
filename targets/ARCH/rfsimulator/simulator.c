@@ -104,9 +104,8 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
   // the parameter "-s" is declared as SNR, but the input power is not well defined
   // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain= 132.24 - snr_dB; 
+  const double rxGain= 132.24 - snr_dB;
   const double noise_per_sample = sqrt(0.5*noise_figure_watt) * pow(10,rxGain/20);
-  
   // Fixme: we don't fill the offset length samples at begining ?
   // anyway, in today code, channel_offset=0
   const int dd = abs(channelDesc->channel_offset);
@@ -136,20 +135,20 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
     out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
     /*
       printf("in: %d, out %d= %f*%f + %f*%f\n",
-      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x, 
+      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x,
       pathLossLinear, noise_per_sample,gaussdouble(0.0,1.0));
     */
     out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
     out_ptr++;
   }
-  
+
   if ( (TS*nbTx)%CirSize+nbSamples <= CirSize )
     // Cast to a wrong type for compatibility !
-    LOG_I(HW,"Input power %f, output power: %f, channel path loss %f, noise coeff: %f \n",
-	  10*log10((double)signal_energy((int32_t*)&input_sig[(TS*nbTx)%CirSize], nbSamples)),
-	  10*log10((double)signal_energy((int32_t*)after_channel_sig, nbSamples)),
-	  channelDesc->path_loss_dB,
-	  10*log10(noise_per_sample));
+    LOG_D(HW,"Input power %f, output power: %f, channel path loss %f, noise coeff: %f \n",
+          10*log10((double)signal_energy((int32_t *)&input_sig[(TS*nbTx)%CirSize], nbSamples)),
+          10*log10((double)signal_energy((int32_t *)after_channel_sig, nbSamples)),
+          channelDesc->path_loss_dB,
+          10*log10(noise_per_sample));
 }
 
 void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
@@ -541,14 +540,13 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
 
-      for (int a=0; a<nbAnt; a++) 
-	rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+      for (int a=0; a<nbAnt; a++)
+        rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
                     a,
                     ptr->channel_model,
                     nsamps,
                     t->nextTimestamp
                   );
-      
     }
   }
 
@@ -587,9 +585,9 @@ int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_c
 }
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
-  //set_log(HW,OAILOG_DEBUG);
-  set_log(TMR,OAILOG_DEBUG);
-  //set_log(PHY,OAILOG_DEBUG);
+  // to change the log level, use this on command line
+  // --log_config.hw_log_level debug
+  // (for phy layer, replace "hw" by "phy"
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {
