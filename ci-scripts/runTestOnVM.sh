@@ -20,12 +20,12 @@
 # *      contact@openairinterface.org
 # */
 
-function run_test_usage {
+function test_usage {
     echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo "   Default:"
     echo "     -- eNB with USRP"
     echo ""
@@ -126,7 +126,7 @@ function start_basic_sim_ue {
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" > $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build" >> $1
-    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS  --log_config.global_log_options level,nocolor --basicsim\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS  --log_config.global_log_options nocolor,level --basicsim\" > ./my-lte-uesoftmodem-run.sh" >> $1
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE; fi" >> $1
@@ -483,7 +483,7 @@ function install_epc_on_vm {
         echo "Creating test EPC VM ($LOC_EPC_VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $LOC_EPC_VM_NAME release=xenial --unsafe-caching
+        uvt-kvm create $LOC_EPC_VM_NAME release=$VM_OSREL --unsafe-caching
         echo "Waiting for VM to be started"
         uvt-kvm wait $LOC_EPC_VM_NAME --insecure
         release_vm_create_lock
@@ -629,14 +629,19 @@ function retrieve_real_epc_ip_addr {
     local LOC_EPC_VM_CMDS=$2
     local LOC_EPC_VM_IP_ADDR=$3
 
-    if [ $LTEBOX -eq 1 ]
+    if [[ "$EPC_IPADDR" == "" ]]
     then
-        # in our configuration file, we are using pool 5
-        echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $LOC_EPC_VM_CMDS
-        REAL_EPC_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
-        echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
-        rm $LOC_EPC_VM_CMDS
+        if [ $LTEBOX -eq 1 ]
+        then
+            # in our configuration file, we are using pool 5
+            echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $LOC_EPC_VM_CMDS
+            REAL_EPC_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
+            rm $LOC_EPC_VM_CMDS
+        fi
+    else
+    	REAL_EPC_IP_ADDR=$EPC_TUN_IPADDR
     fi
+    echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"   
 }
 
 function terminate_epc {
@@ -1093,7 +1098,7 @@ function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
     echo "############################################################"
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#" -e "s#rf-sim#enb-ethernet#"`
         ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
@@ -1110,7 +1115,7 @@ function run_test_on_vm {
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         echo "############################################################"
         echo "Waiting for ENB VM to be started"
@@ -1142,7 +1147,7 @@ function run_test_on_vm {
         echo "No run on VM testing for this variant currently"
         return
     fi
-
+    
     if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
     then
         echo "############################################################"
@@ -1261,17 +1266,28 @@ function run_test_on_vm {
         EPC_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#epc#"`
         EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
         LTEBOX=0
-        install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
-        EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
+            # Creating a VM for EPC and installing SW
+            install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
+            EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
 
-        # Starting EPC
-        start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            # Starting EPC
+            start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        else
+        	echo "We will use EPC on $EPC_IPADDR"
+        	EPC_VM_IP_ADDR=$EPC_IPADDR
+        fi
+        
 
-        # Retrieve EPC real IP address
-        retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+         # Retrieve EPC real IP address
+         retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+  
 
-        TRANS_MODES=("fdd" "tdd")
-        BW_CASES=(05 10 20)
+        #TRANS_MODES=("fdd" "tdd")
+        #BW_CASES=(05 10 20)
+        TRANS_MODES=("fdd")
+        BW_CASES=(05)
 
         for TMODE in ${TRANS_MODES[@]}
         do
@@ -1311,7 +1327,10 @@ function run_test_on_vm {
                   return
               fi
               get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
-
+              
+              full_terminate
+              continue
+         
               echo "############################################################"
               echo "Pinging the UE"
               echo "############################################################"
@@ -1453,7 +1472,10 @@ function run_test_on_vm {
         echo "Terminate EPC"
         echo "############################################################"
 
-        terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
+            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        fi
 
         full_basic_sim_destroy
 
@@ -1481,43 +1503,53 @@ function run_test_on_vm {
             rm -Rf $ARCHIVES_LOC
         fi
         mkdir --parents $ARCHIVES_LOC
-
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
         # Creating a VM for EPC and installing SW
-        EPC_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#epc#"`
-        EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
-        LTEBOX=0
-        install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
-        EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
-
+            EPC_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#epc#"`
+            EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
+            LTEBOX=0
+            install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
+            EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+        fi
         # withS1 configuration is not working
         #EPC_CONFIGS=("wS1" "noS1")
         #TRANS_MODES=("fdd" "tdd")
         #BW_CASES=(05 10 20)
-        EPC_CONFIGS=("noS1")
+        EPC_CONFIGS=("noS1" "wS1")
         TRANS_MODES=("fdd")
         BW_CASES=(05)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
           if [[ $CN_CONFIG =~ .*wS1.* ]]
           then
-              echo "############################################################"
-              echo "Start EPC for the wS1 configuration"
-              echo "############################################################"
-              start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-
-              # Retrieve EPC real IP address
-              retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-              S1_NOS1_CFG=1
+             if [[ "$EPC_IPADDR" ==  "" ]]
+             then
+                 echo "############################################################"
+                 echo "Start EPC for the wS1 configuration"
+                 echo "############################################################"
+                 start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                 # Retrieve EPC real IP address
+                 retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                 S1_NOS1_CFG=1        	 
+             else             	 
+                 echo "############################################################"
+                 echo "Using external EPC " $EPC_IPADDR
+                 echo "############################################################"           	 
+             	 $EPC_VM_IP_ADDR=$EPC_IPADDR
+             	 S1_NOS1_CFG=1
+             	 LTEBOX=0
+             fi
           else
-              echo "############################################################"
-              echo "Terminate EPC"
-              echo "############################################################"
-              terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                  echo "############################################################"
+                  echo "Terminate EPC"
+                  echo "############################################################"
+                  terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
-              echo "############################################################"
-              echo "Running now in a no-S1 configuration"
-              echo "############################################################"
-              S1_NOS1_CFG=0
+                  echo "############################################################"
+                  echo "Running now in a no-S1 "
+                  echo "############################################################"
+                  S1_NOS1_CFG=0
           fi
           for TMODE in ${TRANS_MODES[@]}
           do
@@ -1539,7 +1571,7 @@ function run_test_on_vm {
                   echo "${CN_CONFIG} : Starting the eNB in ${TMODE}-${BW}MHz mode"
                   echo "############################################################"
                   CURRENT_ENB_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_enb.log
-                  start_rf_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
+                  start_rf_sim_enb $ENB_VM_CMDS "$ENB_VM_IP_ADDR" "$EPC_VM_IP_ADDR" $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
 
                   echo "############################################################"
                   echo "${CN_CONFIG} : Starting the UE"

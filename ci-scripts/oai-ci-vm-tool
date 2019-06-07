@@ -20,34 +20,210 @@
 # *      contact@openairinterface.org
 # */
 
+
 function top_usage {
     echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo ""
     echo "Usage:"
     echo "------"
-    echo "    oai-ci-vm-tool (-h|--help) {create,destroy,build,wait,test,report-build,report-test} ..."
+    echo "    oai-ci-vm-tool (-h|--help) { `for i in "${COMMANDS_NAME[@]}"; do echo -n $i,;done` ..." }
     echo ""
 }
 
 function variant_usage {
-    echo " # OpenAirInterface Build Variants"
-    echo "    --variant enb-usrp     OR -v1"
-    echo "    --variant basic-sim    OR -v2"
-    echo "    --variant phy-sim      OR -v3"
-    echo "    --variant cppcheck     OR -v4"
-    echo "    --variant enb-ethernet OR -v7"
-    echo "    --variant ue-ethernet  OR -v8"
-    echo " # non-OSA Build Variants"
-    echo "    --variant flexran-rtc  OR -v10"
-    echo " # OpenAirInterface Test Variants"
-    echo "    --variant l1-sim       OR -v20"
-    echo "    --variant rf-sim       OR -v21"
-    echo "    --variant l2-sim       OR -v22"
+
+    for (( i=0 ; i<${#VARIANTS_LONG[@]} ; i++ )) 
+    do        
+    	unset BUILD_OPTIONS
+    	unset VARIANT_INFO
+    	check_set_variant "${VARIANTS_SHORT[$i]}"
+        printf  "    --variant %-15s OR -%-3s" "${VARIANTS_LONG[$i]}" "${VARIANTS_SHORT[$i]}"
+        if [ "$BUILD_OPTIONS" = "" ]
+        then
+        	echo -n "    ( test "
+        else
+        	echo -n "    ( build and test "
+        fi
+        echo "$VARIANT_INFO )"
+        printf  "               VM_NAME=%-15s          ARCHIVES_LOC=%-15s\n" "$VM_NAME" "$ARCHIVES_LOC"
+        printf  "               VM_MEMORY=%-15s        VM_CPU=%-15s\n" "$VM_MEMORY" "$VM_CPU"       
+        printf  "               NB_PATTERN_FILES=%-15s BUILD_OPTIONS=%-15s\n" "$NB_PATTERN_FILES" "\"$BUILD_OPTIONS\""
+        printf  "               LOG_PATTERN=%-15s\n\n" "$LOG_PATTERN"
+        
+    done    
 }
+
+function setvar_usage {
+    echo "--setvar_<varname> <value> where varname is one of:"
+	for i in "$AUTHORIZED_VAR"; do echo "   $i";done
+}
+
+# functions variant__v<n>__<variant name> are used to define build or test variants
+# The only thing to do to define a new variant is to add a function which name
+# match this template. Note that "_" character in function <varriant name> part
+# will be replaced by "-" character in  build_variant_arrays function, this is
+# for compatibility reasons  
+
+function variant__v1__enb_usrp {
+    NB_PATTERN_FILES=9
+    BUILD_OPTIONS="--eNB -w USRP --mu"
+}
+    
+function variant__v2__basic_sim {
+    NB_PATTERN_FILES=13
+    BUILD_OPTIONS="--eNB --UE"
+    VM_MEMORY=8192
+    RUN_OPTIONS="complex"
+}
+
+function variant__v3__phy_sim {
+    NB_PATTERN_FILES=3
+    BUILD_OPTIONS="--phy_simulators"
+    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
+}
+
+function variant__v4__cppcheck {
+    VM_MEMORY=4096
+    LOG_PATTERN=cppcheck.xml
+    NB_PATTERN_FILES=1
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
+}
+
+function variant__v7__enb_ethernet {
+    VM_MEMORY=4096
+    ARCHIVES_LOC=enb_eth
+    NB_PATTERN_FILES=8
+    BUILD_OPTIONS="--eNB"
+}
+function variant__v8__ue_ethernet {
+    VM_MEMORY=4096
+    ARCHIVES_LOC=ue_eth
+    NB_PATTERN_FILES=12
+    BUILD_OPTIONS="--UE"
+}
+
+function variant__v10__flexran_rtc {
+    ARCHIVES_LOC=flexran
+    NB_PATTERN_FILES=1
+    BUILD_OPTIONS="cmake . && make -j2"
+    VARIANT_INFO="non-OSA"
+}
+function variant__v20__l1_sim {
+    ARCHIVES_LOC=l1_sim
+    RUN_OPTIONS="complex"
+}
+    
+function variant__v21__rf_sim {
+    RUN_OPTIONS="complex"
+}
+
+function variant__v22__l2_sim {
+    RUN_OPTIONS="complex"
+}
+
+# Following function lists all variant__v<n>__<variant name> functions
+# and set the VARIANTS_SHORT and VARIANTS_LONG arrays from
+# the function names
+function build_variant_arrays {
+    VARIANTS=`declare -F`
+    VARIANTS=${VARIANTS//"declare -f "}
+    for i in $VARIANTS
+    do
+    	if [ `expr match "$i" 'variant__v'` -eq 10 ]
+    	then
+    	   IDX1=`expr match "$i" 'variant__v[0-9]\+__'`
+    	   VARIANTS_SHORT+=(${i:9:$((IDX1-11))})
+    	   LONGNAME=${i:$IDX1}
+           VARIANTS_LONG+=(${LONGNAME//"_"/"-"})
+    	fi
+    done
+}
+
+# check that the passed argument is a valid variant, set
+# default values for variant related variables and then execute
+# the corresponding variant__v<n>__<variant name> function
+function check_set_variant {
+    for (( i=0 ; i<${#VARIANTS_SHORT[@]} ; i++ )) 
+    do  
+    	if [ "$1" = "${VARIANTS_SHORT[$i]}" ] || [ "$1" = "${VARIANTS_LONG[$i]}" ]
+    	then
+            VM_NAME=ci-${VARIANTS_LONG[$i]}
+            LOG_PATTERN=.$ASN1VER.txt
+            ARCHIVES_LOC=${VARIANTS_LONG[$i]//"-"/"_"}  
+            VM_MEMORY=2048
+            VM_CPU=4
+            NBARGS=$[$NBARGS+$VARIANT_OPTID]   
+            variant__${VARIANTS_SHORT[$i]}__${VARIANTS_LONG[$i]//"-"/"_"}
+            return 0
+        fi
+    done   
+    echo "$1" is not a valid variant
+    variant_usage
+    exit 1
+    
+}
+
+function check_command_options {
+	GIVEN_OPTIONS=$1
+	declare -a MANDATORY_OPTIONS=("${!2}")
+	if [ ${MANDATORY_OPTIONS[1]} -eq 0 ]
+	then
+		MANDATORY_OPTIONS[1]=${MANDATORY_OPTIONS[0]}
+	fi
+	OPTIONAL_OPTIONS=$3
+	if [ $(($GIVEN_OPTIONS & ${MANDATORY_OPTIONS[0]} )) -ne ${MANDATORY_OPTIONS[0]} ] && [ $(($GIVEN_OPTIONS & ${MANDATORY_OPTIONS[1]} )) -ne ${MANDATORY_OPTIONS[1]} ]
+    then
+        echo "Syntax Error: missing option(s) for $4 command"
+        $4_usage
+        exit 1
+    fi	
+    
+    if [ $(($GIVEN_OPTIONS | ${MANDATORY_OPTIONS[0]} | ${MANDATORY_OPTIONS[1]} | $OPTIONAL_OPTIONS )) -ne  $(( ${MANDATORY_OPTIONS[0]} | ${MANDATORY_OPTIONS[1]} | $OPTIONAL_OPTIONS )) ] 
+    then
+        echo "Syntax Error: unknown option(s) for $4 command"
+        $4_usage
+        exit 1
+    fi	 
+}
+
+function check_ipv4addr {
+    local  ipaddr=$1
+    local  stat=1
+
+    if [[ $ipaddr =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} ]]
+    then
+        OIFS=$IFS
+        IFS='.'
+        ipaddr=($ipaddr)
+        IFS=$OIFS
+        [[ ${ipaddr[0]} -le 255 && ${ipaddr[1]} -le 255 \
+            && ${ipaddr[2]} -le 255 && ${ipaddr[3]} -le 255 ]]
+        stat=$?
+    fi
+    if [ $stat -ne 0 ]
+    then
+    	echo $ipaddr " is not a valid ip V4 address"
+    	exit 1
+    fi
+}
+
+function check_setvar {
+    for i in $AUTHORIZED_VAR
+    do
+    	if [ "$1" = "$i" ]
+    	then
+    	   $1="$2"
+    	   return 0
+    	fi
+    done
+    echo " $1 is not a variable you can set"
+    setvar_usage
+    exit 1
+}	
 
 MY_DIR=$(dirname $(readlink -f $0))
 . $MY_DIR/createVM.sh
@@ -67,101 +243,208 @@ then
 fi
 
 VM_TEMPLATE=ci-
+# look for default ASN1 release in cmake directives
+# It will be the release used when building
+ASN1VEROPT=( `grep "add_list2_option(RRC_ASN1_VERSION" cmake_targets/CMakeLists.txt` )
+ASN1VER=${ASN1VEROPT[1]//\"}
+unset ASN1VEROPT
+
+# variable to identify and store the command (build, create ...)
+# command index in the COMMAND and COMMANDS_NAME arrays 
+HELP_CMD=0
+CREATE_CMD=1
+BUILD_CMD=2
+WAIT_CMD=3
+DESTROY_CMD=4
+TEST_CMD=5
+REPORT_BUILD_CMD=6
+REPORT_TEST_CMD=7
+
+COMMANDS_NAME=(help create build wait destroy test report-build report-test)
+
+#COMMAND will be used to save the command entered as argument
+declare -A COMMAND
+for i in "${COMMANDS_NAME[@]}"
+do 
+	COMMAND[$i]=0
+done
+
+# build the variant arrays
+declare -a VARIANTS_SHORT
+declare -a VARIANTS_LONG
+build_variant_arrays
+
+#variables to process options, for each option we define a variable to store
+# its value and a bit mask, used to check allowed options depending on 
+# the command
 JOB_NAME=XX
+JOB_NAME_OPTID=1
 BUILD_ID=XX
-VM_NAME=ci-enb-usrp
-VM_MEMORY=2048
-VM_CPU=4
-ARCHIVES_LOC=enb_usrp
-LOG_PATTERN=.Rel14.txt
-NB_PATTERN_FILES=7
-BUILD_OPTIONS="--eNB -w USRP"
+BUILD_ID_OPTID=2
+JENKINS_WKSP_OPTID=4
 KEEP_VM_ALIVE=0
+KEEP_VM_ALIVE_OPTID=8
 RUN_OPTIONS="none"
 DAEMON=0
+DAEMON_OPTID=$((2**4))
+GITURL_OPTID=$((2**5))
+PU_OPTID=$((2**6))
+MR_OPTID=$((2**7))
+VARIANT_OPTID=$((2**8))
+SB_OPTID=$((2**10))
+SC_OPTID=$((2**11))
+TB_OPTID=$((2**12))
+TC_OPTID=$((2**13))
+BR_OPTID=$((2**14))
+CO_OPTID=$((2**15))
 MR_TRIG=0
 PU_TRIG=0
+EPC_IPADDR=""
+EPC_IPADDR_OPTID=$((2**16))
 
-HELP_CMD=0
-CREATE_CMD=0
-BUILD_CMD=0
-WAIT_CMD=0
-DESTROY_CMD=0
-TEST_CMD=0
-REPORT_BUILD_CMD=0
-REPORT_TEST_CMD=0
+# list of variables that can be set via the --setvar option
+AUTHORIZED_VAR="VM_OSREL"
+
+#variables to set which OS VM should use
+#if [ -f "/etc/os-release" ]
+#then
+#    source /etc/os-release
+#    VM_OS="$NAME"
+#    VM_OSREL="$VERSION_CODENAME"
+#    VM_ARCHI=`uname -m`	
+#else
+    VM_OS="ubuntu"
+    VM_OSREL="xenial"
+    VM_ARCHI="x86_64"		
+#fi
+
+
+# variant option, ie the test variant which will be run triggers the
+# variables listed below, used to configure the VM and to define what this
+# VM will do. The variant can be specified by the --variant option or by a 
+# -V<xx> option.
+VM_NAME=""
+VM_MEMORY=0
+VM_CPU=0
+ARCHIVES_LOC=""
+LOG_PATTERN=""
+NB_PATTERN_FILES=0
+BUILD_OPTIONS=""
+RUN_OPTIONS=""
+
+
+
+# NARGS is used to check that only valid options are used for the given command
+# It is a bit mask, each bit set to 1 specifies the corresponding option 
+# has been entered on the command line. MANDATORY_OPTMASK and ALLOWED_OPTMASK define
+# respectively the mandatory and optional parameters of the entered command
 NBARGS=0
+MANDATORY_OPTMASK=(0 0)   # some command have two sets of mandatory options
+ALLOWED_OPTMASK=0
 
 while [[ $# -gt 0 ]]
 do
 key="$1"
 
 case $key in
-    -h|--help)
-    HELP_CMD=1
+    --debug)
+    set -v
+    set -x
+    shift
+    ;;
+    -h|--help|help)
+    COMMAND["help"]=1
     shift
     ;;
     create)
-    CREATE_CMD=1
+    COMMAND[$key]=1
+    # For create, mandatory options: jn, id. Optional: variant
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID ))
+    ALLOWED_OPTMASK=$(($VARIANT_OPTID))
     # It is implied to keep the VM when creating it
     KEEP_VM_ALIVE=1
     shift
     ;;
     build)
-    BUILD_CMD=1
+    COMMAND[$key]=1
+    # For build, mandatory options: jn, id, ws. Optional: variant, k, D
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
+    ALLOWED_OPTMASK=$(($KEEP_VM_ALIVE_OPTID + $DAEMON_OPTID + $VARIANT_OPTID))
     shift
     ;;
     wait)
-    WAIT_CMD=1
+    # For test, mandatory options: jn, id, ws. Optional: variant, k     	
+    COMMAND[$key]=1
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID)) 
+    ALLOWED_OPTMASK=$(($KEEP_VM_ALIVE_OPTID + $VARIANT_OPTID))  
     shift
     ;;
-    test)
-    TEST_CMD=1
+    test) 	
+    COMMAND[$key]=1
+    # For test, mandatory options: jn, id, ws. Optional: variant, k, epc 
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID)) 
+    ALLOWED_OPTMASK=$(($KEEP_VM_ALIVE_OPTID + $VARIANT_OPTID + $EPC_IPADDR_OPTID))
     shift
     ;;
     destroy)
-    DESTROY_CMD=1
+    COMMAND[$key]=1
+    # For destroy, mandatory options: jn, id. 
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID)) 
+    ALLOWED_OPTMASK=0   
     shift
     ;;
     report-build)
-    REPORT_BUILD_CMD=1
+    COMMAND[$key]=1
+    # For report-build, mandatory options: jn, id, ws, gu, pu, br,co.
+    #                                  or: jn, id, ws, gu, mr, sb, sc, tb, tc.
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID + $GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
+    MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
+    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
+    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $TB_OPTID + $TC_OPTID))     
     shift
     ;;
-    report-test)
-    REPORT_TEST_CMD=1
+    report-test) 
+    COMMAND[$key]=1
+    # For report-test, mandatory options: jn, id, ws, gu, pu, br,co.
+    #                                 or: jn, id, ws, gu, mr, sb, sc, tb, tc.
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
+    MANDATORY_OPTMASK[0]+=$(($GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
+    MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
+    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
+    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $TB_OPTID + $TC_OPTID))   
     shift
     ;;
     -jn|--job-name)
     JOB_NAME="$2"
-    NBARGS=$[$NBARGS+1]
+    NBARGS=$[$NBARGS+$JOB_NAME_OPTID]
     shift
     shift
     ;;
     -id|--build-id)
     BUILD_ID="$2"
-    NBARGS=$[$NBARGS+2]
+    NBARGS=$[$NBARGS+$BUILD_ID_OPTID]
     shift
     shift
     ;;
     -ws|--workspace)
     JENKINS_WKSP="$2"
-    NBARGS=$[$NBARGS+4]
+    NBARGS=$[$NBARGS+$JENKINS_WKSP_OPTID]
     shift
     shift
     ;;
     -k|--keep-vm-alive)
     KEEP_VM_ALIVE=1
-    NBARGS=$[$NBARGS+8]
+    NBARGS=$[$NBARGS+$KEEP_VM_ALIVE_OPTID]
     shift
     ;;
     -D|--daemon)
     DAEMON=1
-    NBARGS=$[$NBARGS+16]
+    NBARGS=$[$NBARGS+$DAEMON_OPTID]
     shift
     ;;
     -gu|--git-url)
     GIT_URL="$2"
-    NBARGS=$[$NBARGS+32]
+    NBARGS=$[$NBARGS+$GITURL_OPTID]
     shift
     shift
     ;;
@@ -188,236 +471,72 @@ case $key in
     ;;
     -mr)
     MR_TRIG=1
-    NBARGS=$[$NBARGS+64]
+    NBARGS=$[$NBARGS+$MR_OPTID]
     shift
     ;;
     -pu)
     PU_TRIG=1
-    NBARGS=$[$NBARGS+64]
+    NBARGS=$[$NBARGS+$PU_OPTID]
     shift
     ;;
     -sb|--src-branch)
     SOURCE_BRANCH="$2"
-    NBARGS=$[$NBARGS+1024]
+    NBARGS=$[$NBARGS+$SB_OPTID]
     shift
     shift
     ;;
     -sc|--src-commit)
     SOURCE_COMMIT_ID="$2"
-    NBARGS=$[$NBARGS+2048]
+    NBARGS=$[$NBARGS+$SC_OPTID]
     shift
     shift
     ;;
     -tb|--target-branch)
     TARGET_BRANCH="$2"
-    NBARGS=$[$NBARGS+4096]
+    NBARGS=$[$NBARGS+$TB_OPTID]
     shift
     shift
     ;;
     -tc|--target-commit)
     TARGET_COMMIT_ID="$2"
-    NBARGS=$[$NBARGS+8192]
+    NBARGS=$[$NBARGS+$TC_OPTID]
     shift
     shift
     ;;
     -br|--branch)
     SOURCE_BRANCH="$2"
-    NBARGS=$[$NBARGS+16384]
+    NBARGS=$[$NBARGS+$BR_OPTID]
     shift
     shift
     ;;
     -co|--commit)
     SOURCE_COMMIT_ID="$2"
-    NBARGS=$[$NBARGS+32768]
+    NBARGS=$[$NBARGS+$CO_OPTID]
     shift
     shift
     ;;
-    -v1)
-    VM_NAME=ci-enb-usrp
-    ARCHIVES_LOC=enb_usrp
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=9
-    BUILD_OPTIONS="--eNB -w USRP --mu"
-    NBARGS=$[$NBARGS+256]
+    --epc)
+    check_ipv4addr "$2"
+    check_ipv4addr "$3"
+    EPC_IPADDR="$2"
+    EPC_TUN_IPADDR="$3"
+    NBARGS=$[$NBARGS+$EPC_IPADDR_OPTID]
+    shift
+    shift
     shift
     ;;
-    -v2)
-    VM_NAME=ci-basic-sim
-    ARCHIVES_LOC=basic_sim
-    LOG_PATTERN=Rel14.txt
-    NB_PATTERN_FILES=13
-    BUILD_OPTIONS="--eNB --UE"
-    VM_MEMORY=8192
-    VM_CPU=4
-    RUN_OPTIONS="complex"
-    NBARGS=$[$NBARGS+256]
+    --setvar_*)
+    check_setvar "${key:9}" "$2"
+    shift
     shift
     ;;
-    -v3)
-    VM_NAME=ci-phy-sim
-    ARCHIVES_LOC=phy_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=3
-    BUILD_OPTIONS="--phy_simulators"
-    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v4)
-    VM_NAME=ci-cppcheck
-    VM_MEMORY=4096
-    ARCHIVES_LOC=cppcheck
-    LOG_PATTERN=cppcheck.xml
-    NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v7)
-    VM_NAME=ci-enb-ethernet
-    VM_MEMORY=4096
-    VM_CPU=4
-    ARCHIVES_LOC=enb_eth
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=8
-    BUILD_OPTIONS="--eNB"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v8)
-    VM_NAME=ci-ue-ethernet
-    VM_MEMORY=4096
-    VM_CPU=4
-    ARCHIVES_LOC=ue_eth
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=12
-    BUILD_OPTIONS="--UE"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v10)
-    VM_NAME=ci-flexran-rtc
-    ARCHIVES_LOC=flexran
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=1
-    BUILD_OPTIONS="cmake . && make -j2"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v20)
-    VM_NAME=ci-l1-sim
-    ARCHIVES_LOC=l1_sim
-    RUN_OPTIONS="complex"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v21)
-    VM_NAME=ci-rf-sim
-    ARCHIVES_LOC=rf_sim
-    RUN_OPTIONS="complex"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
-    -v22)
-    VM_NAME=ci-l2-sim
-    ARCHIVES_LOC=l2_sim
-    RUN_OPTIONS="complex"
-    NBARGS=$[$NBARGS+256]
+    -v[0-9] | -v[0-9][0-9])
+    check_set_variant ${key//"-"} 
     shift
     ;;
     --variant)
-    variant="$2"
-    case $variant in
-        enb-usrp)
-        VM_NAME=ci-enb-usrp
-        ARCHIVES_LOC=enb_usrp
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=9
-        BUILD_OPTIONS="--eNB -w USRP --mu"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        basic-sim)
-        VM_NAME=ci-basic-sim
-        ARCHIVES_LOC=basic_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=13
-        BUILD_OPTIONS="--UE --eNB"
-        VM_MEMORY=8192
-        VM_CPU=4
-        RUN_OPTIONS="complex"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        phy-sim)
-        VM_NAME=ci-phy-sim
-        ARCHIVES_LOC=phy_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=3
-        BUILD_OPTIONS="--phy_simulators"
-        RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        cppcheck)
-        VM_NAME=ci-cppcheck
-        VM_MEMORY=4096
-        ARCHIVES_LOC=cppcheck
-        LOG_PATTERN=cppcheck.xml
-        NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        enb-ethernet)
-        VM_NAME=ci-enb-ethernet
-        VM_MEMORY=4096
-        VM_CPU=4
-        ARCHIVES_LOC=enb_eth
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=8
-        BUILD_OPTIONS="--eNB"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        ue-ethernet)
-        VM_NAME=ci-ue-ethernet
-        VM_MEMORY=4096
-        VM_CPU=4
-        ARCHIVES_LOC=ue_eth
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=12
-        BUILD_OPTIONS="--UE"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        flexran-rtc)
-        VM_NAME=ci-flexran-rtc
-        ARCHIVES_LOC=flexran
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=1
-        BUILD_OPTIONS="cmake . && make -j2"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        l1-sim)
-        VM_NAME=ci-l1-sim
-        ARCHIVES_LOC=l1_sim
-        RUN_OPTIONS="complex"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        rf-sim)
-        VM_NAME=ci-rf-sim
-        ARCHIVES_LOC=rf_sim
-        RUN_OPTIONS="complex"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        l2-sim)
-        VM_NAME=ci-l2-sim
-        ARCHIVES_LOC=l2_sim
-        RUN_OPTIONS="complex"
-        NBARGS=$[$NBARGS+256]
-        ;;
-        *)
-        echo ""
-        echo "Syntax Error: Invalid Variant option -> $variant"
-        echo ""
-        variant_usage
-        exit 1
-    esac
+    variant="$2" 
+    check_set_variant ${2}
     shift
     shift
     ;;
@@ -429,117 +548,45 @@ case $key in
 esac
 done
 
-MANY_CMDS=$[$CREATE_CMD+$BUILD_CMD+$WAIT_CMD+$DESTROY_CMD+$TEST_CMD+$REPORT_BUILD_CMD+$REPORT_TEST_CMD]
-if [ $MANY_CMDS -gt 1 ]
-then
-    echo "Syntax Error: too many commands"
-    top_usage
-    exit 1
-fi
+i=0
+for (( COUNT=1 ; COUNT<${#COMMAND[@]} ; COUNT++ )) 
+do    
+   if [ ${COMMAND[${COMMANDS_NAME[$COUNT]}]} -eq 1 ]
+   then
+   	   COMMAND_KEY[$i]=${COMMANDS_NAME[$COUNT]} 
+      (( i++ ))	   
+   fi
+done
 
-if [ $HELP_CMD -eq 1 ]
+if [ ${COMMAND["help"]} -eq 1 ]
 then
-    if [ $MANY_CMDS -eq 0 ]
+    if [ ${#COMMAND_KEY[@]} -ne 1 ]
     then
-        top_usage
-        exit 0
-    fi
-    if [ $CREATE_CMD -eq 1 ]
-    then
-        create_usage
-        exit 0
-    fi
-    if [ $BUILD_CMD -eq 1 ]
-    then
-        build_usage
-        exit 0
-    fi
-    if [ $WAIT_CMD -eq 1 ]
-    then
-        wait_usage
-        exit 0
-    fi
-    if [ $TEST_CMD -eq 1 ]
-    then
-        run_test_usage
-        exit 0
-    fi
-    if [ $DESTROY_CMD -eq 1 ]
-    then
-        destroy_usage
-        exit 0
-    fi
-    if [ $REPORT_BUILD_CMD -eq 1 ]
-    then
-        report_build_usage
-        exit 0
-    fi
-    if [ $REPORT_TEST_CMD -eq 1 ]
-    then
-        report_test_usage
-        exit 0
-    fi
+       top_usage
+    else
+       USAGE_KEY=`echo ${COMMAND_KEY[0]} | sed -e "s#-#_#g"`
+       ${USAGE_KEY[0]}_usage
+    fi 
+    exit 0
 else
-    if [ $MANY_CMDS -eq 0 ]
+    if [ ${#COMMAND_KEY[@]} -gt 1 ]
     then
-        echo "Syntax Error: no command"
+        echo "Syntax Error, too many commands:  ${COMMAND_KEY[@]}" 
         top_usage
         exit 1
     fi
-    # For create, mandatory options: jn, id. Optional: variant
-    if [ $CREATE_CMD -eq 1 ] && [ $NBARGS -ne 3 ] && [ $NBARGS -ne 259 ]
+
+    if [ -z "${COMMAND_KEY[0]}" ]
     then
-        echo "Syntax Error: unsupported option(s) for create command"
-        create_usage
+        echo "Syntax Error: no command, specify one of: ${COMMANDS_NAME[@]}"
+        top_usage
         exit 1
     fi
-    # For build, mandatory options: jn, id, ws. Optional: variant, k, D
-    if [ $BUILD_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ] && [ $NBARGS -ne 23 ] && [ $NBARGS -ne 279 ] && [ $NBARGS -ne 31 ] && [ $NBARGS -ne 287 ]
-    then
-        echo "Syntax Error: unsupported option(s) for build command"
-        build_usage
-        exit 1
-    fi
-    # For wait, mandatory options: jn, id, ws. Optional: variant, k
-    if [ $WAIT_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ]
-    then
-        echo "Syntax Error: unsupported option(s) for wait command"
-        wait_usage
-        exit 1
-    fi
-    # For test, mandatory options: jn, id, ws. Optional: variant, k
-    if [ $TEST_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ]
-    then
-        echo "Syntax Error: unsupported option(s) for test command"
-        run_test_usage
-        exit 1
-    fi
-    # For destroy, mandatory options: jn, id.
-    if [ $DESTROY_CMD -eq 1 ] && [ $NBARGS -ne 3 ]
-    then
-        echo "Syntax Error: unsupported option(s) for destroy command"
-        destroy_usage
-        exit 1
-    fi
-    # For report-build, mandatory options: jn, id, ws, gu, pu, br,co.
-    #                                  or: jn, id, ws, gu, mr, sb, sc, tb, tc.
-    if [ $REPORT_BUILD_CMD -eq 1 ] && [ $NBARGS -ne 15463 ] && [ $NBARGS -ne 49255 ]
-    then
-        echo "Syntax Error: unsupported option(s) for report-build command"
-        report_build_usage
-        exit 1
-    fi
-    # For report-test, mandatory options: jn, id, ws, gu, pu, br,co.
-    #                                 or: jn, id, ws, gu, mr, sb, sc, tb, tc.
-    if [ $REPORT_TEST_CMD -eq 1 ] && [ $NBARGS -ne 15463 ] && [ $NBARGS -ne 49255 ]
-    then
-        echo "Syntax Error: unsupported option(s) for report-test command"
-        report_test_usage
-        exit 1
-    fi
+
+    check_command_options $NBARGS MANDATORY_OPTMASK[@] $ALLOWED_OPTMASK ${COMMAND_KEY[0]}
 fi
 
-if [ $REPORT_BUILD_CMD -ne 1 ] && [ $REPORT_TEST_CMD -ne 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$REPORT_BUILD_CMD]}]} -ne 1 ]  && [ ${COMMAND[${COMMANDS_NAME[$REPORT_TEST_CMD]}]} -ne 1 ]
 then
     # Checking uvt-kvm is installed
     UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
@@ -563,7 +610,7 @@ VM_CMDS=${VM_NAME}_cmds.txt
 ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 
 STATUS=0
-if [ $CREATE_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$CREATE_CMD]}]} -eq 1 ]
 then
     if [[ $VM_NAME =~ .*-l2-sim.* ]]
     then
@@ -573,7 +620,7 @@ then
         create_vm
     fi
 fi
-if [ $BUILD_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$BUILD_CMD]}]} -eq 1 ]
 then
     if [[ $VM_NAME =~ .*-l2-sim.* ]]
     then
@@ -587,7 +634,7 @@ then
         check_on_vm_build
     fi
 fi
-if [ $WAIT_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$WAIT_CMD]}]} -eq 1 ]
 then
     if [[ $VM_NAME =~ .*-l2-sim.* ]]
     then
@@ -601,7 +648,7 @@ then
         check_on_vm_build
     fi
 fi
-if [ $TEST_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$TEST_CMD]}]} -eq 1 ]
 then
     # Comment out or delete the following lines if you want to run L1-simulator in your branch and/or merge request
     if [[ $VM_NAME =~ .*-l1-sim.* ]]
@@ -613,26 +660,26 @@ then
     fi
     # end to comment out for L1-simulator
     # Comment out or delete the following lines if you want to run RF-simulator in your branch and/or merge request
-    if [[ $VM_NAME =~ .*-rf-sim.* ]]
-    then
-        echo "Currently RF-Simulator Testing is not implemented / enabled"
-        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
-        echo "STATUS seems OK"
-        exit $STATUS
-    fi
+#    if [[ $VM_NAME =~ .*-rf-sim.* ]]
+#    then
+#        echo "Currently RF-Simulator Testing is not implemented / enabled"
+#        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
+#        echo "STATUS seems OK"
+#    exit $STATUS
+#    fi
     # end to comment out for RF-simulator
     ARCHIVES_LOC=${ARCHIVES_LOC}/test
     run_test_on_vm
 fi
-if [ $DESTROY_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$DESTROY_CMD]}]} -eq 1 ]
 then
     destroy_vm
 fi
-if [ $REPORT_BUILD_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$REPORT_BUILD_CMD]}]} -eq 1 ]
 then
     report_build
 fi
-if [ $REPORT_TEST_CMD -eq 1 ]
+if [ ${COMMAND[${COMMANDS_NAME[$REPORT_TEST_CMD]}]} -eq 1 ]
 then
     report_test
 fi
