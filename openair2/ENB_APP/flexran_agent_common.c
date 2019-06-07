@@ -871,7 +871,7 @@ int flexran_agent_rrc_trigger_handover(mid_t mod_id, const void *params, Protoco
       rnti_found = 1;
       // Call the proper wrapper in FlexRAN API
       if (flexran_call_rrc_trigger_handover(mod_id, ho_command->rnti, ho_command->target_phy_cell_id) < 0) {
-        LOG_E(FLEXRAN_AGENT, "Error in handovering user %d\n", i);
+        LOG_E(FLEXRAN_AGENT, "Error in handovering user %d/RNTI %x\n", i, rnti);
       }
       break;
     }

@@ -4842,14 +4842,18 @@ int cell_found = 0;
 
   /* Check if eNB id was found */
 
-  if (!cell_found)
+  if (!cell_found) {
+    LOG_E(RRC, "%s(): cannot find target eNB with phyCellId %d\n", __func__, target_cell_id);
     return -1;
+  }
 
   /* Handover process is following */
 
   /* if X2AP is disabled, do nothing */
-  if (!is_x2ap_enabled())
+  if (!is_x2ap_enabled()) {
+    LOG_E(RRC, "X2 is disabled\n");
     return -1;
+  }
 
   LOG_D(RRC, "Handover is triggered by FlexRAN controller...\n");
 
