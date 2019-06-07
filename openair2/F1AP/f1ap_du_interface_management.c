@@ -169,6 +169,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
+        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
         LOG_D(F1AP, "plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
@@ -619,6 +620,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
+        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &nRCGI.pLMN_Identity);
         LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
               nRCGI.nRCellIdentity.buf[0],
@@ -778,6 +780,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t oldNRCGI;
+        memset(&oldNRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
         NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
@@ -790,6 +793,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
+        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
         NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
@@ -944,6 +948,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t oldNRCGI;
+        memset(&oldNRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
         NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
@@ -980,6 +985,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t nRCGI;
+        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
         MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
         NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);

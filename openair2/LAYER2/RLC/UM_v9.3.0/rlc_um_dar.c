@@ -112,7 +112,7 @@ signed int rlc_um_get_pdu_infos(
       //             PROTOCOL_RLC_UM_CTXT_FMT"[GET PDU INFO]  SN %04d TOO MANY LIs ",
       //             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
       //             pdu_info_pP->sn);
-      if(pdu_info_pP->num_li > RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
+      if(pdu_info_pP->num_li >= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[GET PDU INFO]  SN %04d TOO MANY LIs \n",
                    PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                    pdu_info_pP->sn);
