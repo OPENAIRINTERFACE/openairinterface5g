@@ -1277,8 +1277,7 @@ function run_test_on_vm {
         do
           for BW in ${BW_CASES[@]}
           do
-              # Not Running in TDD-10MHz and TDD-20MHz : too unstable
-              #if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*10.* ]]; then continue; fi
+              # Not Running in TDD-20MHz : too unstable
               if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*20.* ]]; then continue; fi
 
               if [[ $BW =~ .*05.* ]]; then PRB=25; fi
@@ -1300,15 +1299,9 @@ function run_test_on_vm {
               if [ $UE_SYNC -eq 0 ]
               then
                   echo "Problem w/ eNB and UE not syncing"
-                  terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
-                  scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-                  scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-                  recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-                  terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                  full_basic_sim_destroy
-                  echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                  full_terminate
                   STATUS=-1
-                  return
+                  continue
               fi
               get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
 
@@ -1739,14 +1732,8 @@ function run_test_on_vm {
                     terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
                     scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
                     scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-                    if [ $S1_NOS1_CFG -eq 1 ]
-                    then
-                        terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                    fi
-                    full_l2_sim_destroy
-                    echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                     STATUS=-1
-                    return
+                    continue
                 fi
 
                 if [ $S1_NOS1_CFG -eq 1 ]
