@@ -1445,7 +1445,7 @@ static void *ru_thread( void *param ) {
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
 
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_gNB>0) {
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_gNB==0) {
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
 
