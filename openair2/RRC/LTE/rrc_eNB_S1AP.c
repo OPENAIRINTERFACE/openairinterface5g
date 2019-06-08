@@ -257,6 +257,14 @@ rrc_eNB_S1AP_get_ue_ids(
         }
 
         if (ue_desc_p != NULL) {
+          struct s1ap_eNB_ue_context_s *s1ap_ue_context_p = NULL;
+          if ((s1ap_ue_context_p = RB_REMOVE(s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head, ue_desc_p)) != NULL) {
+            LOG_E(RRC, "Removed UE context eNB_ue_s1ap_id %u\n", s1ap_ue_context_p->eNB_ue_s1ap_id);
+            s1ap_eNB_free_ue_context(s1ap_ue_context_p);
+          } else {
+            LOG_E(RRC, "Removing UE context eNB_ue_s1ap_id %u: did not find context\n",ue_desc_p->eNB_ue_s1ap_id);
+          }
+          return NULL; //skip the operation below to avoid loop
           result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
 
           if (result != NULL) {
