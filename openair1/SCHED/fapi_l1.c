@@ -925,12 +925,15 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
   if ((NFAPI_MODE!=NFAPI_MONOLITHIC) && do_oai && !dont_send) {
     if(Sched_INFO->TX_req->tx_request_body.number_of_pdus > 0){
+      Sched_INFO->TX_req->sfn_sf = frame << 4 | subframe;
       oai_nfapi_tx_req(Sched_INFO->TX_req);
     }
+    Sched_INFO->DL_req->sfn_sf = frame << 4 | subframe;
     oai_nfapi_dl_config_req(Sched_INFO->DL_req); // DJP - .dl_config_request_body.dl_config_pdu_list[0]); // DJP - FIXME TODO - yuk - only copes with 1 pdu
   }
 
   if ((NFAPI_MODE!=NFAPI_MONOLITHIC) && number_hi_dci0_pdu!=0) {
+    HI_DCI0_req->sfn_sf = frame << 4 | subframe;
     oai_nfapi_hi_dci0_req(HI_DCI0_req);
     eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_dci=0;
     eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_pdcch_symbols=0;
@@ -961,6 +964,7 @@ if (NFAPI_MODE!=NFAPI_MODE_VNF)
   if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
     if (number_ul_pdu>0) {
       //LOG_D(PHY, "UL_CONFIG to send to PNF\n");
+      UL_req->sfn_sf = frame << 4 | subframe;
       oai_nfapi_ul_config_req(UL_req);
       UL_req->ul_config_request_body.number_of_pdus=0;
       number_ul_pdu=0;

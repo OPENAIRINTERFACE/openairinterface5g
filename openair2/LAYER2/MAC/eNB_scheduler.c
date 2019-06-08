@@ -462,6 +462,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       DL_req[CC_id].dl_config_request_body.number_dci++;
       DL_req[CC_id].dl_config_request_body.number_pdu++;
       DL_req[CC_id].dl_config_request_body.tl.tag                      = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+      DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
       LOG_D(MAC,
             "UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d), resource_block_coding %d \n",
             UE_id, rnti,
