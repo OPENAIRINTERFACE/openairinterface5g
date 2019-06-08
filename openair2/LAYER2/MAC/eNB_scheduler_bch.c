@@ -733,6 +733,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
 		    //    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
 		    dl_req->number_pdu++;
+		    dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 
                     // Rel10 fields
                     dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.tl.tag                                = NFAPI_DL_CONFIG_REQUEST_DLSCH_PDU_REL10_TAG;
