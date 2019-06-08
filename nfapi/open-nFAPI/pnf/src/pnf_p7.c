@@ -36,7 +36,7 @@ extern uint16_t sf_ahead;
 
 void add_sf(uint16_t *frameP, uint16_t *subframeP, int offset)
 {
-    *frameP    = *frameP + ((*subframeP + offset) / 10);
+    *frameP    = (*frameP + ((*subframeP + offset) / 10))%1024;
 
     *subframeP = ((*subframeP + offset) % 10);
 }
