@@ -222,6 +222,7 @@
     {"g" ,           CONFIG_HLP_LOGL, 0,      uptr:&glog_level,     defintval:0,         TYPE_UINT,     0},        \
     {"telnetsrv",        CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,    defintval:0,         TYPE_UINT,     0},        \
     {"msc",                CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,            defintval:0,         TYPE_UINT,     0},                    \
+    {"log-mem",      NULL,            0,      strptr:(char **)&logmem_filename,    defstrval:NULL,          TYPE_STRING,   0},    \
   }
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
@@ -231,6 +232,7 @@
 #define CMDLINE_LOGPARAMS_CHECK_DESC { \
     { .s5= {NULL }} ,                                                 \
     { .s2=  { config_check_intrange,           {0,4}}},               \
+    { .s5= {NULL }} ,                   \
     { .s5= {NULL }} ,                   \
     { .s5= {NULL }} ,                   \
   }
