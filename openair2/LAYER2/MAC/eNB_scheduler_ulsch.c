@@ -460,7 +460,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
             if (RA_id != -1) {
               RA_t *ra = &(mac->common_channels[CC_idP].ra[RA_id]);
-              mac_rrc_data_ind(enb_mod_idP,
+              int8_t ret = mac_rrc_data_ind(enb_mod_idP,
                                CC_idP,
                                frameP, subframeP,
                                UE_id,
@@ -474,6 +474,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 #endif
                               );
               /* Received a new rnti */
+              if(ret == 0){
               ra->state = MSGCRNTI;
               LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                     enb_mod_idP,
@@ -502,6 +503,9 @@ rx_sdu(const module_id_t enb_mod_idP,
               }
               UE_template_ptr->ul_SR = 1;
               UE_scheduling_control->crnti_reconfigurationcomplete_flag = 1;
+              }else{
+                 cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+              }
               // break;
             }
           }
