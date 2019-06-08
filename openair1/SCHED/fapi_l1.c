@@ -924,7 +924,9 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   }
 
   if ((NFAPI_MODE!=NFAPI_MONOLITHIC) && do_oai && !dont_send) {
-    oai_nfapi_tx_req(Sched_INFO->TX_req);
+    if(Sched_INFO->TX_req->tx_request_body.number_of_pdus > 0){
+      oai_nfapi_tx_req(Sched_INFO->TX_req);
+    }
     oai_nfapi_dl_config_req(Sched_INFO->DL_req); // DJP - .dl_config_request_body.dl_config_pdu_list[0]); // DJP - FIXME TODO - yuk - only copes with 1 pdu
   }
 
