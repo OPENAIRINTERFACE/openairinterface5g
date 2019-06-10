@@ -4041,6 +4041,27 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     size,
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
+  free(quantityConfig);
+  quantityConfig = NULL;
+
+  free(mac_MainConfig->ul_SCH_Config);
+  mac_MainConfig->ul_SCH_Config = NULL;
+
+  free(mac_MainConfig->phr_Config);
+  mac_MainConfig->phr_Config = NULL;
+
+  free(mac_MainConfig);
+  mac_MainConfig = NULL;
 }
 
 
@@ -8038,9 +8059,9 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
             &ctxt,
             RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
 
-      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
+      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
         LOG_I(RRC, "CCCH message has size %d > %d\n",
-              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
         break;
       }
 
@@ -8456,7 +8477,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 //-----------------------------------------------------------------------------
 {
   uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size = -1;
+  uint16_t                            size = 0;
   memset(buffer, 0, RRC_BUF_SIZE);
 
   // allocate dedicated pools for UE -sl-CommConfig/sl-DiscConfig (sl-V2X-ConfigDedicated)
@@ -8593,6 +8614,7 @@ LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t *
 LTE_SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool( const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP,  int n_discoveryMessages ) {
   //TODO
   LTE_SL_DiscConfig_r12_t  sl_DiscConfig;
+  memset(&sl_DiscConfig,0,sizeof(LTE_SL_DiscConfig_r12_t));
   sl_DiscConfig.discTxResources_r12 = CALLOC(1,sizeof(*sl_DiscConfig.discTxResources_r12));
   sl_DiscConfig.discTxResources_r12->present = LTE_SL_DiscConfig_r12__discTxResources_r12_PR_setup;
   sl_DiscConfig.discTxResources_r12->choice.setup.present = LTE_SL_DiscConfig_r12__discTxResources_r12__setup_PR_scheduled_r12;

@@ -618,6 +618,8 @@ int main( int argc, char **argv ) {
     ctxt.instance = 0;
     ctxt.rnti = 0;
     ctxt.enb_flag = 1;
+    ctxt.frame = 0;
+    ctxt.subframe = 0;
     pdcp_run(&ctxt);
   }
 

@@ -84,6 +84,9 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
 
  error:
   LOG_I(FLEXRAN_AGENT, "%s(): there was an error\n", __func__);
+  if (channel){
+    free(channel);
+  }
   return NULL;
 }
 

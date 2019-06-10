@@ -499,7 +499,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   (void)data_p;
   pdcp_t                        *pdcp_p    = NULL;
   //TTN for D2D (PC5S)
-  int prose_addr_len;
+  int prose_addr_len = sizeof(prose_pdcp_addr);
   char send_buf[BUFSIZE], receive_buf[BUFSIZE];
   //int optval;
   int bytes_received;

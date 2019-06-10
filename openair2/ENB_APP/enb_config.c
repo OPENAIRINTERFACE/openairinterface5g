@@ -2628,6 +2628,8 @@ int RCconfig_parallel(void) {
     set_worker_conf(worker_conf);
   }
 
+  free(worker_conf);
+  free(parallel_conf);
   return 0;
 }
 
