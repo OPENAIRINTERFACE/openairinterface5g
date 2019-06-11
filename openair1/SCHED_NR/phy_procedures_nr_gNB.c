@@ -149,11 +149,13 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,1);
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     nr_common_signal_procedures(gNB,frame, slot);
     //if (frame == 9)
     //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,0);
 
   num_dci = gNB->pdcch_vars.num_dci;
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;

@@ -44,8 +44,6 @@ int set_device(openair0_device *device) {
 
   switch (device->type) {
 
-printf("/////////////HW device type %s\n",device->type);
-    
   case EXMIMO_DEV:
     LOG_I(HW,"[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
