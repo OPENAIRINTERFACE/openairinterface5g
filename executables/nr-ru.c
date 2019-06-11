@@ -1076,10 +1076,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 40e6;
       }
     } else if(N_RB == 106) {
-      cfg->sample_rate=61.44e6;
-      cfg->samples_per_frame = 614400;
-      cfg->tx_bw = 20e6;
-      cfg->rx_bw = 20e6;
+      if (fp->threequarter_fs) {
+	cfg->sample_rate=46.08e6;
+	cfg->samples_per_frame = 460800;
+	cfg->tx_bw = 20e6;
+	cfg->rx_bw = 20e6;
+      }
+      else {
+	cfg->sample_rate=61.44e6;
+	cfg->samples_per_frame = 614400;
+	cfg->tx_bw = 20e6;
+	cfg->rx_bw = 20e6;
+      }
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }

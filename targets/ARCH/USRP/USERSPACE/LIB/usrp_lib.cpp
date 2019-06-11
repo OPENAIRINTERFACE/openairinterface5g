@@ -870,7 +870,7 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
 
       default:
         LOG_E(PHY,"unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
-        exit(-1);
+        //exit(-1);
         break;
     }
   }
@@ -1210,7 +1210,15 @@ extern "C" {
         }
 
         switch ((int)openair0_cfg[0].sample_rate) {
-          case 30720000:
+	case 46080000:
+            s->usrp->set_master_clock_rate(46.08e6);
+            //openair0_cfg[0].samples_per_packet    = 1024;
+            openair0_cfg[0].tx_sample_advance     = 115;
+            openair0_cfg[0].tx_bw                 = 40e6;
+            openair0_cfg[0].rx_bw                 = 40e6;
+            break;
+
+	case 30720000:
             s->usrp->set_master_clock_rate(30.72e6);
             //openair0_cfg[0].samples_per_packet    = 1024;
             openair0_cfg[0].tx_sample_advance     = 115;
