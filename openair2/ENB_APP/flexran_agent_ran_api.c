@@ -71,19 +71,10 @@ sub_frame_t flexran_get_current_subframe(mid_t mod_id)
   return RC.mac[mod_id]->subframe;
 }
 
-/* Why uint16_t, frame_t and sub_frame_t are defined as uint32_t? */
-uint16_t flexran_get_sfn_sf(mid_t mod_id)
+uint32_t flexran_get_sfn_sf(mid_t mod_id)
 {
   if (!mac_is_present(mod_id)) return 0;
-  frame_t frame = flexran_get_current_system_frame_num(mod_id);
-  sub_frame_t subframe = flexran_get_current_subframe(mod_id);
-  uint16_t sfn_sf, frame_mask, sf_mask;
-
-  frame_mask = (1 << 12) - 1;
-  sf_mask = (1 << 4) - 1;
-  sfn_sf = (subframe & sf_mask) | ((frame & frame_mask) << 4);
-
-  return sfn_sf;
+  return flexran_get_current_frame(mod_id) * 10 + flexran_get_current_subframe(mod_id);
 }
 
 uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time)

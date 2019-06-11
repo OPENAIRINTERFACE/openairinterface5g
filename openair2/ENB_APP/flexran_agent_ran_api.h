@@ -63,7 +63,7 @@ sub_frame_t flexran_get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
   Bits 0-3 subframe, rest for frame. Required by FlexRAN protocol*/
-uint16_t flexran_get_sfn_sf(mid_t mod_id);
+uint32_t flexran_get_sfn_sf(mid_t mod_id);
 
 /* Return a future frame and subframe number that is ahead_of_time
    subframes later in compact 16-bit format. Bits 0-3 subframe,
