@@ -186,14 +186,14 @@ function check_command_options {
 	if [ $(($GIVEN_OPTIONS & ${MANDATORY_OPTIONS[0]} )) -ne ${MANDATORY_OPTIONS[0]} ] && [ $(($GIVEN_OPTIONS & ${MANDATORY_OPTIONS[1]} )) -ne ${MANDATORY_OPTIONS[1]} ]
     then
         echo "Syntax Error: missing option(s) for $4 command"
-        $4_usage
+        ${4//-/_}_usage
         exit 1
     fi	
     
-    if [ $(($GIVEN_OPTIONS | ${MANDATORY_OPTIONS[0]} | ${MANDATORY_OPTIONS[1]} | $OPTIONAL_OPTIONS )) -ne  $(( ${MANDATORY_OPTIONS[0]} | ${MANDATORY_OPTIONS[1]} | $OPTIONAL_OPTIONS )) ] 
+    if [ $(( $(($GIVEN_OPTIONS ^ ${MANDATORY_OPTIONS[0]})) | $OPTIONAL_OPTIONS )) -ne  $(( $OPTIONAL_OPTIONS )) ] && [ $(( $(($GIVEN_OPTIONS ^ ${MANDATORY_OPTIONS[1]})) | $OPTIONAL_OPTIONS )) -ne  $(( $OPTIONAL_OPTIONS )) ]
     then
         echo "Syntax Error: unknown option(s) for $4 command"
-        $4_usage
+        ${4//-/_}_usage
         exit 1
     fi	 
 }
@@ -288,30 +288,67 @@ build_variant_arrays
 #variables to process options, for each option we define a variable to store
 # its value and a bit mask, used to check allowed options depending on 
 # the command
+
+SHORT_OPTIONS=( "jn" "id" "ws" "k" "D" "gu" "pu" "mr" "var" "notused" "sb" "sc" "tb" "tc" "br" "co" "epc" )
+LONG_OPTIONS=( "job-name" "build-id" "workspace" "keep-vm-alive" "daemon" "git-url" "" "" "variant" "notused" "" "" "" "" "" "" "" )
+
 JOB_NAME=XX
+JOB_NAME_OPTINDEX=0
 JOB_NAME_OPTID=1
+
 BUILD_ID=XX
+BUILD_ID_OPTINDEX=1
 BUILD_ID_OPTID=2
+
+JENKINS_WKSP_OPTINDEX=2
 JENKINS_WKSP_OPTID=4
-KEEP_VM_ALIVE=0
+
+KEEP_VM_ALIVE_OPTINDEX=3
 KEEP_VM_ALIVE_OPTID=8
-RUN_OPTIONS="none"
-DAEMON=0
+KEEP_VM_ALIVE=0
+
+DAEMON_OPTINDEX=4
 DAEMON_OPTID=$((2**4))
+DAEMON=0
+
+GITURL_OPTINDEX=5
 GITURL_OPTID=$((2**5))
+
+PU_OPTINDEX=6
 PU_OPTID=$((2**6))
-MR_OPTID=$((2**7))
-VARIANT_OPTID=$((2**8))
-SB_OPTID=$((2**10))
-SC_OPTID=$((2**11))
-TB_OPTID=$((2**12))
-TC_OPTID=$((2**13))
-BR_OPTID=$((2**14))
-CO_OPTID=$((2**15))
-MR_TRIG=0
 PU_TRIG=0
-EPC_IPADDR=""
+
+MR_OPTINDEX=7
+MR_OPTID=$((2**7))
+MR_TRIG=0
+
+VARIANT_OPTINDEX=8
+VARIANT_OPTID=$((2**8))
+
+SB_OPTINDEX=10
+SB_OPTID=$((2**10))
+
+SC_OPTINDEX=11
+SC_OPTID=$((2**11))
+
+TB_OPTINDEX=12
+TB_OPTID=$((2**12))
+
+TC_OPTINDEX=13
+TC_OPTID=$((2**13))
+
+BR_OPTINDEX=14
+BR_OPTID=$((2**14))
+
+CO_OPTINDEX=15
+CO_OPTID=$((2**15))
+
+EPC_IPADDR_OPTINDEX=16
 EPC_IPADDR_OPTID=$((2**16))
+EPC_IPADDR=""
+
+RUN_OPTIONS="none"
+
 
 # list of variables that can be set via the --setvar option
 AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL")
@@ -430,7 +467,7 @@ case $key in
     MANDATORY_OPTMASK[0]+=$(($GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
     MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
     MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
-    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $TB_OPTID + $TC_OPTID))   
+    MANDATORY_OPTMASK[1]+=$(($TB_OPTID + $TC_OPTID))   
     shift
     ;;
     -jn|--job-name)
@@ -534,7 +571,7 @@ case $key in
     shift
     shift
     ;;
-    --epc)
+    -epc)
     check_ipv4addr "$2"
     check_ipv4addr "$3"
     EPC_IPADDR="$2"
@@ -553,7 +590,7 @@ case $key in
     check_set_variant ${key//"-"} 
     shift
     ;;
-    --variant)
+    -var|--variant)
     variant="$2" 
     check_set_variant ${2}
     shift
