@@ -1299,6 +1299,7 @@ set(PHY_SRC_UE
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
   ${PHY_LDPCSRC}
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c # added by prasanth
   )
 
   set(PHY_NR_UE_SRC
@@ -2550,6 +2551,14 @@ add_executable(nr_pbchsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${T_SOURCE})
 target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+
+#PUCCH ---> Prashanth
+add_executable(nr_pucchsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c 
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${T_SOURCE})
+target_link_libraries(nr_pucchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+#PUCCH ---> Prashanth
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c 

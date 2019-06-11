@@ -38,18 +38,20 @@ void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
                    int CC_idP,
-				   int Nid_cell,
+		   int Nid_cell,
                    int nr_bandP,
-				   uint64_t ssb_pattern,
+		   uint64_t ssb_pattern,
+		   uint16_t ssb_periodicity,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
-						   int cellid,
+			   int cellid,
                            int p_gNB,
                            int nr_bandP,
                            uint64_t ssb_pattern,
+                           uint16_t ssb_periodicity,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,

@@ -402,7 +402,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
      assert(0);
     }
 
-    size = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int64_t)*frame_parms_ue->samples_per_subframe;
+    size = sizeof(int64_t)*(frame_parms_ue->samples_per_frame + (2*ofdm_symbol_size));
     q = (int64_t*)malloc16(size);
     if (q != NULL) {
       pss_corr_ue[i] = q;
@@ -611,7 +611,7 @@ void restore_frame_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue, int rate_ch
 void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **rxdata)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;
+  int samples_for_frame = 2*frame_parms->samples_per_frame;
 
   AssertFatal(frame_parms->samples_per_tti > 3839,"Illegal samples_per_tti %d\n",frame_parms->samples_per_tti);
 
@@ -658,7 +658,7 @@ void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **r
 *
 *********************************************************************/
 
-int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
+int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
   int synchro_position;
@@ -667,9 +667,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
 #ifdef DBG_PSS_NR
 
-  int samples_for_frame = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-
-  LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], samples_for_frame, 1, 1);
+  LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], frame_parms->samples_per_frame, 1, 1);
 
 #endif
 
@@ -678,7 +676,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
     rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
 
     for (int aa=0; aa < frame_parms->nb_antennas_rx; aa++) {
-      rxdata[aa] = (int32_t*) malloc16_clear( (frame_parms->samples_per_subframe*10+8192)*sizeof(int32_t));
+      rxdata[aa] = (int32_t*) malloc16_clear( (frame_parms->samples_per_frame+8192)*sizeof(int32_t));
     }
 #ifdef SYNCHRO_DECIMAT
 
@@ -693,7 +691,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
 #ifdef DBG_PSS_NR
 
-  LOG_M("rxdata0_des.m","rxd0_des", &rxdata[0][0], samples_for_frame,1,1);
+  LOG_M("rxdata0_des.m","rxd0_des", &rxdata[0][0], frame_parms->samples_per_frame,1,1);
 
 #endif
 
@@ -708,6 +706,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
 					fo_flag,
+                                        is,
                                         (int *)&PHY_vars_UE->common_vars.eNb_id,
 					(int *)&PHY_vars_UE->common_vars.freq_offset);
 
@@ -745,6 +744,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
   return synchro_position;
 }
+
 
 static inline int abs32(int x)
 {
@@ -820,6 +820,7 @@ static inline double angle64(int64_t x)
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
 		       int fo_flag,
+                       int is,
                        int *eNB_id,
 		       int *f_off)
 {
@@ -829,13 +830,17 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   int64_t avg[NUMBER_PSS_SEQUENCE];
   double ffo_est=0;
 
-
-  unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
+  // performing the correlation on a frame length plus one symbol for the first of the two frame
+  // to take into account the possibility of PSS in between the two frames 
+  unsigned int length;
+  if (is==0)
+    length = frame_parms->samples_per_frame + (2*frame_parms->ofdm_symbol_size);
+  else
+    length = frame_parms->samples_per_frame;
 
   AssertFatal(length>0,"illegal length %d\n",length);
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) AssertFatal(pss_corr_ue[i] != NULL,"pss_corr_ue[%d] not yet allocated! Exiting.\n", i);
 
-    
   peak_value = 0;
   peak_position = 0;
   pss_source = 0;
@@ -871,7 +876,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
           /* perform correlation of rx data and pss sequence ie it is a dot product */
           result  = dot_product64((short*)primary_synchro_time_nr[pss_index], 
-				  (short*) &(rxdata[ar][n]), 
+				  (short*) &(rxdata[ar][n])+(is*frame_parms->samples_per_frame), 
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
@@ -905,13 +910,13 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 	  int64_t result1,result2;
 	  // Computing cross-correlation at peak on half the symbol size for first half of data
 	  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
-				  (short*) &(rxdata[0][peak_position]), 
+				  (short*) &(rxdata[0][peak_position])+(is*frame_parms->samples_per_frame), 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
 	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
 	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
-				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size), 
+				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size+(is*frame_parms->samples_per_frame)), 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 
@@ -950,7 +955,10 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     LOG_M("pss_corr_ue0.m","pss_corr_ue0",pss_corr_ue[0],length,1,6);
     LOG_M("pss_corr_ue1.m","pss_corr_ue1",pss_corr_ue[1],length,1,6);
     LOG_M("pss_corr_ue2.m","pss_corr_ue2",pss_corr_ue[2],length,1,6);
-    LOG_M("rxdata0.m","rxd0",rxdata[0],length,1,1); 
+    if (is)
+      LOG_M("rxdata1.m","rxd0",rxdata[frame_parms->samples_per_frame],length,1,1); 
+    else
+      LOG_M("rxdata0.m","rxd0",rxdata[0],length,1,1);
   } else {
     debug_cnt++;
   }
