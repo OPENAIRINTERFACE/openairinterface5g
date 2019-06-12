@@ -519,6 +519,9 @@ add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR" "OAI_SIMU")
+if (NOT ${RF_BOARD} STREQUAL "None")
+   add_definitions(-DMANAGED_RF=1)
+endif()
 
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
@@ -626,8 +629,6 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
   )
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
-
-add_library(rfsimulator MODULE ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c)
 
 ##########################################################
 
@@ -2010,6 +2011,11 @@ add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_
 target_link_libraries(enbscope ${XFORMS_LIBRARIES})
 target_link_libraries(uescope ${XFORMS_LIBRARIES})
 
+add_library(rfsimulator MODULE 
+	${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
+	)
+target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
+
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
 #include T directory even if the T is off because T macros are in the code
@@ -2053,6 +2059,25 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 #################################
 # add executables for operation
 #################################
+add_library(minimal_lib
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/config/config_userapi.c
+  ${OPENAIR_DIR}/common/config/config_load_configmodule.c
+  ${OPENAIR_DIR}/common/config/config_cmdline.c
+  ${OPENAIR_DIR}/common/utils/minimal_stub.c
+  ${T_SOURCE}
+  )
+target_link_libraries(minimal_lib pthread dl ${T_LIB})
+
+add_executable(replay_node
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/stored_node.c
+  )
+target_link_libraries (replay_node minimal_lib)
+
+add_executable(measurement_display
+  ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
+target_link_libraries (measurement_display minimal_lib)
 
 # lte-softmodem is both eNB and UE implementation
 ###################################################
