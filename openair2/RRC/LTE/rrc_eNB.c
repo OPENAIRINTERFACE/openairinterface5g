@@ -3316,7 +3316,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   //TODO: Assign proper values
   ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
-  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = 0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = LTE_Q_OffsetRange_dB0;
 
   /* TODO: Extend to multiple carriers */
   // Add adjacent cell lists (max 6 per eNB)
@@ -4028,6 +4028,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0] = 0;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
+  MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = (LTE_Q_OffsetRange_t *) CALLOC(1,sizeof(LTE_Q_OffsetRange_t));
   *(MeasObj->measObject.choice.measObjectEUTRA.offsetFreq) = ue_context_pP->ue_context.measurement_info->offsetFreq;   // Default is 15 or 0dB
 
   if (RC.rrc[ctxt_pP->module_id]->num_neigh_cells > 0) {
@@ -5563,7 +5564,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
 
   //TODO: Assign proper values
   ue_context_pP->ue_context.measurement_info->offsetFreq = 0;
-  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = 0;
+  ue_context_pP->ue_context.measurement_info->cellIndividualOffset[0] = LTE_Q_OffsetRange_dB0;
 
   /* TODO: Extend to multiple carriers */
   // Add adjacent cell lists (max 6 per eNB)
