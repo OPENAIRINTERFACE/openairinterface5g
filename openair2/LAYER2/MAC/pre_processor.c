@@ -1399,7 +1399,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
 
   //
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id,(int)(UE_RNTI(module_idP, UE_id)));
     // initialize harq_pid and round
     cc = &RC.mac[module_idP]->common_channels[CC_id];
     N_RBG[CC_id] = to_rbg(cc->mib->message.dl_Bandwidth);

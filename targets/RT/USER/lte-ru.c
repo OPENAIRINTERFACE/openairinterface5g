@@ -682,6 +682,7 @@ static void *emulatedRF_thread(void *param) {
   req.tv_sec = 0;
   req.tv_nsec = (numerology>0)? ((microsec * 1000L)/numerology):(microsec * 1000L)*2;
   cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
   CPU_SET(1,&cpuset);
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   int policy;

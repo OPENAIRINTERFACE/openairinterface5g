@@ -63,3 +63,4 @@ v1.0.0 -> January 2019. This version first implements the architectural split de
             A lot of bugfixes and a proper automated Continuous Integration process validates contributions.
 v1.0.1 -> February 2019: Bug fix for the UE L1 simulator.
 v1.0.2 -> February 2019: Full OAI support for 3.13.1 UHD
+v1.0.3 -> June 2019: Bug fix for LimeSuite v19.04.0 API

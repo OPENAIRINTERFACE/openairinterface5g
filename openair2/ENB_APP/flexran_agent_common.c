@@ -514,8 +514,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     // Fill the config for each UE
     for (int i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
       lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
-
-      if (!lc_ue_config[i]) goto error;
+      if (!lc_ue_config[i]){
+        for (int j = 0; j < i; j++){
+          free(lc_ue_config[j]);
+        }
+        free(lc_ue_config);
+        goto error;
+      }
 
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
       const int UE_id = flexran_get_mac_ue_id(mod_id, i);
@@ -527,8 +532,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if (*msg == NULL)
+  if (*msg == NULL){
+    for (int k = 0; k < lc_config_reply_msg->n_lc_ue_config; k++){
+      free(lc_ue_config[k]);
+    }
+    free(lc_ue_config);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
@@ -736,7 +746,13 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
     for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++) {
       cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
 
-      if (!cell_conf[i]) goto error;
+      if (!cell_conf[i]) {
+        for (int j = 0; j < i; j++) {
+          free(cell_conf[j]);
+        }
+        free(cell_conf);
+        goto error;
+      }
 
       protocol__flex_cell_config__init(cell_conf[i]);
 
@@ -758,8 +774,13 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    for (int k = 0; k < enb_config_reply_msg->n_cell_config; k++) {
+      free(cell_conf[k]);
+    }
+    free(cell_conf);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
@@ -789,6 +810,8 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
   Protocol__FlexRrcTriggering *triggering = input->rrc_triggering;
   agent_reconf_rrc *reconf_param = malloc(sizeof(agent_reconf_rrc));
   reconf_param->trigger_policy = triggering->rrc_trigger;
+  reconf_param->report_interval = 0;
+  reconf_param->report_amount = 0;
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)) {
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
