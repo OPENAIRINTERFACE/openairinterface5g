@@ -31,7 +31,7 @@
  */
 
 #include "mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h" //temporary
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
@@ -105,6 +105,9 @@ void mac_top_init_gNB(void)
         bzero(RC.nrmac[i], sizeof(gNB_MAC_INST));
 
         RC.nrmac[i]->Mod_id = i;
+
+        RC.nrmac[i]->tag = (NR_TAG_t*)malloc(sizeof(NR_TAG_t));
+        memset((void*)RC.nrmac[i]->tag,0,sizeof(NR_TAG_t));
 
 
         for (j = 0; j < MAX_NUM_CCs; j++) {

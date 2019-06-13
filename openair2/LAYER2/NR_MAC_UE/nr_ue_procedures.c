@@ -21,23 +21,41 @@
 
 /* \file ue_procedures.c
  * \brief procedures related to UE
- * \author R. Knopp, K.H. HSU
+ * \author R. Knopp, K.H. HSU, G. Casati
  * \date 2018
  * \version 0.1
  * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \note
  * \warning
  */
 
+/* MAC related headers */
 #include "mac_proto.h"
-#include "LAYER2/NR_MAC/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "mac_extern.h"
+//#include "LAYER2/MAC/mac_vars.h" // TODO Note that mac_vars.h is not NR specific and this should be updated
+                                 // also, the use of the same should be updated in nr-softmodem and nr-uesoftmodem
+
+/* PHY UE related headers*/
+#include "SCHED_NR_UE/defs.h"
+
 #include "RRC/NR_UE/rrc_proto.h"
 #include "assertions.h"
 #include "PHY/defs_nr_UE.h"
+
+/*Openair Packet Tracer */
+#include "UTIL/OPT/opt.h"
+#include "OCG.h"
+
+/* log utils */
 #include "common/utils/LOG/log.h"
-#include "openair2/LAYER2/MAC/mac.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
+/* TODO remove this for debugging purpose
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "LAYER2/MAC/mac.h"
+*/
 
 #include <stdio.h>
 #include <math.h>
@@ -2025,20 +2043,87 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
     return 0;
 }
 
+void nr_ue_send_sdu(module_id_t module_idP,
+                    uint8_t CC_id,
+                    frame_t frameP,
+                    uint8_t ttiP,
+                    uint8_t * pdu, uint16_t pdu_len, uint8_t eNB_index){
+
+  printf("nr_ue_send_sdu frame %d\n", frameP);
+
+  // Changes wrt LTE: replaced subframeP with ttiP
+  // TODO double check this and eventually create a type for TTI (tti_t)
+  // Note: pdu_len was previously named sdu and sdu_len
+
+  uint8_t * pduP = pdu;
+  NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
+
+  /*
+  #if UE_TIMING_TRACE
+    start_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
+  #endif
+  */
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
+
+  //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+
+  if (opt_enabled) {
+    trace_pdu(DIRECTION_DOWNLINK, pduP, pdu_len, module_idP, WS_C_RNTI,
+    UE_mac_inst[module_idP].cs_RNTI, frameP, ttiP, 0, 0); //subframeP
+    LOG_D(OPT, "[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
+      module_idP, frameP, UE_mac_inst[module_idP].cs_RNTI, pdu_len);
+    }
+
+  /*
+  #ifdef DEBUG_HEADER_PARSING
+    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",
+      module_idP, frameP, eNB_index, num_ce, num_sdu);
+  #endif
+  */
+
+  /*
+  #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+    for (i = 0; i < 32; i++) {
+      LOG_T(MAC, "%x.", sdu[i]);
+    }
+    LOG_T(MAC, "\n");
+  #endif
+  */
+
+  // Processing MAC PDU
+  // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
+  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, eNB_index);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
+
+  /*
+  #if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
+  #endif
+  */
+}
 
 void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,
     uint8_t *pduP, 
-    uint16_t mac_pdu_len, 
+    uint16_t mac_pdu_len,
     uint8_t eNB_index){
 
+    // This function is adapting code from the old
+    // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
+
     uint8_t *pdu_ptr = pduP;
-    uint16_t pdu_len = mac_pdu_len;
+    int pdu_len = mac_pdu_len;
 
     uint16_t mac_ce_len;
     uint16_t mac_subheader_len;
     uint16_t mac_sdu_len;
+
+    NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
+    uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
 
     //  For both DL/UL-SCH
     //  Except:
@@ -2067,12 +2152,16 @@ void nr_ue_process_mac_pdu(
 
     uint8_t done = 0;
     
-    while (!done || pdu_len <= 0){
-        mac_ce_len = 0x0000;
-        mac_subheader_len = 0x0001; //  default to fixed-length subheader = 1-oct
-        mac_sdu_len = 0x0000;
+    while (!done && pdu_len > 0){
+        mac_ce_len = 0;
+        mac_subheader_len = 1; //  default to fixed-length subheader = 1-oct
+        mac_sdu_len = 0;
         switch(((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID){
             //  MAC CE
+
+            /*#ifdef DEBUG_HEADER_PARSING
+              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
+            #endif*/
             case DL_SCH_LCID_CCCH:
                 //  MSG4 RRC Connection Setup 38.331
                 //  varialbe length
@@ -2082,8 +2171,29 @@ void nr_ue_process_mac_pdu(
                     mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
                     mac_subheader_len = 3;
                 }
+
+                /*LOG_D(MAC, "[UE %d] rnti %x Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",
+                    module_idP, UE_mac_inst[module_idP].crnti, frameP, eNB_index, rx_lengths[i]);*/
+
+                /*#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                  int j;
+                  for (j = 0; j < rx_lengths[i]; j++) {
+                    LOG_T(MAC, "%x.", (uint8_t) payload_ptr[j]);
+                  }
+                  LOG_T(MAC, "\n");
+                #endif*/
+
+                /*mac_rrc_data_ind_ue(module_idP,
+                            CC_id,
+                            frameP, subframeP,
+                            UE_mac_inst[module_idP].crnti,
+                            CCCH,
+                            (uint8_t *) payload_ptr,
+                            rx_lengths[i], eNB_index, 0);*/
                 break;
+
             case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
+
                 //  38.321 Ch6.1.3.14
                 //  varialbe length
                 mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
@@ -2169,10 +2279,70 @@ void nr_ue_process_mac_pdu(
             case DL_SCH_LCID_TA_COMMAND:
                 //  38.321 Ch6.1.3.4
                 mac_ce_len = 1;
+
+                uint8_t ta_command = ((NR_MAC_CE_TA *)pdu_ptr)[1].TA_COMMAND;
+
+                uint8_t tag_id = ((NR_MAC_CE_TA *)pdu_ptr)[1].TAGID;
+
+                /*
+                #ifdef DEBUG_HEADER_PARSING
+                LOG_D(MAC, "[UE] CE %d : UE Timing Advance : %d\n", i, pdu_ptr[1]);
+                #endif
+                */
+
+                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n", ta_command, tag_id, CC_id);
+
+                //if (nfapi_mode!=3){ // TODO check nfapi_mode
+                  nr_process_timing_advance(module_idP, CC_id, ta_command, scs);
+                //}
+
                 break;
             case DL_SCH_LCID_CON_RES_ID:
                 //  38.321 Ch6.1.3.3
                 mac_ce_len = 6;
+
+                // TODO index should be shifted by 1
+                // LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, payload_ptr[0], payload_ptr[1], payload_ptr[2], payload_ptr[3], payload_ptr[4], payload_ptr[5]);
+
+                // TODO RACH is missing
+
+                /*if (UE_mac_inst[module_idP].RA_active == 1) {
+                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n",
+                    module_idP, frameP);
+                    UE_mac_inst[module_idP].RA_active = 0;
+                    // check if RA procedure has finished completely (no contention)
+                    tx_sdu = &UE_mac_inst[module_idP].CCCH_pdu.payload[3];
+
+                  //Note: 3 assumes sizeof(SCH_SUBHEADER_SHORT) + PADDING CE, which is when UL-Grant has TBS >= 9 (64 bits)
+                  // (other possibility is 1 for TBS=7 (SCH_SUBHEADER_FIXED), or 2 for TBS=8 (SCH_SUBHEADER_FIXED+PADDING or SCH_SUBHEADER_SHORT)
+                  for (i = 0; i < 6; i++)
+                    if (tx_sdu[i] != payload_ptr[i]) {
+                      LOG_E(MAC, "[UE %d][RAPROC] Contention detected, RA failed\n", module_idP);
+                      if(nfapi_mode == 3) { // phy_stub mode
+                      //  Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
+                      // PRACH state.
+                        LOG_I(MAC, "nfapi_mode3: Setting UE_mode BACK to PRACH 1\n");
+                        UE_mac_inst[module_idP].UE_mode[eNB_index] = PRACH;
+                      //ra_failed(module_idP,CC_id,eNB_index);UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
+                      }
+                      else{
+                        ra_failed(module_idP, CC_id, eNB_index);
+                      }
+                    UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
+                    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
+                    return;
+                    }
+                    LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n", module_idP, frameP);
+                    UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
+                    if(nfapi_mode == 3){
+                      // phy_stub mode
+                      // Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
+                      UE_mac_inst[module_idP].UE_mode[eNB_index] = PUSCH;
+                  } else { // Full stack mode
+                    ra_succeeded(module_idP,CC_id,eNB_index);
+                  }
+                }*/
+
                 break;
             case DL_SCH_LCID_PADDING:
                 done = 1;
@@ -2180,25 +2350,62 @@ void nr_ue_process_mac_pdu(
                 break;
 
             //  MAC SDU
+            /* TODO double check SRBs 1-3 & DRB 1-3 */
+
             case DL_SCH_LCID_SRB1:
-                //  check if LCID is valid at current time.
+            //  check if LCID is valid at current time.
+
+              /*if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
+
+              LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n",
+              module_idP, frameP, rx_lcids[i], eNB_index, rx_lengths[i]);
+
+              mac_rlc_data_ind(module_idP, UE_mac_inst[module_idP].crnti, eNB_index, frameP, ENB_FLAG_NO,
+              MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
+              } else if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
+              LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
+              module_idP, frameP, rx_lcids[i], eNB_index, rx_lengths[i]);
+
+              #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                int j;
+                for (j = 0; j < rx_lengths[i]; j++)
+                LOG_T(MAC, "%x.", (unsigned char) payload_ptr[j]);
+                LOG_T(MAC, "\n");
+              #endif
+
+              mac_rlc_data_ind(module_idP,
+                         UE_mac_inst[module_idP].crnti,
+                         eNB_index,
+                         frameP,
+                         ENB_FLAG_NO,
+                         MBMS_FLAG_NO,
+                         rx_lcids[i],
+                         (char *) payload_ptr, rx_lengths[i], 1, NULL);
+            }*/
+
             case UL_SCH_LCID_SRB2:
                 //  check if LCID is valid at current time.
             case UL_SCH_LCID_SRB3:
                 //  check if LCID is valid at current time.
             default:
                 //  check if LCID is valid at current time.
-                mac_sdu_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
-                mac_subheader_len = 2;
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
-                    mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
                     mac_subheader_len = 3;
+                    mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1 & 0x7f) << 8)
+                    | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
+
+                } else {
+                  mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                  mac_subheader_len = 2;
                 }
+
                 //  DRB LCID by RRC
                 break;
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+
         AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
     }
 }

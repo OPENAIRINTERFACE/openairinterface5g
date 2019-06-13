@@ -33,9 +33,10 @@
 #include "assertions.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
@@ -63,10 +64,6 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
-
-extern RAN_CONTEXT_t RC;
-extern int phy_test;
-extern uint8_t nfapi_mode;
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -375,11 +372,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Phytest scheduling
  
-  if (slot_rxP==2){
+  if (slot_rxP == NR_UPLINK_SLOT){
     nr_schedule_uss_ulsch_phytest(&RC.nrmac[module_idP]->UL_tti_req[0], frame_rxP, slot_rxP);
   }
   
-  if (slot_txP==1){
+  if (slot_txP == NR_DOWNLINK_SLOT){
+    nr_schedule_ue_spec(module_idP, frame_txP, slot_txP);
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
   }
 

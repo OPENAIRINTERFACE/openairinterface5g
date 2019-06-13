@@ -125,16 +125,28 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
 
+
+/* \brief Get payload (MAC PDU) from UE PHY
+@param module_idP Instance id of UE in machine
+@param CC_id Component Carrier index
+@param frameP Current Rx frame
+@param ttiP Current Rx tti subframe
+@param pdu Pointer to the MAC PDU
+@param pdu_len Length of the MAC PDU
+@param eNB_id Index of eNB that UE is attached to
+@returns void
+*/
+void nr_ue_send_sdu(module_id_t module_idP,uint8_t CC_id, frame_t frameP, uint8_t ttiP,
+                    uint8_t * pdu, uint16_t pdu_len, uint8_t eNB_index);
+
 void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,
     uint8_t *pduP, 
-    uint16_t mac_pdu_len, 
+    uint16_t mac_pdu_len,
     uint8_t eNB_index);
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
-
-void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index);
 
 #endif
 /** @}*/

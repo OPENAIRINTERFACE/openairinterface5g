@@ -1641,6 +1641,7 @@ set (MAC_NR_SRC
   ${NR_MAC_DIR}/config.c
   ${NR_MAC_DIR}/gNB_scheduler.c
   ${NR_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_MAC_DIR}/gNB_scheduler_dlsch.c
   ${NR_MAC_DIR}/gNB_scheduler_primitives.c
   ${NR_MAC_DIR}/gNB_scheduler_phytest.c
  )
@@ -1713,7 +1714,7 @@ add_dependencies(L2_UE rrc_flag s1ap_flag x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 
-add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c )
+add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c )
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
 include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")

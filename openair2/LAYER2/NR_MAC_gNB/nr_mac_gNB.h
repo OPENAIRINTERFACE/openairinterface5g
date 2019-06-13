@@ -55,11 +55,13 @@
 #include "common/ran_context.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 
+
+#include "NR_TAG.h"
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -107,7 +109,9 @@ typedef struct gNB_MAC_INST_s {
   /// frame counter
   frame_t                         frame;
   /// slot counter
-  int                             slot;  
+  int                             slot;
+  /// timing advance group
+  NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
     /// Common cell resources

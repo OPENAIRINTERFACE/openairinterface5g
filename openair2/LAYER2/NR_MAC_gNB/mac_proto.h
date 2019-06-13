@@ -33,6 +33,7 @@
 
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
+#include "NR_TAG-Id.h"
 
 void set_cset_offset(uint16_t);
 
@@ -69,6 +70,19 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_txP, sub_frame_t slot_txP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
+
+int nr_generate_dlsch_pdu(unsigned char *sdus_payload,
+                          unsigned char *mac_pdu,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned short timing_advance_cmd,
+                          NR_TAG_Id_t tag_id,
+                          unsigned char *ue_cont_res_id,
+                          unsigned short post_padding);
+
+void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 

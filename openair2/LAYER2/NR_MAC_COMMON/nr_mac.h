@@ -41,6 +41,31 @@
 
 #define NR_BCCH_BCH 5    // MIB
 
+//  For both DL/UL-SCH
+//  Except:
+//   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+//   - UL/DL-SCH: padding
+//   - UL-SCH:    MSG3 48-bits
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|F|   LCID    |
+//  |       L       |
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|F|   LCID    |
+//  |       L       |
+//  |       L       |
+
+//  For both DL/UL-SCH
+//  For:
+//   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+//   - UL/DL-SCH: padding, for single/multiple 1-oct padding CE(s)
+//   - UL-SCH:    MSG3 48-bits
+//  |0|1|2|3|4|5|6|7|  bit-wise
+//  |R|R|   LCID    |
+//  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
+//  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
+//  F: lenght of L is 0:8 or 1:16 bits wide
+//  R: Reserved bit, set to zero.
+
 typedef struct {
     uint8_t LCID:6;     // octet 1 [5:0]
     uint8_t F:1;        // octet 1 [6]

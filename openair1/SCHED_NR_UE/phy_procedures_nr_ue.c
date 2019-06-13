@@ -21,11 +21,11 @@
 
 /*! \file phy_procedures_nr_ue.c
  * \brief Implementation of UE procedures from 36.213 LTE specifications
- * \author R. Knopp, F. Kaltenberger, N. Nikaein, A. Mico Pereperez
+ * \author R. Knopp, F. Kaltenberger, N. Nikaein, A. Mico Pereperez, G. Casati
  * \date 2018
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \note
  * \warning
  */
@@ -420,22 +420,6 @@ void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,ui
   /*LOG_I(PHY,"[UE %d] AbsoluteSubFrame %d.%d, received (rar) timing_advance %d, HW timing advance %d\n",ue->Mod_id,proc->frame_rx, proc->nr_tti_rx_rx, ue->timing_advance);*/
   LOG_I(PHY,"[UE %d] AbsoluteSubFrame %d.%d, received (rar) timing_advance %d\n",ue->Mod_id,proc->frame_rx, proc->nr_tti_rx, ue->timing_advance);
 #endif
-
-}
-
-void nr_process_timing_advance(uint8_t Mod_id,uint8_t CC_id,int16_t timing_advance)
-{
-
-  //  uint32_t frame = PHY_vars_UE_g[Mod_id]->frame;
-
-  // timing advance has Q1.5 format
-  timing_advance = timing_advance - 31;
-
-  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance = PHY_vars_UE_g[Mod_id][CC_id]->timing_advance+timing_advance*4; //this is for 25RB only!!!
-
-
-  LOG_D(PHY,"[UE %d] Got timing advance %d from MAC, new value %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
-
 
 }
 
@@ -1559,6 +1543,19 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 }
 
 #endif
+
+
+void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing_advance, uint8_t mu){
+
+  // 3GPP TS 38.213 p4.2
+
+  int factor_mu = 1 << mu;
+
+  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * 1024 / factor_mu ;
+
+
+  LOG_D(PHY,"[UE %d] Got timing advance %d from MAC, new value is %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
+}
 
 void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
 								UE_nr_rxtx_proc_t *proc,
@@ -3361,7 +3358,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
     uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
     uint16_t s1 =  dlsch0->harq_processes[harq_pid]->nb_symbols;
 
-    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
+    LOG_I(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
 
     for (m = s0; m < (s1 + s0); m++) {
 
@@ -3528,7 +3525,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
-  //int CC_id = ue->CC_id;
+  uint8_t CC_id = ue->CC_id;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
@@ -3800,11 +3797,89 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       if (ue->if_inst && ue->if_inst->dl_indication)
       ue->if_inst->dl_indication(&dl_indication);
       }
-    }
 
+      // TODO CRC check for CW0
 
+      // Check CRC for CW 0
+      /*if (ret == (1+dlsch0->max_turbo_iterations)) {
+        *dlsch_errors=*dlsch_errors+1;
+        if(dlsch0->rnti != 0xffff){
+          LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : DLSCH CW0 in error (rv %d,round %d, mcs %d,TBS %d)\n",
+          ue->Mod_id,dlsch0->rnti,
+          harq_pid,frame_rx,subframe_rx,
+          dlsch0->harq_processes[harq_pid]->rvidx,
+          dlsch0->harq_processes[harq_pid]->round,
+          dlsch0->harq_processes[harq_pid]->mcs,
+          dlsch0->harq_processes[harq_pid]->TBS);
+        }
+      } else {
+        if(dlsch0->rnti != 0xffff){
+          LOG_D(PHY,"[UE  %d][PDSCH %x/%d] AbsSubframe %d.%d : Received DLSCH CW0 (rv %d,round %d, mcs %d,TBS %d)\n",
+          ue->Mod_id,dlsch0->rnti,
+          harq_pid,frame_rx,subframe_rx,
+          dlsch0->harq_processes[harq_pid]->rvidx,
+          dlsch0->harq_processes[harq_pid]->round,
+          dlsch0->harq_processes[harq_pid]->mcs,
+          dlsch0->harq_processes[harq_pid]->TBS);
+        }
+        if ( LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)){
+          int j;
+          LOG_D(PHY,"dlsch harq_pid %d (rx): \n",dlsch0->current_harq_pid);
 
+          for (j=0; j<dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS>>3; j++)
+            LOG_T(PHY,"%x.",dlsch0->harq_processes[dlsch0->current_harq_pid]->b[j]);
+          LOG_T(PHY,"\n");
+      }*/
 
+      if (ue->mac_enabled == 1) {
+        switch (pdsch) {
+          case PDSCH:
+          printf("PDSCH procedures\n");
+          nr_ue_send_sdu(ue->Mod_id,
+                      CC_id,
+                      frame_rx,
+                      nr_tti_rx,
+                      dlsch0->harq_processes[harq_pid]->b,
+                      dlsch0->harq_processes[harq_pid]->TBS>>3,
+                      eNB_id);
+          break;
+          case SI_PDSCH:
+          /*ue_decode_si(ue->Mod_id,
+                      CC_id,
+                      frame_rx,
+                      eNB_id,
+                      ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
+                      ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);*/
+          break;
+          case P_PDSCH:
+          /*ue_decode_p(ue->Mod_id,
+                      CC_id,
+                      frame_rx,
+                      eNB_id,
+                      ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
+                      ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);*/
+          break;
+          case RA_PDSCH:
+          /*process_rar(ue,proc,eNB_id,mode,abstraction_flag);*/
+          break;
+          case PDSCH1:
+          /*LOG_E(PHY,"Shouldn't have PDSCH1 yet, come back later\n");
+          AssertFatal(1==0,"exiting");*/
+          break;
+          case PMCH:
+          /*LOG_E(PHY,"Shouldn't have PMCH here\n");
+          AssertFatal(1==0,"exiting");*/
+          break;
+        }
+      }
+
+      /*ue->total_TBS[eNB_id] =  ue->total_TBS[eNB_id] + dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS;
+      ue->total_received_bits[eNB_id] = ue->total_TBS[eNB_id] + dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS;
+    }*/
+
+    // TODO CRC check for CW1
+
+  }
 }
 
 
@@ -4132,6 +4207,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            uint8_t do_pdcch_flag,
                            runmode_t mode)
 {
+  int l,l2;
+  int pilot1;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
