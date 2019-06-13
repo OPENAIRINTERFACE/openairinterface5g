@@ -639,7 +639,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
   LTE_eNB_UCI *uci = NULL;
   LTE_DL_FRAME_PARMS *fp = &(eNB->frame_parms);
 
-  for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
     uci = &(eNB->uci_vars[i]);
 
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
@@ -687,7 +687,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
           int pucch1_thres = (uci->ue_type == 0) ? eNB->pucch1_DTX_threshold : eNB->pucch1_DTX_threshold_emtc[0];
           metric_SR = rx_pucch(eNB,
                                uci->pucch_fmt,
-                               i,
+                               uci->ue_id,
                                uci->n_pucch_1_0_sr[0],
                                0, // n2_pucch
                                uci->srs_active, // shortened format
@@ -729,7 +729,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
                   SR_payload);
             metric[0] = rx_pucch(eNB,
                                  uci->pucch_fmt,
-                                 i,
+                                 uci->ue_id,
                                  uci->n_pucch_1[0][0],
                                  0, //n2_pucch
                                  uci->srs_active, // shortened format
@@ -753,7 +753,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
               SR_payload = 1;
               metric[0]=rx_pucch(eNB,
                                  uci->pucch_fmt,
-                                 i,
+                                 uci->ue_id,
                                  uci->n_pucch_1_0_sr[0],
                                  0, //n2_pucch
                                  uci->srs_active, // shortened format
@@ -783,7 +783,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
 #if 1
             metric[0] = rx_pucch(eNB,
                                  uci->pucch_fmt,
-                                 i,
+                                 uci->ue_id,
                                  uci->n_pucch_1[0][0],
                                  0, //n2_pucch
                                  uci->srs_active, // shortened format
@@ -803,7 +803,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
               SR_payload = 1;
               metric[0] = rx_pucch(eNB,
                                    pucch_format1b,
-                                   i,
+                                   uci->ue_id,
                                    uci->n_pucch_1_0_sr[0],
                                    0, //n2_pucch
                                    uci->srs_active, // shortened format
@@ -1142,11 +1142,11 @@ uci_procedures(PHY_VARS_eNB *eNB,
           if (SR_payload == 1) {
             LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n", eNB->Mod_id, uci->rnti, frame, subframe);
 
-            if (eNB->first_sr[i] == 1) {    // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
-              eNB->first_sr[i] = 0;
-              eNB->dlsch[i][0]->harq_processes[0]->round = 0;
-              eNB->dlsch[i][0]->harq_processes[0]->status = SCH_IDLE;
-              LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d First SR\n", eNB->Mod_id, eNB->ulsch[i]->rnti, frame, subframe);
+            if (eNB->first_sr[uci->ue_id] == 1) {    // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
+              eNB->first_sr[uci->ue_id] = 0;
+              eNB->dlsch[uci->ue_id][0]->harq_processes[0]->round = 0;
+              eNB->dlsch[uci->ue_id][0]->harq_processes[0]->status = SCH_IDLE;
+              LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d First SR\n", eNB->Mod_id, eNB->ulsch[uci->ue_id]->rnti, frame, subframe);
             }
           }
       }

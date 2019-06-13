@@ -1023,26 +1023,30 @@ void release_UE_in_freeList(module_id_t mod_id) {
 
         for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
           ulsch = eNB_PHY->ulsch[i];
-
           if((ulsch != NULL) && (ulsch->rnti == rnti)) {
             void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
             LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
             clean_eNb_ulsch(ulsch);
           }
 
-          if(eNB_PHY->uci_vars[i].rnti == rnti) {
-            LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
-            memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
-          }
-        }
-
-        for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
           dlsch = eNB_PHY->dlsch[i][0];
-
           if((dlsch != NULL) && (dlsch->rnti == rnti)) {
             void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
             LOG_I(RRC, "clean_eNb_dlsch dlsch[%d] UE %x \n", i, rnti);
             clean_eNb_dlsch(dlsch);
+          }
+        }
+        ulsch = eNB_PHY->ulsch[i];
+        if((ulsch != NULL) && (ulsch->rnti == rnti)) {
+          void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
+          LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
+          clean_eNb_ulsch(ulsch);
+        }
+
+        for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+          if(eNB_PHY->uci_vars[i].rnti == rnti) {
+            LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
+            memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
           }
         }
 
