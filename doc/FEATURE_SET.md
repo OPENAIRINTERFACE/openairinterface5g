@@ -203,17 +203,26 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Bandwidths up to 80MHz (217 Physical Resource Blocks)
 *  Single antenna port (single beam)
 *  Slot format: 14 OFDM symbols in UL or DL
+*  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 supported)
+*  Highly efficient 3GPP compliant polar encoder and decoder
+*  Encoder and decoder for short blocks
 
 ## gNB Features ##
 
 ### gNB PHY Layer ###
 
-*  Generation of PSS/SSS/PBCH for a single beam
-*  Generation of PDCCH for SIB1 (as defined in the MIB)
-   -  (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc). 
-*  Generation of PDSCH 
-   -  (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
-
+*  Generation of PSS/SSS/PBCH for multiple beams and
+*  Generation of PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+   - common search space configured by MIB
+   - user-specific search space configured by RRC
+   - DCI formats: 00, 10
+*  Generation of PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+   - Single symbol DMRS, dmrs-TypeA-Position Pos2,  DMRS configuration type 1
+   - PDSCH mapping type A 
+*  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+*  NR-PUCCH 
+   - Format 0 (ACK/NACK)
+   
 ### gNB higher Layers ###
   
 - NR RRC (38.331) Rel 15 messages using new asn1c 
@@ -230,10 +239,14 @@ For more details see [this document](https://gitlab.eurecom.fr/oai/openairinterf
 
 ### NR UE PHY Layer ###
 
-- initial synchronization (single-beam only)
+- initial synchronization
+- Time tracking based on PDCCH DMRS
+- Frequency offset estimation
 - PBCH RX
 - PDCCH RX 
 - PDSCH RX
+  - including first version of dual stream receiver for PDSCH
+
 
 ### NR UE higher Layers ###
 
