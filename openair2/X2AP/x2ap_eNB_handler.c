@@ -84,6 +84,24 @@ int x2ap_eNB_handle_handover_cancel (instance_t instance,
                                      uint32_t stream,
                                      X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_eNB_handle_senb_addition_request (instance_t instance,
+                                           uint32_t assoc_id,
+                                           uint32_t stream,
+                                           X2AP_X2AP_PDU_t *pdu);
+
+static
+int x2ap_eNB_handle_senb_addition_request_acknowledge (instance_t instance,
+                                                       uint32_t assoc_id,
+                                                       uint32_t stream,
+                                                       X2AP_X2AP_PDU_t *pdu);
+
+static
+int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
+                                                  uint32_t assoc_id,
+                                                  uint32_t stream,
+                                                  X2AP_X2AP_PDU_t *pdu);
+
 /* Handlers matrix. Only eNB related procedure present here */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
@@ -105,7 +123,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* x2Release */
   { 0, 0, 0 }, /* x2APMessageTransfer */
   { 0, 0, 0 }, /* x2Removal */
-  { 0, 0, 0 }, /* seNBAdditionPreparation */
+  { x2ap_eNB_handle_senb_addition_request, x2ap_eNB_handle_senb_addition_request_acknowledge, x2ap_eNB_handle_senb_addition_request_reject }, /* seNBAdditionPreparation */
   { 0, 0, 0 }, /* seNBReconfigurationCompletion */
   { 0, 0, 0 }, /* meNBinitiatedSeNBModificationPreparation */
   { 0, 0, 0 }, /* seNBinitiatedSeNBModification */
@@ -1071,5 +1089,35 @@ int x2ap_eNB_handle_handover_cancel (instance_t instance,
 
   x2ap_release_id(&instance_p->id_manager, ue_id);
 
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_senb_addition_request (instance_t instance,
+                                           uint32_t assoc_id,
+                                           uint32_t stream,
+                                           X2AP_X2AP_PDU_t *pdu)
+{
+  printf("%s:%d:%s:TODO\n", __FILE__, __LINE__, __FUNCTION__);
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_senb_addition_request_acknowledge (instance_t instance,
+                                                       uint32_t assoc_id,
+                                                       uint32_t stream,
+                                                       X2AP_X2AP_PDU_t *pdu)
+{
+  printf("%s:%d:%s:TODO\n", __FILE__, __LINE__, __FUNCTION__);
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
+                                                  uint32_t assoc_id,
+                                                  uint32_t stream,
+                                                  X2AP_X2AP_PDU_t *pdu)
+{
+  printf("%s:%d:%s:TODO\n", __FILE__, __LINE__, __FUNCTION__);
   return 0;
 }

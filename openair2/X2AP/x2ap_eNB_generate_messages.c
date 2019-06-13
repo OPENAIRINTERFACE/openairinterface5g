@@ -993,3 +993,101 @@ int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_
 
   return ret;
 }
+
+int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p
+                                             /* TODO: pass needed parameters */)
+{
+  X2AP_X2AP_PDU_t                pdu;
+  X2AP_SeNBAdditionRequest_t     *out;
+  X2AP_SeNBAdditionRequest_IEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  /* Prepare the X2AP SeNB Addition Request message to encode */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_seNBAdditionPreparation;
+  pdu.choice.initiatingMessage.criticality = X2AP_Criticality_reject;
+  pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_SeNBAdditionRequest;
+  out = &pdu.choice.initiatingMessage.value.choice.SeNBAdditionRequest;
+
+  /* id-MeNB-UE-X2AP-ID - mandatory - criticality reject */
+  ie = (X2AP_SeNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = 0;                                   /* TODO */
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* id-UE-SecurityCapabilities - conditional - criticality reject */
+  /* TODO */
+
+  /* id-SeNBSecurityKey - conditional - criticality reject */
+  /* TODO */
+
+  /* id-SeNBUEAggregateMaximumBitRate - mandatory - criticality reject */
+  ie = (X2AP_SeNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SeNBUEAggregateMaximumBitRate;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_ProtocolIE_ID_id_SeNBUEAggregateMaximumBitRate;
+  if (asn_imax2INTEGER(&ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateDownlink, 0) != 0) { /* TODO: right value */
+    LOG_E(X2AP, "%s:%d:%s: fatal asn1 error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  if (asn_imax2INTEGER(&ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateUplink, 0) != 0) { /* TODO: right value */
+    LOG_E(X2AP, "%s:%d:%s: fatal asn1 error\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* id-ServingPLMN - optional - criticality ignore */
+  /* TODO */
+
+  /* id-E-RABs-ToBeAdded-List - mandatory - criticality reject */
+  ie = (X2AP_SeNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SeNBUEAggregateMaximumBitRate;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_List;
+  /* TODO: set value of ie->value.choice.E_RABs_ToBeAdded_List.list */
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* id-MeNBtoSeNBContainer - mandatory - criticality reject */
+  ie = (X2AP_SeNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNBtoSeNBContainer;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_ProtocolIE_ID_id_MeNBtoSeNBContainer;
+  /* TODO: set value of ie->value.choice.MeNBtoSeNBContainer */
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* id-CSGMembershipStatus - optional - criticality reject */
+  /* TODO */
+
+  /* id-SeNB-UE-X2AP-ID - optional - criticality reject */
+  /* TODO */
+
+  /* id-SeNB-UE-X2AP-ID-Extension - optional - criticality reject */
+  /* TODO */
+
+  /* id-ExpectedUEBehaviour - optional - criticality ignore */
+  /* TODO */
+
+  /* id-MeNB-UE-X2AP-ID-Extension - optional - criticality reject */
+  /* TODO */
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode X2AP SeNB Addition Request\n");
+    abort();
+    return -1;
+  }
+
+  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2SeNBAdditionRequest/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
+
+  return ret;
+}
