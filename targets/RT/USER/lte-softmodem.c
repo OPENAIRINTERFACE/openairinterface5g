@@ -719,7 +719,6 @@ int main( int argc, char **argv ) {
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
-    int UE_id;
     if(IS_SOFTMODEM_DOFORMS)
       end_forms();
 

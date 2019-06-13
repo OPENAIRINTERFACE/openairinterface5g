@@ -238,7 +238,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 #endif
 	rxF = &prach_rxsigF[antenna_id][0];
 
-      LOG_D(PHY,"PRACH_if4P5: rxsigF%d energy %d\n",antenna_id,dB_fixed(signal_energy(rxF,839)));
+      LOG_D(PHY,"PRACH_if4P5: rxsigF%d energy %d\n",antenna_id,dB_fixed(signal_energy((int*)rxF,839)));
       AssertFatal(rxF!=NULL,"rxF is null\n");
       if (eth->flags == ETH_RAW_IF4p5_MODE) {
         memcpy((void *)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t+PRACH_BLOCK_SIZE_BYTES*antenna_id),
