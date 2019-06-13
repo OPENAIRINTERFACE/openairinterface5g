@@ -598,7 +598,7 @@ case $key in
     case $TRIG in
         merge-request)
         MR_TRIG=1
-        NBARGS=$[$NBARGS+$PU_OPTID]       
+        NBARGS=$[$NBARGS+$MR_OPTID]       
         ;;
         push)
         PU_TRIG=1
