@@ -114,6 +114,7 @@ volatile int             oai_exit = 0;
 
 static clock_source_t clock_source = internal;
 int                      single_thread_flag=1;
+double snr_dB=20;
 
 int                      threequarter_fs=0;
 
