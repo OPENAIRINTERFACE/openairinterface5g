@@ -868,8 +868,10 @@ generate_Msg4(module_id_t module_idP,
       ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE;
       ul_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_ul_config_uci_harq_pdu));
+      ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.handle = 0;      // don't know how to use this
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti = ra->rnti;
+      ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.tl.tag = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL13_TAG;
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.ue_type = (ra->rach_resource_type < 3) ? 1 : 2;
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.empty_symbols = 0;
       ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.total_number_of_repetitions = pucchreps[ra->rach_resource_type - 1];
