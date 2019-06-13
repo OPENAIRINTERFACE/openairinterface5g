@@ -108,11 +108,12 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
-void config_nr_mib(int Mod_idP, 
-		   int subCarrierSpacingCommon, 
-		   uint32_t ssb_SubcarrierOffset,
-		   int dmrs_TypeA_Position,
-		   uint32_t pdcch_ConfigSIB1
-		   );
+void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                nfapi_nr_dl_config_dci_dl_pdu dci_pdu);
+
+int NRRIV2BW(int locationAndBandwidth,int N_RB);
+
+int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
+
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

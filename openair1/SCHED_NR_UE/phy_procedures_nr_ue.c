@@ -3775,13 +3775,13 @@ void process_rar(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, runmod
 #endif
 
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
-       UE_nr_rxtx_proc_t *proc,
-       int eNB_id,
-       PDSCH_t pdsch,
-       NR_UE_DLSCH_t *dlsch0,
-       NR_UE_DLSCH_t *dlsch1,
-       int *dlsch_errors,
-       runmode_t mode) {
+			    UE_nr_rxtx_proc_t *proc,
+			    int eNB_id,
+			    PDSCH_t pdsch,
+			    NR_UE_DLSCH_t *dlsch0,
+			    NR_UE_DLSCH_t *dlsch1,
+			    int *dlsch_errors,
+			    runmode_t mode) {
 
   int harq_pid;
   int frame_rx = proc->frame_rx;
@@ -3791,18 +3791,27 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
-  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
-  uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
-  uint16_t nb_symb_sch = 9;
+
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
 
   harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
-  nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
+  uint16_t nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
+
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &dlsch0->harq_processes[harq_pid]->dl_config_pdu;
+  uint8_t dmrs_Type = dl_config_pdu->dmrs_Type;
+  AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
+  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
+  uint8_t dmrs_TypeA_Position = dl_config_pdu->dmrs_TypeA_Position;
+  AssertFatal(dmrs_TypeA_Position == 2 || dmrs_TypeA_Position == 3,"Illegal dmrs_TypeA_Position %d\n",dmrs_TypeA_Position);
+  uint16_t dmrs_maxLength = dl_config_pdu->dmrs_maxLength;
+  AssertFatal(dmrs_maxLength == 1 || dmrs_maxLength == 2,"Illegal dmrs_maxLength %d\n",dmrs_maxLength);
+  uint16_t dmrs_AdditionalPosition = dl_config_pdu->dmrs_AdditionalPosition;
+  AssertFatal(dmrs_AdditionalPosition >= 0 && dmrs_AdditionalPosition <= 4,"Illegal dmrs_additional_symbols %d\n",dmrs_AdditionalPosition);
+  //  uint16_t nb_symb_sch = dl_config_pdu->nb_symbols;
+  //  AssertFatal(nb_symb_sch >= 1 && nb_symb_sch <= 14,"Illegal nb_symb_sch %d\n",nb_symb_sch);
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -3863,17 +3872,17 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
 						     nb_symb_sch,
 						     nb_re_dmrs,
-						     length_dmrs,
+						     dmrs_maxLength,
 						     dlsch0->harq_processes[harq_pid]->Qm,
 						     dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif
       nr_dlsch_unscrambling(pdsch_vars->llr[0],
-    		  	  	  	    dlsch0->harq_processes[harq_pid]->G,
-							0,
-							ue->frame_parms.Nid_cell,
-							dlsch0->rnti);
+			    dlsch0->harq_processes[harq_pid]->G,
+			    0,
+			    ue->frame_parms.Nid_cell,
+			    dlsch0->rnti);
       
 
 #if UE_TIMING_TRACE
@@ -3947,7 +3956,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
 							 nb_symb_sch,
 							 nb_re_dmrs,
-							 length_dmrs,
+							 dmrs_maxLength,
 							 dlsch1->harq_processes[harq_pid]->Qm,
 							 dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE

@@ -250,7 +250,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms)
 *
 *********************************************************************/
 
-int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
+int nr_slot_select(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
 {
   /* for FFD all slot can be considered as an uplink */
   if (frame_parms->frame_type == FDD) {

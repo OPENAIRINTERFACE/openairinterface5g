@@ -352,9 +352,9 @@ void RCconfig_NR_L1(void) {
 
 
   if (RC.gNB == NULL) {
-    RC.gNB                       = (PHY_VARS_gNB ***)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB**));
+    RC.gNB                       = (PHY_VARS_gNB **)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
     LOG_I(NR_PHY,"RC.gNB = %p\n",RC.gNB);
-    memset(RC.gNB,0,(1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB**));
+    memset(RC.gNB,0,(1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
   }
 
   config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
@@ -505,7 +505,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
    ////////// Physical parameters
 
 
-  printf("SCCsParams[15].i64ptr %p (%p)\n",SCCsParams[15].i64ptr,scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->k0);
 
   /* get global parameters, defined outside any section in the config file */
  

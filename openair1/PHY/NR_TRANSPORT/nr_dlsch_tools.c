@@ -105,25 +105,25 @@ static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {
 }
 
 /*ideally combine the calculation of L in the same function once the right struct is defined*/
-uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position) {
+uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_TypeA_Position) {
 
   uint8_t idx;
   //uint8_t S;
 
   switch(time_alloc_type) {
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A:
-      idx = (row_idx>7)? (row_idx+6) : (((row_idx-1)<<1)-1+((dmrs_typeA_position==2)?0:1));
+      idx = (row_idx>7)? (row_idx+6) : (((row_idx-1)<<1)-1+((dmrs_TypeA_Position==2)?0:1));
       return ((CP==NFAPI_CP_NORMAL)?nr_pdsch_default_time_alloc_A_S_nCP[idx] : nr_pdsch_default_time_alloc_A_S_eCP[idx]);
       break;
 
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B:
-      idx = (row_idx<14)? (row_idx-1) : (row_idx == 14)? row_idx-1+((dmrs_typeA_position==2)?0:1) : 15;
+      idx = (row_idx<14)? (row_idx-1) : (row_idx == 14)? row_idx-1+((dmrs_TypeA_Position==2)?0:1) : 15;
       return (nr_pdsch_default_time_alloc_B_S[idx]);
       break;
 
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C:
       AssertFatal((row_idx!=6)&&(row_idx!=7)&&(row_idx<17), "Invalid row index %d in %s %s\n", row_idx, __FUNCTION__, __FILE__);
-      idx = (row_idx<6)? (row_idx-1) : (row_idx<14)? (row_idx-3) : (row_idx == 14)? row_idx-3+((dmrs_typeA_position==2)?0:1) : (row_idx-2);
+      idx = (row_idx<6)? (row_idx-1) : (row_idx<14)? (row_idx-3) : (row_idx == 14)? row_idx-3+((dmrs_TypeA_Position==2)?0:1) : (row_idx-2);
       break;
 
   default:
@@ -132,16 +132,16 @@ uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t d
   return 0; // temp warning fix
 }
 
-void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config) {
+void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg) {
 
-  switch (config.subframe_config.dl_cyclic_prefix_type.value) {
+  switch (cfg->subframe_config.dl_cyclic_prefix_type.value) {
     case NFAPI_CP_NORMAL:
-      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (rel15->mapping_type == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and normal CP\n", S);
 
         if (S==3)
-          AssertFatal(config.pdsch_config.mapping_type.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position.value);
+          AssertFatal(rel15->dmrs_TypeA_Position == 3, "Invalid S %d for dmrs_TypeA_Position %d\n",
+          S, rel15->dmrs_TypeA_Position);
 
         AssertFatal((L>2)&&(L<15), "Invalid L %d for mapping type A and normal CP\n", L);
 
@@ -157,12 +157,12 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
       break;
 
     case NFAPI_CP_EXTENDED:
-      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (rel15->mapping_type == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and extended CP\n", S);
 
         if (S==3)
-          AssertFatal(config.pdsch_config.dmrs_typeA_position.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position.value);
+          AssertFatal(rel15->dmrs_TypeA_Position == 3, "Invalid S %d for dmrs_TypeA_Position %d\n",
+          S, rel15->dmrs_TypeA_Position);
 
         AssertFatal((L>2)&&(L<13), "Invalid L %d for mapping type A and extended CP\n", L);
 

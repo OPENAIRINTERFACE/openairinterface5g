@@ -48,31 +48,7 @@ extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
-
-
-void config_nr_mib(int Mod_idP, 
-		   int subcarrierSpacingCommon, 
-		   uint32_t ssb_SubcarrierOffset,
-		   int dmrs_TypeA_Position,
-		   uint32_t pdcch_ConfigSIB1
-                ){
-  nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[0];
-
-  cfg->num_tlv=0;
-  
-  cfg->rf_config.dl_subcarrierspacing.value  = subcarrierSpacingCommon;
-
-  cfg->rf_config.dl_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG;
-  cfg->num_tlv++;
-  
-  cfg->rf_config.ul_subcarrierspacing.value  = subcarrierSpacingCommon;
-  cfg->rf_config.ul_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG;
-  cfg->num_tlv++;
-
-  cfg->sch_config.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
-  cfg->sch_config.ssb_subcarrier_offset.tl.tag = NFAPI_NR_SCH_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
-  cfg->num_tlv++; 
-}
+ 
 
 void config_common(int Mod_idP, 
 		   NR_ServingCellConfigCommon_t *scc
@@ -110,9 +86,50 @@ void config_common(int Mod_idP,
   cfg->num_tlv++;
   LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->rf_config.dl_carrier_bandwidth.value);
 
-  cfg->rf_config.ul_carrier_bandwidth.value    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-  cfg->rf_config.ul_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
+  cfg->rf_config.ul_carrier_bandwidth.value    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  cfg->rf_config.ul_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG; 
   cfg->num_tlv++;
+
+  cfg->rf_config.dl_subcarrierspacing.value    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  cfg->rf_config.dl_subcarrierspacing.tl.tag   = NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG;
+  cfg->num_tlv++;
+
+  cfg->rf_config.ul_subcarrierspacing.value    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  cfg->rf_config.ul_subcarrierspacing.tl.tag   = NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG;
+  cfg->num_tlv++;
+
+  cfg->rf_config.dl_offsettocarrier.value    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+  cfg->rf_config.dl_offsettocarrier.tl.tag   = NFAPI_NR_RF_CONFIG_DL_OFFSETTOCARRIER_TAG;
+  cfg->num_tlv++;
+
+  cfg->rf_config.ul_offsettocarrier.value    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+  cfg->rf_config.ul_offsettocarrier.tl.tag   = NFAPI_NR_RF_CONFIG_UL_OFFSETTOCARRIER_TAG;
+  cfg->num_tlv++;
+ 
+  // InitialBWP configuration
+
+  cfg->initialBWP_config.dl_bandwidth.value    = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
+  cfg->initialBWP_config.dl_bandwidth.tl.tag   = NFAPI_INITIALBWP_DL_BANDWIDTH_TAG; //temporary
+  cfg->num_tlv++;
+  cfg->initialBWP_config.dl_offset.value    = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
+  cfg->initialBWP_config.dl_offset.tl.tag   = NFAPI_INITIALBWP_DL_OFFSET_TAG; //temporary
+  cfg->num_tlv++;
+  cfg->initialBWP_config.dl_subcarrierSpacing.value    = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+  cfg->initialBWP_config.dl_subcarrierSpacing.tl.tag   = NFAPI_INITIALBWP_DL_SUBCARRIERSPACING_TAG; //temporary
+  cfg->num_tlv++;
+  LOG_I(PHY,"%s() initialBWP_dl_Bandwidth.RBstart.SCS :%d.%d.%d\n", __FUNCTION__, cfg->initialBWP_config.dl_bandwidth.value,cfg->initialBWP_config.dl_offset.value,cfg->initialBWP_config.dl_subcarrierSpacing.value);
+
+  cfg->initialBWP_config.ul_bandwidth.value    = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
+  cfg->initialBWP_config.ul_bandwidth.tl.tag   = NFAPI_INITIALBWP_UL_BANDWIDTH_TAG; 
+  cfg->num_tlv++;
+  cfg->initialBWP_config.ul_offset.value    = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
+  cfg->initialBWP_config.ul_offset.tl.tag   = NFAPI_INITIALBWP_UL_OFFSET_TAG; //temporary
+  cfg->num_tlv++;
+  cfg->initialBWP_config.ul_subcarrierSpacing.value    = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  cfg->initialBWP_config.ul_subcarrierSpacing.tl.tag   = NFAPI_INITIALBWP_DL_SUBCARRIERSPACING_TAG; //temporary
+  cfg->num_tlv++;
+  LOG_I(PHY,"%s() initialBWP_ul_Bandwidth.RBstart.SCS :%d.%d.%d\n", __FUNCTION__, cfg->initialBWP_config.ul_bandwidth.value,cfg->initialBWP_config.ul_offset.value,cfg->initialBWP_config.ul_subcarrierSpacing.value);
+
 
   cfg->rach_config.prach_RootSequenceIndex.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139;
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
@@ -130,6 +147,28 @@ void config_common(int Mod_idP,
   cfg->rach_config.zeroCorrelationZoneConfig.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
   cfg->rach_config.preambleReceivedTargetPower.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower;
 
+  // PDCCH-ConfigCommon
+  cfg->pdcch_config.controlResourceSetZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
+  cfg->pdcch_config.searchSpaceZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
+
+  // PDSCH-ConfigCommon
+  cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
+  cfg->pdsch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position;
+  AssertFatal(cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PDSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value);
+  for (int i=0;i<cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value;i++) {
+    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[i].value=*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
+    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
+    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
+  }
+
+  // PUSCH-ConfigCommon
+  cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
+  cfg->pusch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position+2;
+  AssertFatal(cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PUSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value);
+  for (int i=0;i<cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value;i++) {
+    cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i].value=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
+  }
+
   //cfg->sch_config.half_frame_index.value = 0; Fix in PHY
   //cfg->sch_config.n_ssb_crb.value = 86;       Fix in PHY
 
@@ -145,14 +184,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            ){
 
   AssertFatal(scc!=NULL,"scc is null\n");
-  config_nr_mib(Mod_idP, 
-		*scc->subcarrierSpacing,
-		ssb_SubcarrierOffset,
-		scc->dmrs_TypeA_Position,
-		*scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero * 16 + *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero
-		);
-
-
   AssertFatal(scc->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap, "SSB Bitmap is not 8-bits!\n");
 
   config_common(Mod_idP, 

@@ -32,9 +32,9 @@
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "phy_frame_config_nr.h"
 
 
-nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot);
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx,int slot_tx, int do_meas);
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);

@@ -155,7 +155,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   else 
     ssb_frame_periodicity = (cfg->sch_config.ssb_periodicity.value)/10 ;  // 10ms is the frame length
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_UL)) return;
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+      ((nr_slot_select(fp,frame,slot)&NR_UPLINK_SLOT) > 0)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
 
@@ -208,7 +209,8 @@ void phy_procedures_gNB_RX(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_DL)) return;
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+      ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
 
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
 
