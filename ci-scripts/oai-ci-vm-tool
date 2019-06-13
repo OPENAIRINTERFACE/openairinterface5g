@@ -59,6 +59,87 @@ function variant_usage {
     done    
 }
 
+function command_options_usage {
+
+    local -A HELP_MSG
+    HELP_MSG["jn"]="    Specify the name of the Jenkins job."
+    HELP_MSG["id"]="    Specify the build ID of the Jenkins job."
+    HELP_MSG["ws"]="    Specify the workspace"
+    HELP_MSG["var"]="    Specify the variant to build."
+    HELP_MSG["k"]="    Keep the VM alive after the build."
+    HELP_MSG["D"]="    Run as daemon"
+    HELP_MSG["gu"]="    Specify the URL of the GIT Repository."
+    HELP_MSG["pu"]="    trigger a push action from the Jenkins job to the specified url, \"--trigger pu\" can also be used"
+    HELP_MSG["mr"]="    trigger a merge request action from the Jenkins job, \"--trigger mr\" can also be used"
+    HELP_MSG["sb"]="    Specify the source branch of the merge request."
+    HELP_MSG["sc"]="    Specify the source commit ID (SHA-1) of the merge request."
+    HELP_MSG["tb"]="    Specify the target branch of the merge request (usually develop)."    
+    HELP_MSG["tc"]="    Specify the target commit ID (SHA-1) of the merge request."
+    HELP_MSG["br"]="    Specify the branch of the push event."
+    HELP_MSG["co"]="    Specify the commit ID (SHA-1) of the push event."
+    HELP_MSG["epc"]="    (two arguments) Specify the ip addresses of an external EPC, on respectively the core network and the UEs network"
+    HELP_MSG["sim"]="   Specify the path to the sim file, used to emulate the oai UE sim card "
+    for (( m=0 ; m<2 ; m++ ))
+    do
+      if [[ $m -eq 0  || ( $m > 0 && ${MANDATORY_OPTMASK[$m]} > 0 ) ]]
+      then
+        echo "Mandatory Options ($((m+1))):"
+        echo "---------------------"    
+        for (( i=0 ; i<${#SHORT_OPTIONS[@]} ; i++ )) 
+        do  
+    	  if [ $(( MANDATORY_OPTMASK[$m] & $(( 2**$i )) )) -ne 0 ]
+    	  then
+    	     if [ "${LONG_OPTIONS[$i]}" != "" ]
+    	     then
+    	       local ARGPATTERN
+    	       if [[ !("${HELP_MSG[${SHORT_OPTIONS[$i]}]}" =~  "Specify") ]]
+    	       then
+    	       	   ARGPATTERN=""
+    	       elif [[ "${HELP_MSG[${SHORT_OPTIONS[$i]}]}" =~  "(two arguments)" ]]
+    	       then 
+       	       	   ARGPATTERN="#### ####"
+       	       else
+       	       	   ARGPATTERN="####"
+    	       fi
+    	   	   printf "    %s %s OR "  "--${LONG_OPTIONS[$i]}" "$ARGPATTERN"
+    	     fi
+             printf "%s %s \n" "-${SHORT_OPTIONS[$i]}" "$ARGPATTERN"
+             printf "  %s\n\n"  "${HELP_MSG[${SHORT_OPTIONS[$i]}]}"
+          fi
+        done
+    fi
+    done
+    echo "Options:"
+    echo "--------"
+
+    for (( i=0 ; i<${#SHORT_OPTIONS[@]} ; i++ )) 
+    do  
+    	if [ $(( ALLOWED_OPTMASK & $(( 2**$i )) )) -ne 0 ]
+    	then
+    	   if [ "${LONG_OPTIONS[$i]}" != "" ]
+    	   then
+    	   	   printf "    %s #### OR "  "--${LONG_OPTIONS[$i]}"
+    	   fi
+           printf "%s #### \n" "-${SHORT_OPTIONS[$i]}"
+           printf "  %s\n\n"  "${HELP_MSG[${SHORT_OPTIONS[$i]}]}"
+        fi
+    done 
+
+    for (( i=0 ; i<${#SHORT_OPTIONS[@]} ; i++ )) 
+    do  
+    	if [ $(( ALLOWED_OPTMASK & $(( 2**$i )) )) -ne 0 ]
+    	then
+    	   if [ "$(type -t ${LONG_OPTIONS[$i]}_usage)" = 'function'  ]
+    	   then
+    	   	   ${LONG_OPTIONS[$i]}_usage
+    	   fi
+        fi
+    done    
+    echo "    --help OR -h"
+    echo "    Print this help message."
+    echo ""
+}
+
 function setvar_usage {
 	declare -A HELP_VAR
 	HELP_VAR["VM_OSREL"]="OS release to use in virtual machines"
@@ -289,8 +370,12 @@ build_variant_arrays
 # its value and a bit mask, used to check allowed options depending on 
 # the command
 
-SHORT_OPTIONS=( "jn" "id" "ws" "k" "D" "gu" "pu" "mr" "var" "notused" "sb" "sc" "tb" "tc" "br" "co" "epc" )
-LONG_OPTIONS=( "job-name" "build-id" "workspace" "keep-vm-alive" "daemon" "git-url" "" "" "variant" "notused" "" "" "" "" "" "" "" )
+# The two following arrays must be consistent: a given index must point to the long and short options
+# of a given command
+SHORT_OPTIONS=( "jn" "id" "ws" "k" "D" "gu" "pu" "mr" "var" "notused" "sb" "sc" "tb" "tc" "br" "co" "epc" "sim")
+LONG_OPTIONS=( "job-name" "build-id" "workspace" "keep-vm-alive" "daemon" "git-url" "push" "merge-request" 
+               "variant" "notused" "src-branch" "src-commit" "target-branch" "target-commit" "branch" "commit" 
+               "external-epc" "sim-file")
 
 JOB_NAME=XX
 JOB_NAME_OPTINDEX=0
@@ -347,6 +432,10 @@ EPC_IPADDR_OPTINDEX=16
 EPC_IPADDR_OPTID=$((2**16))
 EPC_IPADDR=""
 
+SIM_OPTINDEX=17
+SIM_OPTID=$((2**17))
+SIMFILE=""
+
 RUN_OPTIONS="none"
 
 
@@ -394,6 +483,7 @@ ALLOWED_OPTMASK=0
 while [[ $# -gt 0 ]]
 do
 key="$1"
+
 if [ "$(type -t $funcname)" != 'function' ]; then
     funcname=do_it_normal
 fi
@@ -405,10 +495,11 @@ case $key in
     ;;
     -h|--help|help)
     COMMAND["help"]=1
-    if [ "$2" != "" ] && [ "$(type -t $2_usage)" = 'function' ]
+    # following word might specify the topic for the help request
+    # but help can also be used without argument, so don't shift
+    if [ "$2" != "" ] && [ "$(type -t ${2//-/_}_usage)" = 'function' ]
     then
-         $2_usage "full"
-         exit 0
+           HELPCMD="${2//-/_}_usage full"
     fi
     shift
     ;;
@@ -439,14 +530,13 @@ case $key in
     COMMAND[$key]=1
     # For test, mandatory options: jn, id, ws. Optional: variant, k, epc 
     MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID)) 
-    ALLOWED_OPTMASK=$(($KEEP_VM_ALIVE_OPTID + $VARIANT_OPTID + $EPC_IPADDR_OPTID))
+    ALLOWED_OPTMASK=$(($KEEP_VM_ALIVE_OPTID + $VARIANT_OPTID + $EPC_IPADDR_OPTID + $SIM_OPTID))
     shift
     ;;
     destroy)
     COMMAND[$key]=1
     # For destroy, mandatory options: jn, id. 
-    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID)) 
-    ALLOWED_OPTMASK=0   
+    MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID))   
     shift
     ;;
     report-build)
@@ -454,9 +544,8 @@ case $key in
     # For report-build, mandatory options: jn, id, ws, gu, pu, br,co.
     #                                  or: jn, id, ws, gu, mr, sb, sc, tb, tc.
     MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID + $GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
-    MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
-    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
-    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $TB_OPTID + $TC_OPTID))     
+    MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID + $GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID)) 
+    MANDATORY_OPTMASK[1]=$(( ${MANDATORY_OPTMASK[1]} + $TB_OPTID + $TC_OPTID))     
     shift
     ;;
     report-test) 
@@ -464,10 +553,10 @@ case $key in
     # For report-test, mandatory options: jn, id, ws, gu, pu, br,co.
     #                                 or: jn, id, ws, gu, mr, sb, sc, tb, tc.
     MANDATORY_OPTMASK[0]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
-    MANDATORY_OPTMASK[0]+=$(($GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
+    MANDATORY_OPTMASK[0]=$((${MANDATORY_OPTMASK[0]} + $GITURL_OPTID + $PU_OPTID + $BR_OPTID + $CO_OPTID))
     MANDATORY_OPTMASK[1]=$(($JOB_NAME_OPTID + $BUILD_ID_OPTID + $JENKINS_WKSP_OPTID))
-    MANDATORY_OPTMASK[1]+=$(($GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
-    MANDATORY_OPTMASK[1]+=$(($TB_OPTID + $TC_OPTID))   
+    MANDATORY_OPTMASK[1]=$((${MANDATORY_OPTMASK[1]} + GITURL_OPTID + $MR_OPTID + $SB_OPTID + $SC_OPTID))  
+    MANDATORY_OPTMASK[1]=$((${MANDATORY_OPTMASK[1]} + $TB_OPTID + $TC_OPTID))   
     shift
     ;;
     -jn|--job-name)
@@ -509,9 +598,11 @@ case $key in
     case $TRIG in
         merge-request)
         MR_TRIG=1
+        NBARGS=$[$NBARGS+$PU_OPTID]       
         ;;
         push)
         PU_TRIG=1
+        NBARGS=$[$NBARGS+$PU_OPTID]        
         ;;
         *)
         echo ""
@@ -521,16 +612,15 @@ case $key in
         exit
         ;;
     esac
-    NBARGS=$[$NBARGS+64]
     shift
     shift
     ;;
-    -mr)
+    -mr|--merge-request)
     MR_TRIG=1
     NBARGS=$[$NBARGS+$MR_OPTID]
     shift
     ;;
-    -pu)
+    -pu|--push)
     PU_TRIG=1
     NBARGS=$[$NBARGS+$PU_OPTID]
     shift
@@ -571,7 +661,7 @@ case $key in
     shift
     shift
     ;;
-    -epc)
+    -epc|--external-epc)
     check_ipv4addr "$2"
     check_ipv4addr "$3"
     EPC_IPADDR="$2"
@@ -581,6 +671,12 @@ case $key in
     shift
     shift
     ;;
+    -sim|--sim-file)
+    SIMFILE="$2"
+    NBARGS=$[$NBARGS+$SIM_OPTID]
+    shift
+    shift
+    ;;   
     --setvar_*)
     check_setvar "${key:9}" "$2"
     shift
@@ -616,12 +712,14 @@ done
 
 if [ ${COMMAND["help"]} -eq 1 ]
 then
-    if [ ${#COMMAND_KEY[@]} -ne 1 ]
-    then
+    if [ ${#COMMAND_KEY[@]} -ne 1 ] && [ "$HELPCMD" == "" ]
+    then 
        top_usage
+    elif  [ "$HELPCMD" != "" ]
+    then
+       $HELPCMD
     else
-       USAGE_KEY=`echo ${COMMAND_KEY[0]} | sed -e "s#-#_#g"`
-       ${USAGE_KEY[0]}_usage
+       ${COMMAND_KEY[0]//-/_}_usage
     fi 
     exit 0
 else
@@ -715,21 +813,12 @@ then
     if [ "$EXPERIMENTAL" = "true" ] && [ "$RUN_EXPERIMENTAL" != "true" ]
     then
         echo "Currently $VM_NAME Testing is not implemented / enabled"
-        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
-        echo " or use option --setvar_RUN_EXPERIMENTAL=true to test it"
+        echo "remove EXPERIMENTAL variable definition from this variant"
+        echo " or use option --setvar_RUN_EXPERIMENTAL=true to enforce testing it"
         echo "STATUS seems OK"
         exit $STATUS
     fi
-    # end to comment out for L1-simulator
-    # Comment out or delete the following lines if you want to run RF-simulator in your branch and/or merge request
-#    if [[ $VM_NAME =~ .*-rf-sim.* ]]
-#    then
-#        echo "Currently RF-Simulator Testing is not implemented / enabled"
-#        echo "Comment out these lines in ./ci-scripts/oai-ci-vm-tool if you want to run it"
-#        echo "STATUS seems OK"
-#    exit $STATUS
-#    fi
-    # end to comment out for RF-simulator
+
     ARCHIVES_LOC=${ARCHIVES_LOC}/test
     run_test_on_vm
 fi

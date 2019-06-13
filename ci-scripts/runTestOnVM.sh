@@ -33,26 +33,7 @@ function test_usage {
     echo "------"
     echo "    oai-ci-vm-tool test [OPTIONS]"
     echo ""
-    echo "Options:"
-    echo "--------"
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    variant_usage
-    echo "    Specify the variant to build."
-    echo ""
-    echo "    --keep-vm-alive OR -k"
-    echo "    Keep the VM alive after the build."
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
+    command_options_usage
 }
 
 function start_basic_sim_enb {

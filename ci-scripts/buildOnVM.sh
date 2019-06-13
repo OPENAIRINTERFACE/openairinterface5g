@@ -33,44 +33,8 @@ function build_usage {
     echo "------"
     echo "    oai-ci-vm-tool build [OPTIONS]"
     echo ""
-    echo "Mandatory Options:"
-    echo "--------"
-    local -A HELP_BUILD
-    HELP_BUILD["jn"]="    Specify the name of the Jenkins job."
-    HELP_BUILD["id"]="    Specify the build ID of the Jenkins job."
-    HELP_BUILD["ws"]="    Specify the workspace"
-    for (( i=0 ; i<${#SHORT_OPTIONS[@]} ; i++ )) 
-    do  
-    	if [ $(( MANDATORY_OPTMASK & $(( 2**$i )) )) -ne 0 ]
-    	then
-    	   if [ "${LONG_OPTIONS[$i]}" != "" ]
-    	   then
-    	   	   printf "    %s #### OR "  "--${LONG_OPTIONS[$i]}"
-    	   fi
-           printf "%s #### \n" "-${SHORT_OPTIONS[$i]}"
-           printf "  %s\n\n"  "${HELP_BUILD[${SHORT_OPTIONS[$i]}]}"
-        fi
-    done   
-    echo "Options:"
-    echo "--------"
-    HELP_BUILD["var"]="    Specify the variant to build."
-    HELP_BUILD["k"]="    Keep the VM alive after the build."
-    HELP_BUILD["D"]="    Run as daemon"
-    for (( i=0 ; i<${#SHORT_OPTIONS[@]} ; i++ )) 
-    do  
-    	if [ $(( ALLOWED_OPTMASK & $(( 2**$i )) )) -ne 0 ]
-    	then
-    	   if [ "${LONG_OPTIONS[$i]}" != "" ]
-    	   then
-    	   	   printf "    %s #### OR "  "--${LONG_OPTIONS[$i]}"
-    	   fi
-           printf "%s #### \n" "-${SHORT_OPTIONS[$i]}"
-           printf "  %s\n\n"  "${HELP_BUILD[${SHORT_OPTIONS[$i]}]}"
-        fi
-    done 
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
+    command_options_usage
+
 }
 
 function build_on_vm {
