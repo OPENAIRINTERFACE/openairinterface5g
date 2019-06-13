@@ -591,7 +591,15 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+	  // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
+
+	  if ((((uintptr_t) buff[i])&0x1F)==0) {
+	    ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+	  }
+	  else {
+	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[j],4);
+	    ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j+1],4);
+	  }
 #else
           ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
 #endif
@@ -1158,6 +1166,13 @@ extern "C" {
             // from usrp_time_offset
             //openair0_cfg[0].samples_per_packet    = 2048;
             openair0_cfg[0].tx_sample_advance     = 15;
+            openair0_cfg[0].tx_bw                 = 40e6;
+            openair0_cfg[0].rx_bw                 = 40e6;
+            break;
+
+ 	  case 46080000:
+            //openair0_cfg[0].samples_per_packet    = 1024;
+            openair0_cfg[0].tx_sample_advance     = 115;
             openair0_cfg[0].tx_bw                 = 40e6;
             openair0_cfg[0].rx_bw                 = 40e6;
             break;
