@@ -31,6 +31,7 @@
  */
 
 #include "mac_proto.h"
+#include "LAYER2/NR_MAC/nr_mac.h"
 #include "mac_extern.h"
 #include "RRC/NR_UE/rrc_proto.h"
 #include "assertions.h"

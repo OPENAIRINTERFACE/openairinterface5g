@@ -40,6 +40,7 @@
 #include "platform_types.h"
 
 #include "LAYER2/NR_MAC_UE/mac.h"
+#include "LAYER2/NR_MAC/nr_mac.h"
 #include "rrc_list.h"
 #include "NR_asn_constant.h"
 #include "NR_MeasConfig.h"
