@@ -579,32 +579,9 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
   L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  int ret;
 
-  int i,ret;
-  
   LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->subframe_rx);
-
-
-  
-  AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
-  for (i=0;i<eNB->num_RU;i++) {
-    if (ru == eNB->RU_list[i]) {
-      if ((proc->RU_mask[ru_proc->subframe_rx]&(1<<i)) > 0)
-	LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",
-	      eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask[ru_proc->subframe_rx]);
-      proc->RU_mask[ru_proc->subframe_rx] |= (1<<i);
-    }
-  }
-  if (proc->RU_mask[ru_proc->subframe_rx] != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-    LOG_E(PHY,"Not all RUs have provided their info\n");
-    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"mutex_unlock returns %d\n",ret);
-    return(0);
-  }
-  else { // all RUs have provided their information so continue on and wakeup eNB processing
-    proc->RU_mask[ru_proc->subframe_rx] = 0;
-    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"mutex_unlock returns %d\n",ret);
-  }
-
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
