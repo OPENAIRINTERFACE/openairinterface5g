@@ -600,7 +600,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
   dl_indication.dci_ind = NULL; 
   dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
-  dl_indication.module_id=proc->proc_id;
+  dl_indication.module_id=0;
   dl_indication.cc_id=proc->CC_id;
 
   rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
