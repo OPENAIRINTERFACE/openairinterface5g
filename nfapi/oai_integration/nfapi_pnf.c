@@ -83,7 +83,7 @@ nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_n
 
 uint8_t tx_pdus[32][8][4096];
 
-
+nfapi_ue_release_request_body_t release_rntis;
 uint16_t phy_antenna_capability_values[] = { 1, 2, 4, 8, 16 };
 
 nfapi_pnf_param_response_t g_pnf_param_resp;
@@ -895,6 +895,15 @@ int pnf_phy_lbt_dl_config_req(nfapi_pnf_p7_config_t *config, nfapi_lbt_dl_config
   return 0;
 }
 
+int pnf_phy_ue_release_req(nfapi_pnf_p7_config_t* config, nfapi_ue_release_request_t* req) {
+  if (req->ue_release_request_body.number_of_TLVs==0)
+    return -1;
+
+  release_rntis.number_of_TLVs = req->ue_release_request_body.number_of_TLVs;
+  memcpy(&release_rntis.ue_release_request_TLVs_list, req->ue_release_request_body.ue_release_request_TLVs_list, sizeof(nfapi_ue_release_request_TLVs_t)*req->ue_release_request_body.number_of_TLVs);
+  return 0;
+}
+
 int pnf_phy_vendor_ext(nfapi_pnf_p7_config_t *config, nfapi_p7_message_header_t *msg) {
   if(msg->message_id == P7_VENDOR_EXT_REQ) {
     //vendor_ext_p7_req* req = (vendor_ext_p7_req*)msg;
@@ -1023,7 +1032,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->hi_dci0_req = &pnf_phy_hi_dci0_req;
   p7_config->tx_req = &pnf_phy_tx_req;
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
-
+  p7_config->ue_release_req = &pnf_phy_ue_release_req;
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF) {
     p7_config->dl_config_req = &memcpy_dl_config_req;
     p7_config->ul_config_req = &memcpy_ul_config_req;

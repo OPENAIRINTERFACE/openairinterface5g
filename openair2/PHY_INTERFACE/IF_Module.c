@@ -762,6 +762,9 @@ void UL_indication(UL_IND_t *UL_info) {
         sched_info->UL_req      = NULL;
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
+      pthread_mutex_lock(&lock_ue_freelist);
+      sched_info->UE_release_req = &mac->UE_release_req;
+      pthread_mutex_unlock(&lock_ue_freelist);
 #ifdef DUMP_FAPI
       dump_dl(sched_info);
 #endif

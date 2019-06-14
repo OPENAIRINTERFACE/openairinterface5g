@@ -146,6 +146,8 @@ typedef enum {
 	NFAPI_LBT_DL_INDICATION,
 	NFAPI_NB_HARQ_INDICATION,
 	NFAPI_NRACH_INDICATION,
+	NFAPI_UE_RELEASE_REQUEST,
+	NFAPI_UE_RELEASE_RESPONSE,
 
 	NFAPI_PNF_PARAM_REQUEST = 0x0100,
 	NFAPI_PNF_PARAM_RESPONSE,
@@ -2378,6 +2380,19 @@ typedef struct {
 } nfapi_tx_request_body_t;
 #define NFAPI_TX_REQUEST_BODY_TAG 0x2022
 
+#define  NFAPI_RELEASE_MAX_RNTI  256
+typedef struct {
+    uint32_t handle;
+    uint16_t rnti;
+} nfapi_ue_release_request_TLVs_t;
+
+typedef struct {
+    nfapi_tl_t tl;
+    uint16_t number_of_TLVs;
+    nfapi_ue_release_request_TLVs_t ue_release_request_TLVs_list[NFAPI_RELEASE_MAX_RNTI];
+} nfapi_ue_release_request_body_t;
+#define NFAPI_UE_RELEASE_BODY_TAG 0x2068
+
 // P7 Message Structures
 typedef struct {
 	nfapi_p7_message_header_t header;
@@ -3403,6 +3418,19 @@ typedef struct {
 	};
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_error_indication_t;
+
+typedef struct {
+    nfapi_p7_message_header_t header;
+    uint16_t sfn_sf;
+    nfapi_ue_release_request_body_t ue_release_request_body;
+    nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_ue_release_request_t;
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_ue_release_response_t;
 
 // 
 // P4 Messages

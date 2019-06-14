@@ -129,6 +129,8 @@ typedef struct{
   nfapi_hi_dci0_request_t *HI_DCI0_req;
   /// Pointers to DL SDUs
   nfapi_tx_request_t *TX_req;
+  /// Pointers to ue_release
+  nfapi_ue_release_request_t *UE_release_req;
 }Sched_Rsp_t;
 
 typedef struct {

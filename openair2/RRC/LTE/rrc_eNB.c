@@ -979,6 +979,8 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   free_list->UE_free_ctrl[free_list->tail_freelist].rnti = rnti;
   free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = removeFlag;
   free_list->num_UEs++;
+  eNB_MAC->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = rnti;
+  eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs++;
   free_list->tail_freelist = (free_list->tail_freelist + 1) % (NUMBER_OF_UE_MAX+1);
   pthread_mutex_unlock(&lock_ue_freelist);
 }

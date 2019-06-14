@@ -42,7 +42,7 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req);
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req);
 
-
+int oai_nfapi_ue_release_req(nfapi_ue_release_request_t *release_req);
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame, int subframe,
                              L1_rxtx_proc_t *proc,
@@ -933,6 +933,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
     }
     Sched_INFO->DL_req->sfn_sf = frame << 4 | subframe;
     oai_nfapi_dl_config_req(Sched_INFO->DL_req); // DJP - .dl_config_request_body.dl_config_pdu_list[0]); // DJP - FIXME TODO - yuk - only copes with 1 pdu
+    Sched_INFO->UE_release_req->sfn_sf = frame << 4 | subframe;
+    oai_nfapi_ue_release_req(Sched_INFO->UE_release_req);
   }
 
   if ((NFAPI_MODE!=NFAPI_MONOLITHIC) && number_hi_dci0_pdu!=0) {

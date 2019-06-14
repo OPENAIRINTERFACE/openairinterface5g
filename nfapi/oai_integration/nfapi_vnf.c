@@ -1209,3 +1209,21 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
 
   return retval;
 }
+
+int oai_nfapi_ue_release_req(nfapi_ue_release_request_t *release_req){
+    if(release_req->ue_release_request_body.number_of_TLVs <= 0)
+        return 0;
+    nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
+
+    release_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+    release_req->header.message_id = NFAPI_UE_RELEASE_REQUEST;
+    release_req->ue_release_request_body.tl.tag = NFAPI_UE_RELEASE_BODY_TAG;
+
+    int retval = nfapi_vnf_p7_ue_release_req(p7_config, release_req);
+    if (retval!=0) {
+      LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
+    } else {
+        release_req->ue_release_request_body.number_of_TLVs = 0;
+    }
+    return retval;
+}
