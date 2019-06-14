@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dlsch_coding.c
+/*! \file PHY/NR_TRANSPORT/nr_tbs_tools.c
 * \brief Top-level routines for implementing LDPC-coded (DLSCH) transport channels from 38-212, 15.2
 * \author H.Wang
 * \date 2018
@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include "nr_dlsch.h"
+#include "nr_transport_common_proto.h"
 
 /// Target code rate tables indexed by Imcs
 uint16_t nr_target_code_rate_table1[29] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679, 340, 378, 434, 490, 553, \

@@ -405,7 +405,7 @@ typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
-#define sample_t uint32_t // 2*16 bits complex number
+#define sample_t struct complex16 // 2*16 bits complex number
 
 typedef struct {
   uint64_t magic;          // Magic value (see defines above)
@@ -444,6 +444,10 @@ openair0_timestamp get_usrp_time(openair0_device *device);
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
 #define gettid() syscall(__NR_gettid)
 /*@}*/
+
+  void uhd_set_thread_prio(void);
+  typedef void(*set_prio_func_t)(void);
+  set_prio_func_t uhd_set_thread_priority_fun;
 
 #ifdef __cplusplus
 }

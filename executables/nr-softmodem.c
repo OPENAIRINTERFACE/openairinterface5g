@@ -139,6 +139,7 @@ unsigned char NB_gNB_INST = 1;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
+double snr_dB=20;
 
 FILE *input_fd=NULL;
 

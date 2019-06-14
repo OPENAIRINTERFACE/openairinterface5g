@@ -138,10 +138,6 @@ typedef struct {
   uint32_t sumKr;
   /// Number of "Filler" bits
   uint32_t F;
-  /// Msc_initial, Initial number of subcarriers for ULSCH
-  uint16_t Msc_initial;
-  /// Nsymb_initial, Initial number of symbols for ULSCH
-  uint8_t Nsymb_initial;
   /// n_DMRS  for cyclic shift of DMRS
   uint8_t n_DMRS;
   /// n_DMRS2 for cyclic shift of DMRS
@@ -152,11 +148,12 @@ typedef struct {
   //  int calibration_flag;
   /// Number of soft channel bits
   uint32_t G;
-  // number of symbols
-  uint8_t nb_symbols;
-  // first symbol in the slot
+  // Number of modulated symbols carrying data
+  uint32_t num_of_mod_symbols;
+  // This is "L" in  TS 38.214 V15.4.0 subclause 6.1.2.1
+  uint8_t number_of_symbols;
+  // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1
   uint8_t start_symbol;
-
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
@@ -164,8 +161,12 @@ typedef struct {
 typedef struct {
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
+  /// Nsc_pusch, number of allocated subcarriers for ULSCH
+  uint16_t Nsc_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
+  /// DMRS length
+  uint8_t length_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
@@ -201,9 +202,9 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d[MAX_NUM_NR_RE];
-  /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
-  int32_t z[MAX_NUM_NR_RE];
+  uint32_t d_mod[MAX_NUM_NR_RE];
+  /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
+  uint32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
@@ -231,6 +232,8 @@ typedef struct {
   uint16_t rnti;
   /// RNTI type
   uint8_t rnti_type;
+  /// Cell ID
+  int     Nid_cell;
   /// f_PUSCH parameter for PUSCH power control
   int16_t f_pusch;
   /// Po_PUSCH - target output power for PUSCH

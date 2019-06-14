@@ -234,8 +234,6 @@ typedef struct {
   int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
-  /// Number of soft channel bits after code block concatenation (38.212 V15.4.0 section 5.5)
-  uint32_t G;
   //////////////////////////////////////////////////////////////
 
 
@@ -352,6 +350,45 @@ typedef struct {
   /// - third index: sample [0..]
   int32_t **txdataF;
 } NR_gNB_COMMON;
+
+
+typedef struct {
+  /// \brief Holds the received data in the frequency domain for the allocated RBs in repeated format.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size[
+  int32_t **rxdataF_ext;
+  /// \brief Holds the received data in the frequency domain for the allocated RBs in normal format.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_ext2;
+  /// \brief Offset for calculating the index of rxdataF_ext for the current symbol
+  uint32_t rxdataF_ext_offset;
+  /// \brief Hold the channel estimates in time domain based on DRS.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..4*ofdm_symbol_size[
+  int32_t **drs_ch_estimates_time;
+  /// \brief Hold the channel estimates in frequency domain based on DRS.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **drs_ch_estimates;
+  /// \brief Holds the compensated signal.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_comp;
+  /// \brief Magnitude of the UL channel estimates. Used for 2nd-bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_mag;
+  /// \brief Magnitude of the UL channel estimates scaled for 3rd bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_magb;
+  /// measured RX power based on DRS
+  int ulsch_power[2];
+  /// \brief llr values.
+  /// - first index: ? [0..1179743] (hard coded)
+  int16_t *llr;
+} NR_gNB_PUSCH;
 
 
 /// Context data structure for RX/TX portion of slot processing
@@ -569,13 +606,13 @@ typedef struct PHY_VARS_gNB_s {
   Sched_Rsp_t         Sched_INFO;
   NR_gNB_PDCCH        pdcch_vars;
   NR_gNB_PBCH         pbch;
-  LTE_eNB_PHICH       phich_vars[2];
+  // LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;
 /*  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PUSCH      *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH       prach_vars;*/
+  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
   // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA

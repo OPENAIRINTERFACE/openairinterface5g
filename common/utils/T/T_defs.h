@@ -41,7 +41,7 @@ typedef struct {
 } T_cache_t;
 
 /* number of VCD functions (to be kept up to date! see in T_messages.txt) */
-#define VCD_NUM_FUNCTIONS 192//190
+#define VCD_NUM_FUNCTIONS 193//192//190
 
 /* number of VCD variables (to be kept up to date! see in T_messages.txt) */
 #define VCD_NUM_VARIABLES 136//128

@@ -23,7 +23,9 @@
 /* Author R. Knopp / EURECOM / OpenAirInterface.org */
 #ifndef __NR_REFSIG_DEFS__H__
 #define __NR_REFSIG_DEFS__H__
+
 #include "PHY/defs_nr_UE.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 
 /*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.
@@ -61,5 +63,6 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
 					unsigned short *n_idDMRS,
 					unsigned short length_dmrs);
 
+void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue, uint16_t *N_n_scid, uint8_t n_scid);
 
 #endif
