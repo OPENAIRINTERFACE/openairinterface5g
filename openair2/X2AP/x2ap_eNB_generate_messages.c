@@ -1091,3 +1091,136 @@ int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2
 
   return ret;
 }
+
+//Panos:
+int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                               x2ap_senb_addition_req_ack_t *x2ap_addition_req_ack)
+{
+
+  X2AP_X2AP_PDU_t                        pdu;
+  X2AP_SeNBAdditionRequestAcknowledge_t      *out;
+  X2AP_SeNBAdditionRequestAcknowledge_IEs_t  *ie;
+  X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t         *e_RABS_Admitted_ToBeAdded_ItemIEs;
+  X2AP_E_RABs_Admitted_ToBeAdded_Item_t            *e_RABs_Admitted_ToBeAdded_Item;
+  int                                    ue_id;
+  int                                    ue_id_MeNB;
+  int                                    ue_id_SeNB;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  //Panos: The fact that we have separate IDs here is because the ID for a specific UE might be different
+  //between the 2 eNBs?
+  //ue_id     = x2ap_addition_req_ack->x2_id_target; //Panos: change name to master_x2...
+  //id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  //id_target = ue_id;
+
+  /* Prepare the X2AP addition req. ack. message to encode */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_seNBAdditionPreparation;
+  //Panos: What does the criticality indicate here?
+  pdu.choice.successfulOutcome.criticality = X2AP_Criticality_reject;
+  pdu.choice.successfulOutcome.value.present = X2AP_SuccessfulOutcome__value_PR_SeNBAdditionRequestAcknowledge;
+  out = &pdu.choice.successfulOutcome.value.choice.SeNBAdditionRequestAcknowledge;
+
+  /* mandatory */
+  ie = (X2AP_SeNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_SeNBAdditionRequestAcknowledge_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = 0;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  ie = (X2AP_SeNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SeNB_UE_X2AP_ID;
+  //Panos: Why for the X2_HANDOVER_REQ_ACK here the criticality is ignore whereas in the specs it is reject?
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_SeNBAdditionRequestAcknowledge_IEs__value_PR_UE_X2AP_ID_1;
+  ie->value.choice.UE_X2AP_ID_1 = 0;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  ie = (X2AP_SeNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_List;
+  ie->criticality = X2AP_Criticality_ignore;
+  ie->value.present = X2AP_SeNBAdditionRequestAcknowledge_IEs__value_PR_E_RABs_Admitted_ToBeAdded_List;
+
+  {
+	  // SCG bearers to be added
+      for (int i=0;i<x2ap_addition_req_ack->nb_sCG_e_rabs_tobeadded;i++) {
+    	e_RABS_Admitted_ToBeAdded_ItemIEs = (X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t *)calloc(1,sizeof(X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t));
+    	e_RABS_Admitted_ToBeAdded_ItemIEs->id = X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_Item;
+    	e_RABS_Admitted_ToBeAdded_ItemIEs->criticality = X2AP_Criticality_ignore;
+    	e_RABS_Admitted_ToBeAdded_ItemIEs->value.present = X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs__value_PR_E_RABs_Admitted_ToBeAdded_Item;
+    	e_RABs_Admitted_ToBeAdded_Item = &e_RABS_Admitted_ToBeAdded_ItemIEs->value.choice.E_RABs_Admitted_ToBeAdded_Item;
+        {
+    		e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.e_RAB_ID = x2ap_addition_req_ack->e_sCG_rabs_tobeadded[i].e_rab_id;
+    		INT32_TO_OCTET_STRING(x2ap_addition_req_ack->e_sCG_rabs_tobeadded[i].gtp_teid, &e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.gTP_TEID);
+
+    		e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size 		= (uint8_t)(x2ap_addition_req_ack->e_sCG_rabs_tobeadded[i].eNB_addr.length/8);
+    		e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = x2ap_addition_req_ack->e_sCG_rabs_tobeadded[i].eNB_addr.length%8;
+    		e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf =
+    		                        calloc(1,e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+    		        memcpy (e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf,
+    		        		x2ap_addition_req_ack->e_sCG_rabs_tobeadded[i].eNB_addr.buffer,
+    		        		e_RABs_Admitted_ToBeAdded_Item->choice.sCG_Bearer.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+        }
+        ASN_SEQUENCE_ADD(&ie->value.choice.E_RABs_Admitted_ToBeAdded_List.list, e_RABS_Admitted_ToBeAdded_ItemIEs);
+      }
+
+      // Split bearers to be added
+      for (int i=0;i<x2ap_addition_req_ack->nb_split_e_rabs_tobeadded;i++) {
+    	  e_RABS_Admitted_ToBeAdded_ItemIEs = (X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t *)calloc(1,sizeof(X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t));
+    	  e_RABS_Admitted_ToBeAdded_ItemIEs->id = X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_Item;
+    	  e_RABS_Admitted_ToBeAdded_ItemIEs->criticality = X2AP_Criticality_ignore;
+    	  e_RABS_Admitted_ToBeAdded_ItemIEs->value.present = X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs__value_PR_E_RABs_Admitted_ToBeAdded_Item;
+    	  e_RABs_Admitted_ToBeAdded_Item = &e_RABS_Admitted_ToBeAdded_ItemIEs->value.choice.E_RABs_Admitted_ToBeAdded_Item;
+    	  {
+    		  e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.e_RAB_ID = x2ap_addition_req_ack->e_split_rabs_tobeadded[i].e_rab_id;
+    		  INT32_TO_OCTET_STRING(x2ap_addition_req_ack->e_split_rabs_tobeadded[i].gtp_teid, &e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.gTP_TEID);
+
+    		  e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.size 		= (uint8_t)(x2ap_addition_req_ack->e_split_rabs_tobeadded[i].eNB_addr.length/8);
+    		  e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.bits_unused = x2ap_addition_req_ack->e_split_rabs_tobeadded[i].eNB_addr.length%8;
+    		  e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.buf =
+    				  calloc(1,e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.size);
+
+    		  memcpy (e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.buf,
+    				  x2ap_addition_req_ack->e_split_rabs_tobeadded[i].eNB_addr.buffer,
+    				  e_RABs_Admitted_ToBeAdded_Item->choice.split_Bearer.seNB_GTPtunnelEndpoint.transportLayerAddress.size);
+
+    		  }
+    	  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABs_Admitted_ToBeAdded_List.list, e_RABS_Admitted_ToBeAdded_ItemIEs);
+      }
+
+  }
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  ie = (X2AP_SeNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequestAcknowledge_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_SeNBtoMeNBContainer;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_SeNBAdditionRequestAcknowledge_IEs__value_PR_SeNBtoMeNBContainer;
+
+  OCTET_STRING_fromBuf(&ie->value.choice.SeNBtoMeNBContainer, (char*) x2ap_addition_req_ack->rrc_buffer, x2ap_addition_req_ack->rrc_buffer_size);
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode SeNB addition response\n");
+    abort();
+    return -1;
+  }
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
+
+  return ret;
+}
