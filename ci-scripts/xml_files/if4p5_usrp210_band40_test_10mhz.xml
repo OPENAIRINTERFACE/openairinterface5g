@@ -24,7 +24,7 @@
 	<htmlTabRef>test-10</htmlTabRef>
 	<htmlTabName>Test-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-        <TestCaseRequestedList>
+	<TestCaseRequestedList>
  030201
  040101
  030114 030115 040301 040511 040612 040652 040401 040201 030201 030202
@@ -40,11 +40,11 @@
 	</testCase>
 	
 	<testCase id="030115">
-                <class>Initialize_eNB</class>
-                <desc>Initialize RCC (TDD/Band40/10MHz/info)</desc>
-                <Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band40.tm1.50PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
+		<class>Initialize_eNB</class>
+		<desc>Initialize RCC (TDD/Band40/10MHz/info)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band40.tm1.50PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
-        </testCase>
+	</testCase>
 
 	<testCase id="030201">
 		<class>Terminate_eNB</class>

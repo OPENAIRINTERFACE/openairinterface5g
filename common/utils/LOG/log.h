@@ -497,10 +497,10 @@ static inline void printMeas(char *txt,
             M->iterations,
             M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
             M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-#if DISABLE_LOG_X
-    printf("%s",txt2);
+#if T_TRACER
+    LOG_W(PHY,"%s",txt2);
 #else
-    LOG_W(PHY, "%s",txt2);
+    printf("%s",txt2);
 #endif
   }
 }

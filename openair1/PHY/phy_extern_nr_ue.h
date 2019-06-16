@@ -25,9 +25,9 @@
 #include "PHY/defs_nr_UE.h"
 //#include "common/ran_context.h"
 
-extern  char* namepointer_chMag ;
+extern char* namepointer_chMag ;
 extern char* namepointer_log2;
-extern  char fmageren_name2[512];
+extern char  fmageren_name2[512];
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
@@ -94,8 +94,8 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
-extern char eNB_functions[6][20];
-extern char eNB_timing[2][20];
+extern char NB_functions[7][20];
+extern char NB_timing[2][20];
 extern char ru_if_types[MAX_RU_IF_TYPES][20];
 
 extern int16_t unscrambling_lut[65536*16];

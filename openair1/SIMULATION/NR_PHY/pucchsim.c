@@ -85,8 +85,7 @@ int main(int argc, char **argv)
 {
 
   char c;
-
-  int i,aa;//,l;
+  int i;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
@@ -98,8 +97,8 @@ int main(int argc, char **argv)
   uint8_t write_output_file=0;
   //int result;
   //int freq_offset;
-  //  int subframe_offset;
-  //  char fname[40], vname[40];
+  //int subframe_offset;
+  //char fname[40], vname[40];
   int trial,n_trials=1,n_errors=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
@@ -107,8 +106,8 @@ int main(int argc, char **argv)
 
   channel_desc_t *gNB2UE;
 
-  uint8_t extended_prefix_flag=0;
-  int8_t interf1=-21,interf2=-21;
+  //uint8_t extended_prefix_flag=0;
+  //int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
 
@@ -123,26 +122,26 @@ int main(int argc, char **argv)
 
   int N_RB_DL=273,mu=1;
 
-  unsigned char frame_type = 0;
+  //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=0;
+  //int frame=0,subframe=0;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  nfapi_nr_config_request_t *gNB_config;
+  //nfapi_nr_config_request_t *gNB_config;
 
   int loglvl=OAILOG_WARNING;
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv) == 0) {
+  if ( load_configmodule(argc,argv,0) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:n:o:s:S:t:x:y:z:N:F:GR:P:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -155,9 +154,9 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'd':
+    /*case 'd':
       frame_type = 1;
-      break;
+      break;*/
 
     case 'g':
       switch((char)*optarg) {
@@ -196,13 +195,13 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'i':
+    /*case 'i':
       interf1=atoi(optarg);
       break;
 
     case 'j':
       interf2=atoi(optarg);
-      break;
+      break;*/
 
     case 'n':
       n_trials = atoi(optarg);
@@ -228,12 +227,12 @@ int main(int argc, char **argv)
       case 't':
       Td= atof(optarg);
       break;
-      */
+
     case 'p':
       extended_prefix_flag=1;
       break;
 
-      /*
+
       case 'r':
       ricean_factor = pow(10,-.1*atof(optarg));
       if (ricean_factor>1) {
@@ -347,7 +346,7 @@ int main(int argc, char **argv)
   RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0][0];
-  gNB_config = &gNB->gNB_config;
+  //gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -411,7 +410,7 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -537,6 +536,3 @@ int main(int argc, char **argv)
   return(n_errors);
 
 }
-
-
-

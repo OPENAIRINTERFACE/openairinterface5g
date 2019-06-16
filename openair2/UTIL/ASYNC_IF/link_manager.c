@@ -95,7 +95,7 @@ link_manager_t *create_link_manager(
         socket_link_t   *link)
 {
   link_manager_t *ret = NULL;
-  pthread_attr_t attr;
+  //pthread_attr_t attr;
   pthread_t      t;
 
   LOG_D(MAC, "create new link manager\n");

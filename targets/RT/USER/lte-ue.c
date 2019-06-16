@@ -161,7 +161,7 @@ static const eutra_band_t eutra_bands[] = {
 };
 
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
 
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
@@ -286,8 +286,8 @@ void init_UE(int nb_inst,
     if ( !IS_SOFTMODEM_SIML1 ) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
     else {
       // needed for memcopy below. these are not used in the RU, but needed for UE
-      RC.ru[0]->frame_parms.nb_antennas_rx = fp0->nb_antennas_rx;
-      RC.ru[0]->frame_parms.nb_antennas_tx = fp0->nb_antennas_tx;
+      RC.ru[0]->frame_parms->nb_antennas_rx = fp0->nb_antennas_rx;
+      RC.ru[0]->frame_parms->nb_antennas_tx = fp0->nb_antennas_tx;
       PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
     }
 
@@ -1524,6 +1524,7 @@ void *UE_thread(void *arg)
   int i;
   int th_id;
   static uint8_t thread_idx = 0;
+  int ret;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   if ( threads.main != -1 )
@@ -1743,15 +1744,27 @@ void *UE_thread(void *arg)
           }
 
           pickTime(gotIQs);
-          struct timespec tv= {0};
-          tv.tv_nsec=10*1000;
 
-          if( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM)
-            tv.tv_sec=INT_MAX;
+          /* no timeout in IS_SOFTMODEM_BASICSIM or IS_SOFTMODEM_RFSIM mode */
+          if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) {
+            ret = pthread_mutex_lock(&proc->mutex_rxtx);
+          } else {
+            struct timespec tv;
+            if (clock_gettime(CLOCK_REALTIME, &tv) != 0) {
+              perror("clock_gettime");
+              exit(1);
+            }
+            tv.tv_nsec += 10*1000;
+            if (tv.tv_nsec >= 1000 * 1000 * 1000) {
+              tv.tv_sec++;
+              tv.tv_nsec -= 1000 * 1000 * 1000;
+            }
+            ret = pthread_mutex_timedlock(&proc->mutex_rxtx, &tv);
+          }
 
           // operate on thread sf mod 2
-          if (pthread_mutex_timedlock(&proc->mutex_rxtx, &tv) !=0) {
-            if ( errno == ETIMEDOUT) {
+          if (ret != 0) {
+            if (ret == ETIMEDOUT) {
               LOG_E(PHY,"Missed real time\n");
               continue;
             } else {
@@ -1760,7 +1773,7 @@ void *UE_thread(void *arg)
             }
           }
 
-          //usleep(3000);
+          //          usleep(3000);
           if(sub_frame == 0) {
             //UE->proc.proc_rxtx[0].frame_rx++;
             //UE->proc.proc_rxtx[1].frame_rx++;

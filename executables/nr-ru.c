@@ -2132,7 +2132,7 @@ void init_RU(char *rf_config_file) {
       }
     }
 
-    //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],gNB_timing[ru->if_timing],ru->function);
+    //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);

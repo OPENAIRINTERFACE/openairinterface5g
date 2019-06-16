@@ -1631,15 +1631,13 @@ int main(int argc, char **argv) {
   UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
-    eNB->UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
+	  eNB->UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
 
-    if (n_users>1)
-      eNB->UE_stats[1].DL_pmi_single = (eNB->UE_stats[0].DL_pmi_single ^ 0x1555); //opposite PMI
+	  if (n_users>1) eNB->UE_stats[1].DL_pmi_single = (eNB->UE_stats[0].DL_pmi_single ^ 0x1555); //opposite PMI
   } else {
-    eNB->UE_stats[0].DL_pmi_single = 0;
+	  eNB->UE_stats[0].DL_pmi_single = 0;
 
-    if (n_users>1)
-      eNB->UE_stats[1].DL_pmi_single = 0;
+	  if (n_users>1) eNB->UE_stats[1].DL_pmi_single = 0;
   }
 
   L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc; //&eNB->proc.proc_rxtx[0]; //UE->current_thread_id[subframe]];

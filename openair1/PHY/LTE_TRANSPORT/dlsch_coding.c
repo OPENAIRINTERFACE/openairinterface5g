@@ -40,6 +40,7 @@
 #include "SCHED/sched_eNB.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
+#include "targets/RT/USER/lte-softmodem.h"
 #include <syscall.h>
 
 //#define DEBUG_DLSCH_CODING
@@ -57,6 +58,7 @@
          uint64_t deadline,
          uint64_t period);*/
 extern WORKER_CONF_t get_thread_worker_conf(void);
+extern volatile int oai_exit;
 
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
@@ -326,7 +328,6 @@ int dlsch_encoding_2threads0(te_params *tep) {
 }
 
 
-extern int oai_exit;
 void *te_thread(void *param) {
   te_params *tep                 = (te_params *)param;
 

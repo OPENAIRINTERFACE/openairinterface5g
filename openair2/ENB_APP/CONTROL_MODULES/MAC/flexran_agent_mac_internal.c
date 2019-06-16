@@ -151,6 +151,15 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
   return msg;
   
  error:
+   if (stats_reply_msg) {
+     if (stats_reply_msg->ue_report) {
+       free(stats_reply_msg->ue_report);
+     }
+     if (stats_reply_msg->cell_report) {
+       free(stats_reply_msg->cell_report);
+     }
+     free(stats_reply_msg);
+   }
    return NULL;
 }
 
@@ -233,6 +242,12 @@ Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport *
   return copy;
 
  error:
+  if (copy){
+    if (copy->bsr){
+      free(copy->bsr);
+    }
+    free(copy);
+  }
   return NULL;
 }
 
@@ -303,6 +318,20 @@ Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * origi
   return full_ul_report;
   
   error:
+    if (full_ul_report){
+      if (ul_report){
+        for (i = 0; i < full_ul_report->n_cqi_meas; i++){
+          if (ul_report[i]){
+            if ( ul_report[i]->sinr ){
+              free(ul_report[i]->sinr);
+            }
+            free(ul_report[i]);
+          }
+        }
+        free(ul_report);
+      }
+      free(full_ul_report);
+    }
     return NULL;
 }
 
@@ -369,6 +398,18 @@ Protocol__FlexPagingBufferReport * copy_paging_buffer_report(Protocol__FlexPagin
 
  error:
   /*TODO: free memory properly*/
+  if (copy){
+    if (p_info){
+      for (i = 0; i < copy->n_paging_info; i++){
+        if (p_info[i]){
+          free(p_info[i]);
+        }
+      }
+      free(p_info);
+    }
+    free(copy);
+    copy = NULL;
+  }
   return NULL;
 }
 
@@ -902,6 +943,13 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
     LOG_I(FLEXRAN_AGENT, "Scheduler could not be loaded\n");
   }
 
+  if (flexran_agent_get_mac_xface(mod_id)) {
+    if (flexran_agent_get_mac_xface(mod_id)->dl_scheduler_loaded_lib != lib) {
+      dlclose(lib);
+    }
+  } else {
+    dlclose(lib);
+  }
   return 0;
 
  error:

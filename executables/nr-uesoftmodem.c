@@ -159,10 +159,10 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
-
+static char *parallel_config = NULL;
+static char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
+
 void set_parallel_conf(char *parallel_conf) {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
@@ -182,20 +182,16 @@ PARALLEL_CONF_t get_thread_parallel_conf(void) {
 WORKER_CONF_t get_thread_worker_conf(void) {
   return thread_struct.worker_conf;
 }
-int                         rx_input_level_dBm;
+int rx_input_level_dBm;
 
-//static int                      online_log_messages=0;
+//static int online_log_messages=0;
 
-#ifdef XFORMS
-  extern int                      otg_enabled;
-  int                             do_forms=0;
-#else
-  int                             otg_enabled;
-#endif
+uint32_t do_forms=0;
+int otg_enabled;
 //int                             number_of_cards =   1;
 
-static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-int16_t   node_synch_ref[MAX_NUM_CCs];
+static NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
+int16_t node_synch_ref[MAX_NUM_CCs];
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -423,8 +419,8 @@ static void get_options(void) {
     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
-  paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
-  paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
+  paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
 
@@ -676,7 +672,7 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
+    if (init_opt() == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 
@@ -766,7 +762,7 @@ int main( int argc, char **argv ) {
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_UE(1);
+  init_NR_UE(1);
 
   while(true)
     sleep(3600);

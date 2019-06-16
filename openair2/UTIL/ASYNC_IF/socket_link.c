@@ -228,7 +228,7 @@ socket_link_t *new_link_udp_client(const char *server, int port){
 
   struct sockaddr_in si_other;
   int s;
-  socklen_t slen;
+  socklen_t slen = sizeof(si_other);
  
   if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         goto error;
@@ -402,7 +402,7 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
   LOG_D(PROTO_AGENT,"UDP RECEIVE\n");
 
   struct sockaddr_in client;
-  socklen_t slen;
+  socklen_t slen = sizeof(client);
   int   l;
 
   l = recvfrom(socket_fd, buf, size, 0, (struct sockaddr *) &client, &slen);

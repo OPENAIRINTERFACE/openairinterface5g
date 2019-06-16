@@ -231,7 +231,7 @@ add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 # Debug related options
 #########################################
 add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
-add_boolean_option(ASN_EMIT_DEBUG      False "ASN1 coder/decoder Debug")
+add_boolean_option(EMIT_ASN_DEBUG      False "ASN1 coder/decoder Debug")
 add_boolean_option(MSG_PRINT           False "print debug messages")
 add_boolean_option(DISABLE_XER_PRINT   False "print XER Format")
 add_boolean_option(XER_PRINT           False "print XER Format")
@@ -242,7 +242,6 @@ add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdo
 add_boolean_option(TRACE_RLC_PAYLOAD   False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace
 add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
-add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" )
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
@@ -253,8 +252,7 @@ add_boolean_option(USRP_REC_PLAY       False "Enable USRP record playback mode")
 add_boolean_option(UE_NAS_USE_TUN      False "Enable UE NAS TUN device instead of ue_ip.ko")
 add_boolean_option(NOS1                False "Allows to run without a EPC")
 add_boolean_option(BASIC_SIMULATOR     False "Has to be True when building the basic simulator, False otherwise")
-
-add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
+add_boolean_option(DEBUG_CONSOLE       False "makes debugging easier, disables stdout/stderr buffering")
 
 add_boolean_option(ENABLE_ITTI True "ITTI is internal messaging, should remain enabled for most targets")
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
@@ -530,9 +528,9 @@ set(F1AP_ASN_FILES
   )
 
 set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
+message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
 execute_process(COMMAND mkdir -p ${F1AP_ASN_GENERATED_C_DIR}
-                COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+   COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
                 RESULT_VARIABLE ret
                 OUTPUT_QUIET
                 ERROR_QUIET)
@@ -813,12 +811,19 @@ include_directories("${OPENAIR_BIN_DIR}")
 # Legacy exact order
 
 include_directories("${OPENAIR_DIR}/executables")
-include_directories("${OPENAIR2_DIR}/COMMON")
-include_directories("${OPENAIR2_DIR}/UTIL")
-include_directories("${OPENAIR2_DIR}/UTIL/LOG")
-include_directories("${OPENAIR3_DIR}/COMMON")
-include_directories("${OPENAIR3_DIR}/UTILS")
-
+if(ENB_MODE)
+  include_directories("${OPENAIR2_DIR}/COMMON")
+  include_directories("${OPENAIR2_DIR}/UTIL")
+  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
+else()
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
+  include_directories("${OPENAIR2_DIR}/COMMON")
+  include_directories("${OPENAIR2_DIR}/UTIL")
+  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+endif()
 include_directories("${NFAPI_DIR}/nfapi/public_inc")
 include_directories("${NFAPI_DIR}/common/public_inc")
 include_directories("${NFAPI_DIR}/pnf/public_inc")
@@ -2236,26 +2241,34 @@ endif()
 
 list(APPEND ATLAS_LIBRARIES lapack lapacke)
 
-if (${XFORMS})
-  include_directories ("/usr/include/X11")
-  set(XFORMS_SOURCE
-    ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
-    )
-  set(XFORMS_SOURCE_NR
-    ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
-    )
-  set(XFORMS_SOURCE_SOFTMODEM
-	  ${OPENAIR_DIR}/targets/RT/USER/stats.c
-    )
-  set(XFORMS_LIBRARIES "forms")
-endif (${XFORMS})
-
 include_directories ("/usr/include/X11")
-
-add_library(gnbScope MODULE
+set(XFORMS_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
+  )
+set(XFORMS_ENB_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_enb_scope.c
+  )
+set(XFORMS_UE_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_ue_scope.c
+  )
+set(XFORMS_SOURCE_NR
   ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
   )
-target_link_libraries(gnbScope forms)
+set(XFORMS_SOURCE_SOFTMODEM
+  ${OPENAIR_TARGETS}/RT/USER/stats.c
+  )
+set(XFORMSINTERFACE_SOURCE
+  ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
+  )
+set(XFORMS_LIBRARIES "forms")
+
+add_library(enbscope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_ENB_SOURCE})
+add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_UE_SOURCE})
+target_link_libraries(enbscope ${XFORMS_LIBRARIES})
+target_link_libraries(uescope ${XFORMS_LIBRARIES})
+
+add_library(gnbscope MODULE ${XFORMS_SOURCE_NR})
+target_link_libraries(gnbscope ${XFORMS_LIBRARIES})
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2267,7 +2280,7 @@ if (${T_TRACER})
   set(T_SOURCE
       ${OPENAIR_DIR}/common/utils/T/T.c
       ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
-  set (T_LIB "rt")
+  set(T_LIB "rt")
 endif (${T_TRACER})
 
 #Some files in the T directory are generated.
@@ -2341,8 +2354,7 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2351,10 +2363,15 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB 
+  PHY_COMMON PHY PHY_RU LFDS L2 NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
+  
+target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
+target_link_libraries (lte-softmodem ${T_LIB})
 
 add_executable(cu_test
   ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/cu_test.c
@@ -2384,51 +2401,6 @@ target_link_libraries(du_test
   ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
 )
 
-target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
-target_link_libraries (lte-softmodem ${T_LIB})
-
-# lte-softmodem-nos1 is both eNB and UE implementation
-###################################################
-add_executable(lte-softmodem-nos1
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
-  ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
-  ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-  )
-
-add_dependencies(lte-softmodem-nos1 rrc_flag s1ap_flag x2_flag)
-
-target_link_libraries (lte-softmodem-nos1
-  -Wl,--start-group
-  RRC_LIB F1AP F1AP_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  -Wl,--end-group z dl)
-
-target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 # lte-uesoftmodem is  UE implementation
 #######################################
 
@@ -2450,8 +2422,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2464,57 +2435,15 @@ if (NOT ${NOS1})
 endif()
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP F1AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP F1AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON 
+  PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
-
-# lte-uesoftmodem-nos1 is UE implementation
-###################################################
-add_executable(lte-uesoftmodem-nos1
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/rfsim.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
-  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
-  ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
-  ${XFORMS_SOURCE_SOFTMODEM}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-  )
-
-add_dependencies(lte-uesoftmodem-nos1 rrc_flag s1ap_flag x2_flag)
-
-target_link_libraries (lte-uesoftmodem-nos1
-  -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP F1AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  -Wl,--end-group z dl)
-
-target_link_libraries (lte-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
-target_link_libraries (lte-uesoftmodem-nos1  ${LIB_LMS_LIBRARIES})
-target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
-
 
 # nr-softmodem
 ###################################################
@@ -2527,8 +2456,11 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/executables/nr-gnb.c
   ${OPENAIR_DIR}/executables/nr-ru.c
   ${OPENAIR_DIR}/executables/nr-softmodem.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -2542,9 +2474,9 @@ add_executable(nr-softmodem
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
+  S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  X2AP_LIB X2AP_ENB F1AP_LIB F1AP ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
@@ -2579,7 +2511,7 @@ add_executable(nr-softmodem-nos1
 target_link_libraries (nr-softmodem-nos1
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${MIH_LIB}
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2599,8 +2531,10 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR_DIR}/executables/nr-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -2613,8 +2547,9 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_NR_UE PHY_RU LFDS NR_L2_UE  MAC_NR_COMMON
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
+  RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
+  PHY_COMMON PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2622,7 +2557,7 @@ target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${C
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
-# nr-uesoftmodem is  UE implementation
+# nr-uesoftmodem-nos1
 #######################################
 
 add_executable(nr-uesoftmodem-nos1
@@ -2694,7 +2629,7 @@ add_executable(dlsim_tm4
   )
 target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
-  pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
+  pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${T_LIB}
   )
 
 add_executable(polartest 
@@ -2763,7 +2698,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     )
   target_link_libraries (${myExe}
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
-    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB} dl
+    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
     )
 endforeach(myExe)
 
@@ -2827,12 +2762,11 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
-        nr-softmodem nr-softmodem-nos1 nr-uesoftmodem nr-uesoftmodem-nos1
-        dlsim_tm4 nr_dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
-        pdcchsim pucchsim prachsim syncsim ulsim ldpctest polartest
-        cu_test du_test
-        
+        lte-softmodem lte-uesoftmodem nr-softmodem nr-softmodem-nos1
+        nr-uesoftmodem nr-uesoftmodem-nos1 dlsim dlsim_tm4 dlsim_tm7 
+        ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim
+        syncsim ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
+        nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP_LIB
         F1AP params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif

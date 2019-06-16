@@ -35,6 +35,7 @@
 #include "common/ran_context.h"
 
 #include "PHY/defs_gNB.h"
+#include "PHY/defs_common.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -80,24 +81,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
 
-#ifdef XFORMS
-  #include "PHY/TOOLS/nr_phy_scope.h"
-  #include "stats.h"
-#endif
+#include "PHY/TOOLS/nr_phy_scope.h"
+#include "stats.h"
 #include "nr-softmodem.h"
 #include "NB_IoT_interface.h"
-
-#ifdef XFORMS
-  // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
-  // at eNB 0, an UL scope for every UE
-
-  FD_phy_scope_gnb               *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-  char title[255];
-  unsigned char                   scope_enb_num_ue = 2;
-  static pthread_t                forms_thread; //xforms
-
-#endif //XFORMS
 
 short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
 
@@ -121,13 +108,13 @@ volatile int             oai_exit = 0;
 static clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
-unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=1;
+unsigned int mmapped_dma=0;
+int single_thread_flag=1;
 
-static int8_t                     threequarter_fs=0;
+static int8_t threequarter_fs=0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
-int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+uint32_t downlink_frequency[MAX_NUM_CCs][4];
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 //Temp fix for inexisting NR upper layer
 unsigned char NB_gNB_INST = 1;
@@ -158,9 +145,9 @@ double rx_gain_off = 0.0;
 double sample_rate=30.72e6;
 double bw = 10.0e6;
 
-static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
+static int tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-char   rf_config_file[1024]="/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
+char rf_config_file[1024]="/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
 int chain_offset=0;
 int phy_test = 0;
@@ -175,14 +162,11 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-int                      rx_input_level_dBm;
+int rx_input_level_dBm;
 
-#ifdef XFORMS
-  extern int                      otg_enabled;
-  static char                     do_forms=0;
-#else
-  int                             otg_enabled;
-#endif
+uint32_t do_forms=0;
+int otg_enabled;
+
 //int                             number_of_cards =   1;
 
 
@@ -203,10 +187,11 @@ extern void init_eNB_afterRU(void);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-char *parallel_config = NULL;
-char *worker_config = NULL;
 
+static char *parallel_config = NULL;
+static char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
+
 void set_parallel_conf(char *parallel_conf) {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
@@ -215,18 +200,17 @@ void set_parallel_conf(char *parallel_conf) {
   printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
 }
 void set_worker_conf(char *worker_conf) {
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)	                  thread_struct.worker_conf = WORKER_DISABLE;
   else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
 
   printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
 }
 PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
+	return thread_struct.parallel_conf;
 }
 WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
+	return thread_struct.worker_conf;
 }
-
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -368,74 +352,6 @@ void exit_function(const char *file, const char *function, const int line, const
 #endif
   exit(1);
 }
-
-#ifdef XFORMS
-
-
-void reset_stats(FL_OBJECT *button, long arg) {
-  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
-
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-    for (int k=0; k<8; k++) { //harq_processes
-      /*      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
-        phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
-        phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
-        phy_vars_gNB->UE_stats[i].dlsch_trials[k][j]=0;
-            }
-      phy_vars_gNB->UE_stats[i].dlsch_l2_errors[k]=0;
-      phy_vars_gNB->UE_stats[i].ulsch_errors[k]=0;
-      phy_vars_gNB->UE_stats[i].ulsch_consecutive_errors=0;
-      phy_vars_gNB->UE_stats[i].dlsch_sliding_cnt=0;
-      phy_vars_gNB->UE_stats[i].dlsch_NAK_round0=0;
-      phy_vars_gNB->UE_stats[i].dlsch_mcs_offset=0;
-      */
-    }
-  }
-}
-
-static void *scope_thread(void *arg) {
-  int UE_id, CC_id;
-  int ue_cnt=0;
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
-#endif
-
-  while (!oai_exit) {
-    ue_cnt=0;
-
-    for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        if ((ue_cnt<scope_enb_num_ue)) {
-          /*
-          //this function needs to be written
-          phy_scope_gNB(form_gnb[CC_id][ue_cnt],
-                    RC.gNB[0][CC_id],
-                UE_id);
-          */
-          ue_cnt++;
-        }
-      }
-    }
-
-    sleep(1);
-  }
-
-  //  printf("%s",stats_buffer);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-
-  if (eNB_stats) {
-    rewind (gNB_stats);
-    fwrite (stats_buffer, 1, len, gNB_stats);
-    fclose (gNB_stats);
-  }
-
-# endif
-  pthread_exit((void *)arg);
-}
-#endif
-
-
-
 
 #if defined(ENABLE_ITTI)
 void *l2l1_task(void *arg) {
@@ -621,7 +537,7 @@ static void get_options(void) {
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
-  if(worker_config != NULL)   set_worker_conf(worker_config);
+  if(worker_config != NULL) set_worker_conf(worker_config);
 }
 
 
@@ -942,16 +858,9 @@ static  void wait_nfapi_init(char *thread_name) {
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
-int main( int argc, char **argv ) {
-  int i;
-#if defined (XFORMS)
-  //void *status;
-#endif
-  int CC_id;
-  int ru_id;
-#if defined (XFORMS)
-  int ret;
-#endif
+int main( int argc, char **argv )
+{
+  int i, CC_id, ru_id;
   start_background_system();
 
   ///static configuration for NR at the moment
@@ -997,7 +906,7 @@ int main( int argc, char **argv ) {
 #endif
 
   if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
+    if (init_opt() == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 
@@ -1040,7 +949,7 @@ int main( int argc, char **argv ) {
   mlockall(MCL_CURRENT | MCL_FUTURE);
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-#ifdef XFORMS
+/*#ifdef XFORMS
   int UE_id;
 
   if (do_forms==1) {
@@ -1070,7 +979,7 @@ int main( int argc, char **argv ) {
     printf("Scope thread created, ret=%d\n",ret);
   }
 
-#endif
+#endif*/
   usleep(10*1000);
 
   if (nfapi_mode) {
@@ -1175,8 +1084,8 @@ int main( int argc, char **argv ) {
   printf("Terminating application - oai_exit=%d\n",oai_exit);
 #endif
   // stop threads
-#ifdef XFORMS
-  /*
+/*#ifdef XFORMS
+
     printf("waiting for XFORMS thread\n");
 
     if (do_forms==1) {
@@ -1194,8 +1103,8 @@ int main( int argc, char **argv ) {
     }
         }
     }
-  */
-#endif
+
+#endif*/
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);

@@ -733,8 +733,8 @@ typedef enum {format0,
               format2C,
               format2D,
               format3,
-	      format3A,
-	      format4,
+	          format3A,
+	          format4,
               format5,
               format6_0A,
               format6_0B,
@@ -867,8 +867,8 @@ typedef enum {
   RESYNCH=4
 } UE_MODE_t;
 
-#define FOREACH_PARALLEL(GEN)			\
-  GEN(PARALLEL_SINGLE_THREAD)			\
+#define FOREACH_PARALLEL(GEN)		\
+  GEN(PARALLEL_SINGLE_THREAD)		\
   GEN(PARALLEL_RU_L1_SPLIT)			\
   GEN(PARALLEL_RU_L1_TRX_SPLIT)
 
@@ -888,7 +888,7 @@ typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
-extern THREAD_STRUCT  thread_struct;
+/*extern THREAD_STRUCT thread_struct;
 
 static inline void set_parallel_conf(char *parallel_conf) {
   mapping config[]= {
@@ -907,7 +907,7 @@ static inline void set_worker_conf(char *worker_conf) {
     FOREACH_WORKER(GENERATE_ENUMTXT)
     {NULL, -1}
   };
-  thread_struct.worker_conf =  (WORKER_CONF_t)map_str_to_int(config, worker_conf);
+  thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
   if (thread_struct.worker_conf == -1 ) {
     LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
     thread_struct.worker_conf = WORKER_DISABLE ;
@@ -920,7 +920,7 @@ static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
 
 static inline WORKER_CONF_t get_thread_worker_conf(void) {
   return thread_struct.worker_conf;
-}
+}*/
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
@@ -973,25 +973,25 @@ extern int sync_var;
 
 
 typedef uint8_t(decoder_if_t)(int16_t *y,
-                               int16_t *y2,
-    		               uint8_t *decoded_bytes,
-    		               uint8_t *decoded_bytes2,
-	   		       uint16_t n,
-	   		       uint8_t max_iterations,
-	   		       uint8_t crc_type,
-	   		       uint8_t F,
-	   		       time_stats_t *init_stats,
-	   		       time_stats_t *alpha_stats,
-	   		       time_stats_t *beta_stats,
-	   		       time_stats_t *gamma_stats,
-	   		       time_stats_t *ext_stats,
-	   		       time_stats_t *intl1_stats,
-                               time_stats_t *intl2_stats);
+                              int16_t *y2,
+							  uint8_t *decoded_bytes,
+							  uint8_t *decoded_bytes2,
+							  uint16_t n,
+							  uint8_t max_iterations,
+							  uint8_t crc_type,
+							  uint8_t F,
+							  time_stats_t *init_stats,
+							  time_stats_t *alpha_stats,
+							  time_stats_t *beta_stats,
+							  time_stats_t *gamma_stats,
+							  time_stats_t *ext_stats,
+							  time_stats_t *intl1_stats,
+							  time_stats_t *intl2_stats);
 
 typedef uint8_t(encoder_if_t)(uint8_t *input,
-                               uint16_t input_length_bytes,
-                               uint8_t *output,
-                               uint8_t F);
+                              uint16_t input_length_bytes,
+                              uint8_t *output,
+                              uint8_t F);
 
 
 static inline void wait_sync(char *thread_name) {

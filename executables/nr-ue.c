@@ -738,7 +738,7 @@ void *UE_thread(void *arg) {
   return NULL;
 }
 
-void init_UE(int nb_inst) {
+void init_NR_UE(int nb_inst) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   pthread_t threads[nb_inst];

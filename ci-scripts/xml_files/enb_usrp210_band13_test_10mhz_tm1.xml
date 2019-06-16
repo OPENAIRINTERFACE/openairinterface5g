@@ -32,11 +32,11 @@
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
 
-        <testCase id="000001">
-                <class>IdleSleep</class>
-                <desc>Waiting for a moment...</desc>
-                <idle_sleep_time_in_sec>15</idle_sleep_time_in_sec>
-        </testCase>
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Waiting for a moment...</desc>
+		<idle_sleep_time_in_sec>15</idle_sleep_time_in_sec>
+	</testCase>
 
 	<testCase id="030121">
 		<class>Initialize_eNB</class>
@@ -49,31 +49,31 @@
 		<desc>Terminate eNB</desc>
 	</testCase>
 
-        <testCase id="040102">
-                <class>Initialize_CatM_module</class>
-                <desc>Initialize CAT-M Module</desc>
-        </testCase>
+	<testCase id="040102">
+		<class>Initialize_CatM_module</class>
+		<desc>Initialize CAT-M Module</desc>
+	</testCase>
 
-        <testCase id="040202">
-                <class>Terminate_CatM_module</class>
-                <desc>Terminate CAT-M Module</desc>
-        </testCase>
+	<testCase id="040202">
+		<class>Terminate_CatM_module</class>
+		<desc>Terminate CAT-M Module</desc>
+	</testCase>
 
-        <testCase id="040302">
-                <class>Attach_CatM_module</class>
-                <desc>Attach CAT-M Module</desc>
-        </testCase>
+	<testCase id="040302">
+		<class>Attach_CatM_module</class>
+		<desc>Attach CAT-M Module</desc>
+	</testCase>
 
-        <testCase id="040402">
-                <class>Detach_CatM_module</class>
-                <desc>Detach CAT-M Module</desc>
-        </testCase>
+	<testCase id="040402">
+		<class>Detach_CatM_module</class>
+		<desc>Detach CAT-M Module</desc>
+	</testCase>
 
-        <testCase id="040502">
-                <class>Ping_CatM_module</class>
-                <desc>ping (10MHz - 20 sec)</desc>
-                <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>5</ping_packetloss_threshold>
-        </testCase>
+	<testCase id="040502">
+		<class>Ping_CatM_module</class>
+		<desc>ping (10MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
 
 </testCaseList>

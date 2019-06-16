@@ -452,8 +452,8 @@ static void *fep_thread(void *param) {
   return(NULL);
 }
 
-void init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
-
+void init_feptx_thread(RU_t *ru, pthread_attr_t *attr_feptx)
+{
   RU_proc_t *proc = &ru->proc;
 
   proc->instance_cnt_feptx         = -1;
@@ -462,12 +462,10 @@ void init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
   pthread_cond_init( &proc->cond_feptx, NULL);
 
   threadCreate(&proc->pthread_feptx, feptx_thread, (void*)ru, "feptx", -1, OAI_PRIORITY_RT);
-
-
 }
 
-void init_fep_thread(RU_t *ru,pthread_attr_t *attr_fep) {
-
+void init_fep_thread(RU_t *ru, pthread_attr_t *attr_fep)
+{
   RU_proc_t *proc = &ru->proc;
 
   proc->instance_cnt_fep         = -1;
@@ -476,8 +474,6 @@ void init_fep_thread(RU_t *ru,pthread_attr_t *attr_fep) {
   pthread_cond_init( &proc->cond_fep, NULL);
 
   threadCreate(&proc->pthread_fep, fep_thread, (void*)ru, "fep", -1, OAI_PRIORITY_RT);
-
-
 }
 
 extern void kill_fep_thread(RU_t *ru)
@@ -506,7 +502,7 @@ extern void kill_feptx_thread(RU_t *ru)
   pthread_cond_destroy( &proc->cond_feptx );
 }
 
-void ru_fep_full_2thread(RU_t *ru,int subframe) {
+void ru_fep_full_2thread(RU_t *ru, int subframe) {
 
   RU_proc_t *proc = &ru->proc;
 

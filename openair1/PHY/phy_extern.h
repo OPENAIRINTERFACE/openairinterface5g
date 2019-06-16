@@ -40,8 +40,6 @@ extern int number_of_cards;
 
 extern short conjugate[8],conjugate2[8];
 
-
-
 extern RAN_CONTEXT_t RC;
 
 extern short primary_synch0[144];

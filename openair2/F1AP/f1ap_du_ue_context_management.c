@@ -470,6 +470,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
 
       /* sCell_ID */
       F1AP_NRCGI_t nRCGI;  // issue here
+      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
       MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
 
       NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
@@ -703,7 +704,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
                                               , 0
                                               , sdu_len
                                               , pdu_p
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                               ,NULL
                                               ,NULL
 #endif
@@ -1155,6 +1156,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
 
      /* - sCell_ID */
      F1AP_NRCGI_t nRCGI;
+     memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                         &nRCGI.pLMN_Identity);
 

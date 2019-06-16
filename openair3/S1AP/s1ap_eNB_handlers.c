@@ -220,7 +220,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage.procedureCode > sizeof(messages_callback) / (3 * sizeof(
+  if (pdu.choice.initiatingMessage.procedureCode >= sizeof(messages_callback) / (3 * sizeof(
         s1ap_message_decoded_callback))
       || (pdu.present > S1AP_S1AP_PDU_PR_unsuccessfulOutcome)) {
     S1AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",

@@ -238,7 +238,7 @@ case $key in
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=7
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--eNB -w USRP --mu"
     NBARGS=$[$NBARGS+256]
     shift
@@ -246,9 +246,9 @@ case $key in
     -v2)
     VM_NAME=ci-basic-sim
     ARCHIVES_LOC=basic_sim
-    LOG_PATTERN=basic_simulator
-    NB_PATTERN_FILES=2
-    BUILD_OPTIONS="--basic-simulator"
+    LOG_PATTERN=Rel14.txt
+    NB_PATTERN_FILES=13
+    BUILD_OPTIONS="--eNB --UE"
     VM_MEMORY=8192
     VM_CPU=4
     RUN_OPTIONS="complex"
@@ -300,8 +300,8 @@ case $key in
     VM_CPU=4
     ARCHIVES_LOC=enb_eth
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -t ETHERNET"
+    NB_PATTERN_FILES=8
+    BUILD_OPTIONS="--eNB"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -311,8 +311,8 @@ case $key in
     VM_CPU=4
     ARCHIVES_LOC=ue_eth
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=10
-    BUILD_OPTIONS="--UE -t ETHERNET"
+    NB_PATTERN_FILES=12
+    BUILD_OPTIONS="--UE"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -353,16 +353,16 @@ case $key in
         VM_NAME=ci-enb-usrp
         ARCHIVES_LOC=enb_usrp
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=7
+        NB_PATTERN_FILES=9
         BUILD_OPTIONS="--eNB -w USRP --mu"
         NBARGS=$[$NBARGS+256]
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
         ARCHIVES_LOC=basic_sim
-        LOG_PATTERN=basic_simulator
-        NB_PATTERN_FILES=2
-        BUILD_OPTIONS="--basic-simulator"
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=13
+        BUILD_OPTIONS="--UE --eNB"
         VM_MEMORY=8192
         VM_CPU=4
         RUN_OPTIONS="complex"
@@ -409,8 +409,8 @@ case $key in
         VM_CPU=4
         ARCHIVES_LOC=enb_eth
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--eNB -t ETHERNET"
+        NB_PATTERN_FILES=8
+        BUILD_OPTIONS="--eNB"
         NBARGS=$[$NBARGS+256]
         ;;
         ue-ethernet)
@@ -419,8 +419,8 @@ case $key in
         VM_CPU=4
         ARCHIVES_LOC=ue_eth
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=10
-        BUILD_OPTIONS="--UE -t ETHERNET"
+        NB_PATTERN_FILES=12
+        BUILD_OPTIONS="--UE"
         NBARGS=$[$NBARGS+256]
         ;;
         flexran-rtc)

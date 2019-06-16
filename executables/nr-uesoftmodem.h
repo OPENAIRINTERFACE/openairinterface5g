@@ -125,23 +125,23 @@
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 
 
-/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters specific to UE                                                                */
-/*   optname                     helpstr             paramflags                      XXXptr                  defXXXval       type          numelt   */
-/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_UEPARAMS_DESC {  \
-    {"ue-rxgain",                CONFIG_HLP_UERXG,      0,    dblptr:&(rx_gain[0][0]),      defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,   0,    dblptr:&rx_gain_off,        defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-txgain",                CONFIG_HLP_UETXG,      0,    dblptr:&(tx_gain[0][0]),      defdblval:0,    TYPE_DOUBLE,   0},     \
-    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,    0,    u8ptr:&nb_antenna_rx,       defuintval:1,   TYPE_UINT8,    0},     \
-    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,    0,    u8ptr:&nb_antenna_tx,       defuintval:1,   TYPE_UINT8,    0},     \
-    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL, iptr:&UE_scan_carrier,        defintval:0,    TYPE_INT,    0},     \
-    {"ue-fo-compensation",         CONFIG_HLP_UEFO,       PARAMFLAG_BOOL, iptr:&UE_fo_compensation,       defintval:0,    TYPE_INT,    0},     \
-    {"ue-max-power",             NULL,          0,    iptr:&(tx_max_power[0]),      defintval:90,   TYPE_INT,    0},     \
-    {"r"  ,                        CONFIG_HLP_PRB,        0,                iptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT,    0},     \
-    {"dlsch-demod-shift",        CONFIG_HLP_DLSHIFT,  0,      iptr:(int32_t *)&dlsch_demod_shift, defintval:0,         TYPE_INT,    0},        \
-    {"usrp-args",               CONFIG_HLP_USRP_ARGS,   0,                      strptr:(char **)&usrp_args,         defstrval:"type=b200",          TYPE_STRING,    0},                     \
-    {"usrp-clksrc",             CONFIG_HLP_USRP_CLK_SRC,0,                      strptr:(char **)&usrp_clksrc,       defstrval:"internal",           TYPE_STRING,    0}                     \
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters specific to UE                                                                       */
+/*   optname                     helpstr             paramflags                  XXXptr                      defXXXval              type          numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define CMDLINE_NRUEPARAMS_DESC {  \
+    {"ue-rxgain",                CONFIG_HLP_UERXG,       0,              dblptr:&(rx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,              dblptr:&rx_gain_off,                defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-txgain",                CONFIG_HLP_UETXG,       0,              dblptr:&(tx_gain[0][0]),            defdblval:0,           TYPE_DOUBLE,   0},     \
+    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,              u8ptr:&nb_antenna_rx,               defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,              u8ptr:&nb_antenna_tx,               defuintval:1,          TYPE_UINT8,    0},     \
+    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL, iptr:&UE_scan_carrier,              defintval:0,           TYPE_INT,      0},     \
+    {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL, iptr:&UE_fo_compensation,           defintval:0,           TYPE_INT,      0},     \
+    {"ue-max-power",             NULL,                   0,              iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
+    {"r"  ,                      CONFIG_HLP_PRB,         0,              iptr:&(frame_parms[0]->N_RB_DL),    defintval:25,          TYPE_UINT,     0},     \
+    {"dlsch-demod-shift",        CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&dlsch_demod_shift, defintval:0,           TYPE_INT,      0},     \
+    {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,              strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0},     \
+    {"usrp-clksrc",              CONFIG_HLP_USRP_CLK_SRC,0,              strptr:(char **)&usrp_clksrc,       defstrval:"internal",  TYPE_STRING,   0}      \
   }
 
 #define DEFAULT_DLF 2680000000
@@ -181,15 +181,15 @@
 #define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for LOG utility                                                                                        */
-/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                            */
+/*   optname         helpstr          paramflags            XXXptr                  defXXXval             type         numelt    */
+/*-------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_LOGPARAMS_DESC {  \
-    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,    defintval:1,         TYPE_INT,    0},        \
-    {"g" ,           CONFIG_HLP_LOGL, 0,      uptr:&glog_level,     defintval:0,         TYPE_UINT,     0},        \
-    {"G" ,                           CONFIG_HLP_LOGV, 0,      uptr:&glog_verbosity,           defintval:0,         TYPE_UINT16,   0},        \
-    {"telnetsrv",        CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,    defintval:0,         TYPE_UINT,     0},        \
+    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},        \
+    {"g" ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},        \
+    {"G" ,           CONFIG_HLP_LOGV, 0,                uptr:&glog_verbosity,      defintval:0,         TYPE_UINT16,   0},        \
+    {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},        \
   }
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
@@ -233,9 +233,9 @@ extern double cpuf;
 #endif
 
 // In nr-ue.c
-extern int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
+extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
-extern void init_UE(int);
+extern void init_NR_UE(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);

@@ -74,7 +74,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-
+#include "targets/RT/USER/lte-softmodem.h"
 
 #ifndef OPENAIR2
   #include "UTIL/OTG/otg_extern.h"
@@ -98,7 +98,7 @@ struct timing_info_t {
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-extern volatile int                    oai_exit;
+extern volatile int oai_exit;
 
 extern int transmission_mode;
 
@@ -107,6 +107,8 @@ extern int oaisim_flag;
 //uint16_t sf_ahead=4;
 extern uint16_t sf_ahead;
 
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 //pthread_t                       main_eNB_thread;
 
@@ -147,7 +149,10 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 
-static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name) {
+static inline int rxtx(PHY_VARS_eNB *eNB,
+		               L1_rxtx_proc_t *proc,
+					   char *thread_name)
+{
   start_meas(&softmodem_stats_rxtx_sf);
   //L1_rxtx_proc_t *L1_proc_tx = &eNB->proc.L1_proc_tx;
   // *******************************************************************
@@ -421,20 +426,21 @@ static void *L1_thread( void *param ) {
 void eNB_top(PHY_VARS_eNB *eNB,
 		     int frame_rx,
 			 int subframe_rx,
-			 char *string,RU_t *ru)
+			 char *string,
+			 RU_t *ru)
 {
-  L1_proc_t *proc           = &eNB->proc;
-  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  RU_proc_t *ru_proc=&ru->proc;
-  proc->frame_rx    = frame_rx;
-  proc->subframe_rx = subframe_rx;
+  L1_proc_t *proc        = &eNB->proc;
+  L1_rxtx_proc_t *L1_proc= &proc->L1_proc;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
+  RU_proc_t *ru_proc     = &ru->proc;
+  proc->frame_rx         = frame_rx;
+  proc->subframe_rx      = subframe_rx;
 
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
     L1_proc->frame_rx     = ru_proc->frame_rx;
-    L1_proc->subframe_rx  = ru_proc->subframe_rx;
+    L1_proc->subframe_rx  = ru_proc->tti_rx;
     L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
     L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
 
@@ -442,7 +448,7 @@ void eNB_top(PHY_VARS_eNB *eNB,
     	LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
 
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-    ru_proc->subframe_tx  = L1_proc->subframe_tx;
+    ru_proc->tti_tx  = L1_proc->subframe_tx;
     ru_proc->frame_tx     = L1_proc->frame_tx;
   }
 }
@@ -472,12 +478,12 @@ int wakeup_txfh(L1_rxtx_proc_t *proc,
     ru_proc = &ru->proc;
 
     if (ru_proc->instance_cnt_eNBs == 0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->subframe_rx);
       return(-1);
     }
 
     if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->tti_rx&1,ru_proc->instance_cnt_eNBs );
       exit_fun( "error locking mutex_eNB" );
       return(-1);
     }
@@ -540,7 +546,7 @@ int wakeup_tx(PHY_VARS_eNB *eNB)
 int wakeup_rxtx(PHY_VARS_eNB *eNB,
 		        RU_t *ru)
 {
-  L1_proc_t *proc=&eNB->proc;
+  L1_proc_t *proc   =&eNB->proc;
   RU_proc_t *ru_proc=&ru->proc;
   L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
@@ -592,7 +598,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
   L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
   L1_proc->frame_rx     = ru_proc->frame_rx;
-  L1_proc->subframe_rx  = ru_proc->subframe_rx;
+  L1_proc->subframe_rx  = ru_proc->tti_rx;
   L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
 
@@ -607,7 +613,11 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   return(0);
 }
 
-void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,
+		              RU_t *ru,
+					  int frame,
+					  int subframe)
+{
   L1_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int i;

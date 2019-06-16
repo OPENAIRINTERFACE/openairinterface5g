@@ -986,7 +986,7 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
       if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
         LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
       } else {
-        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_LTE_DRB_Identity)) {
+        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id < max_val_LTE_DRB_Identity)) {
           enb_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_eNB;
           sgw_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_sgw;
           stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;

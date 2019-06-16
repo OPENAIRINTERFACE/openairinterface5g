@@ -426,7 +426,7 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
                         ,confirmP
                         ,pdcp_pdu_size
                         ,pdcp_pdu_p
-  #ifdef Rel14
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,NULL
                         ,NULL
   #endif

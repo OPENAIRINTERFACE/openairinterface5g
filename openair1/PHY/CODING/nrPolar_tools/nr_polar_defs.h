@@ -363,14 +363,16 @@ void updateCrcChecksum2(uint8_t **crcChecksum,
 static inline void nr_polar_interleaver(uint8_t *input,
                                         uint8_t *output,
                                         uint16_t *pattern,
-                                        uint16_t size) {
+                                        uint16_t size)
+{
   for (int i=0; i<size; i++) output[i]=input[pattern[i]];
 }
 
 static inline void nr_polar_deinterleaver(uint8_t *input,
 										  uint8_t *output,
 										  uint16_t *pattern,
-										  uint16_t size) {
+										  uint16_t size)
+{
 	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
 }
 

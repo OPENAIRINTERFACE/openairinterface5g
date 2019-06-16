@@ -66,14 +66,14 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
 					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
 					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
 					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) || (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (NR_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) || (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                     ,0
 #endif
                      );
   }
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (NR_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
 
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");

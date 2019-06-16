@@ -127,46 +127,46 @@
 #define START_MSC          softmodem_params.start_msc
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters specific to UE                                                                     */
-/*   optname                     helpstr             paramflags                      XXXptr                  defXXXval            type          numelt   */
+/*   optname                     helpstr             paramflags          XXXptr                          defXXXval            type          numelt       */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #define CMDLINE_UEPARAMS_DESC {  \
-    {"siml1",                      CONFIG_HLP_SIML1,       PARAMFLAG_BOOL,  iptr:&simL1flag,                    defintval:0,          TYPE_INT,      0},   \
-    {"U",            CONFIG_HLP_NUMUE,       0,               u16ptr:&NB_UE_INST,                  defuintval:1,         TYPE_UINT16,     0},   \
-    {"ue-rxgain",                CONFIG_HLP_UERXG,       0,   dblptr:&(rx_gain[0][0]),      defdblval:130,        TYPE_DOUBLE,   0},   \
-    {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,   dblptr:&rx_gain_off,        defdblval:0,          TYPE_DOUBLE,   0},   \
-    {"ue-txgain",                CONFIG_HLP_UETXG,       0,   dblptr:&(tx_gain[0][0]),      defdblval:0,          TYPE_DOUBLE,   0},   \
-    {"ue-nb-ant-rx",             CONFIG_HLP_UENANTR,     0,   u8ptr:&nb_antenna_rx,       defuintval:1,         TYPE_UINT8,    0},   \
-    {"ue-nb-ant-tx",             CONFIG_HLP_UENANTT,     0,   u8ptr:&nb_antenna_tx,       defuintval:1,         TYPE_UINT8,    0},   \
-    {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&UE_scan_carrier,        defintval:0,          TYPE_INT,  0},   \
-    {"ue-max-power",             NULL,           0,   iptr:&(tx_max_power[0]),      defintval:23,         TYPE_INT,  0},   \
-    {"emul-iface",                 CONFIG_HLP_EMULIFACE,   0,               strptr:&emul_iface,       defstrval:"lo",       TYPE_STRING,   100}, \
-    {"L2-emul",                    NULL,             0,               u8ptr:&nfapi_mode,        defuintval:3,         TYPE_UINT8,  0},   \
-    {"num-ues",              NULL,                   0,               u16ptr:&(NB_UE_INST),        defuintval:1,         TYPE_UINT16,  0},   \
-    {"nums_ue_thread",             NULL,                   0,               u16ptr:&(NB_THREAD_INST),           defuintval:1,         TYPE_UINT16,   0},   \
-    {"r"  ,                        CONFIG_HLP_PRB,         0,               u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,         TYPE_UINT8,    0},   \
-    {"dlsch-demod-shift",          CONFIG_HLP_DLSHIFT,     0,   iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,  0},   \
-    {"usrp-args",                  CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
-    {"usrp-clksrc",                CONFIG_HLP_USRP_CLK_SRC,0,               strptr:(char **)&usrp_clksrc,       defstrval:"internal", TYPE_STRING,   0},   \
-    {"mmapped-dma",                CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
-    {"clock",                      CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
-    {"s" ,                         CONFIG_HLP_SNR,         0,               iptr:&snr_dB,                       defintval:25,         TYPE_INT,      0},   \
-    {"T" ,                         CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
-    {"A",                          CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
+    {"siml1",             CONFIG_HLP_SIML1,       PARAMFLAG_BOOL,  iptr:&simL1flag,                    defintval:0,          TYPE_INT,      0},   \
+    {"U",                 CONFIG_HLP_NUMUE,       0,               u16ptr:&NB_UE_INST,                 defuintval:1,         TYPE_UINT16,   0},   \
+    {"ue-rxgain",         CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:130,        TYPE_DOUBLE,   0},   \
+    {"ue-rxgain-off",     CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,          TYPE_DOUBLE,   0},   \
+    {"ue-txgain",         CONFIG_HLP_UETXG,       0,               dblptr:&(tx_gain[0][0]),            defdblval:0,          TYPE_DOUBLE,   0},   \
+    {"ue-nb-ant-rx",      CONFIG_HLP_UENANTR,     0,               u8ptr:&nb_antenna_rx,               defuintval:1,         TYPE_UINT8,    0},   \
+    {"ue-nb-ant-tx",      CONFIG_HLP_UENANTT,     0,               u8ptr:&nb_antenna_tx,               defuintval:1,         TYPE_UINT8,    0},   \
+    {"ue-scan-carrier",   CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&UE_scan_carrier,              defintval:0,          TYPE_INT,      0},   \
+    {"ue-max-power",      NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:23,         TYPE_INT,      0},   \
+    {"emul-iface",        CONFIG_HLP_EMULIFACE,   0,               strptr:&emul_iface,                 defstrval:"lo",       TYPE_STRING, 100},   \
+    {"L2-emul",           NULL,                   0,               u8ptr:&nfapi_mode,                  defuintval:3,         TYPE_UINT8,    0},   \
+    {"num-ues",           NULL,                   0,               u16ptr:&(NB_UE_INST),               defuintval:1,         TYPE_UINT16,   0},   \
+    {"nums_ue_thread",    NULL,                   0,               u16ptr:&(NB_THREAD_INST),           defuintval:1,         TYPE_UINT16,   0},   \
+    {"r"  ,               CONFIG_HLP_PRB,         0,               u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,         TYPE_UINT8,    0},   \
+    {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,      0},   \
+    {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
+    {"usrp-clksrc",       CONFIG_HLP_USRP_CLK_SRC,0,               strptr:(char **)&usrp_clksrc,       defstrval:"internal", TYPE_STRING,   0},   \
+    {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
+    {"clock",             CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
+    {"s" ,                CONFIG_HLP_SNR,         0,               iptr:&snr_dB,                       defintval:25,         TYPE_INT,      0},   \
+    {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
+    {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }
 
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters specific to UE threads                                                             */
-/*   optname                     helpstr             paramflags                      XXXptr                  defXXXval            type          numelt   */
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters specific to UE threads                                   */
+/*   optname                   helpstr     paramflags     XXXptr                       defXXXval        type          numelt   */
+/*-----------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UETHREADSPARAMS_DESC {  \
-    {"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:1,                    TYPE_INT,       0},                     \
-    {"threadOneSubframe",       NULL,                   0,                      iptr:&(threads.one),                defintval:1,                    TYPE_INT,       0},                     \
-    {"threadTwoSubframe",       NULL,                   0,                      iptr:&(threads.two),                defintval:1,                    TYPE_INT,       0},                     \
-    {"threadThreeSubframe",     NULL,                   0,                      iptr:&(threads.three),              defintval:1,                    TYPE_INT,       0},                     \
-    {"threadSlot1ProcOne",      NULL,                   0,                      iptr:&(threads.slot1_proc_one),     defintval:1,                    TYPE_INT,       0},                     \
-    {"threadSlot1ProcTwo",      NULL,                   0,                      iptr:&(threads.slot1_proc_two),     defintval:1,                    TYPE_INT,       0},                     \
+    {"threadOneSubframe",       NULL,      0,     iptr:&(threads.one),                defintval:1,     TYPE_INT,       0},   \
+    {"threadTwoSubframe",       NULL,      0,     iptr:&(threads.two),                defintval:1,     TYPE_INT,       0},   \
+    {"threadThreeSubframe",     NULL,      0,     iptr:&(threads.three),              defintval:1,     TYPE_INT,       0},   \
+    {"threadSlot1ProcOne",      NULL,      0,     iptr:&(threads.slot1_proc_one),     defintval:1,     TYPE_INT,       0},   \
+    {"threadSlot1ProcTwo",      NULL,      0,     iptr:&(threads.slot1_proc_two),     defintval:1,     TYPE_INT,       0},   \
   }
+//    {"threadIQ",                NULL,      0,     iptr:&(threads.iq),                 defintval:1,     TYPE_INT,       0},   \
 
 #define DEFAULT_DLF 2680000000
 
@@ -179,7 +179,6 @@
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
 #define CHAIN_OFFSET        softmodem_params.chain_offset
-#define DO_FORMS            softmodem_params.do_forms
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
@@ -193,11 +192,9 @@
     {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&CLOCK_SOURCE,                 defintval:0,                    TYPE_UINT,      0},                     \
     {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&WAIT_FOR_SYNC,                defintval:0,                    TYPE_INT,       0},                     \
     {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
-	{"threadMain",              NULL,                   0,                      iptr:&(threads.main),               defintval:1,                    TYPE_INT,       0},                     \
-	{"threadSync",              NULL,                   0,                      iptr:&(threads.sync),               defintval:1,                    TYPE_INT,       0},                     \
     {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
     {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&CHAIN_OFFSET,                 defintval:0,                    TYPE_INT,       0},                     \
-    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&DO_FORMS,         defintval:0,                    TYPE_INT8,      0},                     \
+    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
@@ -211,7 +208,7 @@
   }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
-#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
+#define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -220,14 +217,15 @@
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define START_MSC          softmodem_params.start_msc
 #define CMDLINE_LOGPARAMS_DESC {  \
-    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,    defintval:1,         TYPE_INT,    0},        \
-    {"g" ,           CONFIG_HLP_LOGL, 0,      uptr:&glog_level,     defintval:0,         TYPE_UINT,     0},        \
-    {"telnetsrv",        CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,    defintval:0,         TYPE_UINT,     0},        \
-    {"msc",                CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,            defintval:0,         TYPE_UINT,     0},                    \
+    {"R" ,           CONFIG_HLP_FLOG, 0,              uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},        \
+    {"g" ,           CONFIG_HLP_LOGL, 0,              uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},        \
+    {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL, uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},        \
+    {"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL, uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},                    \
   }
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
-#define CMDLINE_STARTTELN_IDX     2
+#define CMDLINE_GLOGVERBO_IDX     2
+#define CMDLINE_STARTTELN_IDX     3
 
 /* check function for global log level */
 #define CMDLINE_LOGPARAMS_CHECK_DESC { \
@@ -240,6 +238,51 @@
 /***************************************************************************************************************************************/
 /*  */
 #include "threads_t.h"
+//extern threads_t threads;
+
+//extern THREAD_STRUCT thread_struct;
+THREAD_STRUCT thread_struct;
+
+static inline void set_parallel_conf(char *parallel_conf) {
+  mapping config[]= {
+    FOREACH_PARALLEL(GENERATE_ENUMTXT)
+    {NULL,-1}
+  };
+  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
+  if (thread_struct.parallel_conf == -1 ) {
+    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
+    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  }
+}
+
+static inline void set_worker_conf(char *worker_conf) {
+  mapping config[]={
+    FOREACH_WORKER(GENERATE_ENUMTXT)
+    {NULL, -1}
+  };
+  thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
+  if (thread_struct.worker_conf == -1 ) {
+    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
+    thread_struct.worker_conf = WORKER_DISABLE ;
+  }
+}
+
+static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
+  return thread_struct.parallel_conf;
+}
+
+static inline WORKER_CONF_t get_thread_worker_conf(void) {
+  return thread_struct.worker_conf;
+}
+
+/*PARALLEL_CONF_t get_thread_parallel_conf(void);
+WORKER_CONF_t   get_thread_worker_conf(void);
+void set_parallel_conf(char *parallel_conf);
+void set_worker_conf(char *worker_conf);
+*/
+
+
+
 
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
@@ -247,6 +290,7 @@
 #define SOFTMODEM_RFSIM_BIT           (1<<10)
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
+#define SOFTMODEM_DOFORMS_BIT         (1<<15)
 typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
@@ -257,7 +301,6 @@ typedef struct {
   int            wait_for_sync; //eNodeB only
   int            single_thread_flag; //eNodeB only
   int            chain_offset;
-  uint32_t       do_forms;
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
@@ -270,6 +313,7 @@ typedef struct {
 #define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
+#define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern void get_common_options(void);
@@ -316,7 +360,16 @@ extern void set_function_spec_param(RU_t *ru);
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,
+extern void init_UE(int nb_inst,
+		            int eMBMS_active,
+					int uecap_xer_in,
+					int timing_correction,
+					int phy_test,
+					int UE_scan,
+					int UE_scan_carrier,
+					runmode_t mode,
+					int rxgain,
+					int txpowermax,
                     LTE_DL_FRAME_PARMS *fp);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
 
@@ -337,11 +390,6 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
-PARALLEL_CONF_t get_thread_parallel_conf(void);
-WORKER_CONF_t   get_thread_worker_conf(void);
-void set_parallel_conf(char *parallel_conf);
-void set_worker_conf(char *worker_conf);
-
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 

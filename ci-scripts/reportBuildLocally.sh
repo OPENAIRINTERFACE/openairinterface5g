@@ -566,9 +566,11 @@ function report_build {
     summary_table_footer
 
     summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
-    summary_table_row "Basic Simulator eNb - Release 15" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
-    summary_table_row "Basic Simulator UE - Release 15" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
-    summary_table_row "Conf 2 UE data - Release 15" ./archives/basic_sim/conf2uedata.Rel15.txt "Built target conf2uedata" ./basic_sim_row3.html
+    summary_table_row "LTE SoftModem - Release 14" ./archives/basic_sim/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./basic_sim_row1.html
+    summary_table_row "LTE UE SoftModem - Release 14" ./archives/basic_sim/lte-uesoftmodem.Rel14.txt "Built target lte-uesoftmodem" ./basic_sim_row2.htm
+    summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
+    summary_table_row "RB Tool - Release 14" ./archives/basic_sim/rb_tool.Rel14.txt "Built target rb_tool" ./basic_sim_row4.html
+    summary_table_row "NASMESH - Release 14" ./archives/basic_sim/nasmesh.Rel14.txt "Built target nasmesh" ./basic_sim_row5.html
     summary_table_footer
 
     summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
@@ -665,7 +667,7 @@ function report_build {
             cat $DETAILS_TABLE >> ./build_results.html
         done
     fi
-    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ]
+    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ] || [ -f ./basic_sim_row4.html ] || [ -f ./basic_sim_row5.html ]
     then
         for DETAILS_TABLE in `ls ./basic_sim_row*.html`
         do

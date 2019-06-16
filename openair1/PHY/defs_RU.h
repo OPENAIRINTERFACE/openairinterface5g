@@ -142,12 +142,12 @@ typedef struct RU_proc_t_s {
   int frame_rx;
   /// frame to act upon for transmission
   int frame_tx;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/*#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     /// subframe to act upon for transmission
     int subframe_tx;
     /// subframe to act upon for reception
     int subframe_rx;
-#endif
+#endif*/
   /// unwrapped frame count
   int frame_tx_unwrap;
   /// frame to act upon for reception of prach
@@ -229,7 +229,7 @@ typedef struct RU_proc_t_s {
   struct sched_param sched_param_FH1;
   /// scheduling parameters for RU prach thread
   struct sched_param sched_param_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for RU prach thread BL/CE UEs
   struct sched_param sched_param_prach_br;
 #endif
@@ -431,10 +431,10 @@ typedef struct RU_t_s{
   /// function pointer to wakeup routine in lte-enb/nr-gnb.
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru, int frame, int subframe);
   void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB, struct RU_t_s *ru, int frame, int subframe);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru, int frame, int subframe);
-  #endif
+#endif
 
   /// function pointer to NB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
@@ -553,7 +553,7 @@ typedef struct RRU_config_s {
   int prach_FreqOffset[MAX_BANDS_PER_RRU];
   /// prach_ConfigIndex for IF4p5
   int prach_ConfigIndex[MAX_BANDS_PER_RRU];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int emtc_prach_CElevel_enable[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_FreqOffset for IF4p5 per CE Level
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];

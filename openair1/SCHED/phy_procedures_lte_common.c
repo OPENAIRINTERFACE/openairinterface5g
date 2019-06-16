@@ -752,9 +752,9 @@ int subframe_num(LTE_DL_FRAME_PARMS *frame_parms){
     }
 }
 
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,
+		                       unsigned char subframe)
 {
-
   // if FDD return dummy value
   if (frame_parms->frame_type == FDD)
     return(SF_DL);

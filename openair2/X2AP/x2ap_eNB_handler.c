@@ -192,7 +192,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_initiatingMessage:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.initiatingMessage.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.initiatingMessage.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
@@ -218,7 +218,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_successfulOutcome:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.successfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.successfulOutcome.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
@@ -244,7 +244,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_unsuccessfulOutcome:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.unsuccessfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.unsuccessfulOutcome.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",

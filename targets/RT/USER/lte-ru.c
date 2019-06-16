@@ -100,26 +100,21 @@ static int DEFENBS[] = {0};
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 
-
 #include "T.h"
 
 #include "pdcp.h"
 
-extern volatile int                    oai_exit;
+extern volatile int oai_exit;
 extern int emulate_rf;
 extern int numerology;
 extern clock_source_t clock_source;
-extern uint8_t dlsch_ue_select_tbl_in_use;
-
 
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
-extern void  phy_init_RU(RU_t *);
-extern void  phy_free_RU(RU_t *);
-
+extern void phy_init_RU(RU_t *);
 
 void stop_RU(int nb_ru);
-void do_ru_sync(RU_t *ru);
+void do_ru_synch(RU_t *ru);
 
 void configure_ru(int idx,
                   void *arg);
@@ -134,6 +129,7 @@ int connect_rau(RU_t *ru);
 extern uint16_t sf_ahead;
 
 #if defined(PRE_SCD_THREAD)
+  extern uint8_t dlsch_ue_select_tbl_in_use;
   void init_ru_vnf(void);
 #endif
 
@@ -548,7 +544,7 @@ void fh_if4p5_north_in(RU_t *ru,
   /// **** incoming IF4p5 from remote RCC/RAU **** ///
   symbol_number = 0;
   symbol_mask = 0;
-  symbol_mask_full = (1<<ru->frame_parms.symbols_per_tti)-1;
+  symbol_mask_full = (1<<ru->frame_parms->symbols_per_tti)-1;
 
   do {
     recv_IF4p5(ru, frame, subframe, &packet_type, &symbol_number);
@@ -700,6 +696,7 @@ static void *emulatedRF_thread(void *param) {
   req.tv_sec = 0;
   req.tv_nsec = (numerology>0)? ((microsec * 1000L)/numerology):(microsec * 1000L)*2;
   cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
   CPU_SET(1,&cpuset);
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   int policy;
@@ -848,7 +845,7 @@ void tx_rf(RU_t *ru,int frame,int subframe,uint64_t timestamp) {
 
   lte_subframe_t SF_type     = subframe_select(fp,subframe%10);
   lte_subframe_t prevSF_type = subframe_select(fp,(subframe+9)%10);
-  lte_subframe_t nextSF_type = subframe_select(fp,(subframe+1)%10);
+  //lte_subframe_t nextSF_type = subframe_select(fp,(subframe+1)%10);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -982,7 +979,7 @@ static void *ru_thread_asynch_rxtx( void *param )
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
     else if (ru->fh_north_asynch_in) {
-      if (subframe_select(&ru->frame_parms,subframe)!=SF_UL)
+      if (subframe_select(ru->frame_parms,subframe)!=SF_UL)
         ru->fh_north_asynch_in(ru,&frame,&subframe);
     } else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
   }
@@ -1227,9 +1224,8 @@ void do_ru_synch(RU_t *ru)
 
 void wakeup_L1s(RU_t *ru)
 {
-  int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
-  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB, ru->idx, ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
@@ -1241,12 +1237,11 @@ void wakeup_L1s(RU_t *ru)
   } else {
     LOG_D(PHY,"ru->num_eNB:%d\n", ru->num_eNB);
 
-    for (i=0; i<ru->num_eNB; i++) {
+    for (int i=0; i<ru->num_eNB; i++) {
       LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
-      eNB_list[i]->proc.ru_proc = &ru->proc;
-      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
-      {
-        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.tti_rx);
+
+      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0) {
+    	  LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.tti_rx);
       }
 
       ru->proc.emulate_rf_busy = 0;
@@ -1631,7 +1626,7 @@ static void *ru_thread( void *param )
   pthread_setname_np( pthread_self(),"ru thread");
   LOG_I(PHY,"thread ru created id=%ld\n", syscall(__NR_gettid));
 
-  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
+  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx, NB_functions[ru->function], NB_timing[ru->if_timing]);
 
   if(get_softmodem_params()->emulate_rf) {
     fill_rf_config(ru,ru->rf_config_file);
@@ -1656,7 +1651,7 @@ static void *ru_thread( void *param )
 
     if (ru->if_south == LOCAL_RF) { // configure RF parameters only
       fill_rf_config(ru,ru->rf_config_file);
-      init_frame_parms(&ru->frame_parms,1);
+      init_frame_parms(ru->frame_parms,1);
       phy_init_RU(ru);
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
     }
@@ -2115,8 +2110,8 @@ extern void ru_fep_full_2thread(RU_t *ru,int subframe);
 extern void feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 extern void feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
 extern void feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
-extern void init_fep_thread(RU_t *ru);
-extern void init_feptx_thread(RU_t *ru);
+extern void init_fep_thread(RU_t *ru, pthread_attr_t *attr_fep);
+extern void init_feptx_thread(RU_t *ru, pthread_attr_t *attr_feptx);
 extern void kill_fep_thread(RU_t *ru);
 extern void kill_feptx_thread(RU_t *ru);
 
@@ -2238,8 +2233,8 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_thread_worker_conf() == WORKER_ENABLE) {
-    init_fep_thread(ru,NULL);
-    init_feptx_thread(ru,NULL);
+    init_fep_thread(ru, NULL);
+    init_feptx_thread(ru, NULL);
   }
 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void *)ru);
@@ -2377,12 +2372,12 @@ int check_capabilities(RU_t *ru,
   FH_fmt_options_t fmt = cap->FH_fmt;
   int i;
   int found_band=0;
-  LOG_I(PHY,"RRU %d, num_bands %d, looking for band %d\n",ru->idx,cap->num_bands,ru->frame_parms.eutra_band);
+  LOG_I(PHY,"RRU %d, num_bands %d, looking for band %d\n",ru->idx,cap->num_bands,ru->frame_parms->eutra_band);
 
   for (i=0; i<cap->num_bands; i++) {
     LOG_I(PHY,"band %d on RRU %d\n",cap->band_list[i],ru->idx);
 
-    if (ru->frame_parms.eutra_band == cap->band_list[i]) {
+    if (ru->frame_parms->eutra_band == cap->band_list[i]) {
       found_band=1;
       break;
     }
@@ -2447,20 +2442,20 @@ void configure_ru(int idx,
   ru->nb_rx                      = capabilities->nb_rx[0];
   // Pass configuration to RRU
 
-  LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->frame_parms.eutra_band);
+  LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->frame_parms->eutra_band);
   // wait for configuration
   config->FH_fmt                 = ru->if_south;
   config->num_bands              = 1;
-  config->band_list[0]           = ru->frame_parms.eutra_band;
-  config->tx_freq[0]             = ru->frame_parms.dl_CarrierFreq;
-  config->rx_freq[0]             = ru->frame_parms.ul_CarrierFreq;
-  config->tdd_config[0]          = ru->frame_parms.tdd_config;
-  config->tdd_config_S[0]        = ru->frame_parms.tdd_config_S;
+  config->band_list[0]           = ru->frame_parms->eutra_band;
+  config->tx_freq[0]             = ru->frame_parms->dl_CarrierFreq;
+  config->rx_freq[0]             = ru->frame_parms->ul_CarrierFreq;
+  config->tdd_config[0]          = ru->frame_parms->tdd_config;
+  config->tdd_config_S[0]        = ru->frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = ru->frame_parms.N_RB_DL;
-  config->N_RB_UL[0]             = ru->frame_parms.N_RB_UL;
-  config->threequarter_fs[0]     = ru->frame_parms.threequarter_fs;
+  config->N_RB_DL[0]             = ru->frame_parms->N_RB_DL;
+  config->N_RB_UL[0]             = ru->frame_parms->N_RB_UL;
+  config->threequarter_fs[0]     = ru->frame_parms->threequarter_fs;
 
   if (ru->if_south==REMOTE_IF4p5) {
     config->prach_FreqOffset[0]  = ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
@@ -2471,9 +2466,9 @@ void configure_ru(int idx,
     int i;
 
     for (i=0; i<4; i++) {
-      config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
-      config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
-      config->emtc_prach_ConfigIndex[0][i]     = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i];
+      config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
+      config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
+      config->emtc_prach_ConfigIndex[0][i]     = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i];
     }
 
 #endif
@@ -2487,44 +2482,44 @@ void configure_rru(int idx,
                    void *arg)
 {
   RRU_config_t *config = (RRU_config_t *)arg;
-  RU_t         *ru         = RC.ru[idx];
+  RU_t         *ru     = RC.ru[idx];
 
-  ru->frame_parms.eutra_band                                               = config->band_list[0];
-  ru->frame_parms.dl_CarrierFreq                                           = config->tx_freq[0];
-  ru->frame_parms.ul_CarrierFreq                                           = config->rx_freq[0];
+  ru->frame_parms->eutra_band                                               = config->band_list[0];
+  ru->frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
+  ru->frame_parms->ul_CarrierFreq                                           = config->rx_freq[0];
 
-  if (ru->frame_parms.dl_CarrierFreq == ru->frame_parms.ul_CarrierFreq) {
+  if (ru->frame_parms->dl_CarrierFreq == ru->frame_parms->ul_CarrierFreq) {
     LOG_I(PHY,"Setting RRU to TDD frame type\n");
-    ru->frame_parms.frame_type                                             = TDD;
-    ru->frame_parms.tdd_config                                             = config->tdd_config[0];
-    ru->frame_parms.tdd_config_S                                           = config->tdd_config_S[0];
-  } else ru->frame_parms.frame_type                                        = FDD;
+    ru->frame_parms->frame_type                                             = TDD;
+    ru->frame_parms->tdd_config                                             = config->tdd_config[0];
+    ru->frame_parms->tdd_config_S                                           = config->tdd_config_S[0];
+  } else ru->frame_parms->frame_type                                        = FDD;
 
-  ru->att_tx                                                               = config->att_tx[0];
-  ru->att_rx                                                               = config->att_rx[0];
-  ru->frame_parms.N_RB_DL                                                  = config->N_RB_DL[0];
-  ru->frame_parms.N_RB_UL                                                  = config->N_RB_UL[0];
-  ru->frame_parms.threequarter_fs                                          = config->threequarter_fs[0];
-  ru->frame_parms.pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
+  ru->att_tx                                                                = config->att_tx[0];
+  ru->att_rx                                                                = config->att_rx[0];
+  ru->frame_parms->N_RB_DL                                                  = config->N_RB_DL[0];
+  ru->frame_parms->N_RB_UL                                                  = config->N_RB_UL[0];
+  ru->frame_parms->threequarter_fs                                          = config->threequarter_fs[0];
+  ru->frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
 
   if (ru->function==NGFI_RRU_IF4p5) {
-    ru->frame_parms.att_rx = ru->att_rx;
-    ru->frame_parms.att_tx = ru->att_tx;
+    ru->frame_parms->att_rx = ru->att_rx;
+    ru->frame_parms->att_tx = ru->att_tx;
     LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d, att (%d,%d)\n",
           config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
-    ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0];
-    ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0];
+    ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0];
+    ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0];
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     for (int i=0; i<4; i++) {
-      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];
-      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i]     = config->emtc_prach_FreqOffset[0][i];
-      ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i]    = config->emtc_prach_ConfigIndex[0][i];
+      ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];
+      ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i]     = config->emtc_prach_FreqOffset[0][i];
+      ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i]    = config->emtc_prach_ConfigIndex[0][i];
     }
 #endif
   }
 
-  init_frame_parms(&ru->frame_parms,1);
+  init_frame_parms(ru->frame_parms,1);
   fill_rf_config(ru,ru->rf_config_file);
   phy_init_RU(ru);
 }
@@ -2638,7 +2633,7 @@ void set_function_spec_param(RU_t *ru)
       /*
           if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
             fill_rf_config(ru,rf_config_file);
-            init_frame_parms(&ru->frame_parms,1);
+            init_frame_parms(ru->frame_parms,1);
             phy_init_RU(ru);
           }
 
@@ -2720,7 +2715,7 @@ void init_RU(char *rf_config_file)
 {
   int ru_id;
   RU_t *ru;
-  PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
+  PHY_VARS_eNB *eNB0     = (PHY_VARS_eNB *)NULL;
   LTE_DL_FRAME_PARMS *fp = (LTE_DL_FRAME_PARMS *)NULL;
   int i;
   int CC_id;
@@ -2784,7 +2779,7 @@ void init_RU(char *rf_config_file)
       }
     }
 
-    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);
@@ -2874,7 +2869,7 @@ void init_ru_vnf(void) {
           }
         }
     */
-    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     //    set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     //    init_RU_proc(ru);
@@ -2897,8 +2892,7 @@ void init_ru_vnf(void) {
 /* from here function to use configuration module          */
 void RCconfig_RU(void)
 {
-  int               j                             = 0;
-  int               i                             = 0;
+  int i = 0;
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
@@ -2908,7 +2902,7 @@ void RCconfig_RU(void)
     RC.ru_mask=(1<<RC.nb_RU) - 1;
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
-    for (j = 0; j < RC.nb_RU; j++) {
+    for (int j = 0; j < RC.nb_RU; j++) {
       RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));
       memset((void *)RC.ru[j],0,sizeof(RU_t));
       RC.ru[j]->idx                                 = j;
@@ -2989,12 +2983,12 @@ void RCconfig_RU(void)
       } //strcmp(local_rf, "yes") == 0
       else {
         printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
-        RC.ru[j]->eth_params.local_if_name        = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
-        RC.ru[j]->eth_params.my_addr          = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
+        RC.ru[j]->eth_params.local_if_name      = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
+        RC.ru[j]->eth_params.my_addr            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
         RC.ru[j]->eth_params.remote_addr        = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.my_portc         = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+        RC.ru[j]->eth_params.my_portc           = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
         RC.ru[j]->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.my_portd         = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
+        RC.ru[j]->eth_params.my_portd           = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
         RC.ru[j]->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
 
         if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {

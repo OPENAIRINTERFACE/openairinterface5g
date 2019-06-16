@@ -543,7 +543,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                 , 0
                                 , rrc_dl_sdu_len
                                 , pdcp_pdu_p
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL
                                 ,NULL
 #endif
@@ -799,6 +799,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_NRCGI;
 
   F1AP_NRCGI_t nRCGI;
+  memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
   MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[0], f1ap_du_data->mnc[0], f1ap_du_data->mnc_digit_length[0],
                                          &nRCGI.pLMN_Identity);
   NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);

@@ -30,6 +30,7 @@
 * \warning
 */
 
+//#define DEBUG_ULSCH_DECODING
 
 #include <syscall.h>
 #include "PHY/defs_eNB.h"
@@ -39,12 +40,13 @@
 #include "LAYER2/MAC/mac.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
-
-#include "common/utils/LOG/vcd_signal_dumper.h"
-//#define DEBUG_ULSCH_DECODING
 #include "transport_proto.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
+extern volatile int oai_exit;
+
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   int i,r;
@@ -351,7 +353,7 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
   return(ret);
 }
 
-extern int oai_exit;
+
 void *td_thread(void *param) {
   PHY_VARS_eNB *eNB = ((td_params *)param)->eNB;
   L1_proc_t *proc  = &eNB->proc;

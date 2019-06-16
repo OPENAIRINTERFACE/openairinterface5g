@@ -99,14 +99,14 @@
 /*   optname                     helpstr                paramflags                      XXXptr        defXXXval         type       numelt   */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEMODEPARAMS_DESC {  \
-    {"calib-ue-rx",                 CONFIG_HLP_CALUER,     0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"calib-ue-rx-med",             CONFIG_HLP_CALUERM,    0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"calib-ue-rx-byp",             CONFIG_HLP_CALUERB,    0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"debug-ue-prach",              CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"no-L2-connect",               CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"calib-prach-tx",              CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"loop-memory",                 CONFIG_HLP_UELOOP,     0,    strptr:&loopfile,       defstrval:"iqs.in", TYPE_STRING,0},    \
-    {"ue-dump-frame",               CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,      defintval:0,  TYPE_INT,   0},    \
+    {"calib-ue-rx",                 CONFIG_HLP_CALUER,     0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-med",             CONFIG_HLP_CALUERM,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-byp",             CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"debug-ue-prach",              CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"no-L2-connect",               CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"calib-prach-tx",              CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"loop-memory",                 CONFIG_HLP_UELOOP,     0,                strptr:&loopfile,           defstrval:"iqs.in", TYPE_STRING,0},    \
+    {"ue-dump-frame",               CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,            defintval:0,        TYPE_INT,   0},    \
   }
 #define CMDLINE_CALIBUERX_IDX                   0
 #define CMDLINE_CALIBUERXMED_IDX                1
@@ -155,7 +155,7 @@
   }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
-#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
+#define CONFIG_HLP_LOGL          "Set the global log level, valid options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/

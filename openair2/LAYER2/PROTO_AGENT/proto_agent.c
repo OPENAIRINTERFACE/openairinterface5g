@@ -40,14 +40,14 @@
 #include "assertions.h"
 #include "proto_agent_net_comm.h"
 #include "proto_agent_async.h"
-
+#include <common/utils/system.h>
 #include <pthread.h>
 
 #define  ENB_AGENT_MAX 9
 
 proto_agent_instance_t proto_agent[MAX_DU];
 
-pthread_t new_thread(void *(*f)(void *), void *b);
+//pthread_t new_thread(void *(*f)(void *), void *b);
 
 Protocol__FlexsplitMessage *proto_agent_timeout_fsp(void *args);
 
@@ -117,7 +117,8 @@ int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p) {
   //    over the channel
   //  */
   //}
-  proto_agent[mod_id].recv_thread = new_thread(proto_agent_receive, &proto_agent[mod_id]);
+  //proto_agent[mod_id].recv_thread = new_thread(proto_agent_receive, &proto_agent[mod_id]);
+  threadCreate(&proto_agent[mod_id].recv_thread, proto_agent_receive, &proto_agent[mod_id], "proto", -1, OAI_PRIORITY_RT_LOW);
   fprintf(stderr, "[PROTO_AGENT] server started at port %s:%d\n", p->local_ipv4_address, p->local_port);
   return 0;
 error:

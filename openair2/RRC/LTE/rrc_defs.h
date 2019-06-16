@@ -809,7 +809,7 @@ typedef struct UE_RRC_INST_s {
 #endif
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  uint8_t                           MBMS_flag;
+  uint8_t MBMS_flag;
   uint8_t *MCCH_MESSAGE[NB_CNX_UE];
   uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];
   uint8_t MCCH_MESSAGEStatus[NB_CNX_UE];
