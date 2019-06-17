@@ -1221,10 +1221,10 @@ typedef struct {
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4
  */
-struct nr_rxtx_thread_data {
+typedef struct nr_rxtx_thread_data_s {
+  UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
-  UE_nr_rxtx_proc_t *proc;
-};
+}  nr_rxtx_thread_data_t;
 
 /*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
