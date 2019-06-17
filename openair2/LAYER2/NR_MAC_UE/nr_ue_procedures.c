@@ -2012,7 +2012,6 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
 }
 
 
-
 void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,

@@ -413,9 +413,6 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   RU_proc_t *ru_proc;
 
   int waitret,ret;
-  struct timespec wait;
-  wait.tv_sec=0;
-  wait.tv_nsec=10000000L;
  
 
 
@@ -487,10 +484,6 @@ int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_t
 
   int ret;
  
-  struct timespec wait;
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-  
   
   AssertFatal((ret = pthread_mutex_lock(&L1_proc_tx->mutex))==0,"mutex_lock returns %d\n",ret);
 
@@ -527,7 +520,6 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
   int ret;
   int i;
-  struct timespec wait;
   
   AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
   for (i=0;i<gNB->num_RU;i++) {
@@ -548,9 +540,6 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"muex_unlock returns %d\n",ret);
   }
 
-
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready

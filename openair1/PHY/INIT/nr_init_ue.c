@@ -37,7 +37,8 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/pss_nr.h"
-#include "openair1/PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -645,6 +646,19 @@ void phy_init_nr_ue__PDSCH( NR_UE_PDSCH* const pdsch, const NR_DL_FRAME_PARMS* c
   }
 }
 
+void phy_init_nr_ue_PUSCH( NR_UE_PUSCH* const pusch, const NR_DL_FRAME_PARMS* const fp )
+{
+
+  int i;
+  AssertFatal( pusch, "pusch==0" );
+
+  for (i=0; i<NR_MAX_NB_LAYERS; i++){
+    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
+
+  }
+
+}
+
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 		       int nb_connected_eNB,
 		       uint8_t abstraction_flag)
@@ -656,18 +670,22 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
   NR_UE_PDSCH** const pdsch_vars_p       = ue->pdsch_vars_p;
   NR_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
-  NR_UE_PDSCH* (*pdsch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX+1] = &ue->pdsch_vars;
-  NR_UE_PDCCH* (*pdcch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX]   = &ue->pdcch_vars;
+  NR_UE_PDSCH* (*const pdsch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX+1] = ue->pdsch_vars;
+  NR_UE_PDCCH* (*const pdcch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX]   = ue->pdcch_vars;
   NR_UE_PBCH** const pbch_vars           = ue->pbch_vars;
   NR_UE_PRACH** const prach_vars         = ue->prach_vars;
+  NR_UE_PUSCH* (*const pusch_vars)[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX] = ue->pusch_vars;
 
 
 
-  int i,j,k,l;
+  int i,j,k,l,slot,symb,q,layer;
   int eNB_id;
   int th_id;
   int n_ssb_crb=(fp->N_RB_DL-20);
   int k_ssb=0;
+  uint32_t ****pusch_dmrs;
+  int N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig 
+  int n_scid;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
@@ -699,6 +717,59 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->total_received_bits[eNB_id] = 0;
   }
 
+/////////////////////////PUSCH init/////////////////////////
+///////////
+  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++){
+    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++){
+
+      (*pusch_vars)[th_id][eNB_id] = (NR_UE_PUSCH *)malloc16(sizeof(NR_UE_PUSCH));
+      phy_init_nr_ue_PUSCH( (*pusch_vars)[th_id][eNB_id], fp );
+
+    }
+  }
+
+///////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////PUSCH DMRS init/////////////////////////
+///////////
+
+  // default values until overwritten by RRCConnectionReconfiguration
+
+  for (i=0;i<MAX_NR_OF_UL_ALLOCATIONS;i++){
+    ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
+    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeA;
+  }
+
+
+
+  //------------- config DMRS parameters--------------// 
+  ue->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
+  ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
+  //-------------------------------------------------//
+
+   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t***));
+   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
+   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization 
+
+   for (slot=0; slot<fp->slots_per_frame; slot++) {
+    pusch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t**));
+    AssertFatal(pusch_dmrs[slot]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d - malloc failed\n", slot);
+    for (symb=0; symb<fp->symbols_per_slot; symb++){
+      pusch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t*));
+      AssertFatal(pusch_dmrs[slot][symb]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+      for (q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+        pusch_dmrs[slot][symb][q] = (uint32_t*)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pusch_dmrs[slot][symb][q]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+      }
+    }
+  }
+
+  nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+///////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
   for (i=0;i<10;i++)
     ue->tx_power_dBm[i]=-127;
 
@@ -712,7 +783,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (i=0; i<fp->nb_antennas_tx; i++) {
 
       common_vars->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
-      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_slot*10*sizeof(int32_t) );
+      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->samples_per_slot_wCP*sizeof(int32_t) );
     }
 
     // init RX buffers
@@ -724,7 +795,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (i=0; i<fp->nb_antennas_rx; i++) {
       common_vars->rxdata[i] = (int32_t*) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
+          common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->samples_per_slot_wCP) );
       }
     }
   }
@@ -896,6 +967,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->pdsch_config_dedicated->p_a = dBm3;
   else
     ue->pdsch_config_dedicated->p_a = dB0;
+  
 
   // set channel estimation to do linear interpolation in time
   ue->high_speed_flag = 1;

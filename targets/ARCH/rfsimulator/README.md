@@ -3,7 +3,7 @@
 This is a RF simulator that allows to test OAI without a RF board.
 It replaces a actual RF board driver.
 
-As much as possible, it works like a RF board, but not in realtime: it can run faster than realtime if there is enough CPU or slower (it is CPU bound instead of real time RF sampling bound)
+As much as possible, it works like a RF board, but not in realtime: It can run faster than realtime if there is enough CPU or slower (it is CPU bound instead of real time RF sampling bound)
 
 ## build
 
@@ -19,7 +19,7 @@ Then, you can use it freely
 
 # Usage
 Setting the env variable RFSIMULATOR enables the RF board simulator
-It should the set to "enb" in the eNB
+It should the set to "server" in the eNB or gNB
 
 ## 4G case
 
@@ -29,7 +29,7 @@ example:
 ```bash
 sudo RFSIMULATOR=192.168.2.200 ./lte-uesoftmodem -C 2685000000 -r 50 --rfsim
 ```
-For the eNodeB, use a valid configuration file setup for USRP board tests and start the softmodem as usual, but adding the `--rfsim` option.
+For the eNodeB, use a valid configuration file setup for USRP board tests and start the softmodem as usual, **but** adding the `--rfsim` option.
 
 ```bash
 sudo RFSIMULATOR=enb ./lte-softmodem -O <config file> --rfsim
@@ -65,9 +65,27 @@ sudo RFSIMULATOR=enb ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC
 sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C 3510000000 
 ```
 
-Of course, set the gNB machine IP address if the UE and the gNB are not on the same machine
+Of course, set the gNB machine IP address if the UE and the gNB are not on the same machine.
+
 In UE, you can add "-d" to get the softscope
 
-## Caveats
+### Channel simulation
+The RF channel simulator is called.
+In current version all channel paramters are hard coded in the call to:
 
+```bash
+new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
+                                          AWGN,
+                                          bridge->sample_rate,
+                                          bridge->tx_bw,
+                                          0.0, // forgetting_factor
+                                          0, // maybe used for TA
+                                          0); // path_loss in dB
+```
+
+Only the input noise can be changed on command line with -s parameter.
+
+With path loss = 0 set "-s 5" to see a little noise.
+
+## Caveats
 Still issues in power control: txgain, rxgain are not used

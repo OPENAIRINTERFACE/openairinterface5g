@@ -142,7 +142,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	  uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;
 	  ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
 	  ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
-	  ulsch0->harq_processes[current_harq_pid]->nb_symbols = pusch_config_pdu->number_symbols;
+	  ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
 	  ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
 	  ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
 	  ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;

@@ -33,7 +33,7 @@
 #define __NR_TRANSPORT_PROTO_UE__H__
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/defs.h"
-//#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include <math.h>
 #include "nfapi_interface.h"
 
@@ -1055,12 +1055,24 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
                      uint8_t harq_pid);
 
+/*! \brief Fill up NR_UE_ULSCH_t and NR_UL_UE_HARQ_t structs
+  @param[in] UE, Pointer to PHY_VARS_NR_UE struct
+  @param[in] thread_id, thread id
+  @param[in] gNB_id, gNB id
+  @param[in] harq_pid, harq id
+*/
+
+int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
+                             uint8_t thread_id,
+                             int gNB_id,
+                             unsigned char harq_pid);
+
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
-  @param[in] in Pointer to input bits
-  @param[in] size of input bits
-  @param[in] Nid cell id
-  @param[in] n_RNTI CRNTI
-  @param[out] out the scrambled bits
+  @param[in] in, Pointer to input bits
+  @param[in] size, of input bits
+  @param[in] Nid, cell id
+  @param[in] n_RNTI, CRNTI
+  @param[out] out, the scrambled bits
 */
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
@@ -1068,6 +1080,29 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
+
+/** \brief Perform the following functionalities:
+    - encoding
+    - scrambling
+    - modulation
+    - transform precoding
+*/
+
+uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+                               unsigned char harq_pid,
+                               uint8_t slot,
+                               uint8_t thread_id,
+                               int eNB_id);
+
+
+/** \brief This function does IFFT for PUSCH
+*/
+
+uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
+                                      uint8_t slot,
+                                      uint8_t Nl,
+                                      NR_DL_FRAME_PARMS *frame_parms);
+
 
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
@@ -1099,34 +1134,6 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
-/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
-    - RB extraction (signal and channel estimates)
-    - channel compensation (matched filtering)
-    - RE extraction (pilot, PBCH, synch. signals)
-    - antenna combining (MRC, Alamouti, cycling)
-    - LLR computation
-    This function supports TM1, 2, 3, 5, and 6.
-    @param PHY_VARS_NR_UE Pointer to PHY variables
-    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
-    @param eNB_id eNb index (Nid1) 0,1,2
-    @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
-    @param subframe Subframe number
-    @param symbol Symbol on which to act (within sub-frame)
-    @param first_symbol_flag set to 1 on first DLSCH symbol
-    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
-    @param i_mod Modulation order of the interfering stream
-*/
-int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
-                 PDSCH_t type,
-                 uint8_t eNB_id,
-                 uint8_t eNB_id_i,
-                 uint32_t frame,
-                 uint8_t subframe,
-                 uint8_t symbol,
-                 uint8_t first_symbol_flag,
-                 RX_type_t rx_type,
-                 uint8_t i_mod,
-                 uint8_t harq_pid);
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint32_t frame,
@@ -1271,14 +1278,6 @@ uint16_t dci_decoding_procedure_emul(NR_UE_PDCCH **lte_ue_pdcch_vars,
                                      DCI_ALLOC_t *dci_alloc_rx,
                                      int16_t eNB_id);
 
-/** \brief Compute Q (modulation order) based on I_MCS PDSCH.  Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS */
-uint8_t get_Qm(uint8_t I_MCS);
-
-/** \brief Compute Q (modulation order) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
-    @param I_MCS */
-uint8_t get_Qm_ul(uint8_t I_MCS);
-
 /** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 uint8_t get_I_TBS(uint8_t I_MCS);
@@ -1326,8 +1325,6 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
    @returns number of physical resource blocks
 */
 uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
-
-int get_G(NR_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
 int adjust_G(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
 int adjust_G2(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
@@ -1765,6 +1762,24 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
 	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
 
+/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+    - RB extraction (signal and channel estimates)
+    - channel compensation (matched filtering)
+    - RE extraction (pilot, PBCH, synch. signals)
+    - antenna combining (MRC, Alamouti, cycling)
+    - LLR computation
+    This function supports TM1, 2, 3, 5, and 6.
+    @param ue Pointer to PHY variables
+    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
+    @param eNB_id eNb index (Nid1) 0,1,2
+    @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
+    @param frame Frame number
+    @param nr_tti_rx Subframe number
+    @param symbol Symbol on which to act (within sub-frame)
+    @param first_symbol_flag set to 1 on first DLSCH symbol
+    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
+    @param i_mod Modulation order of the interfering stream
+*/
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              PDSCH_t type,
              unsigned char eNB_id,
@@ -1776,8 +1791,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              RX_type_t rx_type,
              unsigned char i_mod,
 		unsigned char harq_pid);
-
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) ;
 
 uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    short *dlsch_llr,

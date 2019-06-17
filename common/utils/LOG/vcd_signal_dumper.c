@@ -321,6 +321,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_enb_prach_rx",
   "phy_ru_prach_rx",
   "phy_enb_pdcch_tx",
+  "phy_enb_common_tx",
   "phy_enb_rs_tx",
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",

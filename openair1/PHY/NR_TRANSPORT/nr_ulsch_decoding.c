@@ -233,7 +233,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
 			  /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
 			  //int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
 			  ulsch->harq_processes[i]->E=0;
-			  ulsch->harq_processes[i]->G=0;
 
 
 			  ulsch->harq_processes[i]->n_DMRS=0;
@@ -278,8 +277,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint16_t nb_symb_sch,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
-                           uint8_t is_crnti,
-                           uint8_t llr8_flag)
+                           uint8_t is_crnti)
 {
 
   uint32_t A,E;
@@ -291,7 +289,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id+1][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &harq_process->ulsch_pdu.ulsch_pdu_rel15;
   
@@ -301,16 +299,22 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
-  int16_t z [68*384];
-  int8_t l [68*384];
-  //int16_t inv_d [68*384];
-  uint8_t kc;
-  uint8_t Ilbrm        = 0;
+  int16_t  z [68*384];
+  int8_t   l [68*384];
+  uint8_t  kc;
+  uint8_t  Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;
-  uint16_t nb_rb       = 30; //to update
-  uint8_t nb_re_dmrs   = 6;
-  uint16_t length_dmrs = 1;
-  double Coderate = 0.0;
+  double   Coderate    = 0.0;
+  
+  // ------------------------------------------------------------------
+  uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
+  uint16_t number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
+  uint8_t Qm              = nfapi_ulsch_pdu_rel15->Qm;
+  uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
+  uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
+  uint8_t nb_re_dmrs      = nfapi_ulsch_pdu_rel15->nb_re_dmrs;
+  uint8_t length_dmrs     = nfapi_ulsch_pdu_rel15->length_dmrs;
+  // ------------------------------------------------------------------
 
   uint32_t i,j;
 
@@ -333,19 +337,18 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     return(ulsch->max_ldpc_iterations);
   }
 
-  nb_rb = nfapi_ulsch_pdu_rel15->number_rbs;
-
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
-
-  harq_process->TBS = nr_compute_tbs(nfapi_ulsch_pdu_rel15->mcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->n_layers);
+  
+  harq_process->TBS = nr_compute_tbs(mcs, nb_rb, number_symbols, nb_re_dmrs, length_dmrs, n_layers);
 
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations;
+  
+  G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
+  // G = 0;
+  // G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers);
 
-  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, nfapi_ulsch_pdu_rel15->Qm,nfapi_ulsch_pdu_rel15->n_layers);
-  G = harq_process->G;
-
-  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nfapi_ulsch_pdu_rel15->mcs, nfapi_ulsch_pdu_rel15->n_layers, nb_symb_sch,nb_rb);
+  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
 
   if (harq_process->round == 0) {
 
@@ -443,7 +446,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, nfapi_ulsch_pdu_rel15->n_layers);
 
   for (r=0; r<harq_process->C; r++) {
-
     E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
 
 #if gNB_TIMING_TRACE
@@ -582,10 +584,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                          p_procTime);
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("Segment %d CRC OK\n",r);
+        LOG_I(PHY, "Segment %d CRC OK\n",r);
         ret = 2;
       } else {
-        printf("CRC NOK\n");
+        LOG_I(PHY, "CRC NOK\n");
         ret = 1+ulsch->max_ldpc_iterations;
       }
     
@@ -595,7 +597,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       }
 
       ret=no_iteration_ldpc;
-
+      
       for (int m=0; m < Kr>>3; m ++) {
         harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
       }

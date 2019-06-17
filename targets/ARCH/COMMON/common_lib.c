@@ -96,8 +96,14 @@ int set_transport(openair0_device *device) {
   }
 }
 typedef int(*devfunc_t)(openair0_device *, openair0_config_t *, eth_params_t *);
+//loader_shlibfunc_t shlib_fdesc[2];
+
 /* look for the interface library and load it */
-int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *cfg, uint8_t flag) {
+int load_lib(openair0_device *device,
+		     openair0_config_t *openair0_cfg,
+			 eth_params_t *cfg,
+			 uint8_t flag)
+{
   loader_shlibfunc_t shlib_fdesc[1];
   int ret=0;
   char *libname;
@@ -113,6 +119,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
 	  else
 		  libname=OAI_RF_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
+	  //shlib_fdesc[1].fname="uhd_set_thread_priority";
   } else {
 	  libname=OAI_TP_LIBNAME;
 	  shlib_fdesc[0].fname="transport_init";
@@ -123,12 +130,32 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
        LOG_E(HW,"Library %s couldn't be loaded\n",libname);
   } else {
     ret=((devfunc_t)shlib_fdesc[0].fptr)(device,openair0_cfg,cfg);
-  }
-
+//uhd_set_thread_priority_fun = (set_prio_func_t)shlib_fdesc[1].fptr;
+    }
   return ret;
 }
 
 
+void uhd_set_thread_prio(void) {
+  
+  loader_shlibfunc_t shlib_fdesc[1];
+  int ret = 0;
+
+  char *libname;
+  if (getenv("RFSIMULATOR") != NULL) 
+    libname="rfsimulator";
+  else 
+    libname=OAI_RF_LIBNAME;
+  shlib_fdesc[0].fname="uhd_set_thread_priority";
+  ret=load_module_shlib(libname,shlib_fdesc,1,NULL);
+  if (ret < 0) {
+    LOG_E(HW,"Library %s couldn't be loaded\n",libname);
+  } else {
+    (set_prio_func_t)shlib_fdesc[0].fptr();
+  }    
+  return ret; 	    
+  
+}
 
 int openair0_device_load(openair0_device *device,
 		                 openair0_config_t *openair0_cfg)

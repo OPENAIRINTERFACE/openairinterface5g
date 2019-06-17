@@ -3229,6 +3229,17 @@ class SSHConnection():
 		if result is not None:
 			self.OsVersion = result.group('os_type')
 			logging.debug('OS is: ' + self.OsVersion)
+		else:
+			self.command('hostnamectl', '\$', 5)
+			result = re.search('Operating System: (?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
+			if result is not None:
+				self.OsVersion = result.group('os_type')
+				if self.OsVersion == 'CentOS Linux 7 ':
+					self.command('cat /etc/redhat-release', '\$', 5)
+					result = re.search('CentOS Linux release (?P<os_version>[0-9\.]+)', str(self.ssh.before))
+					if result is not None:
+						self.OsVersion = self.OsVersion.replace('7 ', result.group('os_version'))
+				logging.debug('OS is: ' + self.OsVersion)
 		self.command('uname -r', '\$', 5)
 		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', str(self.ssh.before))
 		if result is not None:
@@ -3239,11 +3250,23 @@ class SSHConnection():
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 15)
-		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
-		if result is not None:
-			self.UsrpBoard = result.group('usrp_board')
-			logging.debug('USRP Board  is: ' + self.UsrpBoard)
+		else:
+			self.command('uhd_config_info --version', '\$', 5)
+			result = re.search('UHD (?P<uhd_version>[a-zA-Z0-9\.\-]+)', str(self.ssh.before))
+			if result is not None:
+				self.UhdVersion = result.group('uhd_version')
+				logging.debug('UHD Version is: ' + self.UhdVersion)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 12)
+		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
+		count = 0
+		for board in usrp_boards:
+			if count == 0:
+				self.UsrpBoard = board
+			else:
+				self.UsrpBoard += ',' + board
+			count += 1
+		if count > 0:
+			logging.debug('USRP Board(s) : ' + self.UsrpBoard)
 		self.command('lscpu', '\$', 5)
 		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
 		if result is not None:
@@ -3452,6 +3475,7 @@ class SSHConnection():
 				self.htmlFile.write('        <td></td>\n')
 				self.htmlFile.write('        <td></td>\n')
 				self.htmlFile.write('      </tr>\n')
+
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
