@@ -2464,11 +2464,10 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 
 
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
-		                    UE_nr_rxtx_proc_t *proc,
-							uint8_t gNB_id,
-							uint8_t thread_id)
+                            UE_nr_rxtx_proc_t *proc,
+                            uint8_t gNB_id,
+                            uint8_t thread_id)
 {
-  //NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;
@@ -4116,10 +4115,10 @@ int is_pbch_in_slot(fapi_nr_pbch_config_t *pbch_config, int frame, int slot, int
 
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
-		                   UE_nr_rxtx_proc_t *proc,
-						   uint8_t eNB_id,
-						   uint8_t do_pdcch_flag,
-						   runmode_t mode)
+                           UE_nr_rxtx_proc_t *proc,
+                           uint8_t eNB_id,
+                           uint8_t do_pdcch_flag,
+                           runmode_t mode)
 {
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
