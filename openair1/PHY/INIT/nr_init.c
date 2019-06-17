@@ -294,7 +294,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  //NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
@@ -330,29 +330,38 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   free_and_zero(prach_vars->prach_ifft[0]);
   free_and_zero(prach_vars->rxsigF[0]);
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    for (i = 0; i < 2; i++) {
+*/
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for (int i = 0; i < 2; i++) {
       free_and_zero(pusch_vars[UE_id]->rxdataF_ext[i]);
       free_and_zero(pusch_vars[UE_id]->rxdataF_ext2[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_ext[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_time[i]);
       free_and_zero(pusch_vars[UE_id]->rxdataF_comp[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_mag0[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_magb0[i]);
       free_and_zero(pusch_vars[UE_id]->ul_ch_mag[i]);
       free_and_zero(pusch_vars[UE_id]->ul_ch_magb[i]);
+      free_and_zero(pusch_vars[UE_id]->rho[i]);
     }
 
     free_and_zero(pusch_vars[UE_id]->rxdataF_ext);
     free_and_zero(pusch_vars[UE_id]->rxdataF_ext2);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_ext);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_time);
     free_and_zero(pusch_vars[UE_id]->rxdataF_comp);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_mag0);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_magb0);
     free_and_zero(pusch_vars[UE_id]->ul_ch_mag);
     free_and_zero(pusch_vars[UE_id]->ul_ch_magb);
+    free_and_zero(pusch_vars[UE_id]->rho);
+
     free_and_zero(pusch_vars[UE_id]->llr);
     free_and_zero(pusch_vars[UE_id]);
   } //UE_id
-
+/*
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
 }

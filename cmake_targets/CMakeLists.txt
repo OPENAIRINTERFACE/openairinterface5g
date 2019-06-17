@@ -1393,6 +1393,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sch_dmrs.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/filt16a_32.c
   ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c

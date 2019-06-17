@@ -3,14 +3,12 @@
 #include "nr_transport_proto.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/defs_nr_common.h"
 
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
-
-static short jitter[8]  __attribute__ ((aligned(16))) = {1,0,0,1,0,1,1,0};
-static short jitterc[8] __attribute__ ((aligned(16))) = {0,1,1,0,1,0,0,1};
 
 void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 {
@@ -353,13 +351,11 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb;
-  unsigned char aatx, aarx, nre = 12;
+  unsigned char aatx, aarx;
   __m128i *ul_ch128, avg128U;
 
-  //nb_rb*nre = y * 2^x
   int16_t x = factor2(len);
   int16_t y = (len)>>x;
-  //printf("nb_rb*nre = %d = %d * 2^(%d)\n",nb_rb*nre,y,x);
 
   for (aatx = 0; aatx < frame_parms->nb_antennas_tx; aatx++)
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
@@ -975,14 +971,13 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
-  uint8_t cw_idx, first_symbol_flag, aarx, aatx, pilots; // pilots, a flag to indicate DMRS REs in current symbol
+  uint8_t first_symbol_flag, aarx, aatx, pilots; // pilots, a flag to indicate DMRS REs in current symbol
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs;
   int avg[4];
 
-  cw_idx = 0; // temp implementation
   pilots = 0;
   first_symbol_flag = 0;
   
@@ -1031,7 +1026,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                          frame_parms,
-                         gNB->ulsch,
+                         gNB->ulsch[UE_id+1],
                          symbol,
                          pilots,
                          rel15_ul->number_rbs);
