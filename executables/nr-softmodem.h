@@ -46,10 +46,6 @@
   }
 
 
-typedef struct {
-  int *argc;
-  char **argv;
-} scopeParms_t;
 
 extern int T_port;
 extern int T_nowait;
