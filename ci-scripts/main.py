@@ -318,6 +318,13 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		result = re.search('--gNB', self.Build_eNB_args)
+		if result is not None:
+			self.air_interface = 'nr'
+			nodeB_prefix = 'g'
+		else:
+			self.air_interface = 'lte'
+			nodeB_prefix = 'e'
 		self.command('mkdir -p ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
@@ -343,10 +350,10 @@ class SSHConnection():
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
 		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 600)
-		self.command('ls lte_build_oai/build', '\$', 3)
-		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
-		result = re.search('lte-softmodem', str(self.ssh.before))
+		result = re.search(self.air_interface + '-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
@@ -354,9 +361,10 @@ class SSHConnection():
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
 		if buildStatus:
+			logging.info('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Pass\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 		else:
-			logging.error('\u001B[1m Building OAI eNB Failed\u001B[0m')
+			logging.error('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Failed\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_eNB_args, 'KO', ALL_PROCESSES_OK)
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
@@ -366,6 +374,13 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		result = re.search('--nrUE', self.Build_OAI_UE_args)
+		if result is not None:
+			self.air_interface = 'nr'
+			ue_prefix = 'NR '
+		else:
+			self.air_interface = 'lte'
+			ue_prefix = ''
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
 		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
@@ -393,10 +408,10 @@ class SSHConnection():
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
 		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 600)
-		self.command('ls lte_build_oai/build', '\$', 3)
-		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
-		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		result = re.search(self.air_interface + '-uesoftmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
@@ -404,9 +419,10 @@ class SSHConnection():
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
 		if buildStatus:
+			logging.info('\u001B[1m Building OAI ' + ue_prefix + 'UE Pass\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 		else:
-			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
+			logging.error('\u001B[1m Building OAI ' + ue_prefix + 'UE Failed\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
@@ -670,15 +686,19 @@ class SSHConnection():
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
-		if result is None:
-			check_eNB = True
-			check_OAI_UE = False
-			pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
-			if (pStatus < 0):
-				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', pStatus)
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
+		if self.air_interface == 'lte':
+			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+			if result is None:
+				check_eNB = True
+				check_OAI_UE = False
+				pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
+				if (pStatus < 0):
+					self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', pStatus)
+					self.CreateHtmlTabFooter(False)
+					sys.exit(1)
+			UE_prefix = ''
+		else:
+			UE_prefix = 'NR '
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
 		self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 30)
@@ -695,6 +715,13 @@ class SSHConnection():
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets/ran_build/build', '\$', 5)
+		if self.air_interface == 'lte':
+			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+			# We may have to regenerate the .u* files
+			if result is None:
+				self.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
+				self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
+				self.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
 		self.command('echo "ulimit -c unlimited && ./'+ self.air_interface +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
@@ -789,7 +816,7 @@ class SSHConnection():
 		self.close()
 		# For the moment we are always OK!!!
 		self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-		logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+		logging.debug('\u001B[1m Initialize OAI ' + UE_prefix + 'UE Completed\u001B[0m')
 
 	def InitializeOAIeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
@@ -797,6 +824,10 @@ class SSHConnection():
 			sys.exit('Insufficient Parameter')
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+		if self.air_interface == 'lte':
+			nodeB_prefix = 'e'
+		else:
+			nodeB_prefix = 'g'
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets/ran_build/build', '\$', 5)
@@ -816,7 +847,7 @@ class SSHConnection():
 			if (loopCounter == 0):
 				self.close()
 				doLoop = False
-				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
+				logging.error('\u001B[1;37;41m ' + nodeB_prefix + 'NB logging system did not show got sync! \u001B[0m')
 				self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'KO', ALL_PROCESSES_OK, 'OAI eNB')
 				self.CreateHtmlTabFooter(False)
 				sys.exit(1)
@@ -828,7 +859,7 @@ class SSHConnection():
 				else:
 					doLoop = False
 					self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'OK', ALL_PROCESSES_OK, 'OAI eNB')
-					logging.debug('\u001B[1m Initialize OAI eNB Completed\u001B[0m')
+					logging.debug('\u001B[1m Initialize OAI ' + nodeB_prefix + 'NB Completed\u001B[0m')
 		self.close()
 
 	def checkDevTTYisUnlocked(self):
@@ -2635,35 +2666,43 @@ class SSHConnection():
 				rachCanceledProcedure += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
+		self.htmleNBFailureMsg = ''
+		if self.air_interface == 'lte':
+			nodeB_prefix = 'e'
+		else:
+			nodeB_prefix = 'g'
 		if uciStatMsgCount > 0:
-			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
+			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if pdcpFailure > 0:
-			statMsg = 'eNB showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
+			statMsg = nodeB_prefix + 'NB showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
-			statMsg = 'eNB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if rrcSetupComplete > 0:
-			rrcMsg = 'eNB completed ' + str(rrcSetupComplete) + ' RRC Connection Setup(s)'
+			rrcMsg = nodeB_prefix + 'NB completed ' + str(rrcSetupComplete) + ' RRC Connection Setup(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReleaseRequest > 0:
-			rrcMsg = 'eNB requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
-			rrcMsg = 'eNB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
-			rrcMsg = 'eNB requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
@@ -2677,22 +2716,22 @@ class SSHConnection():
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rachCanceledProcedure > 0:
-			rachMsg = 'eNB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
+			rachMsg = nodeB_prefix + 'NB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rachMsg + '\n'
 		if foundSegFault:
-			logging.debug('\u001B[1;37;41m eNB ended with a Segmentation Fault! \u001B[0m')
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
-			logging.debug('\u001B[1;37;41m eNB ended with an assertion! \u001B[0m')
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with an assertion! \u001B[0m')
 			self.htmleNBFailureMsg += msgAssertion
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
-			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
-			self.htmleNBFailureMsg += 'eNB faced real time issues!\n'
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
+			self.htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
 			#return ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
-			rlcMsg = 'eNB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
+			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rlcMsg + '\n'
 			return ENB_PROCESS_REALTIME_ISSUE
@@ -2866,6 +2905,10 @@ class SSHConnection():
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+		if self.air_interface == 'lte':
+			nodeB_prefix = 'e'
+		else:
+			nodeB_prefix = 'g'
 		self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 		result = re.search('-softmodem', str(self.ssh.before))
 		if result is not None:
@@ -2922,12 +2965,12 @@ class SSHConnection():
 			if analyzeFile:
 				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
-					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
-					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
+					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
+					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					return
-				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
-				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
+				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m')
+				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.CreateHtmlTabFooter(False)
@@ -3064,11 +3107,13 @@ class SSHConnection():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				# In case of sniffing on commercial eNBs we have random results
-				# Not an error then
-				if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
-					self.Initialize_OAI_UE_args = ''
-					self.AutoTerminateUEandeNB()
+				# for NR-UE at the moment keep running 
+				if self.air_interface == 'lte':
+					# In case of sniffing on commercial eNBs we have random results
+					# Not an error then
+					if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
+						self.Initialize_OAI_UE_args = ''
+						self.AutoTerminateUEandeNB()
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 			else:
@@ -3077,7 +3122,6 @@ class SSHConnection():
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
-			self.htmlUEFailureMsg = 'No Log File to analyze!'
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
@@ -3942,9 +3986,6 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlFooter(SSH.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
 		if (SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '') and (SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == ''):
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -3953,7 +3994,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		elif SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		if (SSH.EPCIPAddress != ''):
+		if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
