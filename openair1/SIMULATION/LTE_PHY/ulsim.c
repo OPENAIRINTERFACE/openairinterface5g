@@ -39,7 +39,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_vars.h"
-
+#include "targets/RT/USER/lte-softmodem.h"
 
 #include "SCHED/sched_common_vars.h"
 #include "SCHED/sched_eNB.h"

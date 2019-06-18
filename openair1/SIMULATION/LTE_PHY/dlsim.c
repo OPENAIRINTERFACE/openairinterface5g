@@ -67,6 +67,7 @@
 #include "common/config/config_load_configmodule.h"
 #include "PHY/INIT/phy_init.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "targets/RT/USER/lte-softmodem.h"
 
 void feptx_ofdm(RU_t *ru,int frame,int subframe);
 void feptx_prec(RU_t *ru,int frame,int subframe);

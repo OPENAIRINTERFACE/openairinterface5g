@@ -59,7 +59,6 @@
 #include "UTIL/MATH/oml.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "lte-softmodem.h"
 #include "common/config/config_userapi.h"
 #include "T.h"
 
