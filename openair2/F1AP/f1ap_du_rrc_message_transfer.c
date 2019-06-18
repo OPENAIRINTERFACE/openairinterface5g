@@ -312,6 +312,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           ,
           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
           );
           break;
       } // case
@@ -470,6 +479,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                    ,
                    (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+        #endif
+	#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                         ,
+                         0,
+                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
         #endif
                    );
                   }

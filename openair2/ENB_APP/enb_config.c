@@ -1310,6 +1310,62 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 break;
             }
 
+            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_multiple_max= ccparams_lte.ue_multiple_max;
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
+            if (!ccparams_lte.mbms_dedicated_serving_cell)
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+                           RC.config_file_name, i, ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL);
+            else if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "ENABLE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell = TRUE;
+            } else  if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "DISABLE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell  = FALSE;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for mbms_dedicated_serving_cell choice: TRUE or FALSE !\n",
+                           RC.config_file_name, i, ccparams_lte.mbms_dedicated_serving_cell);
+            }
+
+#endif
+
+
+            switch (ccparams_lte.N_RB_DL) {
+	    case 25:
+	      if ((ccparams_lte.ue_multiple_max < 1) || 
+		  (ccparams_lte.ue_multiple_max > 4))
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
+			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+
+	      break;
+
+	    case 50:
+	      if ((ccparams_lte.ue_multiple_max < 1) || 
+		  (ccparams_lte.ue_multiple_max > 8))
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
+			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+
+	      break;
+
+	    case 100:
+	      if ((ccparams_lte.ue_multiple_max < 1) || 
+		  (ccparams_lte.ue_multiple_max > 16))
+		AssertFatal (0,
+			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
+			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+
+	      break;
+
+	    default:
+	      AssertFatal (0,
+			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+			   RC.config_file_name, i, ccparams_lte.N_RB_DL);
+	      break;
+	    }
+
             if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf1") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf1;
             } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf2") == 0) {
@@ -2825,6 +2881,15 @@ void configure_du_mac(int inst) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                          ,
                          NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                         );
 }

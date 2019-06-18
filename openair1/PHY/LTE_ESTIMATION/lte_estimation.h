@@ -141,6 +141,11 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                                     int subframe,
                                     unsigned char l);
 
+int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
+                                    module_id_t eNB_id,
+                                    uint8_t eNB_offset,
+                                    int subframe);
+
 /*!
 \brief Frequency offset estimation for LTE
 We estimate the frequency offset by calculating the phase difference between channel estimates for symbols carrying pilots (l==0 or l==3/4). We take a moving average of the phase difference.

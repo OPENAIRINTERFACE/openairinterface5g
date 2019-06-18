@@ -1071,6 +1071,10 @@ typedef struct PHY_VARS_eNB_s {
 
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150];
+#endif
 
   // PRACH energy detection parameters
   /// Detection threshold for LTE PRACH

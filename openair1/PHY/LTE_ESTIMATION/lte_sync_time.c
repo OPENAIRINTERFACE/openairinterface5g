@@ -341,7 +341,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 {
 
 
-
   // perform a time domain correlation using the oversampled sync sequence
 
   unsigned int n, ar, s, peak_pos, peak_val, sync_source;

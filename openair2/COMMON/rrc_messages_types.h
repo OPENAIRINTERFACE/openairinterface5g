@@ -166,6 +166,7 @@ typedef struct RadioResourceConfig_s {
   long			  mpdcch_startSF_CSS_RA_r13_val;
   long*			  prach_HoppingOffset_r13;
 #endif
+  BOOLEAN_t		  mbms_dedicated_serving_cell;
 } RadioResourceConfig;
 
 // eNB: ENB_APP -> RRC messages

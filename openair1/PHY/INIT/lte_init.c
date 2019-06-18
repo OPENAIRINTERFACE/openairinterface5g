@@ -310,6 +310,12 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
   fp->num_MBSFN_config = 0;
 
+  fp->NonMBSFN_config_flag =cfg->fembms_config.non_mbsfn_config_flag.value;
+  fp->NonMBSFN_config.non_mbsfn_SubframeConfig = cfg->fembms_config.non_mbsfn_subframeconfig.value;
+  fp->NonMBSFN_config.radioframeAllocationPeriod = cfg->fembms_config.radioframe_allocation_period.value;
+  fp->NonMBSFN_config.radioframeAllocationOffset = cfg->fembms_config.radioframe_allocation_offset.value;
+  LOG_D(PHY,"eNB %d/%d frame NonMBSFN configured: %d (%x) %d/%d\n",Mod_id,CC_id,fp->NonMBSFN_config_flag,fp->NonMBSFN_config.non_mbsfn_SubframeConfig,fp->NonMBSFN_config.radioframeAllocationPeriod,fp->NonMBSFN_config.radioframeAllocationOffset);
+
   init_ncs_cell (fp, RC.eNB[Mod_id][CC_id]->ncs_cell);
 
 
@@ -335,6 +341,10 @@ void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
   }
 
   lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
+#endif
 }
 
 
