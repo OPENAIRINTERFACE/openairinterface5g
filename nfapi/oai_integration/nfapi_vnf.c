@@ -755,7 +755,19 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
                &ind->cqi_indication_body.cqi_raw_pdu_list[i], sizeof(nfapi_cqi_indication_raw_pdu_t));
     }
   }else{
-  eNB->UL_INFO.cqi_ind = ind->cqi_indication_body;
+  nfapi_cqi_indication_t *dest_ind = &eNB->UL_INFO.cqi_ind;
+  *dest_ind = *ind;
+  dest_ind->cqi_indication_body.cqi_pdu_list = ind->cqi_indication_body.cqi_pdu_list;
+  dest_ind->cqi_indication_body.cqi_raw_pdu_list = ind->cqi_indication_body.cqi_raw_pdu_list;
+  for(int i=0; i<ind->cqi_indication_body.number_of_cqis; i++) {
+    nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
+    LOG_D(MAC, "SR_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+                src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
+    memcpy(&dest_ind->cqi_indication_body.cqi_pdu_list[i],
+           src_pdu, sizeof(nfapi_cqi_indication_pdu_t));
+    memcpy(&dest_ind->cqi_indication_body.cqi_raw_pdu_list[i],
+           &ind->cqi_indication_body.cqi_raw_pdu_list[i], sizeof(nfapi_cqi_indication_raw_pdu_t));
+  }
   }
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   return 1;

@@ -5835,7 +5835,7 @@ static uint8_t unpack_ue_release_resp(uint8_t **ppReadPackedMsg, uint8_t *end, v
 		return 0;
 	}
 	else{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "ue_release_response:error_code = %d\n", pNfapiMsg->error_code);
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "ue_release_response:error_code = %d\n", pNfapiMsg->error_code);
 	}
 	return 1;
 }

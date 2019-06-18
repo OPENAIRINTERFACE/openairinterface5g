@@ -175,14 +175,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
         eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs ||
         eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs ||
         eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles ||
-        eNB->UL_INFO.cqi_ind.number_of_cqis
+        eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis
        ) {
       LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d TX:%04d%d num_pdcch_symbols:%d\n",
             NFAPI_SFNSF2DEC(eNB->UL_INFO.rx_ind.sfn_sf),   eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.harq_ind.sfn_sf), eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.crc_ind.sfn_sf),  eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.rach_ind.sfn_sf), eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
-            eNB->UL_INFO.cqi_ind.number_of_cqis,
+          eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis, 
             proc->frame_rx, proc->subframe_rx,
             proc->frame_tx, proc->subframe_tx, eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols);
     }
@@ -1270,8 +1270,8 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
       eNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = eNB->sr_pdu_list;
       eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = eNB->harq_pdu_list;
-      eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
-      eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_pdu_list = eNB->cqi_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
       eNB->prach_energy_counter = 0;
     }
   }

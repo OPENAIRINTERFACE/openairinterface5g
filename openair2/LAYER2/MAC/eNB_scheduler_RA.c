@@ -1051,7 +1051,7 @@ generate_Msg4(module_id_t module_idP,
           mac->TX_req[CC_idP].sfn_sf =
             fill_nfapi_tx_req(&mac->TX_req[CC_idP].tx_request_body,
                               (frameP * 10) + subframeP,
-                              rrc_sdu_length,
+				      rrc_sdu_length+offset,
                               mac->pdu_index[CC_idP],
                               mac->UE_list.
                               DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0]);
