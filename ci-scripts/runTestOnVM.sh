@@ -620,9 +620,9 @@ function retrieve_real_epc_ip_addr {
             rm $LOC_EPC_VM_CMDS
         fi
     else
-    	REAL_EPC_IP_ADDR=$EPC_TUN_IPADDR
+        REAL_EPC_IP_ADDR=$EPC_TUN_IPADDR
     fi
-    echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"   
+    echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
 }
 
 function terminate_epc {
@@ -1128,7 +1128,7 @@ function run_test_on_vm {
         echo "No run on VM testing for this variant currently"
         return
     fi
-    
+
     if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
     then
         echo "############################################################"
@@ -1256,19 +1256,15 @@ function run_test_on_vm {
             # Starting EPC
             start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
         else
-        	echo "We will use EPC on $EPC_IPADDR"
-        	EPC_VM_IP_ADDR=$EPC_IPADDR
+            echo "We will use EPC on $EPC_IPADDR"
+            EPC_VM_IP_ADDR=$EPC_IPADDR
         fi
-        
 
-         # Retrieve EPC real IP address
-         retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-  
+        # Retrieve EPC real IP address
+        retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
-        #TRANS_MODES=("fdd" "tdd")
-        #BW_CASES=(05 10 20)
-        TRANS_MODES=("fdd")
-        BW_CASES=(05)
+        TRANS_MODES=("fdd" "tdd")
+        BW_CASES=(05 10 20)
 
         for TMODE in ${TRANS_MODES[@]}
         do
@@ -1301,10 +1297,7 @@ function run_test_on_vm {
                   continue
               fi
               get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
-              
-              full_terminate
-              continue
-         
+
               echo "############################################################"
               echo "Pinging the UE"
               echo "############################################################"
@@ -1497,24 +1490,26 @@ function run_test_on_vm {
         do
           if [[ $CN_CONFIG =~ .*wS1.* ]]
           then
-             if [[ "$EPC_IPADDR" ==  "" ]]
-             then
-                 echo "############################################################"
-                 echo "Start EPC for the wS1 configuration"
-                 echo "############################################################"
-                 start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                 # Retrieve EPC real IP address
-                 retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                 S1_NOS1_CFG=1        	 
-             else             	 
-                 echo "############################################################"
-                 echo "Using external EPC " $EPC_IPADDR
-                 echo "############################################################"           	 
-             	 $EPC_VM_IP_ADDR=$EPC_IPADDR
-             	 S1_NOS1_CFG=1
-             	 LTEBOX=0
-             fi
+              if [[ "$EPC_IPADDR" ==  "" ]]
+              then
+                  echo "############################################################"
+                  echo "Start EPC for the wS1 configuration"
+                  echo "############################################################"
+                  start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                  # Retrieve EPC real IP address
+                  retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                  S1_NOS1_CFG=1
+              else
+                  echo "############################################################"
+                  echo "Using external EPC " $EPC_IPADDR
+                  echo "############################################################"
+                  $EPC_VM_IP_ADDR=$EPC_IPADDR
+                  S1_NOS1_CFG=1
+                  LTEBOX=0
+              fi
           else
+              if [[ "$EPC_IPADDR" ==  "" ]]
+              then
                   echo "############################################################"
                   echo "Terminate EPC"
                   echo "############################################################"
@@ -1524,6 +1519,7 @@ function run_test_on_vm {
                   echo "Running now in a no-S1 "
                   echo "############################################################"
                   S1_NOS1_CFG=0
+              fi
           fi
           for TMODE in ${TRANS_MODES[@]}
           do
