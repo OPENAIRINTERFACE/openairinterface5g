@@ -577,6 +577,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble, 
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
+	      uint16_t *avg_preamble_energy, 
 	      uint16_t Nf, uint8_t tdd_mapindex
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      ,

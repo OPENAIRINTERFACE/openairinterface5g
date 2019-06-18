@@ -889,7 +889,6 @@ int main(int argc, char **argv) {
 
   if (help)
     exit(0);
-
   if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
     set_worker_conf("WORKER_ENABLE");
 

@@ -51,6 +51,7 @@
 #include <sys/sysinfo.h>
 
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -59,6 +60,8 @@
 #include "common_lib.h"
 #include "msc.h"
 #include <common/utils/LOG/log.h>
+
+#include "assertions.h"
 
 
 //#include <complex.h>
@@ -1035,14 +1038,15 @@ typedef uint8_t(encoder_if_t)(uint8_t *input,
 
 
 static inline void wait_sync(char *thread_name) {
+  int rc;
 
   printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
-  pthread_mutex_lock( &sync_mutex );
+  AssertFatal((rc = pthread_mutex_lock( &sync_mutex ))==0,"sync mutex lock error");
   
   while (sync_var<0)
     pthread_cond_wait( &sync_cond, &sync_mutex );
   
-  pthread_mutex_unlock(&sync_mutex);
+  AssertFatal((rc = pthread_mutex_unlock( &sync_mutex ))==0,"sync mutex unlock error");
   
   printf( "got sync (%s)\n", thread_name);
   /*
@@ -1052,15 +1056,25 @@ static inline void wait_sync(char *thread_name) {
   fflush(stderr);
 }
 
-static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name, int sleeptime,int sleep_cnt_max) {
   int rc;
-  if ((rc = pthread_mutex_lock(mutex)) != 0) {
-    LOG_E(PHY, "wakeup_thread(): error locking mutex for %s (%d %s, %p)\n",
-        name, rc, strerror(rc), (void *)mutex);
-    exit_fun("nothing to add");
-    return(-1);
+  int sleep_cnt=0;
+
+  AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
+
+  while (*instance_cnt == 0) {
+
+    AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
+
+    sleep_cnt++;
+    if (sleep_cnt>sleep_cnt_max) return(-1);
+    usleep(sleeptime);
+    AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
   }
   *instance_cnt = *instance_cnt + 1;
+
+  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
+
   // the thread can now be woken up
   if (pthread_cond_signal(cond) != 0) {
     LOG_E( PHY, "ERROR pthread_cond_signal\n");
@@ -1068,18 +1082,40 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int 
     return(-1);
   }
 
-  pthread_mutex_unlock(mutex);
+  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
+  return(0);
+}
+
+static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name,uint32_t time_ns) {
+  int rc;
+  int waitret=0;
+  struct timespec now,abstime;
+
+  AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
+
+  clock_gettime(CLOCK_REALTIME,&now);
+  while (*instance_cnt < 0) {
+    // most of the time the thread is waiting here
+    // proc->instance_cnt_rxtx is -1
+    abstime.tv_sec=now.tv_sec;
+    abstime.tv_nsec = now.tv_nsec + time_ns;
+    if (abstime.tv_nsec >= 1000*1000*1000)
+    {
+      abstime.tv_nsec -= 1000*1000*1000;
+      abstime.tv_sec  += 1;
+    }
+    if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime)) == 0) break; // this unlocks mutex_rxtx while waiting and then locks it again
+  }
+
+  AssertFatal((rc = pthread_mutex_unlock(mutex)) == 0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
+
   return(0);
 }
 
 static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
   int rc;
-  if ((rc = pthread_mutex_lock(mutex)) != 0) {
-    LOG_E(PHY, "[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n",
-        name, rc, strerror(rc), (void *)mutex);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+
+  AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   while (*instance_cnt < 0) {
     // most of the time the thread is waiting here
@@ -1087,22 +1123,14 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
+
   return(0);
 }
 
 static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
   int rc;
-  if ((rc = pthread_mutex_lock(mutex)) != 0) {
-    LOG_E(PHY, "[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n",
-        name, rc, strerror(rc), (void *)mutex);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+  AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   while (*instance_cnt == 0) {
     // most of the time the thread will skip this
@@ -1110,30 +1138,20 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error unlocking mutex return %d for %s\n", rc, name);
+
   return(0);
 }
 
 static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
   int rc;
-  if ((rc = pthread_mutex_lock(mutex)) != 0) {
-    LOG_E(PHY, "[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n",
-        name, rc, strerror(rc), (void *)mutex);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+
+  AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   *instance_cnt=*instance_cnt-1;
 
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
+  AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] release_thread(): error unlocking mutex return %d for %s\n", rc, name);
+
   return(0);
 }
 

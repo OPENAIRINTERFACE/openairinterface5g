@@ -336,6 +336,7 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 
 int8_t dB_fixed(uint32_t x);
+uint8_t dB_fixed64(uint64_t x);
 
 int8_t dB_fixed2(uint32_t x,uint32_t y);
 
@@ -348,6 +349,11 @@ int32_t dot_product(int16_t *x,
                     int16_t *y,
                     uint32_t N, //must be a multiple of 8
                     uint8_t output_shift);
+
+int64_t dot_product64(int16_t *x,
+                      int16_t *y,
+                      uint32_t N, //must be a multiple of 8
+                      uint8_t output_shift);
 
 void dft12(int16_t *x,int16_t *y);
 void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);

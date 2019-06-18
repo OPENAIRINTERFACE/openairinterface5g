@@ -1660,6 +1660,8 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
       for (aa=0; aa<1/*frame_parms->nb_antennas_tx*/; aa++)
         generate_drs_pusch(ue,
                            proc,
+			   (LTE_DL_FRAME_PARMS *)NULL,
+			   (int32_t**)NULL,
                            eNB_id,
                            tx_amp,
                            subframe_tx,

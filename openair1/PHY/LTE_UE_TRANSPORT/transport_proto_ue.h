@@ -1338,15 +1338,17 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 /*!
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
+int generate_drs_pusch(PHY_VARS_UE *ue,
+		       UE_rxtx_proc_t *proc,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       int32_t **txdataF,
+                       uint8_t eNB_id,
+                       short amp,
+                       unsigned int subframe,
+                       unsigned int first_rb,
+                       unsigned int nb_rb,
+                       uint8_t ant);
 
-int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
-                           UE_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           int16_t amp,
-                           uint32_t subframe,
-                           uint32_t first_rb,
-                           uint32_t nb_rb,
-                           uint8_t ant);
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).

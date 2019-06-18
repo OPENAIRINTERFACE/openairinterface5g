@@ -204,6 +204,8 @@ typedef struct {
   double tx_bw;
   //! clock source
   clock_source_t clock_source;
+  //! timing_source
+  clock_source_t time_source;
   //! Manual SDR IP address
   char *sdr_addrs;
   //! Auto calibration flag
@@ -288,6 +290,10 @@ struct openair0_device_t {
   /* !brief ETH params set by application */
   eth_params_t *eth_params;
 
+  /* !brief Indicates if device already initialized */
+  int is_init;
+
+
   /*!brief Can be used by driver to hold internal structure*/
   void *priv;
 
@@ -297,6 +303,13 @@ struct openair0_device_t {
       @param device pointer to the device structure specific to the RF hardware target
   */
   int (*trx_start_func)(openair0_device *device);
+
+ /*! \brief Called to configure the device
+      @param device pointer to the device structure specific to the RF hardware target  
+  */
+
+
+  int (*trx_config_func)(openair0_device* device, openair0_config_t *openair0_cfg);
 
   /*! \brief Called to send a request message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target

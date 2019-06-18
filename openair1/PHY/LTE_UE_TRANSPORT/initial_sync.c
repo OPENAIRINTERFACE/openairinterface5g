@@ -259,6 +259,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   frame_parms->frame_type=FDD;
   frame_parms->nb_antenna_ports_eNB = 2;
   init_frame_parms(frame_parms,1);
+
   /*
   LOG_M("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
@@ -443,6 +444,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);
       ue->pbch_vars[0]->pdu_errors_conseq=0;
+
     }
 
     LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
