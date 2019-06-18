@@ -1,21 +1,5 @@
-#define MTU 65536
-#define UDP_TIMEOUT 100000L // in nano second
+#include <split_headers.h>
 
-receiveSubFrame(int sock) {
-  //read all subframe data from the control unit
-  char * buf[MTU];
-  int ret=recv(sock, buf, sizeof(buf), 0);
-  if ( ret==-1) {
-    if ( errno == EWOULDBLOCK || errno== EINTR ) {
-      finishSubframeRecv();
-    } else {
-      LOG_E(HW,"Critical issue in socket: %s\n", strerror(errno));
-      return;
-    }
-  } else {
-  }
-      
-}
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
@@ -206,21 +190,6 @@ DL_thread_fs6() {
   ru->fh_south_out(ru);
 }
 
-int createListner (port) {
-  int sock;
-  AssertFatal((sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) >= 0, "");
-    struct sockaddr_in addr = {
-sin_family:
-    AF_INET,
-sin_port:
-htons(port),
-sin_addr:
-    { s_addr: INADDR_ANY }
-  };
- AssertFatal(bind(sock, const struct sockaddr *addr, socklen_t addrlen)==0,"");
- struct timeval tv={0,UDP_TIMEOUT};
- AssertFatal(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) ==0,"");
-}
 
 
 DL_thread_frequency() {

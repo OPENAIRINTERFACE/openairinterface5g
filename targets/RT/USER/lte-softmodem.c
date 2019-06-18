@@ -108,10 +108,6 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
-uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
-
-
 volatile int             oai_exit = 0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
@@ -149,21 +145,13 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-int                      rx_input_level_dBm;
-
-
-int                             otg_enabled;
-
-
+int rx_input_level_dBm;
+int    otg_enabled;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-
-extern void reset_opp_meas(void);
-extern void print_opp_meas(void);
-
-
 extern void init_eNB_afterRU(void);
+extern void  phy_free_RU(RU_t *);
 
 int transmission_mode=1;
 int emulate_rf = 0;
@@ -172,72 +160,10 @@ int numerology = 0;
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
-
 double cpuf;
-
-
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
-
-/*---------------------BMC: timespec helpers -----------------------------*/
-
-struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
-struct timespec max_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
-
-struct timespec clock_difftime(struct timespec start, struct timespec end) {
-  struct timespec temp;
-
-  if ((end.tv_nsec-start.tv_nsec)<0) {
-    temp.tv_sec = end.tv_sec-start.tv_sec-1;
-    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-  } else {
-    temp.tv_sec = end.tv_sec-start.tv_sec;
-    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-  }
-
-  return temp;
-}
-
-void print_difftimes(void) {
-#ifdef DEBUG
-  printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
-#else
-  LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
-#endif
-}
-
-void update_difftimes(struct timespec start, struct timespec end) {
-  struct timespec diff_time = { .tv_sec = 0, .tv_nsec = 0 };
-  int             changed = 0;
-  diff_time = clock_difftime(start, end);
-
-  if ((min_diff_time.tv_nsec == 0) || (diff_time.tv_nsec < min_diff_time.tv_nsec)) {
-    min_diff_time.tv_nsec = diff_time.tv_nsec;
-    changed = 1;
-  }
-
-  if ((max_diff_time.tv_nsec == 0) || (diff_time.tv_nsec > max_diff_time.tv_nsec)) {
-    max_diff_time.tv_nsec = diff_time.tv_nsec;
-    changed = 1;
-  }
-
-#if 1
-
-  if (changed) print_difftimes();
-
-#endif
-}
-
-/*------------------------------------------------------------------------*/
-
-unsigned int build_rflocal(int txi, int txq, int rxi, int rxq) {
-  return (txi + (txq<<6) + (rxi<<12) + (rxq<<18));
-}
-unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
-  return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
-}
-
 
 void signal_handler(int sig) {
   void *array[10];
@@ -255,7 +181,6 @@ void signal_handler(int sig) {
     exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
   }
 }
-
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int ru_id;
@@ -285,8 +210,6 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-
-
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   get_common_options();
@@ -297,11 +220,11 @@ static void get_options(void) {
     /* Read RC configuration file */
     RCConfig();
     NB_eNB_INST = RC.nb_inst;
-    printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
+    LOG_I(ENB_APP,"Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
 
     if (!IS_SOFTMODEM_NONBIOT) {
       load_NB_IoT();
-      printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
+      LOG_I(ENB_APP,"           nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
              RC.nb_nb_iot_rrc_inst, RC.nb_nb_iot_L1_inst, RC.nb_nb_iot_macrlc_inst);
     } else {
       printf("All Nb-IoT instances disabled\n");
@@ -309,10 +232,6 @@ static void get_options(void) {
     }
   }
 }
-
-
-
-
 
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
@@ -528,75 +447,58 @@ int main( int argc, char **argv ) {
   int CC_id = 0;
   int ru_id;
 
-  if ( load_configmodule(argc,argv,0) == NULL) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
-  }
-
+  AssertFatal(load_configmodule(argc,argv,0) != NULL,
+	     "[SOFTMODEM] Error, configuration module init failed\n");
   mode = normal_txrx;
-  set_latency_target();
+
   logInit();
-  printf("Reading in command-line options\n");
   get_options ();
+  AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
+  
+    configure_linux();
+    // to make a graceful exit when ctrl-c is pressed
+  signal(SIGSEGV, signal_handler);
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGABRT, signal_handler);
+  cpuf=get_cpu_freq_GHz();
+
+  #ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "OAI Version: %s\n", PACKAGE_VERSION);
 
   if (is_nos1exec(argv[0]) )
     set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
-  if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
-    fprintf(stderr,"Getting configuration failed\n");
-    exit(-1);
-  }
-
 #if T_TRACER
   T_Config_Init();
 #endif
   //randominit (0);
   set_taus_seed (0);
-  printf("configuring for RAU/RRU\n");
 
-  if (opp_enabled ==1) {
+  if (opp_enabled ==1) 
     reset_opp_meas();
-  }
 
-  cpuf=get_cpu_freq_GHz();
-  printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
-
-  // initialize mscgen log after ITTI
-  if (get_softmodem_params()->start_msc) {
-    load_module_shlib("msc",NULL,0,&msc_interface);
-  }
-
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  // allows to forward in wireshark L2 protocol for decoding
   init_opt();
-  // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
-  check_clock();
-#ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
-#endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-  printf("Runtime table\n");
-  fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
 
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
     /* Start the agent. If it is turned off in the configuration, it won't start */
     RCconfig_flexran();
-
-    for (i = 0; i < RC.nb_inst; i++) {
+    
+    for (i = 0; i < RC.nb_inst; i++) 
       flexran_agent_start(i);
-    }
-
+    
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
     init_pdcp();
-
+    
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1);
@@ -685,15 +587,11 @@ int main( int argc, char **argv ) {
     }
 
     printf("wait RUs\n");
-    // CI -- Flushing the std outputs for the previous marker to show on the eNB / RRU log file
-    fflush(stdout);
-    fflush(stderr);
     // end of CI modifications
     wait_RUs();
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
-    printf("ALL RUs ready - init eNBs\n");
-
+    
     if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
       LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
@@ -738,7 +636,6 @@ int main( int argc, char **argv ) {
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
       for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
-        free_transport(RC.eNB[inst][cc_id]);
         phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
