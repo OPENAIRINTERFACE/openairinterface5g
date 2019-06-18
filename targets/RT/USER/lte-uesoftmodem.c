@@ -131,7 +131,6 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 
-int snr_dB=25;
 
 runmode_t mode = normal_txrx;
 
@@ -810,7 +809,7 @@ int main( int argc, char **argv ) {
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
   if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm((double)snr_dB,0);
+    init_ocm(snr_dB,0);
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 

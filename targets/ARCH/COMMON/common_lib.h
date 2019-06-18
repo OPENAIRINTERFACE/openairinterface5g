@@ -34,6 +34,7 @@
 #define COMMON_LIB_H
 #include <stdint.h>
 #include <sys/types.h>
+#include <openair1/PHY/TOOLS/tools_defs.h>
 
 /* name of shared library implementing the radio front end */
 #define OAI_RF_LIBNAME        "oai_device"
@@ -83,9 +84,6 @@ typedef enum {
  */
 /*!\brief RF device types
  */
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   MIN_RF_DEV_TYPE = 0,
   /*!\brief device is ExpressMIMO */
@@ -109,7 +107,6 @@ typedef enum {
   MAX_RF_DEV_TYPE
 
 } dev_type_t;
-#endif
 
 /*!\brief transport protocol types
  */
@@ -218,14 +215,6 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
-  //! remote IP/MAC addr for Ethernet interface
-  char *remote_addr;
-  //! remote port number for Ethernet interface
-  unsigned int remote_port;
-  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
-  char *my_addr;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
-  unsigned int my_port;
 #if defined(USRP_REC_PLAY)
   unsigned short sf_mode;           // 1=record, 2=replay
   char           sf_filename[1024]; // subframes file path
@@ -235,13 +224,6 @@ typedef struct {
   unsigned int   sf_write_delay;    // write delay in replay mode
   unsigned int   eth_mtu;           // ethernet MTU
 #endif
-
-  //! number of samples per tti
-  unsigned int  samples_per_tti;
-  //! the sample rate for receive.
-  double rx_sample_rate;
-  //! the sample rate for transmit.
-  double tx_sample_rate;
 } openair0_config_t;
 
 /*! \brief RF mapping */
@@ -415,7 +397,7 @@ typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
-#define sample_t uint32_t // 2*16 bits complex number
+#define sample_t struct complex16 // 2*16 bits complex number
 
 typedef struct {
   uint64_t magic;          // Magic value (see defines above)
@@ -452,7 +434,7 @@ openair0_timestamp get_usrp_time(openair0_device *device);
  * \returns 0 in success
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
-#define gettid() syscall(__NR_gettid)
+
 /*@}*/
 
 #ifdef __cplusplus
