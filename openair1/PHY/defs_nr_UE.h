@@ -817,6 +817,8 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
+  /// \brief PBCH additional bits
+  uint8_t xtra_byte;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.

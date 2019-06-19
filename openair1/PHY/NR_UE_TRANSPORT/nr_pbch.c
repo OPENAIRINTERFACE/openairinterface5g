@@ -566,8 +566,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 
   uint32_t payload = 0;
-  uint8_t xtra_byte = 0;
-  xtra_byte = (out>>24)&0xff;
+  //uint8_t xtra_byte = 0;
+  nr_ue_pbch_vars->xtra_byte = (out>>24)&0xff;
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
     payload |= ((out>>i)&1)<<(NR_POLAR_PBCH_PAYLOAD_BITS-i-1);
@@ -575,18 +575,18 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  n_hf = ((xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+  n_hf = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
 
   ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
     for (int i=0; i<3; i++)
-      ssb_index += (((xtra_byte>>(7-i))&0x01)<<(3+i));
+      ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
   ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
 
 #ifdef DEBUG_PBCH
-  printf("xtra_byte %x payload %x\n", xtra_byte, payload);
+  printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
 
   for (int i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++) {
     //     printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
@@ -604,8 +604,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   dl_indication.cc_id=proc->CC_id;
 
   rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-  rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];
-  rx_ind.rx_indication_body[0].mib_pdu.additional_bits = xtra_byte;
+  rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0]; //not good as it is pointing to a memory that can change
+  rx_ind.rx_indication_body[0].mib_pdu.additional_bits = nr_ue_pbch_vars->xtra_byte;
   rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
