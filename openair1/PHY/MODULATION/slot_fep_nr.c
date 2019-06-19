@@ -89,6 +89,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     dft = dft2048;
     break;
 
+  case 3072:
+    dft = dft3072;
+    break;
+
   case 4096:
     dft = dft4096;
     break;
@@ -98,8 +102,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     break;
 
   default:
-    dft = dft512;
-    break;
+    printf("unsupported ofdm symbol size \n");
+    assert(0);
   }
 
   if (no_prefix) {
