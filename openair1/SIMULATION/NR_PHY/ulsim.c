@@ -55,6 +55,7 @@
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/phy_vars.h"
+#include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 //#include "PHY/MODULATION/modulation_common.h"
 //#include "common/config/config_load_configmodule.h"
@@ -170,6 +171,7 @@ int main(int argc, char **argv) {
   int start_symbol = NR_SYMBOLS_PER_SLOT - nb_symb_sch;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+  uint8_t precod_nbr_layers = 1;
   int gNB_id = 0;
   int ap;
   int tx_offset;
@@ -182,7 +184,6 @@ int main(int argc, char **argv) {
   cpuf = get_cpu_freq_GHz();
 
 
-  fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
   UE_nr_rxtx_proc_t UE_proc;
 
 
@@ -444,11 +445,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  ul_dci_pdu = &UE->dci_ind.dci_list[0].dci;
-
-  ul_dci_pdu->mcs = Imcs;
-  ul_dci_pdu->rv = 0;
-  ul_dci_pdu->precod_nbr_layers = 1;
 
   unsigned char harq_pid = 0;
   unsigned int TBS = 8424;
@@ -459,14 +455,14 @@ int main(int argc, char **argv) {
 
   mod_order      = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, ul_dci_pdu->precod_nbr_layers);
+  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, precod_nbr_layers);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
 
-  // --------- setting rel15_ul parameters ----------
+  // --------- setting rel15_ul parameters for gNB --------
   rel15_ul->rnti                           = n_rnti;
   rel15_ul->ulsch_pdu_rel15.start_rb       = start_rb;
   rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
@@ -477,8 +473,40 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
   rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
   rel15_ul->ulsch_pdu_rel15.rv             = 0;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = ul_dci_pdu->precod_nbr_layers;
+  rel15_ul->ulsch_pdu_rel15.ndi            = 0;
+  rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
   ///////////////////////////////////////////////////
+
+  nr_scheduled_response_t scheduled_response;
+  fapi_nr_ul_config_request_t ul_config;
+  //fapi_nr_tx_request_t tx_request;
+
+  scheduled_response.module_id = 0;
+  scheduled_response.CC_id = 0;
+  scheduled_response.frame = frame;
+  scheduled_response.slot = slot;
+  scheduled_response.dl_config = NULL;
+  scheduled_response.ul_config = &ul_config;
+  scheduled_response.dl_config = NULL;
+  
+
+  ul_config.sfn_slot = slot;
+  ul_config.number_pdus = 1;
+  ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+  ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+  //there are plenty of other parameters that we don't seem to be using for now. e.g.
+  //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0; 
+
+  // set FAPI parameters for UE, put them in the scheduled response and call 
+  //nr_ue_scheduled_response(&scheduled_response);
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;

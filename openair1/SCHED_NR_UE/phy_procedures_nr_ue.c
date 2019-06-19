@@ -2467,7 +2467,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;
@@ -2483,7 +2482,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
   start_meas(&ue->phy_proc_tx);
 #endif
 
-  ul_dci_pdu = &ue->dci_ind.dci_list[0].dci;
 
   harq_pid = 0; //temporary implementation
 
@@ -2497,7 +2495,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
 
-  TBS = nr_compute_tbs(ul_dci_pdu->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, ul_dci_pdu->precod_nbr_layers);
+  TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
 
 //-----------------------------------------------------//
   // to be removed later when MAC is ready
@@ -2527,7 +2525,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   nr_ue_pusch_common_procedures(ue,
                                 slot_tx,
-                                ul_dci_pdu->precod_nbr_layers,
+                                harq_process_ul_ue->Nl,
                                 &ue->frame_parms);
 
 

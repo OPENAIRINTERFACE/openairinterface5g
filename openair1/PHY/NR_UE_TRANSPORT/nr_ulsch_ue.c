@@ -50,14 +50,11 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
                              unsigned char harq_pid){
 
   int N_PRB_oh, N_RE_prime, cwd_idx, length_dmrs, Nid_cell;
-  int nb_rb, Nsymb_pusch, first_rb, nb_codewords;
+  int nb_rb, Nsymb_pusch, first_rb, nb_codewords,mcs,rvidx;
   uint16_t n_rnti;
 
-  fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
-
-  ul_dci_pdu = &UE->dci_ind.dci_list[0].dci;
 
   //--------------------------Temporary configuration-----------------------------//
   length_dmrs = 1;
@@ -66,7 +63,9 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
   nb_rb = 50;
   first_rb = 30;
   Nsymb_pusch = 12;
-  nb_codewords = (ul_dci_pdu->precod_nbr_layers>4)?2:1;
+  nb_codewords = 1;
+  mcs = 9;
+  rvidx = 0;
   //------------------------------------------------------------------------------//
 
   for (cwd_idx = 0; cwd_idx < nb_codewords; cwd_idx++) {
@@ -87,19 +86,19 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
 
     if (harq_process_ul_ue) {
 
-      harq_process_ul_ue->mcs                = ul_dci_pdu->mcs;
-      harq_process_ul_ue->Nl                 = ul_dci_pdu->precod_nbr_layers;
+      harq_process_ul_ue->mcs                = mcs;
+      harq_process_ul_ue->Nl                 = nb_codewords;
       harq_process_ul_ue->nb_rb              = nb_rb;
       harq_process_ul_ue->first_rb           = first_rb;
       harq_process_ul_ue->number_of_symbols  = Nsymb_pusch;
       harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-      harq_process_ul_ue->rvidx              = ul_dci_pdu->rv;
-      harq_process_ul_ue->TBS                = nr_compute_tbs(ul_dci_pdu->mcs,
+      harq_process_ul_ue->rvidx              = rvidx;
+      harq_process_ul_ue->TBS                = nr_compute_tbs(harq_process_ul_ue->mcs,
                                                               nb_rb,
                                                               Nsymb_pusch,
                                                               ulsch_ue->nb_re_dmrs,
                                                               length_dmrs,
-                                                              ul_dci_pdu->precod_nbr_layers);
+                                                              harq_process_ul_ue->Nl);
 
     }
 
