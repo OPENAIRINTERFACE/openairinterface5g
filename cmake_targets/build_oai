@@ -837,35 +837,29 @@ function main() {
 	          echo_info "liboai_device.so is not linked to any device library"	    
 	      fi
       fi
-  fi
-  
-  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
+      
       #build simulators devices
       echo_info "Compiling rfsimulator"
       compilations \
           $build_dir rfsimulator \
           librfsimulator.so $dbin/librfsimulator.so.$REL
+      
       echo_info "Compiling basicsimulator"
       compilations \
           $build_dir tcp_bridge_oai \
           libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
-  fi
-        
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+
       #build transport protocol libraries (currently only ETHERNET is available)
-      if [ "$TP" != "None" ] ; then
-          rm -f liboai_transpro.so
-	      rm -f $dbin/liboai_transpro.so
-	      if [ "$TP" == "ETHERNET" ] ; then
-	          compilations \
-                  $build_dir oai_eth_transpro \
-		          liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	          ln -sf liboai_eth_transpro.so liboai_transpro.so
-	          ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-              echo_info "liboai_transpro.so is linked to ETHERNET transport"
-          fi
-      fi
+      rm -f liboai_transpro.so
+	  rm -f $dbin/liboai_transpro.so
+	  compilations \
+          $build_dir oai_eth_transpro \
+		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+	  ln -sf liboai_eth_transpro.so liboai_transpro.so
+	  ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	  echo_info "liboai_transpro.so is linked to ETHERNET transport"
   fi
+  
 
   ###################
   # Doxygen Support #

@@ -246,7 +246,7 @@ case $key in
     -v2)
     VM_NAME=ci-basic-sim
     ARCHIVES_LOC=basic_sim
-    LOG_PATTERN=Rel14.txt
+    LOG_PATTERN=Rel15.txt
     NB_PATTERN_FILES=13
     BUILD_OPTIONS="--eNB --UE"
     VM_MEMORY=8192
@@ -280,7 +280,7 @@ case $key in
     VM_NAME=ci-gnb-usrp
     ARCHIVES_LOC=gnb_usrp
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--gNB -w USRP"
     NBARGS=$[$NBARGS+256]
     shift
@@ -289,7 +289,7 @@ case $key in
     VM_NAME=ci-ue-nr-usrp
     ARCHIVES_LOC=nrue_usrp
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--nrUE -w USRP"
     NBARGS=$[$NBARGS+256]
     shift
@@ -360,7 +360,7 @@ case $key in
         basic-sim)
         VM_NAME=ci-basic-sim
         ARCHIVES_LOC=basic_sim
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=13
         BUILD_OPTIONS="--UE --eNB"
         VM_MEMORY=8192
@@ -391,7 +391,7 @@ case $key in
         VM_NAME=ci-gnb-usrp
         ARCHIVES_LOC=gnb_usrp
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=4
+        NB_PATTERN_FILES=9
         BUILD_OPTIONS="--gNB -w USRP"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -399,7 +399,7 @@ case $key in
         VM_NAME=ci-ue-nr-usrp
         ARCHIVES_LOC=nrue_usrp
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=4
+        NB_PATTERN_FILES=9
         BUILD_OPTIONS="--nrUE -w USRP"
         NBARGS=$[$NBARGS+256]
         ;;

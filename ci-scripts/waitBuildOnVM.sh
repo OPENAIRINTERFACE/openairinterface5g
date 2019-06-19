@@ -159,10 +159,6 @@ function check_on_vm_build {
             then
                 PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
             fi
-            if [ "$LOG_PATTERN" == "basic_simulator" ]
-            then
-                PASS_PATTERN="lte-"
-            fi
             if [ "$LOG_PATTERN" == "cppcheck.xml" ]
             then
                 PASS_PATTERN="results version"
