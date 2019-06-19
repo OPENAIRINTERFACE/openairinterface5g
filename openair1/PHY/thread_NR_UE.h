@@ -15,6 +15,10 @@ typedef struct {
   int nr_tti_tx;
   /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
   int nr_tti_rx;
+  /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_tx;
+  /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_rx;
   //#endif
   /// subframe to act upon for transmission
   int subframe_tx;

@@ -278,6 +278,11 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
+  /// TX buffers for multiple layers
+  int32_t *txdataF_layers[NR_MAX_NB_LAYERS];
+  } NR_UE_PUSCH;
+
+typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
@@ -949,6 +954,7 @@ typedef struct {
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
   NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
   NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -988,6 +994,9 @@ typedef struct {
 
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];
+
+  /// PUSCH DMRS sequence
+  uint32_t ****nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 

@@ -396,24 +396,44 @@ function report_build {
     summary_table_footer
 
     summary_table_header "OAI Build Physical simulators option"
-    summary_table_row "DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
-    summary_table_row "UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
+    summary_table_row "LTE DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
+    summary_table_row "LTE UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
     summary_table_row "Coding - Release 15" ./archives/phy_sim/coding.Rel15.txt "Built target coding" ./phy_sim_row3.html
     if [ -f ./archives/phy_sim/ldpctest.Rel15.txt ]
     then
-        summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target ldpctest" ./phy_sim_row4.html
+        summary_table_row "NR LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target ldpctest" ./phy_sim_row4.html
     fi
     if [ -f ./archives/phy_sim/polartest.Rel15.txt ]
     then
-        summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target polartest" ./phy_sim_row5.html
+        summary_table_row "NR Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target polartest" ./phy_sim_row5.html
     fi
     if [ -f ./archives/phy_sim/nr_pbchsim.Rel15.txt ]
     then
-        summary_table_row "PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row6.html
+        summary_table_row "NR PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row6.html
     fi
     if [ -f ./archives/phy_sim/nr_dlschsim.Rel15.txt ]
     then
-        summary_table_row "DLSCH Test - Release 15" ./archives/phy_sim/nr_dlschsim.Rel15.txt "Built target nr_dlschsim" ./phy_sim_row7.html
+        summary_table_row "NR DLSCH Test - Release 15" ./archives/phy_sim/nr_dlschsim.Rel15.txt "Built target nr_dlschsim" ./phy_sim_row7.html
+    fi
+    if [ -f ./archives/phy_sim/nr_pucchsim.Rel15.txt ]
+    then
+        summary_table_row "NR PUCCH Test - Release 15" ./archives/phy_sim/nr_pucchsim.Rel15.txt "Built target nr_pucchsim" ./phy_sim_row8.html
+    fi
+    if [ -f ./archives/phy_sim/smallblocktest.Rel15.txt ]
+    then
+        summary_table_row "NR Small Block Test - Release 15" ./archives/phy_sim/smallblocktest.Rel15.txt "Built target smallblocktest" ./phy_sim_row9.html
+    fi
+    if [ -f ./archives/phy_sim/nr_dlsim.Rel15.txt ]
+    then
+        summary_table_row "NR DL Sim Test - Release 15" ./archives/phy_sim/nr_dlsim.Rel15.txt "Built target nr_dlsim" ./phy_sim_row10.html
+    fi
+    if [ -f ./archives/phy_sim/nr_ulschsim.Rel15.txt ]
+    then
+        summary_table_row "NR ULSCH Test - Release 15" ./archives/phy_sim/nr_ulschsim.Rel15.txt "Built target nr_ulschsim" ./phy_sim_row11.html
+    fi
+    if [ -f ./archives/phy_sim/nr_ulsim.Rel15.txt ]
+    then
+        summary_table_row "NR UL Sim Test - Release 15" ./archives/phy_sim/nr_ulsim.Rel15.txt "Built target nr_ulsim" ./phy_sim_row12.html
     fi
     summary_table_footer
 

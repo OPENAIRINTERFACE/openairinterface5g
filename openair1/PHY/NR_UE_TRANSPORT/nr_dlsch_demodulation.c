@@ -964,7 +964,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     break;
   }
   if (dlsch1_harq) {
-  switch (get_Qm(dlsch1_harq->mcs)) {
+  switch (nr_get_Qm(dlsch1_harq->mcs, 1)) {
   case 2 :
     if (rx_type==rx_standard) {
         nr_dlsch_qpsk_llr(frame_parms,

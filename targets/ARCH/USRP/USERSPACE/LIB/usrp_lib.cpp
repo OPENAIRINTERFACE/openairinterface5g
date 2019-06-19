@@ -1462,5 +1462,10 @@ extern "C" {
 #endif
     return 0;
   }
+
+  void uhd_set_thread_priority(void) {
+      uhd::set_thread_priority_safe(1.0);
+  }
+
 }
 /*@}*/

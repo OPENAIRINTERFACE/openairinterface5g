@@ -44,6 +44,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
+#include "PHY/phy_vars.h"
 
 #include "SCHED_NR/sched_nr.h"
 
@@ -79,7 +80,6 @@ void exit_function(const char* file, const char* function, const int line,const 
 }
 
 // needed for some functions
-PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
