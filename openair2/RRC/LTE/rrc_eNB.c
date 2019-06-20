@@ -5536,6 +5536,10 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX: activated if ack was expected */
     int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    if (UE_id_mac == -1){
+      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
+      return;
+    }
     UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
     
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
