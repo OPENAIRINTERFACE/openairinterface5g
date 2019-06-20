@@ -555,6 +555,74 @@ Protocol__FlexDlCsi * copy_csi_report(Protocol__FlexDlCsi * original) {
   return copy;
 
  error:
+  if (copy != NULL) {
+      if ((copy->p11csi != NULL) && (copy->p11csi->wb_cqi != NULL)) {
+          free(copy->p11csi->wb_cqi);
+          copy->p11csi->wb_cqi = NULL;
+      }
+      if (copy->p21csi != NULL) {
+          if (copy->p21csi->wb_cqi != NULL) {
+              free(copy->p21csi->wb_cqi);
+              copy->p21csi->wb_cqi = NULL;
+          }
+          if (copy->p21csi->sb_cqi != NULL) {
+              free(copy->p21csi->sb_cqi);
+              copy->p21csi->sb_cqi = NULL;
+          }
+      }
+      if (copy->a12csi != NULL) {
+          if (copy->a12csi->wb_cqi != NULL) {
+              free(copy->a12csi->wb_cqi);
+              copy->a12csi->wb_cqi = NULL;
+          }
+          if (copy->a12csi->sb_pmi != NULL) {
+              free(copy->a12csi->sb_pmi);
+              copy->a12csi->sb_pmi = NULL;
+          }
+      }
+      if (copy->a22csi != NULL) {
+          if (copy->a22csi->wb_cqi != NULL) {
+              free(copy->a22csi->wb_cqi);
+              copy->a22csi->wb_cqi = NULL;
+          }
+          if (copy->a22csi->sb_cqi != NULL) {
+              free(copy->a22csi->sb_cqi);
+              copy->a22csi->sb_cqi = NULL;
+          }
+          if (copy->a22csi->sb_list != NULL) {
+              free(copy->a22csi->sb_list);
+              copy->a22csi->sb_list = NULL;
+          }
+      }
+      if ((copy->a20csi != NULL) && (copy->a20csi->sb_list != NULL)) {
+          free(copy->a20csi->sb_list);
+          copy->a20csi->sb_list = NULL;
+      }
+      if ((copy->a30csi != NULL) && (copy->a30csi->sb_cqi != NULL)) {
+          free(copy->a30csi->sb_cqi);
+          copy->a30csi->sb_cqi = NULL;
+      }
+      if (copy->a31csi != NULL) {
+          if (copy->a31csi->wb_cqi != NULL) {
+              free(copy->a31csi->wb_cqi);
+              copy->a31csi->wb_cqi = NULL;
+          }
+          if (copy->a31csi->sb_cqi != NULL) {
+              for (i = 0; i < copy->a31csi->n_sb_cqi; i++) {
+                  if (copy->a31csi->sb_cqi[i] != NULL) {
+                      if (copy->a31csi->sb_cqi[i]->sb_cqi != NULL) {
+                          free(copy->a31csi->sb_cqi[i]->sb_cqi);
+                      }
+                      free(copy->a31csi->sb_cqi[i]);
+                  }
+              }
+              free(copy->a31csi->sb_cqi);
+              copy->a31csi->sb_cqi = NULL;
+          }
+      }
+      free(copy);
+      copy = NULL;
+  }
   return NULL;
 }
 
