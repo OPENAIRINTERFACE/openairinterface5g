@@ -167,6 +167,7 @@ uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i = %d , it will trigger out-of-bounds read.\n",i);
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %lld Hz < %u\n",
               eutra_bandP, bw, dl_CarrierFreq,
