@@ -1212,6 +1212,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
     } else {
       /* invalid paging_p->cnDomain */
       S1AP_ERROR("[SCTP %d] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, ie->value.choice.CNDomain);
+      itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
       return -1;
     }
   } else {
