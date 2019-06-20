@@ -378,7 +378,7 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
   __m128i tmp;
   uint16_t *systematic2_ptr=(uint16_t *) output;
 #else
-  __m256i tmp;
+  __m256i tmp = _mm256_setzero_si256();
   uint32_t *systematic2_ptr=(uint32_t *) output;
 #endif
 #elif defined(__arm__)
