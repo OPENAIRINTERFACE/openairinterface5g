@@ -211,21 +211,21 @@ int emm_recv_attach_accept(nas_user_t *user, attach_accept_msg *msg, int *emm_ca
 
   /* Get the list of equivalent PLMNs */
   int n_eplmns = 0;
-  plmn_t eplmn;
+  plmn_t eplmn[1];
 
   if (msg->presencemask & ATTACH_ACCEPT_EQUIVALENT_PLMNS_PRESENT) {
     n_eplmns = 1;
-    eplmn.MCCdigit1 = msg->equivalentplmns.mccdigit1;
-    eplmn.MCCdigit2 = msg->equivalentplmns.mccdigit2;
-    eplmn.MCCdigit3 = msg->equivalentplmns.mccdigit3;
-    eplmn.MNCdigit1 = msg->equivalentplmns.mncdigit1;
-    eplmn.MNCdigit2 = msg->equivalentplmns.mncdigit2;
-    eplmn.MNCdigit3 = msg->equivalentplmns.mncdigit3;
+    eplmn[0].MCCdigit1 = msg->equivalentplmns.mccdigit1;
+    eplmn[0].MCCdigit2 = msg->equivalentplmns.mccdigit2;
+    eplmn[0].MCCdigit3 = msg->equivalentplmns.mccdigit3;
+    eplmn[0].MNCdigit1 = msg->equivalentplmns.mncdigit1;
+    eplmn[0].MNCdigit2 = msg->equivalentplmns.mncdigit2;
+    eplmn[0].MNCdigit3 = msg->equivalentplmns.mncdigit3;
   }
 
   /* Execute attach procedure accepted by the network */
   rc = emm_proc_attach_accept(user, T3412, T3402, T3423, n_tais, tai, pguti,
-                              n_eplmns, &eplmn,
+                              n_eplmns, eplmn,
                               &msg->esmmessagecontainer.esmmessagecontainercontents);
 
   LOG_FUNC_RETURN (rc);
