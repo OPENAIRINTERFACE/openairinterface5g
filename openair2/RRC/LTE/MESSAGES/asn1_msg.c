@@ -4213,6 +4213,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
   meas2.rsrpResult=&(rsrp_t);
   //&rsrp_va;
   meas2.rsrqResult=&(rsrq_t);
+  meas2.ext1 = NULL;
   measresulteutra2->measResult=meas2;
   ASN_SEQUENCE_ADD(&measResultListEUTRA2->list,measresulteutra2);
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
