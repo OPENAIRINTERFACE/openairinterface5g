@@ -3422,6 +3422,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                size,
                buffer,
                PDCP_TRANSMISSION_MODE_CONTROL);
+
+  free(Sparams);
+  Sparams = NULL;
 }
 
 //-----------------------------------------------------------------------------
