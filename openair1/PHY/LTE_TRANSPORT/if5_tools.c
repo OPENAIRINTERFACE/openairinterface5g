@@ -606,7 +606,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 	  }
 	}
 #endif
-
+      free(rx_buffer);
 
      
     }
