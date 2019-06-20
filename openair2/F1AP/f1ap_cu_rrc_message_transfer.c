@@ -143,6 +143,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   int f1ap_uid = f1ap_add_ue(&f1ap_cu_inst[rrc_inst], rrc_inst, CC_id, 0, rnti);
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
+    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
   }
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
