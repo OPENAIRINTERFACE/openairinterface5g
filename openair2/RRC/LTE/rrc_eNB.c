@@ -8074,6 +8074,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
         //generate RRC Reconfiguration
         rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+        free(destinationInfoList);
+        destinationInfoList = NULL;
         return 0;
       }
 
@@ -8092,6 +8095,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
@@ -8113,6 +8119,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
@@ -8134,6 +8143,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
