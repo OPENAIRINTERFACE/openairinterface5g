@@ -161,6 +161,7 @@ rlc_tm_mac_status_indication (
   status_resp.buffer_occupancy_in_bytes = ((rlc_tm_entity_t *) rlc_pP)->buffer_occupancy;
   status_resp.buffer_occupancy_in_pdus = status_resp.buffer_occupancy_in_bytes / ((rlc_tm_entity_t *) rlc_pP)->rlc_pdu_size;
   status_resp.rlc_info.rlc_protocol_state = ((rlc_tm_entity_t *) rlc_pP)->protocol_state;
+  status_resp.head_sdu_creation_time = 0;
   return status_resp;
 }
 
