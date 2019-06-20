@@ -5384,6 +5384,18 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
+  free(quantityConfig);
+  quantityConfig = NULL;
 }
 
 void
