@@ -3425,6 +3425,18 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   free(Sparams);
   Sparams = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
+  free(quantityConfig);
+  quantityConfig = NULL;
 }
 
 //-----------------------------------------------------------------------------
