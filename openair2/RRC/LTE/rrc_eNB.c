@@ -5399,6 +5399,9 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
 
   free(securityConfigHO);
   securityConfigHO = NULL;
+
+  free(Sparams);
+  Sparams = NULL;
 }
 
 void
