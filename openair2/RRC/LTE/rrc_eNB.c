@@ -6919,12 +6919,11 @@ rrc_eNB_decode_dcch(
               // clear currentC-RNTI from map
               reestablish_rnti_map[i][0] = 0;
               reestablish_rnti_map[i][1] = 0;
+              LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
+                    i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
               break;
             }
           }
-
-          LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
-                i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
 
           if (!ue_context_p) {
             LOG_E(RRC,
