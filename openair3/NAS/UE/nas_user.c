@@ -161,6 +161,8 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 
   user->nas_user_nvdata = calloc_or_fail(sizeof(user_nvdata_t));
 
+  memset(user->nas_user_nvdata, 0, sizeof(user_nvdata_t));
+
   /* Get UE data stored in the non-volatile memory device */
   int rc = memory_read(user->user_nvdata_store, user->nas_user_nvdata, sizeof(user_nvdata_t));
   if (rc != RETURNok) {
