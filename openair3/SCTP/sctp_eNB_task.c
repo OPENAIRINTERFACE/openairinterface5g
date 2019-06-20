@@ -580,6 +580,7 @@ sctp_handle_new_association_req(
         addr6.sin6_family = AF_INET6;
         addr6.sin6_addr = in6addr_any;
         addr6.sin6_port = htons(sctp_new_association_req_p->port);
+        addr6.sin6_flowinfo = 0;
 
         if (bind(sd, (struct sockaddr*)&addr6, sizeof(addr6)) < 0) {
             SCTP_ERROR("Failed to bind the socket to address any (v4/v6): %s\n",
