@@ -882,7 +882,7 @@ int gtpv1u_eNB_init(void) {
    * nw-gtpv1u stack.
    */
   ulp.ulpReqCallback = gtpv1u_eNB_process_stack_req;
-
+  memset((void *)&(ulp.hUlp), 0, sizeof(NwGtpv1uUlpHandleT));
   if ((rc = nwGtpv1uSetUlpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &ulp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUlpEntity: %x", rc);
     return -1;
