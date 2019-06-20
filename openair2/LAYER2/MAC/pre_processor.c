@@ -280,6 +280,8 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     UE_id = find_UE_id(Mod_id, rnti);
+    if(UE_id == -1)
+        continue;
     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame,subframe);
     round = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
 
