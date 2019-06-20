@@ -1634,6 +1634,8 @@ int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t *const ctxt_pP,
       S1AP_E_RAB_MODIFY_RESP (msg_p).eNB_ue_s1ap_id,
       e_rabs_done, e_rabs_failed);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+  } else {
+    itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
   }
 
   return 0;
