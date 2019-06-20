@@ -205,6 +205,8 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) {
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
+
   return (eutra_bandtable[i].dl_min +
           (dl_earfcn - (eutra_bandtable[i].N_OFFs_DL / 10))) * 100000;
 }
