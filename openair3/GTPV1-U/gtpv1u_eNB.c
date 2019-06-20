@@ -892,7 +892,7 @@ int gtpv1u_eNB_init(void) {
    * We provide a wrapper to UDP task.
    */
   udp.udpDataReqCallback = gtpv1u_eNB_send_udp_msg;
-
+  memset((void *)&(udp.hUdp), 0, sizeof(NwGtpv1uUdpHandleT));
   if ((rc = nwGtpv1uSetUdpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &udp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUdpEntity: %x", rc);
     return -1;
