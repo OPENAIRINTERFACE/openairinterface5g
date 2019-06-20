@@ -1342,6 +1342,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
     S1AP_E_RAB_MODIFY_RESP(message_p).nb_of_e_rabs_failed = nb_of_e_rabs_failed;
     s1ap_eNB_e_rab_modify_resp(mme_desc_p->s1ap_eNB_instance->instance,
                                &S1AP_E_RAB_MODIFY_RESP(message_p));
+    itti_free(TASK_RRC_ENB,message_p);
     message_p = NULL;
     return -1;
   }
