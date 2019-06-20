@@ -279,11 +279,12 @@ void phy_config_request(PHY_Config_t *phy_config) {
 }*/
 
 
-void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
+void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
+{
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  //NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;

@@ -153,8 +153,7 @@ void uhd_set_thread_prio(void) {
   } else {
     (set_prio_func_t)shlib_fdesc[0].fptr();
   }    
-  return ret; 	    
-  
+  //return ret;
 }
 
 int openair0_device_load(openair0_device *device,

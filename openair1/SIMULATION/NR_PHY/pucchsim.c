@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
-  uint8_t write_output_file=0;
+  //uint8_t write_output_file=0;
   //int result;
   //int freq_offset;
   //int subframe_offset;
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
   while ((c = getopt (argc, argv, "f:hA:f:g:n:o:s:S:t:x:y:z:N:F:GR:P:IL:")) != -1) {
     switch (c) {
     case 'f':
-      write_output_file=1;
+      //write_output_file=1;
       output_fd = fopen(optarg,"w");
 
       if (output_fd==NULL) {

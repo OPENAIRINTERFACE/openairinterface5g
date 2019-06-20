@@ -678,13 +678,13 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
 
 
-  int i,j,k,l,slot,symb,q,layer;
+  int i,j,k,l,slot,symb,q;
   int eNB_id;
   int th_id;
   int n_ssb_crb=(fp->N_RB_DL-20);
   int k_ssb=0;
   uint32_t ****pusch_dmrs;
-  int N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig 
+  uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;

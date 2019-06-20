@@ -2463,10 +2463,11 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 
 
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id, uint8_t thread_id) {
-
-
-  NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
+		                    UE_nr_rxtx_proc_t *proc,
+							uint8_t gNB_id,
+							uint8_t thread_id)
+{
   fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
@@ -2487,7 +2488,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   harq_pid = 0; //temporary implementation
 
-
   generate_ue_ulsch_params(ue,
                            0,
                            gNB_id,
@@ -2495,7 +2495,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-
 
   TBS = nr_compute_tbs(ul_dci_pdu->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, ul_dci_pdu->precod_nbr_layers);
 
@@ -2522,7 +2521,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
     ue_srs_procedures(ue,proc,eNB_id,abstraction_flag);
   } // UE_mode==PUSCH
 */
-
 
 
   nr_ue_pusch_common_procedures(ue,

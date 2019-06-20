@@ -88,8 +88,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h and GNB_APP/gnb_paramdef.h */
-static int DEFBANDS[] = {7};
-static int DEFENBS[] = {0};
+//static int DEFBANDS[] = {7};
+//static int DEFENBS[] = {0};
 
 static int DEFNRBANDS[] = {7};
 static int DEFGNBS[] = {0};

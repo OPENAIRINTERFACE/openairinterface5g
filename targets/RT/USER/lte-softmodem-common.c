@@ -54,6 +54,7 @@ softmodem_params_t *get_softmodem_params(void) {
 void get_common_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level ;
+  uint32_t glog_verbosity;
   uint32_t start_telnetsrv;
   uint32_t noS1;
   uint32_t nokrnmod;

@@ -40,9 +40,8 @@
 #include "PHY/impl_defs_nr.h"
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
-
-
+int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
+{
   /// module id
   module_id_t module_id = scheduled_response->module_id; 
   /// component carrier id

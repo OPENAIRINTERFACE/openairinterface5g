@@ -453,7 +453,7 @@ int main(int argc, char **argv) {
   unsigned char harq_pid = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint8_t  nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+  uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
   uint8_t length_dmrs = 1;
   unsigned char mod_order;
 

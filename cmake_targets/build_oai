@@ -574,6 +574,22 @@ function main() {
     compilations \
 	  $build_dir $exec \
 	  $exec $dbin/$exec.$REL
+	  
+# if --eNB --UE are both provided together as build options
+	  if [ "$eNB" = "1" -a "$UE" = "1" ] ; then
+	    echo_info "Compiling lte-uesoftmodem"
+        compilations \
+	      $build_dir lte-uesoftmodem \
+	      lte-uesoftmodem $dbin/lte-uesoftmodem.$REL	  
+	  fi
+	  
+# if --gNB --nrUE are both provided together as build options
+	  if [ "$gNB" = "1" -a "$nrUE" = "1" ] ; then
+	    echo_info "Compiling nr-uesoftmodem"
+        compilations \
+	      $build_dir nr-uesoftmodem \
+	      nr-uesoftmodem $dbin/nr-uesoftmodem.$REL	  
+	  fi
 
 # mandatory shared lib
     compilations \

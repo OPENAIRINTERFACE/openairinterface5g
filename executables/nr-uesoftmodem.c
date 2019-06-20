@@ -161,6 +161,23 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
+typedef struct {
+  uint64_t       optmask;
+  THREAD_STRUCT  thread_struct;
+  char           rf_config_file[1024];
+  int            phy_test;
+  uint8_t        usim_test;
+  int            emulate_rf;
+  int            wait_for_sync; //eNodeB only
+  int            single_thread_flag; //eNodeB only
+  int            chain_offset;
+  int            numerology;
+  unsigned int   start_msc;
+  uint32_t       clock_source;
+  int            hw_timing_advance;
+} softmodem_params_t;
+static softmodem_params_t softmodem_params;
+
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
@@ -386,7 +403,7 @@ int16_t dlsch_demod_shift;
 static void get_options(void) {
   int CC_id;
   int tddflag=0, nonbiotflag;
-  char *loopfile=NULL;
+  char *loopfile=NULL, *in_ip=NULL, *in_path=NULL;
   int dumpframe=0;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;

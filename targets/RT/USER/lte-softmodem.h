@@ -102,17 +102,17 @@
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters defining UE running mode                                              */
-/*   optname                     helpstr                paramflags                      XXXptr        defXXXval         type       numelt   */
+/*   optname                     helpstr                paramflags        XXXptr                      defXXXval           type      numelt  */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEMODEPARAMS_DESC {  \
-    {"calib-ue-rx",                 CONFIG_HLP_CALUER,     0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"calib-ue-rx-med",             CONFIG_HLP_CALUERM,    0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"calib-ue-rx-byp",             CONFIG_HLP_CALUERB,    0,    iptr:&rx_input_level_dBm,   defintval:0,  TYPE_INT,   0},    \
-    {"debug-ue-prach",              CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"no-L2-connect",               CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"calib-prach-tx",              CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,        defuintval:1,   TYPE_INT,   0},    \
-    {"loop-memory",                 CONFIG_HLP_UELOOP,     0,    strptr:&loopfile,       defstrval:"iqs.in", TYPE_STRING,0},    \
-    {"ue-dump-frame",               CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,      defintval:0,  TYPE_INT,   0},    \
+    {"calib-ue-rx",              CONFIG_HLP_CALUER,     0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-med",          CONFIG_HLP_CALUERM,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-byp",          CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
+    {"debug-ue-prach",           CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"no-L2-connect",            CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"calib-prach-tx",           CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
+    {"loop-memory",              CONFIG_HLP_UELOOP,     0,                strptr:&loopfile,           defstrval:"iqs.in", TYPE_STRING,0},    \
+    {"ue-dump-frame",            CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,            defintval:0,        TYPE_INT,   0},    \
   }
 #define CMDLINE_CALIBUERX_IDX                   0
 #define CMDLINE_CALIBUERXMED_IDX                1
@@ -166,7 +166,7 @@
     {"threadSlot1ProcOne",      NULL,      0,     iptr:&(threads.slot1_proc_one),     defintval:1,     TYPE_INT,       0},   \
     {"threadSlot1ProcTwo",      NULL,      0,     iptr:&(threads.slot1_proc_two),     defintval:1,     TYPE_INT,       0},   \
   }
-//    {"threadIQ",                NULL,      0,     iptr:&(threads.iq),                 defintval:1,     TYPE_INT,       0},   \
+//    {"threadIQ",                NULL,      0,     iptr:&(threads.iq),                 defintval:1,     TYPE_INT,       0},
 
 #define DEFAULT_DLF 2680000000
 
@@ -188,7 +188,6 @@
     {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
     {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&PHY_TEST,                     defintval:0,                    TYPE_INT,       0},                     \
     {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&USIM_TEST,                   defintval:0,                    TYPE_UINT8,     0},                     \
-    {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
     {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&CLOCK_SOURCE,                 defintval:0,                    TYPE_UINT,      0},                     \
     {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&WAIT_FOR_SYNC,                defintval:0,                    TYPE_INT,       0},                     \
     {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
@@ -198,6 +197,7 @@
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
+    {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,                         defintval:0,                    TYPE_INT,       0},                     \
@@ -209,19 +209,22 @@
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
+#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                                                        */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define START_MSC          softmodem_params.start_msc
+#define START_MSC                softmodem_params.start_msc
 #define CMDLINE_LOGPARAMS_DESC {  \
-    {"R" ,           CONFIG_HLP_FLOG, 0,              uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},        \
-    {"g" ,           CONFIG_HLP_LOGL, 0,              uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},        \
-    {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL, uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},        \
-    {"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL, uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},                    \
+    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},        \
+    {"g" ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},        \
+    {"G" ,           CONFIG_HLP_LOGV, 0,                uptr:&glog_verbosity,      defintval:0,         TYPE_UINT16,   0},        \
+    {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},        \
+	{"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},        \
   }
+
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
 #define CMDLINE_GLOGVERBO_IDX     2
@@ -229,10 +232,10 @@
 
 /* check function for global log level */
 #define CMDLINE_LOGPARAMS_CHECK_DESC { \
-    { .s5= {NULL }} ,                                                 \
-    { .s2=  { config_check_intrange,           {0,4}}},               \
-    { .s5= {NULL }} ,                   \
-    { .s5= {NULL }} ,                   \
+    { .s5= {NULL }} ,                         \
+    { .s2=  { config_check_intrange, {0,4}}}, \
+    { .s5= {NULL }} ,                         \
+    { .s5= {NULL }} ,                         \
   }
 
 /***************************************************************************************************************************************/
@@ -282,8 +285,6 @@ void set_worker_conf(char *worker_conf);
 */
 
 
-
-
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 #define SOFTMODEM_NONBIOT_BIT         (1<<2)
@@ -324,9 +325,8 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
-
-extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
-extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
+extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;
 extern uint8_t exit_missed_slots;
@@ -343,7 +343,8 @@ extern int transmission_mode;
 extern double cpuf;
 
 // In lte-enb.c
-extern void init_eNB(int single_thread_flag,int wait_for_sync);
+extern void init_eNB(int single_thread_flag,
+		             int wait_for_sync);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
@@ -357,7 +358,8 @@ extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
 
 // In lte-ue.c
-extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
+extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
+		                    openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
 extern void init_UE(int nb_inst,
@@ -371,7 +373,11 @@ extern void init_UE(int nb_inst,
 					int rxgain,
 					int txpowermax,
                     LTE_DL_FRAME_PARMS *fp);
-extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
+extern void init_thread(int sched_runtime,
+		                int sched_deadline,
+						int sched_fifo,
+						cpu_set_t *cpuset,
+						char *name);
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -394,7 +400,10 @@ extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 
 
-extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
+extern void init_UE_stub_single_thread(int nb_inst,
+                                       int eMBMS_active,
+									   int uecap_xer_in,
+									   char *emul_iface);
 
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                                  uint8_t UE_id,

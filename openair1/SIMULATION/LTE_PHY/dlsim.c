@@ -67,10 +67,9 @@
 #include "common/config/config_load_configmodule.h"
 #include "PHY/INIT/phy_init.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "targets/RT/USER/lte-softmodem.h"
 
-void feptx_ofdm(RU_t *ru,int frame,int subframe);
-void feptx_prec(RU_t *ru,int frame,int subframe);
+void feptx_ofdm(RU_t *ru, int frame, int subframe);
+void feptx_prec(RU_t *ru, int frame, int subframe);
 
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -86,7 +85,29 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-THREAD_STRUCT thread_struct;
+//THREAD_STRUCT thread_struct;
+static THREAD_STRUCT thread_struct;
+
+void set_parallel_conf(char *parallel_conf) {
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
+}
+void set_worker_conf(char *worker_conf) {
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)	                  thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
+}
+PARALLEL_CONF_t get_thread_parallel_conf(void) {
+	return thread_struct.parallel_conf;
+}
+WORKER_CONF_t get_thread_worker_conf(void) {
+	return thread_struct.worker_conf;
+}
+
 
 int emulate_rf = 0;
 
@@ -294,7 +315,7 @@ fill_dlsch_config(nfapi_dl_config_request_body_t *dl_req,
                   uint8_t transmission_scheme,
                   uint8_t number_of_layers,
                   uint8_t number_of_subbands,
-                  //uint8_t codebook_index,
+                  //                             uint8_t codebook_index,
                   uint8_t ue_category_capacity,
                   uint8_t pa,
                   uint8_t delta_power_offset_index,
@@ -629,7 +650,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
-  /*static paramdef_t options[] = {
+  static paramdef_t options[] = {
     { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
     { "Abstx", "Turns on calibration mode for abstraction.", PARAMFLAG_BOOL, iptr:&abstx,  defintval:0, TYPE_INT, 0 },
     { "bTDD", "Set the tdd configuration mode",0, iptr:&tdd_config,  defintval:3, TYPE_INT, 0 },
@@ -892,371 +913,7 @@ int main(int argc, char **argv) {
     exit(0);
 
   if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
-    set_worker_conf("WORKER_ENABLE");*/
-
-
-
-  int c;
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXYL:")) != -1) {
-    switch (c) {
-    case 'a':
-      awgn_flag = 1;
-      channel_model = AWGN;
-      break;
-
-    case 'A':
-      abstx = 1;
-      break;
-
-    case 'b':
-      tdd_config=atoi(optarg);
-      break;
-
-    case 'B':
-      N_RB_DL=atoi(optarg);
-      break;
-
-    case 'c':
-      num_pdcch_symbols=atoi(optarg);
-      break;
-
-    case 'C':
-      Nid_cell = atoi(optarg);
-      break;
-
-    case 'd':
-      dci_flag = 1;
-      break;
-
-    case 'D':
-      frame_type=TDD;
-      break;
-
-    case 'e':
-      num_rounds=1;
-      common_flag = 1;
-      TPC = atoi(optarg);
-      break;
-
-    case 'E':
-      threequarter_fs=1;
-      break;
-
-    case 'f':
-      input_snr_step= atof(optarg);
-      break;
-
-    case 'F':
-      forgetting_factor = atof(optarg);
-      break;
-
-    case 'i':
-      input_fd = fopen(optarg,"r");
-      input_file=1;
-      dci_flag = 1;
-      break;
-
-    case 'I':
-      input_trch_fd = fopen(optarg,"r");
-      input_trch_file=1;
-      break;
-
-    case 'W':
-      two_thread_flag = 1;
-      break;
-    case 'l':
-      offset_mumimo_llr_drange_fix=atoi(optarg);
-      break;
-
-    case 'm':
-      mcs1 = atoi(optarg);
-      break;
-
-    case 'M':
-      mcs2 = atoi(optarg);
-      break;
-
-    case 'O':
-      test_perf=atoi(optarg);
-      //print_perf =1;
-      break;
-
-    case 't':
-      mcs_i = atoi(optarg);
-      i_mod = get_Qm(mcs_i);
-      break;
-
-    case 'n':
-      n_frames = atoi(optarg);
-      break;
-
-
-    case 'o':
-      rx_sample_offset = atoi(optarg);
-      break;
-
-    case 'r':
-      DLSCH_RB_ALLOC = atoi(optarg);
-      rballocset = 1;
-      break;
-
-    case 's':
-      snr0 = atof(optarg);
-      break;
-
-    case 'w':
-      snr_int = atof(optarg);
-      break;
-
-
-    case 'N':
-      n_ch_rlz= atof(optarg);
-      break;
-
-    case 'p':
-      extended_prefix_flag=1;
-      break;
-
-    case 'g':
-      memcpy(channel_model_input,optarg,10);
-
-      switch((char)*optarg) {
-      case 'A':
-        channel_model=SCM_A;
-        break;
-
-      case 'B':
-        channel_model=SCM_B;
-        break;
-
-      case 'C':
-        channel_model=SCM_C;
-        break;
-
-      case 'D':
-        channel_model=SCM_D;
-        break;
-
-      case 'E':
-        channel_model=EPA;
-        break;
-
-      case 'F':
-        channel_model=EVA;
-        break;
-
-      case 'G':
-        channel_model=ETU;
-        break;
-
-      case 'H':
-        channel_model=Rayleigh8;
-        break;
-
-      case 'I':
-        channel_model=Rayleigh1;
-        break;
-
-      case 'J':
-        channel_model=Rayleigh1_corr;
-        break;
-
-      case 'K':
-        channel_model=Rayleigh1_anticorr;
-        break;
-
-      case 'L':
-        channel_model=Rice8;
-        break;
-
-      case 'M':
-        channel_model=Rice1;
-        break;
-
-      case 'N':
-        channel_model=AWGN;
-        break;
-      default:
-        printf("Unsupported channel model!\n");
-        exit(-1);
-      }
-
-      break;
-    case 'R':
-      num_rounds=atoi(optarg);
-      break;
-
-    case 'S':
-      subframe=atoi(optarg);
-      break;
-
-    case 'T':
-      n_rnti=atoi(optarg);
-      break;
-
-    case 'u':
-      dual_stream_UE=1;
-      UE->use_ia_receiver = 1;
-
-      if ((n_tx_port!=2) || (transmission_mode!=5)) {
-        printf("IA receiver only supported for TM5!");
-        exit(-1);
-      }
-
-      break;
-
-    case 'v':
-      i_mod = atoi(optarg);
-
-      if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
-        printf("Wrong i_mod %d, should be 2,4 or 6\n",i_mod);
-        exit(-1);
-      }
-
-      break;
-
-    case 'P':
-      print_perf=1;
-      break;
-
-    case 'q':
-      n_tx_port=atoi(optarg);
-
-      if ((n_tx_port==0) || ((n_tx_port>2))) {
-        printf("Unsupported number of cell specific antennas ports %d\n",n_tx_port);
-        exit(-1);
-      }
-
-      break;
-
-
-    case 'x':
-      transmission_mode=atoi(optarg);
-
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=3) &&
-          (transmission_mode!=4) &&
-          (transmission_mode!=5) &&
-          (transmission_mode!=6) &&
-          (transmission_mode!=7)) {
-        printf("Unsupported transmission mode %d\n",transmission_mode);
-        exit(-1);
-      }
-
-      if (transmission_mode>1 && transmission_mode<7) {
-        n_tx_port = 2;
-      }
-
-      break;
-
-    case 'y':
-      n_tx_phy=atoi(optarg);
-
-      if (n_tx_phy < n_tx_port) {
-        printf("n_tx_phy mush not be smaller than n_tx_port");
-        exit(-1);
-      }
-
-      if ((transmission_mode>1 && transmission_mode<7) && n_tx_port<2) {
-        printf("n_tx_port must be >1 for transmission_mode %d\n",transmission_mode);
-        exit(-1);
-      }
-
-      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
-        printf("Physical number of antennas not supported for TM7.\n");
-        exit(-1);
-      }
-
-      break;
-      break;
-
-    case 'X':
-      xforms=1;
-      break;
-
-    case 'Y':
-      perfect_ce=1;
-      break;
-
-    case 'z':
-      n_rx=atoi(optarg);
-
-      if ((n_rx==0) || (n_rx>2)) {
-        printf("Unsupported number of rx antennas %d\n",n_rx);
-        exit(-1);
-      }
-
-      break;
-
-    case 'Z':
-      dump_table=1;
-      break;
-
-    case 'L':
-      loglvl = atoi(optarg);
-      break;
-
-    case 'h':
-    default:
-      printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,5,6,7) -y TXant -z RXant -I trch_file\n",argv[0]);
-      printf("-h This message\n");
-      printf("-a Use AWGN channel and not multipath\n");
-      printf("-c Number of PDCCH symbols\n");
-      printf("-m MCS1 for TB 1\n");
-      printf("-M MCS2 for TB 2\n");
-      printf("-d Transmit the DCI and compute its error statistics\n");
-      printf("-p Use extended prefix mode\n");
-      printf("-n Number of frames to simulate\n");
-      printf("-o Sample offset for receiver\n");
-      printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
-      printf("-f step size of SNR, default value is 1.\n");
-      printf("-C cell id\n");
-      printf("-S subframe\n");
-      printf("-D use TDD mode\n");
-      printf("-b TDD config\n");
-      printf("-B bandwidth configuration (in number of ressource blocks): 6, 25, 50, 100\n");
-      printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
-      printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
-      printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
-      printf("-x Transmission mode (1,2,6,7 for the moment)\n");
-      printf("-q Number of TX antennas ports used in eNB\n");
-      printf("-y Number of TX antennas used in eNB\n");
-      printf("-z Number of RX antennas used in UE\n");
-      printf("-t MCS of interfering UE\n");
-      printf("-R Number of HARQ rounds (fixed)\n");
-      printf("-A Turns on calibration mode for abstraction.\n");
-      printf("-N Determines the number of Channel Realizations in Abstraction mode. Default value is 1. \n");
-      printf("-O Set the percenatge of effective rate to testbench the modem performance (typically 30 and 70, range 1-100) \n");
-      printf("-I Input filename for TrCH data (binary)\n");
-      printf("-u Enables the Interference Aware Receiver for TM5 (default is normal receiver)\n");
-      exit(1);
-      break;
-    }
-  }
-  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
-  set_worker_conf("WORKER_ENABLE");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
 
@@ -1272,6 +929,7 @@ int main(int argc, char **argv) {
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
   //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  T_stdout = 1;
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
@@ -1355,8 +1013,8 @@ int main(int argc, char **argv) {
 
   if ((transmission_mode==1) || (transmission_mode==7)) {
     for (aa=0; aa<ru->nb_tx; aa++)
-    	for (re=0; re<ru->frame_parms->ofdm_symbol_size; re++)
-    		ru->beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx;
+      for (re=0; re<ru->frame_parms->ofdm_symbol_size; re++)
+        ru->beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx;
   }
 
   if (transmission_mode<7)
@@ -1632,17 +1290,19 @@ int main(int argc, char **argv) {
   UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
-	  eNB->UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
+    eNB->UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
 
-	  if (n_users>1) eNB->UE_stats[1].DL_pmi_single = (eNB->UE_stats[0].DL_pmi_single ^ 0x1555); //opposite PMI
+    if (n_users>1)
+      eNB->UE_stats[1].DL_pmi_single = (eNB->UE_stats[0].DL_pmi_single ^ 0x1555); //opposite PMI
   } else {
-	  eNB->UE_stats[0].DL_pmi_single = 0;
+    eNB->UE_stats[0].DL_pmi_single = 0;
 
-	  if (n_users>1) eNB->UE_stats[1].DL_pmi_single = 0;
+    if (n_users>1)
+      eNB->UE_stats[1].DL_pmi_single = 0;
   }
 
-  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc; //&eNB->proc.proc_rxtx[0]; //UE->current_thread_id[subframe]];
-  proc_eNB->frame_tx = 0;
+  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
+  proc_eNB->frame_tx=0;
 
   if (input_fd==NULL) {
     DL_req.dl_config_request_body.number_pdcch_ofdm_symbols = num_pdcch_symbols;
@@ -1846,7 +1506,7 @@ int main(int argc, char **argv) {
 
             start_meas(&eNB->ofdm_mod_stats);
             ru->proc.tti_tx=subframe;
-            memcpy((void *)&ru->frame_parms,(void *)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+            memcpy((void *)ru->frame_parms,(void *)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
             feptx_prec(ru,proc_eNB->frame_tx,subframe);
             feptx_ofdm(ru,proc_eNB->frame_tx,subframe);
             stop_meas(&eNB->ofdm_mod_stats);
@@ -1859,8 +1519,8 @@ int main(int argc, char **argv) {
             schedule_response(&sched_resp);
             phy_procedures_eNB_TX(eNB,proc_eNB,0);
             ru->proc.tti_tx=(subframe+1)%10;
-    	    feptx_prec(ru,proc_eNB->frame_tx,subframe+1);
-    	    feptx_ofdm(ru,proc_eNB->frame_tx,subframe+1);
+            feptx_prec(ru,proc_eNB->frame_tx,subframe+1);
+            feptx_ofdm(ru,proc_eNB->frame_tx,subframe+1);
             proc_eNB->frame_tx++;
             tx_lev = 0;
 

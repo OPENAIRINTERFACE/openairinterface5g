@@ -218,11 +218,11 @@ void feptx_ofdm_2thread(RU_t *ru,int frame,int subframe) {
 
 }
 
-void feptx_ofdm(RU_t *ru,int frame,int subframe) {
-     
+void feptx_ofdm(RU_t *ru, int frame, int subframe)
+{
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
-  unsigned int aa,slot_offset, slot_offset_F;
+  unsigned int aa, slot_offset, slot_offset_F;
   int dummy_tx_b[7680*4] __attribute__((aligned(32)));
   int i,j, tx_offset;
   int slot_sizeF = (fp->ofdm_symbol_size)*

@@ -525,10 +525,10 @@ typedef struct{
   uint8_t   css_format_2_2;
   uint8_t   css_format_2_3;
   uint8_t   uss_dci_formats;
-  uint16_t   srs_monitoring_periodicity;
-  uint16_t   slot_monitoring_periodicity;
-  uint16_t   slot_monitoring_offset;
-  uint16_t  monitoring_symbols_in_slot;
+  uint16_t  srs_monitoring_periodicity;
+  uint16_t  slot_monitoring_periodicity;
+  uint16_t  slot_monitoring_offset;
+  uint32_t  monitoring_symbols_in_slot;
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
 

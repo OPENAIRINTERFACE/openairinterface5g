@@ -189,6 +189,23 @@ int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
 
+typedef struct {
+  uint64_t       optmask;
+  THREAD_STRUCT  thread_struct;
+  char           rf_config_file[1024];
+  int            phy_test;
+  uint8_t        usim_test;
+  int            emulate_rf;
+  int            wait_for_sync; //eNodeB only
+  int            single_thread_flag; //eNodeB only
+  int            chain_offset;
+  int            numerology;
+  unsigned int   start_msc;
+  uint32_t       clock_source;
+  int            hw_timing_advance;
+} softmodem_params_t;
+static softmodem_params_t softmodem_params;
+
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
@@ -492,7 +509,8 @@ static void get_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv;
-  paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC ;
+  char *in_ip=NULL, *in_path=NULL;
+  paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
   paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
@@ -550,10 +568,10 @@ static void get_options(void) {
 
 
 
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
-  int CC_id;
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
+		                     NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
+{
+  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
     config[CC_id] = (nfapi_nr_config_request_t *) malloc(sizeof(nfapi_nr_config_request_t));
     config[CC_id]->subframe_config.numerology_index_mu.value =1;
@@ -861,7 +879,7 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main( int argc, char **argv )
 {
-  int i, CC_id, ru_id;
+  int i, ru_id, CC_id = 0;
   start_background_system();
 
   ///static configuration for NR at the moment

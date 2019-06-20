@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -449,8 +449,8 @@ int main(int argc, char **argv)
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
- 				fs, 
-				bw, 
+ 				fs,
+				bw,
                                 0,
                                 0,
                                 0);
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
 
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	  
+
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
@@ -726,7 +726,7 @@ int main(int argc, char **argv)
 	UE_proc.frame_rx = frame;
 	UE_proc.nr_tti_rx= slot;
 	UE_proc.subframe_rx = slot;
-	
+
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
 	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
@@ -743,7 +743,7 @@ int main(int argc, char **argv)
 	  if (UE->frame_parms.nb_antennas_rx>1)
 	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
 	}
-	
+
 	if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }
     } //noise trials
