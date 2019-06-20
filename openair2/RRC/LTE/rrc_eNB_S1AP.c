@@ -918,7 +918,7 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     rrc_data_req (
       &ctxt,
       srb_id,
-      *rrc_eNB_mui++,
+      (*rrc_eNB_mui)++,
       SDU_CONFIRM_NO,
       length,
       buffer,
