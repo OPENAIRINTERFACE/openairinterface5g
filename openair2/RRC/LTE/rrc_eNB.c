@@ -6275,12 +6275,12 @@ rrc_eNB_decode_ccch(
             if (reestablish_rnti_map[i][0] == 0) {
               reestablish_rnti_map[i][0] = ctxt_pP->rnti;
               reestablish_rnti_map[i][1] = c_rnti;
+              LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
+                    i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
               break;
             }
           }
 
-          LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
-                i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
           ue_context_p->ue_context.reestablishment_cause = rrcConnectionReestablishmentRequest->reestablishmentCause;
           LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept connection reestablishment request from UE physCellId %ld cause %ld\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
