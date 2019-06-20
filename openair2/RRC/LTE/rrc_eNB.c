@@ -7468,13 +7468,38 @@ void rrc_enb_init(void) {
 }
 
 //-----------------------------------------------------------------------------
+int add_ue_to_remove(struct rrc_eNB_ue_context_s **ue_to_be_removed,
+                     int removed_ue_count,
+                     struct rrc_eNB_ue_context_s *ue_context_p)
+{
+  int i;
+
+  /* is it already here? */
+  for (i = 0; i < removed_ue_count; i++)
+    if (ue_to_be_removed[i] == ue_context_p)
+      return removed_ue_count;
+
+  if (removed_ue_count == NUMBER_OF_UE_MAX) {
+    LOG_E(RRC, "fatal: ue_to_be_removed is full\n");
+    exit(1);
+  }
+
+  ue_to_be_removed[removed_ue_count] = ue_context_p;
+  removed_ue_count++;
+
+  return removed_ue_count;
+}
+
+//-----------------------------------------------------------------------------
 void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
 {
   int32_t current_timestamp_ms = 0;
   int32_t ref_timestamp_ms = 0;
   struct timeval ts;
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
-  struct rrc_eNB_ue_context_s *ue_to_be_removed = NULL;
+  struct rrc_eNB_ue_context_s *ue_to_be_removed[NUMBER_OF_UE_MAX];
+  int removed_ue_count = 0;
+  int cur_ue;
 #ifdef LOCALIZATION
   double estimated_distance = 0;
   protocol_ctxt_t                     ctxt;
@@ -7515,7 +7540,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         // remove UE after 20 seconds after MAC (or else) has indicated UL failure
         LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
               ue_context_p->ue_context.rnti);
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         break; // break RB_FOREACH
       }
     }
@@ -7531,7 +7556,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         if (EPC_MODE_ENABLED && !NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type))
           rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
         else
-          ue_to_be_removed = ue_context_p;
+          removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
 
         ue_context_p->ue_context.ue_release_timer_s1 = 0;
         break; // break RB_FOREACH
@@ -7545,14 +7570,14 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         LOG_I(RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n",
               ue_context_p->ue_context.rnti);
         ue_context_p->ue_context.ue_release_timer_rrc = 0;
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         break; // break RB_FOREACH
       }
     }
 
     if (ue_context_p->ue_context.handover_info != NULL) {
       if (ue_context_p->ue_context.handover_info->state == HO_RELEASE) {
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         rrc_eNB_handover_ue_context_release(ctxt_pP, ue_context_p);
         break; //break RB_FOREACH (why to break ?)
       }
@@ -7625,7 +7650,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
       if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) {
         LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n",
               ue_context_p->ue_context.rnti);
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         break; // break RB_FOREACH
       }
     }
@@ -7637,7 +7662,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         LOG_I(RRC, "Removing UE %x instance because of reestablishment_timer timeout\n",
               ue_context_p->ue_context.rnti);
         ue_context_p->ue_context.ul_failure_timer = 20000; // lead to send S1 UE_CONTEXT_RELEASE_REQ
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         ue_context_p->ue_context.ue_reestablishment_timer = 0;
         break; // break RB_FOREACH
       }
@@ -7654,32 +7679,32 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         * It is no more the case.
         * The timer should be renamed.
         */
-        ue_to_be_removed = ue_context_p;
+        removed_ue_count = add_ue_to_remove(ue_to_be_removed, removed_ue_count, ue_context_p);
         ue_context_p->ue_context.ue_release_timer = 0;
         break; // break RB_FOREACH
       }
     }
   } // end RB_FOREACH
 
-  if (ue_to_be_removed) {
-    if ((ue_to_be_removed->ue_context.ul_failure_timer >= 20000) ||
-        ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
+  for (cur_ue = 0; cur_ue < removed_ue_count; cur_ue++) {
+    if ((ue_to_be_removed[cur_ue]->ue_context.ul_failure_timer >= 20000) ||
+        ((ue_to_be_removed[cur_ue]->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
          (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0))) {
-      ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
-      ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
-      ue_to_be_removed->ue_context.ue_release_timer = 0;
-      ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
+      ue_to_be_removed[cur_ue]->ue_context.ue_release_timer_s1 = 1;
+      ue_to_be_removed[cur_ue]->ue_context.ue_release_timer_thres_s1 = 100;
+      ue_to_be_removed[cur_ue]->ue_context.ue_release_timer = 0;
+      ue_to_be_removed[cur_ue]->ue_context.ue_reestablishment_timer = 0;
     }
 
-    rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed);
+    rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed[cur_ue]);
 
-    if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
-      ue_to_be_removed->ue_context.ul_failure_timer = 0;
+    if (ue_to_be_removed[cur_ue]->ue_context.ul_failure_timer >= 20000) {
+      ue_to_be_removed[cur_ue]->ue_context.ul_failure_timer = 0;
     }
 
-    if ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
+    if ((ue_to_be_removed[cur_ue]->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
         (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
-      ue_to_be_removed->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
+      ue_to_be_removed[cur_ue]->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
     }
   }
 
