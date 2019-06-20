@@ -441,7 +441,12 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             for (j = 0; j < paging_report->n_paging_info; j++) {
 
                                     p_info[j] = malloc(sizeof(Protocol__FlexPagingInfo));
-                                    if(p_info[j] == NULL){
+                                    if (p_info[j] == NULL) {
+                                      for (k = 0; k < j; k++) {
+                                        free(p_info[k]);
+                                      }
+                                      free(p_info);
+                                      p_info = NULL;
                                       free(paging_report);
                                       goto error;
                                     }
