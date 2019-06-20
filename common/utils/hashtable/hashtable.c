@@ -358,6 +358,7 @@ hashtable_rc_t hashtable_resize(hash_table_t *const hashtblP, const hash_size_t 
 
   newtbl.size     = sizeP;
   newtbl.hashfunc = hashtblP->hashfunc;
+  newtbl.num_elements = 0;
 
   if(!(newtbl.nodes=calloc(sizeP, sizeof(hash_node_t *)))) return -1;
 
