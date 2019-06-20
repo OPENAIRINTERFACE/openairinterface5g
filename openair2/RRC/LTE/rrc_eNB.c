@@ -8257,9 +8257,10 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 
 LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, LTE_SL_DestinationInfoList_r12_t  *destinationInfoList ) {
   // for the moment, use scheduled resource allocation
-  LTE_SL_CommConfig_r12_t  *sl_CommConfig;
+  LTE_SL_CommConfig_r12_t sl_CommConfig_r12;
+  LTE_SL_CommConfig_r12_t  *sl_CommConfig = &sl_CommConfig_r12;
   LTE_SL_CommResourcePool_r12_t    *sc_CommTxConfig;
-  sl_CommConfig = CALLOC(1, sizeof(struct LTE_SL_CommConfig_r12));
+  memset(sl_CommConfig,0,sizeof(LTE_SL_CommConfig_r12_t));
   sl_CommConfig->commTxResources_r12 = CALLOC(1, sizeof(*sl_CommConfig->commTxResources_r12));
   sl_CommConfig->commTxResources_r12->present = LTE_SL_CommConfig_r12__commTxResources_r12_PR_setup;
   sl_CommConfig->commTxResources_r12->choice.setup.present = LTE_SL_CommConfig_r12__commTxResources_r12__setup_PR_scheduled_r12;
