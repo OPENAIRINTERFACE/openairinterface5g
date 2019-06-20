@@ -1545,6 +1545,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
     S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
                "existing UE context 0x%06lx\n", assoc_id,
                ie->value.choice.ENB_UE_S1AP_ID);
+    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
   }
 
