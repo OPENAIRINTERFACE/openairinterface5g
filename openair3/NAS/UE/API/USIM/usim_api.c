@@ -268,9 +268,9 @@ int usim_api_authenticate_test(usim_data_t *usim_data,
     printf("usim_data->usim_sqn_data.sqn_ms %p\n", usim_data->usim_sqn_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
       //#warning "LG:BUG HERE TODO"
-      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
-      sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - 1 - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - 1 - i]);
+      sqn_ms[USIM_API_SQNMS_SIZE - 1 - i] =
+        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - 1 - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
