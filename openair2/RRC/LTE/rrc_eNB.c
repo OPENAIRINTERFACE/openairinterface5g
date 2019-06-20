@@ -2255,6 +2255,12 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
         ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_FAILED;
         ue_context_pP->ue_context.e_rab[i].xid = xid;
         e_rab_done++;
+        free(DRB_pdcp_config->discardTimer);
+        free(DRB_pdcp_config);
+        free(DRB_rlc_config);
+        free(DRB_config->logicalChannelIdentity);
+        free(DRB_config->eps_BearerIdentity);
+        free(DRB_config);
         continue;
     }
 
