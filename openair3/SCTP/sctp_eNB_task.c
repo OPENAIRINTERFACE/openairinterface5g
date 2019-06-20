@@ -832,6 +832,11 @@ err:
         sctp_cnx = NULL;
     }
 
+    if (addr != NULL) {
+        free(addr);
+        addr = NULL;
+    }
+
     return -1;
 }
 
