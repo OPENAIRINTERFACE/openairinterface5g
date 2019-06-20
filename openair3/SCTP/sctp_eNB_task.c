@@ -764,6 +764,10 @@ static int sctp_create_new_listener(
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &event,
                    sizeof(struct sctp_event_subscribe)) < 0) {
         SCTP_ERROR("setsockopt: %s:%d\n", strerror(errno), errno);
+        if (sd != -1) {
+            close(sd);
+            sd = -1;
+        }
         free(addr);
         return -1;
     }
