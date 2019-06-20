@@ -874,6 +874,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring UE context release\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
@@ -883,6 +884,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
                id_source,
                x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
                id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
