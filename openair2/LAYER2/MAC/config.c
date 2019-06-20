@@ -219,6 +219,8 @@ int32_t get_uldl_offset(int eutra_bandP) {
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
+
   return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
