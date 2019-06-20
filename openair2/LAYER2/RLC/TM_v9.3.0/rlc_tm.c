@@ -186,6 +186,7 @@ rlc_tm_mac_data_request (
           PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
           data_req.data.nb_elements);
   }
+  data_req.ue_id_type_indicator = 0;
 
   return data_req;
 }
