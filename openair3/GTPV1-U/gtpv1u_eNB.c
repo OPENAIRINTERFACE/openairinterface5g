@@ -899,7 +899,7 @@ int gtpv1u_eNB_init(void) {
   }
 
   log.logReqCallback = gtpv1u_eNB_log_request;
-
+  memset((void *)&(log.logMgrHandle), 0, sizeof(NwGtpv1uLogMgrHandleT));
   if ((rc = nwGtpv1uSetLogMgrEntity(RC.gtpv1u_data_g->gtpv1u_stack, &log)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetLogMgrEntity: %x", rc);
     return -1;
