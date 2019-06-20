@@ -389,6 +389,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               LTE_SRB_ToAddModList_t  *SRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
               LTE_DRB_ToReleaseList_t *DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
               LTE_MAC_MainConfig_t    *mac_MainConfig  = NULL;
+              for (i = 0; i< 8; i++){
+                DRB2LCHAN[i] = 0;
+              }
               if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig)
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;
