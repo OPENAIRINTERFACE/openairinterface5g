@@ -785,6 +785,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring handover response\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
