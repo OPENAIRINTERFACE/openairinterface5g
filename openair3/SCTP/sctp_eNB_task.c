@@ -800,11 +800,15 @@ static int sctp_create_new_listener(
 
     if (sctp_bindx(sd, addr, used_addresses, SCTP_BINDX_ADD_ADDR) != 0) {
         SCTP_ERROR("sctp_bindx: %s:%d\n", strerror(errno), errno);
+        free(sctp_cnx);
+        sctp_cnx = NULL;
         return -1;
     }
 
     if (listen(sd, 5) < 0) {
         SCTP_ERROR("listen: %s:%d\n", strerror(errno), errno);
+        free(sctp_cnx);
+        sctp_cnx = NULL;
         return -1;
     }
 
@@ -821,6 +825,11 @@ err:
     if (sd != -1) {
         close(sd);
         sd = -1;
+    }
+
+    if (sctp_cnx != NULL) {
+        free(sctp_cnx);
+        sctp_cnx = NULL;
     }
 
     return -1;
