@@ -1726,6 +1726,10 @@ int apply_ue_slice_assoc_update(mid_t mod_id)
   int changes = 0;
   for (i = 0; i < n_ue_slice_assoc_updates; i++) {
     int ue_id = find_UE_id(mod_id, ue_slice_assoc_update[i]->rnti);
+    if (ue_id < 0 || ue_id > MAX_MOBILES_PER_ENB){
+      LOG_E(FLEXRAN_AGENT,"UE_id %d is wrong!!\n",ue_id);
+      continue;
+    }
     if (ue_slice_assoc_update[i]->has_dl_slice_id) {
       int slice_idx = flexran_find_dl_slice(mod_id, ue_slice_assoc_update[i]->dl_slice_id);
       if (flexran_dl_slice_exists(mod_id, slice_idx)) {
