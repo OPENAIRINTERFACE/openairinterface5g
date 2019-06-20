@@ -188,6 +188,7 @@ uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i = %d , it will trigger out-of-bounds read.\n",i);
   AssertFatal(ul_CarrierFreq_by_100k >= eutra_bandtable[i].ul_min,
               "Band %d, bw %u : UL carrier frequency %lld Hz < %u\n",
               eutra_bandP, bw, ul_CarrierFreq,
