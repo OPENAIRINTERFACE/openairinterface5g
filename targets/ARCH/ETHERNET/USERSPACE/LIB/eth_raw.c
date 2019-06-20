@@ -533,7 +533,8 @@ int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {
     perror("ETHERNET: ");
     exit(0);
   }
-  
+
+  free(msg);
   return 0;
 }
 
