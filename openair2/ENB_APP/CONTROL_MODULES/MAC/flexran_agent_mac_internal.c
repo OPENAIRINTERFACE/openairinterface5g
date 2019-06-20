@@ -361,6 +361,14 @@ Protocol__FlexDlCqiReport * copy_dl_cqi_report(Protocol__FlexDlCqiReport * origi
 
  error:
   /*TODO: Must free memory properly*/
+  if (dl_report != NULL) {
+     if (csi_reports != NULL) {
+         free(csi_reports);
+         csi_reports = NULL;
+     }
+     free(dl_report);
+     dl_report = NULL;
+  }
   return NULL;
 }
 
