@@ -5140,8 +5140,8 @@ nack_or_dtx_reported(COMMON_channels_t *cc,
   if (cc->tdd_Config) {
     nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
 
-    for (i = 0; i < hi->number_of_ack_nack; hi++) {
-      if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
+    for (i = 0; i < hi->number_of_ack_nack; i++) {
+      if (hi->harq_data[i].bundling.value_0 != 1) //only bundling is used for tdd for now
         return 1;
     }
 
@@ -5150,7 +5150,7 @@ nack_or_dtx_reported(COMMON_channels_t *cc,
 
   nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
 
-  for (i = 0; i < hi->number_of_ack_nack; hi++) {
+  for (i = 0; i < hi->number_of_ack_nack; i++) {
     if (hi->harq_tb_n[i] != 1)
       return 1;
   }
