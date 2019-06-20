@@ -4231,8 +4231,13 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
           enc_rval.failed_type->name, enc_rval.encoded);
+    free(measResultListEUTRA2);
+    measResultListEUTRA2 = NULL;
     return -1;
   }
+
+  free(measResultListEUTRA2);
+  measResultListEUTRA2 = NULL;
 
   return((enc_rval.encoded+7)/8);
 }
