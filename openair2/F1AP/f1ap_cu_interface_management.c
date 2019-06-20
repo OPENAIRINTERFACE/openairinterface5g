@@ -370,6 +370,8 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
                       cells_to_be_activated_list_itemExtIEs);
       cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_160P9_t;
 
+      free(gNB_CUSystemInformation);
+      gNB_CUSystemInformation = NULL;
     }
     /* ADD */
     cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;
