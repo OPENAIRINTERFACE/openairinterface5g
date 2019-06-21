@@ -449,7 +449,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
 
-            if (!NODE_IS_CU(rrc->node_type)) {
+            if (1 || !NODE_IS_CU(rrc->node_type)) {
               // Cell params, MIB/SIB1 in DU
               RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
               AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
