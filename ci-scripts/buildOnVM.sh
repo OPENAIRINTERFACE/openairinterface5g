@@ -158,11 +158,21 @@ function build_on_vm {
         then
             echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-            echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            if [[ "$VM_NAME" == *"-phy-sim"* ]]
+            then
+                echo "sudo apt-get --yes install zip subversion libboost-dev make gcc >> zip-install.txt 2>&1" >> $VM_CMDS
+            else
+                echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            fi
         else
             echo "echo \"sudo apt-get --yes --quiet install zip daemon subversion libboost-dev \"" >> $VM_CMDS
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-            echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            if [[ "$VM_NAME" == *"-phy-sim"* ]]
+            then
+                echo "sudo apt-get --yes install zip daemon subversion libboost-dev make gcc >> zip-install.txt 2>&1" >> $VM_CMDS
+            else
+                echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            fi
         fi
     fi
     echo "mkdir tmp" >> $VM_CMDS
@@ -198,6 +208,12 @@ function build_on_vm {
     then
         echo "echo \"source oaienv\"" >> $VM_CMDS
         echo "source oaienv" >> $VM_CMDS
+        if [[ "$VM_NAME" == *"-phy-sim"* ]]
+        then
+            echo "cd common/utils/T" >> $VM_CMDS
+            echo "make" >> $VM_CMDS
+            echo "cd ../../.." >> $VM_CMDS
+        fi
         echo "cd cmake_targets/" >> $VM_CMDS
         echo "mkdir log" >> $VM_CMDS
         echo "chmod 777 log" >> $VM_CMDS
