@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   int N_RB_UL=273;
   uint32_t prach_errors=0;
   uint8_t subframe=9;
-  uint16_t preamble_energy_list[64],preamble_tx=99,preamble_delay_list[64];
+  uint16_t preamble_energy_list[64],preamble_tx=50,preamble_delay_list[64];
   uint16_t preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
   //uint8_t prach_fmt;
@@ -514,10 +514,14 @@ int main(int argc, char **argv)
   UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
   UE->prach_resources[0]->ra_TDD_map_index = 0;
 
-  tx_lev = generate_nr_prach(UE,
+  /*tx_lev = generate_nr_prach(UE,
 			     0, //gNB_id,
 			     subframe,
-			     0); //Nf
+			     0); //Nf */ //commented for testing purpose
+
+UE_nr_rxtx_proc_t proc={0};
+nr_ue_prach_procedures(UE,&proc,0,0,0);
+
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
@@ -603,7 +607,7 @@ int main(int argc, char **argv)
         if (preamble_rx!=preamble_tx)
           prach_errors++;
         else {
-          delay_avg += (double)preamble_delay_list[preamble_max];
+          delay_avg += (double)preamble_delay_list[preamble_tx];
         }
 
         if (n_frames==1) {
