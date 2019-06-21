@@ -580,6 +580,7 @@ sctp_handle_new_association_req(
         addr6.sin6_family = AF_INET6;
         addr6.sin6_addr = in6addr_any;
         addr6.sin6_port = htons(sctp_new_association_req_p->port);
+        addr6.sin6_flowinfo = 0;
 
         if (bind(sd, (struct sockaddr*)&addr6, sizeof(addr6)) < 0) {
             SCTP_ERROR("Failed to bind the socket to address any (v4/v6): %s\n",
@@ -763,6 +764,10 @@ static int sctp_create_new_listener(
     if (setsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, &event,
                    sizeof(struct sctp_event_subscribe)) < 0) {
         SCTP_ERROR("setsockopt: %s:%d\n", strerror(errno), errno);
+        if (sd != -1) {
+            close(sd);
+            sd = -1;
+        }
         free(addr);
         return -1;
     }
@@ -795,11 +800,15 @@ static int sctp_create_new_listener(
 
     if (sctp_bindx(sd, addr, used_addresses, SCTP_BINDX_ADD_ADDR) != 0) {
         SCTP_ERROR("sctp_bindx: %s:%d\n", strerror(errno), errno);
+        free(sctp_cnx);
+        sctp_cnx = NULL;
         return -1;
     }
 
     if (listen(sd, 5) < 0) {
         SCTP_ERROR("listen: %s:%d\n", strerror(errno), errno);
+        free(sctp_cnx);
+        sctp_cnx = NULL;
         return -1;
     }
 
@@ -816,6 +825,16 @@ err:
     if (sd != -1) {
         close(sd);
         sd = -1;
+    }
+
+    if (sctp_cnx != NULL) {
+        free(sctp_cnx);
+        sctp_cnx = NULL;
+    }
+
+    if (addr != NULL) {
+        free(addr);
+        addr = NULL;
     }
 
     return -1;

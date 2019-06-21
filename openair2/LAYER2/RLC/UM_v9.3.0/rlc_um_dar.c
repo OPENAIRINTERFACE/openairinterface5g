@@ -1038,6 +1038,8 @@ rlc_um_receive_process_dar (
     sn = pdu_pP->b1 & 0x1F;
   } else {
     free_mem_block(pdu_mem_pP, __func__);
+    pdu_mem_pP = NULL;
+    return;
   }
 
   RLC_UM_MUTEX_LOCK(&rlc_pP->lock_dar_buffer, ctxt_pP, rlc_pP);

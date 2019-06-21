@@ -248,6 +248,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
+    itti_free(TASK_RRC_ENB,message_p);
     return -1;
   }
   return 0;
@@ -370,6 +371,8 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
                       cells_to_be_activated_list_itemExtIEs);
       cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_160P9_t;
 
+      free(gNB_CUSystemInformation);
+      gNB_CUSystemInformation = NULL;
     }
     /* ADD */
     cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;

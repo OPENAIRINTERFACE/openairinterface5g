@@ -221,6 +221,8 @@ void* socket_udp_open(int type, const char* host, const char* port)
     sid->type = type;
     sid->port = atoi (port);
     sid->fd = sfd;
+  } else {
+    close (sfd);
   }
 
   return sid;

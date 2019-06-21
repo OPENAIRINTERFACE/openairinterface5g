@@ -327,6 +327,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   uint16_t *j      = NULL;
 
   openair0_timestamp timestamp[spsf / spp_eth];
+  memset(timestamp, 0, sizeof(timestamp));
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
@@ -606,7 +607,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 	  }
 	}
 #endif
-
+      free(rx_buffer);
 
      
     }

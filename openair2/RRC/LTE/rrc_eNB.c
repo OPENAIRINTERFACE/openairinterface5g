@@ -2381,6 +2381,12 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
         ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_FAILED;
         ue_context_pP->ue_context.e_rab[i].xid = xid;
         e_rab_done++;
+        free(DRB_pdcp_config->discardTimer);
+        free(DRB_pdcp_config);
+        free(DRB_rlc_config);
+        free(DRB_config->logicalChannelIdentity);
+        free(DRB_config->eps_BearerIdentity);
+        free(DRB_config);
         continue;
     }
 
@@ -3542,6 +3548,21 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                size,
                buffer,
                PDCP_TRANSMISSION_MODE_CONTROL);
+
+  free(Sparams);
+  Sparams = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
+  free(quantityConfig);
+  quantityConfig = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -5628,6 +5649,24 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
+  quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP = NULL;
+
+  free(quantityConfig->quantityConfigEUTRA);
+  quantityConfig->quantityConfigEUTRA = NULL;
+
+  free(quantityConfig);
+  quantityConfig = NULL;
+
+  free(securityConfigHO);
+  securityConfigHO = NULL;
+
+  free(Sparams);
+  Sparams = NULL;
 }
 
 void
@@ -5771,6 +5810,10 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX: activated if ack was expected */
     int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    if (UE_id_mac == -1){
+      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
+      return;
+    }
     UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
     
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
@@ -6577,12 +6620,12 @@ rrc_eNB_decode_ccch(
             if (reestablish_rnti_map[i][0] == 0) {
               reestablish_rnti_map[i][0] = ctxt_pP->rnti;
               reestablish_rnti_map[i][1] = c_rnti;
+              LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
+                    i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
               break;
             }
           }
 
-          LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
-                i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
           ue_context_p->ue_context.reestablishment_cause = rrcConnectionReestablishmentRequest->reestablishmentCause;
           LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept connection reestablishment request from UE physCellId %ld cause %ld\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -7221,12 +7264,11 @@ rrc_eNB_decode_dcch(
               // clear currentC-RNTI from map
               reestablish_rnti_map[i][0] = 0;
               reestablish_rnti_map[i][1] = 0;
+              LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
+                    i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
               break;
             }
           }
-
-          LOG_D(RRC, "reestablish_rnti_map[%d] [0] %x, [1] %x\n",
-                i, reestablish_rnti_map[i][0], reestablish_rnti_map[i][1]);
 
           if (!ue_context_p) {
             LOG_E(RRC,
@@ -8401,6 +8443,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
         //generate RRC Reconfiguration
         rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+        free(destinationInfoList);
+        destinationInfoList = NULL;
         return 0;
       }
 
@@ -8419,6 +8464,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
@@ -8440,6 +8488,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
@@ -8461,6 +8512,9 @@ rrc_eNB_process_SidelinkUEInformation(
 
           //generate RRC Reconfiguration
           rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+
+          free(destinationInfoList);
+          destinationInfoList = NULL;
           return 0;
         }
       }
@@ -8572,9 +8626,10 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 
 LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, LTE_SL_DestinationInfoList_r12_t  *destinationInfoList ) {
   // for the moment, use scheduled resource allocation
-  LTE_SL_CommConfig_r12_t  *sl_CommConfig;
+  LTE_SL_CommConfig_r12_t sl_CommConfig_r12;
+  LTE_SL_CommConfig_r12_t  *sl_CommConfig = &sl_CommConfig_r12;
   LTE_SL_CommResourcePool_r12_t    *sc_CommTxConfig;
-  sl_CommConfig = CALLOC(1, sizeof(struct LTE_SL_CommConfig_r12));
+  memset(sl_CommConfig,0,sizeof(LTE_SL_CommConfig_r12_t));
   sl_CommConfig->commTxResources_r12 = CALLOC(1, sizeof(*sl_CommConfig->commTxResources_r12));
   sl_CommConfig->commTxResources_r12->present = LTE_SL_CommConfig_r12__commTxResources_r12_PR_setup;
   sl_CommConfig->commTxResources_r12->choice.setup.present = LTE_SL_CommConfig_r12__commTxResources_r12__setup_PR_scheduled_r12;
