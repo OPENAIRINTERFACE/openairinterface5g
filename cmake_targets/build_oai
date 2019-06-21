@@ -223,9 +223,6 @@ function main() {
        -w | --hardware)
             # Use OAI_USRP  as the key word USRP is used inside UHD driver           
                 case "$2" in
-                    "EXMIMO")
-                        HW="EXMIMO"
-                        ;;
                     "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU")
                         HW="OAI_"$2
                         ;;
@@ -388,14 +385,7 @@ function main() {
   echo_info "RF HW set to $HW" 
     # If the user doesn't specify the Linux scheduler to use, we set a value
     if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-      case "$HW" in
- 	  "EXMIMO")
-        DEADLINE_SCHEDULER_FLAG_USER="True"
-              ;;
- 	  *)
         DEADLINE_SCHEDULER_FLAG_USER="False"
-              ;;
-      esac
   fi
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
@@ -489,7 +479,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 
     # LTE softmodem compilation
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
@@ -685,15 +675,7 @@ function main() {
 	  rm -f $dbin/liboai_device.so
 
 	  # link liboai_device.so with the selected RF device library
-	  if [ "$HW" == "EXMIMO" ] ; then
-	      compilations \
-                    $lte_build_dir oai_exmimodevif \
-		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
-
-	      ln -sf liboai_exmimodevif.so liboai_device.so
-	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
-	      echo_info "liboai_device.so is linked to EXMIMO device library"       
-	  elif [ "$HW" == "OAI_USRP" ] ; then
+	  if [ "$HW" == "OAI_USRP" ] ; then
               compilations \
                     $lte_build_dir oai_usrpdevif \
                   liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL

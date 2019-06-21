@@ -933,8 +933,8 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
     }
     RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[cc_idx][rachCEInfoIndex] = eMTCconfig->rar_HoppingConfig_r13;
 
-    AssertFatal(eMTCconfig->rar_HoppingConfig_r13 == 0 || eMTCconfig->rar_HoppingConfig_r13 == 1,
-		            "illegal rar_HoppingConfig_r13 %d\n",eMTCconfig->rar_HoppingConfig_r13);
+    AssertFatal(eMTCconfig->rar_HoppingConfig_r13 == 1 ,
+		            "illegal rar_HoppingConfig_r13 %d (should be 1 only for now, can be 0 when RAR frequency hopping is supported\n",eMTCconfig->rar_HoppingConfig_r13);
   } // end for loop (rach ce level info)
 
   char rsrpRangeListPath[MAX_OPTNAME_SIZE * 2];

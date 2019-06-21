@@ -2535,7 +2535,7 @@ UE_is_to_be_scheduled(module_id_t module_idP,
 
   if (UE_template->scheduled_ul_bytes < UE_template->estimated_ul_buffer ||
       UE_template->ul_SR > 0 || // uplink scheduling request
-      (UE_sched_ctl->ul_inactivity_timer > 20 && UE_sched_ctl->ul_scheduled == 0) ||  // every 2 frames when RRC_CONNECTED
+      (UE_sched_ctl->ul_inactivity_timer > 19 && UE_sched_ctl->ul_scheduled == 0) ||  // every 2 frames when RRC_CONNECTED
       (UE_sched_ctl->ul_inactivity_timer > 10 &&
        UE_sched_ctl->ul_scheduled == 0 &&
        mac_eNB_get_rrc_status(module_idP,
@@ -4056,7 +4056,6 @@ extract_harq(module_id_t mod_idP,
             }
           }
         }
-
         break;
 
       case 1:   // Channel Selection
@@ -5140,8 +5139,8 @@ nack_or_dtx_reported(COMMON_channels_t *cc,
   if (cc->tdd_Config) {
     nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
 
-    for (i = 0; i < hi->number_of_ack_nack; hi++) {
-      if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
+    for (i = 0; i < hi->number_of_ack_nack; i++) {
+      if (hi->harq_data[i].bundling.value_0 != 1) //only bundling is used for tdd for now
         return 1;
     }
 
@@ -5150,7 +5149,7 @@ nack_or_dtx_reported(COMMON_channels_t *cc,
 
   nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
 
-  for (i = 0; i < hi->number_of_ack_nack; hi++) {
+  for (i = 0; i < hi->number_of_ack_nack; i++) {
     if (hi->harq_tb_n[i] != 1)
       return 1;
   }
@@ -5182,13 +5181,6 @@ harq_indication(module_id_t mod_idP,
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   // extract HARQ Information
-  LOG_D(MAC, "Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",
-        frameP,
-        subframeP,
-        channel,
-        UE_id,
-        rnti,
-        ul_cqi);
 
   if (cc->tdd_Config) {
     extract_harq(mod_idP,

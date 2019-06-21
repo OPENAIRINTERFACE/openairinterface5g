@@ -59,6 +59,8 @@
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
+#define CONFIG_HLP_EXTS          "tells hardware to use an external timing reference\n"
+#define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
@@ -182,6 +184,8 @@
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
+#define TIMING_SOURCE       softmodem_params.timing_source
+#define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)}, \
@@ -258,7 +262,9 @@ typedef struct {
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
+  uint32_t       timing_source; 
   int            hw_timing_advance;
+  uint32_t       send_dmrs_sync; 
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
@@ -302,7 +308,7 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
-extern void init_RU(char *);
+extern void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 extern void stop_ru(RU_t *ru);
 extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);

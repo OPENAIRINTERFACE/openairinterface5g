@@ -818,6 +818,8 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
     flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt, ue_context_p, 0, reconf_param);
   }
   *msg = NULL;
+  free(reconf_param);
+  reconf_param = NULL;
   return 0;
 }
 

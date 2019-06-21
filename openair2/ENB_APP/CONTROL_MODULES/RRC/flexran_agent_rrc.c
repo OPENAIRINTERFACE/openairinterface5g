@@ -400,8 +400,11 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         /* Target Cell, Neghibouring*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;
         neigh_meas = malloc(sizeof(Protocol__FlexNeighCellsMeasurements));
-        if (neigh_meas == NULL)
+        if (neigh_meas == NULL) {
+          free(rrc_measurements);
+          rrc_measurements = NULL;
           goto error;
+        }
         protocol__flex_neigh_cells_measurements__init(neigh_meas);
          
         
@@ -412,8 +415,12 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         if (neigh_meas->n_eutra_meas > 0){
           
           eutra_meas = malloc(sizeof(Protocol__FlexEutraMeasurements) * neigh_meas->n_eutra_meas);
-          if (eutra_meas == NULL)
+          if (eutra_meas == NULL) {
+            free(neigh_meas);
+            free(rrc_measurements);
+            rrc_measurements = NULL;
             goto error;
+          }
           
           for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
 
@@ -423,6 +430,9 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
                   free(eutra_meas[k]);
                 }
                 free(eutra_meas);
+                free(neigh_meas);
+                free(rrc_measurements);
+                rrc_measurements = NULL;
                 goto error;
               }
 
@@ -453,6 +463,8 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
            rrc_measurements->neigh_meas = neigh_meas;
        
+        } else {
+           free(neigh_meas);
         }
 
       	 ue_report[i]->rrc_measurements = rrc_measurements;

@@ -65,7 +65,7 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
 {
     // currently there is one-to-one mapping between sf allocation pattern and sync area
-    if (mbsfn_sync_area > MAX_MBSFN_AREA) {
+    if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
 	LOG_W(MAC,
 	      "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
 	      module_idP, CC_id, mbsfn_sync_area);

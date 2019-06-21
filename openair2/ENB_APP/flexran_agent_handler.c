@@ -745,11 +745,14 @@ err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id,
   Protocol__FlexranMessage *req_msg = NULL;
 
   flexran_agent_stats_request(mod_id, xid, stats_req, &req_msg);
-  stats_context[mod_id].stats_req = req_msg;
-  stats_context[mod_id].prev_stats_reply = NULL;
 
-  stats_context[mod_id].cont_update = 1;
-  stats_context[mod_id].xid = xid;
+  if (req_msg != NULL) {
+    stats_context[mod_id].stats_req = req_msg;
+    stats_context[mod_id].prev_stats_reply = NULL;
+
+    stats_context[mod_id].cont_update = 1;
+    stats_context[mod_id].xid = xid;
+  }
 
   if (pthread_mutex_unlock(stats_context[mod_id].mutex)) {
     goto error;

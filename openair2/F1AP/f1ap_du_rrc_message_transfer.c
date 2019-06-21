@@ -312,6 +312,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           ,
           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
           );
           break;
       } // case
@@ -389,6 +398,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               LTE_SRB_ToAddModList_t  *SRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
               LTE_DRB_ToReleaseList_t *DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
               LTE_MAC_MainConfig_t    *mac_MainConfig  = NULL;
+              for (i = 0; i< 8; i++){
+                DRB2LCHAN[i] = 0;
+              }
               if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig)
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;
@@ -470,6 +482,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                    ,
                    (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+        #endif
+	#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                         ,
+                         0,
+                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
         #endif
                    );
                   }

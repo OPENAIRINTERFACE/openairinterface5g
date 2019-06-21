@@ -144,6 +144,8 @@ uint32_t to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw) {
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
+
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
               eutra_bandP, bw, dl_CarrierFreq,
@@ -165,6 +167,7 @@ uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i = %d , it will trigger out-of-bounds read.\n",i);
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %lld Hz < %u\n",
               eutra_bandP, bw, dl_CarrierFreq,
@@ -186,6 +189,7 @@ uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i = %d , it will trigger out-of-bounds read.\n",i);
   AssertFatal(ul_CarrierFreq_by_100k >= eutra_bandtable[i].ul_min,
               "Band %d, bw %u : UL carrier frequency %lld Hz < %u\n",
               eutra_bandP, bw, ul_CarrierFreq,
@@ -205,6 +209,8 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) {
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
+  AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
+
   return (eutra_bandtable[i].dl_min +
           (dl_earfcn - (eutra_bandtable[i].N_OFFs_DL / 10))) * 100000;
 }
@@ -214,6 +220,8 @@ int32_t get_uldl_offset(int eutra_bandP) {
   int i;
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
 
   return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
@@ -685,7 +693,17 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
   LTE_SystemInformationBlockType1_v1310_IEs_t *
   sib1_v13ext
 #endif
-                          ) {
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                       ,
+                       uint8_t FeMBMS_Flag,
+                       LTE_BCCH_DL_SCH_Message_MBMS_t * mib_fembms,
+                       LTE_SchedulingInfo_MBMS_r14_t * schedulingInfo_fembms,
+                       struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                       LTE_SystemInformationBlockType1_MBMS_r14_t *  sib1_mbms_r14_fembms,
+                       LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
+#endif
+			   ) {
+  
   int i;
   int UE_id = -1;
   eNB_MAC_INST *eNB = RC.mac[Mod_idP];
@@ -736,6 +754,13 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       config_sib1(Mod_idP,CC_idP,tdd_Config);
     }
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) //TODO MBMS this must be passed through function
+    /*if (schedulingInfoList_MBMS!=NULL)  {
+      RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList_MBMS = schedulingInfoList_MBMS;    
+      config_sib1_mbms(Mod_idP,CC_idP,tdd_Config);
+    }*/
+#endif
+    
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
     if (sib1_v13ext != NULL) {
@@ -854,6 +879,39 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     RC.mac[Mod_idP]->common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
   }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+ if (nonMBSFN_SubframeConfig != NULL){
+         LOG_D(MAC,
+          "[eNB %d][CONFIG] Received a non MBSFN subframe allocation pattern (%x,%x):%x for FeMBMS-CAS\n",
+          Mod_idP, nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7 );
+         //RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1) | (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+         RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = nonMBSFN_SubframeConfig;
+
+        nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+        cfg->fembms_config.non_mbsfn_config_flag.value   = 1;
+        cfg->fembms_config.non_mbsfn_config_flag.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.non_mbsfn_subframeconfig.value = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+        cfg->fembms_config.non_mbsfn_subframeconfig.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.radioframe_allocation_period.value   = nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
+        cfg->fembms_config.radioframe_allocation_period.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.radioframe_allocation_offset.value   = nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
+        cfg->fembms_config.radioframe_allocation_offset.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG;
+        cfg->num_tlv++;
+
+
+
+        //We need to reuse current MCH scheduler 
+        //TOCHECK whether we can simply reuse current mbsfn_SubframeConfig stuff
+  }
+#endif
+
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 

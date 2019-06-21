@@ -398,7 +398,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     }
 
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
-  }
+  }else
 
   if (sourceL2Id && destinationL2Id) {
     LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,

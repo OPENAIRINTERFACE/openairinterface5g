@@ -53,7 +53,8 @@ UE_IP_ADDRESS_ISSUE = -5
 OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE = -20
 OAI_UE_PROCESS_COULD_NOT_SYNC = -21
 OAI_UE_PROCESS_ASSERTION = -22
-OAI_UE_PROCESS_FAILED = -6
+OAI_UE_PROCESS_FAILED = -23
+OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
 OAI_UE_PROCESS_OK = +6
 
 #-----------------------------------------------------------
@@ -770,13 +771,24 @@ class SSHConnection():
 				result = re.search('inet addr', str(self.ssh.before))
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+					tunnelInterfaceStatus = True
 				else:
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+					tunnelInterfaceStatus = False
+			else:
+				tunnelInterfaceStatus = True
 
 		self.close()
-		# For the moment we are always OK!!!
-		self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-		logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
+			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+		else:
+			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def checkDevTTYisUnlocked(self):
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1413,9 +1425,13 @@ class SSHConnection():
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			self.command('ifconfig oaitun_ue1', '\$', 4)
 			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
-			UE_IPAddress = result.group('ueipaddress')
-			logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
-			self.UEIPAddresses.append(UE_IPAddress)
+			if result is not None:
+				UE_IPAddress = result.group('ueipaddress')
+				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
+				self.UEIPAddresses.append(UE_IPAddress)
+			else:
+				logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
+				ue_ip_status -= 1
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -3026,7 +3042,6 @@ class SSHConnection():
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
-			self.htmlUEFailureMsg = 'No Log File to analyze!'
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
@@ -3469,7 +3484,7 @@ class SSHConnection():
 				if result is not None:
 					cellBgColor = 'red'
 				else:
-					result = re.search('showed|Could not copy UE logfile|No Log File to analyze', self.htmlUEFailureMsg)
+					result = re.search('showed|Could not copy UE logfile|oaitun_ue1 interface is either NOT mounted or NOT configured', self.htmlUEFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
 				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
