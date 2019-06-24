@@ -4819,12 +4819,17 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
   rrc_eNB_ue_context_t  *ue_context_pP,
   int target_cell_id) {
 
-uint32_t earfcn_dl;
-uint8_t KeNB_star[32] = { 0 };
-int cell_found = 0;
+  uint32_t earfcn_dl;
+  uint8_t KeNB_star[32] = { 0 };
+  int cell_found = 0;
+
+  /* if X2AP is disabled, do nothing */
+  if (!is_x2ap_enabled()) {
+    LOG_E(RRC, "X2 is disabled\n");
+    return -1;
+  }
 
   /* Check if eNB id belongs to the supported ones-Extend for multiple carrieres */
-
   for (int i=0; i < RC.rrc[mod_id]->num_neigh_cells; i++) {
     if (RC.rrc[mod_id]->neigh_cells_id[i][0] == target_cell_id) {
       cell_found = 1;
@@ -4833,20 +4838,12 @@ int cell_found = 0;
   }
 
   /* Check if eNB id was found */
-
   if (!cell_found) {
     LOG_E(RRC, "%s(): cannot find target eNB with phyCellId %d\n", __func__, target_cell_id);
     return -1;
   }
 
   /* Handover process is following */
-
-  /* if X2AP is disabled, do nothing */
-  if (!is_x2ap_enabled()) {
-    LOG_E(RRC, "X2 is disabled\n");
-    return -1;
-  }
-
   LOG_D(RRC, "Handover is triggered by FlexRAN controller...\n");
 
   /* if the UE is not in handover mode, start handover procedure */
