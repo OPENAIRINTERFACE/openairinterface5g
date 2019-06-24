@@ -4592,9 +4592,6 @@ rrc_eNB_generate_HandoverPreparationInformation(
 }
 
 void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m) {
-
-  RC.rrc[mod_id]->num_neigh_cells ++;
-
   if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
      LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
      return;
@@ -4605,18 +4602,14 @@ void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m) {
      return;
   }
 
+  RC.rrc[mod_id]->num_neigh_cells++;
   RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
-
   for (int i=0; i<m->num_cc; i++) {
     RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
   }
-
 }
 
 void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m) {
-
-  RC.rrc[mod_id]->num_neigh_cells ++;
-
   if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
      LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
      return;
@@ -4627,12 +4620,11 @@ void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m) {
      return;
   }
 
+  RC.rrc[mod_id]->num_neigh_cells++;
   RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
-
   for (int i=0; i<m->num_cc; i++) {
     RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
   }
-
 }
 
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m) {
