@@ -845,6 +845,10 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
 
   if (bw_gain_adjust==1) {
     switch ((int)openair0_cfg[0].sample_rate) {
+
+      case 46080000:
+        break;
+
       case 30720000:
         break;
 
