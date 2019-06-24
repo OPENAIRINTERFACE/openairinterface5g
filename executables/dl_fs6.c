@@ -8,7 +8,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
                       LTE_eNB_DLSCH_t *dlsch1,
                       LTE_eNB_UE_stats *ue_stats,
                       int ra_flag) {
-  
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch->harq_processes[harq_pid];
@@ -16,24 +15,22 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   // 36-212
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) { // monolthic OR PNF - do not need turbo encoding on VNF
-
     // Replace dlsch_encoding
-    // data is in 
+    // data is in
     // dlsch->harq_processes[harq_pid]->e
     feedDlschBuffers(eNB,
-                       dlsch_harq->pdu,
-                       dlsch_harq->pdsch_start,
-                       dlsch,
-                       frame,
-                       subframe,
-                       &eNB->dlsch_rate_matching_stats,
-                       &eNB->dlsch_turbo_encoding_stats,
-                       &eNB->dlsch_turbo_encoding_waiting_stats,
-                       &eNB->dlsch_turbo_encoding_main_stats,
-                       &eNB->dlsch_turbo_encoding_wakeup_stats0,
-                       &eNB->dlsch_turbo_encoding_wakeup_stats1,
-                       &eNB->dlsch_interleaving_stats);
-
+                     dlsch_harq->pdu,
+                     dlsch_harq->pdsch_start,
+                     dlsch,
+                     frame,
+                     subframe,
+                     &eNB->dlsch_rate_matching_stats,
+                     &eNB->dlsch_turbo_encoding_stats,
+                     &eNB->dlsch_turbo_encoding_waiting_stats,
+                     &eNB->dlsch_turbo_encoding_main_stats,
+                     &eNB->dlsch_turbo_encoding_wakeup_stats0,
+                     &eNB->dlsch_turbo_encoding_wakeup_stats1,
+                     &eNB->dlsch_interleaving_stats);
     // 36-211
     dlsch_scrambling(fp,
                      0,
@@ -65,7 +62,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 }
 
 phy_procedures_eNB_TX_fs6() {
-
   receiveSubFrame();
 
   // We got
@@ -74,10 +70,10 @@ phy_procedures_eNB_TX_fs6() {
 
   for (aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
     memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * fp->symbols_per_tti],
-	    0,
-	    fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
+            0,
+            fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
   }
-  
+
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     if (is_pmch_subframe(frame,subframe,fp)) {
       pmch_procedures(eNB,proc);
@@ -88,59 +84,60 @@ phy_procedures_eNB_TX_fs6() {
   }
 
   if (ul_subframe < 10)if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
-    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
-      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
-      else 
+        if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
+        else
 #endif
-        harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+          harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
 
-      if (eNB->ulsch[i]) {
-        ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
-        /* Store first_rb and n_DMRS for correct PHICH generation below.
-         * For PHICH generation we need "old" values of last scheduling
-         * for this HARQ process. 'generate_eNB_dlsch_params' below will
-         * overwrite first_rb and n_DMRS and 'generate_phich_top', done
-         * after 'generate_eNB_dlsch_params', would use the "new" values
-         * instead of the "old" ones.
-         *
-         * This has been tested for FDD only, may be wrong for TDD.
-         *
-         * TODO: maybe we should restructure the code to be sure it
-         *       is done correctly. The main concern is if the code
-         *       changes and first_rb and n_DMRS are modified before
-         *       we reach here, then the PHICH processing will be wrong,
-         *       using wrong first_rb and n_DMRS values to compute
-         *       ngroup_PHICH and nseq_PHICH.
-         *
-         * TODO: check if that works with TDD.
-         */
-        ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
-        ulsch_harq->previous_n_DMRS = ulsch_harq->n_DMRS;
+        if (eNB->ulsch[i]) {
+          ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
+          /* Store first_rb and n_DMRS for correct PHICH generation below.
+           * For PHICH generation we need "old" values of last scheduling
+           * for this HARQ process. 'generate_eNB_dlsch_params' below will
+           * overwrite first_rb and n_DMRS and 'generate_phich_top', done
+           * after 'generate_eNB_dlsch_params', would use the "new" values
+           * instead of the "old" ones.
+           *
+           * This has been tested for FDD only, may be wrong for TDD.
+           *
+           * TODO: maybe we should restructure the code to be sure it
+           *       is done correctly. The main concern is if the code
+           *       changes and first_rb and n_DMRS are modified before
+           *       we reach here, then the PHICH processing will be wrong,
+           *       using wrong first_rb and n_DMRS values to compute
+           *       ngroup_PHICH and nseq_PHICH.
+           *
+           * TODO: check if that works with TDD.
+           */
+          ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
+          ulsch_harq->previous_n_DMRS = ulsch_harq->n_DMRS;
+        }
       }
     }
-  }
 
   num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
+
   if (num_dci > 0)
     if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
       generate_dci_top(num_pdcch_symbols,
-		       num_dci,
-		       &eNB->pdcch_vars[subframe&1].dci_alloc[0],
-		       0,
-		       AMP,
-		       fp,
-		       eNB->common_vars.txdataF,
-		       subframe);
+                       num_dci,
+                       &eNB->pdcch_vars[subframe&1].dci_alloc[0],
+                       0,
+                       AMP,
+                       fp,
+                       eNB->common_vars.txdataF,
+                       subframe);
       num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
-      
+
       if (num_mdci > 0) {
-	generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
+        generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
       }
     }
-  
+
   // Now scan UE specific DLSCH
   LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
 
@@ -158,16 +155,16 @@ phy_procedures_eNB_TX_fs6() {
       if (harq_pid>=8) {
         if (dlsch0->ue_type==0)
           LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x \n",
-		harq_pid,UE_id,frame,subframe,dlsch0->rnti);
+                harq_pid,UE_id,frame,subframe,dlsch0->rnti);
       } else {
         // generate pdsch
         pdsch_procedures_fs6(eNB,
-			     proc,
-			     harq_pid,
-			     dlsch0,
-			     dlsch1,
-			     &eNB->UE_stats[(uint32_t)UE_id],
-			     0);
+                             proc,
+                             harq_pid,
+                             dlsch0,
+                             dlsch1,
+                             &eNB->UE_stats[(uint32_t)UE_id],
+                             0);
       }
     } else if ((dlsch0)&&(dlsch0->rnti>0)&&
                (dlsch0->active == 0)
@@ -176,10 +173,10 @@ phy_procedures_eNB_TX_fs6() {
       dlsch0->subframe_tx[subframe]=0;
     }
   }
+
   generate_phich_top(eNB,
                      proc,
                      AMP);
-
 }
 
 DL_thread_fs6() {
@@ -194,5 +191,4 @@ DL_thread_fs6() {
 
 DL_thread_frequency() {
   frequency_t header;
-  
-  full_read(&header, 
+  full_read(&header,

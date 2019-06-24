@@ -983,11 +983,9 @@ void wakeup_slaves(RU_proc_t *proc) {
 
     // wake up slave FH thread
     // lock the FH mutex and make sure the thread is ready
-    if (pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait) != 0) {
-      LOG_E( PHY, "ERROR pthread_mutex_lock for RU %d slave %d (IC %d)\n",proc->ru->idx,slave_proc->ru->idx,slave_proc->instance_cnt_FH);
-      exit_fun( "error locking mutex_rxtx" );
-      break;
-    }
+    AssertFatal(pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait) == 0,
+		"ERROR pthread_mutex_lock for RU %d slave %d (IC %d)\n",
+		proc->ru->idx,slave_proc->ru->idx,slave_proc->instance_cnt_FH);
 
     int cnt_slave            = ++slave_proc->instance_cnt_FH;
     slave_proc->frame_rx     = proc->frame_rx;
@@ -1628,7 +1626,6 @@ static void *ru_thread( void *param ) {
   pthread_cond_signal(&proc->cond_FH1);
   wait_sync("ru_thread");
 
-  if(!(get_softmodem_params()->emulate_rf)) {
     // Start RF device if any
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
@@ -1648,12 +1645,9 @@ static void *ru_thread( void *param ) {
 
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
-  }
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD,sched_getcpu());
-  LOG_ENTER(PHY);
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
     if (subframe==9) {
@@ -1665,37 +1659,9 @@ static void *ru_thread( void *param ) {
     }
 
     // synchronization on input FH interface, acquire signals/data and block
-    if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
-    else AssertFatal(1==0, "No fronthaul interface at south port");
+    AssertFatal(ru->fh_south_in, "No fronthaul interface at south port");
+    ru->fh_south_in(ru,&frame,&subframe);
 
-#ifdef PHY_TX_THREAD
-
-    if(first_phy_tx == 0) {
-      phy_tx_end = 0;
-      phy_tx_txdataF_end = 0;
-
-      if(pthread_mutex_lock(&ru->proc.mutex_phy_tx) != 0) {
-        LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for phy tx thread (IC %d)\n", ru->proc.instance_cnt_phy_tx);
-        exit_fun( "error locking mutex_rxtx" );
-      }
-
-      if (ru->proc.instance_cnt_phy_tx==-1) {
-        ++ru->proc.instance_cnt_phy_tx;
-        // the thread can now be woken up
-        AssertFatal(pthread_cond_signal(&ru->proc.cond_phy_tx) == 0, "ERROR pthread_cond_signal for phy_tx thread\n");
-      } else {
-        LOG_E(PHY,"phy tx thread busy, skipping\n");
-        ++ru->proc.instance_cnt_phy_tx;
-      }
-
-      pthread_mutex_unlock( &ru->proc.mutex_phy_tx );
-    } else {
-      phy_tx_end = 1;
-      phy_tx_txdataF_end = 1;
-    }
-
-    first_phy_tx = 0;
-#endif
     LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
@@ -1720,72 +1686,26 @@ static void *ru_thread( void *param ) {
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
-    wakeup_slaves(proc);
-#if defined(PRE_SCD_THREAD)
-    new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
-    dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
-    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
-
-    if (pthread_mutex_lock(&ru->proc.mutex_pre_scd)!= 0) {
-      LOG_E( PHY, "[eNB] error locking proc mutex for eNB pre scd\n");
-      exit_fun("error locking mutex_time");
+    // Fixme: not used
+    // wakeup_slaves(proc);
+    for (int i=0; i<ru->num_eNB; i++) {
+      char string[20];
+      sprintf(string,"Incoming RU %d",ru->idx);
+      ru->eNB_top(ru->eNB_list[i],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
     }
-
-    ru->proc.instance_pre_scd++;
-
-    if (ru->proc.instance_pre_scd == 0) {
-      if (pthread_cond_signal(&ru->proc.cond_pre_scd) != 0) {
-        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB pre scd\n" );
-        exit_fun( "ERROR pthread_cond_signal cond_pre_scd" );
-      }
-    } else {
-      LOG_E( PHY, "[eNB] frame %d subframe %d rxtx busy instance_pre_scd %d\n",
-             frame,subframe,ru->proc.instance_pre_scd );
-    }
-
-    if (pthread_mutex_unlock(&ru->proc.mutex_pre_scd)!= 0) {
-      LOG_E( PHY, "[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
-      exit_fun("error unlocking mutex_pre_scd");
-    }
-
-#endif
-
-    // wakeup all eNB processes waiting for this RU
-    if (ru->num_eNB>0) wakeup_L1s(ru);
-
-#ifndef PHY_TX_THREAD
-
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0) {
-      // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
-
-      // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-
-      if(!(get_softmodem_params()->emulate_rf)) {
-        // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-
-        if (ru->fh_north_out) ru->fh_north_out(ru);
-      }
-
-      proc->emulate_rf_busy = 0;
-    }
-
-#else
-    struct timespec time_req, time_rem;
-    time_req.tv_sec = 0;
-    time_req.tv_nsec = 10000;
-
-    while((!oai_exit)&&(phy_tx_end == 0)) {
-      nanosleep(&time_req,&time_rem);
-      continue;
-    }
-
-#endif
+    
+    // do TX front-end processing if needed (precoding and/or IDFTs)
+    if (ru->feptx_prec) ru->feptx_prec(ru);
+    
+    // do OFDM if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    // do outgoing fronthaul (south) if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+    
+    if (ru->fh_north_out) ru->fh_north_out(ru);
+    
   }
-
+  
   printf( "Exiting ru_thread \n");
 
   if (!(get_softmodem_params()->emulate_rf)) {

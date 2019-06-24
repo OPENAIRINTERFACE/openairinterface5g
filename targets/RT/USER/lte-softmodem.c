@@ -505,9 +505,7 @@ int main( int argc, char **argv ) {
     }
 
     for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
-      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
-      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
-      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+      openair_rrc_eNB_configuration(enb_id, &RC.rrc[enb_id]->configuration);
     }
   } else {
     printf("RC.nb_inst = 0, Initializing L1\n");
@@ -530,11 +528,8 @@ int main( int argc, char **argv ) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
-    mlockall(MCL_CURRENT | MCL_FUTURE);
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
-
-
 
     rt_sleep_ns(10*100000000ULL);
 
@@ -563,9 +558,10 @@ int main( int argc, char **argv ) {
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
 
-    printf("wait_eNBs()\n");
-    wait_eNBs();
-    printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+    // no need to wait: openair_rrc_eNB_configuration() is called earlier from this thread
+    // openair_rrc_eNB_configuration()->init_SI()->rrc_mac_config_req_eNB ()->phy_config_request () sets the wait_eNBs() tested flag
+    // wait_eNBs();
+    // printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
     // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
     // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
@@ -588,6 +584,9 @@ int main( int argc, char **argv ) {
 
     printf("wait RUs\n");
     // end of CI modifications
+    // fixme: very weird usage of bitmask
+    // lack of mutex in: ru_thread_prach(),...
+    // wait_RUs() is wrong and over complex!
     wait_RUs();
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)

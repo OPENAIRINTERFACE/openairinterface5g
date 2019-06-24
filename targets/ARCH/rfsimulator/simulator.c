@@ -135,9 +135,6 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
     }
 
     out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
-      printf("in: %d, out %d= %f*%f + %f*%f\n",
-      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x,
-      pathLossLinear, noise_per_sample,gaussdouble(0.0,1.0));
     out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
     out_ptr++;
   }

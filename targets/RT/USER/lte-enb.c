@@ -1146,7 +1146,7 @@ void init_eNB_afterRU(void) {
 
     for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
       LOG_I(PHY,"RC.nb_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.eNB[inst][CC_id]);
-      eNB                                  =  RC.eNB[inst][CC_id];
+      eNB = RC.eNB[inst][CC_id];
       phy_init_lte_eNB(eNB,0,0);
 
       // map antennas and PRACH signals to eNB RX
