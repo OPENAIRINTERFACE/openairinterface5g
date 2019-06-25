@@ -790,7 +790,7 @@ static void *ru_thread_asynch_rxtx( void *param ) {
     LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
 
     // asynchronous receive from north (RRU IF4/IF5)
-    else if (ru->fh_north_asynch_in) {
+    if (ru->fh_north_asynch_in) {
       if (nr_slot_select(&ru->gNB_list[0]->gNB_config,subframe)!=SF_UL)
         ru->fh_north_asynch_in(ru,&frame,&subframe);
     } else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
