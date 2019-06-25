@@ -3836,7 +3836,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   /* MAC Main Config */
   // The different parts of MAC main config are set below
   mac_MainConfig = CALLOC(1, sizeof(*mac_MainConfig));
-  ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
   mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
   maxHARQ_Tx = CALLOC(1, sizeof(long));
   *maxHARQ_Tx = LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
@@ -3903,6 +3902,21 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   mac_MainConfig->ext1 = CALLOC(1, sizeof(struct LTE_MAC_MainConfig__ext1));
   mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
 #endif
+
+  // free the old LTE_MAC_MainConfig_t: get a pointer to "old" memory, assign
+  // the new values in the ue_context, then free it
+  // Note: can not completely avoid race condition with FlexRAN
+  LTE_MAC_MainConfig_t *old_mac_MainConfig = ue_context_pP->ue_context.mac_MainConfig;
+  ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
+  free(old_mac_MainConfig->ul_SCH_Config->periodicBSR_Timer);
+  free(old_mac_MainConfig->ul_SCH_Config->maxHARQ_Tx);
+  free(old_mac_MainConfig->ul_SCH_Config);
+  free(old_mac_MainConfig->phr_Config);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+  free(old_mac_MainConfig->ext1->sr_ProhibitTimer_r9);
+  free(old_mac_MainConfig->ext1);
+#endif
+  free(old_mac_MainConfig);
 
   // change the transmission mode for the primary component carrier
   // TODO: add codebook subset restriction here
@@ -4308,15 +4322,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 
   free(quantityConfig);
   quantityConfig = NULL;
-
-  free(mac_MainConfig->ul_SCH_Config);
-  mac_MainConfig->ul_SCH_Config = NULL;
-
-  free(mac_MainConfig->phr_Config);
-  mac_MainConfig->phr_Config = NULL;
-
-  free(mac_MainConfig);
-  mac_MainConfig = NULL;
 }
 
 //-----------------------------------------------------------------------------
