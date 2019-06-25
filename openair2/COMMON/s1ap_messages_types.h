@@ -22,6 +22,7 @@
 #ifndef S1AP_MESSAGES_TYPES_H_
 #define S1AP_MESSAGES_TYPES_H_
 
+#include "LTE_asn_constant.h"
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 
@@ -62,7 +63,7 @@
 /* Maximum number of e-rabs to be setup/deleted in a single message.
  * Even if only one bearer will be modified by message.
  */
-#define S1AP_MAX_E_RAB  11
+#define S1AP_MAX_E_RAB  (LTE_maxDRB + 3)
 
 /* Length of the transport layer address string
  * 160 bits / 8 bits by char.

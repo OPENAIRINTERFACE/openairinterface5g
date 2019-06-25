@@ -122,6 +122,7 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxt
   phich->config[phich->num_hi].n_DMRS   = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms;
   phich->num_hi++;
   AssertFatal(phich->num_hi<32,"Maximum number of phich reached in subframe\n");
+
 }
 
 void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,

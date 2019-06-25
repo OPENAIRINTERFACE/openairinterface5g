@@ -882,7 +882,7 @@ int gtpv1u_eNB_init(void) {
    * nw-gtpv1u stack.
    */
   ulp.ulpReqCallback = gtpv1u_eNB_process_stack_req;
-
+  memset((void *)&(ulp.hUlp), 0, sizeof(NwGtpv1uUlpHandleT));
   if ((rc = nwGtpv1uSetUlpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &ulp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUlpEntity: %x", rc);
     return -1;
@@ -892,14 +892,14 @@ int gtpv1u_eNB_init(void) {
    * We provide a wrapper to UDP task.
    */
   udp.udpDataReqCallback = gtpv1u_eNB_send_udp_msg;
-
+  memset((void *)&(udp.hUdp), 0, sizeof(NwGtpv1uUdpHandleT));
   if ((rc = nwGtpv1uSetUdpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &udp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUdpEntity: %x", rc);
     return -1;
   }
 
   log.logReqCallback = gtpv1u_eNB_log_request;
-
+  memset((void *)&(log.logMgrHandle), 0, sizeof(NwGtpv1uLogMgrHandleT));
   if ((rc = nwGtpv1uSetLogMgrEntity(RC.gtpv1u_data_g->gtpv1u_stack, &log)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetLogMgrEntity: %x", rc);
     return -1;

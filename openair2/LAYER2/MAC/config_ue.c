@@ -20,15 +20,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file config.c
- * \brief UE and eNB configuration performed by RRC or as a consequence of RRC procedures
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+
+/*! \file config_ue.c
+ * \brief UE configuration performed by RRC or as a consequence of RRC procedures / This includes FeMBMS UE procedures
+ * \author  Navid Nikaein, Raymond Knopp and Javier Morgade
+ * \date 2010 - 2014 / 2019
  * \version 0.1
- * \email: navid.nikaein@eurecom.fr
+ * \email: navid.nikaein@eurecom.fr, javier.morgade@ieee.org
  * @ingroup _mac
 
  */
+
 
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
@@ -130,7 +132,15 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
 #endif
-                     ) {
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
+#endif
+		      )
+{
+
   int i;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
@@ -560,6 +570,15 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   }
 
 #endif
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  if(nonMBSFN_SubframeConfig!=NULL) {
+    	LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
+	  Mod_idP);
+	phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0, nonMBSFN_SubframeConfig);
+  }
+#endif
+
 #ifdef CBA
 
   if (cba_rnti) {

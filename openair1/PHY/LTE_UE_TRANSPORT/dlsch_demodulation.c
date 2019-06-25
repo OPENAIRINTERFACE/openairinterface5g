@@ -256,7 +256,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
-    LOG_I(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0],dlsch0_harq->rb_alloc_even[0]);
+    LOG_D(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0],dlsch0_harq->rb_alloc_even[0]);
 #endif
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
@@ -829,7 +829,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
              pllr_symbol_cw0);
-  */
+  */  
   switch (dlsch0_harq->Qm) {
     case 2 :
       if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {

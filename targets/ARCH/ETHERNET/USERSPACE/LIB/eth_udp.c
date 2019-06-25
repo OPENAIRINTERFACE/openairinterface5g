@@ -176,7 +176,8 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
   
   int block_cnt=0; 
 
-  packet_size = max(UDP_IF4p5_PRACH_SIZE_BYTES, max(UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks), UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks)));
+  // *2 because of 2 antennas PUL/DLFFT are controlled by nsamps, PRACH is not
+  packet_size = max(UDP_IF4p5_PRACH_SIZE_BYTES*2, max(UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks), UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks)));
 
   while(bytes_received == -1) {
   again:
@@ -190,6 +191,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
       eth->num_rx_errors++;
       if (errno == EAGAIN) {
 	printf("Lost IF4p5 connection with %s\n", inet_ntoa(eth->dest_addrd.sin_addr));
+	return -1;
       } else if (errno == EWOULDBLOCK) {
         block_cnt++;
         usleep(10);
@@ -209,7 +211,6 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
       eth->rx_count++;
     }
   }
-  //printf("size of third %d subtype %d frame %d subframe %d symbol %d \n", bytes_received, test_header->sub_type, ((test_header->frame_status)>>6)&0xffff, ((test_header->frame_status)>>22)&0x000f, ((test_header->frame_status)>>26)&0x000f) ;
 
   eth->rx_nsamps = nsamps;  
   return(bytes_received);
@@ -237,7 +238,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = UDP_IF4p5_PULTICK_SIZE_BYTES; 
   } else if ((flags >= IF4p5_PRACH)&&
              (flags <= (IF4p5_PRACH+4))) {  
-    packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;   
+    packet_size = UDP_HEADER_SIZE_BYTES + IPV4_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + (nsamps<<1);   
   } else {
     printf("trx_eth_write_udp_IF4p5: unknown flags %d\n",flags);
     return(-1);

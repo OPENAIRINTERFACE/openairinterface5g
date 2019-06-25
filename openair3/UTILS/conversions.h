@@ -135,7 +135,7 @@ do {                                            \
     do {                        \
     (bitstring)->size=2;                \
     (bitstring)->bits_unused=0;            \
-    (bitstring)->buf=calloc (1, sizeof (uint8_t));    \
+    (bitstring)->buf=calloc (2, sizeof (uint8_t));    \
     (bitstring)->buf[0] = (encralg) >> 8;         \
     (bitstring)->buf[1] = (encralg);        \
     }while(0)

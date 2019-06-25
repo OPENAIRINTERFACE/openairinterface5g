@@ -364,7 +364,7 @@ typedef struct ccparams_eMTC_s {
 {ENB_CONFIG_STRING_LAST_PREAMBLE_R13,                      NULL,   0,           iptr:&eMTCconfig->lastPreamble_r13,                  defintval:63,            TYPE_UINT,       0}, \
 {ENB_CONFIG_STRING_RA_RESPONSE_WINDOW_SIZE_R13,            NULL,   0,           iptr:&eMTCconfig->ra_ResponseWindowSize_r13,         defintval:20,        TYPE_UINT,     0}, \
 {ENB_CONFIG_STRING_MAC_CONTENTION_RESOLUTION_TIMER_R13,    NULL,   0,           iptr:&eMTCconfig->mac_ContentionResolutionTimer_r13, defintval:80,        TYPE_UINT,     0}, \
-{ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13,                 NULL,   0,           iptr:&eMTCconfig->rar_HoppingConfig_r13,             defintval:0,         TYPE_UINT,     0}\
+{ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13,                 NULL,   0,           iptr:&eMTCconfig->rar_HoppingConfig_r13,             defintval:1,         TYPE_UINT,     0}\
 }
 
 #define PRACH_PARAMS_CE_R13_DESC(eMTCconfig) {				\

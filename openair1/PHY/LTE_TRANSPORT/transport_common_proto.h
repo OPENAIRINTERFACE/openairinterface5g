@@ -96,6 +96,8 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
 
 int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
+int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
+
 int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
 int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
 
@@ -255,6 +257,27 @@ void init_prach_tables(int N_ZC);
   @returns 1 if subframe is for MBSFN
 */
 int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/*!
+  \brief Return the status of CAS in this frame/subframe
+  @param frame Frame index
+  @param subframe Subframe index
+  @param frame_parms Pointer to frame parameters
+  @returns 1 if subframe is for CAS
+*/
+int is_fembms_cas_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+
+/*!
+  \brief Return the status of MBSFN in this frame/subframe
+  @param frame Frame index
+  @param subframe Subframe index
+  @param frame_parms Pointer to frame parameters
+  @returns 1 if subframe is for MBSFN
+*/
+int is_fembms_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+#endif
+
 
 
 /** \brief  This routine expands a single (wideband) PMI to subband PMI bitmap similar to the one used in the UCI and in the dlsch_modulation routine
