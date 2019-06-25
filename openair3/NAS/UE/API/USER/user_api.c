@@ -276,7 +276,7 @@ int user_api_set_data(user_api_id_t *user_api_id, char *message)
 
   memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
-  strncpy(user_api_id->recv_buffer, message, USER_API_RECV_BUFFER_SIZE);
+  strncpy(user_api_id->recv_buffer, message, USER_API_RECV_BUFFER_SIZE - 1);
   rbytes = strlen(user_api_id->recv_buffer);
 
   LOG_TRACE(INFO, "USR-API   - %d bytes write", rbytes);

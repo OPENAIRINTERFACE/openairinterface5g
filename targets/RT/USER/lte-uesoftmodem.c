@@ -117,7 +117,8 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-clock_source_t clock_source = internal;
+
+clock_source_t clock_source = internal,time_source=internal;
 
 
 unsigned int                    mmapped_dma=0;
@@ -323,10 +324,12 @@ static void get_options(void) {
   int CC_id;
   int tddflag;
   char *loopfile=NULL;
-  int dumpframe;
+
+  int dumpframe=0;
   int timingadv;
   uint8_t nfapi_mode;
   int simL1flag ;
+
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
@@ -614,7 +617,7 @@ int main( int argc, char **argv ) {
   if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+ 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   set_latency_target();

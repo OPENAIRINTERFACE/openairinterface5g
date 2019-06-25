@@ -361,6 +361,14 @@ Protocol__FlexDlCqiReport * copy_dl_cqi_report(Protocol__FlexDlCqiReport * origi
 
  error:
   /*TODO: Must free memory properly*/
+  if (dl_report != NULL) {
+     if (csi_reports != NULL) {
+         free(csi_reports);
+         csi_reports = NULL;
+     }
+     free(dl_report);
+     dl_report = NULL;
+  }
   return NULL;
 }
 
@@ -555,6 +563,74 @@ Protocol__FlexDlCsi * copy_csi_report(Protocol__FlexDlCsi * original) {
   return copy;
 
  error:
+  if (copy != NULL) {
+      if ((copy->p11csi != NULL) && (copy->p11csi->wb_cqi != NULL)) {
+          free(copy->p11csi->wb_cqi);
+          copy->p11csi->wb_cqi = NULL;
+      }
+      if (copy->p21csi != NULL) {
+          if (copy->p21csi->wb_cqi != NULL) {
+              free(copy->p21csi->wb_cqi);
+              copy->p21csi->wb_cqi = NULL;
+          }
+          if (copy->p21csi->sb_cqi != NULL) {
+              free(copy->p21csi->sb_cqi);
+              copy->p21csi->sb_cqi = NULL;
+          }
+      }
+      if (copy->a12csi != NULL) {
+          if (copy->a12csi->wb_cqi != NULL) {
+              free(copy->a12csi->wb_cqi);
+              copy->a12csi->wb_cqi = NULL;
+          }
+          if (copy->a12csi->sb_pmi != NULL) {
+              free(copy->a12csi->sb_pmi);
+              copy->a12csi->sb_pmi = NULL;
+          }
+      }
+      if (copy->a22csi != NULL) {
+          if (copy->a22csi->wb_cqi != NULL) {
+              free(copy->a22csi->wb_cqi);
+              copy->a22csi->wb_cqi = NULL;
+          }
+          if (copy->a22csi->sb_cqi != NULL) {
+              free(copy->a22csi->sb_cqi);
+              copy->a22csi->sb_cqi = NULL;
+          }
+          if (copy->a22csi->sb_list != NULL) {
+              free(copy->a22csi->sb_list);
+              copy->a22csi->sb_list = NULL;
+          }
+      }
+      if ((copy->a20csi != NULL) && (copy->a20csi->sb_list != NULL)) {
+          free(copy->a20csi->sb_list);
+          copy->a20csi->sb_list = NULL;
+      }
+      if ((copy->a30csi != NULL) && (copy->a30csi->sb_cqi != NULL)) {
+          free(copy->a30csi->sb_cqi);
+          copy->a30csi->sb_cqi = NULL;
+      }
+      if (copy->a31csi != NULL) {
+          if (copy->a31csi->wb_cqi != NULL) {
+              free(copy->a31csi->wb_cqi);
+              copy->a31csi->wb_cqi = NULL;
+          }
+          if (copy->a31csi->sb_cqi != NULL) {
+              for (i = 0; i < copy->a31csi->n_sb_cqi; i++) {
+                  if (copy->a31csi->sb_cqi[i] != NULL) {
+                      if (copy->a31csi->sb_cqi[i]->sb_cqi != NULL) {
+                          free(copy->a31csi->sb_cqi[i]->sb_cqi);
+                      }
+                      free(copy->a31csi->sb_cqi[i]);
+                  }
+              }
+              free(copy->a31csi->sb_cqi);
+              copy->a31csi->sb_cqi = NULL;
+          }
+      }
+      free(copy);
+      copy = NULL;
+  }
   return NULL;
 }
 
@@ -1650,6 +1726,10 @@ int apply_ue_slice_assoc_update(mid_t mod_id)
   int changes = 0;
   for (i = 0; i < n_ue_slice_assoc_updates; i++) {
     int ue_id = find_UE_id(mod_id, ue_slice_assoc_update[i]->rnti);
+    if (ue_id < 0 || ue_id > MAX_MOBILES_PER_ENB){
+      LOG_E(FLEXRAN_AGENT,"UE_id %d is wrong!!\n",ue_id);
+      continue;
+    }
     if (ue_slice_assoc_update[i]->has_dl_slice_id) {
       int slice_idx = flexran_find_dl_slice(mod_id, ue_slice_assoc_update[i]->dl_slice_id);
       if (flexran_dl_slice_exists(mod_id, slice_idx)) {

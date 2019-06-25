@@ -80,7 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 //#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
-  #include "UTIL/OTG/otg_vars.h"
+#include "UTIL/OTG/otg_vars.h"
 #endif
 
 
@@ -90,7 +90,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/INIT/phy_init.h"
 
 #include "system.h"
-
 
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
@@ -522,7 +521,7 @@ int main( int argc, char **argv ) {
     ctxt.subframe = 0;
     pdcp_run(&ctxt);
   }
-
+    
   /* start threads if only L1 or not a CU */
   if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
     // init UE_PF_PO and mutex lock
@@ -532,56 +531,53 @@ int main( int argc, char **argv ) {
     pthread_mutex_init(&sync_mutex, NULL);
 
     rt_sleep_ns(10*100000000ULL);
-
+    
     if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
       LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
       pthread_cond_init(&sync_cond,NULL);
       pthread_mutex_init(&sync_mutex, NULL);
     }
-
+    
     if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
 #if defined(PRE_SCD_THREAD)
       init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
       wait_nfapi_init("main?");
     }
-
+    
     LOG_I(ENB_APP,"START MAIN THREADS\n");
     // start the main threads
     number_of_cards = 1;
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-
+    
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
-
-    // no need to wait: openair_rrc_eNB_configuration() is called earlier from this thread
-    // openair_rrc_eNB_configuration()->init_SI()->rrc_mac_config_req_eNB ()->phy_config_request () sets the wait_eNBs() tested flag
-    // wait_eNBs();
-    // printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-
-    // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
-    // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
-    // some initialization is necessary and init_ru_vnf do this.
-    if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
-      printf("Initializing RU threads\n");
-      init_RU(get_softmodem_params()->rf_config_file);
-
-      for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-        RC.ru[ru_id]->rf_map.card=0;
-        RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-      }
+  printf("wait_eNBs()\n");
+  wait_eNBs();
+  printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+  
+  // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+  // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+  // some initialization is necessary and init_ru_vnf do this.
+  if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
+    printf("Initializing RU threads\n");
+    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
+    
+    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+      RC.ru[ru_id]->rf_map.card=0;
+      RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }
-
+    
     config_sync_var=0;
-
+    
     if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
       wait_nfapi_init("main?");
     }
-
+    
     printf("wait RUs\n");
     // end of CI modifications
     // fixme: very weird usage of bitmask
@@ -608,7 +604,6 @@ int main( int argc, char **argv ) {
     pthread_mutex_unlock(&sync_mutex);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
@@ -653,17 +648,17 @@ int main( int argc, char **argv ) {
 
     for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func) {
-        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+	RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
       }
 
       if (RC.ru[ru_id]->ifdevice.trx_end_func) {
-        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
-        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+	RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
       }
     }
   }
-
+   
   terminate_opt();
   logClean();
   printf("Bye.\n");

@@ -703,6 +703,18 @@ typedef struct {
 #define NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG 0x003F
 
 typedef struct {
+       nfapi_uint8_tlv_t radioframe_allocation_period;
+       nfapi_uint8_tlv_t radioframe_allocation_offset;
+       nfapi_uint8_tlv_t non_mbsfn_config_flag;
+       nfapi_uint16_tlv_t non_mbsfn_subframeconfig;
+} nfapi_fembms_config_t;
+
+#define NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG 0x0042
+#define NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG 0x0043
+#define NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG 0x0044
+#define NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG 0x0045
+
+typedef struct {
 	nfapi_uint16_tlv_t bandwidth_configuration;
 	nfapi_uint16_tlv_t max_up_pts;
 	nfapi_uint16_tlv_t srs_subframe_configuration;
@@ -1097,6 +1109,7 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+	nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
 	nfapi_tdd_frame_structure_t tdd_frame_structure_config;
@@ -1118,6 +1131,7 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+        nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
 	nfapi_laa_config_t laa_config;

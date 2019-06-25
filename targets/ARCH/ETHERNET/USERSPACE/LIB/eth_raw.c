@@ -501,6 +501,7 @@ int eth_set_dev_conf_raw(openair0_device *device) {
     perror("ETHERNET: ");
     exit(0);
   }
+  free(msg);
   
   return 0;
 }
@@ -532,7 +533,8 @@ int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {
     perror("ETHERNET: ");
     exit(0);
   }
-  
+
+  free(msg);
   return 0;
 }
 
@@ -590,5 +592,6 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   //device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
   printf("[%s] binding mod to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),eth->ehd.ether_shost[0],eth->ehd.ether_shost[1],eth->ehd.ether_shost[2],eth->ehd.ether_shost[3],eth->ehd.ether_shost[4],eth->ehd.ether_shost[5],eth->ehd.ether_dhost[0],eth->ehd.ether_dhost[1],eth->ehd.ether_dhost[2],eth->ehd.ether_dhost[3],eth->ehd.ether_dhost[4],eth->ehd.ether_dhost[5]);
  	  
+  free(msg);
   return 0;
 }

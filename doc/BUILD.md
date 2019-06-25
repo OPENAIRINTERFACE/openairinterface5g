@@ -62,6 +62,36 @@ You can build the eNodeB and the UE separately, you may not need both of them de
 
 After completing the build, the binaries are available in the `cmake_targets/lte_build_oai/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel14 by default. It must be noticed that the option for building for a specific 3GPP release number is not tested by the CI and may be removed in the future. 
 
+## Issue when building `nasmeh` module ##
+
+A lot of users and contributors have faced the issue: `nasmesh` module does not build.
+
+The reason is that the linux headers are not properly installed. For example:
+
+```bash
+$ uname -r
+4.4.0-145-lowlatency
+$ dpkg --list | grep 4.4.0-145-lowlatency | grep headers
+ii  linux-headers-4.4.0-145-lowlatency         4.4.0-145.171
+```
+
+In my example it is properly installed.
+
+Check on your environment:
+
+```bash
+$ uname -r
+your-version
+$ dpkg --list | grep your-version | grep headers
+$
+```
+
+Install it:
+
+```bash
+$ sudo apt-get install --yes linux-headers-your-version
+```
+
 # Building Optional Binaries
 
 ## Telnet Server

@@ -735,9 +735,9 @@ int main(int argc, char **argv) {
   printf("ULSCH %p\n",UE->ulsch[0]);
 
   if(get_thread_worker_conf() == WORKER_ENABLE) {
-    extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+    extern void init_fep_thread(RU_t *, pthread_attr_t *);
     extern void init_td_thread(PHY_VARS_eNB *);
-    init_fep_thread(eNB,NULL);
+    init_fep_thread(ru,NULL);
     init_td_thread(eNB);
   }
 
