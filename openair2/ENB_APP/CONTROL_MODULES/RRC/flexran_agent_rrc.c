@@ -449,55 +449,56 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
             eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
             eutra_meas[j]->has_phys_cell_id = 1;
 
-            if (flexran_get_rrc_neigh_cgi(mod_id, rnti, j)) {
-              /* Initialize CGI measurements. */
-              Protocol__FlexEutraCgiMeasurements *cgi_meas;
-              cgi_meas = malloc(sizeof(Protocol__FlexEutraCgiMeasurements));
+            /* The following is not correctly implemented */
+            //if (flexran_get_rrc_neigh_cgi(mod_id, rnti, j)) {
+            //  /* Initialize CGI measurements. */
+            //  Protocol__FlexEutraCgiMeasurements *cgi_meas;
+            //  cgi_meas = malloc(sizeof(Protocol__FlexEutraCgiMeasurements));
 
-              if (cgi_meas) {
-                protocol__flex_eutra_cgi_measurements__init(cgi_meas);
+            //  if (cgi_meas) {
+            //    protocol__flex_eutra_cgi_measurements__init(cgi_meas);
 
-                cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, j);
-                cgi_meas->has_tracking_area_code = 1;
+            //    cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, j);
+            //    cgi_meas->has_tracking_area_code = 1;
 
-                /* EUTRA Cell Global Identity (CGI) */
-                Protocol__FlexCellGlobalEutraId *cgi;
-                cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
+            //    /* EUTRA Cell Global Identity (CGI) */
+            //    Protocol__FlexCellGlobalEutraId *cgi;
+            //    cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
 
-                if (cgi) {
-                  protocol__flex_cell_global_eutra_id__init(cgi);
+            //    if (cgi) {
+            //      protocol__flex_cell_global_eutra_id__init(cgi);
 
-                  cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, j);
-                  cgi->has_cell_id = 1;
+            //      cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, j);
+            //      cgi->has_cell_id = 1;
 
-                  /* PLMN for neighbouring cell */
-                  Protocol__FlexPlmnIdentity *plmn_id;
-                  plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
+            //      /* PLMN for neighbouring cell */
+            //      Protocol__FlexPlmnIdentity *plmn_id;
+            //      plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
 
-                  if (plmn_id) {
-                    protocol__flex_plmn_identity__init(plmn_id);
+            //      if (plmn_id) {
+            //        protocol__flex_plmn_identity__init(plmn_id);
 
-                    plmn_id->mcc = 0;
-                    plmn_id->n_mcc = flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, j);
+            //        plmn_id->mcc = 0;
+            //        plmn_id->n_mcc = flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, j);
 
-                    for (int m = 0; m < plmn_id->n_mcc; m++) {
-                      plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, j, m);
-                    }
+            //        for (int m = 0; m < plmn_id->n_mcc; m++) {
+            //          plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, j, m);
+            //        }
 
-                    plmn_id->mnc = 0;
-                    plmn_id->n_mnc = flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, j);
+            //        plmn_id->mnc = 0;
+            //        plmn_id->n_mnc = flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, j);
 
-                    for (int m = 0; m < plmn_id->n_mnc; m++) {
-                      plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, j, m);
-                    }
+            //        for (int m = 0; m < plmn_id->n_mnc; m++) {
+            //          plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, j, m);
+            //        }
 
-                    cgi->plmn_id = plmn_id;
-                  }
-                  cgi_meas->cgi = cgi;
-                }
-                eutra_meas[j]->cgi_meas = cgi_meas;
-              }
-            }
+            //        cgi->plmn_id = plmn_id;
+            //      }
+            //      cgi_meas->cgi = cgi;
+            //    }
+            //    eutra_meas[j]->cgi_meas = cgi_meas;
+            //  }
+            //}
 
             /*RSRP/RSRQ of the neighbouring cell */
             Protocol__FlexEutraRefSignalMeas *meas_result;
@@ -551,15 +552,15 @@ int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
   for (int i = 0; i < reply->n_ue_report; i++){
     if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas) {
       for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
-        if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas) {
-          if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi) {
-            if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->plmn_id) {
-              free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi->plmn_id);
-            }
-            free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi);
-          }
-          free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
-        }
+        //if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas) {
+        //  if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi) {
+        //    if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->plmn_id) {
+        //      free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi->plmn_id);
+        //    }
+        //    free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi);
+        //  }
+        //  free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
+        //}
         if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result)  {
           free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
         }
