@@ -81,6 +81,26 @@ void config_common(int Mod_idP,
 
   int mu = 1;
 
+  switch (*scc->ssb_periodicityServingCell) {
+    case 0:
+      cfg->sch_config.ssb_periodicity.value = 5;
+      break;
+    case 1:
+      cfg->sch_config.ssb_periodicity.value = 10;
+      break;
+    case 2:
+      cfg->sch_config.ssb_periodicity.value = 20;
+      break;
+    case 3:
+      cfg->sch_config.ssb_periodicity.value = 40;
+      break;
+    case 4:
+      cfg->sch_config.ssb_periodicity.value = 80;
+      break;
+    case 5:
+      cfg->sch_config.ssb_periodicity.value = 160;
+      break;
+  }   
 
   cfg->sch_config.physical_cell_id.value = *scc->physCellId;
   cfg->sch_config.ssb_scg_position_in_burst.value = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
