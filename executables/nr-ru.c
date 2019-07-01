@@ -1211,7 +1211,7 @@ static void *ru_thread_tx( void *param ) {
   
   if(ru->if_south == LOCAL_RF)
   {
-    uhd_set_thread_prio();
+    //uhd_set_thread_prio();
     LOG_I(PHY,"set ru_thread_tx uhd priority");
   }
 
