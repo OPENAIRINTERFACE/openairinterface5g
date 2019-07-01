@@ -15,6 +15,7 @@ static int DEFENBS[] = {0};
 #include <openair1/SCHED/fapi_l1.h>
 #include <openair1/PHY/INIT/phy_init.h>
 #include <openair2/LAYER2/MAC/mac_extern.h>
+#include <openair1/PHY/LTE_REFSIG/lte_refsig.h>
 extern uint16_t sf_ahead;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void fep_full(RU_t *ru);
@@ -89,10 +90,6 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_tx_unwrap          = 0;
 
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
-
-  pthread_mutex_init( &proc->mutex_synch,NULL);
-  pthread_cond_init( &proc->cond_synch,NULL);
-  pthread_cond_init( &proc->cond_eNBs, NULL);
   pthread_t t;
   threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
 }
@@ -166,6 +163,7 @@ void init_eNB_afterRU(void) {
       eNB = RC.eNB[inst][CC_id];
       phy_init_lte_eNB(eNB,0,0);
       eNB->frame_parms.nb_antennas_rx       = 0;
+      eNB->frame_parms.nb_antennas_tx       = 0;
       eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
 
       for (int ce_level=0; ce_level<4; ce_level++) {
@@ -175,6 +173,7 @@ void init_eNB_afterRU(void) {
 
       for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
         eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+        eNB->frame_parms.nb_antennas_tx    += eNB->RU_list[ru_id]->nb_tx;
         AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
                     "RU %d : common.rxdataF is NULL\n",
                     eNB->RU_list[ru_id]->idx);
@@ -197,22 +196,9 @@ void init_eNB_afterRU(void) {
        * In monolithic mode, we come here with nb_antennas_rx == 0
        * (not tested in other modes).
        */
-      if (eNB->frame_parms.nb_antennas_rx < 1) {
-        LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_rx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_rx);
-        eNB->frame_parms.nb_antennas_rx = 1;
-      } else {
-        //LOG_I(PHY," Delete code\n");
-      }
+      AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
+      AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
 
-      if (eNB->frame_parms.nb_antennas_tx < 1) {
-        LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_tx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_tx);
-        eNB->frame_parms.nb_antennas_tx = 1;
-      } else {
-        //LOG_I(PHY," Delete code\n");
-      }
-
-      AssertFatal(eNB->frame_parms.nb_antennas_rx >0,
-                  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       init_transport(eNB);
       //init_precoding_weights(RC.eNB[inst][CC_id]);
@@ -261,6 +247,7 @@ void stop_eNB(int nb_inst) {
     kill_eNB_proc(inst);
   }
 }
+
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
@@ -768,7 +755,7 @@ int stop_rf(RU_t *ru) {
 
 void set_function_spec_param(RU_t *ru) {
   switch (ru->if_south) {
-    case LOCAL_RF: { // this is an RU with integrated RF (RRU, eNB)
+    case LOCAL_RF: // this is an RU with integrated RF (RRU, eNB)
       ru->do_prach             = 0;                       // no prach processing in RU
       ru->feprx                = fep_full;
       ru->feptx_ofdm           = feptx_ofdm;
@@ -776,31 +763,16 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
       ru->start_if             = NULL;                    // no if interface
       ru->rfdevice.host_type   = RAU_HOST;
-    }
-
-    ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-    ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-    ru->start_rf               = start_rf;                            // need to start the local RF interface
-    ru->stop_rf                = stop_rf;
-    ru->eNB_top=eNB_top;
-    printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
-      /*
-          if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
-            fill_rf_config(ru,rf_config_file);
-            init_frame_parms(&ru->frame_parms,1);
-            phy_init_RU(ru);
-          }
-
-          ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-          if (setup_RU_buffers(ru)!=0) {
-            printf("Exiting, cannot initialize RU Buffers\n");
-            exit(-1);
-          }*/
-    break;
-
-    default:
-      LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
+      ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
+      ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
+      ru->start_rf               = start_rf;                            // need to start the local RF interface
+      ru->stop_rf                = stop_rf;
+      ru->eNB_top=eNB_top;
       break;
+      
+  default:
+    LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
+    break;
   } // switch on interface type
 }
 

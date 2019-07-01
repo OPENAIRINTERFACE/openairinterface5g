@@ -91,7 +91,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "system.h"
 
-
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
 
@@ -163,7 +162,6 @@ extern void print_opp_meas(void);
 
 
 extern void init_eNB_afterRU(void);
-extern void  phy_free_RU(RU_t *);
 
 int transmission_mode=1;
 int emulate_rf = 0;
@@ -296,11 +294,11 @@ static void get_options(void) {
     /* Read RC configuration file */
     RCConfig();
     NB_eNB_INST = RC.nb_inst;
-    LOG_I(ENB_APP,"Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
+    printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
 
     if (!IS_SOFTMODEM_NONBIOT) {
       load_NB_IoT();
-      LOG_I(ENB_APP,"           nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
+      printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
              RC.nb_nb_iot_rrc_inst, RC.nb_nb_iot_L1_inst, RC.nb_nb_iot_macrlc_inst);
     } else {
       printf("All Nb-IoT instances disabled\n");
@@ -532,25 +530,11 @@ int main( int argc, char **argv ) {
   }
 
   mode = normal_txrx;
-
+  set_latency_target();
   logInit();
   printf("Reading in command-line options\n");
   get_options ();
-  AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
   
-    configure_linux();
-    // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
-  cpuf=get_cpu_freq_GHz();
-
-  #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
-#endif
-  LOG_I(HW, "OAI Version: %s\n", PACKAGE_VERSION);
-
   if (is_nos1exec(argv[0]) )
     set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
 
@@ -572,9 +556,29 @@ int main( int argc, char **argv ) {
     reset_opp_meas();
   }
 
+  cpuf=get_cpu_freq_GHz();
+  printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   // allows to forward in wireshark L2 protocol for decoding
+  // initialize mscgen log after ITTI
+  if (get_softmodem_params()->start_msc) {
+    load_module_shlib("msc",NULL,0,&msc_interface);
+  }
+
+  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
+
+  signal(SIGSEGV, signal_handler);
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGABRT, signal_handler);
+  check_clock();
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+  printf("Runtime table\n");
+  fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
 
   /* Read configuration */
   if (RC.nb_inst > 0) {
@@ -596,7 +600,9 @@ int main( int argc, char **argv ) {
     }
 
     for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
-      openair_rrc_eNB_configuration(enb_id, &RC.rrc[enb_id]->configuration);
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
   } else {
     printf("RC.nb_inst = 0, Initializing L1\n");
@@ -619,6 +625,7 @@ int main( int argc, char **argv ) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
+    mlockall(MCL_CURRENT | MCL_FUTURE);
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
 
@@ -648,11 +655,11 @@ int main( int argc, char **argv ) {
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
+  }
 
-    // no need to wait: openair_rrc_eNB_configuration() is called earlier from this thread
-    // openair_rrc_eNB_configuration()->init_SI()->rrc_mac_config_req_eNB ()->phy_config_request () sets the wait_eNBs() tested flag
-    // wait_eNBs();
-    // printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+  printf("wait_eNBs()\n");
+  wait_eNBs();
+  printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
     // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
     // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
@@ -664,7 +671,6 @@ int main( int argc, char **argv ) {
       for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
         RC.ru[ru_id]->rf_map.card=0;
         RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-      }
     }
 
     config_sync_var=0;
@@ -675,12 +681,13 @@ int main( int argc, char **argv ) {
 
     printf("wait RUs\n");
     // end of CI modifications
-    // fixme: very weird usage of bitmask
-    // lack of mutex in: ru_thread_prach(),...
+    fflush(stdout);
+    fflush(stderr);
     // wait_RUs() is wrong and over complex!
     wait_RUs();
     LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
+    printf("ALL RUs ready - init eNBs\n");
     
     if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
       LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
@@ -700,7 +707,6 @@ int main( int argc, char **argv ) {
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
 
-  // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
   fflush(stdout);
@@ -726,6 +732,7 @@ int main( int argc, char **argv ) {
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
       for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+	free_transport(RC.eNB[inst][cc_id]);
         phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
