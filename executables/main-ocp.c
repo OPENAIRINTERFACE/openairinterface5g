@@ -50,9 +50,6 @@ void init_eNB_proc(int inst) {
     proc->CC_id                    = CC_id;
     proc->first_rx                 =1;
     proc->first_tx                 =1;
-    proc->RU_mask_tx               = (1<<eNB->num_RU)-1;
-    proc->RU_mask                  =0;
-    proc->RU_mask_prach            =0;
     pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
     pthread_mutex_init( &L1_proc->mutex, NULL);
     pthread_cond_init( &L1_proc->cond, NULL);
@@ -94,100 +91,10 @@ void init_RU_proc(RU_t *ru) {
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 
   pthread_mutex_init( &proc->mutex_synch,NULL);
-
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_eNBs, NULL);
-
   pthread_t t;
   threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
-}
-
-void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
-  L1_proc_t *proc = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-
-  // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,frame,subframe)>0) {
-    // set timing for prach thread
-    proc->frame_prach = frame;
-    proc->subframe_prach = subframe;
-    prach_procedures(eNB,0);
-  }
-}
-
-void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
-  L1_proc_t *proc = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-
-  // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,frame,subframe)>0) {
-    LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
-    // set timing for prach thread
-    proc->frame_prach_br = frame;
-    proc->subframe_prach_br = subframe;
-    prach_procedures(eNB,1);
-  }
-}
-
-static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name) {
-
-  AssertFatal( eNB !=NULL, "");
-
-  if (NFAPI_MODE==NFAPI_MODE_PNF) {
-    // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
-    //add_subframe(&frame, &subframe, 4);
-    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
-    oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-  }
-
-  AssertFatal( !(NFAPI_MODE==NFAPI_MODE_PNF &&
-		 eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0), "");
-  
-  wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
-  wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
-  release_UE_in_freeList(eNB->Mod_id);
-
-  // UE-specific RX processing for subframe n
-  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX(eNB, proc);
-  }
-
-  pthread_mutex_lock(&eNB->UL_INFO_mutex);
-  eNB->UL_INFO.frame     = proc->frame_rx;
-  eNB->UL_INFO.subframe  = proc->subframe_rx;
-  eNB->UL_INFO.module_id = eNB->Mod_id;
-  eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
-  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-  phy_procedures_eNB_TX(eNB, proc, 1);
-  
-  return(0);
-}
-
-void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru) {
-  L1_proc_t *proc           = &eNB->proc;
-  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  RU_proc_t *ru_proc=&ru->proc;
-  proc->frame_rx    = frame_rx;
-  proc->subframe_rx = subframe_rx;
-
-  if (!oai_exit) {
-    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
-    L1_proc->frame_rx     = ru_proc->frame_rx;
-    L1_proc->subframe_rx  = ru_proc->subframe_rx;
-    L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ?
-      (L1_proc->frame_rx+1)&1023 :
-      L1_proc->frame_rx;
-    L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
-
-    if (rxtx(eNB,L1_proc,string) < 0)
-      LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
-
-    ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-    ru_proc->subframe_tx  = L1_proc->subframe_tx;
-    ru_proc->frame_tx     = L1_proc->frame_tx;
-  }
 }
 
 void init_transport(PHY_VARS_eNB *eNB) {
@@ -354,129 +261,6 @@ void stop_eNB(int nb_inst) {
     kill_eNB_proc(inst);
   }
 }
-
-void rx_rf(RU_t *ru,int *frame,int *subframe) {
-  RU_proc_t *proc = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  void *rxp[ru->nb_rx];
-  unsigned int rxs;
-  int i;
-  openair0_timestamp ts=0,old_ts=0;
-
-  for (i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
-
-  old_ts = proc->timestamp_rx;
-  rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                                   &ts,
-                                   rxp,
-                                   fp->samples_per_tti,
-                                   ru->nb_rx);
-  proc->timestamp_rx = ts-ru->ts_offset;
-
-  //  AssertFatal(rxs == fp->samples_per_tti,
-  //        "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
-  if(rxs != fp->samples_per_tti) {
-    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
-  }
-
-  if (proc->first_rx == 1) {
-    ru->ts_offset = proc->timestamp_rx;
-    proc->timestamp_rx = 0;
-  } else {
-    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-      proc->timestamp_rx = ts-ru->ts_offset;
-    }
-  }
-
-  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
-  // synchronize first reception to frame 0 subframe 0
-  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-
-  if (proc->first_rx == 0) {
-    AssertFatal( proc->subframe_rx == *subframe && proc->frame_rx == *frame ,
-		 "Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d) (proc->frame_rx %d frame %d)\n",
-		 (long long unsigned int)proc->timestamp_rx,proc->subframe_rx,*subframe, proc->frame_rx,*frame);
-  } else {
-    proc->first_rx = 0;
-    *frame = proc->frame_rx;
-    *subframe = proc->subframe_rx;
-  }
-
-  if (rxs != fp->samples_per_tti) {
-#if defined(USRP_REC_PLAY)
-    exit_fun("Exiting IQ record/playback");
-#else
-    //exit_fun( "problem receiving samples" );
-    LOG_E(PHY, "problem receiving samples");
-#endif
-  }
-}
-
-void tx_rf(RU_t *ru) {
-  RU_proc_t *proc = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  void *txp[ru->nb_tx];
-  int i;
-  lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
-  lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
-  int sf_extension = 0;
-
-  if ((SF_type == SF_DL) ||
-      (SF_type == SF_S)) {
-    int siglen=fp->samples_per_tti,flags=1;
-
-    if (SF_type == SF_S) {
-      /* end_of_burst_delay is used to stop TX only "after a while".
-       * If we stop right after effective signal, with USRP B210 and
-       * B200mini, we observe a high EVM on the S subframe (on the
-       * PSS).
-       * A value of 400 (for 30.72MHz) solves this issue. This is
-       * the default.
-       */
-      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
-               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
-               + ru->end_of_burst_delay;
-      flags=3; // end of burst
-    }
-
-    if (fp->frame_type == TDD &&
-        SF_type == SF_DL &&
-        prevSF_type == SF_UL) {
-      flags = 2; // start of burst
-      sf_extension = ru->sf_extension;
-    }
-
-#if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
-    sf_extension = (sf_extension)&0xfffffff8;
-#else
-    sf_extension = (sf_extension)&0xfffffffc;
-#endif
-#elif defined(__arm__)
-    sf_extension = (sf_extension)&0xfffffffc;
-#endif
-
-    for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
-
-    /* add fail safe for late command end */
-    // prepare tx buffer pointers
-    ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
-                                      txp,
-                                      siglen+sf_extension,
-                                      ru->nb_tx,
-                                      flags);
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
-  }
-}
-
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
@@ -642,6 +426,247 @@ int setup_RU_buffers(RU_t *ru) {
   return(0);
 }
 
+
+void init_precoding_weights(PHY_VARS_eNB *eNB) {
+  int layer,ru_id,aa,re,ue,tb;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  RU_t *ru;
+  LTE_eNB_DLSCH_t *dlsch;
+
+  // init precoding weigths
+  for (ue=0; ue<NUMBER_OF_UE_MAX; ue++) {
+    for (tb=0; tb<2; tb++) {
+      dlsch = eNB->dlsch[ue][tb];
+
+      for (layer=0; layer<4; layer++) {
+        int nb_tx=0;
+
+        for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+          ru = RC.ru[ru_id];
+          nb_tx+=ru->nb_tx;
+        }
+
+        dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(nb_tx*sizeof(int32_t *));
+
+        for (aa=0; aa<nb_tx; aa++) {
+          dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(fp->ofdm_symbol_size*sizeof(int32_t));
+
+          for (re=0; re<fp->ofdm_symbol_size; re++) {
+            dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+          }
+        }
+      }
+    }
+  }
+}
+
+void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+  L1_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+
+  // check if we have to detect PRACH first
+  if (is_prach_subframe(fp,frame,subframe)>0) {
+    // set timing for prach thread
+    proc->frame_prach = frame;
+    proc->subframe_prach = subframe;
+    prach_procedures(eNB,0);
+  }
+}
+
+void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+  L1_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+
+  // check if we have to detect PRACH first
+  if (is_prach_subframe(fp,frame,subframe)>0) {
+    LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
+    // set timing for prach thread
+    proc->frame_prach_br = frame;
+    proc->subframe_prach_br = subframe;
+    prach_procedures(eNB,1);
+  }
+}
+
+static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name) {
+  AssertFatal( eNB !=NULL, "");
+
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
+    // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
+    //add_subframe(&frame, &subframe, 4);
+    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
+    oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
+  }
+
+  AssertFatal( !(NFAPI_MODE==NFAPI_MODE_PNF &&
+                 eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0), "");
+  wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  release_UE_in_freeList(eNB->Mod_id);
+
+  // UE-specific RX processing for subframe n
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    phy_procedures_eNB_uespec_RX(eNB, proc);
+  }
+
+  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  eNB->UL_INFO.frame     = proc->frame_rx;
+  eNB->UL_INFO.subframe  = proc->subframe_rx;
+  eNB->UL_INFO.module_id = eNB->Mod_id;
+  eNB->UL_INFO.CC_id     = eNB->CC_id;
+  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  phy_procedures_eNB_TX(eNB, proc, 1);
+  return(0);
+}
+
+void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru) {
+  L1_proc_t *proc           = &eNB->proc;
+  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  RU_proc_t *ru_proc=&ru->proc;
+  proc->frame_rx    = frame_rx;
+  proc->subframe_rx = subframe_rx;
+
+  if (!oai_exit) {
+    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
+    L1_proc->frame_rx     = ru_proc->frame_rx;
+    L1_proc->subframe_rx  = ru_proc->subframe_rx;
+    L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ?
+                            (L1_proc->frame_rx+1)&1023 :
+                            L1_proc->frame_rx;
+    L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+
+    if (rxtx(eNB,L1_proc,string) < 0)
+      LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
+
+    ru_proc->timestamp_tx = L1_proc->timestamp_tx;
+    ru_proc->subframe_tx  = L1_proc->subframe_tx;
+    ru_proc->frame_tx     = L1_proc->frame_tx;
+  }
+}
+
+void rx_rf(RU_t *ru,int *frame,int *subframe) {
+  RU_proc_t *proc = &ru->proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  void *rxp[ru->nb_rx];
+  unsigned int rxs;
+  int i;
+  openair0_timestamp ts=0,old_ts=0;
+
+  for (i=0; i<ru->nb_rx; i++)
+    rxp[i] = (void *)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
+
+  old_ts = proc->timestamp_rx;
+  rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
+                                   &ts,
+                                   rxp,
+                                   fp->samples_per_tti,
+                                   ru->nb_rx);
+  proc->timestamp_rx = ts-ru->ts_offset;
+
+  //  AssertFatal(rxs == fp->samples_per_tti,
+  //        "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
+  if(rxs != fp->samples_per_tti) {
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
+  }
+
+  if (proc->first_rx == 1) {
+    ru->ts_offset = proc->timestamp_rx;
+    proc->timestamp_rx = 0;
+  } else {
+    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
+      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      proc->timestamp_rx = ts-ru->ts_offset;
+    }
+  }
+
+  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  // synchronize first reception to frame 0 subframe 0
+  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
+  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
+  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+
+  if (proc->first_rx == 0) {
+    AssertFatal( proc->subframe_rx == *subframe && proc->frame_rx == *frame,
+                 "Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d) (proc->frame_rx %d frame %d)\n",
+                 (long long unsigned int)proc->timestamp_rx,proc->subframe_rx,*subframe, proc->frame_rx,*frame);
+  } else {
+    proc->first_rx = 0;
+    *frame = proc->frame_rx;
+    *subframe = proc->subframe_rx;
+  }
+
+  if (rxs != fp->samples_per_tti) {
+#if defined(USRP_REC_PLAY)
+    exit_fun("Exiting IQ record/playback");
+#else
+    //exit_fun( "problem receiving samples" );
+    LOG_E(PHY, "problem receiving samples");
+#endif
+  }
+}
+
+void tx_rf(RU_t *ru) {
+  RU_proc_t *proc = &ru->proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  void *txp[ru->nb_tx];
+  int i;
+  lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
+  lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
+  int sf_extension = 0;
+
+  if ((SF_type == SF_DL) ||
+      (SF_type == SF_S)) {
+    int siglen=fp->samples_per_tti,flags=1;
+
+    if (SF_type == SF_S) {
+      /* end_of_burst_delay is used to stop TX only "after a while".
+       * If we stop right after effective signal, with USRP B210 and
+       * B200mini, we observe a high EVM on the S subframe (on the
+       * PSS).
+       * A value of 400 (for 30.72MHz) solves this issue. This is
+       * the default.
+       */
+      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
+               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
+               + ru->end_of_burst_delay;
+      flags=3; // end of burst
+    }
+
+    if (fp->frame_type == TDD &&
+        SF_type == SF_DL &&
+        prevSF_type == SF_UL) {
+      flags = 2; // start of burst
+      sf_extension = ru->sf_extension;
+    }
+
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+    sf_extension = (sf_extension)&0xfffffff8;
+#else
+    sf_extension = (sf_extension)&0xfffffffc;
+#endif
+#elif defined(__arm__)
+    sf_extension = (sf_extension)&0xfffffffc;
+#endif
+
+    for (i=0; i<ru->nb_tx; i++)
+      txp[i] = (void *)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
+
+    /* add fail safe for late command end */
+    // prepare tx buffer pointers
+    ru->rfdevice.trx_write_func(&ru->rfdevice,
+                                proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                txp,
+                                siglen+sf_extension,
+                                ru->nb_tx,
+                                flags);
+    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
+          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
+  }
+}
+
 static void *ru_thread( void *param ) {
   static int ru_thread_status;
   RU_t               *ru      = (RU_t *)param;
@@ -664,10 +689,6 @@ static void *ru_thread( void *param ) {
   }
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-  pthread_mutex_lock(&RC.ru_mutex);
-  RC.ru_mask &= ~(1<<ru->idx);
-  pthread_cond_signal(&RC.ru_cond);
-  pthread_mutex_unlock(&RC.ru_mutex);
   wait_sync("ru_thread");
 
   // Start RF device if any
@@ -745,41 +766,7 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
-void init_precoding_weights(PHY_VARS_eNB *eNB) {
-  int layer,ru_id,aa,re,ue,tb;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  RU_t *ru;
-  LTE_eNB_DLSCH_t *dlsch;
-
-  // init precoding weigths
-  for (ue=0; ue<NUMBER_OF_UE_MAX; ue++) {
-    for (tb=0; tb<2; tb++) {
-      dlsch = eNB->dlsch[ue][tb];
-
-      for (layer=0; layer<4; layer++) {
-        int nb_tx=0;
-
-        for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-          ru = RC.ru[ru_id];
-          nb_tx+=ru->nb_tx;
-        }
-
-        dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(nb_tx*sizeof(int32_t *));
-
-        for (aa=0; aa<nb_tx; aa++) {
-          dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(fp->ofdm_symbol_size*sizeof(int32_t));
-
-          for (re=0; re<fp->ofdm_symbol_size; re++) {
-            dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
-          }
-        }
-      }
-    }
-  }
-}
-
 void set_function_spec_param(RU_t *ru) {
-
   switch (ru->if_south) {
     case LOCAL_RF: { // this is an RU with integrated RF (RRU, eNB)
       ru->do_prach             = 0;                       // no prach processing in RU
@@ -819,21 +806,20 @@ void set_function_spec_param(RU_t *ru) {
 
 //extern void RCconfig_RU(void);
 
-void init_RU(char *rf_config_file) {
+void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source,int send_dmrssync) {
   int ru_id;
   RU_t *ru;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
   // create status mask
-  RC.ru_mask = 0;
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   printf("configuring RU from file\n");
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
-	RC.nb_L1_inst,RC.nb_RU,get_nprocs());
+        RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   if (RC.nb_CC != 0)
     for (i=0; i<RC.nb_L1_inst; i++)
@@ -847,16 +833,38 @@ void init_RU(char *rf_config_file) {
     ru->rf_config_file = rf_config_file;
     ru->idx          = ru_id;
     ru->ts_offset    = 0;
+
+    if (ru->is_slave == 1) {
+      ru->in_synch    = 0;
+      ru->generate_dmrs_sync = 0;
+    } else {
+      ru->in_synch    = 1;
+      ru->generate_dmrs_sync=send_dmrssync;
+    }
+
+    ru->cmd      = EMPTY;
+    ru->south_out_cnt= 0;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
+    ru->openair0_cfg.clock_source  = clock_source;
+    ru->openair0_cfg.time_source = time_source;
+
+    //    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    if (ru->generate_dmrs_sync == 1) {
+      generate_ul_ref_sigs();
+      ru->dmrssync = (int16_t *)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t));
+    }
+
+    ru->wakeup_L1_sleeptime = 2000;
+    ru->wakeup_L1_sleep_cnt_max  = 3;
 
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n",
-	    __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
+            __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
 
       if (ru->eNB_list[0] == 0) {
         LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n",
-	      __FUNCTION__);
+              __FUNCTION__);
         ru->eNB_list[0] = RC.eNB[0][0];
         ru->num_eNB=1;
         //
@@ -916,8 +924,6 @@ void RCconfig_RU(void) {
 
   if ( RUParamList.numelt > 0) {
     RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-    RC.ru_mask=(1<<RC.nb_RU) - 1;
-    printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (j = 0; j < RC.nb_RU; j++) {
       RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));

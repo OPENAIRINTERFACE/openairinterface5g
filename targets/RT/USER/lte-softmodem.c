@@ -80,7 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 //#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
-#include "UTIL/OTG/otg_vars.h"
+  #include "UTIL/OTG/otg_vars.h"
 #endif
 
 
@@ -90,6 +90,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/INIT/phy_init.h"
 
 #include "system.h"
+
 
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
@@ -106,6 +107,10 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
+
+uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
+uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
+
 
 volatile int             oai_exit = 0;
 
@@ -145,9 +150,17 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 int rx_input_level_dBm;
+
 int    otg_enabled;
+
+
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
+
+
+extern void reset_opp_meas(void);
+extern void print_opp_meas(void);
+
 
 extern void init_eNB_afterRU(void);
 extern void  phy_free_RU(RU_t *);
@@ -159,10 +172,72 @@ int numerology = 0;
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
+
 double cpuf;
 
 /* forward declarations */
+
+/* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
+/*---------------------BMC: timespec helpers -----------------------------*/
+
+struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+struct timespec max_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+
+struct timespec clock_difftime(struct timespec start, struct timespec end) {
+  struct timespec temp;
+
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+
+  return temp;
+}
+
+void print_difftimes(void) {
+#ifdef DEBUG
+  printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+#else
+  LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+#endif
+}
+
+void update_difftimes(struct timespec start, struct timespec end) {
+  struct timespec diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+  int             changed = 0;
+  diff_time = clock_difftime(start, end);
+
+  if ((min_diff_time.tv_nsec == 0) || (diff_time.tv_nsec < min_diff_time.tv_nsec)) {
+    min_diff_time.tv_nsec = diff_time.tv_nsec;
+    changed = 1;
+  }
+
+  if ((max_diff_time.tv_nsec == 0) || (diff_time.tv_nsec > max_diff_time.tv_nsec)) {
+    max_diff_time.tv_nsec = diff_time.tv_nsec;
+    changed = 1;
+  }
+
+#if 1
+
+  if (changed) print_difftimes();
+
+#endif
+}
+
+/*------------------------------------------------------------------------*/
+
+unsigned int build_rflocal(int txi, int txq, int rxi, int rxq) {
+  return (txi + (txq<<6) + (rxi<<12) + (rxq<<18));
+}
+unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
+  return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
+}
+
 
 void signal_handler(int sig) {
   void *array[10];
@@ -180,6 +255,7 @@ void signal_handler(int sig) {
     exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
   }
 }
+
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int ru_id;
@@ -209,6 +285,7 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
+
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   get_common_options();
@@ -231,6 +308,10 @@ static void get_options(void) {
     }
   }
 }
+
+
+
+
 
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
@@ -446,11 +527,14 @@ int main( int argc, char **argv ) {
   int CC_id = 0;
   int ru_id;
 
-  AssertFatal(load_configmodule(argc,argv,0) != NULL,
-	     "[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,0) == NULL) {
+    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  }
+
   mode = normal_txrx;
 
   logInit();
+  printf("Reading in command-line options\n");
   get_options ();
   AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
   
@@ -472,14 +556,21 @@ int main( int argc, char **argv ) {
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
+    fprintf(stderr,"Getting configuration failed\n");
+    exit(-1);
+  }
+
 #if T_TRACER
   T_Config_Init();
 #endif
   //randominit (0);
   set_taus_seed (0);
+  printf("configuring for RAU/RRU\n");
 
-  if (opp_enabled ==1) 
+  if (opp_enabled ==1) {
     reset_opp_meas();
+  }
 
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   // allows to forward in wireshark L2 protocol for decoding
@@ -491,8 +582,9 @@ int main( int argc, char **argv ) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
     RCconfig_flexran();
     
-    for (i = 0; i < RC.nb_inst; i++) 
+    for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
+    }
     
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
@@ -521,7 +613,7 @@ int main( int argc, char **argv ) {
     ctxt.subframe = 0;
     pdcp_run(&ctxt);
   }
-    
+
   /* start threads if only L1 or not a CU */
   if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
     // init UE_PF_PO and mutex lock
@@ -531,53 +623,56 @@ int main( int argc, char **argv ) {
     pthread_mutex_init(&sync_mutex, NULL);
 
     rt_sleep_ns(10*100000000ULL);
-    
+
     if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
       LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
       pthread_cond_init(&sync_cond,NULL);
       pthread_mutex_init(&sync_mutex, NULL);
     }
-    
+
     if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
 #if defined(PRE_SCD_THREAD)
       init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
       wait_nfapi_init("main?");
     }
-    
+
     LOG_I(ENB_APP,"START MAIN THREADS\n");
     // start the main threads
     number_of_cards = 1;
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-    
+
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
-  printf("wait_eNBs()\n");
-  wait_eNBs();
-  printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-  
-  // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
-  // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
-  // some initialization is necessary and init_ru_vnf do this.
-  if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
-    printf("Initializing RU threads\n");
+
+    // no need to wait: openair_rrc_eNB_configuration() is called earlier from this thread
+    // openair_rrc_eNB_configuration()->init_SI()->rrc_mac_config_req_eNB ()->phy_config_request () sets the wait_eNBs() tested flag
+    // wait_eNBs();
+    // printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+
+    // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+    // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+    // some initialization is necessary and init_ru_vnf do this.
+    if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
+      printf("Initializing RU threads\n");
     init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
-    
-    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-      RC.ru[ru_id]->rf_map.card=0;
-      RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
+
+      for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+        RC.ru[ru_id]->rf_map.card=0;
+        RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
+      }
     }
-    
+
     config_sync_var=0;
-    
+
     if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
       wait_nfapi_init("main?");
     }
-    
+
     printf("wait RUs\n");
     // end of CI modifications
     // fixme: very weird usage of bitmask
@@ -604,6 +699,7 @@ int main( int argc, char **argv ) {
     pthread_mutex_unlock(&sync_mutex);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
+
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
@@ -648,17 +744,17 @@ int main( int argc, char **argv ) {
 
     for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func) {
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-	RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
       }
 
       if (RC.ru[ru_id]->ifdevice.trx_end_func) {
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
-	RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
       }
     }
   }
-   
+
   terminate_opt();
   logClean();
   printf("Bye.\n");

@@ -23,6 +23,7 @@ typedef struct frequency_s {
 } frequency_t;
 
 int createListner (port);
-int receiveSubFrame(int sock, uint64_t expectedTS, void* bufferZone,  int bufferSize);
-int sendSubFrame(int sock, void* bufferZone, int nbBlocks);}
+int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
+int sendSubFrame(int sock, void *bufferZone, int nbBlocks);
+}
 #endif
