@@ -132,8 +132,6 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 
-int snr_dB=25;
-
 runmode_t mode = normal_txrx;
 
 FILE *input_fd=NULL;

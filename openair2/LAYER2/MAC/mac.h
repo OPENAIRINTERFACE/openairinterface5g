@@ -1070,7 +1070,7 @@ typedef struct {
     /// DRX UL retransmission timer, one per UL HARQ process
     /* Not implemented yet */
     /* End of C-DRX related timers */
-} UE_sched_ctrl;
+} UE_sched_ctrl_t;
 
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -1168,7 +1168,7 @@ typedef struct {
   /// eNB to UE statistics
   eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
   /// scheduling control info
-  UE_sched_ctrl UE_sched_ctrl[MAX_MOBILES_PER_ENB];
+  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_ENB];
   int next[MAX_MOBILES_PER_ENB];
   int head;
   int next_ul[MAX_MOBILES_PER_ENB];
@@ -1191,11 +1191,11 @@ typedef struct {
     rnti_t rnti;
     ///remove UE context flag
     boolean_t removeContextFlg;
-} UE_free_ctrl;
+} UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {
     /// deleting control info
-    UE_free_ctrl UE_free_ctrl[NUMBER_OF_UE_MAX+1];
+    UE_free_ctrl_t UE_free_ctrl[NUMBER_OF_UE_MAX+1];
     int num_UEs;
     int head_freelist; ///the head position of the delete list
     int tail_freelist; ///the tail position of the delete list
@@ -1772,11 +1772,11 @@ typedef struct {
   volatile uint8_t flag;
   rnti_t rnti;
   mui_t  rrc_eNB_mui;
-}RRC_release_ctrl;
+}RRC_release_ctrl_t;
  
 typedef struct {
     uint16_t num_UEs;
-    RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
+    RRC_release_ctrl_t RRC_release_ctrl[NUMBER_OF_UE_MAX];
 } RRC_release_list_t;
 
 typedef  struct {

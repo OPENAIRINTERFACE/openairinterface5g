@@ -5814,7 +5814,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
       LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
       return;
     }
-    UE_sched_ctrl *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
     
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
       UE_scheduling_control->cdrx_waiting_ack = FALSE;

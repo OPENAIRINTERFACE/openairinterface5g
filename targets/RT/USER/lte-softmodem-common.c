@@ -34,9 +34,11 @@
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include <dlfcn.h>
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
+double snr_dB=25;
 
 uint64_t get_softmodem_optmask(void) {
   return softmodem_params.optmask;

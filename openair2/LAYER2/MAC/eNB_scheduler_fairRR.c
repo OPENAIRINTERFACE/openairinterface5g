@@ -179,7 +179,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
   COMMON_channels_t              *cc       = eNB->common_channels;
   UE_list_t                      *UE_list  = &eNB->UE_list;
-  UE_sched_ctrl                  *ue_sched_ctl;
+  UE_sched_ctrl_t                  *ue_sched_ctl;
   uint8_t                        CC_id;
   int                            UE_id;
   unsigned char                  round             = 0;
@@ -585,7 +585,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   //  uint16_t r1=0;
   uint8_t CC_id;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   //  int rrc_status           = RRC_IDLE;
   COMMON_channels_t *cc;
 #ifdef TM5
@@ -596,7 +596,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   rnti_t rnti1, rnti2;
   LTE_eNB_UE_stats *eNB_UE_stats1 = NULL;
   LTE_eNB_UE_stats *eNB_UE_stats2 = NULL;
-  UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
+  UE_sched_ctrl_t *ue_sched_ctl1, *ue_sched_ctl2;
 #endif
   memset(rballoc_sub[0],0,(MAX_NUM_CCs)*(N_RBG_MAX)*sizeof(unsigned char));
   memset(min_rb_unit,0,sizeof(min_rb_unit));
@@ -828,7 +828,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
   int32_t normalized_rx_power, target_rx_power;
   int32_t tpc = 1;
   static int32_t tpc_accumulated = 0;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   int mcs;
   int i;
   int min_rb_unit[MAX_NUM_CCs];
@@ -1968,7 +1968,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
   uint8_t ulsch_ue_max_num[MAX_NUM_CCs];
   uint16_t saved_ulsch_dci[MAX_NUM_CCs];
   rnti_t rnti;
-  UE_sched_ctrl *UE_sched_ctl = NULL;
+  UE_sched_ctrl_t *UE_sched_ctl = NULL;
   uint8_t cc_id_flag[MAX_NUM_CCs];
   uint8_t harq_pid = 0,round = 0;
   UE_list_t *UE_list= &eNB->UE_list;
@@ -2627,7 +2627,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
   COMMON_channels_t *cc;
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
-  UE_sched_ctrl     *UE_sched_ctrl;
+  UE_sched_ctrl_t     *UE_sched_ctrl;
   int               sched_frame=frameP;
   int               rvidx_tab[4] = {0,2,3,1};
   uint16_t          ul_req_index;

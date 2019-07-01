@@ -480,7 +480,7 @@ schedule_ue_spec(module_id_t module_idP,
   eNB_UE_STATS *eNB_UE_stats = NULL;
   UE_TEMPLATE *ue_template = NULL;
   eNB_STATS *eNB_stats = NULL;
-  RRC_release_ctrl *release_ctrl = NULL;
+  RRC_release_ctrl_t *release_ctrl = NULL;
   DLSCH_PDU *dlsch_pdu = NULL;
   RA_t *ra = NULL;
   int sdu_length_total = 0;
@@ -490,7 +490,7 @@ schedule_ue_spec(module_id_t module_idP,
   int continue_flag = 0;
   int32_t normalized_rx_power, target_rx_power;
   int tpc = 1;
-  UE_sched_ctrl *ue_sched_ctrl;
+  UE_sched_ctrl_t *ue_sched_ctrl;
   int mcs;
   int i;
   int min_rb_unit[NFAPI_CC_MAX];
@@ -1688,7 +1688,7 @@ dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
   int nb_mac_CC = RC.nb_mac_CC[Mod_id];
   UE_list_t *UE_list = &eNB->UE_list;
   slice_info_t *sli = &eNB->slice_info;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   COMMON_channels_t *cc;
   int N_RBG[NFAPI_CC_MAX];
   int slice_sorted_list[MAX_NUM_SLICES];
@@ -1914,7 +1914,7 @@ schedule_ue_spec_br(module_id_t module_idP,
   COMMON_channels_t *cc = mac->common_channels;
   UE_list_t *UE_list = &mac->UE_list;
   UE_TEMPLATE *UE_template = NULL;
-  UE_sched_ctrl *ue_sched_ctl = NULL;
+  UE_sched_ctrl_t *ue_sched_ctl = NULL;
   nfapi_dl_config_request_pdu_t *dl_config_pdu = NULL;
   nfapi_ul_config_request_pdu_t *ul_config_pdu = NULL;
   nfapi_tx_request_pdu_t *TX_req = NULL;
