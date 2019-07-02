@@ -469,7 +469,6 @@ endif(${X2AP_RELEASE} STREQUAL "R8")
 add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
-
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"  "X2AP_" -fno-include-deps
                 RESULT_VARIABLE ret)
