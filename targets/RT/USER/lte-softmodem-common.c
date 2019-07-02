@@ -61,6 +61,7 @@ void get_common_options(void) {
   uint32_t rfsim;
   uint32_t basicsim;
   char *logmem_filename = NULL;
+  uint32_t do_forms;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
@@ -106,6 +107,10 @@ void get_common_options(void) {
 
   if (basicsim) {
     set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+  }
+
+  if (do_forms) {
+    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
   }
 
 #if BASIC_SIMULATOR

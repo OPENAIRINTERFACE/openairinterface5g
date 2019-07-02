@@ -248,6 +248,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
+    itti_free(TASK_RRC_ENB,message_p);
     return -1;
   }
   return 0;
@@ -327,6 +328,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
     /* - nRCGI */
     F1AP_NRCGI_t nRCGI;
+    memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
     MCC_MNC_TO_PLMNID(f1ap_setup_resp->mcc[i], f1ap_setup_resp->mnc[i], f1ap_setup_resp->mnc_digit_length[i],
                                      &nRCGI.pLMN_Identity);
     NR_CELL_ID_TO_BIT_STRING(f1ap_setup_resp->nr_cellid[i], &nRCGI.nRCellIdentity);
@@ -369,6 +371,8 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
                       cells_to_be_activated_list_itemExtIEs);
       cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_160P9_t;
 
+      free(gNB_CUSystemInformation);
+      gNB_CUSystemInformation = NULL;
     }
     /* ADD */
     cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;
@@ -562,6 +566,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
 
      /* - nRCGI */
      F1AP_NRCGI_t nRCGI;
+     memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
@@ -611,6 +616,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
 
        /* - nRCGI */
        F1AP_NRCGI_t nRCGI;
+       memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
        MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                            &nRCGI.pLMN_Identity);
        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
@@ -787,6 +793,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
 
        /* - nRCGI */
        F1AP_NRCGI_t nRCGI;
+       memset(&nRCGI,0,sizeof(F1AP_NRCGI_t));
        MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                            &nRCGI.pLMN_Identity);
        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);

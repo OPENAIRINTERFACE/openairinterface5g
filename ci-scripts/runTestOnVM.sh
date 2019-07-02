@@ -20,12 +20,12 @@
 # *      contact@openairinterface.org
 # */
 
-function run_test_usage {
+function test_usage {
     echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo "   Default:"
     echo "     -- eNB with USRP"
     echo ""
@@ -33,26 +33,7 @@ function run_test_usage {
     echo "------"
     echo "    oai-ci-vm-tool test [OPTIONS]"
     echo ""
-    echo "Options:"
-    echo "--------"
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    variant_usage
-    echo "    Specify the variant to build."
-    echo ""
-    echo "    --keep-vm-alive OR -k"
-    echo "    Keep the VM alive after the build."
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
+    command_options_usage
 }
 
 function start_basic_sim_enb {
@@ -80,15 +61,15 @@ function start_basic_sim_enb {
     fi
     echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
     echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
-    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
-    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator" >> $1
-    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --basicsim\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
-    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
     rm $1
@@ -123,14 +104,14 @@ function start_basic_sim_ue {
     local LOC_UE_LOG_FILE=$3
     local LOC_NB_RBS=$4
     local LOC_FREQUENCY=$5
-    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $1
-    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
-    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
-    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" > $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build" >> $1
+    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS  --log_config.global_log_options nocolor,level --basicsim\" > ./my-lte-uesoftmodem-run.sh" >> $1
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE; fi" >> $1
-    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
@@ -418,14 +399,14 @@ function recover_core_dump {
     then
         local TC=`echo $3 | sed -e "s#^.*enb_##" -e "s#Hz.*#Hz#"`
         echo "Segmentation fault detected on enb -> recovering core dump"
-        echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb" > $1
+        echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" > $1
         echo "sync" >> $1
         echo "sudo tar -cjhf basic-simulator-enb-core-${TC}.bz2 core lte-softmodem *.so ci-lte-basic-sim.conf my-lte-softmodem-run.sh" >> $1
         echo "sudo rm core" >> $1
         echo "rm ci-lte-basic-sim.conf" >> $1
         echo "sync" >> $1
         ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/basic_simulator/enb/basic-simulator-enb-core-${TC}.bz2 $4
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/basic-simulator-enb-core-${TC}.bz2 $4
         rm -f $1
     fi
 }
@@ -483,7 +464,7 @@ function install_epc_on_vm {
         echo "Creating test EPC VM ($LOC_EPC_VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $LOC_EPC_VM_NAME release=xenial --unsafe-caching
+        uvt-kvm create $LOC_EPC_VM_NAME release=$VM_OSREL --unsafe-caching
         echo "Waiting for VM to be started"
         uvt-kvm wait $LOC_EPC_VM_NAME --insecure
         release_vm_create_lock
@@ -629,14 +610,19 @@ function retrieve_real_epc_ip_addr {
     local LOC_EPC_VM_CMDS=$2
     local LOC_EPC_VM_IP_ADDR=$3
 
-    if [ $LTEBOX -eq 1 ]
+    if [[ "$EPC_IPADDR" == "" ]]
     then
-        # in our configuration file, we are using pool 5
-        echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $LOC_EPC_VM_CMDS
-        REAL_EPC_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
-        echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
-        rm $LOC_EPC_VM_CMDS
+        if [ $LTEBOX -eq 1 ]
+        then
+            # in our configuration file, we are using pool 5
+            echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $LOC_EPC_VM_CMDS
+            REAL_EPC_IP_ADDR=`ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS`
+            rm $LOC_EPC_VM_CMDS
+        fi
+    else
+        REAL_EPC_IP_ADDR=$EPC_TUN_IPADDR
     fi
+    echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
 }
 
 function terminate_epc {
@@ -694,8 +680,8 @@ function build_ue_on_separate_folder {
     echo "cd cmake_targets/" >> $1
     echo "mkdir log" >> $1
     echo "chmod 777 log" >> $1
-    echo "echo \"./build_oai --UE -t ETHERNET \"" >> $1
-    echo "./build_oai --UE -t ETHERNET > log/ue-build.txt 2>&1" >> $1
+    echo "echo \"./build_oai --UE \"" >> $1
+    echo "./build_oai --UE > log/ue-build.txt 2>&1" >> $1
     echo "cd tools" >> $1
     echo "sudo ifconfig lo: 127.0.0.2 netmask 255.0.0.0 up" >> $1
     echo "sudo chmod 666 /etc/iproute2/rt_tables" >> $1
@@ -729,9 +715,9 @@ function start_l2_sim_enb {
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor \" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -837,9 +823,9 @@ function start_l2_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nokrnmod 1 --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nokrnmod 1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -949,9 +935,9 @@ function start_rf_sim_enb {
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor \" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -1028,9 +1014,9 @@ function start_rf_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -1093,7 +1079,7 @@ function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
     echo "############################################################"
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#" -e "s#rf-sim#enb-ethernet#"`
         ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
@@ -1110,7 +1096,7 @@ function run_test_on_vm {
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* )) || (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* )) ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         echo "############################################################"
         echo "Waiting for ENB VM to be started"
@@ -1261,11 +1247,18 @@ function run_test_on_vm {
         EPC_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#epc#"`
         EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
         LTEBOX=0
-        install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
-        EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
+            # Creating a VM for EPC and installing SW
+            install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
+            EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
 
-        # Starting EPC
-        start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            # Starting EPC
+            start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        else
+            echo "We will use EPC on $EPC_IPADDR"
+            EPC_VM_IP_ADDR=$EPC_IPADDR
+        fi
 
         # Retrieve EPC real IP address
         retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
@@ -1277,9 +1270,8 @@ function run_test_on_vm {
         do
           for BW in ${BW_CASES[@]}
           do
-              # Not Running in TDD-10MHz and TDD-20MHz : too unstable
-              #if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*10.* ]]; then continue; fi
-              #if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*20.* ]]; then continue; fi
+              # Not Running in TDD-20MHz : too unstable
+              if [[ $TMODE =~ .*tdd.* ]] && [[ $BW =~ .*20.* ]]; then continue; fi
 
               if [[ $BW =~ .*05.* ]]; then PRB=25; fi
               if [[ $BW =~ .*10.* ]]; then PRB=50; fi
@@ -1300,15 +1292,9 @@ function run_test_on_vm {
               if [ $UE_SYNC -eq 0 ]
               then
                   echo "Problem w/ eNB and UE not syncing"
-                  terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
-                  scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-                  scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-                  recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-                  terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                  full_basic_sim_destroy
-                  echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                  full_terminate
                   STATUS=-1
-                  return
+                  continue
               fi
               get_ue_ip_addr $VM_CMDS $VM_IP_ADDR 1
 
@@ -1453,7 +1439,10 @@ function run_test_on_vm {
         echo "Terminate EPC"
         echo "############################################################"
 
-        terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
+            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        fi
 
         full_basic_sim_destroy
 
@@ -1481,43 +1470,56 @@ function run_test_on_vm {
             rm -Rf $ARCHIVES_LOC
         fi
         mkdir --parents $ARCHIVES_LOC
-
+        if [[ "$EPC_IPADDR" == "" ]]
+        then
         # Creating a VM for EPC and installing SW
-        EPC_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#epc#"`
-        EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
-        LTEBOX=0
-        install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
-        EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
-
+            EPC_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#epc#"`
+            EPC_VM_CMDS=${EPC_VM_NAME}_cmds.txt
+            LTEBOX=0
+            install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
+            EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+        fi
         # withS1 configuration is not working
         #EPC_CONFIGS=("wS1" "noS1")
         #TRANS_MODES=("fdd" "tdd")
         #BW_CASES=(05 10 20)
-        EPC_CONFIGS=("noS1")
+        EPC_CONFIGS=("noS1" "wS1")
         TRANS_MODES=("fdd")
         BW_CASES=(05)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
           if [[ $CN_CONFIG =~ .*wS1.* ]]
           then
-              echo "############################################################"
-              echo "Start EPC for the wS1 configuration"
-              echo "############################################################"
-              start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-
-              # Retrieve EPC real IP address
-              retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
-              S1_NOS1_CFG=1
+              if [[ "$EPC_IPADDR" ==  "" ]]
+              then
+                  echo "############################################################"
+                  echo "Start EPC for the wS1 configuration"
+                  echo "############################################################"
+                  start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                  # Retrieve EPC real IP address
+                  retrieve_real_epc_ip_addr $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                  S1_NOS1_CFG=1
+              else
+                  echo "############################################################"
+                  echo "Using external EPC " $EPC_IPADDR
+                  echo "############################################################"
+                  $EPC_VM_IP_ADDR=$EPC_IPADDR
+                  S1_NOS1_CFG=1
+                  LTEBOX=0
+              fi
           else
-              echo "############################################################"
-              echo "Terminate EPC"
-              echo "############################################################"
-              terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+              if [[ "$EPC_IPADDR" ==  "" ]]
+              then
+                  echo "############################################################"
+                  echo "Terminate EPC"
+                  echo "############################################################"
+                  terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
-              echo "############################################################"
-              echo "Running now in a no-S1 configuration"
-              echo "############################################################"
-              S1_NOS1_CFG=0
+                  echo "############################################################"
+                  echo "Running now in a no-S1 "
+                  echo "############################################################"
+                  S1_NOS1_CFG=0
+              fi
           fi
           for TMODE in ${TRANS_MODES[@]}
           do
@@ -1539,7 +1541,7 @@ function run_test_on_vm {
                   echo "${CN_CONFIG} : Starting the eNB in ${TMODE}-${BW}MHz mode"
                   echo "############################################################"
                   CURRENT_ENB_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_enb.log
-                  start_rf_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
+                  start_rf_sim_enb $ENB_VM_CMDS "$ENB_VM_IP_ADDR" "$EPC_VM_IP_ADDR" $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
 
                   echo "############################################################"
                   echo "${CN_CONFIG} : Starting the UE"
@@ -1739,14 +1741,8 @@ function run_test_on_vm {
                     terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
                     scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
                     scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
-                    if [ $S1_NOS1_CFG -eq 1 ]
-                    then
-                        terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
-                    fi
-                    full_l2_sim_destroy
-                    echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                     STATUS=-1
-                    return
+                    continue
                 fi
 
                 if [ $S1_NOS1_CFG -eq 1 ]

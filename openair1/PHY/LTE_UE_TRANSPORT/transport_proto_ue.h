@@ -72,6 +72,12 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
             uint8_t subframe,
             unsigned char symbol);
 
+int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
+            unsigned char eNB_id,
+            uint8_t subframe/*, 
+            unsigned char symbol*/
+            ,int mcs);
+
 /** \brief Dump OCTAVE/MATLAB files for PMCH debugging
     @param phy_vars_ue Pointer to UE variables
     @param eNB_id index of eNB in ue variables
@@ -1125,6 +1131,20 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
                  uint32_t high_speed_flag,
                  uint8_t frame_mod4);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+/*! \brief receiver for the PBCH FeMBMS
+  \returns number of tx antennas or -1 if error
+*/
+uint16_t rx_pbch_fembms(LTE_UE_COMMON *lte_ue_common_vars,
+                 LTE_UE_PBCH *lte_ue_pbch_vars,
+                 LTE_DL_FRAME_PARMS *frame_parms,
+                 uint8_t eNB_id,
+                 MIMO_mode_t mimo_mode,
+                 uint32_t high_speed_flag,
+                 uint8_t frame_mod4);
+#endif
+
+
 uint16_t rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
                       uint8_t eNB_id,
                       uint8_t pbch_phase);
@@ -1338,15 +1358,17 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 /*!
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
+int generate_drs_pusch(PHY_VARS_UE *ue,
+		       UE_rxtx_proc_t *proc,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       int32_t **txdataF,
+                       uint8_t eNB_id,
+                       short amp,
+                       unsigned int subframe,
+                       unsigned int first_rb,
+                       unsigned int nb_rb,
+                       uint8_t ant);
 
-int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
-                           UE_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           int16_t amp,
-                           uint32_t subframe,
-                           uint32_t first_rb,
-                           uint32_t nb_rb,
-                           uint8_t ant);
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).

@@ -192,7 +192,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_initiatingMessage:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.initiatingMessage.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.initiatingMessage.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
@@ -218,7 +218,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_successfulOutcome:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.successfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.successfulOutcome.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
@@ -244,7 +244,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
 
   case X2AP_X2AP_PDU_PR_unsuccessfulOutcome:
     /* Checking procedure Code and direction of message */
-    if (pdu.choice.unsuccessfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+    if (pdu.choice.unsuccessfulOutcome.procedureCode >= sizeof(x2ap_messages_callback) / (3 * sizeof(
           x2ap_message_decoded_callback))) {
         //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
       X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
@@ -785,6 +785,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring handover response\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
@@ -873,6 +874,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring UE context release\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
@@ -882,6 +884,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
                id_source,
                x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
                id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 

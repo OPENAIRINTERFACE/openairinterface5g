@@ -3017,8 +3017,9 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=UE_template->TBS_UL[harq_pid];
 
         if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-          LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
-                module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs_rv,first_rb[CC_id],rb_table[rb_table_index],rb_table_index,UE_template->TBS_UL[harq_pid],harq_pid);
+          LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, TBS %d, harq_pid %d)\n",
+                module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs_rv,first_rb[CC_id],ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb,UE_template->TBS_UL[harq_pid],harq_pid);
+
 
         // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
         //store for possible retransmission

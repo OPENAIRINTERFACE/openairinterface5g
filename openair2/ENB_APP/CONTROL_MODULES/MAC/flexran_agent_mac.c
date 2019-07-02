@@ -122,8 +122,13 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
 
                               rlc_reports[j] = malloc(sizeof(Protocol__FlexRlcBsr));
-                              if (rlc_reports[j] == NULL)
+                              if (rlc_reports[j] == NULL){
+                                 for (k = 0; k < j; k++){
+                                   free(rlc_reports[k]);
+                                 }
+                                 free(rlc_reports);
                                  goto error;
+                              }
                               protocol__flex_rlc_bsr__init(rlc_reports[j]);
                               rlc_reports[j]->lc_id = j+1;
                               rlc_reports[j]->has_lc_id = 1;
@@ -180,13 +185,21 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         //Create the actual CSI reports.
                         Protocol__FlexDlCsi **csi_reports;
                         csi_reports = malloc(sizeof(Protocol__FlexDlCsi *)*dl_report->n_csi_report);
-                        if (csi_reports == NULL)
+                        if (csi_reports == NULL) {
+                          free(dl_report);
                           goto error;
+                        }
                         for (j = 0; j < dl_report->n_csi_report; j++) {
 
                               csi_reports[j] = malloc(sizeof(Protocol__FlexDlCsi));
-                              if (csi_reports[j] == NULL)
+                              if (csi_reports[j] == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(csi_reports[k]);
+                                }
+                                free(csi_reports);
+                                csi_reports = NULL;
                                 goto error;
+                              }
                               protocol__flex_dl_csi__init(csi_reports[j]);
                               //The servCellIndex for this report
                               csi_reports[j]->serv_cell_index = j;
@@ -206,8 +219,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP10 *csi10;
                                     csi10 = malloc(sizeof(Protocol__FlexCsiP10));
-                                    if (csi10 == NULL)
-                                    goto error;
+                                    if (csi10 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p10__init(csi10);
                                     //TODO: set the wideband value
                                     // NN: this is also depends on cc_id
@@ -222,8 +241,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP11 *csi11;
                                     csi11 = malloc(sizeof(Protocol__FlexCsiP11));
-                                    if (csi11 == NULL)
-                                    goto error;
+                                    if (csi11 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p11__init(csi11);
 
                                     csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));
@@ -267,8 +292,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP20 *csi20;
                                     csi20 = malloc(sizeof(Protocol__FlexCsiP20));
-                                    if (csi20 == NULL)
-                                    goto error;
+                                    if (csi20 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p20__init(csi20);
 
                                     csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
@@ -402,14 +433,23 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             //Provide a report for each pending paging message
                             Protocol__FlexPagingInfo **p_info;
                             p_info = malloc(sizeof(Protocol__FlexPagingInfo *) * paging_report->n_paging_info);
-                            if (p_info == NULL)
+                            if (p_info == NULL){
+                              free(paging_report);
                               goto error;
+                            }
 
                             for (j = 0; j < paging_report->n_paging_info; j++) {
 
                                     p_info[j] = malloc(sizeof(Protocol__FlexPagingInfo));
-                                    if(p_info[j] == NULL)
+                                    if (p_info[j] == NULL) {
+                                      for (k = 0; k < j; k++) {
+                                        free(p_info[k]);
+                                      }
+                                      free(p_info);
+                                      p_info = NULL;
+                                      free(paging_report);
                                       goto error;
+                                    }
                                     protocol__flex_paging_info__init(p_info[j]);
                                     //TODO: Set paging index. This index is the same that will be used for the scheduling of the
                                     //paging message by the controller
@@ -450,14 +490,22 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                       full_ul_report->n_cqi_meas = 1;
                       Protocol__FlexUlCqi **ul_report;
                       ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
-                      if(ul_report == NULL)
+                      if(ul_report == NULL) {
+                        free(full_ul_report);
                         goto error;
+                      }
                       //Fill each UL report of the UE for each of the configured report types
                       for(j = 0; j < full_ul_report->n_cqi_meas; j++) {
 
                               ul_report[j] = malloc(sizeof(Protocol__FlexUlCqi));
-                              if(ul_report[j] == NULL)
-                              goto error;
+                              if(ul_report[j] == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(ul_report[k]);
+                                }
+                                free(ul_report);
+                                free(full_ul_report);
+                                goto error;
+                              }
                               protocol__flex_ul_cqi__init(ul_report[j]);
                               //TODO: Set the type of the UL report. As an example set it to SRS UL report
                               // See enum flex_ul_cqi_type in FlexRAN specification for more details
@@ -468,8 +516,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               ul_report[j]->n_sinr = 0;
                               uint32_t *sinr_meas;
                               sinr_meas = (uint32_t *) malloc(sizeof(uint32_t) * ul_report[j]->n_sinr);
-                              if (sinr_meas == NULL)
+                              if (sinr_meas == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(ul_report[k]);
+                                }
+                                free(ul_report);
+                                free(full_ul_report);
                                 goto error;
+                              }
                               //TODO:Set the SINR measurements for the specified type
                               for (k = 0; k < ul_report[j]->n_sinr; k++) {
                                       sinr_meas[k] = 10;
@@ -573,8 +627,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                             Protocol__FlexMacSdusDl ** mac_sdus;
                             mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id));
-                            if (mac_sdus == NULL)
+                            if (mac_sdus == NULL) {
+                                free(macstats);
                                 goto error;
+                            }
 
                             macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id);
 
@@ -653,10 +709,125 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
  error:
 
-  if (cell_report != NULL)
-        free(cell_report);
-  if (ue_report != NULL)
-        free(ue_report);
+  if (cell_report != NULL) {
+    if (report_config->nr_cc > 0) {
+      for (i = 0; i < report_config->nr_cc; i++) {
+        if (cell_report[i]->noise_inter_report != NULL) {
+          free(cell_report[i]->noise_inter_report);
+          cell_report[i]->noise_inter_report = NULL;
+        }
+      }
+    }
+    free(cell_report);
+    cell_report = NULL;
+  }
+
+  if (ue_report != NULL) {
+    if (report_config->nr_ue > 0) {
+      for (i = 0; i < report_config->nr_ue; i++) {
+        if (ue_report[i]->bsr != NULL) {
+          free(ue_report[i]->bsr);
+          ue_report[i]->bsr = NULL;
+        }
+        if (ue_report[i]->rlc_report != NULL) {
+          for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
+            if (ue_report[i]->rlc_report[j] != NULL) {
+              free(ue_report[i]->rlc_report[j]);
+              ue_report[i]->rlc_report[j] = NULL;
+            }
+          }
+          free(ue_report[i]->rlc_report);
+          ue_report[i]->rlc_report = NULL;
+        }
+        if (ue_report[i]->dl_cqi_report != NULL) {
+          if (ue_report[i]->dl_cqi_report->csi_report != NULL) {
+            for (j = 0; j < ue_report[i]->dl_cqi_report->n_csi_report; j++) {
+              if (ue_report[i]->dl_cqi_report->csi_report[j] != NULL) {
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p10csi != NULL) {
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p10csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p10csi = NULL;
+                }
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p11csi != NULL) {
+                  if (ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi != NULL) {
+                    free(ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi);
+                    ue_report[i]->dl_cqi_report->csi_report[j]->p11csi->wb_cqi = NULL;
+                  }
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p11csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p11csi = NULL;
+                }
+                if (ue_report[i]->dl_cqi_report->csi_report[j]->p20csi != NULL) {
+                  free(ue_report[i]->dl_cqi_report->csi_report[j]->p20csi);
+                  ue_report[i]->dl_cqi_report->csi_report[j]->p20csi = NULL;
+                }
+                free(ue_report[i]->dl_cqi_report->csi_report[j]);
+                ue_report[i]->dl_cqi_report->csi_report[j] = NULL;
+              }
+            }
+            free(ue_report[i]->dl_cqi_report->csi_report);
+            ue_report[i]->dl_cqi_report->csi_report = NULL;
+          }
+          free(ue_report[i]->dl_cqi_report);
+          ue_report[i]->dl_cqi_report = NULL;
+        }
+        if (ue_report[i]->pbr != NULL) {
+          if (ue_report[i]->pbr->paging_info != NULL) {
+            for (j = 0; j < ue_report[i]->pbr->n_paging_info; j++) {
+              free(ue_report[i]->pbr->paging_info[j]);
+              ue_report[i]->pbr->paging_info[j] = NULL;
+            }
+            free(ue_report[i]->pbr->paging_info);
+            ue_report[i]->pbr->paging_info = NULL;
+          }
+          free(ue_report[i]->pbr);
+          ue_report[i]->pbr = NULL;
+        }
+        if (ue_report[i]->ul_cqi_report != NULL) {
+          if (ue_report[i]->ul_cqi_report->cqi_meas != NULL) {
+            for (j = 0; j < ue_report[i]->ul_cqi_report->n_cqi_meas; j++) {
+              if (ue_report[i]->ul_cqi_report->cqi_meas[j] != NULL) {
+                if (ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr != NULL) {
+                  free(ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr);
+                  ue_report[i]->ul_cqi_report->cqi_meas[j]->sinr = NULL;
+                }
+                free(ue_report[i]->ul_cqi_report->cqi_meas[j]);
+                ue_report[i]->ul_cqi_report->cqi_meas[j] = NULL;
+              }
+            }
+            free(ue_report[i]->ul_cqi_report->cqi_meas);
+            ue_report[i]->ul_cqi_report->cqi_meas = NULL;
+          }
+          if (ue_report[i]->ul_cqi_report->pucch_dbm != NULL) {
+            for (j = 0; j < MAX_NUM_CCs; j++) {
+              if (ue_report[i]->ul_cqi_report->pucch_dbm[j] != NULL) {
+                free(ue_report[i]->ul_cqi_report->pucch_dbm[j]);
+                ue_report[i]->ul_cqi_report->pucch_dbm[j] = NULL;
+              }
+            }
+            free(ue_report[i]->ul_cqi_report->pucch_dbm);
+            ue_report[i]->ul_cqi_report->pucch_dbm = NULL;
+          }
+          free(ue_report[i]->ul_cqi_report);
+          ue_report[i]->ul_cqi_report = NULL;
+        }
+        if (ue_report[i]->mac_stats != NULL) {
+          if (ue_report[i]->mac_stats->mac_sdus_dl != NULL) {
+            for (j = 0; j < ue_report[i]->mac_stats->n_mac_sdus_dl; j++) {
+              if (ue_report[i]->mac_stats->mac_sdus_dl[j] != NULL) {
+                free(ue_report[i]->mac_stats->mac_sdus_dl[j]);
+                ue_report[i]->mac_stats->mac_sdus_dl[j] = NULL;
+              }
+            }
+            free(ue_report[i]->mac_stats->mac_sdus_dl);
+            ue_report[i]->mac_stats->mac_sdus_dl = NULL;
+          }
+          free(ue_report[i]->mac_stats);
+          ue_report[i]->mac_stats = NULL;
+        }
+      }
+    }
+    free(ue_report);
+    ue_report = NULL;
+  }
 
   return -1;
 }
@@ -1014,11 +1185,28 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   if (header != NULL)
     free(header);
   if (sf_trigger_msg != NULL) {
-    for (i = 0; i < sf_trigger_msg->n_dl_info; i++) {
-      free(sf_trigger_msg->dl_info[i]->harq_status);
+    if (sf_trigger_msg->dl_info != NULL) {
+      for (i = 0; i < sf_trigger_msg->n_dl_info; i++) {
+        if (sf_trigger_msg->dl_info[i] != NULL) {
+          if (sf_trigger_msg->dl_info[i]->harq_status != NULL) {
+            free(sf_trigger_msg->dl_info[i]->harq_status);
+          }
+          free(sf_trigger_msg->dl_info[i]);
+        }
+      }
+      free(sf_trigger_msg->dl_info);
     }
-    free(sf_trigger_msg->dl_info);
-    free(sf_trigger_msg->ul_info);
+    if (sf_trigger_msg->ul_info != NULL) {
+      for (i = 0; i < sf_trigger_msg->n_ul_info; i++) {
+        if (sf_trigger_msg->ul_info[i] != NULL) {
+          if (sf_trigger_msg->ul_info[i]->ul_reception != NULL) {
+            free(sf_trigger_msg->ul_info[i]->ul_reception);
+          }
+          free(sf_trigger_msg->ul_info[i]);
+        }
+      }
+      free(sf_trigger_msg->ul_info);
+    }
     free(sf_trigger_msg);
   }
   if(*msg != NULL)
@@ -1063,6 +1251,7 @@ int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMess
   Protocol__FlexDlMacConfig *dl_mac_config_msg;
   dl_mac_config_msg = malloc(sizeof(Protocol__FlexDlMacConfig));
   if (dl_mac_config_msg == NULL) {
+    free(header);
     goto error;
   }
   protocol__flex_dl_mac_config__init(dl_mac_config_msg);
@@ -1072,8 +1261,11 @@ int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMess
   dl_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    free(dl_mac_config_msg);
+    free(header);
     goto error;
+  }
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG;
   (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
@@ -1167,8 +1359,10 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
   ul_mac_config_msg->sfn_sf = flexran_get_sfn_sf(mod_id);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    free(ul_mac_config_msg);
     goto error;
+  }
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG;
   (*msg)->msg_dir =  PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
@@ -1177,6 +1371,10 @@ int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMess
   return 0;
 
  error:
+  if(header){
+      free(header);
+      header = NULL;
+  }
   return -1;
 }
 
@@ -1292,7 +1490,7 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
 
 void flexran_agent_send_sr_info(mid_t mod_id) {
   int size;
-  Protocol__FlexranMessage *msg;
+  Protocol__FlexranMessage *msg = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code;
@@ -1322,7 +1520,7 @@ void flexran_agent_send_sr_info(mid_t mod_id) {
 
 void flexran_agent_send_sf_trigger(mid_t mod_id) {
   int size;
-  Protocol__FlexranMessage *msg;
+  Protocol__FlexranMessage *msg = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code;

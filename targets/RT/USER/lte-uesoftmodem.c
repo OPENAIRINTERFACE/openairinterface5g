@@ -66,7 +66,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
-
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "UTIL/OTG/otg_tx.h"
@@ -85,26 +85,14 @@
 
 #include "system.h"
 
-#ifdef XFORMS
-  #include "PHY/TOOLS/lte_phy_scope.h"
-  #include "stats.h"
-#endif
+
 #include "lte-softmodem.h"
 
 
 
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
-#ifdef XFORMS
-  // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-  // at eNB 0, an UL scope for every UE
-  FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-  FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-  char title[255];
-  unsigned char                   scope_enb_num_ue = 2;
-  static pthread_t                forms_thread; //xforms
-#endif //XFORMS
+
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -129,7 +117,8 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-clock_source_t clock_source = internal;
+
+clock_source_t clock_source = internal,time_source=internal;
 
 
 unsigned int                    mmapped_dma=0;
@@ -148,7 +137,7 @@ int snr_dB=25;
 runmode_t mode = normal_txrx;
 
 FILE *input_fd=NULL;
-
+int otg_enabled=0;
 
 #if MAX_NUM_CCs == 1
 rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
@@ -179,10 +168,6 @@ char channels[128] = "0";
 
 int                      rx_input_level_dBm;
 
-#ifdef XFORMS
-  extern int                      otg_enabled;
-#endif
-//int                             number_of_cards =   1;
 
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
@@ -329,68 +314,8 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-#ifdef XFORMS
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
-  int i,j,k;
-  PHY_VARS_eNB *phy_vars_eNB = RC.eNB[0][0];
-
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_eNB->dlsch[i][0]->Mlimit; j++) {
-        phy_vars_eNB->UE_stats[i].dlsch_NAK[k][j]=0;
-        phy_vars_eNB->UE_stats[i].dlsch_ACK[k][j]=0;
-        phy_vars_eNB->UE_stats[i].dlsch_trials[k][j]=0;
-      }
-
-      phy_vars_eNB->UE_stats[i].dlsch_l2_errors[k]=0;
-      phy_vars_eNB->UE_stats[i].ulsch_errors[k]=0;
-      phy_vars_eNB->UE_stats[i].ulsch_consecutive_errors=0;
-      phy_vars_eNB->UE_stats[i].dlsch_sliding_cnt=0;
-      phy_vars_eNB->UE_stats[i].dlsch_NAK_round0=0;
-      phy_vars_eNB->UE_stats[i].dlsch_mcs_offset=0;
-    }
-  }
-}
-
-static void *scope_thread(void *arg) {
-  char stats_buffer[16384];
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *UE_stats, *eNB_stats;
-# endif
-  struct sched_param sched_param;
-  sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
-  sched_setscheduler(0, SCHED_FIFO,&sched_param);
-  printf("Scope thread has priority %d\n",sched_param.sched_priority);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  UE_stats  = fopen("UE_stats.txt", "w");
-#endif
-
-  while (!oai_exit) {
-    //      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
-    //fl_set_object_label(form_stats->stats_text, stats_buffer);
-    fl_clear_browser(form_stats->stats_text);
-    fl_add_browser_line(form_stats->stats_text, stats_buffer);
-    phy_scope_UE(form_ue[0],
-                 PHY_vars_UE_g[0][0],
-                 0,
-                 0,7);
-    //  printf("%s",stats_buffer);
-  }
-
-# ifdef ENABLE_XFORMS_WRITE_STATS
-
-  if (UE_stats) {
-    rewind (UE_stats);
-    fwrite (stats_buffer, 1, len, UE_stats);
-    fclose (UE_stats);
-  }
-
-# endif
-  pthread_exit((void *)arg);
-}
-#endif
 
 
 
@@ -400,10 +325,12 @@ static void get_options(void) {
   int CC_id;
   int tddflag;
   char *loopfile=NULL;
-  int dumpframe;
+
+  int dumpframe=0;
   int timingadv;
   uint8_t nfapi_mode;
   int simL1flag ;
+
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
@@ -675,9 +602,6 @@ void init_pdcp(void) {
 }
 
 int main( int argc, char **argv ) {
-#if defined (XFORMS)
-  void *status;
-#endif
   int CC_id;
   uint8_t  abstraction_flag=0;
 #ifdef UESIM_EXPANSION
@@ -687,9 +611,6 @@ int main( int argc, char **argv ) {
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
   NB_THREAD_INST=1;
-#if defined (XFORMS)
-  int ret;
-#endif
   configmodule_interface_t *config_mod;
   start_background_system();
   config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
@@ -697,7 +618,7 @@ int main( int argc, char **argv ) {
   if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+ 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   set_latency_target();
@@ -749,9 +670,7 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
-
   init_pdcp();
-
   //TTN for D2D
   printf ("RRC control socket\n");
   rrc_control_socket_init();
@@ -898,37 +817,9 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 
-#ifdef XFORMS
-  int UE_id;
-  printf("XFORMS\n");
+  if(IS_SOFTMODEM_DOFORMS)
+    load_softscope("ue");
 
-  if (get_softmodem_params()->do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_stats = create_form_stats_form();
-    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-    UE_id = 0;
-    form_ue[UE_id] = create_lte_phy_scope_ue();
-    sprintf (title, "LTE DL SCOPE UE");
-    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    /*
-    if (openair_daq_vars.use_ia_receiver) {
-    fl_set_button(form_ue[UE_id]->button_0,1);
-    fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
-    } else {
-    fl_set_button(form_ue[UE_id]->button_0,0);
-    fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-    }*/
-    fl_set_button(form_ue[UE_id]->button_0,0);
-    fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
-
-    printf("Scope thread created, ret=%d\n",ret);
-  }
-
-#endif
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);
   pthread_mutex_lock(&sync_mutex);
@@ -957,19 +848,11 @@ int main( int argc, char **argv ) {
 
   printf("Terminating application - oai_exit=%d\n",oai_exit);
 #endif
+
   // stop threads
-#ifdef XFORMS
-  printf("waiting for XFORMS thread\n");
+  if(IS_SOFTMODEM_DOFORMS)
+    end_forms();
 
-  if (get_softmodem_params()->do_forms==1) {
-    pthread_join(forms_thread,&status);
-    fl_hide_form(form_stats->stats_form);
-    fl_free_form(form_stats->stats_form);
-    fl_hide_form(form_ue[0]->lte_phy_scope_ue);
-    fl_free_form(form_ue[0]->lte_phy_scope_ue);
-  }
-
-#endif
   printf("stopping MODEM threads\n");
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);

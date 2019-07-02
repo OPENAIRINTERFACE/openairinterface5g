@@ -28,56 +28,7 @@ function report_test_usage {
     echo "------"
     echo "    oai-ci-vm-tool report-test [OPTIONS]"
     echo ""
-    echo "Options:"
-    echo "--------"
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
-    echo "Job Options:"
-    echo "------------"
-    echo ""
-    echo "    --git-url #### OR -gu ####"
-    echo "    Specify the URL of the GIT Repository."
-    echo ""
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    echo "    --trigger merge-request OR -mr"
-    echo "    --trigger push          OR -pu"
-    echo "    Specify trigger action of the Jenkins job. Either a merge-request event or a push event."
-    echo ""
-    echo "Merge-Request Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --src-branch #### OR -sb ####"
-    echo "    Specify the source branch of the merge request."
-    echo ""
-    echo "    --src-commit #### OR -sc ####"
-    echo "    Specify the source commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "    --target-branch #### OR -tb ####"
-    echo "    Specify the target branch of the merge request (usually develop)."
-    echo ""
-    echo "    --target-commit #### OR -tc ####"
-    echo "    Specify the target commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "Push Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --branch #### OR -br ####"
-    echo "    Specify the branch of the push event."
-    echo ""
-    echo "    --commit #### OR -co ####"
-    echo "    Specify the commit ID (SHA-1) of the push event."
-    echo ""
-    echo ""
+    command_options_usage
 }
 
 function analyzePingFiles {
@@ -508,26 +459,26 @@ function report_test {
                     NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
                     NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
                     NB_ENB_SYNCED_WITH_UE=`egrep -c "Sending NFAPI_START_RESPONSE" $UE_LOG`
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 3 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 2 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                     else
                         echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                     fi
                     echo "        <td><pre>" >> ./test_simulator_results.html
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ]
                     then
                         echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
                     else
                         echo "<font color = \"red\"><b>- eNB NEVER got sync</b></font>" >> ./test_simulator_results.html
                     fi
-                    if [ $NB_UE_GOT_SYNC -eq 3 ]
+                    if [ $NB_UE_GOT_SYNC -gt 2 ]
                     then
                         echo "<font color = \"blue\">- UE --> got sync</font>" >> ./test_simulator_results.html
                     else
                         echo "<font color = \"red\"><b>- UE NEVER got sync</b></font>" >> ./test_simulator_results.html
                     fi
-                    if [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
                         echo "<font color = \"blue\">- UE attached to eNB</font>" >> ./test_simulator_results.html
                     else

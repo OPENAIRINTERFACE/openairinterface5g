@@ -280,6 +280,8 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     UE_id = find_UE_id(Mod_id, rnti);
+    if(UE_id == -1)
+        continue;
     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame,subframe);
     round = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
 
@@ -302,6 +304,8 @@ maxround_ul(module_id_t Mod_id, uint16_t rnti, int sched_frame,
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     UE_id = find_UE_id(Mod_id, rnti);
+    if(UE_id == -1)
+      continue;
     harq_pid = subframe2harqpid(cc, sched_frame, sched_subframe);
     round = UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid];
 
@@ -1399,7 +1403,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
 
   //
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id,(int)(UE_RNTI(module_idP, UE_id)));
     // initialize harq_pid and round
     cc = &RC.mac[module_idP]->common_channels[CC_id];
     N_RBG[CC_id] = to_rbg(cc->mib->message.dl_Bandwidth);

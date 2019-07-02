@@ -920,6 +920,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   nfapi_hi_dci0_request_t *hi_dci0_req;
   uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
   hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP+sf_ahead_dl)%10];
+
   nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci +
                                       hi_dci0_req_body->number_of_hi];
@@ -1514,7 +1515,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           
           /* Handle the aperiodic CQI report */
           cqi_req = 0;
-
+          LOG_D(MAC,"RRC Conenction status %d, cqi_timer %d\n",status,UE_sched_ctrl_ptr->cqi_req_timer);
           if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
             if (UE_sched_ctrl_ptr->cqi_received == 0) {
               if (NFAPI_MODE != NFAPI_MONOLITHIC) {
@@ -1522,6 +1523,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
               } else {
                 cqi_req = 1;
 
+                LOG_D(MAC,"Setting CQI_REQ (timer %d)\n",UE_sched_ctrl_ptr->cqi_req_timer);
                 /* TDD: to be safe, do not ask CQI in special Subframes:36.213/7.2.3 CQI definition */
                 if (cc[CC_id].tdd_Config) {
                   switch (cc[CC_id].tdd_Config->subframeAssignment) {
@@ -1548,6 +1550,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                 }
               }
             } else {
+              LOG_D(MAC,"Clearing CQI request timer\n");
               UE_sched_ctrl_ptr->cqi_req_flag = 0;
               UE_sched_ctrl_ptr->cqi_received = 0;
               UE_sched_ctrl_ptr->cqi_req_timer = 0;

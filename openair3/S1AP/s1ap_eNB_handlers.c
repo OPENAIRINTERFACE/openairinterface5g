@@ -220,7 +220,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage.procedureCode > sizeof(messages_callback) / (3 * sizeof(
+  if (pdu.choice.initiatingMessage.procedureCode >= sizeof(messages_callback) / (3 * sizeof(
         s1ap_message_decoded_callback))
       || (pdu.present > S1AP_S1AP_PDU_PR_unsuccessfulOutcome)) {
     S1AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
@@ -1212,6 +1212,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
     } else {
       /* invalid paging_p->cnDomain */
       S1AP_ERROR("[SCTP %d] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, ie->value.choice.CNDomain);
+      itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
       return -1;
     }
   } else {
@@ -1342,6 +1343,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
     S1AP_E_RAB_MODIFY_RESP(message_p).nb_of_e_rabs_failed = nb_of_e_rabs_failed;
     s1ap_eNB_e_rab_modify_resp(mme_desc_p->s1ap_eNB_instance->instance,
                                &S1AP_E_RAB_MODIFY_RESP(message_p));
+    itti_free(TASK_RRC_ENB,message_p);
     message_p = NULL;
     return -1;
   }
@@ -1543,6 +1545,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
     S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
                "existing UE context 0x%06lx\n", assoc_id,
                ie->value.choice.ENB_UE_S1AP_ID);
+    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
   }
 

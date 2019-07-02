@@ -218,6 +218,7 @@ error:
 
 socket_link_t *new_link_udp_client(const char *server, int port){
 
+  int s = -1;
   socket_link_t      *ret = NULL;
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
@@ -227,8 +228,7 @@ socket_link_t *new_link_udp_client(const char *server, int port){
   ret->socket_fd = -1;
 
   struct sockaddr_in si_other;
-  int s;
-  socklen_t slen;
+  socklen_t slen = sizeof(si_other);
  
   if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         goto error;
@@ -254,8 +254,12 @@ socket_link_t *new_link_udp_client(const char *server, int port){
   return ret;
 error:
   if (ret != NULL) {
-    close(ret->socket_fd);
     free(ret);
+    ret = NULL;
+  }
+  if (s != -1) {
+    close(s);
+    s = -1;
   }
   LOG_E(MAC, "ERROR in new_link_udp_client (see above), returning NULL\n");
   return NULL;
@@ -402,7 +406,7 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
   LOG_D(PROTO_AGENT,"UDP RECEIVE\n");
 
   struct sockaddr_in client;
-  socklen_t slen;
+  socklen_t slen = sizeof(client);
   int   l;
 
   l = recvfrom(socket_fd, buf, size, 0, (struct sockaddr *) &client, &slen);

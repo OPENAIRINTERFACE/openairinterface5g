@@ -166,6 +166,7 @@ typedef struct RadioResourceConfig_s {
   long			  mpdcch_startSF_CSS_RA_r13_val;
   long*			  prach_HoppingOffset_r13;
 #endif
+  BOOLEAN_t		  mbms_dedicated_serving_cell;
 } RadioResourceConfig;
 
 // eNB: ENB_APP -> RRC messages
@@ -179,6 +180,9 @@ typedef struct RrcConfigurationReq_s {
   uint16_t            mnc[PLMN_LIST_MAX_SIZE];
   uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t             num_plmn;
+
+  int                 enable_measurement_reports;
+  int                 enable_x2;
 
   uint32_t            rrc_inactivity_timer_thres; // for testing, maybe change later
 

@@ -44,6 +44,8 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   int size;
   Protocol__FlexranMessage *msg = NULL;
   Protocol__FlexHeader *header = NULL;
+  Protocol__FlexUeStateChange *ue_state_change_msg = NULL;
+  Protocol__FlexUeConfig *config = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code=0;
@@ -53,7 +55,6 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UE_STATE_CHANGE, &header) != 0)
     goto error;
 
-  Protocol__FlexUeStateChange *ue_state_change_msg;
   ue_state_change_msg = malloc(sizeof(Protocol__FlexUeStateChange));
   if(ue_state_change_msg == NULL) {
     goto error;
@@ -62,7 +63,6 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   ue_state_change_msg->has_type = 1;
   ue_state_change_msg->type = state_change;
 
-  Protocol__FlexUeConfig *config;
   config = malloc(sizeof(Protocol__FlexUeConfig));
   if (config == NULL) {
     goto error;
@@ -103,11 +103,24 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   }
 
   LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
+  free(header);
   return;
  error:
   if (err_code != 0)
      LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d for RNTI %x\n",
            err_code, rnti);
+  if (header){
+    free(header);
+  }
+  if (ue_state_change_msg) {
+    free(ue_state_change_msg);
+  }
+  if (config) {
+    free(config);
+  }
+  if (msg) {
+    free(msg);
+  }
 }
 
 
@@ -387,8 +400,11 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         /* Target Cell, Neghibouring*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;
         neigh_meas = malloc(sizeof(Protocol__FlexNeighCellsMeasurements));
-        if (neigh_meas == NULL)
+        if (neigh_meas == NULL) {
+          free(rrc_measurements);
+          rrc_measurements = NULL;
           goto error;
+        }
         protocol__flex_neigh_cells_measurements__init(neigh_meas);
          
         
@@ -399,14 +415,26 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         if (neigh_meas->n_eutra_meas > 0){
           
           eutra_meas = malloc(sizeof(Protocol__FlexEutraMeasurements) * neigh_meas->n_eutra_meas);
-          if (eutra_meas == NULL)
+          if (eutra_meas == NULL) {
+            free(neigh_meas);
+            free(rrc_measurements);
+            rrc_measurements = NULL;
             goto error;
+          }
           
           for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
 
               eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
-              if (eutra_meas[j] == NULL)
+              if (eutra_meas[j] == NULL) {
+                for (int k = 0 ; k < j ; k++) {
+                  free(eutra_meas[k]);
+                }
+                free(eutra_meas);
+                free(neigh_meas);
+                free(rrc_measurements);
+                rrc_measurements = NULL;
                 goto error;
+              }
 
               protocol__flex_eutra_measurements__init(eutra_meas[j]);
 
@@ -435,6 +463,8 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
            rrc_measurements->neigh_meas = neigh_meas;
        
+        } else {
+           free(neigh_meas);
         }
 
       	 ue_report[i]->rrc_measurements = rrc_measurements;

@@ -66,6 +66,12 @@
 #include "LTE_SystemInformationBlockType1-v1310-IEs.h"
 #include "LTE_SystemInformationBlockType18-r12.h"
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#include "LTE_BCCH-BCH-Message-MBMS.h"
+#include "LTE_BCCH-DL-SCH-Message-MBMS.h"
+#include "LTE_SystemInformationBlockType1-MBMS-r14.h"
+#include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
 #include "LTE_RadioResourceConfigCommonSIB.h"
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
@@ -416,6 +422,11 @@ typedef struct {
 #define BCCH_SIB1_BR 6		// SIB1_BR
 /*!\brief Values of BCCH SIB_BR logical channel (fake) */
 #define BCCH_SI_BR 7		// SI-BR
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/*!\brief Values of BCCH SIB1_BR logical channel (fake) */
+#define BCCH_SIB1_MBMS 60              // SIB1_MBMS //TODO better armonize index
+#define BCCH_SI_MBMS 61                // SIB_MBMS //TODO better armonize index
+#endif
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0			// srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -425,7 +436,8 @@ typedef struct {
 /*!\brief DTCH DRB1  logical channel */
 #define DTCH 3			// LCID
 /*!\brief MCCH logical channel */
-#define MCCH 4
+//#define MCCH 4
+#define MCCH 62
 /*!\brief MTCH logical channel */
 #define MTCH 1
 // DLSCH LCHAN ID
@@ -1311,6 +1323,7 @@ typedef struct {
     LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
+    LTE_SchedulingInfoList_MBMS_r14_t *schedulingInfoList_MBMS;
 #endif
     LTE_TDD_Config_t *tdd_Config;
     LTE_SchedulingInfoList_t *schedulingInfoList;
@@ -1338,6 +1351,9 @@ typedef struct {
     uint8_t vrb_map_UL[100];
     /// MBSFN SubframeConfig
     struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -1370,6 +1386,11 @@ typedef struct {
     /// Outgoing BCCH-BR pdu for PHY
     BCCH_PDU BCCH_BR_pdu[20];
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    BCCH_PDU BCCH_MBMS_pdu;
+    uint8_t FeMBMS_flag;
+#endif
+
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
@@ -1439,6 +1460,9 @@ typedef struct eNB_MAC_INST_s {
   time_stats_t eNB_scheduler;
   /// processing time of eNB scheduler for SI
   time_stats_t schedule_si;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  time_stats_t schedule_si_mbms;
+#endif
   /// processing time of eNB scheduler for Random access
   time_stats_t schedule_ra;
   /// processing time of eNB ULSCH scheduler
@@ -1678,6 +1702,9 @@ typedef struct {
 
     /// MBSFN_Subframe Configuration
     struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))

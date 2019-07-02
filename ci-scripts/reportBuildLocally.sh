@@ -28,56 +28,8 @@ function report_build_usage {
     echo "------"
     echo "    oai-ci-vm-tool report-build [OPTIONS]"
     echo ""
-    echo "Options:"
-    echo "--------"
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
-    echo "Job Options:"
-    echo "------------"
-    echo ""
-    echo "    --git-url #### OR -gu ####"
-    echo "    Specify the URL of the GIT Repository."
-    echo ""
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    echo "    --trigger merge-request OR -mr"
-    echo "    --trigger push          OR -pu"
-    echo "    Specify trigger action of the Jenkins job. Either a merge-request event or a push event."
-    echo ""
-    echo "Merge-Request Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --src-branch #### OR -sb ####"
-    echo "    Specify the source branch of the merge request."
-    echo ""
-    echo "    --src-commit #### OR -sc ####"
-    echo "    Specify the source commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "    --target-branch #### OR -tb ####"
-    echo "    Specify the target branch of the merge request (usually develop)."
-    echo ""
-    echo "    --target-commit #### OR -tc ####"
-    echo "    Specify the target commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "Push Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --branch #### OR -br ####"
-    echo "    Specify the branch of the push event."
-    echo ""
-    echo "    --commit #### OR -co ####"
-    echo "    Specify the commit ID (SHA-1) of the push event."
-    echo ""
-    echo ""
+    command_options_usage
+
 }
 
 function trigger_usage {
@@ -566,9 +518,11 @@ function report_build {
     summary_table_footer
 
     summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
-    summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
-    summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
+    summary_table_row "LTE SoftModem - Release 14" ./archives/basic_sim/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./basic_sim_row1.html
+    summary_table_row "LTE UE SoftModem - Release 14" ./archives/basic_sim/lte-uesoftmodem.Rel14.txt "Built target lte-uesoftmodem" ./basic_sim_row2.htm
     summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
+    summary_table_row "RB Tool - Release 14" ./archives/basic_sim/rb_tool.Rel14.txt "Built target rb_tool" ./basic_sim_row4.html
+    summary_table_row "NASMESH - Release 14" ./archives/basic_sim/nasmesh.Rel14.txt "Built target nasmesh" ./basic_sim_row5.html
     summary_table_footer
 
     summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
@@ -644,7 +598,7 @@ function report_build {
             cat $DETAILS_TABLE >> ./build_results.html
         done
     fi
-    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ]
+    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ] || [ -f ./basic_sim_row4.html ] || [ -f ./basic_sim_row5.html ]
     then
         for DETAILS_TABLE in `ls ./basic_sim_row*.html`
         do

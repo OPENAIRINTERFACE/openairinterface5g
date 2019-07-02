@@ -122,6 +122,7 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 - eMBMS for multicast and broadcast (experimental)
 - Handover (experimental)
 - Paging (soon)
+- RRC inactivity timer (release of UE after a period of data inactivity)
 
 ## eNB X2AP ##
 
@@ -167,6 +168,9 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 - PRACH preamble format 0
 - All downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH
 - All uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
+- LTE MBMS-dedicated cell (feMBMS) procedures subset for LTE release 14 (experimental)  
+- LTE non-MBSFN subframe (feMBMS) Carrier Adquistion Subframe-CAS procedures (PSS/SSS/PBCH/PDSH) (experimental)
+- LTE MBSFN MBSFN subframe channel (feMBMS): PMCH (CS@1.25KHz) (channel estimation for 25MHz bandwidth) (experimental) 
 
 ## LTE UE MAC Layer ##
 
@@ -178,6 +182,8 @@ The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support
 - RLC interface (AM, UM)
 - UL power control
 - Link adaptation
+- MBMS-dedicated cell (feMBMS) RRC interface for BCCH 
+- eMBMS and MBMS-dedicated cell (feMBMS) RRC interface for MCCH, MTCH
 
 ## LTE UE RLC Layer ##
 
@@ -193,6 +199,7 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 - System Information decoding
 - RRC connection establishment
+- MBMS-dedicated cell (feMBMS) SI-MBMS/SIB1-MBMS management
 
 ## LTE UE NAS Layer ##
 

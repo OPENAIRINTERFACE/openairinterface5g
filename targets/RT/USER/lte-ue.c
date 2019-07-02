@@ -890,7 +890,7 @@ void ue_stub_rx_handler(unsigned int num_bytes, char *rx_buffer) {
   switch (((UE_tport_header_t *)rx_buffer)->packet_type) {
     case TTI_SYNC:
       emulator_absSF = ((UE_tport_header_t *)rx_buffer)->absSF;
-      wakeup_thread(&UE->timer_mutex,&UE->timer_cond,&UE->instance_cnt_timer,"timer_thread");
+      wakeup_thread(&UE->timer_mutex,&UE->timer_cond,&UE->instance_cnt_timer,"timer_thread",100,1);
       break;
 
     case SLSCH:
@@ -1503,6 +1503,7 @@ void *UE_thread(void *arg) {
   int i;
   int th_id;
   static uint8_t thread_idx = 0;
+  int ret;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
@@ -1724,24 +1725,36 @@ void *UE_thread(void *arg) {
           }
 
           pickTime(gotIQs);
-          struct timespec tv= {0};
-          tv.tv_nsec=10*1000;
 
-          if( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM)
-            tv.tv_sec=INT_MAX;
+          /* no timeout in IS_SOFTMODEM_BASICSIM or IS_SOFTMODEM_RFSIM mode */
+          if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) {
+            ret = pthread_mutex_lock(&proc->mutex_rxtx);
+          } else {
+            struct timespec tv;
+            if (clock_gettime(CLOCK_REALTIME, &tv) != 0) {
+              perror("clock_gettime");
+              exit(1);
+            }
+            tv.tv_nsec += 10*1000;
+            if (tv.tv_nsec >= 1000 * 1000 * 1000) {
+              tv.tv_sec++;
+              tv.tv_nsec -= 1000 * 1000 * 1000;
+            }
+            ret = pthread_mutex_timedlock(&proc->mutex_rxtx, &tv);
+          }
 
           // operate on thread sf mod 2
-          if (pthread_mutex_timedlock(&proc->mutex_rxtx, &tv) !=0) {
-            if ( errno == ETIMEDOUT) {
+          if (ret != 0) {
+            if (ret == ETIMEDOUT) {
               LOG_E(PHY,"Missed real time\n");
               continue;
             } else {
-              LOG_E(PHY,"System error\n");
+              LOG_E(PHY,"System error %s (%d)\n",strerror(errno),errno);
               abort();
             }
           }
 
-          //usleep(3000);
+          //          usleep(3000);
           if(sub_frame == 0) {
             //UE->proc.proc_rxtx[0].frame_rx++;
             //UE->proc.proc_rxtx[1].frame_rx++;

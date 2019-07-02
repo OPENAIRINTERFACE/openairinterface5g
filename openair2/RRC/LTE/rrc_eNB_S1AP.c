@@ -266,22 +266,28 @@ rrc_eNB_S1AP_get_ue_ids(
           }
           return NULL; //skip the operation below to avoid loop
           result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
+          if (ue_desc_p->ue_initial_id != UE_INITIAL_ID_INVALID) {
+            result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
 
-          if (result != NULL) {
-            ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
+            if (result != NULL) {
+              ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
 
-            if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
-              ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-            } else {
-              LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
-                    rrc_instance_pP - RC.rrc[0],
-                    (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
-                    eNB_ue_s1ap_id,
-                    result->ue_rnti);
+              if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
+                ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+              } else {
+                LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
+                      rrc_instance_pP - RC.rrc[0],
+                      (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
+                      eNB_ue_s1ap_id,
+                      result->ue_rnti);
+              }
             }
+          } else {
+            LOG_E(S1AP, "[eNB %ld] S1AP context found but ue_initial_id is invalid (0)\n", rrc_instance_pP - RC.rrc[0]);
+            return NULL;
           }
         } else {
-          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even when looking at S1AP context\n",
+          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", because ue_initial_id is invalid in S1AP context\n",
                 rrc_instance_pP - RC.rrc[0],
                 eNB_ue_s1ap_id);
           return NULL;
@@ -849,6 +855,7 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
   uint8_t srb_id;
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
+  memset(&ctxt, 0, sizeof(protocol_ctxt_t));
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
@@ -920,7 +927,7 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     rrc_data_req (
       &ctxt,
       srb_id,
-      *rrc_eNB_mui++,
+      (*rrc_eNB_mui)++,
       SDU_CONFIRM_NO,
       length,
       buffer,
@@ -1636,6 +1643,8 @@ int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t *const ctxt_pP,
       S1AP_E_RAB_MODIFY_RESP (msg_p).eNB_ue_s1ap_id,
       e_rabs_done, e_rabs_failed);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+  } else {
+    itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
   }
 
   return 0;
@@ -2033,6 +2042,8 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
 			 S1AP_PATH_SWITCH_REQ (msg_p).eNB_ue_s1ap_id,
 			 e_rabs_done);
 	itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+     } else {
+        itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
      }
 
   return 0;

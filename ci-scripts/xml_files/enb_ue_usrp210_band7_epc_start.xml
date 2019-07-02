@@ -29,10 +29,10 @@
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-        <testCase id="050101">
+	<testCase id="050101">
 		<class>Initialize_HSS</class>
 		<desc>Initialize HSS</desc>
-        </testCase>
+	</testCase>
 
 	<testCase id="060101">
 		<class>Initialize_MME</class>

@@ -19,14 +19,14 @@
  *      contact@openairinterface.org
  */
 
-/*! \file ue_procedures.c
- * \brief procedures related to UE
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
 
+/*! \file asn1_msg.c
+ * \brief primitives to build the asn1 messages / primitives to build FeMBMS asn1  messages
+ * \author Raymond Knopp, Navid Nikaein and Javier Morgade
+ * \date 2011 / 2019
+ * \version 1.0
+ * \company Eurecom
+ * \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr javier.morgade@ieee.org
  */
 
 #ifdef EXMIMO
@@ -593,6 +593,45 @@ ue_send_sdu(module_id_t module_idP,
   stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
 #endif
 }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void
+ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frameP,
+            uint8_t eNB_index, void *pdu, uint16_t len)
+{
+#if UE_TIMING_TRACE
+    start_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
+
+    LOG_D(MAC, "[UE %d] Frame %d Sending SI MBMS to RRC (LCID Id %d,len %d)\n",
+         module_idP, frameP, BCCH, len);
+
+    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,  // unknown subframe
+                    SI_RNTI,
+                    BCCH_SI_MBMS, (uint8_t *) pdu, len, eNB_index,
+                    0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
+    if (opt_enabled == 1) {
+       trace_pdu(DIRECTION_UPLINK,
+                 (uint8_t *) pdu,
+                 len,
+                 module_idP,
+                 WS_SI_RNTI,
+                 0xffff,
+                 UE_mac_inst[module_idP].rxFrame,
+                 UE_mac_inst[module_idP].rxSubframe, 0, 0);
+       LOG_D(OPT,
+             "[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+             module_idP, frameP, CC_id, 0xffff, len);
+    }
+}
+#endif
 
 void
 ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
@@ -3329,7 +3368,7 @@ SLDCH_t *ue_get_sldch(module_id_t Mod_id,int CC_id,frame_t frame_tx,sub_frame_t 
 
 
 SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframeP) {
-  mac_rlc_status_resp_t rlc_status; //, rlc_status_data;
+  mac_rlc_status_resp_t rlc_status = {0,0,0,0,0}; //, rlc_status_data;
   uint32_t absSF = (frameP*10)+subframeP;
   UE_MAC_INST *ue = &UE_mac_inst[module_idP];
   int rvtab[4] = {0,2,3,1};
@@ -3370,10 +3409,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
            (ue->sltx_active == 1)) { // every 4th subframe, check for new data from RLC
     // 10 PRBs, mcs 19
     int TBS = 4584/8;
-    int req;
-
-    if (TBS <= rlc_status.bytes_in_buffer) req = TBS;
-    else req = rlc_status.bytes_in_buffer;
+    int req = (TBS <= rlc_status.bytes_in_buffer) ? TBS : rlc_status.bytes_in_buffer;
 
     if (req>0) {
       sdu_length = mac_rlc_data_req(module_idP,

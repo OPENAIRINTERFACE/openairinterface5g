@@ -81,7 +81,7 @@ static int tun_alloc(char *dev) {
   ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
 
   if( *dev )
-    strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+    strncpy(ifr.ifr_name, dev, sizeof(ifr.ifr_name)-1);
 
   if( (err = ioctl(fd, TUNSETIFF, (void *) &ifr)) < 0 ) {
     close(fd);

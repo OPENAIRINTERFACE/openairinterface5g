@@ -127,7 +127,6 @@ int flexran_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessa
   hello_msg->bs_id  = flexran_get_bs_id(mod_id);
   hello_msg->has_bs_id = 1;
   hello_msg->n_capabilities = flexran_get_capabilities(mod_id, &hello_msg->capabilities);
-
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
   if(*msg == NULL)
@@ -296,8 +295,10 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
   for (int i = 0; i < reply->n_cell_config; i++) {
     if (reply->cell_config[i]->mbsfn_subframe_config_rfoffset)
       free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
+
     if (reply->cell_config[i]->mbsfn_subframe_config_rfperiod)
       free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
+
     if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc)
       free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
 
@@ -305,6 +306,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
       for(int j = 0; j < reply->cell_config[i]->si_config->n_si_message; j++) {
         free(reply->cell_config[i]->si_config->si_message[j]);
       }
+
       free(reply->cell_config[i]->si_config->si_message);
       free(reply->cell_config[i]->si_config);
     }
@@ -319,6 +321,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
       }
 
       free(reply->cell_config[i]->slice_config->dl);
+
       for (int j = 0; j < reply->cell_config[i]->slice_config->n_ul; ++j) {
         if (reply->cell_config[i]->slice_config->ul[j]->n_sorting > 0)
           free(reply->cell_config[i]->slice_config->ul[j]->sorting);
@@ -492,16 +495,15 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     goto error;
 
   lc_config_reply_msg->header = header;
-
   /* the lc_config_reply entirely depends on MAC except for the
    * mac_eNB_get_rrc_status() function (which in the current OAI implementation
    * is reachable if F1 is present). Therefore we check here wether MAC CM is
    * present and the message gets properly filled if it is or remains empty if
    * not */
   lc_config_reply_msg->n_lc_ue_config =
-      flexran_agent_get_mac_xface(mod_id) ? flexran_get_mac_num_ues(mod_id) : 0;
-
+    flexran_agent_get_mac_xface(mod_id) ? flexran_get_mac_num_ues(mod_id) : 0;
   Protocol__FlexLcUeConfig **lc_ue_config = NULL;
+
   if (lc_config_reply_msg->n_lc_ue_config > 0) {
     lc_ue_config = malloc(sizeof(Protocol__FlexLcUeConfig *) * lc_config_reply_msg->n_lc_ue_config);
 
@@ -512,7 +514,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     // Fill the config for each UE
     for (int i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
       lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
-      if (!lc_ue_config[i]) goto error;
+      if (!lc_ue_config[i]){
+        for (int j = 0; j < i; j++){
+          free(lc_ue_config[j]);
+        }
+        free(lc_ue_config);
+        goto error;
+      }
 
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
       const int UE_id = flexran_get_mac_ue_id(mod_id, i);
@@ -524,8 +532,13 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if (*msg == NULL)
+  if (*msg == NULL){
+    for (int k = 0; k < lc_config_reply_msg->n_lc_ue_config; k++){
+      free(lc_ue_config[k]);
+    }
+    free(lc_ue_config);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
@@ -554,8 +567,7 @@ error:
  * ************************************
  */
 
-int sort_ue_config(const void *a, const void *b)
-{
+int sort_ue_config(const void *a, const void *b) {
   const Protocol__FlexUeConfig *fa = a;
   const Protocol__FlexUeConfig *fb = b;
 
@@ -563,6 +575,7 @@ int sort_ue_config(const void *a, const void *b)
     return -1;
   else if (fa->rnti < fb->rnti)
     return 1;
+
   return 0;
 }
 
@@ -584,8 +597,8 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     goto error;
 
   ue_config_reply_msg->header = header;
-
   ue_config_reply_msg->n_ue_config = 0;
+
   if (flexran_agent_get_rrc_xface(mod_id))
     ue_config_reply_msg->n_ue_config = flexran_get_rrc_num_ues(mod_id);
   else if (flexran_agent_get_mac_xface(mod_id))
@@ -597,7 +610,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     const int nmac = flexran_get_mac_num_ues(mod_id);
     ue_config_reply_msg->n_ue_config = nrrc < nmac ? nrrc : nmac;
     LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %lu UEs\n",
-        __func__, nrrc, nmac, ue_config_reply_msg->n_ue_config);
+          __func__, nrrc, nmac, ue_config_reply_msg->n_ue_config);
   }
 
   Protocol__FlexUeConfig **ue_config;
@@ -608,8 +621,10 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     if (ue_config == NULL) {
       goto error;
     }
+
     rnti_t rntis[ue_config_reply_msg->n_ue_config];
     flexran_get_rrc_rnti_list(mod_id, rntis, ue_config_reply_msg->n_ue_config);
+
     for (int i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
       const rnti_t rnti = rntis[i];
       ue_config[i] = malloc(sizeof(Protocol__FlexUeConfig));
@@ -617,11 +632,13 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
       if (flexran_agent_get_rrc_xface(mod_id))
         flexran_agent_fill_rrc_ue_config(mod_id, rnti, ue_config[i]);
+
       if (flexran_agent_get_mac_xface(mod_id)) {
         const int UE_id = flexran_get_mac_ue_id_rnti(mod_id, rnti);
         flexran_agent_fill_mac_ue_config(mod_id, UE_id, ue_config[i]);
       }
     }
+
     ue_config_reply_msg->ue_config = ue_config;
   }
 
@@ -725,14 +742,26 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
     if(cell_conf == NULL)
       goto error;
-    for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++){
+
+    for(int i = 0; i < enb_config_reply_msg->n_cell_config; i++) {
       cell_conf[i] = malloc(sizeof(Protocol__FlexCellConfig));
-      if (!cell_conf[i]) goto error;
+
+      if (!cell_conf[i]) {
+        for (int j = 0; j < i; j++) {
+          free(cell_conf[j]);
+        }
+        free(cell_conf);
+        goto error;
+      }
+
       protocol__flex_cell_config__init(cell_conf[i]);
+
       if (flexran_agent_get_phy_xface(mod_id))
         flexran_agent_fill_phy_cell_config(mod_id, i, cell_conf[i]);
+
       if (flexran_agent_get_rrc_xface(mod_id))
         flexran_agent_fill_rrc_cell_config(mod_id, i, cell_conf[i]);
+
       if (flexran_agent_get_mac_xface(mod_id))
         flexran_agent_fill_mac_cell_config(mod_id, i, cell_conf[i]);
 
@@ -745,8 +774,13 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
-  if(*msg == NULL)
+  if(*msg == NULL) {
+    for (int k = 0; k < enb_config_reply_msg->n_cell_config; k++) {
+      free(cell_conf[k]);
+    }
+    free(cell_conf);
     goto error;
+  }
 
   protocol__flexran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
@@ -776,12 +810,16 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
   Protocol__FlexRrcTriggering *triggering = input->rrc_triggering;
   agent_reconf_rrc *reconf_param = malloc(sizeof(agent_reconf_rrc));
   reconf_param->trigger_policy = triggering->rrc_trigger;
+  reconf_param->report_interval = 0;
+  reconf_param->report_amount = 0;
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)) {
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
     flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt, ue_context_p, 0, reconf_param);
   }
   *msg = NULL;
+  free(reconf_param);
+  reconf_param = NULL;
   return 0;
 }
 
@@ -804,10 +842,11 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
+
   if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-  //} else {
-  //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+    //} else {
+    //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
   }
 
   *msg = NULL;

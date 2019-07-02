@@ -811,6 +811,7 @@ rlc_am_mac_data_request (
       tb_p = tb_p->next;
     } /* while */
   } /* MESSAGE_CHART_GENERATOR && data_req.data.nb_elements > 0 */
+  data_req.buffer_occupancy_in_pdus = 0;
 
   return data_req;
 }
