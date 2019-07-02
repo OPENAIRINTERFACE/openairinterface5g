@@ -1368,7 +1368,6 @@ extern "C" {
       device->trx_set_freq_func = trx_usrp_set_freq;
       device->trx_set_gains_func   = trx_usrp_set_gains;
       device->openair0_cfg = openair0_cfg;
-      device->uhd_set_thread_priority = uhd_set_thread_priority;
       s->sample_rate = openair0_cfg[0].sample_rate;
 
       // TODO:
