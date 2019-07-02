@@ -387,6 +387,10 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
+
+  /*! \brief set UHD thread priority
+   */
+  void (*uhd_set_thread_priority)(void);
 };
 
 /* type of device init function, implemented in shared lib */
@@ -445,9 +449,7 @@ int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *open
 #define gettid() syscall(__NR_gettid)
 /*@}*/
 
-  void uhd_set_thread_prio(void);
-  typedef void(*set_prio_func_t)(void);
-  //set_prio_func_t uhd_set_thread_priority_fun;
+
 
 #ifdef __cplusplus
 }

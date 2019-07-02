@@ -907,6 +907,12 @@ int trx_usrp_reset_stats(openair0_device *device) {
   return(0);
 }
 
+/*! \brief Set uhd priority
+ */
+void uhd_set_thread_priority(void) {
+  uhd::set_thread_priority_safe(1.0);
+}
+
 #if defined(USRP_REC_PLAY)
 extern "C" {
   /*! \brief Initializer for USRP record/playback config
@@ -1044,6 +1050,7 @@ extern "C" {
       device->trx_set_freq_func = trx_usrp_set_freq;
       device->trx_set_gains_func   = trx_usrp_set_gains;
       device->openair0_cfg = openair0_cfg;
+      device->uhd_set_thread_priority = uhd_set_thread_priority;
       std::cerr << "USRP device initialized in subframes replay mode for " << u_sf_loops << " loops. Use mmap="
                 << use_mmap << std::endl;
     } else {
@@ -1463,9 +1470,6 @@ extern "C" {
     return 0;
   }
 
-  void uhd_set_thread_priority(void) {
-      uhd::set_thread_priority_safe(1.0);
-  }
 
 }
 /*@}*/

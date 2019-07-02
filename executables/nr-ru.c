@@ -1209,9 +1209,9 @@ static void *ru_thread_tx( void *param ) {
   int                ret;
   
   
-  if(ru->if_south == LOCAL_RF)
+  if(ru->rfdevice.uhd_set_thread_priority != NULL)
   {
-    //uhd_set_thread_prio();
+    ru->rfdevice.uhd_set_thread_priority();
     LOG_I(PHY,"set ru_thread_tx uhd priority");
   }
 
