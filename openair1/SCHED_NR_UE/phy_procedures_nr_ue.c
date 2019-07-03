@@ -2483,7 +2483,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->phy_proc_tx);
 #endif
 
-
   harq_pid = 0; //temporary implementation
 
   /*
@@ -2498,11 +2497,26 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
 
+  LOG_I(PHY, "[phy_procedures_nrUE_TX] mcs = %d, nb_rb = %d \n , Nsymb_pusch = %d, nb_re_dmrs = %d, length_dmrs = %d, precod_nbr_layers = %d, TBS = %d\n",
+  harq_process_ul_ue->mcs,
+  harq_process_ul_ue->nb_rb,
+  ulsch_ue->Nsymb_pusch,
+  ulsch_ue->nb_re_dmrs,
+  ulsch_ue->length_dmrs,
+  harq_process_ul_ue->Nl,
+  TBS);
+
+
 //-----------------------------------------------------//
   // to be removed later when MAC is ready
 
-  for (i = 0; i < TBS / 8; i++)
-    harq_process_ul_ue->a[i] = (unsigned char) rand();
+  if (harq_process_ul_ue != NULL){
+    for (i = 0; i < TBS / 8; i++)
+      harq_process_ul_ue->a[i] = (unsigned char) rand();
+  } else {
+    LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+    return;
+  }
 
 //-----------------------------------------------------//
 
@@ -2527,6 +2541,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 slot_tx,
                                 harq_process_ul_ue->Nl,
                                 &ue->frame_parms);
+
 
 
 /*
@@ -3405,7 +3420,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 	first_symbol_flag = 0;
 #if UE_TIMING_TRACE
       uint8_t slot = 0;
-      if(m >= ue->frame_parms.symbols_per_tti>>1)
+      if(m >= ue->frame_parms.symbols_per_slot>>1)
         slot = 1;
       start_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
@@ -3898,7 +3913,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
     0);
     */
     // 1- perform FFT
-    for (int l=1; l<ue->frame_parms.symbols_per_tti>>1; l++)
+    for (int l=1; l<ue->frame_parms.symbols_per_slot>>1; l++)
       {
 	//if( (l != pilot0) && (l != pilot1))
 	{
@@ -3930,7 +3945,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
       }
 
     // 2- perform Channel Estimation for slot1
-    for (int l=1; l<ue->frame_parms.symbols_per_tti>>1; l++)
+    for (int l=1; l<ue->frame_parms.symbols_per_slot>>1; l++)
       {
 	if(l == pilot1)
 	  {
@@ -4018,8 +4033,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 			  PDSCH,
 			  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
 			  NULL,
-			  (ue->frame_parms.symbols_per_tti>>1),
-			  ue->frame_parms.symbols_per_tti-1,
+			  (ue->frame_parms.symbols_per_slot>>1),
+			  ue->frame_parms.symbols_per_slot-1,
 			  abstraction_flag);
       LOG_D(PHY," ------ end PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
       LOG_D(PHY," ------ --> PDSCH Turbo Decoder slot 0/1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
@@ -4033,8 +4048,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 			  SI_PDSCH,
 			  ue->dlsch_SI[eNB_id],
 			  NULL,
-			  (ue->frame_parms.symbols_per_tti>>1),
-			  ue->frame_parms.symbols_per_tti-1,
+			  (ue->frame_parms.symbols_per_slot>>1),
+			  ue->frame_parms.symbols_per_slot-1,
 			  abstraction_flag);
     }
 
@@ -4046,8 +4061,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 			  P_PDSCH,
 			  ue->dlsch_p[eNB_id],
 			  NULL,
-			  (ue->frame_parms.symbols_per_tti>>1),
-			  ue->frame_parms.symbols_per_tti-1,
+			  (ue->frame_parms.symbols_per_slot>>1),
+			  ue->frame_parms.symbols_per_slot-1,
 			  abstraction_flag);
     }
     // do procedures for RA-RNTI
@@ -4058,8 +4073,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 			  RA_PDSCH,
 			  ue->dlsch_ra[eNB_id],
 			  NULL,
-			  (ue->frame_parms.symbols_per_tti>>1),
-			  ue->frame_parms.symbols_per_tti-1,
+			  (ue->frame_parms.symbols_per_slot>>1),
+			  ue->frame_parms.symbols_per_slot-1,
 			  abstraction_flag);
     }
 
@@ -4228,7 +4243,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     //set active for testing, to be removed
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
   }
-  else 
+  else
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
 
 #if UE_TIMING_TRACE

@@ -240,7 +240,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
-
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs);
   int16_t mod_dmrs[n_dmrs<<1];
@@ -249,7 +248,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   l0 = get_l0_ul(mapping_type, 2);
   nr_modulation(pusch_dmrs[l0][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -339,7 +337,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 
           #ifdef DEBUG_PUSCH_MAPPING
-            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
+            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t dmrs: %d %d\n",
             dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
           #endif
@@ -370,7 +368,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       }
     }
   }
-
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -416,7 +413,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
            frame_parms);
       }
     }
-
   ///////////
   ////////////////////////////////////////////////////
   return 0;

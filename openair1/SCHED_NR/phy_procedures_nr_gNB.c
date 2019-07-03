@@ -286,7 +286,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, 
   uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
                         //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
 
-  for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
+  for (UE_id = 0; UE_id < 1; UE_id++) { // temporary set to 1 untill list of connected UEs is implemented
     
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
 

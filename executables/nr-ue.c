@@ -141,8 +141,10 @@ PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
   ue = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
   memset(ue,0,sizeof(PHY_VARS_NR_UE));
   memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
+
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
@@ -430,14 +432,12 @@ void UE_processing(void *arg) {
       (UE->frame_parms.frame_type == FDD) )
 #endif
 */
-  if (proc->nr_tti_tx == NR_UPLINK_SLOT){
-
-    LOG_I(PHY, "[UE_processing] Frame = %d, Slot = %d\n", proc->frame_tx, proc->nr_tti_tx);
+  //if (proc->nr_tti_tx == NR_UPLINK_SLOT){
 
     if (UE->mode != loop_through_memory)
       phy_procedures_nrUE_TX(UE,proc,0,0);
 
-  }
+  //}
 
   //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 
@@ -664,7 +664,7 @@ void *UE_thread(void *arg) {
                slot_nr*UE->frame_parms.samples_per_slot];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      txp[i] = (void *)&UE->common_vars.txdata[i][curMsg->proc.nr_tti_tx*UE->frame_parms.samples_per_slot];
+      txp[i] = (void *)&UE->common_vars.txdata[i][((curMsg->proc.nr_tti_rx + 2)%nb_slot_frame)*UE->frame_parms.samples_per_slot];
 
     int readBlockSize, writeBlockSize;
 

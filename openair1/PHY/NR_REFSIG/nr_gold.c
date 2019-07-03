@@ -143,7 +143,7 @@ void nr_gold_pusch(PHY_VARS_gNB* gNB, unsigned short lbar,unsigned short *n_idDM
             //printf("x1 : %x, x2 : %x\n",x1,x2);
         }
 
-        for (n=0; n<52; n++) {
+        for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
           x1 = (x1>>1) ^ (x1>>4);
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);

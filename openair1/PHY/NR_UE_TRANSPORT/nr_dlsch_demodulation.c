@@ -275,7 +275,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
 #if UE_TIMING_TRACE
-  if(symbol > ue->frame_parms.symbols_per_tti>>1)
+  if(symbol > ue->frame_parms.symbols_per_slot>>1)
   {
       slot = 1;
   }
@@ -1064,9 +1064,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if T_TRACER
   T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(ue->Mod_id), T_INT(frame%1024),
     T_INT(nr_tti_rx), T_INT(nb_rb),
-    T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
+    T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_slot),
     T_BUFFER(&pdsch_vars[eNB_id]->rxdataF_comp0[eNB_id][0],
-             2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
+             2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_slot*2));
 #endif
   return(0);
 
