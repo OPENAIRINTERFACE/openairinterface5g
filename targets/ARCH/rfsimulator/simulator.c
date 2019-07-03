@@ -3,6 +3,12 @@
   copyleft: OpenAirInterface Software Alliance and it's licence
 */
 
+/*
+ * Open issues and limitations
+ * The read and write should be called in the same thread, that is not new USRP UHD design
+ * When the opposite side switch from passive reading to active R+Write, the synchro is not fully deterministic
+ */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -129,6 +135,9 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
     }
 
     out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
+    printf("in: %d, out %d= %f*%f + %f*%f\n",
+      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x,
+      pathLossLinear, noise_per_sample,gaussdouble(0.0,1.0));
     out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
     out_ptr++;
   }
@@ -444,10 +453,10 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
       if ( b->headerMode==false ) {
         LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
         b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
-    
-          // First block in UE, resync with the eNB current TS
-          if ( t->nextTimestamp == 0 )
-            t->nextTimestamp=b->lastReceivedTS-b->th.size;
+
+        // First block in UE, resync with the eNB current TS
+        if ( t->nextTimestamp == 0 )
+          t->nextTimestamp=b->lastReceivedTS-b->th.size;
 
         if ( b->remainToTransfer==0) {
           LOG_D(HW,"Completed block reception: %ld\n", b->lastReceivedTS);
@@ -500,11 +509,11 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       for ( int sock=0; sock<FD_SETSIZE; sock++) {
         if ( t->buf[sock].circularBuf && t->buf[sock].alreadyRead )
           if ( t->buf[sock].lastReceivedTS == 0 ||
-             (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
-          have_to_wait=true;
-          break;
+               (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
+            have_to_wait=true;
+            break;
           }
-        }
+      }
 
       if (have_to_wait)
         /*printf("Waiting on socket, current last ts: %ld, expected at least : %ld\n",
@@ -519,7 +528,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
   for (int a=0; a<nbAnt; a++)
     memset(samplesVoid[a],0,sampleToByte(nsamps,1));
 
-  // Add all input signal in the output buffer
+  // Add all input nodes signal in the output buffer
   for (int sock=0; sock<FD_SETSIZE; sock++) {
     buffer_t *ptr=&t->buf[sock];
 
@@ -578,7 +587,6 @@ __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
   // --log_config.hw_log_level debug
-  //set_log(HW,OAILOG_DEBUG);
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {

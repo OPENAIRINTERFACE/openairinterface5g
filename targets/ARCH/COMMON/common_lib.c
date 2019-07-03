@@ -80,12 +80,12 @@ int set_device(openair0_device *device) {
 int set_transport(openair0_device *device) {
   switch (device->transp_type) {
     case ETHERNET_TP:
-      printf("[%s] has loaded ETHERNET trasport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+      LOG_I(HW,"[%s] has loaded ETHERNET trasport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
       return 0;
       break;
 
     case NONE_TP:
-      printf("[%s] has not loaded a transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+      LOG_I(HW,"[%s] has not loaded a transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
       return 0;
       break;
 

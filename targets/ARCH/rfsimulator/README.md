@@ -35,7 +35,6 @@ It should the set to "server" in the eNB or gNB
 ## 4G case
 For the UE, it should be set to the IP address of the eNB
 example: 
-
 ```bash
 sudo RFSIMULATOR=192.168.2.200 ./lte-uesoftmodem -C 2685000000 -r 50 
 ```
@@ -45,10 +44,7 @@ If you reach 'RA not active' on UE, be careful to generate a valid SIM
 ```bash
 $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .
 ```
-This simulator can also be used with the `--noS1` option, in this case you must run the eNodeB and the UE on different PCs. 
-
 ## 5G case
-
 After regular build, add the simulation driver
 (don't use ./build_oai -w SIMU until we merge 4G and 5G branches)
 ```bash

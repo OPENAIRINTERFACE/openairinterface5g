@@ -604,7 +604,6 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
-
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
