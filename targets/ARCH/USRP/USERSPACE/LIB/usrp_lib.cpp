@@ -910,7 +910,6 @@ int trx_usrp_reset_stats(openair0_device *device) {
 /*! \brief Set uhd priority
  */
 static void uhd_set_thread_priority(void) {
-  //std::cout << "~~~~~~~~~~priority setting for USRP" << std::endl;
   uhd::set_thread_priority_safe(1.0);
 }
 
