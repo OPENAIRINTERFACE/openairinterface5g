@@ -264,7 +264,7 @@ void nr_fep0(RU_t *ru, int first_half) {
     end_symbol = NR_SYMBOLS_PER_SLOT;
   }
 
-  LOG_I(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d\n", proc->tti_rx, first_half, start_symbol, end_symbol);
+  LOG_D(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d\n", proc->tti_rx, first_half, start_symbol, end_symbol);
   //  printf("fep0: slot %d\n",slot);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 1);
@@ -405,7 +405,7 @@ void nr_fep_full(RU_t *ru, int slot) {
   // remove_7_5_kHz(ru,proc->tti_rx<<1);
   // remove_7_5_kHz(ru,1+(proc->tti_rx<<1));
 
-  for (l = 0; l < fp->symbols_per_tti; l++) {
+  for (l = 0; l < fp->symbols_per_slot; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
       nr_slot_fep_ul(fp,
                      ru->common.rxdata[aa],

@@ -77,6 +77,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include <forms.h>
 
+
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
@@ -734,6 +735,7 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
     PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+
 
     if (phy_test==1)
       UE[CC_id]->mac_enabled = 0;

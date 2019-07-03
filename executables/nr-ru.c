@@ -659,6 +659,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
                                      ru->nb_rx);
   }
 
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
   proc->timestamp_rx = ts-ru->ts_offset;
 
@@ -1445,6 +1446,7 @@ static void *ru_thread( void *param ) {
     }
 
     // synchronization on input FH interface, acquire signals/data and block
+    LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
@@ -1471,14 +1473,12 @@ static void *ru_thread( void *param ) {
     // do RX front-end processing (frequency-shift, dft) if needed
     if (ru->feprx) ru->feprx(ru,proc->tti_rx);
 
-    LOG_I(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-    LOG_I(PHY,"gNB proc: frame_rx = %d, slot_rx = %d\n", RC.gNB[0][0]->proc.frame_rx, RC.gNB[0][0]->proc.slot_rx);
-    LOG_I(PHY,"Copying rxdataF from RU to gNB\n");
+    LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
+    LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
 
     for (aa=0;aa<ru->nb_rx;aa++)
       memcpy((void*)RC.gNB[0][0]->common_vars.rxdataF[aa],
-         (void*)&ru->common.rxdataF[aa][proc->tti_rx*fp->symbols_per_tti*fp->ofdm_symbol_size],
-         fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
+         (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
     // At this point, all information for subframe has been received on FH interface
 
@@ -2152,7 +2152,7 @@ void init_NR_RU(char *rf_config_file)
       if (gNB0) {
         LOG_I(PHY,"Copying frame parms from gNB %d to ru %d\n",gNB0->Mod_id,ru->idx);
         memcpy((void *)fp,(void *)&gNB0->frame_parms,sizeof(NR_DL_FRAME_PARMS));
-        memset((void *)ru->frame_parms, 0, sizeof(LTE_DL_FRAME_PARMS));
+        memset((void *)ru->nr_frame_parms, 0, sizeof(NR_DL_FRAME_PARMS));
         // attach all RU to all gNBs in its list/
         LOG_D(PHY,"ru->num_gNB:%d gNB0->num_RU:%d\n", ru->num_gNB, gNB0->num_RU);
 
