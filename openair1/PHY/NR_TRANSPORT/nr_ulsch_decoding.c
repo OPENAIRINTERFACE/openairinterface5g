@@ -364,14 +364,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                     &harq_process->Z, // [hna] Z is Zc
                     &harq_process->F);
 
-    p_decParams->Z = harq_process->Z;
-
 #ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch decoding nr segmentation Z %d\n", p_decParams->Z);
+    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
     if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
 #endif
   }
+
+  p_decParams->Z = harq_process->Z;
 
   Coderate = (float) A /(float) G;
 
@@ -436,7 +436,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
 
-  opp_enabled=1;
+  //opp_enabled=1;
 
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
