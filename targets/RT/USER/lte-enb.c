@@ -458,7 +458,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   proc->subframe_rx = subframe_rx;
 
   if (!oai_exit) {
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(ru_proc->frame_rx), T_INT(ru_proc->subframe_rx));
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
     L1_proc->frame_rx     = ru_proc->frame_rx;
     L1_proc->subframe_rx  = ru_proc->subframe_rx;
