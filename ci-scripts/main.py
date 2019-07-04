@@ -2548,6 +2548,9 @@ class SSHConnection():
 			result = re.search('[Cc]ore [dD]ump', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
+			result = re.search('./lte_build_oai/build/lte-softmodem', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
 			if result is not None and not exitSignalReceived:
 				foundAssertion = True
@@ -2688,6 +2691,9 @@ class SSHConnection():
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./lte-uesoftmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
