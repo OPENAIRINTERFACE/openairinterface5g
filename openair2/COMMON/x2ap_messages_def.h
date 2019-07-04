@@ -39,6 +39,8 @@ MESSAGE_DEF(X2AP_REGISTER_ENB_CNF               , MESSAGE_PRIORITY_MED, x2ap_reg
 MESSAGE_DEF(X2AP_DEREGISTERED_ENB_IND           , MESSAGE_PRIORITY_MED, x2ap_deregistered_enb_ind_t      , x2ap_deregistered_enb_ind)
 
 /* handover messages X2AP <-> RRC */
+MESSAGE_DEF(X2AP_SETUP_REQ                      , MESSAGE_PRIORITY_MED, x2ap_setup_req_t                 , x2ap_setup_req)
+MESSAGE_DEF(X2AP_SETUP_RESP                     , MESSAGE_PRIORITY_MED, x2ap_setup_resp_t                , x2ap_setup_resp)
 MESSAGE_DEF(X2AP_HANDOVER_REQ                   , MESSAGE_PRIORITY_MED, x2ap_handover_req_t              , x2ap_handover_req)
 MESSAGE_DEF(X2AP_HANDOVER_REQ_ACK               , MESSAGE_PRIORITY_MED, x2ap_handover_req_ack_t          , x2ap_handover_req_ack)
 MESSAGE_DEF(X2AP_HANDOVER_CANCEL                , MESSAGE_PRIORITY_MED, x2ap_handover_cancel_t           , x2ap_handover_cancel)
