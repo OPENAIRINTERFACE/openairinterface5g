@@ -3898,6 +3898,31 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
   MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
+  if (rrc_inst->carrier[0].sib1->tdd_Config!=NULL) {
+    MeasObj->measObject.choice.measObjectEUTRA.ext1 = CALLOC(1, sizeof(struct LTE_MeasObjectEUTRA__ext1));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measCycleSCell_r10 = NULL;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10 = CALLOC(1, sizeof(struct LTE_MeasSubframePatternConfigNeigh_r10));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->present=LTE_MeasSubframePatternConfigNeigh_r10_PR_setup;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.present=LTE_MeasSubframePattern_r10_PR_subframePatternTDD_r10;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.present=LTE_MeasSubframePattern_r10__subframePatternTDD_r10_PR_subframeConfig1_5_r10;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf=CALLOC(3, sizeof(uint8_t));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.size=3;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.bits_unused=4; 
+    switch (rrc_inst->carrier[0].sib1->tdd_Config->subframeAssignment) {
+    case 1: //subframe 0,4,5,9
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[0]=0x8C;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[1]=0x63;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[2]=0x10;
+      break;
+
+    default: //subframe 0 , 5
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[0]=0x84;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[1]=0x21;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[2]=0x00;
+      break;
+    }
+  }
+
   MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
     (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
   CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
