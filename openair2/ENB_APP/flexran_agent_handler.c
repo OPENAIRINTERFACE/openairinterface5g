@@ -55,7 +55,10 @@ flexran_agent_message_decoded_callback agent_messages_callback[][3] = {
   {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
   {flexran_agent_control_delegation, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
   {flexran_agent_reconfiguration, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_AGENT_RECONFIGURATION_MSG*/
-  {flexran_agent_rrc_measurement, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_RRC_TRIGGERING_MSG*/
+  {flexran_agent_rrc_reconfiguration, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_RRC_TRIGGERING_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_MAC_CONFIG_MSG*/
+  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_DISCONNECT_MSG*/
+  {flexran_agent_rrc_trigger_handover, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_HO_COMMAND_MSG*/
 };
 
 flexran_agent_message_destruction_callback message_destruction_callback[] = {
@@ -508,7 +511,13 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
     goto error;
   }
 
-       
+  /* GTP reply split, currently performed through RRC module */
+  if (flexran_agent_get_rrc_xface(enb_id)
+      && flexran_agent_rrc_gtp_stats_reply(enb_id, report_config, ue_report, cell_report) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
+
   stats_reply_msg->cell_report = cell_report;
   stats_reply_msg->ue_report = ue_report;
 

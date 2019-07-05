@@ -1073,7 +1073,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc,
 
 //------------------------------------------------------------------------------
 uint8_t
-get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl,
+get_rel8_dl_cqi_pmi_size(UE_sched_ctrl_t *sched_ctl,
                          int CC_idP,
                          COMMON_channels_t *cc,
                          uint8_t tmode,
@@ -2182,7 +2182,7 @@ add_new_ue(module_id_t mod_idP,
 #endif
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
-           sizeof(UE_sched_ctrl));
+           sizeof(UE_sched_ctrl_t));
     memset((void *) &UE_list->eNB_UE_stats[cc_idP][UE_id],
            0,
            sizeof(eNB_UE_STATS));
@@ -2520,7 +2520,7 @@ UE_is_to_be_scheduled(module_id_t module_idP,
 //------------------------------------------------------------------------------
 {
   UE_TEMPLATE *UE_template = &RC.mac[module_idP]->UE_list.UE_template[CC_id][UE_id];
-  UE_sched_ctrl *UE_sched_ctl = &RC.mac[module_idP]->UE_list.UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *UE_sched_ctl = &RC.mac[module_idP]->UE_list.UE_sched_ctrl[UE_id];
 
   // do not schedule UE if UL is not working
   if (UE_sched_ctl->ul_failure_timer > 0 || UE_sched_ctl->ul_out_of_sync > 0)
@@ -3928,7 +3928,7 @@ extract_harq(module_id_t mod_idP,
 {
   eNB_MAC_INST *eNB = RC.mac[mod_idP];
   UE_list_t *UE_list = &eNB->UE_list;
-  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(mod_idP, UE_id);
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
   nfapi_harq_indication_fdd_rel13_t *harq_indication_fdd;
@@ -4573,7 +4573,7 @@ extract_pucch_csi(module_id_t mod_idP,
 //------------------------------------------------------------------------------
 {
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   int no_pmi;
   uint8_t Ltab[6] = { 0, 2, 4, 4, 4, 4 };
@@ -4685,7 +4685,7 @@ extract_pusch_csi(module_id_t mod_idP,
 {
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
-  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   int Ntab[6] = { 0, 4, 7, 9, 10, 13 };
   int Ntab_uesel[6] = { 0, 8, 13, 17, 19, 25 };
   int Ltab_uesel[6] = { 0, 6, 9, 13, 15, 18 };
@@ -4980,7 +4980,7 @@ cqi_indication(module_id_t mod_idP,
     return;
   }
 
-  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   if (UE_id >= 0) {
     LOG_D(MAC,"%s() UE_id:%d channel:%d cqi:%d\n",
@@ -5047,7 +5047,7 @@ SR_indication(module_id_t mod_idP,
     T_INT(rntiP));
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  UE_sched_ctrl *UE_scheduling_ctrl = NULL;
+  UE_sched_ctrl_t *UE_scheduling_ctrl = NULL;
 
   if (UE_id != -1) {
     UE_scheduling_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
@@ -5178,7 +5178,7 @@ harq_indication(module_id_t mod_idP,
   }
 
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-  UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   // extract HARQ Information
 

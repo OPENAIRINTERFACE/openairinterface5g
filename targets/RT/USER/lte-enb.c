@@ -458,7 +458,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   proc->subframe_rx = subframe_rx;
 
   if (!oai_exit) {
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(ru_proc->frame_rx), T_INT(ru_proc->subframe_rx));
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
     L1_proc->frame_rx     = ru_proc->frame_rx;
     L1_proc->subframe_rx  = ru_proc->subframe_rx;
@@ -508,9 +508,9 @@ int wakeup_txfh(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,int frame_tx,int subfram
     if (((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL))||
         (eNB->RU_list[ru_id]->state == RU_SYNC)||
         (eNB->RU_list[ru_id]->wait_cnt>0)){
-       AssertFatal((pthread_mutex_lock(&proc->mutex_RUs))==0, "mutex_lock returns %d\n",ret);
+       AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RUs))==0, "mutex_lock returns %d\n",ret);
        proc->instance_cnt_RUs = 0;
-       AssertFatal((pthread_mutex_unlock(&proc->mutex_RUs))==0, "mutex_unlock returns %d\n",ret);
+       AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RUs))==0, "mutex_unlock returns %d\n",ret);
        continue;//hacking only works when all RU_tx works on the same subframe #TODO: adding mask stuff
     }
 

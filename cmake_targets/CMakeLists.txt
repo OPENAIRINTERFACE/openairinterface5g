@@ -174,7 +174,7 @@ set(CMAKE_C_FLAGS
 	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
 )
 set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D${MKVER}"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
 )
 
 
@@ -604,8 +604,6 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
-add_library(rfsimulator MODULE ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c)
-
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
@@ -887,6 +885,7 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY/flexran_agent_phy.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc_internal.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
@@ -1986,6 +1985,11 @@ add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_
 target_link_libraries(enbscope ${XFORMS_LIBRARIES})
 target_link_libraries(uescope ${XFORMS_LIBRARIES})
 
+add_library(rfsimulator MODULE 
+	${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
+	)
+target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
+
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
 #include T directory even if the T is off because T macros are in the code
@@ -2029,6 +2033,25 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 #################################
 # add executables for operation
 #################################
+add_library(minimal_lib
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/config/config_userapi.c
+  ${OPENAIR_DIR}/common/config/config_load_configmodule.c
+  ${OPENAIR_DIR}/common/config/config_cmdline.c
+  ${OPENAIR_DIR}/common/utils/minimal_stub.c
+  ${T_SOURCE}
+  )
+target_link_libraries(minimal_lib pthread dl ${T_LIB})
+
+add_executable(replay_node
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/stored_node.c
+  )
+target_link_libraries (replay_node minimal_lib)
+
+add_executable(measurement_display
+  ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
+target_link_libraries (measurement_display minimal_lib)
 
 # lte-softmodem is both eNB and UE implementation
 ###################################################

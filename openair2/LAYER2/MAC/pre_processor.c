@@ -505,7 +505,7 @@ void sort_UEs(module_id_t Mod_idP,
   int list_size = 0;
   struct sort_ue_dl_params params = {Mod_idP, frameP, subframeP, slice_idx};
   UE_list_t *UE_list = &(RC.mac[Mod_idP]->UE_list);
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
 
@@ -546,7 +546,7 @@ void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
     const uint8_t rbs_retx[NFAPI_CC_MAX]) {
   int UE_id, CC_id, N_RB_DL, i;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   uint16_t available_rbs;
 
   for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -590,7 +590,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   int ue_count_retx[NFAPI_CC_MAX];
   //uint8_t ue_retx_flag[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   COMMON_channels_t *cc;
 
   // Reset
@@ -1226,7 +1226,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   uint8_t  (*MIMO_mode_indicator)[N_RBG_MAX]     = sli->pre_processor_results[slice_idx].MIMO_mode_indicator;
 
   UE_list_t *UE_list = &eNB->UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   //  int rrc_status = RRC_IDLE;
 #ifdef TM5
   int harq_pid1 = 0;
@@ -1236,7 +1236,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   rnti_t rnti1, rnti2;
   LTE_eNB_UE_stats *eNB_UE_stats1 = NULL;
   LTE_eNB_UE_stats *eNB_UE_stats2 = NULL;
-  UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
+  UE_sched_ctrl_t *ue_sched_ctl1, *ue_sched_ctl2;
 #endif
   // Initialize scheduling information for all active UEs
   memset(&sli->pre_processor_results[slice_idx], 0, sizeof(sli->pre_processor_results[slice_idx]));
@@ -1391,7 +1391,7 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
   uint8_t CC_id;
   int i, j;
   UE_list_t *UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   int N_RB_DL, RBGsize, RBGsize_last;
   int N_RBG[NFAPI_CC_MAX];
 #ifdef SF0_LIMIT
@@ -1615,7 +1615,7 @@ dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
   int i;
   int tm = get_tmode(Mod_id, CC_id, UE_id);
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
-  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   int N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   for (i = 0; i < N_RBG; i++) {
@@ -1685,7 +1685,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_list_t *UE_list = &eNB->UE_list;
   slice_info_t *sli = &eNB->slice_info;
   UE_TEMPLATE *UE_template = 0;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   int N_RB_UL = 0;
   uint16_t available_rbs, first_rb_offset;
   rnti_t rntiTable[MAX_MOBILES_PER_ENB];
@@ -1865,7 +1865,7 @@ assign_max_mcs_min_rb(module_id_t module_idP,
   UE_list_t *UE_list = &eNB->UE_list;
   slice_info_t *sli = &eNB->slice_info;
   UE_TEMPLATE *UE_template;
-  UE_sched_ctrl *ue_sched_ctl;
+  UE_sched_ctrl_t *ue_sched_ctl;
   int Ncp;
   int N_RB_UL;
   int first_rb_offset, available_rbs;
@@ -2042,7 +2042,7 @@ void sort_ue_ul(module_id_t module_idP,
   int list_size = 0;
   struct sort_ue_ul_params params = { module_idP, sched_frameP, sched_subframeP };
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
 

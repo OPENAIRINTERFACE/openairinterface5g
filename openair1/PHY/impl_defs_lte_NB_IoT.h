@@ -415,7 +415,7 @@ typedef struct {
   /// nprach_CP_Length_r13, for the CP length(unit us) only 66.7 and 266.7 is implemented
   uint16_t nprach_CP_Length;
   /// The criterion for UEs to select a NPRACH resource. Up to 2 RSRP threshold values can be signalled.  \vr{[1..2]}
-  struct rsrp_ThresholdsNPrachInfoList *rsrp_ThresholdsPrachInfoList;
+  rsrp_ThresholdsNPrachInfoList *rsrp_ThresholdsPrachInfoList;
   /// NPRACH Parameters List
   NPRACH_List_NB_IoT_t nprach_ParametersList;
 

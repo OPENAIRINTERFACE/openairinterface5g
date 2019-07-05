@@ -543,11 +543,11 @@ class SSHConnection():
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		rruCheck = False
-		result = re.search('rru|du', str(config_file))
+		result = re.search('rru|du.band', str(config_file))
 		if result is not None:
 			rruCheck = True
 		# do not reset board twice in IF4.5 case
-		result = re.search('rru|enb|du', str(config_file))
+		result = re.search('rru|enb|du.band', str(config_file))
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 10)
 			result = re.search('type: b200', str(self.ssh.before))
@@ -571,11 +571,12 @@ class SSHConnection():
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		if not rruCheck:
+		result = re.search('rcc|enb|cu.band', str(config_file))
+		if result is not None:
 			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
 			if extra_options != '':
 				self.eNBOptions = extra_options
-		result = re.search('rru|du', str(config_file))
+		result = re.search('rru|du.band', str(config_file))
 		if result is not None:
 			self.rruLogFile = 'enb_' + self.testCase_id + '.log'
 		time.sleep(6)
@@ -2527,6 +2528,7 @@ class SSHConnection():
 		pdcpFailure = 0
 		ulschFailure = 0
 		cdrxActivationMessageCount = 0
+		dropNotEnoughRBs = 0
 		self.htmleNBFailureMsg = ''
 		for line in enb_log_file.readlines():
 			if self.rruOptions != '':
@@ -2546,6 +2548,9 @@ class SSHConnection():
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./lte_build_oai/build/lte-softmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
@@ -2596,6 +2601,9 @@ class SSHConnection():
 			result = re.search('Canceled RA procedure for UE rnti', str(line))
 			if result is not None:
 				rachCanceledProcedure += 1
+			result = re.search('dropping, not enough RBs', str(line))
+			if result is not None:
+				dropNotEnoughRBs += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if uciStatMsgCount > 0:
@@ -2608,6 +2616,10 @@ class SSHConnection():
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
 			statMsg = 'eNB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if dropNotEnoughRBs > 0:
+			statMsg = 'eNB showed ' + str(dropNotEnoughRBs) + ' "dropping, not enough RBs" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if rrcSetupComplete > 0:
@@ -2688,6 +2700,9 @@ class SSHConnection():
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./lte-uesoftmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
@@ -2890,7 +2905,7 @@ class SSHConnection():
 					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					return
-				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
+				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)

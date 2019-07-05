@@ -60,6 +60,11 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, LTE_MeasResults_t *);
 int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
 int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
+/* Statistic reply for GTP statistics which OAI stores also in the RRC layer.
+ * This might be moved to a separate GTP module in the future */
+int flexran_agent_rrc_gtp_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
+int flexran_agent_rrc_gtp_destroy_stats_reply(Protocol__FlexStatsReply *reply);
+
 /* Fill the RRC part of a ue_config message */
 void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
     Protocol__FlexUeConfig *ue_conf);
