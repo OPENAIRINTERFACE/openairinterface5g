@@ -1907,8 +1907,15 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
     ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
     //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
+#if 0
+    /* TODO: set a proper value.
+     * 20 means: UE does not report if RSRP of serving cell is higher
+     * than -120 dB (see 36.331 5.5.3.1).
+     * This is too low for the X2 handover experiment.
+     */
     rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
     *rsrp = 20;
+#endif
     Sparams = CALLOC(1, sizeof(*Sparams));
     Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
     Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
@@ -3461,8 +3468,15 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
   ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
 
+#if 0
+    /* TODO: set a proper value.
+     * 20 means: UE does not report if RSRP of serving cell is higher
+     * than -120 dB (see 36.331 5.5.3.1).
+     * This is too low for the X2 handover experiment.
+     */
   rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
   *rsrp = 20;
+#endif
   Sparams = CALLOC(1, sizeof(*Sparams));
   Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
   Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
@@ -4178,8 +4192,15 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
 
+#if 0
+    /* TODO: set a proper value.
+     * 20 means: UE does not report if RSRP of serving cell is higher
+     * than -120 dB (see 36.331 5.5.3.1).
+     * This is too low for the X2 handover experiment.
+     */
   rsrp = CALLOC(1, sizeof(LTE_RSRP_Range_t));
   *rsrp = 20;
+#endif
   Sparams = CALLOC(1, sizeof(*Sparams));
   Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
   Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
@@ -5803,8 +5824,15 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   ue_context_pP->ue_context.measurement_info->events->a3_event->timeToTrigger = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger;
   ue_context_pP->ue_context.measurement_info->events->a3_event->maxReportCells = ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells;
 
+#if 0
+    /* TODO: set a proper value.
+     * 20 means: UE does not report if RSRP of serving cell is higher
+     * than -120 dB (see 36.331 5.5.3.1).
+     * This is too low for the X2 handover experiment.
+     */
   rsrp = CALLOC(1, sizeof(RSRP_Range_t));
   *rsrp = 20;
+#endif
   Sparams = CALLOC(1, sizeof(*Sparams));
   Sparams->present = LTE_MeasConfig__speedStatePars_PR_setup;
   Sparams->choice.setup.timeToTrigger_SF.sf_High = LTE_SpeedStateScaleFactors__sf_Medium_oDot75;
