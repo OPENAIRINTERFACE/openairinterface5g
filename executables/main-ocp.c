@@ -3,6 +3,15 @@
  * Copyright: Open Cells Project company
  */
 
+/*
+ * This file replaces
+ * targets/RT/USER/lte-ru.c
+ * targets/RT/USER/lte-enb.c
+ * openair1/SCHED/prach_procedures.c
+ * The merger of OpenAir central code to this branch
+ * should check if these 3 files are modified and analyze if code code has to be copied in here
+ */
+
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
 static int DEFBANDS[] = {7};
@@ -16,6 +25,8 @@ static int DEFENBS[] = {0};
 #include <openair1/PHY/INIT/phy_init.h>
 #include <openair2/LAYER2/MAC/mac_extern.h>
 #include <openair1/PHY/LTE_REFSIG/lte_refsig.h>
+#include <nfapi/oai_integration/nfapi_pnf.h>
+
 extern uint16_t sf_ahead;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void fep_full(RU_t *ru);
@@ -90,6 +101,7 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_tx_unwrap          = 0;
 
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
+
   pthread_t t;
   threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
 }
@@ -198,7 +210,6 @@ void init_eNB_afterRU(void) {
        */
       AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
       AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
-
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       init_transport(eNB);
       //init_precoding_weights(RC.eNB[inst][CC_id]);
@@ -280,7 +291,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
       cfg->tx_bw = 40e6;
       cfg->rx_bw = 40e6;
     } else {
-      printf("Wrong input for numerology %d\n setting to 20MHz normal CP configuration",numerology);
+      LOG_E(PHY,"Wrong input for numerology %d\n setting to 20MHz normal CP configuration",numerology);
       cfg->sample_rate=30.72e6;
       cfg->samples_per_frame = 307200;
       cfg->tx_bw = 10e6;
@@ -320,11 +331,11 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
     cfg->configFilename = rf_config_file;
-    printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
-           i, cfg->tx_gain[i],
-           cfg->rx_gain[i],
-           cfg->tx_freq[i],
-           cfg->rx_freq[i]);
+    LOG_I(PHY,"channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
+          i, cfg->tx_gain[i],
+          cfg->rx_gain[i],
+          cfg->tx_freq[i],
+          cfg->rx_freq[i]);
   }
 }
 
@@ -333,81 +344,31 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
    rf_map specifies for each antenna port, on which rf chain the mapping should start. Multiple
    antennas are mapped to successive RF chains on the same card. */
 int setup_RU_buffers(RU_t *ru) {
-  int i,j;
-  int card,ant;
   //uint16_t N_TA_offset = 0;
   LTE_DL_FRAME_PARMS *frame_parms;
-
-  if (ru) {
-    frame_parms = &ru->frame_parms;
-    printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
-  } else {
-    printf("RU not initialized (NULL pointer)\n");
-    return(-1);
-  }
+  AssertFatal(ru, "ru is NULL");
+  frame_parms = &ru->frame_parms;
+  LOG_I(PHY,"setup_RU_buffers: frame_parms = %p\n",frame_parms);
 
   if (frame_parms->frame_type == TDD) {
-    if      (frame_parms->N_RB_DL == 100)
+    if (frame_parms->N_RB_DL == 100) {
       ru->N_TA_offset = 624;
-    else if (frame_parms->N_RB_DL == 50)
+    } else if (frame_parms->N_RB_DL == 50) {
       ru->N_TA_offset = 624/2;
-    else if (frame_parms->N_RB_DL == 25)
-      ru->N_TA_offset = 624/4;
-
-    if(IS_SOFTMODEM_BASICSIM)
-      /* this is required for the basic simulator in TDD mode
-       * TODO: find a proper cleaner solution
-       */
-      ru->N_TA_offset = 0;
-
-    if      (frame_parms->N_RB_DL == 100) /* no scaling to do */;
-    else if (frame_parms->N_RB_DL == 50) {
       ru->sf_extension       /= 2;
       ru->end_of_burst_delay /= 2;
     } else if (frame_parms->N_RB_DL == 25) {
+      ru->N_TA_offset = 624/4;
       ru->sf_extension       /= 4;
       ru->end_of_burst_delay /= 4;
     } else {
-      printf("not handled, todo\n");
+      LOG_E(PHY,"not handled, todo\n");
       exit(1);
     }
   } else {
     ru->N_TA_offset = 0;
     ru->sf_extension = 0;
     ru->end_of_burst_delay = 0;
-  }
-
-  if (ru->openair0_cfg.mmapped_dma == 1) {
-    // replace RX signal buffers with mmaped HW versions
-    for (i=0; i<ru->nb_rx; i++) {
-      card = i/4;
-      ant = i%4;
-      printf("Mapping RU id %d, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
-      free(ru->common.rxdata[i]);
-      ru->common.rxdata[i] = ru->openair0_cfg.rxbase[ru->rf_map.chain+ant];
-      printf("rxdata[%d] @ %p\n",i,ru->common.rxdata[i]);
-
-      for (j=0; j<16; j++) {
-        printf("rxbuffer %d: %x\n",j,ru->common.rxdata[i][j]);
-        ru->common.rxdata[i][j] = 16-j;
-      }
-    }
-
-    for (i=0; i<ru->nb_tx; i++) {
-      card = i/4;
-      ant = i%4;
-      printf("Mapping RU id %d, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
-      free(ru->common.txdata[i]);
-      ru->common.txdata[i] = ru->openair0_cfg.txbase[ru->rf_map.chain+ant];
-      printf("txdata[%d] @ %p\n",i,ru->common.txdata[i]);
-
-      for (j=0; j<16; j++) {
-        printf("txbuffer %d: %x\n",j,ru->common.txdata[i][j]);
-        ru->common.txdata[i][j] = 16-j;
-      }
-    }
-  } else { // not memory-mapped DMA
-    //nothing to do, everything already allocated in lte_init
   }
 
   return(0);
@@ -447,30 +408,134 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
   }
 }
 
-void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
-  L1_proc_t *proc = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag, int frame, int subframe) {
+  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
 
-  // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,frame,subframe)>0) {
-    // set timing for prach thread
-    proc->frame_prach = frame;
-    proc->subframe_prach = subframe;
-    prach_procedures(eNB,0);
+  if (br_flag==0) {
+    eNB->proc.frame_prach = frame;
+    eNB->proc.subframe_prach = subframe;
+  } else {
+    eNB->proc.frame_prach_br = frame;
+    eNB->proc.subframe_prach_br = subframe;
   }
-}
 
-void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
-  L1_proc_t *proc = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  RU_t *ru;
+  int aa=0;
+  int ru_aa;
 
+  for (int i=0; i<eNB->num_RU; i++) {
+    ru=eNB->RU_list[i];
+
+    for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      int ce_level;
+
+      if (br_flag==1)
+        for (ce_level=0; ce_level<4; ce_level++)
+          eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[i]->prach_rxsigF_br[ce_level][ru_aa];
+    }
+  }
+
+  // run PRACH detection for CE-level 0 only for now when br_flag is set
+  rx_prach(eNB,
+           eNB->RU_list[0],
+           &max_preamble[0],
+           &max_preamble_energy[0],
+           &max_preamble_delay[0],
+           &avg_preamble_energy[0],
+           frame,
+           0
+           ,br_flag
+          );
+
+  if (br_flag==1) {
+    int             prach_mask;
+    prach_mask = is_prach_subframe (&eNB->frame_parms, eNB->proc.frame_prach_br, eNB->proc.subframe_prach_br);
+    eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list = eNB->preamble_list_br;
+    int             ind = 0;
+    int             ce_level = 0;
+    /* Save for later, it doesn't work
+       for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
+
+       if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[ce_level]==1)&&
+       (prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
+       (eNB->prach_vars_br.repetition_number[ce_level]==
+       eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
+
+    */
+
+    if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0] == 1) {
+      if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + eNB->prach_DTX_threshold_emtc[0])) {
+        eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles++;
+        eNB->preamble_list_br[ind].preamble_rel8.timing_advance = max_preamble_delay[ind];      //
+        eNB->preamble_list_br[ind].preamble_rel8.preamble = max_preamble[ind];
+        // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
+        eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + subframe + (60*(eNB->prach_vars_br.first_frame[ce_level] % 40));
+        eNB->preamble_list_br[ind].instance_length = 0; //don't know exactly what this is
+        eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type = 1 + ce_level;    // CE Level
+        LOG_I (PHY, "Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+               ind,
+               ce_level,
+               prach_mask,
+               eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
+               eNB->preamble_list_br[ind].preamble_rel8.preamble, eNB->preamble_list_br[ind].preamble_rel8.rnti, eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
+      }
+    }
+
+    /*
+      ind++;
+      }
+    } */// ce_level
+  } else if ((eNB->prach_energy_counter == 100) &&
+             (max_preamble_energy[0] > eNB->measurements.prach_I0+eNB->prach_DTX_threshold)) {
+    LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+          eNB->Mod_id,
+          eNB->CC_id,
+          frame,
+          subframe,
+          max_preamble[0],
+          max_preamble_energy[0]/10,
+          max_preamble_energy[0]%10,
+          max_preamble_delay[0]);
+    pthread_mutex_lock(&eNB->UL_INFO_mutex);
+    eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles  = 1;
+    eNB->UL_INFO.rach_ind.rach_indication_body.preamble_list        = &eNB->preamble_list[0];
+    eNB->UL_INFO.rach_ind.rach_indication_body.tl.tag               = NFAPI_RACH_INDICATION_BODY_TAG;
+    eNB->UL_INFO.rach_ind.header.message_id                         = NFAPI_RACH_INDICATION;
+    eNB->UL_INFO.rach_ind.sfn_sf                                    = frame<<4 | subframe;
+    eNB->preamble_list[0].preamble_rel8.tl.tag                = NFAPI_PREAMBLE_REL8_TAG;
+    eNB->preamble_list[0].preamble_rel8.timing_advance        = max_preamble_delay[0];
+    eNB->preamble_list[0].preamble_rel8.preamble              = max_preamble[0];
+    eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
+    eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
+    eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
+
+    if (NFAPI_MODE==NFAPI_MODE_PNF) {  // If NFAPI PNF then we need to send the message to the VNF
+      LOG_D(PHY,"Filling NFAPI indication for RACH : SFN_SF:%d TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+            NFAPI_SFNSF2DEC(eNB->UL_INFO.rach_ind.sfn_sf),
+            eNB->preamble_list[0].preamble_rel8.timing_advance,
+            eNB->preamble_list[0].preamble_rel8.preamble,
+            eNB->preamble_list[0].preamble_rel8.rnti,
+            eNB->preamble_list[0].preamble_rel13.rach_resource_type);
+      oai_nfapi_rach_ind(&eNB->UL_INFO.rach_ind);
+      eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles = 0;
+    }
+
+    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  } // max_preamble_energy > prach_I0 + 100
+  else {
+    eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((avg_preamble_energy[0]*124)>>10);
+
+    if (eNB->prach_energy_counter < 100)
+      eNB->prach_energy_counter++;
+  }
+} // else br_flag
+
+void prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
   // check if we have to detect PRACH first
-  if (is_prach_subframe(fp,frame,subframe)>0) {
-    LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
-    // set timing for prach thread
-    proc->frame_prach_br = frame;
-    proc->subframe_prach_br = subframe;
-    prach_procedures(eNB,1);
+  if (is_prach_subframe(&eNB->frame_parms, frame,subframe)>0) {
+    prach_procedures_ocp(eNB, 0, frame, subframe);
+    prach_procedures_ocp(eNB, 1, frame, subframe);
   }
 }
 
@@ -486,8 +551,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 
   AssertFatal( !(NFAPI_MODE==NFAPI_MODE_PNF &&
                  eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0), "");
-  wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
-  wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
   release_UE_in_freeList(eNB->Mod_id);
 
   // UE-specific RX processing for subframe n
@@ -670,11 +734,7 @@ static void *ru_thread( void *param ) {
     openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   }
 
-  if (setup_RU_buffers(ru)!=0) {
-    printf("Exiting, cannot initialize RU Buffers\n");
-    exit(-1);
-  }
-
+  AssertFatal(setup_RU_buffers(ru)==0, "Exiting, cannot initialize RU Buffers\n");
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   wait_sync("ru_thread");
 
@@ -732,7 +792,7 @@ static void *ru_thread( void *param ) {
       ru->fh_south_out(ru);
   }
 
-  printf( "Exiting ru_thread \n");
+  LOG_W(PHY,"Exiting ru_thread \n");
 
   if (ru->stop_rf != NULL) {
     if (ru->stop_rf(ru) != 0)
@@ -769,10 +829,10 @@ void set_function_spec_param(RU_t *ru) {
       ru->stop_rf                = stop_rf;
       ru->eNB_top=eNB_top;
       break;
-      
-  default:
-    LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
-    break;
+
+    default:
+      LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
+      break;
   } // switch on interface type
 }
 
@@ -788,7 +848,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
-  printf("configuring RU from file\n");
+  LOG_I(PHY,"configuring RU from file\n");
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
         RC.nb_L1_inst,RC.nb_RU,get_nprocs());
@@ -852,23 +912,17 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     LOG_D(PHY, "eNB0:%p\n", eNB0);
 
     if (eNB0) {
-      if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
-        AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
+      LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
+      memcpy((void *)&ru->frame_parms,(void *)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
 
-      if (eNB0) {
-        LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
-        memcpy((void *)&ru->frame_parms,(void *)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-        // attach all RU to all eNBs in its list/
-        LOG_D(PHY,"ru->num_eNB:%d eNB0->num_RU:%d\n", ru->num_eNB, eNB0->num_RU);
-
-        for (i=0; i<ru->num_eNB; i++) {
-          eNB0 = ru->eNB_list[i];
-          eNB0->RU_list[eNB0->num_RU++] = ru;
-        }
+      for (i=0; i<ru->num_eNB; i++) {
+        eNB0 = ru->eNB_list[i];
+        eNB0->RU_list[eNB0->num_RU++] = ru;
       }
     }
 
-    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",
+          ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);
@@ -894,85 +948,86 @@ void RCconfig_RU(void) {
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
-  if ( RUParamList.numelt > 0) {
-    RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-
-    for (j = 0; j < RC.nb_RU; j++) {
-      RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));
-      memset((void *)RC.ru[j],0,sizeof(RU_t));
-      RC.ru[j]->idx                                 = j;
-      printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
-      RC.ru[j]->if_timing                           = synch_to_ext_device;
-
-      if (RC.nb_L1_inst >0)
-        RC.ru[j]->num_eNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
-      else
-        RC.ru[j]->num_eNB                           = 0;
-
-      for (i=0; i<RC.ru[j]->num_eNB; i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];
-
-      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
-        RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
-      }
-
-      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
-        if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
-          RC.ru[j]->openair0_cfg.clock_source = internal;
-          LOG_D(PHY, "RU clock source set as internal\n");
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
-          RC.ru[j]->openair0_cfg.clock_source = external;
-          LOG_D(PHY, "RU clock source set as external\n");
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
-          RC.ru[j]->openair0_cfg.clock_source = gpsdo;
-          LOG_D(PHY, "RU clock source set as gpsdo\n");
-        } else {
-          LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
-        }
-      }
-
-      if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
-        if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
-          RC.ru[j]->if_south                        = LOCAL_RF;
-          RC.ru[j]->function                        = eNodeB_3GPP;
-          printf("Setting function for RU %d to eNodeB_3GPP\n",j);
-        } else {
-          RC.ru[j]->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
-          RC.ru[j]->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.remote_addr              = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-        }
-
-        RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
-        RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
-        RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
-        /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
-        RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
-        RC.ru[j]->end_of_burst_delay                = *(RUParamList.paramarray[j][RU_END_OF_BURST_DELAY_IDX].uptr);
-
-        for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
-      } //strcmp(local_rf, "yes") == 0
-      else {
-        printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
-        RC.ru[j]->eth_params.local_if_name        = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
-        RC.ru[j]->eth_params.my_addr          = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.remote_addr        = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.my_portc         = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.my_portd         = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-      }  /* strcmp(local_rf, "yes") != 0 */
-
-      RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
-      RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
-      RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
-      RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
-    }// j=0..num_rus
-  } else {
+  if ( RUParamList.numelt == 0 ) {
     RC.nb_RU = 0;
+    return;
   } // setting != NULL
+
+  RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
+
+  for (j = 0; j < RC.nb_RU; j++) {
+    RC.ru[j] = (RU_t *)calloc(sizeof(RU_t), 1);
+    RC.ru[j]->idx = j;
+    LOG_I(PHY,"Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
+    RC.ru[j]->if_timing = synch_to_ext_device;
+    paramdef_t *vals=RUParamList.paramarray[j];
+
+    if (RC.nb_L1_inst >0)
+      RC.ru[j]->num_eNB = vals[RU_ENB_LIST_IDX].numelt;
+    else
+      RC.ru[j]->num_eNB = 0;
+
+    for (i=0; i<RC.ru[j]->num_eNB; i++)
+      RC.ru[j]->eNB_list[i] = RC.eNB[vals[RU_ENB_LIST_IDX].iptr[i]][0];
+
+    if (config_isparamset(vals, RU_SDR_ADDRS)) {
+      RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(vals[RU_SDR_ADDRS].strptr));
+    }
+
+    if (config_isparamset(vals, RU_SDR_CLK_SRC)) {
+      char *paramVal=*(vals[RU_SDR_CLK_SRC].strptr);
+      LOG_D(PHY, "RU clock source set as %s\n", paramVal);
+
+      if (strcmp(paramVal, "internal") == 0) {
+        RC.ru[j]->openair0_cfg.clock_source = internal;
+      } else if (strcmp(paramVal, "external") == 0) {
+        RC.ru[j]->openair0_cfg.clock_source = external;
+      } else if (strcmp(paramVal, "gpsdo") == 0) {
+        RC.ru[j]->openair0_cfg.clock_source = gpsdo;
+      } else {
+        LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", paramVal);
+      }
+    }
+
+    if (strcmp(*(vals[RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
+      if ( !(config_isparamset(vals,RU_LOCAL_IF_NAME_IDX)) ) {
+        RC.ru[j]->if_south  = LOCAL_RF;
+        RC.ru[j]->function  = eNodeB_3GPP;
+        LOG_I(PHY, "Setting function for RU %d to eNodeB_3GPP\n",j);
+      } else {
+        RC.ru[j]->eth_params.local_if_name = strdup(*(vals[RU_LOCAL_IF_NAME_IDX].strptr));
+        RC.ru[j]->eth_params.my_addr       = strdup(*(vals[RU_LOCAL_ADDRESS_IDX].strptr));
+        RC.ru[j]->eth_params.remote_addr   = strdup(*(vals[RU_REMOTE_ADDRESS_IDX].strptr));
+        RC.ru[j]->eth_params.my_portc      = *(vals[RU_LOCAL_PORTC_IDX].uptr);
+        RC.ru[j]->eth_params.remote_portc  = *(vals[RU_REMOTE_PORTC_IDX].uptr);
+        RC.ru[j]->eth_params.my_portd      = *(vals[RU_LOCAL_PORTD_IDX].uptr);
+        RC.ru[j]->eth_params.remote_portd  = *(vals[RU_REMOTE_PORTD_IDX].uptr);
+      }
+
+      RC.ru[j]->max_pdschReferenceSignalPower = *(vals[RU_MAX_RS_EPRE_IDX].uptr);;
+      RC.ru[j]->max_rxgain                    = *(vals[RU_MAX_RXGAIN_IDX].uptr);
+      RC.ru[j]->num_bands                     = vals[RU_BAND_LIST_IDX].numelt;
+      /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
+      RC.ru[j]->sf_extension                  = *(vals[RU_SF_EXTENSION_IDX].uptr);
+      RC.ru[j]->end_of_burst_delay            = *(vals[RU_END_OF_BURST_DELAY_IDX].uptr);
+
+      for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = vals[RU_BAND_LIST_IDX].iptr[i];
+    } else {
+      LOG_I(PHY,"RU %d: Transport %s\n",j,*(vals[RU_TRANSPORT_PREFERENCE_IDX].strptr));
+      RC.ru[j]->eth_params.local_if_name    = strdup(*(vals[RU_LOCAL_IF_NAME_IDX].strptr));
+      RC.ru[j]->eth_params.my_addr          = strdup(*(vals[RU_LOCAL_ADDRESS_IDX].strptr));
+      RC.ru[j]->eth_params.remote_addr      = strdup(*(vals[RU_REMOTE_ADDRESS_IDX].strptr));
+      RC.ru[j]->eth_params.my_portc         = *(vals[RU_LOCAL_PORTC_IDX].uptr);
+      RC.ru[j]->eth_params.remote_portc     = *(vals[RU_REMOTE_PORTC_IDX].uptr);
+      RC.ru[j]->eth_params.my_portd         = *(vals[RU_LOCAL_PORTD_IDX].uptr);
+      RC.ru[j]->eth_params.remote_portd     = *(vals[RU_REMOTE_PORTD_IDX].uptr);
+    }  /* strcmp(local_rf, "yes") != 0 */
+
+    RC.ru[j]->nb_tx                             = *(vals[RU_NB_TX_IDX].uptr);
+    RC.ru[j]->nb_rx                             = *(vals[RU_NB_RX_IDX].uptr);
+    RC.ru[j]->att_tx                            = *(vals[RU_ATT_TX_IDX].uptr);
+    RC.ru[j]->att_rx                            = *(vals[RU_ATT_RX_IDX].uptr);
+  }// j=0..num_rus
 
   return;
 }
