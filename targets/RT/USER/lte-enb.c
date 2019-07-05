@@ -508,9 +508,9 @@ int wakeup_txfh(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,int frame_tx,int subfram
     if (((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL))||
         (eNB->RU_list[ru_id]->state == RU_SYNC)||
         (eNB->RU_list[ru_id]->wait_cnt>0)){
-       AssertFatal((pthread_mutex_lock(&proc->mutex_RUs))==0, "mutex_lock returns %d\n",ret);
+       AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RUs))==0, "mutex_lock returns %d\n",ret);
        proc->instance_cnt_RUs = 0;
-       AssertFatal((pthread_mutex_unlock(&proc->mutex_RUs))==0, "mutex_unlock returns %d\n",ret);
+       AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RUs))==0, "mutex_unlock returns %d\n",ret);
        continue;//hacking only works when all RU_tx works on the same subframe #TODO: adding mask stuff
     }
 
