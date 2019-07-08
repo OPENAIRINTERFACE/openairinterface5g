@@ -121,7 +121,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   eNB_MAC_INST *mac = NULL;
   UE_list_t *UE_list = NULL;
   rrc_eNB_ue_context_t *ue_contextP = NULL;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
   UE_TEMPLATE *UE_template_ptr = NULL;
 
   /* Init */
@@ -1340,7 +1340,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   UE_list_t *UE_list = NULL;
   slice_info_t *sli = NULL;
   UE_TEMPLATE *UE_template_ptr = NULL;
-  UE_sched_ctrl *UE_sched_ctrl_ptr = NULL;
+  UE_sched_ctrl_t *UE_sched_ctrl_ptr = NULL;
   int rvidx_tab[4] = {0, 2, 3, 1};
   int first_rb_slice[NFAPI_CC_MAX];
   int n_rb_ul_tab[NFAPI_CC_MAX];
@@ -1954,7 +1954,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   COMMON_channels_t *cc  = eNB->common_channels;
   UE_list_t         *UE_list = &(eNB->UE_list);
   UE_TEMPLATE       *UE_template = NULL;
-  UE_sched_ctrl     *UE_sched_ctrl = NULL;
+  UE_sched_ctrl_t     *UE_sched_ctrl = NULL;
 
   if (sched_subframeP < subframeP) {
     sched_frame++;

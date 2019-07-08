@@ -306,8 +306,7 @@ void
 flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t *const ue_context_pP,
-							     const uint8_t ho_state,
-  agent_reconf_rrc *trig_param
+  const uint8_t ho_state
 );
 void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
@@ -357,6 +356,9 @@ void *rrc_enb_task(void *args_p);
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
 
+void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m);
+
+void rrc_eNB_process_x2_setup_response(int mod_id, x2ap_setup_resp_t *m);
 
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m);
 
@@ -609,6 +611,12 @@ rrc_eNB_generate_HandoverPreparationInformation(
   int                          *_size
   //LTE_PhysCellId_t targetPhyId
 );
+
+int
+flexran_rrc_eNB_trigger_handover (int mod_id,
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t  *ue_context_pP,
+  int target_cell_id);
 
 void
 check_handovers(

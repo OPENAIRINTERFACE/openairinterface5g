@@ -602,7 +602,6 @@ __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
   // --log_config.hw_log_level debug
-  // (for phy layer, replace "hw" by "phy"
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {

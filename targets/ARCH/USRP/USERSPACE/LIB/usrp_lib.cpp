@@ -539,7 +539,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  int samples_received=0,i,j;
+  int samples_received=0;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(USRP_REC_PLAY)
 
@@ -760,12 +760,9 @@ int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, 
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  static int first_call=1;
-  static double rf_freq,diff;
   uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0]);
   rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
   rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
-  rf_freq=openair0_cfg[0].rx_freq[0];
   s->usrp->set_rx_freq(rx_tune_req);
   return(0);
 }
@@ -1248,7 +1245,7 @@ extern "C" {
       openair0_cfg[0].iq_txshift = 4;//shift
       openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
-      for(int i=0; i<s->usrp->get_rx_num_channels(); i++) {
+      for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
         if (i<openair0_cfg[0].rx_num_channels) {
           s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
           s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
@@ -1268,7 +1265,7 @@ extern "C" {
       LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
       LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
 
-      for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+      for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
         ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
 
         if (i<openair0_cfg[0].tx_num_channels) {
@@ -1310,10 +1307,10 @@ extern "C" {
       s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
 
       /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
-      for(int i=0; i<s->usrp->get_tx_num_channels() && i<openair0_cfg[0].tx_num_channels; i++)
+      for(int i=0; i<((int) s->usrp->get_tx_num_channels()) && i<openair0_cfg[0].tx_num_channels; i++)
         s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
 
-      for(int i=0; i<s->usrp->get_rx_num_channels() && i<openair0_cfg[0].rx_num_channels; i++)
+      for(int i=0; i<((int) s->usrp->get_rx_num_channels()) && i<openair0_cfg[0].rx_num_channels; i++)
         s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
 
       for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {

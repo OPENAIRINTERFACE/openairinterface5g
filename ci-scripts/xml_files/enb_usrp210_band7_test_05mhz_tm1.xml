@@ -30,7 +30,7 @@
  030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
  030102 000010 040301 040502 000011 040302 000001 000012 040303 000002 000013 040503 040401 040201 030201
  050102
- 030102 000020 040301 040504 000021 040302 000001 000022 040303 000002 040504 000023 040401 040201 030201
+ 030103 000020 040301 040504 000021 040302 000001 000022 040303 000002 040504 000023 040401 040201 030201
  050202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -113,13 +113,13 @@
 
 	<testCase id="030102">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<desc>Initialize eNB (FDD/Band7/5MHz) for RRC Inactivity Timer testing -- no FlexRan Ctl</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030103">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<desc>Initialize eNB (FDD/Band7/5MHz) for RRC Inactivity Timer testing -- with FlexRan Ctl</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
