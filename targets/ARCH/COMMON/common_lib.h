@@ -454,7 +454,7 @@ int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *open
 
   void uhd_set_thread_prio(void);
   typedef void(*set_prio_func_t)(void);
-  set_prio_func_t uhd_set_thread_priority_fun;
+  //set_prio_func_t uhd_set_thread_priority_fun;
 
 #ifdef __cplusplus
 }

@@ -135,7 +135,7 @@ int load_lib(openair0_device *device,
   return ret;
 }
 
-
+/*
 void uhd_set_thread_prio(void) {
   
   loader_shlibfunc_t shlib_fdesc[1];
@@ -146,15 +146,16 @@ void uhd_set_thread_prio(void) {
     libname="rfsimulator";
   else 
     libname=OAI_RF_LIBNAME;
-  shlib_fdesc[0].fname="uhd_set_thread_priority";
+  //shlib_fdesc[0].fname="uhd_set_thread_priority";
   ret=load_module_shlib(libname,shlib_fdesc,1,NULL);
   if (ret < 0) {
     LOG_E(HW,"Library %s couldn't be loaded\n",libname);
   } else {
-    (set_prio_func_t)shlib_fdesc[0].fptr();
+    //(set_prio_func_t)shlib_fdesc[0].fptr();
   }    
   //return ret;
 }
+*/
 
 int openair0_device_load(openair0_device *device,
 		                 openair0_config_t *openair0_cfg)

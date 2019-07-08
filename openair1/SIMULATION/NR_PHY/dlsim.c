@@ -685,6 +685,8 @@ int main(int argc, char **argv)
   UE_mac->phy_config.config_req.pbch_config.ssb_index = 0;
   UE_mac->phy_config.config_req.pbch_config.half_frame_bit = 0;
 
+  nr_ue_phy_config_request(&UE_mac->phy_config);
+
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
@@ -735,8 +737,7 @@ int main(int argc, char **argv)
 			       &UE_proc,
 			       0,
 			       do_pdcch_flag,
-			       normal_txrx,
-			       UE_mac->phy_config.config_req.pbch_config);
+			       normal_txrx);
 
 	if (n_trials==1) {
 	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
@@ -744,7 +745,7 @@ int main(int argc, char **argv)
 	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
 	}
 
-	if (UE->dci_ind.number_of_dcis==0) n_errors++;
+	if (UE_mac->dl_config_request.number_pdus==0) n_errors++; //if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }
     } //noise trials
 
