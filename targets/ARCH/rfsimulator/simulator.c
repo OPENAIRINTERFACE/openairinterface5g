@@ -642,6 +642,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_set_gains_func   = rfsimulator_set_gains;
   device->trx_write_func       = rfsimulator_write;
   device->trx_read_func      = rfsimulator_read;
+  device->uhd_set_thread_priority = NULL;
   /* let's pretend to be a b2x0 */
   device->type = USRP_B200_DEV;
   device->openair0_cfg=&openair0_cfg[0];

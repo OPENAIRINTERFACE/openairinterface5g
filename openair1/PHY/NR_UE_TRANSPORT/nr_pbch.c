@@ -103,8 +103,9 @@ uint16_t nr_pbch_extract(int **rxdataF,
             j++;
           }
 
-          rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
-        }
+          //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+          rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
+	}
 
         rxF_ext+=9;
       } else { //symbol 2
@@ -125,11 +126,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
               j++;
             }
 
-            rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+            //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+            rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
           }
 
           rxF_ext+=9;
-        } else rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
+        } else rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 12) : (rx_offset+12);//rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
       }
     }
 

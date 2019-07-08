@@ -542,8 +542,27 @@ void init_openair0(void) {
 
   for (card=0; card<MAX_CARDS; card++) {
     openair0_cfg[card].configFilename = NULL;
+    openair0_cfg[card].threequarter_fs = frame_parms[0]->threequarter_fs;
 
-    if(frame_parms[0]->N_RB_DL == 106) {
+    if(frame_parms[0]->N_RB_DL == 217) {
+      if (numerology==1) {
+        if (frame_parms[0]->threequarter_fs) {
+          openair0_cfg[card].sample_rate=92.16e6;
+          openair0_cfg[card].samples_per_frame = 921600;
+          openair0_cfg[card].tx_bw = 40e6;
+          openair0_cfg[card].rx_bw = 40e6;
+        }
+        else {
+          openair0_cfg[card].sample_rate=122.88e6;
+          openair0_cfg[card].samples_per_frame = 1228800;
+          openair0_cfg[card].tx_bw = 40e6;
+          openair0_cfg[card].rx_bw = 40e6;
+        } 
+      } else {
+        LOG_E(PHY,"Unsupported numerology!\n");
+        exit(-1);
+      }
+     }else if(frame_parms[0]->N_RB_DL == 106) {
       if (numerology==0) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=23.04e6;
@@ -556,14 +575,22 @@ void init_openair0(void) {
           openair0_cfg[card].tx_bw = 10e6;
           openair0_cfg[card].rx_bw = 10e6;
         }
-      } else if (numerology==1) {
-        openair0_cfg[card].sample_rate=61.44e6;
-        openair0_cfg[card].samples_per_frame = 307200;
-        openair0_cfg[card].tx_bw = 20e6;
-        openair0_cfg[card].rx_bw = 20e6;
+     } else if (numerology==1) {
+        if (frame_parms[0]->threequarter_fs) {
+	  openair0_cfg[card].sample_rate=46.08e6;
+	  openair0_cfg[card].samples_per_frame = 480800;
+	  openair0_cfg[card].tx_bw = 20e6;
+	  openair0_cfg[card].rx_bw = 20e6;
+	}
+	else {
+	  openair0_cfg[card].sample_rate=61.44e6;
+	  openair0_cfg[card].samples_per_frame = 614400;
+	  openair0_cfg[card].tx_bw = 20e6;
+	  openair0_cfg[card].rx_bw = 20e6;
+	}
       } else if (numerology==2) {
         openair0_cfg[card].sample_rate=122.88e6;
-        openair0_cfg[card].samples_per_frame = 307200;
+        openair0_cfg[card].samples_per_frame = 1228800;
         openair0_cfg[card].tx_bw = 40e6;
         openair0_cfg[card].rx_bw = 40e6;
       } else {
@@ -585,6 +612,10 @@ void init_openair0(void) {
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
       openair0_cfg[card].rx_bw = 1.5e6;
+    }
+    else {
+      LOG_E(PHY,"Unknown NB_RB %d!\n",frame_parms[0]->N_RB_DL);
+      exit(-1);
     }
 
     if (frame_parms[0]->frame_type==TDD)
@@ -698,6 +729,7 @@ int main( int argc, char **argv ) {
     frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
     frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
     frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
     LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
     get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
   }
