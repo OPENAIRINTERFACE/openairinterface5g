@@ -401,6 +401,10 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 #endif
 
   tx_offset = slot*frame_parms->samples_per_slot - timing_advance;
+
+  if (tx_offset < 0)
+    tx_offset += frame_parms->samples_per_frame;
+
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
