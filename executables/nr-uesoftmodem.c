@@ -403,7 +403,7 @@ int16_t dlsch_demod_shift;
 static void get_options(void) {
   int CC_id;
   int tddflag=0, nonbiotflag;
-  char *loopfile=NULL, *in_ip=NULL, *in_path=NULL;
+  char *loopfile=NULL;
   int dumpframe=0;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
