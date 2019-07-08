@@ -1216,15 +1216,16 @@ static void *ru_thread_tx( void *param ) {
   int                i = 0;
   int                ret;
   
-  
-  if(ru->if_south == LOCAL_RF)
-  {
-    //uhd_set_thread_prio();
-    LOG_I(PHY,"set ru_thread_tx uhd priority");
-  }
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
+
+  
+  if(ru->rfdevice.uhd_set_thread_priority != NULL)
+  {
+    LOG_I(PHY,"set ru_thread_tx uhd priority \n");
+    ru->rfdevice.uhd_set_thread_priority();
+  }
 
   while (!oai_exit) {
     if (oai_exit) break;
