@@ -161,7 +161,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   unsigned int available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  int32_t *mod_symbols[MAX_NUM_NR_RE];
+  int32_t *mod_symbols[NR_MAX_NB_CODEWORDS];
   uint32_t ***pusch_dmrs;
   int16_t **tx_layers;
   int32_t **txdataF;
@@ -370,6 +370,12 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   }
   ///////////
   ////////////////////////////////////////////////////////////////////////
+
+  for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
+
+    free(mod_symbols[cwd_index]);
+
+  }
 
   return 0;
 }
