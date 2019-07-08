@@ -207,9 +207,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
-		                 gNB_L1_rxtx_proc_t *proc,
-						 int UE_id,
-						 uint8_t harq_pid)
+                         gNB_L1_rxtx_proc_t *proc,
+                         int UE_id,
+                         uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
@@ -221,20 +221,20 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
                nfapi_ulsch_pdu_rel15->number_symbols,
-			   nfapi_ulsch_pdu_rel15->nb_re_dmrs,
-			   nfapi_ulsch_pdu_rel15->length_dmrs,
-			   nfapi_ulsch_pdu_rel15->Qm,
-			   nfapi_ulsch_pdu_rel15->n_layers);
+               nfapi_ulsch_pdu_rel15->nb_re_dmrs,
+               nfapi_ulsch_pdu_rel15->length_dmrs,
+               nfapi_ulsch_pdu_rel15->Qm,
+               nfapi_ulsch_pdu_rel15->n_layers);
 
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
 
   nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr,
-		                G,
-						0,
-						Nid_cell,
-						rel15_ul->rnti);
+                        G,
+                        0,
+                        Nid_cell,
+                        rel15_ul->rnti);
 
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
@@ -243,13 +243,13 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
   //ret = nr_ulsch_decoding(gNB,
   nr_ulsch_decoding(gNB,
                     UE_id,
-					gNB->pusch_vars[UE_id]->llr,
-					frame_parms,
-					proc->frame_rx,
-					nfapi_ulsch_pdu_rel15->number_symbols,
-					proc->slot_rx,
-					harq_pid,
-					0);
+                    gNB->pusch_vars[UE_id]->llr,
+                    frame_parms,
+                    proc->frame_rx,
+                    nfapi_ulsch_pdu_rel15->number_symbols,
+                    proc->slot_rx,
+                    harq_pid,
+                    0);
         
   // if (ret > ulsch_gNB->max_ldpc_iterations)
   //   n_errors++;

@@ -2464,9 +2464,9 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 
 
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
-		                    UE_nr_rxtx_proc_t *proc,
-							uint8_t gNB_id,
-							uint8_t thread_id)
+                            UE_nr_rxtx_proc_t *proc,
+                            uint8_t gNB_id,
+                            uint8_t thread_id)
 {
   fapi_nr_dci_pdu_rel15_t *ul_dci_pdu;
   NR_UE_ULSCH_t *ulsch_ue;

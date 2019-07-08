@@ -130,7 +130,8 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size);
 
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const unsigned char *PDU, unsigned int length);
+                                 const unsigned char *PDU,
+								 unsigned int length);
 
 static void *opt_listener_thread(void *arg) {
   ssize_t ret;
@@ -333,7 +334,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 /* Write an individual PDU (PCAP packet header + mac-context + mac-pdu) */
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
                                  const uint8_t *PDU,
-								 unsigned int length)
+                                 unsigned int length)
 {
   pcaprec_hdr_t packet_header;
   uint8_t context_header[256];

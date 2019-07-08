@@ -894,8 +894,8 @@ int main( int argc, char **argv )
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
-  configure_linux();
   logInit();
+  configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
 

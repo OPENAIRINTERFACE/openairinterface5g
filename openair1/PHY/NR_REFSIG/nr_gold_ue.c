@@ -63,8 +63,8 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 }
 
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
-		           unsigned short n_idDMRS,
-				   unsigned short length_dmrs)
+                   unsigned short n_idDMRS,
+                   unsigned short length_dmrs)
 {
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
@@ -107,9 +107,9 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 }
 
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
-		           unsigned short lbar,
-				   unsigned short *n_idDMRS,
-				   unsigned short length_dmrs)
+                   unsigned short lbar,
+                   unsigned short *n_idDMRS,
+                   unsigned short length_dmrs)
 {
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
@@ -164,8 +164,8 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
 }
 
 void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
-		                uint16_t *N_n_scid,
-						uint8_t n_scid)
+                        uint16_t *N_n_scid,
+                        uint8_t n_scid)
 {
   uint32_t x1, x2, n;
   uint8_t reset, slot, symb, q;

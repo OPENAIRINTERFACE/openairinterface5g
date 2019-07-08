@@ -32,8 +32,8 @@
 @param PHY_VARS_NR_UE* ue structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
  */
 int nr_pbch_dmrs_rx(int dmrss,
-		            unsigned int *nr_gold_pbch,
-					int32_t *output);
+                    unsigned int *nr_gold_pbch,
+                    int32_t *output);
 
 /*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PDCCH DMRS.
 @param PHY_VARS_NR_UE* ue structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
@@ -66,7 +66,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
                    unsigned short length_dmrs);
 
 void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
-		                uint16_t *N_n_scid,
-						uint8_t n_scid);
+                        uint16_t *N_n_scid,
+                        uint8_t n_scid);
 
 #endif

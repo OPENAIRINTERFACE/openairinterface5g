@@ -1762,7 +1762,8 @@ void kill_NR_RU_proc(int inst) {
   pthread_cond_destroy(&proc->cond_gNBs);
 }
 
-int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
+int check_capabilities(RU_t *ru,RRU_capabilities_t *cap)
+{
   FH_fmt_options_t fmt = cap->FH_fmt;
   int i;
   int found_band=0;
@@ -1818,7 +1819,8 @@ char rru_formats[3][20] = {"OAI_IF5","MBP_IF5","OAI_IF4p5"};
 char ru_if_formats[4][20] = {"LOCAL_RF","REMOTE_OAI_IF5","REMOTE_MBP_IF5","REMOTE_OAI_IF4p5"};
 
 void configure_ru(int idx,
-                  void *arg) {
+                  void *arg)
+{
   RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t *)arg;
@@ -1859,25 +1861,25 @@ void configure_ru(int idx,
 
 void configure_rru(int idx,
                    void *arg) {
-  RRU_config_t *config = (RRU_config_t *)arg;
+  RRU_config_t *config     = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
   nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
-  ru->nr_frame_parms->eutra_band                                               = config->band_list[0];
-  ru->nr_frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
-  ru->nr_frame_parms->ul_CarrierFreq                                           = config->rx_freq[0];
+  ru->nr_frame_parms->eutra_band                                          = config->band_list[0];
+  ru->nr_frame_parms->dl_CarrierFreq                                      = config->tx_freq[0];
+  ru->nr_frame_parms->ul_CarrierFreq                                      = config->rx_freq[0];
 
   if (ru->nr_frame_parms->dl_CarrierFreq == ru->nr_frame_parms->ul_CarrierFreq) {
     gNB_config->subframe_config.duplex_mode.value                         = TDD;
-    //ru->nr_frame_parms->tdd_config                                            = config->tdd_config[0];
-    //ru->nr_frame_parms->tdd_config_S                                          = config->tdd_config_S[0];
+    //ru->nr_frame_parms->tdd_config                                        = config->tdd_config[0];
+    //ru->nr_frame_parms->tdd_config_S                                      = config->tdd_config_S[0];
   } else
-    gNB_config->subframe_config.duplex_mode.value                            = FDD;
+    gNB_config->subframe_config.duplex_mode.value                         = FDD;
 
-  ru->att_tx                                                               = config->att_tx[0];
-  ru->att_rx                                                               = config->att_rx[0];
-  gNB_config->rf_config.dl_carrier_bandwidth.value                         = config->N_RB_DL[0];
-  gNB_config->rf_config.ul_carrier_bandwidth.value                         = config->N_RB_UL[0];
-  ru->nr_frame_parms->threequarter_fs                                       = config->threequarter_fs[0];
+  ru->att_tx                                                              = config->att_tx[0];
+  ru->att_rx                                                              = config->att_rx[0];
+  gNB_config->rf_config.dl_carrier_bandwidth.value                        = config->N_RB_DL[0];
+  gNB_config->rf_config.ul_carrier_bandwidth.value                        = config->N_RB_UL[0];
+  ru->nr_frame_parms->threequarter_fs                                     = config->threequarter_fs[0];
 
   //ru->nr_frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {
@@ -2016,9 +2018,9 @@ void set_function_spec_param(RU_t *ru) {
       ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
       ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
       ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
-      ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
-      ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
-      ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
+      ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
+      ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
+      ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
       ru->start_rf               = NULL;                 // no local RF
       ru->stop_rf                = NULL;
       ru->start_if               = start_if;             // need to start if interface for IF5
@@ -2173,11 +2175,11 @@ void RCconfig_RU(void) {
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (j = 0; j < RC.nb_RU; j++) {
-      RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));
+      RC.ru[j]                                      = (RU_t *)malloc(sizeof(RU_t));
       memset((void *)RC.ru[j],0,sizeof(RU_t));
       RC.ru[j]->idx                                 = j;
       RC.ru[j]->nr_frame_parms                      = (NR_DL_FRAME_PARMS *)malloc(sizeof(NR_DL_FRAME_PARMS));
-      RC.ru[j]->frame_parms                      = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
+      RC.ru[j]->frame_parms                         = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
       printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
       RC.ru[j]->if_timing                           = synch_to_ext_device;
 
@@ -2213,13 +2215,13 @@ void RCconfig_RU(void) {
           RC.ru[j]->function                        = gNodeB_3GPP;
           printf("Setting function for RU %d to gNodeB_3GPP\n",j);
         } else {
-          RC.ru[j]->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
-          RC.ru[j]->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.remote_addr              = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
+          RC.ru[j]->eth_params.local_if_name           = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
+          RC.ru[j]->eth_params.my_addr                 = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
+          RC.ru[j]->eth_params.remote_addr             = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
+          RC.ru[j]->eth_params.my_portc                = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+          RC.ru[j]->eth_params.remote_portc            = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+          RC.ru[j]->eth_params.my_portd                = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
+          RC.ru[j]->eth_params.remote_portd            = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
 
           if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
             RC.ru[j]->if_south                        = LOCAL_RF;
@@ -2252,13 +2254,13 @@ void RCconfig_RU(void) {
       } //strcmp(local_rf, "yes") == 0
       else {
         printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
-        RC.ru[j]->eth_params.local_if_name        = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
-        RC.ru[j]->eth_params.my_addr          = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.remote_addr        = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.my_portc         = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.my_portd         = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
+        RC.ru[j]->eth_params.local_if_name = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
+        RC.ru[j]->eth_params.my_addr       = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
+        RC.ru[j]->eth_params.remote_addr   = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
+        RC.ru[j]->eth_params.my_portc      = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+        RC.ru[j]->eth_params.remote_portc  = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+        RC.ru[j]->eth_params.my_portd      = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
+        RC.ru[j]->eth_params.remote_portd  = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
 
         if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
           RC.ru[j]->if_south                     = REMOTE_IF5;
