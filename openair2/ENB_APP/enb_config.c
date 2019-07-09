@@ -449,97 +449,95 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
 
-            if (1 || !NODE_IS_CU(rrc->node_type)) {
-              // Cell params, MIB/SIB1 in DU
-              RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
-              AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
-                           "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
-                           RC.config_file_name, i, ccparams_lte.tdd_config, LTE_TDD_Config__subframeAssignment_sa6);
-              RRC_CONFIGURATION_REQ (msg_p).tdd_config_s[j] = ccparams_lte.tdd_config_s;
-              AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
-                           "Failed to parse eNB configuration file %s, enb %d illegal tdd_config_s %d (should be 0-%d)!",
-                           RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
+            // Cell params, MIB/SIB1 in DU
+            RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
+            AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
+                         "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
+                         RC.config_file_name, i, ccparams_lte.tdd_config, LTE_TDD_Config__subframeAssignment_sa6);
+            RRC_CONFIGURATION_REQ (msg_p).tdd_config_s[j] = ccparams_lte.tdd_config_s;
+            AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
+                         "Failed to parse eNB configuration file %s, enb %d illegal tdd_config_s %d (should be 0-%d)!",
+                         RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
 
-              if (!ccparams_lte.prefix_type)
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: NORMAL,EXTENDED!\n",
-                             RC.config_file_name, i, ENB_CONFIG_STRING_PREFIX_TYPE);
-              else if (strcmp(ccparams_lte.prefix_type, "NORMAL") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
-              } else  if (strcmp(ccparams_lte.prefix_type, "EXTENDED") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
-              } else {
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
-                             RC.config_file_name, i, ccparams_lte.prefix_type);
-              }
+            if (!ccparams_lte.prefix_type)
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d define %s: NORMAL,EXTENDED!\n",
+                           RC.config_file_name, i, ENB_CONFIG_STRING_PREFIX_TYPE);
+            else if (strcmp(ccparams_lte.prefix_type, "NORMAL") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
+            } else  if (strcmp(ccparams_lte.prefix_type, "EXTENDED") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, ccparams_lte.prefix_type);
+            }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
-              if (!ccparams_lte.pbch_repetition)
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
-                             RC.config_file_name, i, ENB_CONFIG_STRING_PBCH_REPETITION);
-              else if (strcmp(ccparams_lte.pbch_repetition, "TRUE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 1;
-              } else  if (strcmp(ccparams_lte.pbch_repetition, "FALSE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 0;
-              } else {
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
-                             RC.config_file_name, i, ccparams_lte.pbch_repetition);
-              }
+            if (!ccparams_lte.pbch_repetition)
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+                           RC.config_file_name, i, ENB_CONFIG_STRING_PBCH_REPETITION);
+            else if (strcmp(ccparams_lte.pbch_repetition, "TRUE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 1;
+            } else  if (strcmp(ccparams_lte.pbch_repetition, "FALSE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 0;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
+                           RC.config_file_name, i, ccparams_lte.pbch_repetition);
+            }
 
 #endif
-              RRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = ccparams_lte.eutra_band;
-              RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) ccparams_lte.downlink_frequency;
-              RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) ccparams_lte.uplink_frequency_offset;
-              RRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= ccparams_lte.Nid_cell;
+            RRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = ccparams_lte.eutra_band;
+            RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) ccparams_lte.downlink_frequency;
+            RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) ccparams_lte.uplink_frequency_offset;
+            RRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= ccparams_lte.Nid_cell;
 
-              if (ccparams_lte.Nid_cell>503) {
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
-                             RC.config_file_name, i, ccparams_lte.Nid_cell);
-              }
-
-              RRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= ccparams_lte.N_RB_DL;
-
-              if ((ccparams_lte.N_RB_DL!=6) &&
-                  (ccparams_lte.N_RB_DL!=15) &&
-                  (ccparams_lte.N_RB_DL!=25) &&
-                  (ccparams_lte.N_RB_DL!=50) &&
-                  (ccparams_lte.N_RB_DL!=75) &&
-                  (ccparams_lte.N_RB_DL!=100)) {
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
-                             RC.config_file_name, i, ccparams_lte.N_RB_DL);
-              }
-
-              if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = FDD;
-              } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = TDD;
-              } else {
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
-                             RC.config_file_name, i, ccparams_lte.frame_type);
-              }
-
-              if (config_check_band_frequencies(j,
-                                                RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
-                                                RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
-                                                RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
-                                                RRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
-                AssertFatal(0, "error calling enb_check_band_frequencies\n");
-              }
-
-              if ((ccparams_lte.nb_antenna_ports <1) || (ccparams_lte.nb_antenna_ports > 2))
-                AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
-                             RC.config_file_name, i, ccparams_lte.nb_antenna_ports);
-
-              RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
+            if (ccparams_lte.Nid_cell>503) {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
+                           RC.config_file_name, i, ccparams_lte.Nid_cell);
             }
+
+            RRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= ccparams_lte.N_RB_DL;
+
+            if ((ccparams_lte.N_RB_DL!=6) &&
+                (ccparams_lte.N_RB_DL!=15) &&
+                (ccparams_lte.N_RB_DL!=25) &&
+                (ccparams_lte.N_RB_DL!=50) &&
+                (ccparams_lte.N_RB_DL!=75) &&
+                (ccparams_lte.N_RB_DL!=100)) {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
+                           RC.config_file_name, i, ccparams_lte.N_RB_DL);
+            }
+
+            if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = FDD;
+            } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = TDD;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
+                           RC.config_file_name, i, ccparams_lte.frame_type);
+            }
+
+            if (config_check_band_frequencies(j,
+                                              RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
+              AssertFatal(0, "error calling enb_check_band_frequencies\n");
+            }
+
+            if ((ccparams_lte.nb_antenna_ports <1) || (ccparams_lte.nb_antenna_ports > 2))
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
+                           RC.config_file_name, i, ccparams_lte.nb_antenna_ports);
+
+            RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
 
             if (!NODE_IS_DU(rrc->node_type)) { //this is CU or eNB, SIB2-20 in CU
               // Radio Resource Configuration (SIB2)

@@ -41,6 +41,7 @@
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
 #include "flexran_agent_mac_internal.h"
+#include "flexran_agent_rrc_internal.h"
 
 //#include "SCHED/defs.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -804,27 +805,91 @@ error:
 }
 
 
-int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
-  protocol_ctxt_t  ctxt;
+int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexRrcTriggering *triggering = input->rrc_triggering;
-  agent_reconf_rrc *reconf_param = malloc(sizeof(agent_reconf_rrc));
-  reconf_param->trigger_policy = triggering->rrc_trigger;
-  reconf_param->report_interval = 0;
-  reconf_param->report_amount = 0;
-  struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);
-    flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt, ue_context_p, 0, reconf_param);
+  // Set the proper values using FlexRAN API (protected with mutex ?)
+  if (!flexran_agent_get_rrc_xface(mod_id)) {
+    LOG_E(FLEXRAN_AGENT, "%s(): no RRC present, aborting\n", __func__);
+    return -1;
   }
+
+  int num_ue = flexran_get_rrc_num_ues(mod_id);
+  if (num_ue == 0)
+    return 0;
+
+  rnti_t rntis[num_ue];
+  flexran_get_rrc_rnti_list(mod_id, rntis, num_ue);
+  for (int i = 0; i < num_ue; i++) {
+    const rnti_t rnti = rntis[i];
+    const int error = update_rrc_reconfig(mod_id, rnti, triggering);
+    if (error < 0) {
+      LOG_E(FLEXRAN_AGENT, "Error in updating user %d\n", i);
+      continue;
+    }
+    // Call the proper wrapper in FlexRAN API
+    if (flexran_call_rrc_reconfiguration (mod_id, rnti) < 0) {
+      LOG_E(FLEXRAN_AGENT, "Error in reconfiguring user %d\n", i);
+    }
+  }
+
   *msg = NULL;
-  free(reconf_param);
-  reconf_param = NULL;
   return 0;
 }
 
+int flexran_agent_rrc_trigger_handover(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexHoCommand *ho_command = input->ho_command_msg;
 
-int flexran_agent_destroy_rrc_measurement(Protocol__FlexranMessage *msg) {
+  int rnti_found = 0;
+
+  // Set the proper values using FlexRAN API (protected with mutex ?)
+  if (!flexran_agent_get_rrc_xface(mod_id)) {
+    LOG_E(FLEXRAN_AGENT, "%s(): no RRC present, aborting\n", __func__);
+    return -1;
+  }
+
+  int num_ue = flexran_get_rrc_num_ues(mod_id);
+  if (num_ue == 0)
+    return 0;
+
+  if (!ho_command->has_rnti) {
+    LOG_E(FLEXRAN_AGENT, "%s(): no UE rnti is present, aborting\n", __func__);
+    return -1;
+  }
+
+  if (!ho_command->has_target_phy_cell_id) {
+    LOG_E(FLEXRAN_AGENT, "%s(): no target physical cell id is  present, aborting\n", __func__);
+    return -1;
+  }
+
+  rnti_t rntis[num_ue];
+  flexran_get_rrc_rnti_list(mod_id, rntis, num_ue);
+  for (int i = 0; i < num_ue; i++) {
+    const rnti_t rnti = rntis[i];
+    if (ho_command->rnti == rnti) {
+      rnti_found = 1;
+      // Call the proper wrapper in FlexRAN API
+      if (flexran_call_rrc_trigger_handover(mod_id, ho_command->rnti, ho_command->target_phy_cell_id) < 0) {
+        LOG_E(FLEXRAN_AGENT, "Error in handovering user %d/RNTI %x\n", i, rnti);
+      }
+      break;
+    }
+  }
+
+  if (!rnti_found)
+    return -1;
+
+  *msg = NULL;
+  return 0;
+}
+
+int flexran_agent_destroy_rrc_reconfiguration(Protocol__FlexranMessage *msg) {
+  // TODO
+  return 0;
+}
+
+int flexran_agent_destroy_rrc_trigger_handover(Protocol__FlexranMessage *msg) {
   // TODO
   return 0;
 }
@@ -847,6 +912,12 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
     //} else {
     //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+  }
+
+  if (flexran_agent_get_rrc_xface(mod_id) && enb_config->cell_config[0]->has_x2_ho_net_control) {
+    if (flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control) < 0) {
+      LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
+    }
   }
 
   *msg = NULL;

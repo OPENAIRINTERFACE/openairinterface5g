@@ -826,7 +826,6 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
       }
     }
     free(ue_report);
-    ue_report = NULL;
   }
 
   return -1;

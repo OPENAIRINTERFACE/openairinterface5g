@@ -1001,7 +1001,7 @@ void eNB_Config_Local_DRX(
 {
   UE_list_t *UE_list_mac = NULL;
   int UE_id = -1;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   UE_list_mac = &(RC.mac[Mod_id]->UE_list);
 
