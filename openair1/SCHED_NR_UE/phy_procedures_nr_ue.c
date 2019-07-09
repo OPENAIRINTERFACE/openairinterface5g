@@ -2485,12 +2485,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   harq_pid = 0; //temporary implementation
 
-
+  /*
   generate_ue_ulsch_params(ue,
                            0,
                            gNB_id,
                            harq_pid);
-
+  */
+  
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
