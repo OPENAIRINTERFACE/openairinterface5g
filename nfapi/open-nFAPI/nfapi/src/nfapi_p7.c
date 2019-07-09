@@ -93,9 +93,6 @@ void* nfapi_p7_allocate(size_t size, nfapi_p7_codec_config_t* config)
 	else
 	{
                buffer_p = calloc(1, size);
-               if(buffer_p != NULL){
-               memset(buffer_p,0,size);
-               }
                return buffer_p;
 	}
 }
