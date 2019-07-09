@@ -208,7 +208,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   COMMON_channels_t *cc  = &mac->common_channels[0];
   UE_list_t         *UE_list=&mac->UE_list;
   UE_TEMPLATE       *UE_template;
-  UE_sched_ctrl     *UE_sched_ctrl;
+  UE_sched_ctrl_t     *UE_sched_ctrl;
   int               sched_frame=frameP;
   int               sched_subframe = (subframeP+4)%10;
   uint16_t          ul_req_index;

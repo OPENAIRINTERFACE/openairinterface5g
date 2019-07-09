@@ -1160,7 +1160,7 @@ void get_csi_params(COMMON_channels_t * cc,
 		    struct LTE_CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
 		    uint16_t * Npd, uint16_t * N_OFFSET_CQI, int *H);
 
-uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
+uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl_t * sched_ctl, int CC_idP,
 				 COMMON_channels_t * cc, uint8_t tmode,
 				 struct LTE_CQI_ReportPeriodic
 				 *cqi_ReportPeriodic);

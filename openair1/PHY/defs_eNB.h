@@ -33,7 +33,9 @@
 #define __PHY_DEFS_ENB__H__
 
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>

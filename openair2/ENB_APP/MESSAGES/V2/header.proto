@@ -34,6 +34,7 @@ enum flex_type {
 
      //Controller command messages
      FLPT_DL_MAC_CONFIG = 13;
+     FLPT_HO_COMMAND = 21;
 
      // UE state change messages
      FLPT_UE_STATE_CHANGE = 14;
