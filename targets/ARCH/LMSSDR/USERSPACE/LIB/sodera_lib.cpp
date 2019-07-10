@@ -706,6 +706,7 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
   device->trx_stop_func  = trx_sodera_stop;
   device->trx_set_freq_func = trx_sodera_set_freq;
   device->trx_set_gains_func   = trx_sodera_set_gains;
+  device->uhd_set_thread_priority = NULL;
   
   s->sample_rate   = openair0_cfg[0].sample_rate;
   s->channelscount = openair0_cfg[0].rx_num_channels;

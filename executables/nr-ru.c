@@ -1076,10 +1076,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 40e6;
       }
     } else if(N_RB == 106) {
-      cfg->sample_rate=61.44e6;
-      cfg->samples_per_frame = 614400;
-      cfg->tx_bw = 20e6;
-      cfg->rx_bw = 20e6;
+      if (fp->threequarter_fs) {
+	cfg->sample_rate=46.08e6;
+	cfg->samples_per_frame = 460800;
+	cfg->tx_bw = 20e6;
+	cfg->rx_bw = 20e6;
+      }
+      else {
+	cfg->sample_rate=61.44e6;
+	cfg->samples_per_frame = 614400;
+	cfg->tx_bw = 20e6;
+	cfg->rx_bw = 20e6;
+      }
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
@@ -1208,15 +1216,16 @@ static void *ru_thread_tx( void *param ) {
   int                i = 0;
   int                ret;
   
-  
-  if(ru->if_south == LOCAL_RF)
-  {
-    uhd_set_thread_prio();
-    LOG_I(PHY,"set ru_thread_tx uhd priority");
-  }
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
+
+  
+  if(ru->rfdevice.uhd_set_thread_priority != NULL)
+  {
+    LOG_I(PHY,"set ru_thread_tx uhd priority \n");
+    ru->rfdevice.uhd_set_thread_priority();
+  }
 
   while (!oai_exit) {
     if (oai_exit) break;
