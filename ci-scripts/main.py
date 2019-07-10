@@ -81,18 +81,26 @@ logging.basicConfig(
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
+		self.ranRepository = ''
+		self.ranBranch = ''
+		self.ranAllowMerge = False
+		self.ranCommitID = ''
+		self.ranTargetBranch = ''
 		self.eNBIPAddress = ''
-		self.eNBRepository = ''
-		self.eNBBranch = ''
-		self.eNB_AllowMerge = False
-		self.eNBCommitID = ''
-		self.eNBTargetBranch = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
 		self.eNBSourceCodePath = ''
 		self.EPCIPAddress = ''
 		self.EPCUserName = ''
 		self.EPCPassword = ''
+		self.eNB1IPAddress = ''
+		self.eNB1UserName = ''
+		self.eNB1Password = ''
+		self.eNB1SourceCodePath = ''
+		self.eNB2IPAddress = ''
+		self.eNB2UserName = ''
+		self.eNB2Password = ''
+		self.eNB2SourceCodePath = ''
 		self.EPCSourceCodePath = ''
 		self.EPCType = ''
 		self.EPC_PcapFileName = ''
@@ -107,6 +115,7 @@ class SSHConnection():
 		self.Initialize_eNB_args = ''
 		self.eNBLogFile = ''
 		self.eNB_instance = ''
+		self.eNB_serverId = ''
 		self.eNBOptions = ''
 		self.rruOptions = ''
 		self.rruLogFile = ''
@@ -312,35 +321,53 @@ class SSHConnection():
 			sys.exit('SCP failed')
 
 	def BuildeNB(self):
-		if self.eNBIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('mkdir -p ' + self.eNBSourceCodePath, '\$', 5)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(lIpAddr, lUserName, lPassWord)
+		self.command('mkdir -p ' + lSourcePath, '\$', 5)
+		self.command('cd ' + lSourcePath, '\$', 5)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		self.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
-		if self.eNBCommitID != '':
-			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
+		if self.ranCommitID != '':
+			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNB_AllowMerge):
-			if self.eNBTargetBranch == '':
-				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
-				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				self.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 2000)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		buildStatus = True
@@ -350,7 +377,25 @@ class SSHConnection():
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.close()
+		if self.eNB_serverId != '0':
+			self.command('cd cmake_targets', '\$', 5)
+			self.command('if [ -e tmp_build' + self.testCase_id + '.zip ]; then rm -f tmp_build' + self.testCase_id + '.zip; fi', '\$', 5)
+			self.command('zip -r -qq tmp_build' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
+			self.close()
+			if (os.path.isfile('./tmp_build' + self.testCase_id + '.zip')):
+				os.remove('./tmp_build' + self.testCase_id + '.zip')
+			self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/tmp_build' + self.testCase_id + '.zip', '.')
+			if (os.path.isfile('./tmp_build' + self.testCase_id + '.zip')):
+				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './tmp_build' + self.testCase_id + '.zip', self.eNBSourceCodePath + '/cmake_targets/.')
+				os.remove('./tmp_build' + self.testCase_id + '.zip')
+				self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+				self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+				self.command('unzip -qq -DD tmp_build' + self.testCase_id + '.zip', '\$', 5)
+				self.command('rm -f tmp_build' + self.testCase_id + '.zip', '\$', 5)
+				self.close()
+		else:
+			self.close()
+
 		if buildStatus:
 			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 		else:
@@ -360,29 +405,29 @@ class SSHConnection():
 			sys.exit(1)
 
 	def BuildOAIUE(self):
-		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
+		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
-		if self.eNBCommitID != '':
-			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
+		if self.ranCommitID != '':
+			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNB_AllowMerge):
-			if self.eNBTargetBranch == '':
-				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
-				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				self.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
@@ -3276,46 +3321,46 @@ class SSHConnection():
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-cloud-upload"></span> GIT Repository </td>\n')
-			self.htmlFile.write('       <td><a href="' + self.eNBRepository + '">' + self.eNBRepository + '</a></td>\n')
+			self.htmlFile.write('       <td><a href="' + self.ranRepository + '">' + self.ranRepository + '</a></td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-wrench"></span> Job Trigger </td>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td>Merge-Request</td>\n')
 			else:
 				self.htmlFile.write('       <td>Push to Branch</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-out"></span> Source Branch </td>\n')
 			else:
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tree-deciduous"></span> Branch</td>\n')
-			self.htmlFile.write('       <td>' + self.eNBBranch + '</td>\n')
+			self.htmlFile.write('       <td>' + self.ranBranch + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tag"></span> Source Commit ID </td>\n')
 			else:
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tag"></span> Commit ID </td>\n')
-			self.htmlFile.write('       <td>' + self.eNBCommitID + '</td>\n')
+			self.htmlFile.write('       <td>' + self.ranCommitID + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
-			if self.eNB_AllowMerge != '':
-				commit_message = subprocess.check_output("git log -n1 --pretty=format:\"%s\" " + self.eNBCommitID, shell=True, universal_newlines=True)
+			if self.ranAllowMerge != '':
+				commit_message = subprocess.check_output("git log -n1 --pretty=format:\"%s\" " + self.ranCommitID, shell=True, universal_newlines=True)
 				commit_message = commit_message.strip()
 				self.htmlFile.write('     <tr>\n')
-				if (self.eNB_AllowMerge):
+				if (self.ranAllowMerge):
 					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Source Commit Message </td>\n')
 				else:
 					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Commit Message </td>\n')
 				self.htmlFile.write('       <td>' + commit_message + '</td>\n')
 				self.htmlFile.write('     </tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('     <tr>\n')
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-in"></span> Target Branch </td>\n')
-				if (self.eNBTargetBranch == ''):
+				if (self.ranTargetBranch == ''):
 					self.htmlFile.write('       <td>develop</td>\n')
 				else:
-					self.htmlFile.write('       <td>' + self.eNBTargetBranch + '</td>\n')
+					self.htmlFile.write('       <td>' + self.ranTargetBranch + '</td>\n')
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
@@ -3563,12 +3608,12 @@ def Usage():
 	print('      InitiateHtml, FinalizeHtml')
 	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
 	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
+	print('  --eNBRepository=[eNB\'s Repository URL]                             or --ranRepository=[OAI RAN Repository URL]')
+	print('  --eNBBranch=[eNB\'s Branch Name]                                    or --ranBranch=[OAI RAN Repository Branch')
+	print('  --eNBCommitID=[eNB\'s Commit Number]                                or --ranCommitID=[OAI RAN Repository Commit SHA-1')
+	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]  or --ranAllowMerge=true/false')
+	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request] or --ranTargetBranch=[Target Branch]')
 	print('  --eNBIPAddress=[eNB\'s IP Address]')
-	print('  --eNBRepository=[eNB\'s Repository URL]')
-	print('  --eNBBranch=[eNB\'s Branch Name]')
-	print('  --eNBCommitID=[eNB\'s Commit Number]')
-	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]')
-	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request]')
 	print('  --eNBUserName=[eNB\'s Login User Name]')
 	print('  --eNBPassword=[eNB\'s Login Password]')
 	print('  --eNBSourceCodePath=[eNB\'s Source Code Path]')
@@ -3592,6 +3637,12 @@ def CheckClassValidity(action,id):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
 
 	if action == 'Initialize_eNB':
 		SSH.Initialize_eNB_args = test.findtext('Initialize_eNB_args')
@@ -3684,35 +3735,78 @@ while len(argvs) > 1:
 	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
 		mode = matchReg.group(1)
-	elif re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBIPAddress = matchReg.group(1)
-	elif re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBRepository = matchReg.group(1)
-	elif re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+	elif re.match('^\-\-eNBRepository=(.+)$|^\-\-ranRepository(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
+		SSH.ranRepository = matchReg.group(1)
+	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
-			SSH.eNB_AllowMerge = True
-	elif re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBBranch = matchReg.group(1)
-	elif re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
-		SSH.eNBCommitID = matchReg.group(1)
-	elif re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
-		SSH.eNBTargetBranch = matchReg.group(1)
-	elif re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBUserName = matchReg.group(1)
-	elif re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBPassword = matchReg.group(1)
-	elif re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBSourceCodePath = matchReg.group(1)
+			SSH.ranAllowMerge = True
+	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
+		SSH.ranBranch = matchReg.group(1)
+	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
+		SSH.ranCommitID = matchReg.group(1)
+	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		SSH.ranTargetBranch = matchReg.group(1)
+	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBIPAddress = matchReg.group(1)
+		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1IPAddress = matchReg.group(1)
+		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2IPAddress = matchReg.group(1)
+	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBUserName = matchReg.group(1)
+		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1UserName = matchReg.group(1)
+		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2UserName = matchReg.group(1)
+	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBPassword = matchReg.group(1)
+		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1Password = matchReg.group(1)
+		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2Password = matchReg.group(1)
+	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBSourceCodePath = matchReg.group(1)
+		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1SourceCodePath = matchReg.group(1)
+		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2SourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		SSH.EPCIPAddress = matchReg.group(1)
@@ -3864,15 +3958,15 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlFooter(SSH.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+		if SSH.eNBIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 
-		if (SSH.EPCIPAddress != ''):
+		if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
-		if SSH.UEIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		if SSH.UEIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
 			Usage()
 			sys.exit('UE: Insufficient Parameter')
 
@@ -3915,7 +4009,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
-	SSH.CheckFlexranCtrlInstallation()
+	if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
+		SSH.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
 	todo_tests=[]
