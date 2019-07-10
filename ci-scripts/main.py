@@ -700,9 +700,8 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets/ran_build/build', '\$', 5)
-		#self.command('echo "ulimit -c unlimited && ./' + self.air_interface + '-softmodem ' + self.Initialize_OAI_eNB_args + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
-		self.command('echo "ulimit -c unlimited && ./' + self.air_interface + '-softmodem ' + self.Initialize_OAI_eNB_args + '|& tee ' + self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./' + self.air_interface + '-softmodem ' + self.Initialize_OAI_eNB_args + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log', '\$', 5)
 		#use nohup instead of daemon
@@ -2168,8 +2167,25 @@ class SSHConnection():
 		no_cell_sync_found = False
 		mib_found = False
 		frequency_found = False
+		nrUEFlag = False
+		nrDecodeMib = 0
+		nrFoundDCI = 0
+		nrCRCOK = 0
 		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
+			result = re.search('nr_synchro_time', str(line))
+			if result is not None:
+				nrUEFlag = True
+			if nrUEFlag:
+				result = re.search('decode mib', str(line))
+				if result is not None:
+					nrDecodeMib += 1
+				result = re.search('found 1 DCIs', str(line))
+				if result is not None:
+					nrFoundDCI += 1
+				result = re.search('CRC OK', str(line))
+				if result is not None:
+					nrCRCOK += 1
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
 				foundSegFault = True
@@ -2260,6 +2276,19 @@ class SSHConnection():
 				except Exception as e:
 					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
 		ue_log_file.close()
+		if nrUEFlag:
+			if nrDecodeMib > 0:
+				statMsg = 'UE showed ' + str(nrDecodeMib) + ' MIB decode message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
+			if nrFoundDCI > 0:
+				statMsg = 'UE showed ' + str(nrFoundDCI) + ' DCI found message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
+			if nrCRCOK > 0:
+				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
