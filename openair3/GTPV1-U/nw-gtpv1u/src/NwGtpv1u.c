@@ -893,8 +893,14 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     break;
 
   case NW_GTP_END_MARKER:
-    GTPU_DEBUG("NW_GTP_END_MARKER\n");
-    ret = NW_GTPV1U_OK;
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+    for(int i =1; i<= udpDataLen; i++){
+      printf("%02x ", udpData[i-1]);
+      if(i % 20 == 0)printf("\n");
+    }
+#endif  	
+    GTPU_INFO("NW_GTP_END_MARKER\n");
+    ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
     break;
 
   default:
