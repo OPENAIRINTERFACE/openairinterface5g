@@ -113,6 +113,8 @@ class SSHConnection():
 		self.nbTestXMLfiles = 0
 		self.desc = ''
 		self.Build_eNB_args = ''
+		self.backgroundBuild = False
+		self.backgroundBuildTestId = ['', '', '']
 		self.Initialize_eNB_args = ''
 		self.eNB_instance = ''
 		self.eNB_serverId = ''
@@ -366,31 +368,75 @@ class SSHConnection():
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 2000)
+		if self.backgroundBuild:
+			self.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
+			self.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
+			self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
+			self.close()
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
+			return
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
+
+	def WaitBuildeNBisFinished(self):
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(lIpAddr, lUserName, lPassWord)
+		count = 40
+		buildOAIprocess = True
+		while (count > 0) and buildOAIprocess:
+			self.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
+			result = re.search('build_oai', str(self.ssh.before))
+			if result is None:
+				buildOAIprocess = False
+			else:
+				count -= 1
+				time.sleep(30)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
+
+	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
+		self.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		buildStatus = True
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
-		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
+		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
+		self.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
+		self.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
 		if self.eNB_serverId != '0':
 			self.command('cd cmake_targets', '\$', 5)
-			self.command('if [ -e tmp_build' + self.testCase_id + '.zip ]; then rm -f tmp_build' + self.testCase_id + '.zip; fi', '\$', 5)
-			self.command('zip -r -qq tmp_build' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
+			self.command('if [ -e tmp_build' + testcaseId + '.zip ]; then rm -f tmp_build' + testcaseId + '.zip; fi', '\$', 5)
+			self.command('zip -r -qq tmp_build' + testcaseId + '.zip build_log_' + testcaseId, '\$', 5)
 			self.close()
-			if (os.path.isfile('./tmp_build' + self.testCase_id + '.zip')):
-				os.remove('./tmp_build' + self.testCase_id + '.zip')
-			self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/tmp_build' + self.testCase_id + '.zip', '.')
-			if (os.path.isfile('./tmp_build' + self.testCase_id + '.zip')):
-				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './tmp_build' + self.testCase_id + '.zip', self.eNBSourceCodePath + '/cmake_targets/.')
-				os.remove('./tmp_build' + self.testCase_id + '.zip')
+			if (os.path.isfile('./tmp_build' + testcaseId + '.zip')):
+				os.remove('./tmp_build' + testcaseId + '.zip')
+			self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/tmp_build' + testcaseId + '.zip', '.')
+			if (os.path.isfile('./tmp_build' + testcaseId + '.zip')):
+				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './tmp_build' + testcaseId + '.zip', self.eNBSourceCodePath + '/cmake_targets/.')
+				os.remove('./tmp_build' + testcaseId + '.zip')
 				self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 				self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-				self.command('unzip -qq -DD tmp_build' + self.testCase_id + '.zip', '\$', 5)
-				self.command('rm -f tmp_build' + self.testCase_id + '.zip', '\$', 5)
+				self.command('unzip -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				self.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
 				self.close()
 		else:
 			self.close()
@@ -3678,13 +3724,30 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
 
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
+		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
+		xmlBgBuildField = test.findtext('backgroundBuild')
+		if (xmlBgBuildField is None):
+			SSH.backgroundBuild = False
+		else:
+			if re.match('true', xmlBgBuildField, re.IGNORECASE):
+				SSH.backgroundBuild = True
+			else:
+				SSH.backgroundBuild = False
+
+	if action == 'WaitEndBuild_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
@@ -4098,6 +4161,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.GetAllUEDevices(terminate_ue_flag)
 			if action == 'Build_eNB':
 				SSH.BuildeNB()
+			elif action == 'WaitEndBuild_eNB':
+				SSH.WaitBuildeNBisFinished()
 			elif action == 'Initialize_eNB':
 				SSH.InitializeeNB()
 			elif action == 'Terminate_eNB':
