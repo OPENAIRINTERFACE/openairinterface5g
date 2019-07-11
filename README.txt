@@ -44,7 +44,8 @@ openairinterface5g
 RELEASE NOTES:
 
 v1.1.0 -> July 2019. This version adds the following implemented features:
-           * Experimental support of LTE-M (only one module attachement)
+           * Experimental support of LTE-M
+             - Single LTE-M UE attachment, legacy-LTE UE attachment is disabled
            * X2 interface and handover (also X2-U interface)
              - In FDD and TDD
            * CU/DU split (F1 interface)
