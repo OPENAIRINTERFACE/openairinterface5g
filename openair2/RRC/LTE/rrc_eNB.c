@@ -4614,10 +4614,10 @@ rrc_eNB_generate_HandoverPreparationInformation(
   uint8_t                     *buffer,
   int                          *_size
 ) {
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, 8192);
   char *ho_buf = (char *) buffer;
   int ho_size;
-  ho_size = do_HandoverPreparation(ho_buf, 1024, ue_context_pP->ue_context.UE_Capability, ue_context_pP->ue_context.UE_Capability_size);
+  ho_size = do_HandoverPreparation(ho_buf, 8192, ue_context_pP->ue_context.UE_Capability, ue_context_pP->ue_context.UE_Capability_size);
   *_size = ho_size;
 }
 
