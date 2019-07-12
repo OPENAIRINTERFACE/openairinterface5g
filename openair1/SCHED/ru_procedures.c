@@ -100,7 +100,7 @@ void feptx0(RU_t *ru,int slot) {
 */
       int num_symb = 7;
 
-      if (subframe_select(fp,subframe) == SF_S) num_symb=fp->dl_symbols_in_S_subframe;
+      if (subframe_select(fp,subframe) == SF_S) num_symb=fp->dl_symbols_in_S_subframe+1;
    
       if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
 	//int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
