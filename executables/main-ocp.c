@@ -26,6 +26,7 @@ static int DEFENBS[] = {0};
 #include <openair2/LAYER2/MAC/mac_extern.h>
 #include <openair1/PHY/LTE_REFSIG/lte_refsig.h>
 #include <nfapi/oai_integration/nfapi_pnf.h>
+#include <executables/split_headers.h>
 
 extern uint16_t sf_ahead;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
@@ -103,7 +104,17 @@ void init_RU_proc(RU_t *ru) {
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 
   pthread_t t;
-  threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
+  char *fs6=getenv("fs6");
+
+  if (fs6) {
+    if ( strncasecmp(fs6,"cu", 2) )
+      threadCreate(&t,  cu_fs6, (void *)ru, "MainCu", -1, OAI_PRIORITY_RT_MAX);
+    else if ( strncasecmp(fs6,"du", 2) )
+      threadCreate(&t,  du_fs6, (void *)ru, "MainDu", -1, OAI_PRIORITY_RT_MAX);
+    else
+      AssertFatal(false, "environement variable fs6 is not cu or du");
+  } else
+    threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
 }
 
 void init_transport(PHY_VARS_eNB *eNB) {
@@ -719,13 +730,10 @@ void tx_rf(RU_t *ru) {
 }
 
 static void *ru_thread( void *param ) {
-  static int ru_thread_status;
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
   int                subframe =9;
   int                frame    =1023;
-  // set default return value
-  ru_thread_status = 0;
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
@@ -800,8 +808,7 @@ static void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  ru_thread_status = 0;
-  return &ru_thread_status;
+  return NULL;
 }
 
 int start_rf(RU_t *ru) {
@@ -816,18 +823,15 @@ int stop_rf(RU_t *ru) {
 void set_function_spec_param(RU_t *ru) {
   switch (ru->if_south) {
     case LOCAL_RF: // this is an RU with integrated RF (RRU, eNB)
-      ru->do_prach             = 0;                       // no prach processing in RU
       ru->feprx                = fep_full;
       ru->feptx_ofdm           = feptx_ofdm;
       ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
-      ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
-      ru->start_if             = NULL;                    // no if interface
       ru->rfdevice.host_type   = RAU_HOST;
-      ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-      ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-      ru->start_rf               = start_rf;                            // need to start the local RF interface
-      ru->stop_rf                = stop_rf;
-      ru->eNB_top=eNB_top;
+      ru->fh_south_in          = rx_rf;                               // local synchronous RF RX
+      ru->fh_south_out         = tx_rf;                               // local synchronous RF TX
+      ru->start_rf             = start_rf;                            // need to start the local RF interface
+      ru->stop_rf              = stop_rf;
+      ru->eNB_top              = eNB_top;
       break;
 
     default:

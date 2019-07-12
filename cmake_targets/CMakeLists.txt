@@ -2094,6 +2094,8 @@ target_link_libraries (lte-softmodem
 add_executable(ocp-softmodem
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_DIR}/executables/main-ocp.c
+  ${OPENAIR_DIR}/executables/dl_fs6.c
+  ${OPENAIR_DIR}/executables/transport_split.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c

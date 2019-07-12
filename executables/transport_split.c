@@ -1,6 +1,10 @@
-#include <split_headers.h>
+#include <executables/split_headers.h>
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/udp.h>
 
-int createListner (port) {
+int createListner (int port) {
   int sock;
   AssertFatal((sock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) >= 0, "");
   struct sockaddr_in addr = {
@@ -12,8 +16,8 @@ sin_addr:
     { s_addr: INADDR_ANY }
   };
   int enable=1;
-  AssertFatal(setsockopt(eth->sockfdc, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))==0,"");
-  AssertFatal(bind(sock, const struct sockaddr *addr, socklen_t addrlen)==0,"");
+  AssertFatal(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))==0,"");
+  AssertFatal(bind(sock, (const struct sockaddr *) &addr, sizeof(addr))==0,"");
   struct timeval tv= {0,UDP_TIMEOUT};
   AssertFatal(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) ==0,"");
   // Make a send/recv buffer larger than a a couple of subframe
@@ -28,6 +32,7 @@ sin_addr:
 // bufferZone: a reception area of bufferSize
 int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int bufferSize) {
   int rcved=0;
+  commonUDP_t *tmp=NULL;
 
   do {
     //read all subframe data from the control unit
@@ -41,7 +46,7 @@ int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int buffer
         return -1;
       }
     } else {
-      commonUDP_t *tmp=(commonUDP_t *)bufferZone;
+      tmp=(commonUDP_t *)bufferZone;
 
       if ( expectedTS && tmp->timestamp != expectedTS) {
         LOG_W(HW,"Received a paquet in mixed subframes, dropping it\n");
@@ -50,9 +55,9 @@ int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int buffer
         bufferZone+=ret;
       }
     }
-  } while ( !recved || recved < tmp->nbBlocks);
+  } while ( !rcved || rcved < tmp->nbBlocks);
 
-  return recv;
+  return rcved;
 }
 
 int sendSubFrame(int sock, void *bufferZone, int nbBlocks) {

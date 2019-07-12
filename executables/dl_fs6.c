@@ -1,5 +1,11 @@
-#include <split_headers.h>
+#include <stdint.h>
+#include <nfapi/oai_integration/vendor_ext.h>
+#include <openair1/PHY/INIT/lte_init.c>
+#include <executables/split_headers.h>
 
+#define FS6_BUF_SIZE 100*1000
+static int sockFS6;
+#if 0
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
@@ -61,14 +67,15 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   dlsch_harq->round++;
 }
 
-phy_procedures_eNB_TX_fs6() {
-  receiveSubFrame();
+phy_procedures_eNB_TX_fs6(int sockFS6, uint64_t TS) {
+  uint8_t bufferZone[FS6_BUF_SIZE];
+  receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
 
   // We got
   // subframe number
   //
 
-  for (aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
+  for (int aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
     memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * fp->symbols_per_tti],
             0,
             fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
@@ -178,17 +185,141 @@ phy_procedures_eNB_TX_fs6() {
                      proc,
                      AMP);
 }
+#endif
 
-DL_thread_fs6() {
-  receiveSubFrame();
-  phy_procedures_eNB_TX_fs6();
-  ru->feptx_prec(ru);
-  ru->feptx_ofdm(ru);
-  ru->fh_south_out(ru);
+void prach_eNB_extract(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 }
 
+void prach_eNB_process(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+}
 
+void phy_procedures_eNB_uespec_RX_extract(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
+}
 
-DL_thread_frequency() {
-  frequency_t header;
-  full_read(&header,
+void phy_procedures_eNB_uespec_RX_process(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
+}
+
+void phy_procedures_eNB_TX_fs6() {
+}
+
+void DL_du_fs6(RU_t *ru, int frame, int subframe, uint64_t TS) {
+  RU_proc_t *ru_proc=&ru->proc;
+
+  for (int i=0; i<ru->num_eNB; i++) {
+    uint8_t bufferZone[FS6_BUF_SIZE];
+    receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
+  }
+
+  phy_procedures_eNB_TX_fs6();
+  /* Fixme: datamodel issue: a ru is supposed to be connected to several eNB
+  L1_rxtx_proc_t * L1_proc = &proc->L1_proc;
+  ru_proc->timestamp_tx = L1_proc->timestamp_tx;
+  ru_proc->subframe_tx  = L1_proc->subframe_tx;
+  ru_proc->frame_tx     = L1_proc->frame_tx;
+  */
+  feptx_prec(ru);
+  feptx_ofdm(ru);
+  tx_rf(ru);
+}
+
+void UL_du_fs6(RU_t *ru, int frame, int subframe) {
+  RU_proc_t *ru_proc=&ru->proc;
+  int tmpf=frame, tmpsf=subframe;
+  rx_rf(ru,&tmpf,&tmpsf);
+  AssertFatal(tmpf==frame && tmpsf==subframe, "lost synchronization\n");
+  ru_proc->frame_tx = (ru_proc->frame_tx+ru_proc->frame_offset)&1023;
+  // Fixme: datamodel issue
+  PHY_VARS_eNB *eNB = RC.eNB[0][0];
+  L1_proc_t *proc           = &eNB->proc;
+  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  proc->frame_rx    = frame;
+  proc->subframe_rx = subframe;
+
+  if (NFAPI_MODE==NFAPI_MODE_PNF) {
+    // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
+    //add_subframe(&frame, &subframe, 4);
+    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
+    oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
+  }
+
+  uint8_t bufferZone[FS6_BUF_SIZE];
+  prach_eNB_extract(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    phy_procedures_eNB_uespec_RX_extract(eNB, &proc->L1_proc);
+  }
+
+  for (int i=0; i<ru->num_eNB; i++) {
+    sendSubFrame(sockFS6,bufferZone, sizeof(bufferZone) );
+  }
+}
+
+void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
+  // Fixme: datamodel issue
+  PHY_VARS_eNB *eNB = RC.eNB[0][0];
+  L1_proc_t *proc           = &eNB->proc;
+  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  eNB->UL_INFO.frame     = proc->frame_rx;
+  eNB->UL_INFO.subframe  = proc->subframe_rx;
+  eNB->UL_INFO.module_id = eNB->Mod_id;
+  eNB->UL_INFO.CC_id     = eNB->CC_id;
+  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+  uint8_t bufferZone[FS6_BUF_SIZE];
+  phy_procedures_eNB_TX(eNB, &proc->L1_proc, 1);
+  sendSubFrame(sockFS6, bufferZone, sizeof(bufferZone) );
+}
+
+void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
+  uint8_t bufferZone[FS6_BUF_SIZE];
+  receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
+  // Fixme: datamodel issue
+  PHY_VARS_eNB *eNB = RC.eNB[0][0];
+  L1_proc_t *proc           = &eNB->proc;
+  prach_eNB_process(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  release_UE_in_freeList(eNB->Mod_id);
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    phy_procedures_eNB_uespec_RX_process(eNB, &proc->L1_proc);
+  }
+}
+
+void *cu_fs6(void *arg) {
+  RU_t               *ru      = (RU_t *)arg;
+  RU_proc_t          *proc    = &ru->proc;
+  int64_t           AbsoluteSubframe=-1;
+  init_frame_parms(&ru->frame_parms,1);
+  wait_sync("ru_thread");
+
+  while(1) {
+    AbsoluteSubframe++;
+    int subframe=AbsoluteSubframe%10;
+    int frame=(AbsoluteSubframe/10)%1024;
+    UL_cu_fs6(ru, frame,subframe, AbsoluteSubframe);
+    DL_cu_fs6(ru, frame,subframe);
+  }
+
+  return NULL;
+}
+
+void *du_fs6(void *arg) {
+  RU_t               *ru      = (RU_t *)arg;
+  RU_proc_t          *proc    = &ru->proc;
+  int64_t           AbsoluteSubframe=-1;
+  fill_rf_config(ru,ru->rf_config_file);
+  init_frame_parms(&ru->frame_parms,1);
+  phy_init_RU(ru);
+  openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+  wait_sync("ru_thread");
+
+  while(1) {
+    AbsoluteSubframe++;
+    int subframe=AbsoluteSubframe%10;
+    int frame=(AbsoluteSubframe/10)%1024;
+    UL_du_fs6(ru, frame,subframe);
+    DL_du_fs6(ru, frame,subframe, AbsoluteSubframe);
+  }
+
+  return NULL;
+}
