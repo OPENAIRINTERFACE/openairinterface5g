@@ -52,6 +52,7 @@ typedef struct {
   int max_mib;
   int max_sib;
   int live;
+  int no_bind;
   /* runtime vars */
   int cur_mib;
   int cur_sib;
@@ -264,9 +265,11 @@ void *receiver(void *_d) {
     abort();
   }
 
-  if (bind(s, (struct sockaddr *)&d->to, sizeof(struct sockaddr_in)) == -1) {
-    perror("bind");
-    abort();
+  if (d->no_bind == 0) {
+    if (bind(s, (struct sockaddr *)&d->to, sizeof(struct sockaddr_in)) == -1) {
+      perror("bind");
+      abort();
+    }
   }
 
   while (1) {
@@ -290,6 +293,7 @@ void usage(void) {
     "    -live                     run live\n"
     "    -live-ip <IP address>     tracee's IP address (default %s)\n"
     "    -live-port <port>         tracee's port (default %d)\n"
+    "    -no-bind                  don't bind to IP address (for remote logging)\n"
     "-i and -live are mutually exclusive options. One of them must be provided\n"
     "but not both.\n",
     DEFAULT_IP,
@@ -318,78 +322,18 @@ int main(int n, char **v) {
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
-
-    if (!strcmp(v[i], "-d")) {
-      if (i > n-2) usage();
-
-      database_filename = v[++i];
-      continue;
-    }
-
-    if (!strcmp(v[i], "-i")) {
-      if (i > n-2) usage();
-
-      input_filename = v[++i];
-      continue;
-    }
-
-    if (!strcmp(v[i], "-ip")) {
-      if (i > n-2) usage();
-
-      ip = v[++i];
-      continue;
-    }
-
-    if (!strcmp(v[i], "-p")) {
-      if(i>n-2)usage();
-
-      port=atoi(v[++i]);
-      continue;
-    }
-
-    if (!strcmp(v[i], "-no-mib")) {
-      d.no_mib = 1;
-      continue;
-    }
-
-    if (!strcmp(v[i], "-no-sib")) {
-      d.no_sib = 1;
-      continue;
-    }
-
-    if (!strcmp(v[i], "-max-mib")) {
-      if (i > n-2) usage();
-
-      d.max_mib = atoi(v[++i]);
-      continue;
-    }
-
-    if (!strcmp(v[i], "-max-sib")) {
-      if (i > n-2) usage();
-
-      d.max_sib = atoi(v[++i]);
-      continue;
-    }
-
-    if (!strcmp(v[i], "-live")) {
-      live = 1;
-      continue;
-    }
-
-    if (!strcmp(v[i], "-live-ip")) {
-      if (i > n-2) usage();
-
-      live_ip = v[++i];
-      continue;
-    }
-
-    if (!strcmp(v[i], "-live-port")) {
-      if (i > n-2) usage();
-
-      live_port = atoi(v[++i]);
-      continue;
-    }
-
+    if (!strcmp(v[i], "-d"))         { if(i>n-2)usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-i"))         { if(i>n-2)usage(); input_filename = v[++i];    continue; }
+    if (!strcmp(v[i], "-ip"))        { if(i>n-2)usage(); ip = v[++i];                continue; }
+    if (!strcmp(v[i], "-p"))         { if(i>n-2)usage(); port = atoi(v[++i]);        continue; }
+    if (!strcmp(v[i], "-no-mib"))    {                   d.no_mib = 1;               continue; }
+    if (!strcmp(v[i], "-no-sib"))    {                   d.no_sib = 1;               continue; }
+    if (!strcmp(v[i], "-max-mib"))   { if(i>n-2)usage(); d.max_mib = atoi(v[++i]);   continue; }
+    if (!strcmp(v[i], "-max-sib"))   { if(i>n-2)usage(); d.max_sib = atoi(v[++i]);   continue; }
+    if (!strcmp(v[i], "-live"))      {                   live = 1;                   continue; }
+    if (!strcmp(v[i], "-live-ip"))   { if(i>n-2)usage(); live_ip = v[++i];           continue; }
+    if (!strcmp(v[i], "-live-port")) { if(i>n-2)usage(); live_port = atoi(v[++i]);   continue; }
+    if (!strcmp(v[i], "-no-bind"))   {                   d.no_bind = 1;              continue; }
     usage();
   }
 
