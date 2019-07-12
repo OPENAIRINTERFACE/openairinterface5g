@@ -27,7 +27,7 @@
 #include <libbladeRF.h>
 
 #include "common_lib.h"
-#include "log.h"
+#include "LOG/log.h"
 
 /** @addtogroup _BLADERF_PHY_RF_INTERFACE_
  * @{
