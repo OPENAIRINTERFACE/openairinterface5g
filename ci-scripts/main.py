@@ -3987,6 +3987,8 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	SSH.eNB_serverId = '0'
+	SSH.eNB_instance = '0'
+	SSH.eNBSourceCodePath = '/tmp/'
 	SSH.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
