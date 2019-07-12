@@ -205,7 +205,7 @@ typedef struct x2ap_handover_req_s {
 
   x2ap_lastvisitedcell_info_t lastvisitedcell_info;
 
-  uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
+  uint8_t rrc_buffer[8192 /* arbitrary, big enough */];
   int rrc_buffer_size;
 
   int target_assoc_id;

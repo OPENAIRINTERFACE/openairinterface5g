@@ -635,15 +635,12 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
     AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU_PRACH))==0,"mutex_lock return %d\n",ret);
     for (i=0; i<eNB->num_RU; i++) {
-      if (ru == eNB->RU_list[i]) {
-        LOG_D(PHY,"frame %d, subframe %d: RU %d for eNB %d signals PRACH (mask %x, num_RU %d)\n",frame,subframe,i,eNB->Mod_id,proc->RU_mask_prach,eNB->num_RU);
-
-        if ((proc->RU_mask_prach&(1<<i)) > 0)
-          LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information (PRACH) from RU %d (num_RU %d, mask %x) has not been served yet!\n",
-                eNB->Mod_id,frame,subframe,ru->idx,eNB->num_RU,proc->RU_mask_prach);
-
-        proc->RU_mask_prach |= (1<<i);
-      }
+    	if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0) {
+        	LOG_D(PHY,"frame %d, subframe %d: RU %d for eNB %d signals PRACH (mask %x, num_RU %d)\n",frame,subframe,i,eNB->Mod_id,proc->RU_mask_prach,eNB->num_RU);
+		proc->RU_mask_prach |= (1<<i);
+        } else if (eNB->RU_list[i]->state == RU_SYNC || eNB->RU_list[i]->wait_cnt > 0) {
+	        proc->RU_mask_prach |= (1<<i);
+      	}
     }
 
     if (proc->RU_mask_prach != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
