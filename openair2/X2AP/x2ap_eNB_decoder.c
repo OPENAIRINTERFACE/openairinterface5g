@@ -59,6 +59,10 @@ static int x2ap_eNB_decode_initiating_message(X2AP_X2AP_PDU_t *pdu)
       X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
       break;
 
+    case X2AP_ProcedureCode_id_endcX2Setup:
+    	X2AP_INFO("X2AP_ProcedureCode_id_endcX2Setup message!\n");
+    	break;
+
     default:
       X2AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
                   (int)pdu->choice.initiatingMessage.procedureCode);
