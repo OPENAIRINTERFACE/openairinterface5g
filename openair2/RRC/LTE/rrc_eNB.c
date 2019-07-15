@@ -5176,9 +5176,9 @@ check_handovers(
 
       ue_context_p->ue_context.handover_info->endmark_state = ENDMARK_EMPTY;
       ue_context_p->ue_context.handover_info->state = HO_FORWARDING_COMPLETE;
-    }
 
 #endif
+    }
   }
 }
 

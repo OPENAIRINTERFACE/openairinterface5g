@@ -2046,9 +2046,6 @@ int rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(instance_t instance, rrc_eNB_ue_contex
   uint8_t                      		  e_rab_done;
   uint8_t                         	  inde_list[NB_RB_MAX - 3]= {0};
   
-  LOG_I(RRC, "[eNB %d] rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ: rnti %u nb_of_e_rabs %d\n",
-        instance, ue_context_target_p->ue_context.rnti, ue_context_target_p->ue_context.nb_of_e_rabs);
-
   if (ue_context_target_p == NULL) {
     
     return (-1);
@@ -2056,6 +2053,8 @@ int rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(instance_t instance, rrc_eNB_ue_contex
     
     /* Save e RAB information for later */
     {
+      LOG_I(RRC, "[eNB %d] rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ: rnti %u nb_of_e_rabs %d\n",
+            instance, ue_context_target_p->ue_context.rnti, ue_context_target_p->ue_context.nb_of_e_rabs);
       int i;
       memset(&create_tunnel_req, 0, sizeof(create_tunnel_req));
       uint8_t nb_e_rabs_tosetup = ue_context_target_p->ue_context.nb_of_e_rabs;
