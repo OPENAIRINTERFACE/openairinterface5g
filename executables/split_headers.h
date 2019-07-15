@@ -2,11 +2,21 @@
 #define __SPLIT_HEADERS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <openair1/PHY/defs_eNB.h>
 #define MTU 65536
 #define UDP_TIMEOUT 100000L // in nano second
 #define MAX_BLOCKS 16
 #define blockAlign 32 //bytes
+
+typedef struct {
+  char *sourceIP;
+  char *sourcePort;
+  char *destIP;
+  char *destPort;
+  struct addrinfo *destAddr;
+  int sockHandler;
+} UDPsock_t;
 
 typedef struct commonUDP_s {
   uint64_t timestamp; // id of the group (subframe for LTE)
@@ -24,9 +34,9 @@ typedef struct frequency_s {
   int nbSamples;
 } frequency_t;
 
-int createListner (int port);
-int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
-int sendSubFrame(int sock, void *bufferZone, int nbBlocks);
+bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
+int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
+int sendSubFrame(UDPsock_t *sock, void *bufferZone);
 inline size_t alignedSize(void *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
   return ((header->contentBytes+sizeof(commonUDP_t)+blockAlign-1)/blockAlign)*blockAlign;
@@ -37,6 +47,8 @@ void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
 void rx_rf(RU_t *ru,int *frame,int *subframe);
 void tx_rf(RU_t *ru);
+void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 
 // mistakes in main OAI
 void  phy_init_RU(RU_t *);

@@ -107,9 +107,9 @@ void init_RU_proc(RU_t *ru) {
   char *fs6=getenv("fs6");
 
   if (fs6) {
-    if ( strncasecmp(fs6,"cu", 2) )
+    if ( strncasecmp(fs6,"cu", 2) == 0 )
       threadCreate(&t,  cu_fs6, (void *)ru, "MainCu", -1, OAI_PRIORITY_RT_MAX);
-    else if ( strncasecmp(fs6,"du", 2) )
+    else if ( strncasecmp(fs6,"du", 2) == 0 )
       threadCreate(&t,  du_fs6, (void *)ru, "MainDu", -1, OAI_PRIORITY_RT_MAX);
     else
       AssertFatal(false, "environement variable fs6 is not cu or du");

@@ -4,7 +4,7 @@
 #include <executables/split_headers.h>
 
 #define FS6_BUF_SIZE 100*1000
-static int sockFS6;
+static UDPsock_t sockFS6;
 #if 0
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
@@ -66,14 +66,26 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   dlsch->active = 0;
   dlsch_harq->round++;
 }
+#endif
 
-phy_procedures_eNB_TX_fs6(int sockFS6, uint64_t TS) {
-  uint8_t bufferZone[FS6_BUF_SIZE];
-  receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
-
+void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
   // We got
   // subframe number
   //
+  int frame=proc->frame_tx;
+  int subframe=proc->subframe_tx;
+  uint32_t i,aa;
+  uint8_t harq_pid;
+  int16_t UE_id=0;
+  uint8_t num_pdcch_symbols=0;
+  uint8_t num_dci=0;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t         num_mdci = 0;
+#endif
+  uint8_t ul_subframe;
+  uint32_t ul_frame;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  LTE_UL_eNB_HARQ_t *ulsch_harq;
 
   for (int aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
     memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * fp->symbols_per_tti],
@@ -165,13 +177,15 @@ phy_procedures_eNB_TX_fs6(int sockFS6, uint64_t TS) {
                 harq_pid,UE_id,frame,subframe,dlsch0->rnti);
       } else {
         // generate pdsch
-        pdsch_procedures_fs6(eNB,
-                             proc,
-                             harq_pid,
-                             dlsch0,
-                             dlsch1,
-                             &eNB->UE_stats[(uint32_t)UE_id],
-                             0);
+        /*
+              pdsch_procedures_fs6(eNB,
+                                   proc,
+                                   harq_pid,
+                                   dlsch0,
+                                   dlsch1,
+                                   &eNB->UE_stats[(uint32_t)UE_id],
+                                   0);
+        */
       }
     } else if ((dlsch0)&&(dlsch0->rnti>0)&&
                (dlsch0->active == 0)
@@ -185,21 +199,32 @@ phy_procedures_eNB_TX_fs6(int sockFS6, uint64_t TS) {
                      proc,
                      AMP);
 }
-#endif
 
-void prach_eNB_extract(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+void prach_eNB_extract(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe, uint8_t *buf, int bufSize) {
+  commonUDP_t *header=(commonUDP_t *) buf;
+  header->contentBytes=1000;
+  header->nbBlocks=1;
+  return;
 }
 
 void prach_eNB_process(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 }
 
-void phy_procedures_eNB_uespec_RX_extract(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
+void phy_procedures_eNB_uespec_RX_extract(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc, uint8_t *buf, int bufSize) {
+  commonUDP_t *header=(commonUDP_t *) buf;
+  header->contentBytes=1000;
+  header->nbBlocks=1;
+  return;
 }
 
 void phy_procedures_eNB_uespec_RX_process(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
 }
 
-void phy_procedures_eNB_TX_fs6() {
+void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
+  commonUDP_t *header=(commonUDP_t *) buf;
+  header->contentBytes=1000;
+  header->nbBlocks=1;
+  return;
 }
 
 void DL_du_fs6(RU_t *ru, int frame, int subframe, uint64_t TS) {
@@ -207,10 +232,10 @@ void DL_du_fs6(RU_t *ru, int frame, int subframe, uint64_t TS) {
 
   for (int i=0; i<ru->num_eNB; i++) {
     uint8_t bufferZone[FS6_BUF_SIZE];
-    receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
+    receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone) );
+    phy_procedures_eNB_TX_process( bufferZone, sizeof(bufferZone), ru->eNB_list[i], &ru->eNB_list[i]->proc.L1_proc, 1);
   }
 
-  phy_procedures_eNB_TX_fs6();
   /* Fixme: datamodel issue: a ru is supposed to be connected to several eNB
   L1_rxtx_proc_t * L1_proc = &proc->L1_proc;
   ru_proc->timestamp_tx = L1_proc->timestamp_tx;
@@ -244,14 +269,14 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 
   uint8_t bufferZone[FS6_BUF_SIZE];
-  prach_eNB_extract(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  prach_eNB_extract(eNB,NULL,proc->frame_rx,proc->subframe_rx, bufferZone, FS6_BUF_SIZE);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX_extract(eNB, &proc->L1_proc);
+    phy_procedures_eNB_uespec_RX_extract(eNB, &proc->L1_proc, bufferZone, FS6_BUF_SIZE);
   }
 
   for (int i=0; i<ru->num_eNB; i++) {
-    sendSubFrame(sockFS6,bufferZone, sizeof(bufferZone) );
+    sendSubFrame(&sockFS6,bufferZone);
   }
 }
 
@@ -267,13 +292,13 @@ void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   uint8_t bufferZone[FS6_BUF_SIZE];
-  phy_procedures_eNB_TX(eNB, &proc->L1_proc, 1);
-  sendSubFrame(sockFS6, bufferZone, sizeof(bufferZone) );
+  phy_procedures_eNB_TX_extract(eNB, &proc->L1_proc, 1, bufferZone, FS6_BUF_SIZE);
+  sendSubFrame(&sockFS6, bufferZone );
 }
 
 void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
   uint8_t bufferZone[FS6_BUF_SIZE];
-  receiveSubFrame(sockFS6, TS, bufferZone, sizeof(bufferZone) );
+  receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone) );
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   L1_proc_t *proc           = &eNB->proc;
@@ -289,8 +314,11 @@ void *cu_fs6(void *arg) {
   RU_t               *ru      = (RU_t *)arg;
   RU_proc_t          *proc    = &ru->proc;
   int64_t           AbsoluteSubframe=-1;
+  fill_rf_config(ru,ru->rf_config_file);
   init_frame_parms(&ru->frame_parms,1);
+  phy_init_RU(ru);
   wait_sync("ru_thread");
+  AssertFatal(createUDPsock(NULL, "8888", "127.0.0.1", "7777", &sockFS6), "");
 
   while(1) {
     AbsoluteSubframe++;
@@ -312,6 +340,7 @@ void *du_fs6(void *arg) {
   phy_init_RU(ru);
   openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   wait_sync("ru_thread");
+  AssertFatal(createUDPsock(NULL, "7777", "127.0.0.1", "8888", &sockFS6),"");
 
   while(1) {
     AbsoluteSubframe++;
