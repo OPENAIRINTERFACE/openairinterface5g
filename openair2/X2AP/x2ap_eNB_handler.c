@@ -730,7 +730,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
 
   X2AP_RRC_Context_t *c = &ie->value.choice.UE_ContextInformation.rRC_Context;
 
-  if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s*/)
+  if (c->size > 8192 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s */)
     { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
   memcpy(X2AP_HANDOVER_REQ(msg).rrc_buffer, c->buf, c->size);
@@ -821,7 +821,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   X2AP_TargeteNBtoSource_eNBTransparentContainer_t *c = &ie->value.choice.TargeteNBtoSource_eNBTransparentContainer;
 
-  if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s*/)
+  if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s */)
     { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
   memcpy(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer, c->buf, c->size);

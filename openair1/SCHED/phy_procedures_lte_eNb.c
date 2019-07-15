@@ -230,13 +230,11 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
 
 
 
-void pdsch_procedures(PHY_VARS_eNB *eNB,
+bool dlsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
                       int harq_pid,
                       LTE_eNB_DLSCH_t *dlsch,
-                      LTE_eNB_DLSCH_t *dlsch1,
-                      LTE_eNB_UE_stats *ue_stats,
-                      int ra_flag) {
+                      LTE_eNB_UE_stats *ue_stats) {
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch->harq_processes[harq_pid];
@@ -265,27 +263,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
           dlsch_harq->round);
   }
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_PHY_ENB,MSC_PHY_UE,
-    NULL,0,
-    "%05u:%02u PDSCH/DLSCH input size = %"PRIu16", G %d, nb_rb %"PRIu16", TBS %"PRIu16", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")",
-    frame, subframe,
-    dlsch_harq->TBS/8,
-    get_G(fp,
-          dlsch_harq->nb_rb,
-          dlsch_harq->rb_alloc,
-          dlsch_harq->Qm,
-          dlsch_harq->Nl,
-          dlsch_harq->pdsch_start,
-          frame,
-          subframe,
-          dlsch_harq->mimo_mode==TM7?7:0),
-    dlsch_harq->nb_rb,
-    dlsch_harq->TBS,
-    pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
-    dlsch_harq->rvidx,
-    dlsch_harq->round);
-
   if (ue_stats) ue_stats->dlsch_sliding_cnt++;
 
   if (dlsch_harq->round == 0) {
@@ -300,15 +277,17 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 #endif
   }
 
-  if (dlsch->rnti!=0xffff) LOG_D(PHY,"Generating DLSCH/PDSCH pdu:%p pdsch_start:%d frame:%d subframe:%d nb_rb:%d rb_alloc:%d Qm:%d Nl:%d round:%d\n",
-                                   dlsch_harq->pdu,dlsch_harq->pdsch_start,frame,subframe,dlsch_harq->nb_rb,dlsch_harq->rb_alloc[0],dlsch_harq->Qm,dlsch_harq->Nl,dlsch_harq->round);
+  if (dlsch->rnti!=0xffff)
+    LOG_D(PHY,"Generating DLSCH/PDSCH pdu:%p pdsch_start:%d frame:%d subframe:%d nb_rb:%d rb_alloc:%d Qm:%d Nl:%d round:%d\n",
+	  dlsch_harq->pdu,dlsch_harq->pdsch_start,frame,subframe,dlsch_harq->nb_rb,dlsch_harq->rb_alloc[0],
+	  dlsch_harq->Qm,dlsch_harq->Nl,dlsch_harq->round);
 
   // 36-212
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) { // monolthic OR PNF - do not need turbo encoding on VNF
     if (dlsch_harq->pdu==NULL) {
       LOG_E(PHY,"dlsch_harq->pdu == NULL SFN/SF:%04d%d dlsch[rnti:%x] dlsch_harq[pdu:%p pdsch_start:%d Qm:%d Nl:%d round:%d nb_rb:%d rb_alloc[0]:%d]\n", frame,subframe,dlsch->rnti, dlsch_harq->pdu,
             dlsch_harq->pdsch_start,dlsch_harq->Qm,dlsch_harq->Nl,dlsch_harq->round,dlsch_harq->nb_rb,dlsch_harq->rb_alloc[0]);
-      return;
+      return false;
     }
 
     start_meas(&eNB->dlsch_encoding_stats);
@@ -330,44 +309,57 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
     if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1) {
       print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
     }
-
-    // 36-211
-    start_meas(&eNB->dlsch_scrambling_stats);
-    dlsch_scrambling(fp,
-                     0,
-                     dlsch,
-                     harq_pid,
-                     get_G(fp,
-                           dlsch_harq->nb_rb,
-                           dlsch_harq->rb_alloc,
-                           dlsch_harq->Qm,
-                           dlsch_harq->Nl,
-                           dlsch_harq->pdsch_start,
-                           frame,subframe,
-                           0),
-                     0,
-                     frame,
-                     subframe<<1);
-    stop_meas(&eNB->dlsch_scrambling_stats);
-    start_meas(&eNB->dlsch_modulation_stats);
-    dlsch_modulation(eNB,
-                     eNB->common_vars.txdataF,
-                     AMP,
-                     frame,
-                     subframe,
-                     dlsch_harq->pdsch_start,
-                     dlsch,
-                     dlsch->ue_type==0 ? dlsch1 : (LTE_eNB_DLSCH_t *)NULL);
-    stop_meas(&eNB->dlsch_modulation_stats);
-  }
-
 #ifdef PHY_TX_THREAD
-  dlsch->active[subframe] = 0;
+    dlsch->active[subframe] = 0;
 #else
-  dlsch->active = 0;
+    dlsch->active = 0;
 #endif
-  dlsch_harq->round++;
-  LOG_D(PHY,"Generating DLSCH/PDSCH dlsch_harq[round:%d]\n",dlsch_harq->round);
+    dlsch_harq->round++;
+    LOG_D(PHY,"Generated DLSCH dlsch_harq[round:%d]\n",dlsch_harq->round);
+    return true;
+  }
+  return false;
+}
+
+void pdsch_procedures(PHY_VARS_eNB *eNB,
+                      L1_rxtx_proc_t *proc,
+                      int harq_pid,
+                      LTE_eNB_DLSCH_t *dlsch,
+                      LTE_eNB_DLSCH_t *dlsch1) {
+  int frame=proc->frame_tx;
+  int subframe=proc->subframe_tx;
+  LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch->harq_processes[harq_pid];
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  // 36-211
+  start_meas(&eNB->dlsch_scrambling_stats);
+  dlsch_scrambling(fp,
+		   0,
+		   dlsch,
+		   harq_pid,
+		   get_G(fp,
+			 dlsch_harq->nb_rb,
+			 dlsch_harq->rb_alloc,
+			 dlsch_harq->Qm,
+			 dlsch_harq->Nl,
+			 dlsch_harq->pdsch_start,
+			 frame,subframe,
+			 0),
+		   0,
+		   frame,
+		   subframe<<1);
+  stop_meas(&eNB->dlsch_scrambling_stats);
+  start_meas(&eNB->dlsch_modulation_stats);
+  dlsch_modulation(eNB,
+		   eNB->common_vars.txdataF,
+		   AMP,
+		   frame,
+		   subframe,
+		   dlsch_harq->pdsch_start,
+		   dlsch,
+		   dlsch->ue_type==0 ? dlsch1 : (LTE_eNB_DLSCH_t *)NULL);
+  stop_meas(&eNB->dlsch_modulation_stats);
+
+  LOG_D(PHY,"Generated PDSCH dlsch_harq[round:%d]\n",dlsch_harq->round);
 }
 
 
@@ -531,14 +523,18 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
                 dlsch0->harq_ids[frame%2][6],
                 dlsch0->harq_ids[frame%2][7]);
       } else {
-        // generate pdsch
-        pdsch_procedures(eNB,
+	if (dlsch_procedures(eNB,
                          proc,
                          harq_pid,
                          dlsch0,
-                         dlsch1,
-                         &eNB->UE_stats[(uint32_t)UE_id],
-                         0);
+                         &eNB->UE_stats[(uint32_t)UE_id])) {
+	  // if we generate dlsch, we must generate pdsch
+	  pdsch_procedures(eNB,
+			   proc,
+			   harq_pid,
+			   dlsch0,
+			   dlsch1);
+	}
       }
     } else if ((dlsch0)&&(dlsch0->rnti>0)&&
 #ifdef PHY_TX_THREAD

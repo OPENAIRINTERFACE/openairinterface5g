@@ -43,6 +43,7 @@ ENB_PROCESS_SEG_FAULT = -11
 ENB_PROCESS_ASSERTION = -12
 ENB_PROCESS_REALTIME_ISSUE = -13
 ENB_PROCESS_NOLOGFILE_TO_ANALYZE = -14
+ENB_PROCESS_SLAVE_RRU_NOT_SYNCED = -15
 HSS_PROCESS_FAILED = -2
 HSS_PROCESS_OK = +2
 MME_PROCESS_FAILED = -3
@@ -81,18 +82,26 @@ logging.basicConfig(
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
+		self.ranRepository = ''
+		self.ranBranch = ''
+		self.ranAllowMerge = False
+		self.ranCommitID = ''
+		self.ranTargetBranch = ''
 		self.eNBIPAddress = ''
-		self.eNBRepository = ''
-		self.eNBBranch = ''
-		self.eNB_AllowMerge = False
-		self.eNBCommitID = ''
-		self.eNBTargetBranch = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
 		self.eNBSourceCodePath = ''
 		self.EPCIPAddress = ''
 		self.EPCUserName = ''
 		self.EPCPassword = ''
+		self.eNB1IPAddress = ''
+		self.eNB1UserName = ''
+		self.eNB1Password = ''
+		self.eNB1SourceCodePath = ''
+		self.eNB2IPAddress = ''
+		self.eNB2UserName = ''
+		self.eNB2Password = ''
+		self.eNB2SourceCodePath = ''
 		self.EPCSourceCodePath = ''
 		self.EPCType = ''
 		self.EPC_PcapFileName = ''
@@ -104,12 +113,13 @@ class SSHConnection():
 		self.nbTestXMLfiles = 0
 		self.desc = ''
 		self.Build_eNB_args = ''
+		self.backgroundBuild = False
+		self.backgroundBuildTestId = ['', '', '']
 		self.Initialize_eNB_args = ''
-		self.eNBLogFile = ''
 		self.eNB_instance = ''
-		self.eNBOptions = ''
-		self.rruOptions = ''
-		self.rruLogFile = ''
+		self.eNB_serverId = ''
+		self.eNBLogFiles = ['', '', '']
+		self.eNBOptions = ['', '', '']
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -312,45 +322,125 @@ class SSHConnection():
 			sys.exit('SCP failed')
 
 	def BuildeNB(self):
-		if self.eNBIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('mkdir -p ' + self.eNBSourceCodePath, '\$', 5)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(lIpAddr, lUserName, lPassWord)
+		self.command('mkdir -p ' + lSourcePath, '\$', 5)
+		self.command('cd ' + lSourcePath, '\$', 5)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		self.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
-		if self.eNBCommitID != '':
-			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
+		if self.ranCommitID != '':
+			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNB_AllowMerge):
-			if self.eNBTargetBranch == '':
-				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
-				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				self.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 600)
+		if self.backgroundBuild:
+			self.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
+			self.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
+			self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
+			self.close()
+			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
+			return
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
+
+	def WaitBuildeNBisFinished(self):
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(lIpAddr, lUserName, lPassWord)
+		count = 40
+		buildOAIprocess = True
+		while (count > 0) and buildOAIprocess:
+			self.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
+			result = re.search('build_oai', str(self.ssh.before))
+			if result is None:
+				buildOAIprocess = False
+			else:
+				count -= 1
+				time.sleep(30)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
+
+	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
+		self.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		self.command('ls lte_build_oai/build', '\$', 3)
 		buildStatus = True
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
-		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.close()
+		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
+		self.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
+		self.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
+		if self.eNB_serverId != '0':
+			self.command('cd cmake_targets', '\$', 5)
+			self.command('if [ -e tmp_build' + testcaseId + '.zip ]; then rm -f tmp_build' + testcaseId + '.zip; fi', '\$', 5)
+			self.command('zip -r -qq tmp_build' + testcaseId + '.zip build_log_' + testcaseId, '\$', 5)
+			self.close()
+			if (os.path.isfile('./tmp_build' + testcaseId + '.zip')):
+				os.remove('./tmp_build' + testcaseId + '.zip')
+			self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/tmp_build' + testcaseId + '.zip', '.')
+			if (os.path.isfile('./tmp_build' + testcaseId + '.zip')):
+				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './tmp_build' + testcaseId + '.zip', self.eNBSourceCodePath + '/cmake_targets/.')
+				os.remove('./tmp_build' + testcaseId + '.zip')
+				self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+				self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+				self.command('unzip -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				self.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
+				self.close()
+		else:
+			self.close()
+
 		if buildStatus:
 			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 		else:
@@ -360,29 +450,29 @@ class SSHConnection():
 			sys.exit(1)
 
 	def BuildOAIUE(self):
-		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
+		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
-		if self.eNBCommitID != '':
-			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
+		if self.ranCommitID != '':
+			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNB_AllowMerge):
-			if self.eNBTargetBranch == '':
-				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
-				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				self.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
@@ -498,7 +588,22 @@ class SSHConnection():
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def InitializeeNB(self):
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		check_eNB = False
@@ -519,10 +624,10 @@ class SSHConnection():
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
 				self.EPC_PcapFileName = 'enb_' + self.testCase_id + '_s1log.pcap'
 				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/' + self.EPC_PcapFileName, '\$', 5)
-				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/' + self.EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+				self.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + self.EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.close()
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+		self.open(lIpAddr, lUserName, lPassWord)
+		self.command('cd ' + lSourcePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
 		extra_options = ''
@@ -535,31 +640,34 @@ class SSHConnection():
 				logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
 				self.command('cd common/utils/T/tracer', '\$', 5)
 				self.command('make', '\$', 10)
-				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.eNBUserName, 5)
-				self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', lUserName, 5)
+				self.command('cd ' + lSourcePath, '\$', 5)
 			full_config_file = full_config_file[:extIdx + 5]
 			config_path, config_file = os.path.split(full_config_file)
 		else:
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		rruCheck = False
-		result = re.search('rru|du.band', str(config_file))
+		result = re.search('^rru|^rcc|^du.band', str(config_file))
 		if result is not None:
 			rruCheck = True
 		# do not reset board twice in IF4.5 case
-		result = re.search('rru|enb|du.band', str(config_file))
+		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 10)
+			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
-				self.command('echo ' + self.eNBPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
+				self.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 15)
+				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 15)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_RRU2_IP_ADDR/' + self.eNB2IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
 			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
 		else:
@@ -567,18 +675,13 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		result = re.search('rcc|enb|cu.band', str(config_file))
-		if result is not None:
-			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
-			if extra_options != '':
-				self.eNBOptions = extra_options
-		result = re.search('rru|du.band', str(config_file))
-		if result is not None:
-			self.rruLogFile = 'enb_' + self.testCase_id + '.log'
+		self.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
+		self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
+		if extra_options != '':
+			self.eNBOptions[int(self.eNB_instance)] = extra_options
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -608,7 +711,7 @@ class SSHConnection():
 					if self.EPC_PcapFileName != '':
 						copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
 						if (copyin_res == 0):
-							self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.EPC_PcapFileName, self.eNBSourceCodePath + '/cmake_targets/.')
+							self.copyout(lIpAddr, lUserName, lPassWord, self.EPC_PcapFileName, lSourcePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
@@ -620,8 +723,6 @@ class SSHConnection():
 					time.sleep(6)
 				else:
 					doLoop = False
-					if rruCheck and extra_options != '':
-						self.rruOptions = extra_options
 					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
 					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 					time.sleep(10)
@@ -2386,13 +2487,13 @@ class SSHConnection():
 				if (status < 0):
 					result = status
 			if result == ENB_PROCESS_FAILED:
-				fileCheck = re.search('enb_', str(self.eNBLogFile))
+				fileCheck = re.search('enb_', str(self.eNBLogFiles[0]))
 				if fileCheck is not None:
-					self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
-					logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
+					self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFiles[0], '.')
+					logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFiles[0])
 					if logStatus < 0:
 						result = logStatus
-					self.eNBLogFile = ''
+					self.eNBLogFiles[0] = ''
 				if self.flexranCtrlInstalled and self.flexranCtrlStarted:
 					self.TerminateFlexranCtrl()
 			return result
@@ -2530,17 +2631,20 @@ class SSHConnection():
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		self.htmleNBFailureMsg = ''
+		isRRU = False
+		isSlave = False
+		slaveReceivesFrameResyncCmd = False
 		for line in enb_log_file.readlines():
-			if self.rruOptions != '':
-				res1 = re.search('max_rxgain (?P<requested_option>[0-9]+)', self.rruOptions)
+			if self.eNBOptions[int(self.eNB_instance)] != '':
+				res1 = re.search('max_rxgain (?P<requested_option>[0-9]+)', self.eNBOptions[int(self.eNB_instance)])
 				res2 = re.search('max_rxgain (?P<applied_option>[0-9]+)',  str(line))
 				if res1 is not None and res2 is not None:
 					requested_option = int(res1.group('requested_option'))
 					applied_option = int(res2.group('applied_option'))
 					if requested_option == applied_option:
-						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
 					else:
-						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
 			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
 				exitSignalReceived = True
@@ -2562,6 +2666,17 @@ class SSHConnection():
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
+			result = re.search('Setting function for RU', str(line))
+			if result is not None:
+				isRRU = True
+			if isRRU:
+				result = re.search('RU 0 is_slave=yes', str(line))
+				if result is not None:
+					isSlave = True
+				if isSlave:
+					result = re.search('Received RRU_frame_resynch command', str(line))
+					if result is not None:
+						slaveReceivesFrameResyncCmd = True
 			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
@@ -2655,6 +2770,17 @@ class SSHConnection():
 			rachMsg = 'eNB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rachMsg + '\n'
+		if isRRU:
+			if isSlave:
+				if slaveReceivesFrameResyncCmd:
+					rruMsg = 'Slave RRU received the RRU_frame_resynch command from RAU'
+					logging.debug('\u001B[1;30;43m ' + rruMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rruMsg + '\n'
+				else:
+					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
+					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rruMsg + '\n'
+					return ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m eNB ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
@@ -2842,18 +2968,36 @@ class SSHConnection():
 		return 0
 
 	def TerminateeNB(self):
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+		if self.eNB_serverId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(lIpAddr, lUserName, lPassWord)
+		self.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is not None:
-			self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
+			self.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
+			self.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
 			time.sleep(5)
 			self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is not None:
-				self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
+				self.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 				time.sleep(2)
 		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.close()
@@ -2867,44 +3011,40 @@ class SSHConnection():
 			if self.EPC_PcapFileName != '':
 				self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + self.EPC_PcapFileName, '\$', 5)
 				self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
-				self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.EPC_PcapFileName, self.eNBSourceCodePath + '/cmake_targets/.')
+				self.copyout(lIpAddr, lUserName, lPassWord, self.EPC_PcapFileName, lSourcePath + '/cmake_targets/.')
 			self.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
-			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-			self.command('cd ' + self.eNBSourceCodePath + '/common/utils/T/tracer/', '\$', 5)
-			raw_record_file = self.eNBLogFile.replace('.log', '_record.raw')
-			replay_log_file = self.eNBLogFile.replace('.log', '_replay.log')
-			extracted_txt_file = self.eNBLogFile.replace('.log', '_extracted_messages.txt')
-			extracted_log_file = self.eNBLogFile.replace('.log', '_extracted_messages.log')
-			self.command('./extract_config -i ' + self.eNBSourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.eNBSourceCodePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
-			self.command('echo $USER; nohup ./replay -i ' + self.eNBSourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.eNBSourceCodePath + '/cmake_targets/' + replay_log_file + ' 2>&1 &', self.eNBUserName, 5)
-			self.command('./textlog -d ' +  self.eNBSourceCodePath + '/cmake_targets/' + extracted_txt_file + ' -no-gui -ON -full > ' + self.eNBSourceCodePath + '/cmake_targets/' + extracted_log_file, '\$', 5)
+			self.open(lIpAddr, lUserName, lPassWord)
+			self.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
+			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
+			raw_record_file = enbLogFile.replace('.log', '_record.raw')
+			replay_log_file = enbLogFile.replace('.log', '_replay.log')
+			extracted_txt_file = enbLogFile.replace('.log', '_extracted_messages.txt')
+			extracted_log_file = enbLogFile.replace('.log', '_extracted_messages.log')
+			self.command('./extract_config -i ' + lSourcePath + '/cmake_targets/' + raw_record_file + ' > ' + lSourcePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
+			self.command('echo $USER; nohup ./replay -i ' + lSourcePath + '/cmake_targets/' + raw_record_file + ' > ' + lSourcePath + '/cmake_targets/' + replay_log_file + ' 2>&1 &', lUserName, 5)
+			self.command('./textlog -d ' +  lSourcePath + '/cmake_targets/' + extracted_txt_file + ' -no-gui -ON -full > ' + lSourcePath + '/cmake_targets/' + extracted_log_file, '\$', 5)
 			self.close()
-			self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
+			self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-			self.eNBLogFile = ''
+			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
-			result = re.search('enb_', str(self.eNBLogFile))
 			analyzeFile = False
-			if result is not None:
+			if self.eNBLogFiles[int(self.eNB_instance)] != '':
 				analyzeFile = True
-				fileToAnalyze = str(self.eNBLogFile)
-				self.eNBLogFile = ''
-			else:
-				result = re.search('enb_', str(self.rruLogFile))
-				if result is not None:
-					analyzeFile = True
-					fileToAnalyze = str(self.rruLogFile)
-					self.rruLogFile = ''
+				fileToAnalyze = self.eNBLogFiles[int(self.eNB_instance)]
+				self.eNBLogFiles[int(self.eNB_instance)] = ''
 			if analyzeFile:
-				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + fileToAnalyze, '.')
+				copyin_res = self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					return
+				if self.eNB_serverId != '0':
+					self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
@@ -3276,46 +3416,46 @@ class SSHConnection():
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-cloud-upload"></span> GIT Repository </td>\n')
-			self.htmlFile.write('       <td><a href="' + self.eNBRepository + '">' + self.eNBRepository + '</a></td>\n')
+			self.htmlFile.write('       <td><a href="' + self.ranRepository + '">' + self.ranRepository + '</a></td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-wrench"></span> Job Trigger </td>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td>Merge-Request</td>\n')
 			else:
 				self.htmlFile.write('       <td>Push to Branch</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-out"></span> Source Branch </td>\n')
 			else:
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tree-deciduous"></span> Branch</td>\n')
-			self.htmlFile.write('       <td>' + self.eNBBranch + '</td>\n')
+			self.htmlFile.write('       <td>' + self.ranBranch + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tag"></span> Source Commit ID </td>\n')
 			else:
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tag"></span> Commit ID </td>\n')
-			self.htmlFile.write('       <td>' + self.eNBCommitID + '</td>\n')
+			self.htmlFile.write('       <td>' + self.ranCommitID + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
-			if self.eNB_AllowMerge != '':
-				commit_message = subprocess.check_output("git log -n1 --pretty=format:\"%s\" " + self.eNBCommitID, shell=True, universal_newlines=True)
+			if self.ranAllowMerge != '':
+				commit_message = subprocess.check_output("git log -n1 --pretty=format:\"%s\" " + self.ranCommitID, shell=True, universal_newlines=True)
 				commit_message = commit_message.strip()
 				self.htmlFile.write('     <tr>\n')
-				if (self.eNB_AllowMerge):
+				if (self.ranAllowMerge):
 					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Source Commit Message </td>\n')
 				else:
 					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Commit Message </td>\n')
 				self.htmlFile.write('       <td>' + commit_message + '</td>\n')
 				self.htmlFile.write('     </tr>\n')
-			if (self.eNB_AllowMerge):
+			if (self.ranAllowMerge):
 				self.htmlFile.write('     <tr>\n')
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-in"></span> Target Branch </td>\n')
-				if (self.eNBTargetBranch == ''):
+				if (self.ranTargetBranch == ''):
 					self.htmlFile.write('       <td>develop</td>\n')
 				else:
-					self.htmlFile.write('       <td>' + self.eNBTargetBranch + '</td>\n')
+					self.htmlFile.write('       <td>' + self.ranTargetBranch + '</td>\n')
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
@@ -3468,6 +3608,8 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
 				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
 					self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
+				elif (processesStatus == ENB_PROCESS_SLAVE_RRU_NOT_SYNCED):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' Slave RRU could not synch</td>\n')
 				elif (processesStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
 				elif (processesStatus == HSS_PROCESS_FAILED):
@@ -3563,12 +3705,12 @@ def Usage():
 	print('      InitiateHtml, FinalizeHtml')
 	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
 	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
+	print('  --eNBRepository=[eNB\'s Repository URL]                             or --ranRepository=[OAI RAN Repository URL]')
+	print('  --eNBBranch=[eNB\'s Branch Name]                                    or --ranBranch=[OAI RAN Repository Branch')
+	print('  --eNBCommitID=[eNB\'s Commit Number]                                or --ranCommitID=[OAI RAN Repository Commit SHA-1')
+	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]  or --ranAllowMerge=true/false')
+	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request] or --ranTargetBranch=[Target Branch]')
 	print('  --eNBIPAddress=[eNB\'s IP Address]')
-	print('  --eNBRepository=[eNB\'s Repository URL]')
-	print('  --eNBBranch=[eNB\'s Branch Name]')
-	print('  --eNBCommitID=[eNB\'s Commit Number]')
-	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]')
-	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request]')
 	print('  --eNBUserName=[eNB\'s Login User Name]')
 	print('  --eNBPassword=[eNB\'s Login Password]')
 	print('  --eNBSourceCodePath=[eNB\'s Source Code Path]')
@@ -3584,7 +3726,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3592,17 +3734,46 @@ def CheckClassValidity(action,id):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
+		xmlBgBuildField = test.findtext('backgroundBuild')
+		if (xmlBgBuildField is None):
+			SSH.backgroundBuild = False
+		else:
+			if re.match('true', xmlBgBuildField, re.IGNORECASE):
+				SSH.backgroundBuild = True
+			else:
+				SSH.backgroundBuild = False
+
+	if action == 'WaitEndBuild_eNB':
+		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
 
 	if action == 'Initialize_eNB':
 		SSH.Initialize_eNB_args = test.findtext('Initialize_eNB_args')
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
 
 	if action == 'Terminate_eNB':
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
+		if (SSH.eNB_serverId is None):
+			SSH.eNB_serverId = '0'
 
 	if action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
@@ -3684,35 +3855,78 @@ while len(argvs) > 1:
 	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
 		mode = matchReg.group(1)
-	elif re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBIPAddress = matchReg.group(1)
-	elif re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBRepository = matchReg.group(1)
-	elif re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+	elif re.match('^\-\-eNBRepository=(.+)$|^\-\-ranRepository(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
+		SSH.ranRepository = matchReg.group(1)
+	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
-			SSH.eNB_AllowMerge = True
-	elif re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBBranch = matchReg.group(1)
-	elif re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
-		SSH.eNBCommitID = matchReg.group(1)
-	elif re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
-		SSH.eNBTargetBranch = matchReg.group(1)
-	elif re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBUserName = matchReg.group(1)
-	elif re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBPassword = matchReg.group(1)
-	elif re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		SSH.eNBSourceCodePath = matchReg.group(1)
+			SSH.ranAllowMerge = True
+	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
+		SSH.ranBranch = matchReg.group(1)
+	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
+		SSH.ranCommitID = matchReg.group(1)
+	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		else:
+			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		SSH.ranTargetBranch = matchReg.group(1)
+	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBIPAddress = matchReg.group(1)
+		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1IPAddress = matchReg.group(1)
+		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2IPAddress = matchReg.group(1)
+	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBUserName = matchReg.group(1)
+		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1UserName = matchReg.group(1)
+		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2UserName = matchReg.group(1)
+	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBPassword = matchReg.group(1)
+		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1Password = matchReg.group(1)
+		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2Password = matchReg.group(1)
+	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNBSourceCodePath = matchReg.group(1)
+		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB1SourceCodePath = matchReg.group(1)
+		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+			SSH.eNB2SourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		SSH.EPCIPAddress = matchReg.group(1)
@@ -3772,6 +3986,9 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
+	SSH.eNB_serverId = '0'
+	SSH.eNB_instance = '0'
+	SSH.eNBSourceCodePath = '/tmp/'
 	SSH.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
@@ -3864,15 +4081,15 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlFooter(SSH.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+		if SSH.eNBIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 
-		if (SSH.EPCIPAddress != ''):
+		if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
-		if SSH.UEIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		if SSH.UEIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
 			Usage()
 			sys.exit('UE: Insufficient Parameter')
 
@@ -3915,7 +4132,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
-	SSH.CheckFlexranCtrlInstallation()
+	if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
+		SSH.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -3948,6 +4166,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.GetAllUEDevices(terminate_ue_flag)
 			if action == 'Build_eNB':
 				SSH.BuildeNB()
+			elif action == 'WaitEndBuild_eNB':
+				SSH.WaitBuildeNBisFinished()
 			elif action == 'Initialize_eNB':
 				SSH.InitializeeNB()
 			elif action == 'Terminate_eNB':
