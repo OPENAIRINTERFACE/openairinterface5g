@@ -55,7 +55,7 @@ int receiveSubFrame(int sock, uint64_t expectedTS, void *bufferZone,  int buffer
         bufferZone+=ret;
       }
     }
-  } while ( !rcved || rcved < tmp->nbBlocks);
+  } while ( !rcved || rcved < tmp->nbBlocks );
 
   return rcved;
 }
