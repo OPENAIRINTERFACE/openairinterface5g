@@ -58,6 +58,11 @@ OAI_UE_PROCESS_FAILED = -23
 OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
 OAI_UE_PROCESS_OK = +6
 
+UE_STATUS_DETACHED = 0
+UE_STATUS_DETACHING = 1
+UE_STATUS_ATTACHING = 2
+UE_STATUS_ATTACHED = 3
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -127,6 +132,7 @@ class SSHConnection():
 		self.iperf_profile = ''
 		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
+		self.UEDevicesStatus = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -1237,6 +1243,7 @@ class SSHConnection():
 		nb_ue_to_connect = 0
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
+				self.UEDevicesStatus[nb_ue_to_connect] = UE_STATUS_ATTACHING
 				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,))
 				p.daemon = True
 				p.start()
@@ -1265,6 +1272,11 @@ class SSHConnection():
 					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
 				html_queue.put(html_cell)
 			if (attach_status):
+				cnt = 0
+				while cnt < len(self.UEDevices):
+					if self.UEDevicesStatus[cnt] == UE_STATUS_ATTACHING:
+						self.UEDevicesStatus[cnt] = UE_STATUS_ATTACHED
+					cnt += 1
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -1298,11 +1310,14 @@ class SSHConnection():
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		multi_jobs = []
+		cnt = 0
 		for device_id in self.UEDevices:
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
 			p = Process(target = self.DetachUE_common, args = (device_id,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			cnt += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1310,6 +1325,10 @@ class SSHConnection():
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
+		cnt = 0
+		while cnt < len(self.UEDevices):
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHED
+			cnt += 1
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -1430,6 +1449,11 @@ class SSHConnection():
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
 				sys.exit(1)
+		if len(self.UEDevicesStatus) == 0:
+			cnt = 0
+			while cnt < len(self.UEDevices):
+				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
+				cnt += 1
 		self.close()
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
@@ -1580,7 +1604,11 @@ class SSHConnection():
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		idx = 0
 		for device_id in self.UEDevices:
+			if self.UEDevicesStatus[idx] != UE_STATUS_ATTACHED:
+				idx += 1
+				continue
 			count = 0
 			while count < 4:
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
@@ -1602,6 +1630,7 @@ class SSHConnection():
 					ue_ip_status -= 1
 					continue
 			self.UEIPAddresses.append(UE_IPAddress)
+			idx += 1
 		self.close()
 		return ue_ip_status
 
