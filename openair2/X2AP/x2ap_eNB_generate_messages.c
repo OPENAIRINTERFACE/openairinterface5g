@@ -1224,3 +1224,128 @@ int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p
 
   return ret;
 }
+
+int x2ap_eNB_generate_ENDC_x2_setup_request(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p)
+{
+  X2AP_X2AP_PDU_t                     	 pdu;
+  X2AP_ENDCX2SetupRequest_t              *out;
+  X2AP_ENDCX2SetupRequest_IEs_t          *ie;
+  X2AP_ENB_ENDCX2SetupReqIEs_t 			 *ie_ENB_ENDC;
+  X2AP_PLMN_Identity_t               	 *plmn;
+  ServedEUTRAcellsENDCX2ManagementList__Member                *servedCellMember;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  x2ap_eNB_data_p->state = X2AP_ENB_STATE_WAITING;
+
+  /* Prepare the X2AP message to encode */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_endcX2Setup;
+  pdu.choice.initiatingMessage.criticality = X2AP_Criticality_reject;
+  pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_ENDCX2SetupRequest;
+  out = &pdu.choice.initiatingMessage.value.choice.ENDCX2SetupRequest;
+
+  ie = (X2AP_ENDCX2SetupRequest_IEs_t *)calloc(1, sizeof(X2AP_ENDCX2SetupRequest_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_InitiatingNodeType_EndcX2Setup;
+  ie->value.present = X2AP_ENDCX2SetupRequest_IEs__value_PR_InitiatingNodeType_EndcX2Setup;
+  ie->value.choice.InitiatingNodeType_EndcX2Setup.present = X2AP_InitiatingNodeType_EndcX2Setup_PR_init_eNB;
+
+  ie_ENB_ENDC = (X2AP_ENB_ENDCX2SetupReqIEs_t *)calloc(1, sizeof(X2AP_ENB_ENDCX2SetupReqIEs_t));
+  ie_ENB_ENDC->id = X2AP_ProtocolIE_ID_id_GlobalENB_ID;
+  ie_ENB_ENDC->criticality = X2AP_Criticality_reject;
+  ie_ENB_ENDC->value.present = X2AP_ENB_ENDCX2SetupReqIEs__value_PR_GlobalENB_ID;
+  ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.present = X2AP_ENB_ID_PR_macro_eNB_ID;
+  MACRO_ENB_ID_TO_BIT_STRING(instance_p->eNB_id,
+                               &ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID);
+  MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
+                      &ie_ENB_ENDC->value.choice.GlobalENB_ID.pLMN_Identity);
+
+  ASN_SEQUENCE_ADD(&ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list, ie_ENB_ENDC);
+
+  ie_ENB_ENDC = (X2AP_ENB_ENDCX2SetupReqIEs_t *)calloc(1, sizeof(X2AP_ENB_ENDCX2SetupReqIEs_t));
+  ie_ENB_ENDC->id = X2AP_ProtocolIE_ID_id_ServedEUTRAcellsENDCX2ManagementList;
+  ie_ENB_ENDC->criticality = X2AP_Criticality_reject;
+  ie_ENB_ENDC->value.present = X2AP_ENB_ENDCX2SetupReqIEs__value_PR_ServedEUTRAcellsENDCX2ManagementList;
+
+  {
+      for (int i = 0; i<instance_p->num_cc; i++){
+        servedCellMember = (ServedEUTRAcellsENDCX2ManagementList__Member *)calloc(1,sizeof(ServedEUTRAcellsENDCX2ManagementList__Member));
+        {
+          servedCellMember->servedEUTRACellInfo.pCI = instance_p->Nid_cell[i];
+
+          MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
+                        &servedCellMember->servedEUTRACellInfo.cellId.pLMN_Identity);
+          MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,0,
+                                     &servedCellMember->servedEUTRACellInfo.cellId.eUTRANcellIdentifier);
+
+          INT16_TO_OCTET_STRING(instance_p->tac, &servedCellMember->servedEUTRACellInfo.tAC);
+          plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
+          {
+            MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
+            ASN_SEQUENCE_ADD(&servedCellMember->servedEUTRACellInfo.broadcastPLMNs.list, plmn);
+          }
+
+  	if (instance_p->frame_type[i] == FDD) {
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_fDD;
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_EARFCN = instance_p->fdd_earfcn_DL[i];
+            servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_EARFCN = instance_p->fdd_earfcn_UL[i];
+            switch (instance_p->N_RB_DL[i]) {
+              case 6:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw6;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw6;
+                break;
+              case 15:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw15;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw15;
+                break;
+              case 25:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw25;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw25;
+                break;
+              case 50:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw50;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw50;
+                break;
+              case 75:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw75;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw75;
+                break;
+              case 100:
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.uL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw100;
+                servedCellMember->servedEUTRACellInfo.eUTRA_Mode_Info.choice.fDD.dL_Transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw100;
+                break;
+              default:
+                AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
+                break;
+            }
+          }
+          else {
+            AssertFatal(0,"X2Setuprequest not supported for TDD!");
+          }
+        }
+        ASN_SEQUENCE_ADD(&ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list, servedCellMember);
+      }
+    }
+  ASN_SEQUENCE_ADD(&ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list, ie_ENB_ENDC);
+
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode X2 setup request\n");
+    return -1;
+  }
+
+  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+  return ret;
+}
