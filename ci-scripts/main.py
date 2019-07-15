@@ -350,6 +350,37 @@ class SSHConnection():
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
+		# Checking the BUILD INFO file
+		if not self.backgroundBuild:
+			self.command('ls *.txt', '\$', 5)
+			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			if result is not None:
+				mismatch = False
+				self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				result = re.search(self.ranCommitID, str(self.ssh.before))
+				if result is None:
+					mismatch = True
+				self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				if (self.ranAllowMerge):
+					result = re.search('YES', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+					self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					if self.ranTargetBranch == '':
+						result = re.search('develop', str(self.ssh.before))
+					else:
+						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				else:
+					result = re.search('NO', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				if not mismatch:
+					self.close()
+					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					return
+				
 		self.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
@@ -419,6 +450,18 @@ class SSHConnection():
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
+		else:
+			# Generating a BUILD INFO file
+			self.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if (self.ranAllowMerge):
+				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				if self.ranTargetBranch == '':
+					self.command('echo "TGT_BRANCH: develop" > ../LAST_BUILD_INFO.txt', '\$', 2)
+				else:
+					self.command('echo "TGT_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			else:
+				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
@@ -3239,7 +3282,6 @@ class SSHConnection():
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('echo ' + Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
