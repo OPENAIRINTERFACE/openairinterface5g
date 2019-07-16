@@ -463,9 +463,9 @@ class SSHConnection():
 			if (self.ranAllowMerge):
 				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				if self.ranTargetBranch == '':
-					self.command('echo "TGT_BRANCH: develop" > ../LAST_BUILD_INFO.txt', '\$', 2)
+					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				else:
-					self.command('echo "TGT_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+					self.command('echo "TGT_BRANCH: ' + self.ranBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			else:
 				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
