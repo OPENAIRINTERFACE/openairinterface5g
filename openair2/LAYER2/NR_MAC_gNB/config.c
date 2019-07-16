@@ -58,6 +58,7 @@ void config_common(int Mod_idP,
   int mu = 1;
 
 
+
   cfg->sch_config.physical_cell_id.value = *scc->physCellId;
   cfg->sch_config.ssb_scg_position_in_burst.value = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
  

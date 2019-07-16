@@ -348,8 +348,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                     *cfg))
           nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
-      rnti = UE_RNTI(module_idP, i);
-      CC_id = UE_PCCID(module_idP, i);
+      
+      rnti = 0;//UE_RNTI(module_idP, i);
+      CC_id = 0;//UE_PCCID(module_idP, i);
       //int spf = get_spf(cfg);
   
       if (((frameP&127) == 0) && (slotP == 0)) {
@@ -388,7 +389,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         if(RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
           RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
           RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
-        
+	  /*
           for (int ue_id_l = 0; ue_id_l < MAX_MOBILES_PER_GNB; ue_id_l++) {
             if (reestablish_rnti_map[ue_id_l][0] == rnti) {
             // clear currentC-RNTI from map
@@ -396,7 +397,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             reestablish_rnti_map[ue_id_l][1] = 0;
             break;
             }
-          }
+	    }*/
       
           // Note: This should not be done in the MAC!
           for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
@@ -431,15 +432,16 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               }
             }
           }
-          rrc_mac_remove_ue(module_idP,rnti);
+	  //          rrc_mac_remove_ue(module_idP,rnti);
         }
       } //END if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0)
+
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
   
-  pdcp_run(&ctxt);
+  //  pdcp_run(&ctxt);
 
   //rrc_rx_tx(&ctxt, CC_id);
 

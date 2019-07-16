@@ -63,6 +63,7 @@ int8_t nr_ue_decode_mib(
    \param cc_id                     component carrier id
    \param gNB_index                 gNB index
    \param mibP                      pointer to RRC message MIB
+   \param sccP                      pointer to ServingCellConfigCommon structure,
    \param mac_cell_group_configP    pointer to RRC message MAC-related in cell group config 
    \param phy_cell_group_configP    pointer to RRC message PHY-related in cell group config
    \param spcell_configP            pointer to RRC message serving cell config*/
@@ -71,10 +72,11 @@ int nr_rrc_mac_config_req_ue(
     int cc_id, 
     uint8_t gNB_index, 
     NR_MIB_t *mibP, 
+    NR_ServingCellConfigCommon_t    *sccP,
     NR_MAC_CellGroupConfig_t *mac_cell_group_configP, 
     NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, 
     NR_SpCellConfig_t *spcell_configP );
-   
+
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 int nr_l2_init_ue(void);
 

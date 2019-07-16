@@ -184,7 +184,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
       pos=fsize;
       *dci_pdu |= ((pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_alloc->size-pos)); 
 #ifdef DEBUG_FILL_DCI
-      LOG_D(PHY,"frequency-domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,N_RB,dci_alloc->size-pos,*dci_pdu);
 #endif
       // Time domain assignment
       pos+=4;		   
@@ -219,7 +219,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
       pos++;
       *dci_pdu |= ((uint64_t)pdu_rel15->format_indicator&1)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      LOG_D(PHY,"Format indicator %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->format_indicator,1,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",pdu_rel15->format_indicator,1,N_RB,dci_alloc->size-pos,*dci_pdu);
 #endif
 
       // Freq domain assignment (275rb >> fsize = 16)

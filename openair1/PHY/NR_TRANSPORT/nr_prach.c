@@ -645,3 +645,4 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   if (gNB) stop_meas(&gNB->rx_prach);
 
 }
+

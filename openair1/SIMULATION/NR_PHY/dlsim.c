@@ -72,6 +72,7 @@ RAN_CONTEXT_t RC;
 
 
 double cpuf;
+int sf_ahead=4;
 
 // dummy functions
 int nfapi_mode=0;
@@ -85,7 +86,6 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
 
-NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
 int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
@@ -596,12 +596,58 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
+  RC.nb_nr_macrlc_inst = 1;
+  mac_top_init_gNB();
+  gNB_mac = RC.nrmac[0];
+  gNB_RRC_INST rrc;
+  NR_ServingCellConfigCommon_t scc;
+  rrc.carrier.servingcellconfigcommon = &scc;
+  prepare_scc_sim(&scc);
+  *scc.physCellId = Nid_cell;
+  *scc.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  *scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=660960;
+  *scc.downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
+  scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=660000;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_DL;
+  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->present=NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=12;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero=0;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->startSymbolAndLength=40;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->startSymbolAndLength=53;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->startSymbolAndLength=54;
+  scc.ssb_PositionsInBurst->present=NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+  scc.tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5;
+  scc.tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity = -1;
+  for (int i=scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=3;i--) {
+    *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0=-1;
+  }
+
+  for (int i=scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
+    *scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2=-1;
+  }
+  scc.ssb_PositionsInBurst->present = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+  scc.dmrs_TypeA_Position = NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2; 
+  fix_scc_sim(&scc,0xff);
+  AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
+  gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
+  rrc_mac_config_req_gNB(0,0,&scc);
+  phy_init_nr_gNB(gNB,0,0);
+
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
+  //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
-  phy_init_nr_gNB(gNB,0,0);
-  mac_top_init_gNB();
 
 
   double fs,bw;
@@ -696,50 +742,7 @@ int main(int argc, char **argv)
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 
-  RC.nb_nr_macrlc_inst = 1;
-  mac_top_init_gNB();
-  gNB_mac = RC.nrmac[0];
-  gNB_RRC_INST rrc;
-  NR_ServingCellConfigCommon_t scc;
-  rrc.carrier.servingcellconfigcommon = &scc;
-  prepare_scc_sim(&scc);
-  *scc.physCellId = Nid_cell;
-  *scc.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-  *scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=660960;
-  *scc.downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
-  scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=660000;
-  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
-  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_DL;
-  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=13036;
-  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->present=NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
-  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=12;
-  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero=0;
-  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->k0=0;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->startSymbolAndLength=40;
-  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->k0=0;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->startSymbolAndLength=53;
-  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->k0=0;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->startSymbolAndLength=54;
-  scc.ssb_PositionsInBurst->present=NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
-  scc.tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-  scc.tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5;
-  scc.tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity = -1;
-  for (int i=scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=3;i--) {
-    *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0=-1;
-  }
 
-  for (int i=scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
-    *scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2=-1;
-  }
-  scc.ssb_PositionsInBurst->present = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
-  scc.dmrs_TypeA_Position = NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2; 
-  fix_scc_sim(&scc,0xff);
-  config_common(0,&scc);
    
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
@@ -838,7 +841,7 @@ int main(int argc, char **argv)
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,NULL,NULL,NULL);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,&scc,NULL,NULL,NULL);
 
   // Initial bandwidth part configuration -- full carrier bandwidth
   UE_mac->initial_bwp_dl.bwp_id = 0;
@@ -898,9 +901,6 @@ int main(int argc, char **argv)
   UE_mac->scheduled_response.frame = frame;
   UE_mac->scheduled_response.slot = slot;
 
-  UE_mac->phy_config.config_req.pbch_config.system_frame_number = frame;
-  UE_mac->phy_config.config_req.pbch_config.ssb_index = 0;
-  UE_mac->phy_config.config_req.pbch_config.half_frame_bit = 0;
 
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
@@ -953,7 +953,8 @@ int main(int argc, char **argv)
 			       0,
 			       do_pdcch_flag,
 			       normal_txrx,
-			       UE_mac->phy_config.config_req.pbch_config);
+			       &UE_mac->dl_config_request);
+
 
 	if (n_trials==1) {
 	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);

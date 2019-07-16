@@ -4341,30 +4341,37 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 
-int is_pbch_in_slot(fapi_nr_pbch_config_t pbch_config, int frame, int slot, int periodicity, uint16_t slots_per_frame)  {
+fapi_nr_dl_config_bch_pdu *is_pbch_in_slot(fapi_nr_dl_config_request_t *DLconfigreq, int frame, int slot, int periodicity, uint16_t slots_per_frame)  {
 
-  int ssb_slot_decoded = (pbch_config.ssb_index)/2;
+  for (int i=0;i<DLconfigreq->number_pdus;i++) {
 
-  if (periodicity == 5) {  
-    // check for pbch in corresponding slot each half frame
-    if (pbch_config.half_frame_bit)
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - slots_per_frame/2);
-    else
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + slots_per_frame/2);
+    if (DLconfigreq->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_BCH_PDU_TYPE) {
+      int ssb_slot_decoded = (DLconfigreq->dl_config_list[i].bch_config_pdu.ssb_index)/2;
+      // All this checking should be done MAC
+      if (periodicity == 5) {  
+	// check for pbch in corresponding slot each half frame
+	if (DLconfigreq->dl_config_list[i].bch_config_pdu.half_frame_bit) {
+	  if (slot == ssb_slot_decoded || slot == ssb_slot_decoded - slots_per_frame/2) return(&DLconfigreq->dl_config_list[i].bch_config_pdu);
+	}
+	else {
+	  if (slot == ssb_slot_decoded || slot == ssb_slot_decoded + slots_per_frame/2) return(&DLconfigreq->dl_config_list[i].bch_config_pdu);
+	}
+      }
+      else {
+	// if the current frame is supposed to contain ssb
+	if (!((frame-(DLconfigreq->dl_config_list[i].bch_config_pdu.system_frame_number))%(periodicity/10))) {
+	  if (slot == ssb_slot_decoded)  return(&DLconfigreq->dl_config_list[i].bch_config_pdu);
+	}
+      }
+    }
   }
-  else {
-    // if the current frame is supposed to contain ssb
-    if (!((frame-(pbch_config.system_frame_number))%(periodicity/10)))
-      return(slot == ssb_slot_decoded);
-    else
-      return 0;
-  }
+  return NULL;
 }
 
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
 			   uint8_t do_pdcch_flag,runmode_t mode,
-			   fapi_nr_pbch_config_t pbch_config) {
+			   fapi_nr_dl_config_request_t *DLconfigreq) {
 
 
 
@@ -4372,7 +4379,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   int pilot1;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
-  int slot_pbch;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
   uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
@@ -4545,10 +4551,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
-  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
+  fapi_nr_dl_config_bch_pdu *bch_config = is_pbch_in_slot(DLconfigreq, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
 
   // looking for pbch only in slot where it is supposed to be
-  if ((ue->decode_MIB == 1) && slot_pbch)
+  if ((ue->decode_MIB == 1) && bch_config)
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
@@ -4563,7 +4569,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config.ssb_index)&7,pbch_config.half_frame_bit);
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(bch_config->ssb_index)&7,bch_config->half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

@@ -44,10 +44,15 @@ typedef enum {
   NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE,
   NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE,
   NFAPI_NR_DL_CONFIG_PCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_NBCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_NPDCCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_NDLSCH_PDU_TYPE
 } nfapi_nr_dl_config_pdu_type_e;
+
+// nFAPI enums
+typedef enum {
+  NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE = 0,
+  NFAPI_NR_UL_CONFIG_ULSCH_PDU_TYPE,
+  NFAPI_NR_UL_CONFIG_UCI_PDU_TYPE,
+  NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE,
+} nfapi_nr_ul_config_pdu_type_e;
 
 //These TLVs are used exclusively by nFAPI
 typedef struct
@@ -251,6 +256,7 @@ typedef struct {
 } nfapi_nr_pusch_config_t;
 
 typedef struct {
+  uint8_t pucch_resource_common;
   nfapi_uint16_tlv_t  pucch_GroupHopping;                                             ///// L1 parameter 'PUCCH-GroupHopping' 
   nfapi_uint16_tlv_t  p0_nominal;                                                     ///// L1 parameter 'p0-nominal-pucch'
 } nfapi_nr_pucch_config_t;
@@ -656,18 +662,6 @@ typedef struct {
 }nfapi_nr_dl_config_pch_pdu_rel15_t;
 
 typedef struct {
-  
-} nfapi_nr_dl_config_nbch_pdu_rel15_t;
-
-typedef struct {
-  
-} nfapi_nr_dl_config_npdcch_pdu_rel15_t;
-
-typedef struct {
-  
-} nfapi_nr_dl_config_ndlsch_pdu_rel15_t;
-
-typedef struct {
   nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params_rel15;
 } nfapi_nr_dl_config_dci_dl_pdu;
@@ -682,11 +676,9 @@ typedef struct {
   nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
   nfapi_nr_dl_config_dlsch_pdu              dlsch_pdu;
   nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
-  nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
-  nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
-  nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
   };
 } nfapi_nr_dl_config_request_pdu_t;
+
  
 typedef struct {
   nfapi_tl_t tl;
@@ -739,9 +731,37 @@ typedef struct {
     uint8_t beta_offset_ind;
 } nfapi_nr_ul_config_ulsch_pdu_rel15_t;
 
+
+
+
+
 typedef struct {
   uint16_t rnti;
   nfapi_nr_ul_config_ulsch_pdu_rel15_t ulsch_pdu_rel15;
 } nfapi_nr_ul_config_ulsch_pdu;
+
+typedef struct {
+  uint8_t pdu_type;
+  uint8_t pdu_size;
+
+  union {
+    //    nfapi_nr_ul_config_uci_pdu uci_pdu;
+    nfapi_nr_ul_config_ulsch_pdu ulsch_pdu;
+    //    nfapi_nr_ul_config_srs_pdu srs_pdu;
+  };
+} nfapi_nr_ul_config_request_pdu_t;
+
+typedef struct {
+  nfapi_tl_t tl;
+  uint8_t   number_pdu;
+  nfapi_nr_ul_config_request_pdu_t *ul_config_pdu_list;
+} nfapi_nr_ul_config_request_body_t;
+
+typedef struct {
+  nfapi_p7_message_header_t header;
+  uint16_t sfn_sf;
+  nfapi_nr_ul_config_request_body_t ul_config_request_body;
+  nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_ul_config_request_t;
 
 #endif
