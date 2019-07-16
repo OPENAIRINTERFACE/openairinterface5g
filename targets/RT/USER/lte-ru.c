@@ -2633,7 +2633,11 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    //ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    if ((ru->is_slave == 0) && (ru->ota_sync_enable == 1))
+      ru->generate_dmrs_sync = 1;
+    else
+      ru->generate_dmrs_sync = 0;
     if (ru->generate_dmrs_sync == 1) {
       generate_ul_ref_sigs();
       ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
@@ -2920,6 +2924,9 @@ void RCconfig_RU(void) {
           printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
           else RC.ru[j]->is_slave=0;
+          printf("RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+          if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) RC.ru[j]->ota_sync_enable=1;
+          else RC.ru[j]->ota_sync_enable=0;
 	}
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
