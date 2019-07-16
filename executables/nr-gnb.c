@@ -701,8 +701,7 @@ void init_gNB_proc(int inst) {
   PHY_VARS_gNB *gNB;
   gNB_L1_proc_t *proc;
   gNB_L1_rxtx_proc_t *L1_proc,*L1_proc_tx;
-  LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
-
+//  LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
   gNB = RC.gNB[inst];
 #ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
@@ -752,7 +751,6 @@ void init_gNB_proc(int inst) {
   }
   
   AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
-
 
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
@@ -852,19 +850,18 @@ void init_eNB_afterRU(void) {
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
-
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, CC_id, RC.gNB[inst]);
     gNB                                  =  RC.gNB[inst];
     phy_init_nr_gNB(gNB,0,0);
-    
+
     // map antennas and PRACH signals to gNB RX
     if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
-    
+
     LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
     //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
     gNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
     LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
-    
+
     for (ru_id=0,aa=0; ru_id<gNB->num_RU; ru_id++) {
       AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
 		  "RU %d : common.rxdataF is NULL\n",
@@ -879,16 +876,14 @@ void init_eNB_afterRU(void) {
 	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }
-    
+
     /* TODO: review this code, there is something wrong.
      * In monolithic mode, we come here with nb_antennas_rx == 0
      * (not tested in other modes).
      */
     //init_precoding_weights(RC.gNB[inst]);
+    init_gNB_proc(inst);
   }
-  
-  init_gNB_proc(inst);
-
 
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
