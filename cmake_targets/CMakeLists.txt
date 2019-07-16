@@ -1410,7 +1410,7 @@ set(PHY_SRC_UE
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
   ${PHY_LDPCSRC}
-  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c # added by prasanth
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c 
   )
 
   set(PHY_NR_UE_SRC

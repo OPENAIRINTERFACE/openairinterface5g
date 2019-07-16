@@ -631,8 +631,9 @@ void *UE_thread(void *arg) {
     processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
-    curMsg->proc.nr_tti_rx= slot_nr;
     curMsg->UE->current_thread_id[slot_nr] = thread_idx;
+    curMsg->proc.CC_id = 0;
+    curMsg->proc.nr_tti_rx= slot_nr;
     curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;

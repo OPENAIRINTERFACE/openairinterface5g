@@ -583,6 +583,9 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_ss_n_c = n_c;
         
 	    // fill in the elements in config request inside P5 message
+	mac->phy_config.Mod_id = module_id;
+	mac->phy_config.CC_id = cc_id;
+
 	    mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
 	    mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation

@@ -600,7 +600,15 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+	  // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
+
+	  if ((((uintptr_t) buff[i])&0x1F)==0) {
+	    ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+	  }
+	  else {
+	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[j],4);
+	    ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j+1],4);
+	  }
 #else
           ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
 #endif
@@ -852,6 +860,10 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
 
   if (bw_gain_adjust==1) {
     switch ((int)openair0_cfg[0].sample_rate) {
+
+      case 46080000:
+        break;
+
       case 30720000:
         break;
 
@@ -877,7 +889,7 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
 
       default:
         LOG_E(PHY,"unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
-        exit(-1);
+        //exit(-1);
         break;
     }
   }
@@ -912,6 +924,12 @@ int trx_usrp_get_stats(openair0_device *device) {
  */
 int trx_usrp_reset_stats(openair0_device *device) {
   return(0);
+}
+
+/*! \brief Set uhd priority
+ */
+static void uhd_set_thread_priority(void) {
+  uhd::set_thread_priority_safe(1.0);
 }
 
 #if defined(USRP_REC_PLAY)
@@ -1047,6 +1065,7 @@ extern "C" {
       device->trx_set_freq_func = trx_usrp_set_freq;
       device->trx_set_gains_func   = trx_usrp_set_gains;
       device->openair0_cfg = openair0_cfg;
+      device->uhd_set_thread_priority = uhd_set_thread_priority;
       std::cerr << "USRP device initialized in subframes replay mode for " << u_sf_loops << " loops. Use mmap="
                 << use_mmap << std::endl;
     } else {
@@ -1162,6 +1181,13 @@ extern "C" {
             openair0_cfg[0].rx_bw                 = 40e6;
             break;
 
+ 	  case 46080000:
+            //openair0_cfg[0].samples_per_packet    = 1024;
+            openair0_cfg[0].tx_sample_advance     = 115;
+            openair0_cfg[0].tx_bw                 = 40e6;
+            openair0_cfg[0].rx_bw                 = 40e6;
+            break;
+
           case 30720000:
             // from usrp_time_offset
             //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1214,7 +1240,15 @@ extern "C" {
         }
 
         switch ((int)openair0_cfg[0].sample_rate) {
-          case 30720000:
+	case 46080000:
+            s->usrp->set_master_clock_rate(46.08e6);
+            //openair0_cfg[0].samples_per_packet    = 1024;
+            openair0_cfg[0].tx_sample_advance     = 115;
+            openair0_cfg[0].tx_bw                 = 40e6;
+            openair0_cfg[0].rx_bw                 = 40e6;
+            break;
+
+	case 30720000:
             s->usrp->set_master_clock_rate(30.72e6);
             //openair0_cfg[0].samples_per_packet    = 1024;
             openair0_cfg[0].tx_sample_advance     = 115;
@@ -1366,6 +1400,7 @@ extern "C" {
       device->trx_set_freq_func = trx_usrp_set_freq;
       device->trx_set_gains_func   = trx_usrp_set_gains;
       device->openair0_cfg = openair0_cfg;
+      device->uhd_set_thread_priority = uhd_set_thread_priority;
       s->sample_rate = openair0_cfg[0].sample_rate;
 
       // TODO:
@@ -1468,9 +1503,6 @@ extern "C" {
     return 0;
   }
 
-  void uhd_set_thread_priority(void) {
-      uhd::set_thread_priority_safe(1.0);
-  }
 
 }
 /*@}*/

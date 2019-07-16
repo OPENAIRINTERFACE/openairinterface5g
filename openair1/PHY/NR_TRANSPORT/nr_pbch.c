@@ -239,7 +239,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint8_t nushift;
   uint32_t unscrambling_mask;
   uint64_t a_reversed=0;
-  LOG_I(PHY, "PBCH generation started\n");
+  LOG_D(PHY, "PBCH generation started\n");
   ///Payload generation
   memset((void *)pbch, 0, sizeof(NR_gNB_PBCH));
   pbch->pbch_a=0;
@@ -267,7 +267,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   else
     pbch->pbch_a |= ((config->sch_config.ssb_subcarrier_offset.value>>4)&1)<<29; //MSB of k_SSB (bit index 4)
 
-  LOG_I(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
+  LOG_D(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
 
   // Payload interleaving
 

@@ -829,6 +829,85 @@ class SSHConnection():
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
+	def InitializeOAIeNB(self):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		#initialize_OAI_eNB_flag = True
+		#pStatus = self.CheckOAIeNBProcessExist(initialize_OAI_eNB_flag)
+		#if (pStatus < 0):
+		#	self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'KO', pStatus)
+		#	self.CreateHtmlTabFooter(False)
+		#	sys.exit(1)
+		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+		if self.air_interface == 'lte':
+			nodeB_prefix = 'e'
+		else:
+			nodeB_prefix = 'g'
+		# Initialize_OAI_eNB_args usually start with -C and followed by the location in repository
+		#full_config_file = self.Initialize_OAI_eNB_args.replace('-O ','')
+		#extIdx = full_config_file.find('.conf')
+		#if (extIdx > 0):
+		#	extra_options = full_config_file[extIdx + 5:]
+		#	# if tracer options is on, compiling and running T Tracer
+		#	result = re.search('T_stdout', str(extra_options))
+		##	if result is not None:
+		#		logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
+		#		self.command('cd common/utils/T/tracer', '\$', 5)
+		#		self.command('make', '\$', 10)
+		#		self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.eNBUserName, 5)
+		#		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+		#	full_config_file = full_config_file[:extIdx + 5]
+		#	config_path, config_file = os.path.split(full_config_file)
+		#ci_full_config_file = config_path + '/ci-' + config_file
+		#rruCheck = False
+		#result = re.search('rru', str(config_file))
+		#if result is not None:
+		#	rruCheck = True
+		## Make a copy and adapt to EPC / eNB IP addresses
+		#self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
+		#self.command('sed -i -e \'s/CI_eNB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		# Launch eNB with the modified config file
+		self.command('source oaienv', '\$', 5)
+		self.command('cd cmake_targets/ran_build/build', '\$', 5)
+		self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
+		self.command('echo "ulimit -c unlimited && ./' + self.air_interface + '-softmodem ' + self.Initialize_OAI_eNB_args + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log', '\$', 5)
+		#use nohup instead of daemon
+		self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh' + ' > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log' + ' 2>&1 &', self.eNBUserName, 5)
+		#self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		time.sleep(6)
+		self.command('cd ../..', '\$', 5)
+		doLoop = True
+		loopCounter = 10
+		while (doLoop):
+			loopCounter = loopCounter - 1
+			if (loopCounter == 0):
+				# In case of T tracer recording, we may need to kill it
+				#result = re.search('T_stdout', str(self.Initialize_OAI_eNB_args))
+				#if result is not None:
+				#	self.command('killall --signal SIGKILL record', '\$', 5)
+				self.close()
+				doLoop = False
+				logging.error('\u001B[1;37;41m ' + nodeB_prefix + 'NB logging system did not show got sync! \u001B[0m')
+				self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'KO', ALL_PROCESSES_OK, 'OAI eNB')
+				self.CreateHtmlTabFooter(False)
+				## In case of T tracer recording, we need to kill tshark on EPC side
+				#result = re.search('T_stdout', str(self.Initialize_OAI_eNB_args))
+				#if result is not None:
+				#	self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+				#	logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+				#	self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+				#	self.close()
+				#	time.sleep(1)
+				#	pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
+				#	copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
+				#	if (copyin_res == 0):
+				#		self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+				sys.exit(1)
+
 	def checkDevTTYisUnlocked(self):
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		count = 0
@@ -2737,8 +2816,25 @@ class SSHConnection():
 		mib_found = False
 		frequency_found = False
 		plmn_found = False
+		nrUEFlag = False
+		nrDecodeMib = 0
+		nrFoundDCI = 0
+		nrCRCOK = 0
 		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
+			result = re.search('nr_synchro_time', str(line))
+			if result is not None:
+				nrUEFlag = True
+			if nrUEFlag:
+				result = re.search('decode mib', str(line))
+				if result is not None:
+					nrDecodeMib += 1
+				result = re.search('found 1 DCIs', str(line))
+				if result is not None:
+					nrFoundDCI += 1
+				result = re.search('CRC OK', str(line))
+				if result is not None:
+					nrCRCOK += 1
 			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
 				exitSignalReceived = True
@@ -2857,6 +2953,19 @@ class SSHConnection():
 			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
 			logging.debug('\033[94m' + statMsg + '\033[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
+		if nrUEFlag:
+			if nrDecodeMib > 0:
+				statMsg = 'UE showed ' + str(nrDecodeMib) + ' MIB decode message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
+			if nrFoundDCI > 0:
+				statMsg = 'UE showed ' + str(nrFoundDCI) + ' DCI found message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
+			if nrCRCOK > 0:
+				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')

@@ -25,7 +25,7 @@
         <htmlTabName>run OAI gNB and OAI NR UE USRP</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
 	<TestCaseRequestedList>
-090101 000001 090102 000001 090108 090109
+090101 000001 090102 000002 090108 090109
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 	
@@ -40,6 +40,12 @@
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
 		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Waiting for NR UE to synchronize w/ gNB</desc>
+		<idle_sleep_time_in_sec>180</idle_sleep_time_in_sec>
 	</testCase>
 
         <testCase id="090102">
