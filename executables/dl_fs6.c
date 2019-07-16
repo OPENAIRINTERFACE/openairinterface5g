@@ -5,6 +5,7 @@
 
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
+
 #if 0
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
@@ -68,137 +69,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 }
 #endif
 
-void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
-  // We got
-  // subframe number
-  //
-  int frame=proc->frame_tx;
-  int subframe=proc->subframe_tx;
-  uint32_t i,aa;
-  uint8_t harq_pid;
-  int16_t UE_id=0;
-  uint8_t num_pdcch_symbols=0;
-  uint8_t num_dci=0;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  uint8_t         num_mdci = 0;
-#endif
-  uint8_t ul_subframe;
-  uint32_t ul_frame;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  LTE_UL_eNB_HARQ_t *ulsch_harq;
-
-  for (int aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
-    memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * fp->symbols_per_tti],
-            0,
-            fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
-  }
-
-  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    if (is_pmch_subframe(frame,subframe,fp)) {
-      pmch_procedures(eNB,proc);
-    } else {
-      // this is not a pmch subframe, so generate PSS/SSS/PBCH
-      common_signal_procedures(eNB,proc->frame_tx, proc->subframe_tx);
-    }
-  }
-
-  if (ul_subframe < 10)if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
-        if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
-        else
-#endif
-          harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
-
-        if (eNB->ulsch[i]) {
-          ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
-          /* Store first_rb and n_DMRS for correct PHICH generation below.
-           * For PHICH generation we need "old" values of last scheduling
-           * for this HARQ process. 'generate_eNB_dlsch_params' below will
-           * overwrite first_rb and n_DMRS and 'generate_phich_top', done
-           * after 'generate_eNB_dlsch_params', would use the "new" values
-           * instead of the "old" ones.
-           *
-           * This has been tested for FDD only, may be wrong for TDD.
-           *
-           * TODO: maybe we should restructure the code to be sure it
-           *       is done correctly. The main concern is if the code
-           *       changes and first_rb and n_DMRS are modified before
-           *       we reach here, then the PHICH processing will be wrong,
-           *       using wrong first_rb and n_DMRS values to compute
-           *       ngroup_PHICH and nseq_PHICH.
-           *
-           * TODO: check if that works with TDD.
-           */
-          ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
-          ulsch_harq->previous_n_DMRS = ulsch_harq->n_DMRS;
-        }
-      }
-    }
-
-  num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
-  num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
-
-  if (num_dci > 0)
-    if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-      generate_dci_top(num_pdcch_symbols,
-                       num_dci,
-                       &eNB->pdcch_vars[subframe&1].dci_alloc[0],
-                       0,
-                       AMP,
-                       fp,
-                       eNB->common_vars.txdataF,
-                       subframe);
-      num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
-
-      if (num_mdci > 0) {
-        generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
-      }
-    }
-
-  // Now scan UE specific DLSCH
-  LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    dlsch0 = eNB->dlsch[(uint8_t)UE_id][0];
-    dlsch1 = eNB->dlsch[(uint8_t)UE_id][1];
-
-    if ((dlsch0)&&(dlsch0->rnti>0)&&
-        (dlsch0->active == 1)
-       ) {
-      // get harq_pid
-      harq_pid = dlsch0->harq_ids[frame%2][subframe];
-      AssertFatal(harq_pid>=0,"harq_pid is negative\n");
-
-      if (harq_pid>=8) {
-        if (dlsch0->ue_type==0)
-          LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x \n",
-                harq_pid,UE_id,frame,subframe,dlsch0->rnti);
-      } else {
-        // generate pdsch
-        /*
-              pdsch_procedures_fs6(eNB,
-                                   proc,
-                                   harq_pid,
-                                   dlsch0,
-                                   dlsch1,
-                                   &eNB->UE_stats[(uint32_t)UE_id],
-                                   0);
-        */
-      }
-    } else if ((dlsch0)&&(dlsch0->rnti>0)&&
-               (dlsch0->active == 0)
-              ) {
-      // clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
-      dlsch0->subframe_tx[subframe]=0;
-    }
-  }
-
-  generate_phich_top(eNB,
-                     proc,
-                     AMP);
-}
 
 void prach_eNB_extract(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe, uint8_t *buf, int bufSize) {
   commonUDP_t *header=(commonUDP_t *) buf;
@@ -220,7 +90,230 @@ void phy_procedures_eNB_uespec_RX_extract(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_pro
 void phy_procedures_eNB_uespec_RX_process(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
 }
 
+typedef struct {
+  int frame;
+  int subframe;
+  int num_pdcch_symbols;
+  int num_dci;
+  int amp;
+  bool UE_active[NUMBER_OF_UE_MAX];
+  LTE_eNB_PHICH phich_vars;
+} fs6_dl_t;
+
+void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
+  // TBD: read frame&subframe from received data
+  int frame=proc->frame_tx;
+  int subframe=proc->subframe_tx;
+  uint32_t i,aa;
+  uint8_t harq_pid;
+  uint8_t num_pdcch_symbols=0;
+  uint8_t num_dci=0;
+  uint8_t num_mdci = 0;
+  uint8_t ul_subframe;
+  uint32_t ul_frame;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  LTE_UL_eNB_HARQ_t *ulsch_harq;
+
+  if (do_meas==1) {
+    start_meas(&eNB->phy_proc_tx);
+    start_meas(&eNB->dlsch_common_and_dci);
+  }
+
+  // clear the transmit data array for the current subframe
+  for (aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
+    memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti)],
+            0, fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
+  }
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    if (is_pmch_subframe(frame,subframe,fp)) {
+      pmch_procedures(eNB,proc);
+    } else {
+      // this is not a pmch subframe, so generate PSS/SSS/PBCH
+      common_signal_procedures(eNB,proc->frame_tx, proc->subframe_tx);
+    }
+  }
+
+  // clear existing ulsch dci allocations before applying info from MAC  (this is table
+  ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
+  ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
+
+  // clear previous allocation information for all UEs
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (eNB->dlsch[i][0])
+      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+  }
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    generate_dci_top(header->num_pdcch_symbols,
+                     header->num_dci,
+                     &eNB->pdcch_vars[subframe&1].dci_alloc[0],
+                     0,
+                     headerAMP,
+                     fp,
+                     eNB->common_vars.txdataF,
+                     header->subframe);
+    num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
+
+    if (num_mdci > 0) {
+      LOG_D (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
+      generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
+    }
+  }
+
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    if (header.UE_active[UE_id]) { // if we generate dlsch, we must generate pdsch
+      dlsch0 = eNB->dlsch[UE_id][0];
+      dlsch1 = eNB->dlsch[UE_id][1];
+      pdsch_procedures(eNB,
+                       proc,
+                       harq_pid,
+                       dlsch0,
+                       dlsch1);
+    }
+  }
+
+  eNB->phich_vars[subframe&1]=header.phich_vars;
+  generate_phich_top(eNB,
+                     proc,
+                     AMP);
+}
+
 void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
+  int frame=proc->frame_tx;
+  int subframe=proc->subframe_tx;
+  uint32_t i,aa;
+  uint8_t harq_pid;
+  uint8_t num_pdcch_symbols=0;
+  uint8_t num_dci=0;
+  uint8_t num_mdci = 0;
+  uint8_t ul_subframe;
+  uint32_t ul_frame;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  LTE_UL_eNB_HARQ_t *ulsch_harq;
+
+  if ((fp->frame_type == TDD) && (subframe_select (fp, subframe) == SF_UL))
+    return;
+
+  header.frame=frame;
+  header.subframe=subframe;
+  // clear existing ulsch dci allocations before applying info from MAC  (this is table
+  ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
+  ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
+
+  // clear previous allocation information for all UEs
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (eNB->dlsch[i][0])
+      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+  }
+
+  /* TODO: check the following test - in the meantime it is put back as it was before */
+  //if ((ul_subframe < 10)&&
+  //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
+  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
+    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
+      else
+        harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+
+      if (eNB->ulsch[i]) {
+        ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
+        /* Store first_rb and n_DMRS for correct PHICH generation below.
+         * For PHICH generation we need "old" values of last scheduling
+         * for this HARQ process. 'generate_eNB_dlsch_params' below will
+         * overwrite first_rb and n_DMRS and 'generate_phich_top', done
+         * after 'generate_eNB_dlsch_params', would use the "new" values
+         * instead of the "old" ones.
+         *
+         * This has been tested for FDD only, may be wrong for TDD.
+         *
+         * TODO: maybe we should restructure the code to be sure it
+         *       is done correctly. The main concern is if the code
+         *       changes and first_rb and n_DMRS are modified before
+         *       we reach here, then the PHICH processing will be wrong,
+         *       using wrong first_rb and n_DMRS values to compute
+         *       ngroup_PHICH and nseq_PHICH.
+         *
+         * TODO: check if that works with TDD.
+         */
+        ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
+        ulsch_harq->previous_n_DMRS = ulsch_harq->n_DMRS;
+      }
+    }
+  }
+
+  num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
+  num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
+  LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
+
+  if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
+    header.num_pdcch_symbols=num_pdcch_symbols;
+    header.num_dci=num_dci;
+    header.amp=AMP;
+  }
+
+  if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+
+  if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
+
+  // Now scan UE specific DLSCH
+  LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
+
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    dlsch0 = eNB->dlsch[UE_id][0];
+    dlsch1 = eNB->dlsch[UE_id][1];
+
+    if ((dlsch0)&&(dlsch0->rnti>0)&&
+#ifdef PHY_TX_THREAD
+        (dlsch0->active[subframe] == 1)
+#else
+        (dlsch0->active == 1)
+#endif
+       ) {
+      // get harq_pid
+      harq_pid = dlsch0->harq_ids[frame%2][subframe];
+      AssertFatal(harq_pid>=0,"harq_pid is negative\n");
+
+      if (harq_pid>=8) {
+        if (dlsch0->ue_type==0)
+          LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x [ %1d.%1d.%1d.%1d.%1d.%1d.%1d.%1d\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti,
+                dlsch0->harq_ids[frame%2][0],
+                dlsch0->harq_ids[frame%2][1],
+                dlsch0->harq_ids[frame%2][2],
+                dlsch0->harq_ids[frame%2][3],
+                dlsch0->harq_ids[frame%2][4],
+                dlsch0->harq_ids[frame%2][5],
+                dlsch0->harq_ids[frame%2][6],
+                dlsch0->harq_ids[frame%2][7]);
+      } else {
+        header.UE_active[UE_id]=true;
+
+        if (dlsch_procedures(eNB,
+                             proc,
+                             harq_pid,
+                             dlsch0,
+                             &eNB->UE_stats[(uint32_t)UE_id])) {
+          append(UEdata);
+        }
+      }
+    } else if ((dlsch0)&&(dlsch0->rnti>0)&&
+#ifdef PHY_TX_THREAD
+               (dlsch0->active[subframe] == 0)
+#else
+               (dlsch0->active == 0)
+#endif
+              ) {
+      // clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
+      dlsch0->subframe_tx[subframe]=0;
+    }
+  }
+
+  header.phich_vars=eNB->phich_vars[subframe&1];
+
+  if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
+
+  if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
+
   commonUDP_t *header=(commonUDP_t *) buf;
   header->contentBytes=1000;
   header->nbBlocks=1;
