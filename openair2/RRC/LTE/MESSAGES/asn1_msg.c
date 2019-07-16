@@ -78,6 +78,13 @@
 #include "LTE_SBCCH-SL-BCH-MessageType.h"
 #include "LTE_SBCCH-SL-BCH-Message.h"
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+   #include "LTE_BCCH-BCH-Message-MBMS.h"
+   #include "LTE_BCCH-DL-SCH-Message-MBMS.h"
+   #include "LTE_SystemInformationBlockType1-MBMS-r14.h"
+   #include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
+
 //#include "PHY/defs.h"
 
 #include "LTE_MeasObjectToAddModList.h"
@@ -176,6 +183,88 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
   LOG_E(RRC,"\nCannot get adjacent cell mod id! Fatal error!\n");
   return 0xFF; //error!
 }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFN, uint32_t frame) {
+  asn_enc_rval_t enc_rval;
+  LTE_BCCH_BCH_Message_MBMS_t *mib_fembms=&carrier->mib_fembms;
+  uint8_t sfn = (uint8_t)((frame>>2)&0xff);
+  uint16_t *spare = calloc(1,sizeof(uint16_t));
+  uint16_t *additionalNonMBSFNSubframes = calloc(1,sizeof(uint16_t));
+
+  if( spare == NULL || additionalNonMBSFNSubframes == NULL ) abort();
+
+  switch (N_RB_DL) {
+    case 6:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n6;
+      break;
+
+    case 15:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n15;
+      break;
+
+    case 25:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n25;
+      break;
+
+    case 50:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n50;
+      break;
+
+    case 75:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n75;
+      break;
+
+    case 100:
+      mib_fembms->message.dl_Bandwidth_MBMS_r14 = LTE_MasterInformationBlock_MBMS_r14__dl_Bandwidth_MBMS_r14_n100;
+      break;
+
+    default:
+      AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
+  }
+  LOG_I(RRC,"[MIB] systemBandwidth %x, additional non MBMS subframes %x, sfn %x\n",
+        (uint32_t)mib_fembms->message.dl_Bandwidth_MBMS_r14,
+        (uint32_t)additionalNonMBSFN,
+        (uint32_t)sfn);
+
+
+  mib_fembms->message.systemFrameNumber_r14.buf = &sfn;
+  mib_fembms->message.systemFrameNumber_r14.size = 1;
+  mib_fembms->message.systemFrameNumber_r14.bits_unused=0;
+  mib_fembms->message.spare.buf = (uint8_t *)spare;
+//#if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
+  mib_fembms->message.spare.size = 2;
+  mib_fembms->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
+//#else
+  //mib->message.spare.size = 1;
+  //mib->message.spare.bits_unused = 3;  // This makes a spare of 5 bits
+  //mib->message.schedulingInfoSIB1_BR_r13 = 0; // turn off eMTC
+//#endif
+
+  //TODO additionalNonBMSFNSubframes-r14  INTEGER (0..3) ? 
+
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_LTE_BCCH_BCH_Message_MBMS, (void *)mib_fembms);
+  //}
+
+
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_BCH_Message_MBMS,
+                                   NULL,
+                                   (void *)mib_fembms,
+                                   carrier->MIB_FeMBMS,
+                                   24);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+  if (enc_rval.encoded==-1) {
+    return(-1);
+  }
+
+  return((enc_rval.encoded+7)/8);
+
+}
+#endif
 
 
 uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame
@@ -317,6 +406,221 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
   return((enc_rval.encoded+7)/8);
 }
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
+                int Mod_id,int CC_id
+#if defined(ENABLE_ITTI)
+  , RrcConfigurationReq *configuration
+#endif
+               ) {
+  //  SystemInformation_t systemInformation;
+#if defined(ENABLE_ITTI)
+  int num_plmn = configuration->num_plmn;
+#else
+  int num_plmn = 1;
+#endif
+  LTE_PLMN_IdentityInfo_t PLMN_identity_info[num_plmn];
+  LTE_MCC_MNC_Digit_t dummy_mcc[num_plmn][3], dummy_mnc[num_plmn][3];
+  asn_enc_rval_t enc_rval;
+  LTE_SchedulingInfo_MBMS_r14_t schedulingInfo;
+  LTE_SIB_Type_t sib_type;
+  uint8_t *buffer                      = carrier->SIB1_MBMS;
+  LTE_BCCH_DL_SCH_Message_MBMS_t *bcch_message  = &carrier->siblock1_MBMS;
+  LTE_SystemInformationBlockType1_MBMS_r14_t **sib1_MBMS = &carrier->sib1_MBMS;
+ 
+  int i;
+  //LTE_NonMBSFN_SubframeConfig_r14 nonMBSFN_SubframeConfig_r14;
+
+  struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1/*, *MBSFN_Area2*/;
+  struct LTE_NonMBSFN_SubframeConfig_r14 nonMBSFN_SubframeConfig_r14;
+
+  memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_MBMS_t));
+  bcch_message->message.present = LTE_BCCH_DL_SCH_MessageType_MBMS_r14_PR_c1;
+  bcch_message->message.choice.c1.present = LTE_BCCH_DL_SCH_MessageType_MBMS_r14__c1_PR_systemInformationBlockType1_MBMS_r14;
+  //  memcpy(&bcch_message.message.choice.c1.choice.systemInformationBlockType1,sib1,sizeof(SystemInformationBlockType1_t));
+  *sib1_MBMS = &bcch_message->message.choice.c1.choice.systemInformationBlockType1_MBMS_r14;
+  memset(PLMN_identity_info,0,num_plmn * sizeof(LTE_PLMN_IdentityInfo_t));
+  memset(&schedulingInfo,0,sizeof(LTE_SchedulingInfo_MBMS_r14_t));
+  memset(&sib_type,0,sizeof(LTE_SIB_Type_t));
+  memset(&nonMBSFN_SubframeConfig_r14,0,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
+
+  /* as per TS 36.311, up to 6 PLMN_identity_info are allowed in list -> add one by one */
+  for (i = 0; i < configuration->num_plmn; ++i) {
+    PLMN_identity_info[i].plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
+    memset(PLMN_identity_info[i].plmn_Identity.mcc,0,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
+    asn_set_empty(&PLMN_identity_info[i].plmn_Identity.mcc->list);//.size=0;
+#if defined(ENABLE_ITTI)
+    dummy_mcc[i][0] = (configuration->mcc[i] / 100) % 10;
+    dummy_mcc[i][1] = (configuration->mcc[i] / 10) % 10;
+    dummy_mcc[i][2] = (configuration->mcc[i] / 1) % 10;
+#else
+    dummy_mcc[i][0] = 0;
+    dummy_mcc[i][1] = 0;
+    dummy_mcc[i][2] = 1;
+#endif
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][0]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][1]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][2]);
+    PLMN_identity_info[i].plmn_Identity.mnc.list.size=0;
+    PLMN_identity_info[i].plmn_Identity.mnc.list.count=0;
+#if defined(ENABLE_ITTI)
+
+    if (configuration->mnc[i] >= 100) {
+      dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 10;
+      dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
+      dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
+    } else {
+      if (configuration->mnc_digit_length[i] == 2) {
+        dummy_mnc[i][0] = (configuration->mnc[i] / 10) % 10;
+        dummy_mnc[i][1] = (configuration->mnc[i] / 1) % 10;
+        dummy_mnc[i][2] = 0xf;
+      } else {
+        dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 100;
+        dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
+        dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
+      }
+    }
+
+#else
+    dummy_mnc[i][0] = 0;
+    dummy_mnc[i][1] = 1;
+    dummy_mnc[i][2] = 0xf;
+#endif
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][0]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][1]);
+
+    if (dummy_mnc[i][2] != 0xf) {
+      ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][2]);
+    }
+
+    //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
+    PLMN_identity_info[i].cellReservedForOperatorUse=LTE_PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
+    ASN_SEQUENCE_ADD(&(*sib1_MBMS)->cellAccessRelatedInfo_r14.plmn_IdentityList_r14.list,&PLMN_identity_info[i]);
+  }
+
+  // 16 bits
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.buf = MALLOC(2);
+#if defined(ENABLE_ITTI)
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.buf[0] = (configuration->tac >> 8) & 0xff;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.buf[1] = (configuration->tac >> 0) & 0xff;
+#else
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.buf[0] = 0x00;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.buf[1] = 0x01;
+#endif
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.size=2;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.trackingAreaCode_r14.bits_unused=0;
+  // 28 bits
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf = MALLOC(8);
+#if defined(ENABLE_ITTI)
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[0] = (configuration->cell_identity >> 20) & 0xff;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[1] = (configuration->cell_identity >> 12) & 0xff;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[2] = (configuration->cell_identity >>  4) & 0xff;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[3] = (configuration->cell_identity <<  4) & 0xf0;
+#else
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[0] = 0x00;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[1] = 0x00;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[2] = 0x00;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.buf[3] = 0x10;
+#endif
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.size=4;
+  (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.bits_unused=4;
+  (*sib1_MBMS)->freqBandIndicator_r14 =
+#if defined(ENABLE_ITTI)
+    configuration->eutra_band[CC_id];
+#else
+    7;
+#endif
+  schedulingInfo.si_Periodicity_r14=LTE_SchedulingInfo__si_Periodicity_rf16;
+  sib_type=LTE_SIB_Type_MBMS_r14_sibType13_v920;
+  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo_r14.list,&sib_type);
+  ASN_SEQUENCE_ADD(&(*sib1_MBMS)->schedulingInfoList_MBMS_r14.list,&schedulingInfo);
+
+  (*sib1_MBMS)->si_WindowLength_r14=LTE_SystemInformationBlockType1_MBMS_r14__si_WindowLength_r14_ms20;
+  (*sib1_MBMS)->systemInfoValueTag_r14=0;
+  //  (*sib1).nonCriticalExtension = calloc(1,sizeof(*(*sib1).nonCriticalExtension));
+
+
+ //sib13 optional
+ if (1)
+  {
+    (*sib1_MBMS)->systemInformationBlockType13_r14 =                             CALLOC(1,sizeof(struct LTE_SystemInformationBlockType13_r9));
+    memset((*sib1_MBMS)->systemInformationBlockType13_r14,0,sizeof(struct LTE_SystemInformationBlockType13_r9));
+
+    ((*sib1_MBMS)->systemInformationBlockType13_r14)->notificationConfig_r9.notificationRepetitionCoeff_r9= LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
+    ((*sib1_MBMS)->systemInformationBlockType13_r14)->notificationConfig_r9.notificationOffset_r9= 0;
+    ((*sib1_MBMS)->systemInformationBlockType13_r14)->notificationConfig_r9.notificationSF_Index_r9= 1;
+
+    //((*sib1_MBMS)->systemInformationBlockType13_r14)->mbsfn_AreaInfoList_r9= CALLOC(1,sizeof(LTE_MBSFN_AreaInfoList_r9_t));
+    //memset(((*sib1_MBMS)->systemInformationBlockType13_r14)->mbsfn_AreaInfoList_r9,0,sizeof(LTE_MBSFN_AreaInfoList_r9_t));
+    LTE_MBSFN_AreaInfoList_r9_t * MBSFNArea_list= &((*sib1_MBMS)->systemInformationBlockType13_r14)->mbsfn_AreaInfoList_r9;
+    //  MBSFN-AreaInfoList
+    memset(MBSFNArea_list,0,sizeof(*MBSFNArea_list));
+    // MBSFN Area 1
+    MBSFN_Area1= CALLOC(1, sizeof(*MBSFN_Area1));
+    MBSFN_Area1->mbsfn_AreaId_r9= 1;
+    MBSFN_Area1->non_MBSFNregionLength= LTE_MBSFN_AreaInfo_r9__non_MBSFNregionLength_s2;
+    MBSFN_Area1->notificationIndicator_r9= 0;
+    MBSFN_Area1->mcch_Config_r9.mcch_RepetitionPeriod_r9= LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_RepetitionPeriod_r9_rf32;
+    MBSFN_Area1->mcch_Config_r9.mcch_Offset_r9= 1; // in accordance with mbsfn subframe configuration in sib2
+    MBSFN_Area1->mcch_Config_r9.mcch_ModificationPeriod_r9= LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_ModificationPeriod_r9_rf512;
+ //  Subframe Allocation Info
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf= MALLOC(1);
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x20<<2;  // FDD: SF1
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
+    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n7;
+
+
+    (MBSFN_Area1)->ext1 = CALLOC (1, sizeof(*(MBSFN_Area1)->ext1));
+
+     memset((MBSFN_Area1)->ext1,0,sizeof(*(MBSFN_Area1)->ext1));
+
+    MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14 = CALLOC(1,sizeof(*( MBSFN_Area1->ext1)->subcarrierSpacingMBMS_r14));
+     
+    memset(MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14,0,sizeof(*((MBSFN_Area1)->ext1)->subcarrierSpacingMBMS_r14));
+
+
+    *(MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14) = LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_khz_1dot25;
+
+    ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
+  }
+
+  //nonMBSFN_SubframeConfig_r14 optional
+  if(1){	
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14 =                             CALLOC(1,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
+    memset((*sib1_MBMS)->nonMBSFN_SubframeConfig_r14,0,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14 = LTE_NonMBSFN_SubframeConfig_r14__radioFrameAllocationPeriod_r14_rf8;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14 = 0;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf = MALLOC(2); 
+    //100000001 byte(0)=10000000 byte(1)=xxxxxxx1
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[0] = 0x80<<0;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[1] = 0x1<<7;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.size = 2; 
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.bits_unused = 7; 
+  }
+
+
+
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
+  //}
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,
+                                   NULL,
+                                   (void *)bcch_message,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(RRC,"[eNB] SystemInformationBlockType1_MBMS Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+
+  if (enc_rval.encoded==-1) {
+    return(-1);
+  }
+
+  return((enc_rval.encoded+7)/8);
+}
+#endif
 //-----------------------------------------------------------------------------
 /*
  * Generate the configuration structure for CDRX feature
@@ -4212,6 +4516,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
   meas2.rsrpResult=&(rsrp_t);
   //&rsrp_va;
   meas2.rsrqResult=&(rsrq_t);
+  meas2.ext1 = NULL;
   measresulteutra2->measResult=meas2;
   ASN_SEQUENCE_ADD(&measResultListEUTRA2->list,measresulteutra2);
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
@@ -4229,8 +4534,13 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
           enc_rval.failed_type->name, enc_rval.encoded);
+    free(measResultListEUTRA2);
+    measResultListEUTRA2 = NULL;
     return -1;
   }
+
+  free(measResultListEUTRA2);
+  measResultListEUTRA2 = NULL;
 
   return((enc_rval.encoded+7)/8);
 }

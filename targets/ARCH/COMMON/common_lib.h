@@ -34,6 +34,7 @@
 #define COMMON_LIB_H
 #include <stdint.h>
 #include <sys/types.h>
+#include <openair1/PHY/TOOLS/tools_defs.h>
 
 /* name of shared library implementing the radio front end */
 #define OAI_RF_LIBNAME        "oai_device"
@@ -199,6 +200,8 @@ typedef struct {
   double tx_bw;
   //! clock source
   clock_source_t clock_source;
+  //! timing_source
+  clock_source_t time_source;
   //! Manual SDR IP address
   //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   char *sdr_addrs;
@@ -302,6 +305,10 @@ struct openair0_device_t {
   /* !brief ETH params set by application */
   eth_params_t *eth_params;
 
+  /* !brief Indicates if device already initialized */
+  int is_init;
+
+
   /*!brief Can be used by driver to hold internal structure*/
   void *priv;
 
@@ -311,6 +318,13 @@ struct openair0_device_t {
       @param device pointer to the device structure specific to the RF hardware target
   */
   int (*trx_start_func)(openair0_device *device);
+
+ /*! \brief Called to configure the device
+      @param device pointer to the device structure specific to the RF hardware target  
+  */
+
+
+  int (*trx_config_func)(openair0_device* device, openair0_config_t *openair0_cfg);
 
   /*! \brief Called to send a request message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target
@@ -398,6 +412,31 @@ struct openair0_device_t {
 typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg);
 /* type of transport init function, implemented in shared lib */
 typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
+#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
+#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
+#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
+#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
+
+#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
+#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
+#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
+#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
+
+#define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
+
+#define sample_t struct complex16 // 2*16 bits complex number
+
+typedef struct {
+  uint64_t magic;          // Magic value (see defines above)
+  uint32_t size;           // Number of samples per antenna to follow this header
+  uint32_t nbAnt;          // Total number of antennas following this header
+  // Samples per antenna follow this header,
+  // i.e. nbAnt = 2 => this header+samples_antenna_0+samples_antenna_1
+  // data following this header in bytes is nbAnt*size*sizeof(sample_t)
+  uint64_t timestamp;      // Timestamp value of first sample
+  uint32_t option_value;   // Option value
+  uint32_t option_flag;    // Option flag
+} samplesBlockHeader_t;
 
 #define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
 #define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record

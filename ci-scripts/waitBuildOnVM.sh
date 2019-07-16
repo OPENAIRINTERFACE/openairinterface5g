@@ -25,7 +25,7 @@ function wait_usage {
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo "   Default:"
     echo "     -- eNB with USRP"
     echo ""
@@ -33,28 +33,7 @@ function wait_usage {
     echo "------"
     echo "    oai-ci-vm-tool wait [OPTIONS]"
     echo ""
-    echo "Mandatory Options:"
-    echo "--------"
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    variant_usage
-    echo "    Specify the variant to build."
-    echo ""
-    echo "Options:"
-    echo "--------"
-    echo "    --keep-vm-alive OR -k"
-    echo "    Keep the VM alive after the build."
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
+    command_options_usage
 }
 
 function wait_on_vm_build {

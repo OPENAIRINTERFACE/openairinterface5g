@@ -138,6 +138,40 @@ mac_rrc_data_ind_ue(
    */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, 0, rntiP, frameP, sub_frameP,eNB_indexP);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+   if(srb_idP == BCCH_SI_MBMS) {
+      LOG_D(RRC,"[UE %d] Received SDU for BCCH on MBMS SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+
+#if defined(ENABLE_ITTI)
+      {
+        MessageDef *message_p;
+        int msg_sdu_size = sizeof(RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu);
+
+        if (sdu_lenP > msg_sdu_size) {
+          LOG_E(RRC, "SDU larger than BCCH SDU buffer size (%d, %d)", sdu_lenP, msg_sdu_size);
+          sdu_size = msg_sdu_size;
+        } else {
+          sdu_size = sdu_lenP;
+        }
+
+        message_p = itti_alloc_new_message (TASK_MAC_UE, RRC_MAC_BCCH_MBMS_DATA_IND);
+        memset (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, 0, BCCH_SDU_MBMS_SIZE);
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).frame     = frameP;
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sub_frame = sub_frameP;
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu_size  = sdu_size;
+        memcpy (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, sduP, sdu_size);
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).enb_index = eNB_indexP;
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrq      = 30 /* TODO change phy to report rspq */;
+        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrp      = 45 /* TODO change phy to report rspp */;
+
+        itti_send_msg_to_task (TASK_RRC_UE, ctxt.instance, message_p);
+      }
+#else
+      decode_BCCH_MBMS_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP, 0, 0);
+#endif
+    }
+#endif
+
   if(srb_idP == BCCH) {
     LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 #if defined(ENABLE_ITTI)

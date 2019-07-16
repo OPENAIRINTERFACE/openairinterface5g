@@ -567,6 +567,10 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   uint32_t                      lte_gold_uespec_table[2][20][2][21];
   /// mbsfn reference symbols
   uint32_t                      lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t                      lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
+#endif
   ///
   uint32_t                      X_u[64][839];
   ///
@@ -839,6 +843,10 @@ typedef struct {
   uint32_t                        lte_gold_uespec_table[2][20][2][21];
   //mbsfn reference symbols
   uint32_t                        lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
+#endif
   ///
   uint32_t                        X_u[64][839];
   /// 

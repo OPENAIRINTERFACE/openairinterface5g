@@ -86,6 +86,7 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RS_EPRE              "max_pdschReferenceSignalPower"
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
+#define CONFIG_STRING_RU_IS_SLAVE                 "is_slave"
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
 #define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
@@ -109,11 +110,12 @@ typedef enum {
 #define RU_ENB_LIST_IDX               14
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
-#define RU_NBIOTRRC_LIST_IDX          17
-#define RU_SDR_ADDRS                  18
-#define RU_SDR_CLK_SRC                19
-#define RU_SF_EXTENSION_IDX           20
-#define RU_END_OF_BURST_DELAY_IDX     21
+#define RU_IS_SLAVE_IDX               17
+#define RU_NBIOTRRC_LIST_IDX          18
+#define RU_SDR_ADDRS                  19
+#define RU_SDR_CLK_SRC                20
+#define RU_SF_EXTENSION_IDX           21
+#define RU_END_OF_BURST_DELAY_IDX     22
 
 
 
@@ -122,28 +124,29 @@ typedef enum {
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 #define RUPARAMS_DESC { \
-{CONFIG_STRING_RU_LOCAL_IF_NAME,            	 NULL,       0,       strptr:NULL,     defstrval:"lo",          TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_LOCAL_ADDRESS,            	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",	TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_REMOTE_ADDRESS,           	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",	TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_LOCAL_PORTC,              	 NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_REMOTE_PORTC,             	 NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_LOCAL_PORTD,              	 NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_REMOTE_PORTD,             	 NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_TRANSPORT_PREFERENCE,     	 NULL,       0,       strptr:NULL,     defstrval:"udp_if5",	    TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_LOCAL_RF,                 	 NULL,       0,       strptr:NULL,     defstrval:"yes", 	    TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_NB_TX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,		    TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_NB_RX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,		    TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_MAX_RS_EPRE,              	 NULL,       0,       iptr:NULL,       defintval:-29,		    TYPE_INT,	   0}, \
-{CONFIG_STRING_RU_MAX_RXGAIN,               	 NULL,       0,       iptr:NULL,       defintval:120,		    TYPE_INT,	   0}, \
-{CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFBANDS, TYPE_INTARRAY, 1}, \
-{CONFIG_STRING_RU_ENB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY, 1}, \
-{CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,				TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,				TYPE_UINT,	   0}, \
-{CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY, 1}, \
-{CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,   0}, \
-{CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,     0}, \
-{CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,     0}, \
+{CONFIG_STRING_RU_LOCAL_IF_NAME,            	 NULL,       0,       strptr:NULL,     defstrval:"lo",          TYPE_STRING,	  0}, \
+{CONFIG_STRING_RU_LOCAL_ADDRESS,            	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",   TYPE_STRING,	  0}, \
+{CONFIG_STRING_RU_REMOTE_ADDRESS,           	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",   TYPE_STRING,	  0}, \
+{CONFIG_STRING_RU_LOCAL_PORTC,              	 NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_REMOTE_PORTC,             	 NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_LOCAL_PORTD,              	 NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_REMOTE_PORTD,             	 NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_TRANSPORT_PREFERENCE,     	 NULL,       0,       strptr:NULL,     defstrval:"udp_if5",     TYPE_STRING,	  0}, \
+{CONFIG_STRING_RU_LOCAL_RF,                 	 NULL,       0,       strptr:NULL,     defstrval:"yes",         TYPE_STRING,	  0}, \
+{CONFIG_STRING_RU_NB_TX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,            TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_NB_RX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,            TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_MAX_RS_EPRE,              	 NULL,       0,       iptr:NULL,       defintval:-29,           TYPE_INT,         0}, \
+{CONFIG_STRING_RU_MAX_RXGAIN,               	 NULL,       0,       iptr:NULL,       defintval:120,           TYPE_INT,         0}, \
+{CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFBANDS, TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_ENB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,             TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,             TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -379,6 +382,10 @@ typedef enum {
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
 #define ENB_CONFIG_STRING_UE_MULTIPLE_MAX                               "ue_multiple_max"
+//SIB1-MBMS 
+#define ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL  			"mbms_dedicated_serving_cell"
+
+
 
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pdsch_maxNumRepetitionCEmodeA_r13"
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pdsch_maxNumRepetitionCEmodeB_r13"
@@ -431,7 +438,6 @@ typedef enum {
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF              "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_buf"
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE             "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_size"
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED  "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused"
-
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     component carriers configuration parameters                                                                                                     */
@@ -519,6 +525,7 @@ typedef struct ccparams_lte_s {
   int32_t           ue_TimersAndConstants_n311;
   int32_t           ue_TransmissionMode;
   int32_t           ue_multiple_max;
+  char             *mbms_dedicated_serving_cell;
   int32_t           srb1_timer_poll_retransmit;
   int32_t           srb1_timer_reordering;
   int32_t           srb1_timer_status_prohibit;
@@ -642,6 +649,7 @@ typedef struct ccparams_lte_s {
                           { .s5= {NULL }} ,						     \
                           { .s5= {NULL }} ,						     \
                           { .s5= {NULL }} ,						     \
+			  { .s5= {NULL }} ,				\
 			  { .s5= {NULL }}				\
 }
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -726,7 +734,8 @@ typedef struct ccparams_lte_s {
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ccparams.ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0}   \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           strptr:&ccparams.mbms_dedicated_serving_cell,  defstrval:"DISABLE",       TYPE_STRING,       0}  \
 }
 
 
@@ -807,6 +816,7 @@ typedef struct ccparams_lte_s {
 #define ENB_CONFIG_UETIMERS_N310_IDX 73
 #define ENB_CONFIG_UETIMERS_N311_IDX 74
 #define ENB_CONFIG_UE_TRANSMISSION_MODE_IDX 75
+#define ENB_CONFIG_MBMS_DEDICATED_SERVING_CELL_IDX	     76
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* SRB1 configuration parameters section name */

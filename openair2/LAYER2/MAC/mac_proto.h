@@ -68,6 +68,17 @@ void schedule_RA(module_id_t module_idP, frame_t frameP,
 void schedule_SI(module_id_t module_idP, frame_t frameP,
 		 sub_frame_t subframeP);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
+                sub_frame_t subframeP);
+#endif
+
+
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -540,6 +551,11 @@ void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
 void ue_decode_si(module_id_t module_idP, int CC_id, frame_t frame,
 		  uint8_t CH_index, void *pdu, uint16_t len);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frame,
+                 uint8_t CH_index, void *pdu, uint16_t len);
+#endif
+
 void ue_decode_p(module_id_t module_idP, int CC_id, frame_t frame,
 		 uint8_t CH_index, void *pdu, uint16_t len);
 
@@ -955,6 +971,12 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 @param sib1_ext_r13 SI Scheduling information for SI-BR UEs         
+@param mib_fembms pointer to FeMBMS MIB
+@param FeMBMS_Flag indicates FeMBMS transmission
+@param schedulingInfo_fembms pointer to FeMBMS SI Scheduling Information
+@param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config 
+@param sib1_mbms_r14_fembms pointer SI Scheduling infomration for SI-MBMS
+@param mbsfn_AreaInfoList_fembms pointer to FeMBMS MBSFN Area Info list from SIB1-MBMS
 */
 
 int rrc_mac_config_req_eNB(module_id_t module_idP,
@@ -1004,6 +1026,15 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   ,
 			   LTE_SystemInformationBlockType1_v1310_IEs_t *
 			   sib1_ext_r13
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           LTE_BCCH_DL_SCH_Message_MBMS_t * mib_fembms,
+                           LTE_SchedulingInfo_MBMS_r14_t * schedulingInfo_fembms,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_SystemInformationBlockType1_MBMS_r14_t *  sib1_mbms_r14_fembms,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
 #endif
     );
 
@@ -1068,6 +1099,12 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  ,const uint32_t * const sourceL2Id
 			  ,const uint32_t * const destinationL2Id
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
+#endif
 			  );
 
 
@@ -1116,6 +1153,7 @@ uint8_t getQm(uint8_t mcs);
 uint8_t subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
 			 sub_frame_t subframe);
 
+
 void get_srs_pos(COMMON_channels_t * cc, uint16_t isrs,
 		 uint16_t * psrsPeriodicity, uint16_t * psrsOffset);
 
@@ -1123,7 +1161,7 @@ void get_csi_params(COMMON_channels_t * cc,
 		    struct LTE_CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
 		    uint16_t * Npd, uint16_t * N_OFFSET_CQI, int *H);
 
-uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
+uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl_t * sched_ctl, int CC_idP,
 				 COMMON_channels_t * cc, uint8_t tmode,
 				 struct LTE_CQI_ReportPeriodic
 				 *cqi_ReportPeriodic);

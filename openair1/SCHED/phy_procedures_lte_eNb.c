@@ -868,7 +868,6 @@ uci_procedures(PHY_VARS_eNB *eNB,
                   uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
 #endif
 #endif
-
             if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
               if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
                 harq_ack[0] = 4; // DTX

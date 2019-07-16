@@ -973,8 +973,10 @@ pdcp_data_ind(
     dest_addr.sin_family      = AF_INET;
     dest_addr.sin_port        = udp_header->dest;
     dest_addr.sin_addr.s_addr = ip_header->daddr;
-    sendto(mbms_socket, &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset, MSG_DONTWAIT, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    packet_forwarded = TRUE;
+
+    sendto(mbms_socket, &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset, MSG_DONTWAIT, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
+    //packet_forwarded = TRUE;
+
   }
 
 #endif

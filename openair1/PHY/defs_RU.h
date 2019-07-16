@@ -180,11 +180,15 @@ typedef struct RU_proc_t_s {
   int instance_cnt_fep;
   /// \internal This variable is protected by \ref mutex_feptx
   int instance_cnt_feptx;
+  /// \internal This variable is protected by \ref mutex_ru_thread
+  int instance_cnt_ru;
   /// This varible is protected by \ref mutex_emulatedRF
   int instance_cnt_emulateRF;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
   pthread_t pthread_FH1;
+  /// pthread structure for RU control thread
+  pthread_t pthread_ctrl;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -208,6 +212,8 @@ typedef struct RU_proc_t_s {
   /// pthread attributes for RU FH processing thread
   pthread_attr_t attr_FH;
   pthread_attr_t attr_FH1;
+  /// pthread attributes for RU control thread
+  pthread_attr_t attr_ctrl;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -281,10 +287,14 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_fep;
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
+  /// mutex for ru_thread
+  pthread_mutex_t mutex_ru;
   /// mutex for emulated RF thread
   pthread_mutex_t mutex_emulateRF;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
+  /// time measurements for each subframe
+  struct timespec t[10];
   /// number of slave threads
   int num_slaves;
   /// array of pointers to slaves
@@ -334,6 +344,27 @@ typedef enum {
   //EMULATE_RF      =6
 } RU_if_south_t;
 
+
+typedef enum {
+  RU_IDLE       = 0,
+  RU_CONFIG     = 1,
+  RU_READY      = 2,
+  RU_RUN        = 3,
+  RU_ERROR      = 4,
+  RU_SYNC       = 5,
+  RU_CHECK_SYNC = 6
+} rru_state_t;
+
+
+/// Some commamds to RRU. Not sure we should do it like this !
+typedef enum {
+  EMPTY            = 0,
+  STOP_RU          = 1,
+  RU_FRAME_RESYNCH = 2,
+  WAIT_RESYNCH     = 3
+} rru_cmd_t;
+
+
 typedef struct RU_t_s{
   /// index of this ru
   uint32_t idx;
@@ -351,8 +382,24 @@ typedef struct RU_t_s{
   int in_synch;
   /// timing offset
   int rx_offset;        
+  /// south in counter
+  int south_in_cnt;
+  /// south out counter
+  int south_out_cnt;
+  /// north in counter
+  int north_in_cnt;
+  /// north out counter
+  int north_out_cnt;
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
+  int generate_dmrs_sync;
+  /// flag to indicate if the RU has a control channel
+  int has_ctrl_prt;
+  /// counter to delay start of processing of RU until HW settles
+  int wait_cnt;
+  /// counter to delay start of slave RUs until stable synchronization
+  int wait_check;
   /// Total gain of receive chain
   uint32_t rx_total_gain_dB;
   /// number of bands that this device can support
@@ -462,6 +509,7 @@ typedef struct RU_t_s{
   time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON common;
+  RU_CALIBRATION calibration;
   /// beamforming weight vectors per eNB
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
   /// beamforming weight vectors per gNB
@@ -474,24 +522,47 @@ typedef struct RU_t_s{
   uint8_t seqno;
   /// initial timestamp used as an offset make first real timestamp 0
   openair0_timestamp ts_offset;
+  /// Current state of the RU
+  rru_state_t state;
+  /// Command to do
+  rru_cmd_t cmd;
+  /// value to be passed using command
+  uint16_t cmdval;
   /// process scheduling variables
   RU_proc_t proc;
   /// stats thread pthread descriptor
   pthread_t ru_stats_thread;
+  /// OTA synchronization signal
+  int16_t *dmrssync;
+  /// OTA synchronization correlator output
+  uint64_t *dmrs_corr;
+  /// sleep time in us for delaying L1 wakeup
+  int wakeup_L1_sleeptime;
+  /// maximum number of sleeps
+  int wakeup_L1_sleep_cnt_max;
 } RU_t;
+
 
 typedef enum {
   RAU_tick=0,
   RRU_capabilities=1,
   RRU_config=2,
-  RRU_MSG_max_num=3
+  RRU_config_ok=3,
+  RRU_start=4,
+  RRU_stop=5,
+  RRU_sync_ok=6,
+  RRU_frame_resynch=7,
+  RRU_MSG_max_num=8,
+  RRU_check_sync = 9
 } rru_config_msg_type_t;
+
 
 typedef struct RRU_CONFIG_msg_s {
   rru_config_msg_type_t type;
   ssize_t len;
   uint8_t msg[MAX_RRU_CONFIG_SIZE];
 } RRU_CONFIG_msg_t;
+
 
 typedef enum {
   OAI_IF5_only      =0,
@@ -500,6 +571,7 @@ typedef enum {
   MBP_IF5           =3,
   MAX_FH_FMTs       =4
 } FH_fmt_options_t;
+
 
 typedef struct RRU_capabilities_s {
   /// Fronthaul format
@@ -523,6 +595,7 @@ typedef struct RRU_capabilities_s {
   /// max UL bandwidth (1,6,15,25,50,75,100)
   uint8_t          N_RB_UL[MAX_BANDS_PER_RRU];
 } RRU_capabilities_t;
+
 
 typedef struct RRU_config_s {
   /// Fronthaul format
@@ -560,6 +633,22 @@ typedef struct RRU_config_s {
   /// emtc_prach_ConfigIndex for IF4p5 per CE Level
   int emtc_prach_ConfigIndex[MAX_BANDS_PER_RRU][4];
 #endif
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
+  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU;
+  /// mutex for RU access to eNB processing (PRACH)
+  pthread_mutex_t mutex_RU_PRACH;
+  /// mutex for RU access to eNB processing (PRACH BR)
+  pthread_mutex_t mutex_RU_PRACH_br;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask[10];
+  /// time measurements for RU arrivals
+  struct timespec t[10];
+  /// Timing statistics (RU_arrivals)
+  time_stats_t ru_arrival_time;
+  /// mask for RUs serving eNB (PRACH)
+  int RU_mask_prach;
 } RRU_config_t;
 
 #endif //__PHY_DEFS_RU__H__

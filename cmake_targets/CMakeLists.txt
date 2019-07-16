@@ -174,7 +174,7 @@ set(CMAKE_C_FLAGS
 	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
 )
 set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D${MKVER}"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
 )
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
@@ -558,7 +558,7 @@ add_library(F1AP
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR" "OAI_SIMU")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR" "OAI_SIMU")
 if (NOT ${RF_BOARD} STREQUAL "None")
    add_definitions(-DMANAGED_RF=1)
 endif()
@@ -587,15 +587,6 @@ set (SHLIB_LOADER_SOURCES
 )
 # include RF devices / transport protocols library modules
 ######################################################################
-
-include_directories("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
-include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
-#set (option_HWEXMIMOLIB_lib "-l ")
-set(HWLIB_EXMIMO_SOURCE
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-#  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
-  )
-add_library(oai_exmimodevif MODULE ${HWLIB_EXMIMO_SOURCE} )
 
 include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
 set(HWLIB_USRP_SOURCE
@@ -636,20 +627,6 @@ set(HWLIB_IRIS_SOURCE
 add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
 target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.7/)
 target_link_libraries(oai_irisdevif SoapySDR)
-
-include_directories("${OPENAIR_TARGETS}/ARCH/mobipass/")
-set(TPLIB_MOBIPASS_SOURCE
-  ${OPENAIR_TARGETS}/ARCH/mobipass/interface.c
-  ${OPENAIR_TARGETS}/ARCH/mobipass/mobipass.c
-  ${OPENAIR_TARGETS}/ARCH/mobipass/queues.c
-  )
-add_library(oai_mobipass MODULE ${TPLIB_MOBIPASS_SOURCE} )
-
-# Hide all functions/variables in the mobipass library.
-# Use __attribute__((__visibility__("default")))
-# in the source code to unhide a function/variable.
-get_target_property(mobipas_cflags oai_mobipass COMPILE_FLAGS)
-set_target_properties(oai_mobipass PROPERTIES COMPILE_FLAGS "${mobipass_cflags} -fvisibility=hidden")
 
 # TCP bridge libraries
 ######################################################################
@@ -860,8 +837,6 @@ include_directories("${OPENAIR3_DIR}/UDP")
 include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
-include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
-include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
@@ -957,6 +932,7 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY/flexran_agent_phy.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc_internal.c
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
@@ -1329,13 +1305,13 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pcfich.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
+#  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_decoding.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/uci_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/freq_equalization.c
-  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_eNB.c
-  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.c
+#  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/freq_equalization.c
+#  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_eNB.c
+#  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_eNB_measurements.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   )
@@ -1343,6 +1319,11 @@ set(PHY_SRC
 set(PHY_SRC_RU
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/drs_modulation.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_eNB.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/freq_equalization.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_ul.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_nr.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ul_7_5_kHz.c
@@ -2126,10 +2107,6 @@ ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/bypass_session_layer.c
 #${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/emu_transport.c
 )
 
-add_library(OPENAIR0_LIB
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-)
-
 include_directories("${NFAPI_DIR}/nfapi/public_inc")
 include_directories("${NFAPI_DIR}/common/public_inc")
 include_directories("${NFAPI_DIR}/pnf/public_inc")
@@ -2276,11 +2253,11 @@ target_link_libraries(uescope ${XFORMS_LIBRARIES})
 add_library(gnbscope MODULE ${XFORMS_SOURCE_NR})
 target_link_libraries(gnbscope ${XFORMS_LIBRARIES})
 
+
 add_library(rfsimulator MODULE 
 	${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
 	)
 target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
-
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2332,8 +2309,9 @@ add_library(minimal_lib
   ${OPENAIR_DIR}/common/config/config_load_configmodule.c
   ${OPENAIR_DIR}/common/config/config_cmdline.c
   ${OPENAIR_DIR}/common/utils/minimal_stub.c
+  ${T_SOURCE}
   )
-target_link_libraries(minimal_lib pthread dl)
+target_link_libraries(minimal_lib pthread dl ${T_LIB})
 
 add_executable(replay_node
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/stored_node.c
@@ -2351,6 +2329,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/ru_control.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
@@ -2422,6 +2401,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/ru_control.c
   ${OPENAIR_TARGETS}/RT/USER/rfsim.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
@@ -2875,14 +2855,6 @@ if(OAI_NW_DRIVER_USE_NETLINK)
 endif()
 make_driver(oai_nw_drv ${OPENAIR2_DIR}/NETWORK_DRIVER/LTE ${oai_nw_drv_src})
 
-# Exmimo board drivers
-#########################
-list(APPEND openair_rf_src module_main.c irq.c fileops.c exmimo_fw.c)
-make_driver(openair_rf ${OPENAIR_TARGETS}/ARCH/EXMIMO/DRIVER/eurecom ${openair_rf_src})
-
-add_executable(updatefw
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw.c
-)
 
 # ue_ip: purpose ???
 ###############
@@ -2892,22 +2864,6 @@ if(OAI_NW_DRIVER_USE_NETLINK)
 endif()
 make_driver(ue_ip ${OPENAIR2_DIR}/NETWORK_DRIVER/UE_IP ${ue_ip_src})
 
-
-# OCTAVE tools
-###############
-set(OCT_INCL -I${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS -I${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB -I${OPENAIR_TARGETS}/ARCH/COMMON)
-set(OCT_LIBS -L${CMAKE_CURRENT_BINARY_DIR} -lm -lOPENAIR0_LIB)
-set(OCT_FLAGS -DEXMIMO)
-set(OCT_DIR ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/OCTAVE)
-set(OCT_FILES
-  oarf_config_exmimo.oct
-  oarf_config_exmimo.oct
-  oarf_get_frame.oct
-  oarf_stop.oct
-  oarf_send_frame.oct
-  oarf_get_num_detected_cards.oct
-  oarf_stop_without_reset.oct
-)
 
 foreach(file IN ITEMS ${OCT_FILES})
   string(REGEX REPLACE "oct *$" "cc" src ${file})

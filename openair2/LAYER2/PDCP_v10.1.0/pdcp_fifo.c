@@ -504,7 +504,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   //int optval;
   int bytes_received;
   sidelink_pc5s_element *sl_pc5s_msg_send = NULL;
-  pc5s_header_t *pc5s_header;
+  pc5s_header_t *pc5s_header = NULL;
   rb_id_t          rab_id  = 0;
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
@@ -680,6 +680,10 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
         break;
     } /* end of switch */
   }/* end of bytes_received > 0 */
+  if (pc5s_header != NULL) {
+    free(pc5s_header);
+    pc5s_header = NULL;
+  }
 } /* pdcp_fifo_read_input_sdus_frompc5s */
 
 //-----------------------------------------------------------------------------

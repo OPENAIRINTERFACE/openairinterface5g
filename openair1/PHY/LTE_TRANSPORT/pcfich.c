@@ -83,6 +83,8 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
 	subframe,num_pdcch_symbols,amp,frame_parms->nb_antenna_ports_eNB,frame_parms->Ncp);
 #endif
 
+  memset(pcfich_bt, 0, sizeof(pcfich_bt));
+
   // scrambling
   if ((num_pdcch_symbols>0) && (num_pdcch_symbols<4))
     pcfich_scrambling(frame_parms,subframe,pcfich_b[num_pdcch_symbols-1],pcfich_bt);

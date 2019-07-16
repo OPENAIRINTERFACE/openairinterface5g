@@ -423,14 +423,14 @@ function main() {
   echo_info "RF HW set to $HW" 
   # If the user doesn't specify the Linux scheduler to use, we set a value
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-  case "$HW" in
+      case "$HW" in
           "EXMIMO")
-		DEADLINE_SCHEDULER_FLAG_USER="True"
-		;;
+		      DEADLINE_SCHEDULER_FLAG_USER="True"
+		      ;;
           *)
-		DEADLINE_SCHEDULER_FLAG_USER="False"
-		;;
-  esac
+		      DEADLINE_SCHEDULER_FLAG_USER="False"
+		      ;;
+      esac
   fi
 
   #Disable CPU Affinity for deadline scheduler

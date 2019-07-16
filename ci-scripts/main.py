@@ -53,7 +53,8 @@ UE_IP_ADDRESS_ISSUE = -5
 OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE = -20
 OAI_UE_PROCESS_COULD_NOT_SYNC = -21
 OAI_UE_PROCESS_ASSERTION = -22
-OAI_UE_PROCESS_FAILED = -6
+OAI_UE_PROCESS_FAILED = -23
+OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
 OAI_UE_PROCESS_OK = +6
 
 #-----------------------------------------------------------
@@ -563,11 +564,11 @@ class SSHConnection():
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		rruCheck = False
-		result = re.search('rru|du', str(config_file))
+		result = re.search('rru|du.band', str(config_file))
 		if result is not None:
 			rruCheck = True
 		# do not reset board twice in IF4.5 case
-		result = re.search('rru|enb|du', str(config_file))
+		result = re.search('rru|enb|du.band', str(config_file))
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 30)
 			result = re.search('type: b200', str(self.ssh.before))
@@ -590,14 +591,13 @@ class SSHConnection():
 		self.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh ', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		#use nohup instead of daemon
-		#self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh' + ' > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log' + ' 2>&1 &', self.eNBUserName, 5)
-		if not rruCheck:
+		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		result = re.search('rcc|enb|cu.band', str(config_file))
+		if result is not None:
 			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
 			if extra_options != '':
 				self.eNBOptions = extra_options
-		result = re.search('rru|du', str(config_file))
+		result = re.search('rru|du.band', str(config_file))
 		if result is not None:
 			self.rruLogFile = 'enb_' + self.testCase_id + '.log'
 		time.sleep(6)
@@ -810,57 +810,24 @@ class SSHConnection():
 				result = re.search('inet addr', str(self.ssh.before))
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+					tunnelInterfaceStatus = True
 				else:
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
-
-		self.close()
-		# For the moment we are always OK!!!
-		self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
-		logging.debug('\u001B[1m Initialize OAI ' + UE_prefix + 'UE Completed\u001B[0m')
-
-	def InitializeOAIeNB(self):
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
-		if self.air_interface == 'lte':
-			nodeB_prefix = 'e'
-		else:
-			nodeB_prefix = 'g'
-		# Launch eNB with the modified config file
-		self.command('source oaienv', '\$', 5)
-		self.command('cd cmake_targets/ran_build/build', '\$', 5)
-		self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
-		self.command('echo "ulimit -c unlimited && ./' + self.air_interface + '-softmodem ' + self.Initialize_OAI_eNB_args + '|& tee ' + self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log', '\$', 5)
-		#use nohup instead of daemon
-		self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh' + ' > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log' + ' 2>&1 &', self.eNBUserName, 5)
-		#self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		time.sleep(6)
-		self.command('cd ../..', '\$', 5)
-		doLoop = True
-		loopCounter = 10
-		while (doLoop):
-			loopCounter = loopCounter - 1
-			if (loopCounter == 0):
-				self.close()
-				doLoop = False
-				logging.error('\u001B[1;37;41m ' + nodeB_prefix + 'NB logging system did not show got sync! \u001B[0m')
-				self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'KO', ALL_PROCESSES_OK, 'OAI eNB')
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
+					tunnelInterfaceStatus = False
 			else:
-				self.command('stdbuf -o0 cat ' + self.eNBLogFile + ' | egrep --text --color=never -i "wait|sync"', '\$', 30)
-				result = re.search('got sync', str(self.ssh.before))
-				if result is None:
-					time.sleep(11)
-				else:
-					doLoop = False
-					self.CreateHtmlTestRow(self.Initialize_OAI_eNB_args, 'OK', ALL_PROCESSES_OK, 'OAI eNB')
-					logging.debug('\u001B[1m Initialize OAI ' + nodeB_prefix + 'NB Completed\u001B[0m')
+				tunnelInterfaceStatus = True
+
 		self.close()
+		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
+			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+		else:
+			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
 
 	def checkDevTTYisUnlocked(self):
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1497,9 +1464,13 @@ class SSHConnection():
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			self.command('ifconfig oaitun_ue1', '\$', 4)
 			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
-			UE_IPAddress = result.group('ueipaddress')
-			logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
-			self.UEIPAddresses.append(UE_IPAddress)
+			if result is not None:
+				UE_IPAddress = result.group('ueipaddress')
+				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
+				self.UEIPAddresses.append(UE_IPAddress)
+			else:
+				logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
+				ue_ip_status -= 1
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -2595,6 +2566,7 @@ class SSHConnection():
 		pdcpFailure = 0
 		ulschFailure = 0
 		cdrxActivationMessageCount = 0
+		dropNotEnoughRBs = 0
 		self.htmleNBFailureMsg = ''
 		for line in enb_log_file.readlines():
 			if self.rruOptions != '':
@@ -2614,6 +2586,9 @@ class SSHConnection():
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./lte_build_oai/build/lte-softmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
@@ -2664,6 +2639,9 @@ class SSHConnection():
 			result = re.search('Canceled RA procedure for UE rnti', str(line))
 			if result is not None:
 				rachCanceledProcedure += 1
+			result = re.search('dropping, not enough RBs', str(line))
+			if result is not None:
+				dropNotEnoughRBs += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		self.htmleNBFailureMsg = ''
@@ -2681,6 +2659,10 @@ class SSHConnection():
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if dropNotEnoughRBs > 0:
+			statMsg = 'eNB showed ' + str(dropNotEnoughRBs) + ' "dropping, not enough RBs" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if rrcSetupComplete > 0:
@@ -2764,6 +2746,9 @@ class SSHConnection():
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./lte-uesoftmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
@@ -2969,8 +2954,8 @@ class SSHConnection():
 					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					return
-				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m')
-				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
+				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
+				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.CreateHtmlTabFooter(False)
@@ -3588,7 +3573,7 @@ class SSHConnection():
 				if result is not None:
 					cellBgColor = 'red'
 				else:
-					result = re.search('showed|Could not copy UE logfile|No Log File to analyze', self.htmlUEFailureMsg)
+					result = re.search('showed|Could not copy UE logfile|oaitun_ue1 interface is either NOT mounted or NOT configured', self.htmlUEFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
 				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
@@ -4099,8 +4084,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.InitializeOAIUE()
 			elif action == 'Terminate_OAI_UE':
 				SSH.TerminateOAIUE()
-			elif action == 'Initialize_OAI_eNB':
-				SSH.InitializeOAIeNB()
 			elif action == 'Initialize_CatM_module':
 				SSH.InitializeCatM()
 			elif action == 'Terminate_CatM_module':

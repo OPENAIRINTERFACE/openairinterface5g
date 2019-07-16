@@ -45,6 +45,7 @@
 
 #define RF
 
+//#define DEBUG_SIM 1
 
 
 
@@ -116,7 +117,8 @@ void do_DL_sig(sim_t *sim,
     
     //    sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
     sf_offset = (subframe*frame_parms->samples_per_tti);
-    LOG_D(OCM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
+    for (int aid=0;aid<RC.ru[ru_id]->nb_tx;aid++)
+      LOG_D(OCM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX%d for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,aid,subframe,sf_offset,length,txdata[0]+sf_offset); 
     int length_meas = frame_parms->ofdm_symbol_size;
     if (sf_offset+length <= frame_parms->samples_per_tti*10) {
       
@@ -165,8 +167,9 @@ void do_DL_sig(sim_t *sim,
 			      frame_parms->N_RB_DL*12);
     }
 #ifdef DEBUG_SIM
-    LOG_D(OCM,"[SIM][DL] subframe %d: txp (time) %d dB\n",
-	  subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],length_meas)));
+    for (int aid=0;aid<RC.ru[ru_id]->nb_tx;aid++)
+      LOG_D(OCM,"[SIM][DL] subframe %d: txp%d (time) %d dB\n",
+	    subframe,aid,dB_fixed(signal_energy(&txdata[aid][sf_offset],length_meas)));
     
     LOG_D(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",
 	  ru_id,CC_id,

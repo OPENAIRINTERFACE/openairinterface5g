@@ -450,7 +450,7 @@ int config_setdefault_double(paramdef_t *cfgoptions, char *prefix) {
   config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double));
 
   if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
-    *(cfgoptions->u64ptr)=cfgoptions->defdblval;
+    *(cfgoptions->dblptr)=cfgoptions->defdblval;
     status=1;
     printf_params("[CONFIG] %s set to default value %lf\n",cfgoptions->optname , *(cfgoptions->dblptr));
   }

@@ -61,6 +61,8 @@
 
 #define MAX_PAYLOAD 1024 /* maximum payload size*/
 
+#define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
+
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -404,13 +406,25 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t SIB1systemInfoValueTag_MBMS;
+  uint32_t SIStatus_MBMS;
+  uint32_t SIcnt_MBMS;
+#endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+#endif
+
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
   uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
+#endif
   unsigned short UE_index;
   uint32_t T300_active;
   uint32_t T300_cnt;
@@ -464,6 +478,73 @@ typedef struct HANDOVER_INFO_s {
   int size;   /* size of above message in bytes */
   int x2_id;   /* X2AP UE ID in the target eNB */
 } HANDOVER_INFO;
+
+typedef struct PER_EVENT_s {
+  long maxReportCells;
+} PER_EVENT_t;
+
+typedef struct A1_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A1_EVENT_t;
+
+typedef struct A2_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A2_EVENT_t;
+
+typedef struct A3_EVENT_s {
+  long a3_offset;
+  int reportOnLeave;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A3_EVENT_t;
+
+
+typedef struct A4_EVENT_s {
+  long threshold_RSRP;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A4_EVENT_t;
+
+typedef struct A5_EVENT_s {
+  long threshold_RSRP_1;
+  long threshold_RSRP_2;
+  long hysteresis;
+  long timeToTrigger;
+  long maxReportCells;
+} A5_EVENT_t;
+
+typedef struct EVENTS_s {
+  PER_EVENT_t *per_event;
+
+  A1_EVENT_t *a1_event;
+
+  A2_EVENT_t *a2_event;
+
+  A3_EVENT_t *a3_event;
+
+  A4_EVENT_t *a4_event;
+
+  A5_EVENT_t *a5_event;
+} EVENTS_t;
+
+typedef struct MEASUREMENT_INFO_s {
+  //TODO: Extend to multiple meas objects for OFP/OFN offsets
+  long  offsetFreq;
+  //TODO: extend to multiple carriers for OCP/OCN offsets
+  long cellIndividualOffset[MAX_NUM_NEIGH_CELLs+1];
+  long filterCoefficientRSRP;
+  long filterCoefficientRSRQ;
+  EVENTS_t *events;
+} MEASUREMENT_INFO;
+
 
 #define RRC_HEADER_SIZE_MAX 64
 #define RRC_BUFFER_SIZE_MAX 1024
@@ -547,6 +628,7 @@ typedef struct eNB_RRC_UE_s {
   SRB_INFO_TABLE_ENTRY               Srb2;
   LTE_MeasConfig_t                  *measConfig;
   HANDOVER_INFO                     *handover_info;
+  MEASUREMENT_INFO                  *measurement_info;
   LTE_MeasResults_t                 *measResults;
   LTE_MobilityControlInfo_t         *mobilityInfo;
 
@@ -656,6 +738,10 @@ typedef struct {
   uint8_t                           sizeof_SIB1_BR;
   uint8_t                           *SIB23_BR;
   uint8_t                           sizeof_SIB23_BR;
+  uint8_t                           *MIB_FeMBMS;
+  uint8_t                           sizeof_MIB_FeMBMS;
+  uint8_t                           *SIB1_MBMS;
+  uint8_t                           sizeof_SIB1_MBMS;
 #endif
   int                                   physCellId;
   int                                   Ncp;
@@ -673,12 +759,20 @@ typedef struct {
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
   //  SystemInformation_t               systemInformation;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_BCCH_BCH_Message_MBMS_t            mib_fembms;
+  LTE_BCCH_DL_SCH_Message_MBMS_t         siblock1_MBMS;
+  LTE_BCCH_DL_SCH_Message_MBMS_t         systemInformation_MBMS;
+#endif
   LTE_SystemInformationBlockType1_t     *sib1;
   LTE_SystemInformationBlockType2_t     *sib2;
   LTE_SystemInformationBlockType3_t     *sib3;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType1_t     *sib1_BR;
   LTE_SystemInformationBlockType2_t     *sib2_BR;
+  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS;
+  LTE_SystemInformationBlockType13_r9_t *sib13_MBMS;
+  uint8_t				FeMBMS_flag;
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13;
@@ -732,6 +826,14 @@ typedef struct eNB_RRC_INST_s {
   /// NR cell id
   uint64_t nr_cellid;
 
+  // X2 handover controlled by network
+  int x2_ho_net_control;
+
+  // Neighborouring cells id
+  int num_neigh_cells;
+  int num_neigh_cells_cc[MAX_NUM_CCs];
+  uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;
@@ -774,8 +876,22 @@ typedef struct UE_RRC_INST_s {
   uint8_t sizeof_SI[NB_CNX_UE];
   uint8_t SIB1Status[NB_CNX_UE];
   uint8_t SIStatus[NB_CNX_UE];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t *SIB1_MBMS[NB_CNX_UE];
+  uint8_t sizeof_SIB1_MBMS[NB_CNX_UE];
+  uint8_t *SI_MBMS[NB_CNX_UE];
+  uint8_t sizeof_SI_MBMS[NB_CNX_UE];
+  uint8_t SIB1Status_MBMS[NB_CNX_UE];
+  uint8_t SIStatus_MBMS[NB_CNX_UE];
+#endif
   LTE_SystemInformationBlockType1_t *sib1[NB_CNX_UE];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS[NB_CNX_UE];
+#endif
   LTE_SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformation_MBMS_r14_t *si_MBMS[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
+#endif
   LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   LTE_SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   LTE_SystemInformationBlockType4_t *sib4[NB_CNX_UE];
@@ -816,6 +932,10 @@ typedef struct UE_RRC_INST_s {
   LTE_MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];
   LTE_SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   LTE_SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformationBlockType13_r9_t *sib13_MBMS[NB_CNX_UE];
+  uint8_t 			  	FeMBMS_flag;
 #endif
 #ifdef CBA
   uint8_t                         num_active_cba_groups;

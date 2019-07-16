@@ -305,3 +305,15 @@ message flex_mac_sdus_dl {
     optional uint32 sdu_length = 1; 
     optional uint32 lcid = 2;
 }
+
+//
+// GTP stats
+//
+
+message flex_gtp_stats {
+    optional uint32 e_rab_id = 1;
+    optional uint32 teid_enb = 2;
+    optional string addr_enb = 3;
+    optional uint32 teid_sgw = 4;
+    optional string addr_sgw = 5;
+}

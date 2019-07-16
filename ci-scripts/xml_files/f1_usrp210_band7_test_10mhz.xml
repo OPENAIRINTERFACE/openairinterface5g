@@ -27,10 +27,16 @@
 	<TestCaseRequestedList>
  030201
  040101
- 030152 030151 040301 040551 040611 040651 040401 040201 030201 030202
+ 030152 030151 000002 040301 000002 040551 040611 040651 040401 040201 030201 030202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
 
 	<testCase id="030151">
 		<class>Initialize_eNB</class>

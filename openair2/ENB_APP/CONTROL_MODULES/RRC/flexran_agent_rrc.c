@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */ 
 
-/*! \file flexran_agent_mac.c
+/*! \file flexran_agent_rrc.c
  * \brief FlexRAN agent Control Module RRC 
  * \author shahab SHARIAT BAGHERI
  * \date 2017
@@ -130,6 +130,18 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
   free(msg->ue_state_change_msg->header);
   if (msg->ue_state_change_msg->config->capabilities)
     free(msg->ue_state_change_msg->config->capabilities);
+  if (msg->ue_state_change_msg->config->info) {
+    if (msg->ue_state_change_msg->config->info->cell_individual_offset) {
+      free(msg->ue_state_change_msg->config->info->cell_individual_offset);
+    }
+    if (msg->ue_state_change_msg->config->info->event) {
+      if (msg->ue_state_change_msg->config->info->event->a3) {
+        free(msg->ue_state_change_msg->config->info->event->a3);
+      }
+      free(msg->ue_state_change_msg->config->info->event);
+    }
+    free(msg->ue_state_change_msg->config->info);
+  }
   free(msg->ue_state_change_msg->config);
   free(msg->ue_state_change_msg);
   free(msg);
@@ -381,7 +393,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS) {
       	
-        /*Source Cell*/
+        /*Source cell EUTRA Measurements*/
         Protocol__FlexRrcMeasurements *rrc_measurements;
       	rrc_measurements = malloc(sizeof(Protocol__FlexRrcMeasurements));
       	if (rrc_measurements == NULL)
@@ -397,145 +409,239 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id, rnti);
       	rrc_measurements->has_pcell_rsrq = 1 ;
         
-        /* Target Cell, Neghibouring*/
+        /* Neighbouring cells EUTRA Measurements*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;
         neigh_meas = malloc(sizeof(Protocol__FlexNeighCellsMeasurements));
-        if (neigh_meas == NULL)
+        if (neigh_meas == NULL) {
+          free(rrc_measurements);
+          rrc_measurements = NULL;
           goto error;
+        }
         protocol__flex_neigh_cells_measurements__init(neigh_meas);
-         
         
         neigh_meas->n_eutra_meas = flexran_get_rrc_num_ncell(mod_id, rnti);
 
         Protocol__FlexEutraMeasurements **eutra_meas = NULL;
 
-        if (neigh_meas->n_eutra_meas > 0){
-          
+        if (neigh_meas->n_eutra_meas > 0) {
           eutra_meas = malloc(sizeof(Protocol__FlexEutraMeasurements) * neigh_meas->n_eutra_meas);
-          if (eutra_meas == NULL)
+          if (eutra_meas == NULL) {
+            free(neigh_meas);
+            free(rrc_measurements);
+            rrc_measurements = NULL;
             goto error;
+          }
           
-          for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ){
+          for (int j = 0; j < neigh_meas->n_eutra_meas; j++ ) {
+            eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
+            if (eutra_meas[j] == NULL) {
+              for (int k = 0 ; k < j ; k++)
+                free(eutra_meas[k]);
+              free(eutra_meas);
+              free(neigh_meas);
+              free(rrc_measurements);
+              rrc_measurements = NULL;
+              goto error;
+            }
+            protocol__flex_eutra_measurements__init(eutra_meas[j]);
 
-              eutra_meas[j] = malloc(sizeof(Protocol__FlexEutraMeasurements));
-              if (eutra_meas[j] == NULL) {
-                for (int k = 0 ; k < j ; k++) {
-                  free(eutra_meas[k]);
-                }
-                free(eutra_meas);
-                goto error;
-              }
+            /* Fill in the physical cell identifier. */
+            eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
+            eutra_meas[j]->has_phys_cell_id = 1;
 
-              protocol__flex_eutra_measurements__init(eutra_meas[j]);
+            /* The following is not correctly implemented */
+            //if (flexran_get_rrc_neigh_cgi(mod_id, rnti, j)) {
+            //  /* Initialize CGI measurements. */
+            //  Protocol__FlexEutraCgiMeasurements *cgi_meas;
+            //  cgi_meas = malloc(sizeof(Protocol__FlexEutraCgiMeasurements));
 
-              eutra_meas[j]->phys_cell_id = flexran_get_rrc_neigh_phy_cell_id(mod_id, rnti, j);
-              eutra_meas[j]->has_phys_cell_id = 1;
+            //  if (cgi_meas) {
+            //    protocol__flex_eutra_cgi_measurements__init(cgi_meas);
 
+            //    cgi_meas->tracking_area_code = flexran_get_rrc_neigh_cgi_tac(mod_id, rnti, j);
+            //    cgi_meas->has_tracking_area_code = 1;
 
-              /*TODO: Extend for CGI and PLMNID*/
+            //    /* EUTRA Cell Global Identity (CGI) */
+            //    Protocol__FlexCellGlobalEutraId *cgi;
+            //    cgi = malloc(sizeof(Protocol__FlexCellGlobalEutraId));
 
-              Protocol__FlexEutraRefSignalMeas *meas_result;
-              meas_result = malloc(sizeof(Protocol__FlexEutraRefSignalMeas));
+            //    if (cgi) {
+            //      protocol__flex_cell_global_eutra_id__init(cgi);
 
-              protocol__flex_eutra_ref_signal_meas__init(meas_result);     
+            //      cgi->cell_id = flexran_get_rrc_neigh_cgi_cell_id(mod_id, rnti, j);
+            //      cgi->has_cell_id = 1;
 
-              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+            //      /* PLMN for neighbouring cell */
+            //      Protocol__FlexPlmnIdentity *plmn_id;
+            //      plmn_id = malloc(sizeof(Protocol__FlexPlmnIdentity));
+
+            //      if (plmn_id) {
+            //        protocol__flex_plmn_identity__init(plmn_id);
+
+            //        plmn_id->mcc = 0;
+            //        plmn_id->n_mcc = flexran_get_rrc_neigh_cgi_num_mcc(mod_id, rnti, j);
+
+            //        for (int m = 0; m < plmn_id->n_mcc; m++) {
+            //          plmn_id->mcc += flexran_get_rrc_neigh_cgi_mcc(mod_id, rnti, j, m);
+            //        }
+
+            //        plmn_id->mnc = 0;
+            //        plmn_id->n_mnc = flexran_get_rrc_neigh_cgi_num_mnc(mod_id, rnti, j);
+
+            //        for (int m = 0; m < plmn_id->n_mnc; m++) {
+            //          plmn_id->mnc += flexran_get_rrc_neigh_cgi_mnc(mod_id, rnti, j, m);
+            //        }
+
+            //        cgi->plmn_id = plmn_id;
+            //      }
+            //      cgi_meas->cgi = cgi;
+            //    }
+            //    eutra_meas[j]->cgi_meas = cgi_meas;
+            //  }
+            //}
+
+            /*RSRP/RSRQ of the neighbouring cell */
+            Protocol__FlexEutraRefSignalMeas *meas_result;
+            meas_result = malloc(sizeof(Protocol__FlexEutraRefSignalMeas));
+
+            if (meas_result) {
+              protocol__flex_eutra_ref_signal_meas__init(meas_result);
+
+              meas_result->rsrp = flexran_get_rrc_neigh_rsrp(mod_id, rnti, j);
               meas_result->has_rsrp = 1;
 
-              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, eutra_meas[j]->phys_cell_id);
+              meas_result->rsrq = flexran_get_rrc_neigh_rsrq(mod_id, rnti, j);
               meas_result->has_rsrq = 1;
 
               eutra_meas[j]->meas_result = meas_result;
-             
-          }    
+            }
+          }
 
-           neigh_meas->eutra_meas = eutra_meas;   
+          neigh_meas->eutra_meas = eutra_meas;
 
-           rrc_measurements->neigh_meas = neigh_meas;
-       
+          rrc_measurements->neigh_meas = neigh_meas;
+        } else {
+           free(neigh_meas);
         }
 
-      	 ue_report[i]->rrc_measurements = rrc_measurements;
-         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
-      	
+        ue_report[i]->rrc_measurements = rrc_measurements;
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
       }
-
-    } 
-
+    }
   }
-
-  /* To be considered for RRC signaling of cell*/ 
-  // if (report_config->nr_cc > 0) { 
-    
-            
-  //           // Fill in the Cell reports
-  //           for (i = 0; i < report_config->nr_cc; i++) {
-
-
-  //                     /* Check flag for creation of noise and interference report */
-  //                     if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
-  //                           // TODO: Fill in the actual noise and interference report for this cell
-  //                           Protocol__FlexNoiseInterferenceReport *ni_report;
-  //                           ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
-  //                           if(ni_report == NULL)
-  //                             goto error;
-  //                           protocol__flex_noise_interference_report__init(ni_report);
-  //                           // Current frame and subframe number
-  //                           ni_report->sfn_sf = flexran_get_sfn_sf(enb_id);
-  //                           ni_report->has_sfn_sf = 1;
-  //                           //TODO:Received interference power in dbm
-  //                           ni_report->rip = 0;
-  //                           ni_report->has_rip = 1;
-  //                           //TODO:Thermal noise power in dbm
-  //                           ni_report->tnp = 0;
-  //                           ni_report->has_tnp = 1;
-
-  //                           ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
-  //                           ni_report->has_p0_nominal_pucch = 1;
-  //                           cell_report[i]->noise_inter_report = ni_report;
-  //                           cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
-  //                     }
-  //           }
-            
-
-      
-            
-  // }
-
   return 0;
-
  error:
-
-  for (int i = 0; i < report_config->nr_ue; i++){
-
-      if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL){
-          for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
-
-             free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
-        }
-        free(ue_report[i]->rrc_measurements->neigh_meas);
+  for (int i = 0; i < report_config->nr_ue; i++) {
+    if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL) {
+      for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
+        free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
       }
+    free(ue_report[i]->rrc_measurements->neigh_meas);
+    }
   }
 
   if (cell_report != NULL)
-        free(cell_report);
+    free(cell_report);
   if (ue_report != NULL)
-        free(ue_report);
-
+    free(ue_report);
   return -1;
 }
 
 int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
 {
   for (int i = 0; i < reply->n_ue_report; i++){
-    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas){
-      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
-        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas) {
+      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++) {
+        //if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas) {
+        //  if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi) {
+        //    if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->plmn_id) {
+        //      free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi->plmn_id);
+        //    }
+        //    free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas->cgi);
+        //  }
+        //  free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->cgi_meas);
+        //}
+        if (reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result)  {
+          free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+        }
         free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
       }
       free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas);
       free(reply->ue_report[i]->rrc_measurements->neigh_meas);
       free(reply->ue_report[i]->rrc_measurements);
+    }
+  }
+  return 0;
+}
+
+int flexran_agent_rrc_gtp_stats_reply(mid_t mod_id,
+      const report_config_t *report_config,
+      Protocol__FlexUeStatsReport **ue_report,
+      Protocol__FlexCellStatsReport **cell_report) {
+  /* This function fills the GTP part of the statistics. The necessary
+   * information is, for our purposes, completely maintained in the RRC layer.
+   * It would be possible to add a GTP module that handles this, though. */
+  if (report_config->nr_ue > 0) {
+    rnti_t rntis[report_config->nr_ue];
+    flexran_get_rrc_rnti_list(mod_id, rntis, report_config->nr_ue);
+    for (int i = 0; i < report_config->nr_ue; i++) {
+      const rnti_t rnti = rntis[i];
+
+      /* Check flag for creation of buffer status report */
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_GTP_STATS) {
+
+        /* get number of rabs for this UE */
+        const int num_e_rab = flexran_agent_rrc_gtp_num_e_rab(mod_id, rnti);
+        Protocol__FlexGtpStats **gtp_stats = NULL;
+        if (num_e_rab > 0) {
+          gtp_stats = calloc(num_e_rab, sizeof(Protocol__FlexGtpStats *));
+          if (!gtp_stats) goto error;
+          for (int r = 0; r < num_e_rab; ++r) {
+            gtp_stats[r] = malloc(sizeof(Protocol__FlexGtpStats));
+            if (!gtp_stats[r]) goto error;
+            protocol__flex_gtp_stats__init(gtp_stats[r]);
+            gtp_stats[r]->e_rab_id = flexran_agent_rrc_gtp_get_e_rab_id(mod_id, rnti, r);
+            gtp_stats[r]->has_e_rab_id = 1;
+            gtp_stats[r]->teid_enb = flexran_agent_rrc_gtp_get_teid_enb(mod_id, rnti, r);
+            gtp_stats[r]->has_teid_enb = 1;
+            gtp_stats[r]->addr_enb = NULL;
+            gtp_stats[r]->teid_sgw = flexran_agent_rrc_gtp_get_teid_sgw(mod_id, rnti, r);
+            gtp_stats[r]->has_teid_sgw = 1;
+            gtp_stats[r]->addr_sgw = NULL;
+          }
+        }
+        ue_report[i]->n_gtp_stats = num_e_rab;
+        ue_report[i]->gtp_stats = gtp_stats;
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_GTP_STATS;
+      }
+    }
+  }
+  return 0;
+error:
+  for (int i = 0; i < report_config->nr_ue; i++) {
+    if (!ue_report[i]->gtp_stats) continue;
+    for (int r = 0; r < ue_report[i]->n_gtp_stats; ++r) {
+      if (ue_report[i]->gtp_stats[r]) {
+        free(ue_report[i]->gtp_stats[r]);
+        ue_report[i]->gtp_stats[r] = NULL;
+      }
+    }
+    free(ue_report[i]->gtp_stats);
+    ue_report[i]->gtp_stats = NULL;
+  }
+  return -1;
+}
+
+int flexran_agent_rrc_gtp_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
+  for (int i = 0; i < reply->n_ue_report; ++i) {
+    if (!reply->ue_report[i]->n_gtp_stats == 0) continue;
+
+    for (int r = 0; r < reply->ue_report[i]->n_gtp_stats; ++r) {
+      //if (reply->ue_report[i]->gtp_stats[r]->addr_enb)
+      //  free(reply->ue_report[i]->gtp_stats[r]->addr_enb);
+      //if (reply->ue_report[i]->gtp_stats[r]->addr_sgw)
+      //  free(reply->ue_report[i]->gtp_stats[r]->addr_sgw);
+      free(reply->ue_report[i]->gtp_stats[r]);
     }
   }
   return 0;
@@ -639,6 +745,76 @@ void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
 
   ue_conf->has_extended_bsr_size = 1;
   ue_conf->extended_bsr_size = flexran_get_extended_bsr_size(mod_id, rnti);
+
+  Protocol__FlexMeasurementInfo *meas_info;
+  meas_info = malloc(sizeof(Protocol__FlexMeasurementInfo));
+
+  if (meas_info) {
+    protocol__flex_measurement_info__init(meas_info);
+
+    meas_info->has_offset_freq_serving = 1;
+    meas_info->offset_freq_serving = flexran_get_rrc_ofp(mod_id, rnti);
+
+    meas_info->has_offset_freq_neighbouring = 1;
+    meas_info->offset_freq_neighbouring = flexran_get_rrc_ofn(mod_id, rnti);
+
+    int num_adj_cells = flexran_get_rrc_num_adj_cells(mod_id);
+    meas_info->n_cell_individual_offset = num_adj_cells + 1;
+
+    int64_t *cell_individual_offset;
+    if (num_adj_cells > 0) {
+      cell_individual_offset = malloc(sizeof(int64_t)*(num_adj_cells+1));
+      if (cell_individual_offset) {
+        cell_individual_offset[0] = flexran_get_rrc_ocp(mod_id, rnti);
+        for (int i=0; i < num_adj_cells; i++) {
+          cell_individual_offset[i+1] = flexran_get_rrc_ocn(mod_id, rnti,i);
+        }
+        meas_info->cell_individual_offset = cell_individual_offset;
+      }
+    }
+    else {
+      cell_individual_offset = malloc(sizeof(int64_t));
+      if (cell_individual_offset) {
+        *cell_individual_offset = flexran_get_rrc_ocp(mod_id, rnti);
+        meas_info->cell_individual_offset = cell_individual_offset;
+      }
+    }
+
+    meas_info->has_filter_coefficient_rsrp = 1;
+    meas_info->filter_coefficient_rsrp = flexran_get_filter_coeff_rsrp(mod_id, rnti);
+
+    meas_info->has_filter_coefficient_rsrq = 1;
+    meas_info->filter_coefficient_rsrq = flexran_get_filter_coeff_rsrq(mod_id, rnti);
+
+    Protocol__FlexMeasurementEvent *event;
+    event = malloc(sizeof(Protocol__FlexMeasurementEvent));
+
+    if (event) {
+      protocol__flex_measurement_event__init(event);
+      Protocol__FlexA3Event *a3_event;
+      a3_event = malloc(sizeof(Protocol__FlexA3Event));
+      if (a3_event) {
+        protocol__flex_a3_event__init(a3_event);
+        a3_event->has_a3_offset = 1;
+        a3_event->a3_offset = flexran_get_rrc_a3_event_a3_offset(mod_id, rnti);
+
+        a3_event->has_report_on_leave = 1;
+        a3_event->report_on_leave = flexran_get_rrc_a3_event_reportOnLeave(mod_id, rnti);
+
+        a3_event->has_hysteresis = 1;
+        a3_event->hysteresis = flexran_get_rrc_a3_event_hysteresis(mod_id, rnti);
+
+        a3_event->has_time_to_trigger = 1;
+        a3_event->time_to_trigger = flexran_get_rrc_a3_event_timeToTrigger(mod_id, rnti);
+
+        a3_event->has_max_report_cells = 1;
+        a3_event->max_report_cells = flexran_get_rrc_a3_event_maxReportCells(mod_id, rnti);
+        event->a3 = a3_event;
+      }
+      meas_info->event = event;
+    }
+    ue_conf->info = meas_info;
+  }
 }
 
 int flexran_agent_register_rrc_xface(mid_t mod_id)
@@ -730,6 +906,9 @@ void flexran_agent_fill_rrc_cell_config(mid_t mod_id, uint8_t cc_id,
   } else {
     conf->n_plmn_id = 0;
   }
+
+  conf->x2_ho_net_control = flexran_get_x2_ho_net_control(mod_id);
+  conf->has_x2_ho_net_control = 1;
 }
 
 int flexran_agent_unregister_rrc_xface(mid_t mod_id)

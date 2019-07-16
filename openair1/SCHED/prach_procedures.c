@@ -59,7 +59,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
   int br_flag
 #endif
                      ) {
-  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
+  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
   uint16_t i;
   int frame,subframe;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -106,18 +106,21 @@ void prach_procedures(PHY_VARS_eNB *eNB
            &max_preamble[0],
            &max_preamble_energy[0],
            &max_preamble_delay[0],
+	   &avg_preamble_energy[0],
            frame,
            0
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
            ,br_flag
 #endif
           );
-  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : BR %d  Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
+  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : BR %d  Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d), threshold %d, I0 %d\n",
         frame,subframe,br_flag,
         max_preamble[0],
         max_preamble_energy[0]/10,
         max_preamble_delay[0],
-        eNB->prach_energy_counter);
+        eNB->prach_energy_counter,
+	eNB->measurements.prach_I0+eNB->prach_DTX_threshold,
+	eNB->measurements.prach_I0);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (br_flag==1) {
@@ -201,7 +204,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
       pthread_mutex_unlock(&eNB->UL_INFO_mutex);
     } // max_preamble_energy > prach_I0 + 100
     else {
-      eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10);
+      eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((avg_preamble_energy[0]*124)>>10);
 
       if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
 

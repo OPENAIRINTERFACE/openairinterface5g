@@ -45,6 +45,7 @@ message flex_cell_config {
 	repeated flex_plmn plmn_id = 40;                   // The PLMN cell id of this cell
 
 	optional flex_slice_config slice_config = 42;
+        optional bool x2_ho_net_control = 43;
 }
 
 message flex_slice_config {
@@ -97,6 +98,8 @@ message flex_ue_config {
 	optional uint64 imsi = 30;
 	optional uint32 dl_slice_id = 31;
 	optional uint32 ul_slice_id = 32;
+  // Configuration about RRC measurements
+  optional flex_measurement_info info = 33;
 }
 
 message flex_lc_ue_config {

@@ -291,6 +291,7 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
 
   x2ap_eNB_instance_t                *instance_p;
   x2ap_eNB_data_t                    *x2ap_eNB_data;
+  MessageDef                         *msg;
   uint32_t                           eNB_id = 0;
 
   DevAssert (pdu != NULL);
@@ -391,16 +392,24 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   }
+
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_SETUP_REQ);
+
+  X2AP_SETUP_REQ(msg).num_cc = ie->value.choice.ServedCells.list.count;
+
   if (ie->value.choice.ServedCells.list.count > 0) {
     x2ap_eNB_data->num_cc = ie->value.choice.ServedCells.list.count;
     for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
       servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
       x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedCellInfo.pCI;
+      X2AP_SETUP_REQ(msg).Nid_cell[i] = x2ap_eNB_data->Nid_cell[i];
     }
   }
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
@@ -418,6 +427,7 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
 
   x2ap_eNB_instance_t                 *instance_p;
   x2ap_eNB_data_t                     *x2ap_eNB_data;
+  MessageDef                          *msg;
   uint32_t                            eNB_id = 0;
 
   DevAssert (pdu != NULL);
@@ -500,11 +510,16 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
     return -1;
   }
 
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_SETUP_RESP);
+
+  X2AP_SETUP_RESP(msg).num_cc = ie->value.choice.ServedCells.list.count;
+
   if (ie->value.choice.ServedCells.list.count > 0) {
     x2ap_eNB_data->num_cc = ie->value.choice.ServedCells.list.count;
     for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
       servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
       x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedCellInfo.pCI;
+      X2AP_SETUP_RESP(msg).Nid_cell[i] = x2ap_eNB_data->Nid_cell[i];
     }
   }
 
@@ -520,6 +535,8 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
 
   instance_p->x2_target_enb_associated_nb ++;
   x2ap_handle_x2_setup_message(instance_p, x2ap_eNB_data, 0);
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
   return 0;
 }
@@ -785,6 +802,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring handover response\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
@@ -873,6 +891,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
     X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring UE context release\n",
               id_source, id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 
@@ -882,6 +901,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
                id_source,
                x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
                id_target);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     return 0;
   }
 

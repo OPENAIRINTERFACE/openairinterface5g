@@ -93,7 +93,7 @@ void schedule_SRS(module_id_t module_idP,
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_list_t *UE_list = &(eNB->UE_list);
   nfapi_ul_config_request_body_t *ul_req = NULL;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
   COMMON_channels_t *cc = eNB->common_channels;
   LTE_SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon = NULL;
   struct LTE_SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated = NULL;
@@ -200,7 +200,7 @@ void schedule_CSI(module_id_t module_idP,
   UE_list_t                      *UE_list = &eNB->UE_list;
   COMMON_channels_t              *cc = NULL;
   nfapi_ul_config_request_body_t *ul_req = NULL;
-  UE_sched_ctrl *UE_scheduling_control = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     cc = &eNB->common_channels[CC_id];
@@ -573,7 +573,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   eNB_MAC_INST      *eNB                    = RC.mac[module_idP];
   UE_list_t         *UE_list                = &(eNB->UE_list);
   COMMON_channels_t *cc                     = eNB->common_channels;
-  UE_sched_ctrl     *UE_scheduling_control  = NULL;
+  UE_sched_ctrl_t     *UE_scheduling_control  = NULL;
 
   start_meas(&(eNB->eNB_scheduler));
 
@@ -957,7 +957,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   /* This schedules MIB */
-  if ((subframeP == 0) && (frameP & 3) == 0)
+  if ((subframeP == 0) && (frameP & 3) == 0) 
     schedule_mib(module_idP, frameP, subframeP);
 
   if (get_softmodem_params()->phy_test == 0) {

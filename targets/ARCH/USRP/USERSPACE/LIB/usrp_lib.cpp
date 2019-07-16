@@ -309,22 +309,22 @@ static int trx_usrp_start(openair0_device *device) {
     usrp_state_t *s = (usrp_state_t *)device->priv;
     // setup GPIO for TDD, GPIO(4) = ATR_RX
     //set data direction register (DDR) to output
-    s->usrp->set_gpio_attr("FP0", "DDR", 0x1f, 0x1f);
+    s->usrp->set_gpio_attr("FP0", "DDR", 0x7f, 0x7f);
     //set control register to ATR
-    s->usrp->set_gpio_attr("FP0", "CTRL", 0x1f,0x1f);
+    s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0x7f);
     //set ATR register
-    s->usrp->set_gpio_attr("FP0", "ATR_RX", 1<<4, 0x1f);
+    s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     LOG_I(PHY,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
     LOG_I(PHY,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
 
-    if (s->use_gps == 1) {
+    if (s->use_gps == 1 || device->openair0_cfg[0].time_source == external) {
       s->wait_for_first_pps = 1;
       cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);
     } else {
       s->wait_for_first_pps = 0;
-      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.005);
     }
 
     cmd.stream_now = false; // start at constant delay
@@ -549,7 +549,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  int samples_received=0,i,j;
+  int samples_received=0;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(USRP_REC_PLAY)
 
@@ -770,12 +770,9 @@ int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, 
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  static int first_call=1;
-  static double rf_freq,diff;
   uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0]);
   rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
   rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
-  rf_freq=openair0_cfg[0].rx_freq[0];
   s->usrp->set_rx_freq(rx_tune_req);
   return(0);
 }
@@ -986,10 +983,6 @@ extern "C" {
 #endif
 
 extern "C" {
-  /*! \brief Initialize Openair USRP target. It returns 0 if OK
-   * \param device the hardware to use
-   * \param openair0_cfg RF frontend parameters set by application
-   */
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     LOG_D(PHY, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
     LOG_D(PHY, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
@@ -1108,7 +1101,6 @@ extern "C" {
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
         args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
       }
-
       if (device_adds[0].get("type") == "n3xx") {
         printf("Found USRP n300\n");
         device->type=USRP_X300_DEV; //treat it as X300 for now
@@ -1122,20 +1114,22 @@ extern "C" {
         device->type=USRP_X300_DEV;
         usrp_master_clock = 184.32e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-	// USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
-	if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
-		LOG_W(HW,"Can't set kernel paramters for X3xx\n");
+        // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
+        if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
+        	LOG_W(HW,"Can't set kernel parameters for X3xx\n");
       }
 
       s->usrp = uhd::usrp::multi_usrp::make(args);
 
       // lock mboard clocks
-      if (openair0_cfg[0].clock_source == internal)
+      if (openair0_cfg[0].clock_source == internal) {
         s->usrp->set_clock_source("internal");
-      else
+        printf("Setting clock source to internal\n");
+      } else {
         s->usrp->set_clock_source("external");
+        printf("Setting clock source to external\n");
+      }
 
-      
       if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
@@ -1160,7 +1154,7 @@ extern "C" {
             openair0_cfg[0].rx_bw                 = 80e6;
             break;
             
-	  case 61440000:
+          case 61440000:
             // from usrp_time_offset
             //openair0_cfg[0].samples_per_packet    = 2048;
             openair0_cfg[0].tx_sample_advance     = 15;
@@ -1273,7 +1267,7 @@ extern "C" {
       openair0_cfg[0].iq_txshift = 4;//shift
       openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
-      for(int i=0; i<s->usrp->get_rx_num_channels(); i++) {
+      for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
         if (i<openair0_cfg[0].rx_num_channels) {
           s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
           s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
@@ -1293,7 +1287,7 @@ extern "C" {
       LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
       LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
 
-      for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+      for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
         ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
 
         if (i<openair0_cfg[0].tx_num_channels) {
@@ -1335,10 +1329,10 @@ extern "C" {
       s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
 
       /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
-      for(int i=0; i<s->usrp->get_tx_num_channels() && i<openair0_cfg[0].tx_num_channels; i++)
+      for(int i=0; i<((int) s->usrp->get_tx_num_channels()) && i<openair0_cfg[0].tx_num_channels; i++)
         s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
 
-      for(int i=0; i<s->usrp->get_rx_num_channels() && i<openair0_cfg[0].rx_num_channels; i++)
+      for(int i=0; i<((int) s->usrp->get_rx_num_channels()) && i<openair0_cfg[0].rx_num_channels; i++)
         s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
 
       for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {

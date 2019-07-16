@@ -59,6 +59,8 @@
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
+#define CONFIG_HLP_EXTS          "tells hardware to use an external timing reference\n"
+#define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
@@ -72,7 +74,7 @@
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"
 #define CONFIG_HLP_EMULIFACE     "Set the interface name for the multicast transport for emulation mode (e.g. eth0, lo, etc.)  \n"
-//#define CONFIG_HLP_NUMUES    "Set the number of UEs for the emulation"
+//#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
@@ -92,8 +94,8 @@
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
-#define CONFIG_HLP_USRP_ARGS                "set the arguments to identify USRP (same syntax as in UHD)\n"
-#define CONFIG_HLP_USRP_CLK_SRC              "USRP clock source: 'internal' or 'external'\n"
+#define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
+#define CONFIG_HLP_USRP_CLK_SRC  "USRP clock source: 'internal' or 'external'\n"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
@@ -150,7 +152,6 @@
     {"usrp-clksrc",       CONFIG_HLP_USRP_CLK_SRC,0,               strptr:(char **)&usrp_clksrc,       defstrval:"internal", TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
     {"clock",             CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
-    {"s" ,                CONFIG_HLP_SNR,         0,               iptr:&snr_dB,                       defintval:25,         TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
     {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }
@@ -182,6 +183,8 @@
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
+#define TIMING_SOURCE       softmodem_params.timing_source
+#define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)},\
@@ -196,6 +199,7 @@
     {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
+    {"s" ,                      CONFIG_HLP_SNR,         0,                      dblptr:&snr_dB,                     defdblval:25,                   TYPE_DOUBLE,    0},   \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
     {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
@@ -305,7 +309,9 @@ typedef struct {
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
+  uint32_t       timing_source; 
   int            hw_timing_advance;
+  uint32_t       send_dmrs_sync; 
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
@@ -324,6 +330,7 @@ uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
+extern double snr_dB;
 
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -343,45 +350,49 @@ extern int transmission_mode;
 extern double cpuf;
 
 // In lte-enb.c
-extern void init_eNB(int single_thread_flag,
-		             int wait_for_sync);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
+extern void init_eNB(int single_thread_flag,
+                     int wait_for_sync);
 
 // In lte-ru.c
-extern void init_RU(char *);
 extern void stop_ru(RU_t *ru);
 extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
+extern void init_RU(char*,
+                    clock_source_t clock_source,
+                    clock_source_t time_source,
+                    int send_dmrssync);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
-		                    openair0_config_t *openair0_cfg);
+                            openair0_config_t *openair0_cfg);
+
 extern void fill_ue_band_info(void);
 
 extern void init_UE(int nb_inst,
-		            int eMBMS_active,
-					int uecap_xer_in,
-					int timing_correction,
-					int phy_test,
-					int UE_scan,
-					int UE_scan_carrier,
-					runmode_t mode,
-					int rxgain,
-					int txpowermax,
+                    int eMBMS_active,
+                    int uecap_xer_in,
+                    int timing_correction,
+                    int phy_test,
+                    int UE_scan,
+                    int UE_scan_carrier,
+                    runmode_t mode,
+                    int rxgain,
+                    int txpowermax,
                     LTE_DL_FRAME_PARMS *fp);
+
 extern void init_thread(int sched_runtime,
-		                int sched_deadline,
-						int sched_fifo,
-						cpu_set_t *cpuset,
-						char *name);
+                        int sched_deadline,
+                        int sched_fifo,
+                        cpu_set_t *cpuset,
+                        char *name);
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
-
 
 extern void init_td_thread(PHY_VARS_eNB *);
 extern void init_te_thread(PHY_VARS_eNB *);
@@ -395,15 +406,15 @@ extern void init_ue_devices(PHY_VARS_UE *);
 PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
+
 void init_eNB_afterRU(void);
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 
-
 extern void init_UE_stub_single_thread(int nb_inst,
                                        int eMBMS_active,
-									   int uecap_xer_in,
-									   char *emul_iface);
+                                       int uecap_xer_in,
+                                       char *emul_iface);
 
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                                  uint8_t UE_id,

@@ -38,7 +38,7 @@
 #include "tools_defs.h"
 #else
 #include "time_meas.h"
-#include "UTIL/LOG/log.h"
+#include "LOG/log.h"
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
@@ -9315,7 +9315,7 @@ int main(int argc, char**argv)
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    idft2048((int16_t *)x,(int16_t *)y,1);
+    dft2048((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 

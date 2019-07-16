@@ -192,8 +192,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         for (j = 0; j < dl_report->n_csi_report; j++) {
 
                               csi_reports[j] = malloc(sizeof(Protocol__FlexDlCsi));
-                              if (csi_reports[j] == NULL)
+                              if (csi_reports[j] == NULL) {
+                                for (k = 0; k < j; k++) {
+                                  free(csi_reports[k]);
+                                }
+                                free(csi_reports);
+                                csi_reports = NULL;
                                 goto error;
+                              }
                               protocol__flex_dl_csi__init(csi_reports[j]);
                               //The servCellIndex for this report
                               csi_reports[j]->serv_cell_index = j;
@@ -213,8 +219,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP10 *csi10;
                                     csi10 = malloc(sizeof(Protocol__FlexCsiP10));
-                                    if (csi10 == NULL)
-                                    goto error;
+                                    if (csi10 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p10__init(csi10);
                                     //TODO: set the wideband value
                                     // NN: this is also depends on cc_id
@@ -229,8 +241,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP11 *csi11;
                                     csi11 = malloc(sizeof(Protocol__FlexCsiP11));
-                                    if (csi11 == NULL)
-                                    goto error;
+                                    if (csi11 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p11__init(csi11);
 
                                     csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));
@@ -274,8 +292,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     Protocol__FlexCsiP20 *csi20;
                                     csi20 = malloc(sizeof(Protocol__FlexCsiP20));
-                                    if (csi20 == NULL)
-                                    goto error;
+                                    if (csi20 == NULL) {
+                                      for (k = 0; k <= j; k++) {
+                                        free(csi_reports[k]);
+                                      }
+                                      free(csi_reports);
+                                      csi_reports = NULL;
+                                      goto error;
+                                    }
                                     protocol__flex_csi_p20__init(csi20);
 
                                     csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
@@ -417,7 +441,12 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             for (j = 0; j < paging_report->n_paging_info; j++) {
 
                                     p_info[j] = malloc(sizeof(Protocol__FlexPagingInfo));
-                                    if(p_info[j] == NULL){
+                                    if (p_info[j] == NULL) {
+                                      for (k = 0; k < j; k++) {
+                                        free(p_info[k]);
+                                      }
+                                      free(p_info);
+                                      p_info = NULL;
                                       free(paging_report);
                                       goto error;
                                     }
@@ -797,7 +826,6 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
       }
     }
     free(ue_report);
-    ue_report = NULL;
   }
 
   return -1;

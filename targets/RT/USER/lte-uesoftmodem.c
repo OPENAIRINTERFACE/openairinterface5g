@@ -117,7 +117,8 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-clock_source_t clock_source = internal;
+
+clock_source_t clock_source = internal,time_source=internal;
 
 
 unsigned int                    mmapped_dma=0;
@@ -130,8 +131,6 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
-
-int snr_dB=25;
 
 runmode_t mode = normal_txrx;
 
@@ -319,10 +318,12 @@ static void get_options(void) {
   int CC_id;
   int tddflag;
   char *loopfile=NULL;
-  int dumpframe;
+
+  int dumpframe=0;
   int timingadv;
   uint8_t nfapi_mode;
   int simL1flag ;
+
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
@@ -610,7 +611,7 @@ int main( int argc, char **argv ) {
   if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+ 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   set_latency_target();
@@ -810,7 +811,7 @@ int main( int argc, char **argv ) {
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
   if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm((double)snr_dB,0);
+    init_ocm(snr_dB,0);
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 
