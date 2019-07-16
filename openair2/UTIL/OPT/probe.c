@@ -99,6 +99,8 @@ int opt_enabled=0;
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
+char in_ip[40];
+char in_path[FILENAME_MAX];
 FILE *file_fd = NULL;
 pcap_hdr_t file_header = {
   0xa1b2c3d4,   /* magic number */
@@ -439,8 +441,6 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
 int init_opt(void)
 {
   char *in_type=NULL;
-  char *in_ip=NULL;
-  char *in_path=NULL;
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
   uint16_t in_port;
