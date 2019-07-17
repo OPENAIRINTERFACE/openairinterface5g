@@ -339,6 +339,8 @@ typedef struct RU_t_s{
   int north_out_cnt;
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate if the RU has to perform OTA sync
+  int ota_sync_enable;
   /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
   int generate_dmrs_sync;
   /// flag to indicate if the RU has a control channel
