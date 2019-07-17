@@ -465,7 +465,7 @@ class SSHConnection():
 				if self.ranTargetBranch == '':
 					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				else:
-					self.command('echo "TGT_BRANCH: ' + self.ranBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+					self.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			else:
 				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
