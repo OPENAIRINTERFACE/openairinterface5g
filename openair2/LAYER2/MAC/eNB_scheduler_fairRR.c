@@ -2459,12 +2459,13 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
               UE_list->UE_template[CC_id][UE_id].pre_allocated_rb_table_index_ul = 5;
               UE_list->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = 10;
             }else{
-            // assigne RBS( 3 RBs)
-            first_rb[CC_id] = first_rb[CC_id] + 3;
-            UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[0] = 3;
-            UE_list->UE_template[CC_id][UE_id].pre_allocated_rb_table_index_ul = 2;
-            UE_list->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = 10;
-          }
+              // assigne RBS( 3 RBs)
+              first_rb[CC_id] = first_rb[CC_id] + 3;
+              UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[0] = 3;
+              UE_list->UE_template[CC_id][UE_id].pre_allocated_rb_table_index_ul = 2;
+              UE_list->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = 10;
+            }
+           }
         } else if ( ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority  == SCH_UL_INACTIVE ) {
           // assigne RBS( 3 RBs)
           first_rb[CC_id] = first_rb[CC_id] + 3;

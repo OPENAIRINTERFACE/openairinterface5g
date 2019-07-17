@@ -1243,10 +1243,10 @@ void release_UE_in_freeList(module_id_t mod_id) {
 
 int rrc_eNB_previous_SRB2(rrc_eNB_ue_context_t*         ue_context_pP)
 {
-  struct SRB_ToAddMod                *SRB2_config = NULL;
+  struct LTE_SRB_ToAddMod                *SRB2_config = NULL;
   uint8_t i;
-  SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
-  SRB_ToAddModList_t**                SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[ue_context_pP->ue_context.reestablishment_xid];
+  LTE_SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  LTE_SRB_ToAddModList_t**                SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[ue_context_pP->ue_context.reestablishment_xid];
   if (*SRB_configList2 != NULL) {
     if((*SRB_configList2)->list.count!=0){
       LOG_D(RRC, "rrc_eNB_previous_SRB2 SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
@@ -7097,7 +7097,7 @@ rrc_eNB_decode_ccch(
       }
 
       //c-plane not end
-      if((ue_context_p->ue_context.Status != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1)) {
+      if((ue_context_p->ue_context.Status != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
         LOG_E(RRC,
              PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest (UE %x c-plane is not end), let's reject the UE\n",
              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);

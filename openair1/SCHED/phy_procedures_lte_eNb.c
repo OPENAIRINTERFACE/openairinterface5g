@@ -508,12 +508,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       harq_pid = dlsch0->harq_ids[frame%2][subframe];
 	//AssertFatal(harq_pid>=0,"harq_pid is negative\n");
 
-        if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq))
-        {
-          LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti);
-        }
-        else
-        {
+        if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
         if (dlsch0->ue_type==0)
@@ -1573,36 +1568,35 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
           LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
           return;
         }
-          dlsch0_harq = dlsch0->harq_processes[harq_pid];
-          dlsch1_harq = dlsch1->harq_processes[harq_pid];
+        dlsch0_harq = dlsch0->harq_processes[harq_pid];
+        dlsch1_harq = dlsch1->harq_processes[harq_pid];
 
-          AssertFatal(dlsch0_harq != NULL, "Dlsch0_harq is null\n");
+        AssertFatal(dlsch0_harq != NULL, "Dlsch0_harq is null\n");
 
 #if T_TRACER
-          if (after_rounds != -1) {
-            T(T_ENB_PHY_DLSCH_UE_NACK,
-              T_INT(0),
-              T_INT(frame),
-              T_INT(subframe),
-              T_INT(dlsch0->rnti),
-              T_INT(harq_pid));
-          } else {
-            T(T_ENB_PHY_DLSCH_UE_ACK,
-              T_INT(0),
-              T_INT(frame),
-              T_INT(subframe),
-              T_INT(dlsch0->rnti),
-              T_INT(harq_pid));
-          }
+        if (after_rounds != -1) {
+          T(T_ENB_PHY_DLSCH_UE_NACK,
+            T_INT(0),
+            T_INT(frame),
+            T_INT(subframe),
+            T_INT(dlsch0->rnti),
+            T_INT(harq_pid));
+        } else {
+          T(T_ENB_PHY_DLSCH_UE_ACK,
+            T_INT(0),
+            T_INT(frame),
+            T_INT(subframe),
+            T_INT(dlsch0->rnti),
+            T_INT(harq_pid));
+        }
 #endif
-          if (dlsch0_harq->round >= after_rounds) {
-            dlsch0_harq->status = SCH_IDLE;
+        if (dlsch0_harq->round >= after_rounds) {
+          dlsch0_harq->status = SCH_IDLE;
 
-            if ((dlsch1_harq == NULL) || ((dlsch1_harq != NULL) && (dlsch1_harq->status == SCH_IDLE))) {
-              dlsch0->harq_mask &= ~(1 << harq_pid);
-            }
+          if ((dlsch1_harq == NULL) || ((dlsch1_harq != NULL) && (dlsch1_harq->status == SCH_IDLE))) {
+            dlsch0->harq_mask &= ~(1 << harq_pid);
           }
-	    } // end if ((harq_pid >= 0) && (harq_pid < dlsch0->Mdlharq))
+        }
       } // end if (((1 << m) & mask) > 0)
     } // end for (int m=0; m < M; m++)
   } // end if TDD
