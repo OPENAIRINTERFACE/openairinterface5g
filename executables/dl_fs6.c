@@ -6,6 +6,23 @@
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
 
+typedef struct {
+  int frame;
+  int subframe;
+} fs6_ul_t;
+
+
+typedef struct {
+  int frame;
+  int subframe;
+  int num_pdcch_symbols;
+  int num_dci;
+  int amp;
+  bool UE_active[NUMBER_OF_UE_MAX];
+  LTE_eNB_PHICH phich_vars;
+} fs6_dl_t;
+
+
 #if 0
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
@@ -90,17 +107,11 @@ void phy_procedures_eNB_uespec_RX_extract(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_pro
 void phy_procedures_eNB_uespec_RX_process(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
 }
 
-typedef struct {
-  int frame;
-  int subframe;
-  int num_pdcch_symbols;
-  int num_dci;
-  int amp;
-  bool UE_active[NUMBER_OF_UE_MAX];
-  LTE_eNB_PHICH phich_vars;
-} fs6_dl_t;
-
 void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
+  commonUDP_t *UDPheader=(commonUDP_t *) bufferZone;
+  UDPheader->contentBytes=1000;
+  UDPheader->nbBlocks=1;
+  fs6_dl_t *header=(fs6_dl_t *) commonUDPdata(bufferZone);
   // TBD: read frame&subframe from received data
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
@@ -113,6 +124,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eN
   uint32_t ul_frame;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
+  
 
   if (do_meas==1) {
     start_meas(&eNB->phy_proc_tx);
@@ -149,7 +161,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eN
                      header->num_dci,
                      &eNB->pdcch_vars[subframe&1].dci_alloc[0],
                      0,
-                     headerAMP,
+                     header->amp,
                      fp,
                      eNB->common_vars.txdataF,
                      header->subframe);
@@ -162,9 +174,9 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eN
   }
 
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    if (header.UE_active[UE_id]) { // if we generate dlsch, we must generate pdsch
-      dlsch0 = eNB->dlsch[UE_id][0];
-      dlsch1 = eNB->dlsch[UE_id][1];
+    if (header->UE_active[UE_id]) { // if we generate dlsch, we must generate pdsch
+      LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
+      LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
       pdsch_procedures(eNB,
                        proc,
                        harq_pid,
@@ -173,13 +185,14 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eN
     }
   }
 
-  eNB->phich_vars[subframe&1]=header.phich_vars;
+  eNB->phich_vars[subframe&1]=header->phich_vars;
   generate_phich_top(eNB,
                      proc,
                      AMP);
 }
 
-void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
+void phy_procedures_eNB_TX_extract(uint8_t bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
+  fs6_dl_t *header=(fs6_dl_t *) commonUDPdata(bufferZone);
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   uint32_t i,aa;
@@ -195,8 +208,8 @@ void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int 
   if ((fp->frame_type == TDD) && (subframe_select (fp, subframe) == SF_UL))
     return;
 
-  header.frame=frame;
-  header.subframe=subframe;
+  header->frame=frame;
+  header->subframe=subframe;
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
   ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
@@ -247,9 +260,9 @@ void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int 
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    header.num_pdcch_symbols=num_pdcch_symbols;
-    header.num_dci=num_dci;
-    header.amp=AMP;
+    header->num_pdcch_symbols=num_pdcch_symbols;
+    header->num_dci=num_dci;
+    header->amp=AMP;
   }
 
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
@@ -286,7 +299,7 @@ void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int 
                 dlsch0->harq_ids[frame%2][6],
                 dlsch0->harq_ids[frame%2][7]);
       } else {
-        header.UE_active[UE_id]=true;
+        header->UE_active[UE_id]=true;
 
         if (dlsch_procedures(eNB,
                              proc,
@@ -308,15 +321,12 @@ void phy_procedures_eNB_TX_extract(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int 
     }
   }
 
-  header.phich_vars=eNB->phich_vars[subframe&1];
+  header->phich_vars=eNB->phich_vars[subframe&1];
 
   if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
 
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
 
-  commonUDP_t *header=(commonUDP_t *) buf;
-  header->contentBytes=1000;
-  header->nbBlocks=1;
   return;
 }
 
@@ -385,7 +395,7 @@ void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   uint8_t bufferZone[FS6_BUF_SIZE];
-  phy_procedures_eNB_TX_extract(eNB, &proc->L1_proc, 1, bufferZone, FS6_BUF_SIZE);
+  phy_procedures_eNB_TX_extract(bufferZone, eNB, &proc->L1_proc, 1, bufferZone, FS6_BUF_SIZE);
   sendSubFrame(&sockFS6, bufferZone );
 }
 

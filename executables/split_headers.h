@@ -37,9 +37,14 @@ typedef struct frequency_s {
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
 int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
 int sendSubFrame(UDPsock_t *sock, void *bufferZone);
+
 inline size_t alignedSize(void *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
   return ((header->contentBytes+sizeof(commonUDP_t)+blockAlign-1)/blockAlign)*blockAlign;
+}
+
+inline void * commonUDPdata(void* ptr) {
+  return (void*) (((commonUDP_t*)ptr)+1);
 }
 
 void *cu_fs6(void *arg);
