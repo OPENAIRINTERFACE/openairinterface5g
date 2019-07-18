@@ -58,6 +58,11 @@ OAI_UE_PROCESS_FAILED = -23
 OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
 OAI_UE_PROCESS_OK = +6
 
+UE_STATUS_DETACHED = 0
+UE_STATUS_DETACHING = 1
+UE_STATUS_ATTACHING = 2
+UE_STATUS_ATTACHED = 3
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -127,6 +132,7 @@ class SSHConnection():
 		self.iperf_profile = ''
 		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
+		self.UEDevicesStatus = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -350,6 +356,37 @@ class SSHConnection():
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
+		# Checking the BUILD INFO file
+		if not self.backgroundBuild:
+			self.command('ls *.txt', '\$', 5)
+			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			if result is not None:
+				mismatch = False
+				self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				result = re.search(self.ranCommitID, str(self.ssh.before))
+				if result is None:
+					mismatch = True
+				self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				if (self.ranAllowMerge):
+					result = re.search('YES', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+					self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					if self.ranTargetBranch == '':
+						result = re.search('develop', str(self.ssh.before))
+					else:
+						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				else:
+					result = re.search('NO', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				if not mismatch:
+					self.close()
+					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					return
+				
 		self.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
@@ -419,6 +456,18 @@ class SSHConnection():
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
+		else:
+			# Generating a BUILD INFO file
+			self.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if (self.ranAllowMerge):
+				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				if self.ranTargetBranch == '':
+					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				else:
+					self.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			else:
+				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
@@ -1194,6 +1243,7 @@ class SSHConnection():
 		nb_ue_to_connect = 0
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
+				self.UEDevicesStatus[nb_ue_to_connect] = UE_STATUS_ATTACHING
 				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,))
 				p.daemon = True
 				p.start()
@@ -1222,6 +1272,11 @@ class SSHConnection():
 					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
 				html_queue.put(html_cell)
 			if (attach_status):
+				cnt = 0
+				while cnt < len(self.UEDevices):
+					if self.UEDevicesStatus[cnt] == UE_STATUS_ATTACHING:
+						self.UEDevicesStatus[cnt] = UE_STATUS_ATTACHED
+					cnt += 1
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -1255,11 +1310,14 @@ class SSHConnection():
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		multi_jobs = []
+		cnt = 0
 		for device_id in self.UEDevices:
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
 			p = Process(target = self.DetachUE_common, args = (device_id,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			cnt += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1267,6 +1325,10 @@ class SSHConnection():
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
+		cnt = 0
+		while cnt < len(self.UEDevices):
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHED
+			cnt += 1
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -1387,6 +1449,11 @@ class SSHConnection():
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
 				sys.exit(1)
+		if len(self.UEDevicesStatus) == 0:
+			cnt = 0
+			while cnt < len(self.UEDevices):
+				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
+				cnt += 1
 		self.close()
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
@@ -1537,7 +1604,11 @@ class SSHConnection():
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		idx = 0
 		for device_id in self.UEDevices:
+			if self.UEDevicesStatus[idx] != UE_STATUS_ATTACHED:
+				idx += 1
+				continue
 			count = 0
 			while count < 4:
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
@@ -1559,6 +1630,7 @@ class SSHConnection():
 					ue_ip_status -= 1
 					continue
 			self.UEIPAddresses.append(UE_IPAddress)
+			idx += 1
 		self.close()
 		return ue_ip_status
 
@@ -3239,7 +3311,6 @@ class SSHConnection():
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('echo ' + Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
