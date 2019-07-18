@@ -868,21 +868,15 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   opp_enabled=1;
   if (harq_process->C>1) {
 	for (int nb_seg =1 ; nb_seg<harq_process->C; nb_seg++){
-	  printf("mthread pool C >1\n");
-	  displayList(&Tpool->incomingFifo);
 	  if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
-		  printf("mthread pool non null\n");
 	          pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
 	        }
 
-	  printf("mthread after push\n");
-	  displayList(&freeBlocks);
 	  AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
 	  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
 	  curMsg->UE=phy_vars_ue;
 
 	  memset(&curMsg->proc, 0, sizeof(curMsg->proc));
-	  printf("mthread frame %d slot %d\n", proc->frame_rx, proc->nr_tti_rx);
 	  curMsg->proc.frame_rx  = proc->frame_rx;
 	  curMsg->proc.nr_tti_rx = proc->nr_tti_rx;
 	  curMsg->proc.num_seg   = nb_seg;
@@ -891,12 +885,9 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 	  curMsg->proc.harq_pid=harq_pid;
 	  curMsg->proc.llr8_flag = llr8_flag;
 
-	  printf("mthread after pull");
-
 	  msgToPush->key=nb_seg;
 	  pushTpool(Tpool, msgToPush);
-	  printf("mthread after pushTpool\n");
-	  displayList(&Tpool->incomingFifo);
+
   /*Qm= harq_process->Qm;
     Nl=harq_process->Nl;
     r_thread = harq_process->C/2-1;
@@ -1666,7 +1657,6 @@ void *dlsch_thread(void *arg) {
 
     while (nbDlProcessing >= RX_NB_TH_DL) {
       if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
-    	  printf("dlsch thread trypull non null\n");
         nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
         nbDlProcessing--;
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
