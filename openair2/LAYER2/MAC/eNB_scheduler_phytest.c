@@ -199,8 +199,8 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   uint8_t           mcs            = 20;
   uint8_t           harq_pid       = 0;
   uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
-  int32_t           normalized_rx_power;
-  int32_t           target_rx_power= 178;
+  int32_t           snr;
+  int32_t           target_snr = 10; /* TODO: target_rx_power was 178, what to put? is it meaningful? */
   int               CC_id = 0;
   int               nb_rb = 24;
   int               N_RB_UL;
@@ -258,15 +258,15 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       //power control
       //compute the expected ULSCH RX power (for the stats)
 	  
-      // this is the normalized RX power and this should be constant (regardless of mcs
-      normalized_rx_power = (5*UE_sched_ctrl->pusch_snr[CC_id]-640)/10+30;
+      // this is the snr and this should be constant (regardless of mcs)
+      snr = (5 * UE_sched_ctrl->pusch_snr[CC_id] - 640) / 10;
 	  
       // new transmission
 	  
       ndi = 1-UE_template->oldNDI_UL[harq_pid];
       UE_template->oldNDI_UL[harq_pid]=ndi;
-	  UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
-	  UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
 	  UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = mcs;
       UE_template->mcs_UL[harq_pid] = mcs;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
       UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
