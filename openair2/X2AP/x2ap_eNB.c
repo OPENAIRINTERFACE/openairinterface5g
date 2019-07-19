@@ -151,7 +151,8 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   printf("x2ap_eNB_handle_sctp_association_resp at 4\n");
   dump_trees();
   /* Prepare new x2 Setup Request */
-  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
+  x2ap_eNB_generate_ENDC_x2_setup_request(instance_p, x2ap_enb_data_p);
+  //x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
 }
 
 static

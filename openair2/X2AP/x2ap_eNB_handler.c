@@ -108,6 +108,13 @@ int x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu);
 
+int
+x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
+                                 uint32_t assoc_id,
+                                 uint32_t stream,
+                                 X2AP_X2AP_PDU_t *pdu);
+
+
 /* Handlers matrix. Only eNB related procedure present here */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
@@ -146,7 +153,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
-  { x2ap_gNB_handle_ENDC_x2_setup_request, 0, 0 },
+  { x2ap_gNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 }
@@ -1332,6 +1339,7 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
   x2ap_eNB_data_t                    *x2ap_eNB_data;
   uint32_t                           eNB_id = 0;
 
+  x2ap_eNB_data = NULL;
   DevAssert (pdu != NULL);
   x2_ENDC_SetupRequest = &pdu->choice.initiatingMessage.value.choice.ENDCX2SetupRequest;
 
@@ -1445,6 +1453,10 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
 			  }
 		  }
 	  }
+	  else {
+		  X2AP_ERROR("%s %d: init_eNB list is empty \n",__FILE__,__LINE__);
+		  return -1;
+	  }
   }
 
   instance_p = x2ap_eNB_get_instance(instance);
@@ -1453,4 +1465,146 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
   // Panos: Here we should be calling an ENDC specific setup response function
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
+
+int
+x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
+                                 uint32_t assoc_id,
+                                 uint32_t stream,
+                                 X2AP_X2AP_PDU_t *pdu)
+{
+
+  X2AP_ENDCX2SetupResponse_t              *x2_ENDC_SetupResponse;
+  X2AP_ENDCX2SetupResponse_IEs_t          *ie;
+  X2AP_En_gNB_ENDCX2SetupReqAckIEs_t 			 *ie_GNB_ENDC;
+  ServedNRcellsENDCX2ManagementList__Member                *servedCellMember;
+
+  x2ap_eNB_instance_t                *instance_p;
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  uint32_t                           gNB_id = 0;
+
+  x2ap_eNB_data = NULL;
+  DevAssert (pdu != NULL);
+  x2_ENDC_SetupResponse = &pdu->choice.successfulOutcome.value.choice.ENDCX2SetupResponse;
+
+  /*
+   * We received a new valid X2 Setup Request on a stream != 0.
+   * * * * This should not happen -> reject eNB x2 setup request.
+   */
+
+  if (stream != 0) {
+    X2AP_ERROR("Received new x2 setup request on stream != 0\n");
+      /*
+       * Send a x2 setup failure with protocol cause unspecified
+       */
+    // Panos: Here we should be calling an ENDC specific setup_failure function instead
+    return x2ap_eNB_generate_x2_setup_failure (instance,
+                                               assoc_id,
+                                               X2AP_Cause_PR_protocol,
+                                               X2AP_CauseProtocol_unspecified,
+                                               -1);
+  }
+
+  X2AP_DEBUG("Received a new X2 setup request\n");
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_ENDCX2SetupResponse_IEs_t, ie, x2_ENDC_SetupResponse,
+		  X2AP_ProtocolIE_ID_id_RespondingNodeType_EndcX2Setup, true);
+
+
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else {
+	  if (ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.count > 0) {
+		  //Panos: Here the container parameter in X2AP_FIND_PROTOCOLIE_BY_ID should be the x2_ENDC_SetupRequest
+		  //message or the ie to which there are more nested information elements?
+		  for (int i=0; i<ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.count;i++) {
+
+			  ie_GNB_ENDC = (X2AP_En_gNB_ENDCX2SetupReqAckIEs_t*) ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.array[i];
+			  if (ie_GNB_ENDC == NULL ) {
+				  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+				  return -1;
+			  }
+
+			  else if (ie_GNB_ENDC->id == X2AP_ProtocolIE_ID_id_Globalen_gNB_ID) {
+				  if (ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID.size!= 28) {
+					  //TODO: handle case were size != 28 -> notify ? reject ?
+				  }
+				  OCTET_STRING_TO_INT32(&ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID,gNB_id);
+				  X2AP_DEBUG("gNB id: %07x\n", gNB_id);
+
+				  X2AP_DEBUG("Adding gNB to the list of associated gNBs\n");
+				  if ((x2ap_eNB_data = x2ap_is_eNB_id_in_list (gNB_id)) == NULL) {
+					  /*
+				       * eNB has not been found in list of associated eNB,
+				       * * * * Add it to the tail of list and initialize data
+				       */
+					  if ((x2ap_eNB_data = x2ap_is_eNB_assoc_id_in_list (assoc_id)) == NULL) {
+						  /*
+						   * ??
+						   */
+						  return -1;
+					  } else {
+						  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+						  x2ap_eNB_data->eNB_id = gNB_id;
+					  }
+				  } else {
+					  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+
+					  /*
+					   * eNB has been found in list, consider the x2 setup request as a reset connection,
+					   * * * * reseting any previous UE state if sctp association is != than the previous one
+					   */
+					  if (x2ap_eNB_data->assoc_id != assoc_id) {
+						  /*
+						   * ??: Send an overload cause...
+						   */
+						  X2AP_ERROR("Rejecting x2 setup request as eNB id %d is already associated to an active sctp association" "Previous known: %d, new one: %d\n", gNB_id, x2ap_eNB_data->assoc_id, assoc_id);
+
+						  // Panos: Here we should be calling an ENDC specific setup_failure function instead
+						  x2ap_eNB_generate_x2_setup_failure (instance,
+				                                          assoc_id,
+				                                          X2AP_Cause_PR_protocol,
+				                                          X2AP_CauseProtocol_unspecified,
+				                                          -1);
+						  return -1;
+					  }
+					  /*
+					   *  * TODO: call the reset procedure
+					   */
+				  }
+			  }
+			  else if (ie_GNB_ENDC->id == X2AP_ProtocolIE_ID_id_ServedNRcellsENDCX2ManagementList){
+				  if (ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.count > 0) {
+				      x2ap_eNB_data->num_cc = ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.count;
+				      for (int i=0; i<ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.count;i++) {
+				    	  servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.array[i];
+				    	  x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedNRCellInfo.nrpCI;
+				      }
+				  }
+			  }
+		  }
+	  }
+	  else {
+		  X2AP_ERROR("%s %d: init_eNB list is empty \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+  }
+
+  /* Optionaly set the target eNB name */
+
+    /* The association is now ready as source and target eNBs know parameters of each other.
+     * Mark the association as connected.
+     */
+    x2ap_eNB_data->state = X2AP_ENB_STATE_READY;
+
+    instance_p = x2ap_eNB_get_instance(instance);
+    DevAssert(instance_p != NULL);
+
+    instance_p->x2_target_enb_associated_nb ++;
+    x2ap_handle_x2_setup_message(instance_p, x2ap_eNB_data, 0);
+
+    return 0;
+}
+
 
