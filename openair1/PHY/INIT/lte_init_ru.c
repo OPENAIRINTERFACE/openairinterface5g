@@ -34,8 +34,9 @@
 
 void init_7_5KHz(void);
 
-int phy_init_RU(RU_t *ru) {
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+int phy_init_RU(RU_t *ru)
+{
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_CALIBRATION *calibration = &ru->calibration;
   int i,j,p,re;
   
@@ -184,8 +185,7 @@ int phy_init_RU(RU_t *ru) {
 
 void phy_free_RU(RU_t *ru)
 {
-  int i,j;
-  int p;
+  int i,j,p;
   RU_CALIBRATION *calibration = &ru->calibration;
 
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);

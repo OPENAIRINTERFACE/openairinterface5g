@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
 
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+    exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
 
   //logInit();
@@ -477,17 +477,17 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
   ///////////////////////////////////////////////////
 
-  nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   //fapi_nr_tx_request_t tx_request;
 
+  /*nr_scheduled_response_t scheduled_response;
   scheduled_response.module_id = 0;
   scheduled_response.CC_id = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot = slot;
   scheduled_response.dl_config = NULL;
   scheduled_response.ul_config = &ul_config;
-  scheduled_response.dl_config = NULL;
+  scheduled_response.dl_config = NULL;*/
   
 
   ul_config.sfn_slot = slot;

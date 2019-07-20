@@ -248,7 +248,6 @@ const char* eurecomVariablesNames[] = {
   "slot_number_TX1_gNB",
   "slot_number_RX0_gNB",
   "slot_number_RX1_gNB"
-
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -286,7 +285,7 @@ const char* eurecomFunctionsNames[] = {
   "do_DL_sig",
   "do_UL_sig",
   "UE_trx_read",
- /* RRH signals  */ 
+  /* RRH signals  */
   "eNB_tx",
   "eNB_rx",
   "eNB_trx",
@@ -296,7 +295,6 @@ const char* eurecomFunctionsNames[] = {
   "eNB_proc_sleep",
   "trx_read_rf",
   "trx_write_rf",
-
   /* PHY signals  */
   "ue_synch",
   "ue_slot_fep",
@@ -411,7 +409,6 @@ const char* eurecomFunctionsNames[] = {
   "phy_eNB_dlsch_scrambling",
   "phy_eNB_beam_precoding",
   "phy_eNB_ofdm_mod_l",
-
   /* MAC  signals  */
   "macxface_macphy_init",
   "macxface_macphy_exit",
@@ -428,7 +425,6 @@ const char* eurecomFunctionsNames[] = {
   "mac_dlsch_preprocessor",
   "mac_schedule_dlsch",
   "mac_fill_dlsch_dci",
-
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
   "macxface_ue_decode_pcch",
@@ -440,9 +436,7 @@ const char* eurecomFunctionsNames[] = {
   "macxface_ue_process_rar",
   "macxface_ue_scheduler",
   "macxface_ue_get_sr",
-
   "ue_send_mch_sdu",
-
   /*RLC signals   */
   "rlc_data_req",
   // "rlc_data_ind", // this calls "pdcp_data_ind",
@@ -452,7 +446,6 @@ const char* eurecomFunctionsNames[] = {
   "rlc_um_try_reassembly",
   "rlc_um_check_timer_dar_time_out",
   "rlc_um_receive_process_dar",
-
   /* PDCP signals   */
   "pdcp_run",
   "pdcp_data_req",
@@ -482,7 +475,6 @@ const char* eurecomFunctionsNames[] = {
   "itti_dump_enqueue_message_malloc",
   "itti_relay_thread",
   "test",
-  
   /* IF4/IF5 signals */
   "send_if4_ru",
   "send_if4_ru1",
@@ -492,10 +484,8 @@ const char* eurecomFunctionsNames[] = {
   "recv_if4_ru2",
   "send_if5",
   "recv_if5",
-
   "compress_if",
   "decompress_if",
-
   "nfapi_subframe",
   "generate_pcfich",
   "generate_dci0",
@@ -505,11 +495,9 @@ const char* eurecomFunctionsNames[] = {
   "pdcch_modulation",
   "pdcch_interleaving",
   "pdcch_tx",
-
   /*NR softmodem signal*/
   "gNB_thread_rxtx0",
   "gNB_thread_rxtx1"
-
 };
 
 struct vcd_module_s vcd_modules[] = {

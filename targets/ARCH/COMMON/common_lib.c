@@ -122,7 +122,7 @@ int load_lib(openair0_device *device,
   if ( IS_SOFTMODEM_BASICSIM ) {
 	  libname=OAI_BASICSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
-  } else if ( IS_SOFTMODEM_RFSIM ) {
+  } else if (IS_SOFTMODEM_RFSIM && flag == RAU_LOCAL_RADIO_HEAD) {
 	  libname=OAI_RFSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
   } else if (flag == RAU_LOCAL_RADIO_HEAD) {

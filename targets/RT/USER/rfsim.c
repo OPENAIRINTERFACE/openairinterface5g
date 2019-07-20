@@ -51,6 +51,7 @@
 #include "common/ran_context.h"
 #include "PHY/defs_UE.h"
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_RU.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 RAN_CONTEXT_t RC;
@@ -286,10 +287,6 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
     sim.last_UE_rx_timestamp[UE_id][CC_id] += read_size;
     sample_count += read_size;
- 
-
-
-
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_UE_TRX_READ,0);

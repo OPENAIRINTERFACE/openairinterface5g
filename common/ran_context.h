@@ -38,8 +38,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
-#include "PHY/defs_L1_NB_IoT.h"
-#include "PHY/defs_RU.h"
+
 #include "ENB_APP/enb_config.h"
 #include "flexran_agent_defs.h"
 
@@ -49,6 +48,7 @@
 #include "NwGtpv1uPrivate.h"
 #include "gtpv1u_eNB_defs.h"
 
+#include "PHY/defs_L1_NB_IoT.h"
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "RRC/NR/nr_rrc_defs.h"

@@ -116,6 +116,10 @@ extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eN
 extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
 extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t * kenb_star);
 
+pthread_mutex_t      rrc_release_freelist;
+RRC_release_list_t   rrc_release_info;
+pthread_mutex_t      lock_ue_freelist;
+
 void
 openair_rrc_on(
   const protocol_ctxt_t *const ctxt_pP
@@ -4610,10 +4614,10 @@ rrc_eNB_generate_HandoverPreparationInformation(
   uint8_t                     *buffer,
   int                          *_size
 ) {
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, 8192);
   char *ho_buf = (char *) buffer;
   int ho_size;
-  ho_size = do_HandoverPreparation(ho_buf, 1024, ue_context_pP->ue_context.UE_Capability, ue_context_pP->ue_context.UE_Capability_size);
+  ho_size = do_HandoverPreparation(ho_buf, 8192, ue_context_pP->ue_context.UE_Capability, ue_context_pP->ue_context.UE_Capability_size);
   *_size = ho_size;
 }
 

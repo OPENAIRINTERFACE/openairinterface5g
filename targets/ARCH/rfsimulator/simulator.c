@@ -85,7 +85,8 @@ typedef struct {
   either we regenerate the channel (call again random_channel(desc,0)), or we keep it over subframes
   legacy: we regenerate each sub frame in UL, and each frame only in DL
 */
-void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+void rxAddInput( struct complex16 *input_sig,
+                 struct complex16 *after_channel_sig,
                  int rxAnt,
                  channel_desc_t *channelDesc,
                  int nbSamples,
@@ -106,7 +107,7 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
   const double rxGain = 132.24 - snr_dB;
   // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
-  // fixme: the last constant is pure trial results to make decent noise 
+  // fixme: the last constant is pure trial results to make decent noise
   const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;
   // Fixme: we don't fill the offset length samples at begining ?
   // anyway, in today code, channel_offset=0
@@ -135,9 +136,6 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
     }
 
     out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
-    printf("in: %d, out %d= %f*%f + %f*%f\n",
-      input_sig[((TS+i)*nbTx)%CirSize].r, out_ptr->r , rx_tmp.x,
-      pathLossLinear, noise_per_sample,gaussdouble(0.0,1.0));
     out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
     out_ptr++;
   }
@@ -325,17 +323,17 @@ sin_addr:
   return 0;
 }
 
-uint64_t lastW=-1;
 int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
+
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
     if (b->conn_sock >= 0 ) {
       if ( abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
-    	  LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
+        LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
       samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(b->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
@@ -354,7 +352,6 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
     }
   }
 
-  lastW=timestamp;
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   // Let's verify we don't have incoming data

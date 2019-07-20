@@ -104,7 +104,7 @@ int main(int argc, char **argv)
   uint64_t SSB_positions=0x01;
   channel_desc_t *gNB2UE;
   int format=0;
-  uint8_t extended_prefix_flag=0;
+  //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
   uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
@@ -121,20 +121,22 @@ int main(int argc, char **argv)
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.01;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  unsigned char frame_type = 0;
+  //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun("[NR_PUCCHSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);
+  logInit();
+  set_glog(loglvl);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:P:b:T:n:o:s:S:t:x:y:z:N:F:GR:d:IL")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:P:b:T:n:o:s:S:x:y:z:N:F:GR:IL")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -146,9 +148,7 @@ int main(int argc, char **argv)
       }
       break;
 
-    case 'd':
-      frame_type = 1;
-      break;
+
 
     case 'g':
       switch((char)*optarg) {
@@ -207,16 +207,19 @@ int main(int argc, char **argv)
       break;
 
       /*
-      case 't':
+    case 't':
       Td= atof(optarg);
       break;
-      */
+
     case 'p':
       extended_prefix_flag=1;
       break;
 
-      /*
-      case 'r':
+    case 'd':
+      frame_type = 1;
+      break;
+
+    case 'r':
       ricean_factor = pow(10,-.1*atof(optarg));
       if (ricean_factor>1) {
         printf("Ricean factor must be between 0 and 1\n");
@@ -317,10 +320,7 @@ int main(int argc, char **argv)
       exit (-1);
       break;
     }
-  } 
-  logInit();
-  set_glog(loglvl);
-  T_stdout = 1;
+  }
 
   if (snr1set==0) snr1 = snr0+10;
 
@@ -386,7 +386,7 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));

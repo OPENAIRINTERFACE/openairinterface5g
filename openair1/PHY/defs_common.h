@@ -145,7 +145,6 @@ typedef struct {
 } PRACH_CONFIG_INFO;
 
 
-
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -157,12 +156,11 @@ typedef struct {
 } PRACH_CONFIG_COMMON;
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
   uint8_t highSpeedFlag;
-/// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
   uint8_t zeroCorrelationZoneConfig;
   /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
 
@@ -586,7 +584,7 @@ typedef struct {
 #endif
 
 
-typedef struct {
+typedef struct LTE_DL_FRAME_PARMS {
   /// Number of resource blocks (RB) in DL
   uint8_t N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -751,28 +749,29 @@ typedef enum {
   MMSE=2
 } PRECODE_TYPE_t;
 
-typedef enum {format0,
-              format1,
-              format1A,
-              format1B,
-              format1C,
-              format1D,
-              format1E_2A_M10PRB,
-              format2,
-              format2A,
-              format2B,
-              format2C,
-              format2D,
-              format3,
-	          format3A,
-	          format4,
-              format5,
-              format6_0A,
-              format6_0B,
-              format6_1A,
-              format6_1B,
-              format6_2
-             } DCI_format_t;
+typedef enum {
+  format0,
+  format1,
+  format1A,
+  format1B,
+  format1C,
+  format1D,
+  format1E_2A_M10PRB,
+  format2,
+  format2A,
+  format2B,
+  format2C,
+  format2D,
+  format3,
+  format3A,
+  format4,
+  format5,
+  format6_0A,
+  format6_0B,
+  format6_1A,
+  format6_1B,
+  format6_2
+} DCI_format_t;
 
 typedef struct {
   /// Length of DCI in bits
@@ -1025,7 +1024,8 @@ typedef uint8_t(encoder_if_t)(uint8_t *input,
                               uint8_t F);
 
 
-static inline void wait_sync(char *thread_name) {
+static inline void wait_sync(char *thread_name)
+{
   int rc;
 
   printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
@@ -1044,7 +1044,14 @@ static inline void wait_sync(char *thread_name) {
   fflush(stderr);
 }
 
-static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name, int sleeptime,int sleep_cnt_max) {
+
+static inline int wakeup_thread(pthread_mutex_t *mutex,
+                                pthread_cond_t *cond,
+                                int *instance_cnt,
+                                char *name,
+                                int sleeptime,
+                                int sleep_cnt_max)
+{
   int rc;
   int sleep_cnt=0;
 
@@ -1074,18 +1081,24 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int 
   return(0);
 }
 
-static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name,uint32_t time_ns) {
+
+static inline int timedwait_on_condition(pthread_mutex_t *mutex,
+                                         pthread_cond_t *cond,
+                                         int *instance_cnt,
+                                         char *name,
+                                         uint32_t time_ns)
+{
   int rc;
   int waitret=0;
-  struct timespec now,abstime;
+  struct timespec now, abstime;
 
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  clock_gettime(CLOCK_REALTIME,&now);
   while (*instance_cnt < 0) {
+	clock_gettime(CLOCK_REALTIME, &now);
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
-    abstime.tv_sec=now.tv_sec;
+    abstime.tv_sec = now.tv_sec;
     abstime.tv_nsec = now.tv_nsec + time_ns;
     if (abstime.tv_nsec >= 1000*1000*1000)
     {
@@ -1097,10 +1110,15 @@ static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *
 
   AssertFatal((rc = pthread_mutex_unlock(mutex)) == 0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
 
-  return(0);
+  return(waitret);
 }
 
-static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+static inline int wait_on_condition(pthread_mutex_t *mutex,
+                                    pthread_cond_t *cond,
+                                    int *instance_cnt,
+                                    char *name)
+{
   int rc;
 
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
@@ -1116,36 +1134,12 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
   return(0);
 }
 
-static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name,uint32_t time_ns) {
-  int rc;
-  int waitret=0;
-  if ((rc = pthread_mutex_lock(mutex)) != 0) {
-    LOG_E(PHY, "[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n",
-        name, rc, strerror(rc), (void *)mutex);
-    exit_fun("nothing to add");
-    return(-1);
-  }
 
-  struct timespec now,abstime;
-
-  while (*instance_cnt < 0) {
-    clock_gettime(CLOCK_REALTIME,&now);
-    // most of the time the thread is waiting here
-    // proc->instance_cnt_rxtx is -1
-    abstime.tv_sec=now.tv_sec;
-    abstime.tv_nsec = now.tv_nsec + time_ns;
-    if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime))==ETIMEDOUT) break; // this unlocks mutex_rxtx while waiting and then locks it again
-    
-  }
-
-  if (pthread_mutex_unlock(mutex) != 0) {
-    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-    exit_fun("nothing to add");
-    return(-1);
-  }
-  return(waitret);
-}
-static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wait_on_busy_condition(pthread_mutex_t *mutex,
+                                         pthread_cond_t *cond,
+                                         int *instance_cnt,
+                                         char *name)
+{
   int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
@@ -1160,7 +1154,11 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *
   return(0);
 }
 
-static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+
+static inline int release_thread(pthread_mutex_t *mutex,
+                                 int *instance_cnt,
+                                 char *name)
+{
   int rc;
 
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);

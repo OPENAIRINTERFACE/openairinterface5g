@@ -2468,7 +2468,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 							uint8_t gNB_id,
 							uint8_t thread_id)
 {
-  NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+  //NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;

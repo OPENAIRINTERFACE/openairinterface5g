@@ -956,6 +956,11 @@ sctp_eNB_read_from_socket(
         return;
     }
 
+    if (!(flags & MSG_EOR)) {
+      SCTP_ERROR("fatal: partial SCTP messages are not handled\n");
+      exit(1);
+    }
+
     if (flags & MSG_NOTIFICATION) {
         union sctp_notification *snp;
         snp = (union sctp_notification *)buffer;

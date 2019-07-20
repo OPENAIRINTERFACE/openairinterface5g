@@ -26,15 +26,13 @@
 */
 
 //#include <string.h>
+#include <math.h>
+#include "LAYER2/MAC/mac.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include <math.h>
-
-
-#include "LAYER2/MAC/mac.h"
-#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "RRC/LTE/rrc_extern.h"
 
 // Note: this is for prototype of generate_drs_pusch (OTA synchronization of RRUs)
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
@@ -46,10 +44,8 @@ int sync_tmp[2048*4] __attribute__((aligned(32)));
 short syncF_tmp[2048*2] __attribute__((aligned(32)));
 
 
-
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *common_vars
 {
-
   int i,k;
 
   sync_corr_ue0 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
@@ -275,8 +271,6 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     ((int32_t*)primary_synch2_time)[i] = sync_tmp[i];
 
 
-
-
   if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
     LOG_M("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
     LOG_M("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
@@ -288,8 +282,6 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
 void lte_sync_time_free(void)
 {
-
-
   if (sync_corr_ue0) {
     LOG_D(PHY,"Freeing sync_corr_ue (%p)...\n",sync_corr_ue0);
     free(sync_corr_ue0);
@@ -328,19 +320,20 @@ void lte_sync_time_free(void)
   primary_synch2_time = NULL;
 }
 
+
 static inline int abs32(int x)
 {
   return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
 }
 
+
 #define SHIFT 17
+
 
 int lte_sync_time(int **rxdata, ///rx data in time domain
                   LTE_DL_FRAME_PARMS *frame_parms,
                   int *eNB_id)
 {
-
-
   // perform a time domain correlation using the oversampled sync sequence
 
   unsigned int n, ar, s, peak_pos, peak_val, sync_source;
@@ -465,76 +458,73 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     } else {
     debug_cnt++;
   }
-} 
-
-
-  return(peak_pos);
-
 }
-
+  return(peak_pos);
+}
 
 
 int ru_sync_time_init(RU_t *ru)   // LTE_UE_COMMON *common_vars
 {
-
   /*
   int16_t dmrs[2048];
   int16_t *dmrsp[2] = {dmrs,NULL};
   */
 
-  int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
-//  int32_t *dmrsp[2] = {&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
+  int32_t dmrs[ru->frame_parms->ofdm_symbol_size*14] __attribute__((aligned(32)));
+  //int32_t *dmrsp[2] = {&dmrs[(3-ru->frame_parms->Ncp)*ru->frame_parms->ofdm_symbol_size],NULL};
   int32_t *dmrsp[2] = {&dmrs[0],NULL};
 
   generate_ul_ref_sigs();
  
-  ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 
-  ru->dmrs_corr = (uint64_t*)malloc16_clear(ru->frame_parms.samples_per_tti*10*sizeof(uint64_t));
+  ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms->ofdm_symbol_size*2*sizeof(int16_t));
+  ru->dmrs_corr = (uint64_t*)malloc16_clear(ru->frame_parms->samples_per_tti*10*sizeof(uint64_t));
 
-  generate_drs_pusch(NULL,NULL,
-		     &ru->frame_parms,
-		     dmrsp,
-		     0,
-		     AMP,
-		     0,
-		     0,
-		     ru->frame_parms.N_RB_DL,
-		     0);
+  generate_drs_pusch(NULL,
+                     NULL,
+                     ru->frame_parms,
+                     dmrsp,
+                     0,
+                     AMP,
+                     0,
+                     0,
+                     ru->frame_parms->N_RB_DL,
+                     0);
 
-  switch (ru->frame_parms.N_RB_DL) {
+  switch (ru->frame_parms->N_RB_DL) {
   case 6:
-    idft128((int16_t*)(&dmrsp[0][3*ru->frame_parms.ofdm_symbol_size]),
+    idft128((int16_t*)(&dmrsp[0][3*ru->frame_parms->ofdm_symbol_size]),
 	    ru->dmrssync, /// complex output
 	    1);
     break;
   case 25:
-    idft512((int16_t*)(&dmrsp[0][3*ru->frame_parms.ofdm_symbol_size]),
+    idft512((int16_t*)(&dmrsp[0][3*ru->frame_parms->ofdm_symbol_size]),
 	    ru->dmrssync, /// complex output
 	    1);
     break;
   case 50:
-    idft1024((int16_t*)(&dmrsp[0][3*ru->frame_parms.ofdm_symbol_size]),
+    idft1024((int16_t*)(&dmrsp[0][3*ru->frame_parms->ofdm_symbol_size]),
 	    ru->dmrssync, /// complex output
 	    1);
     break;
      
   case 75:
-    idft1536((int16_t*)(&dmrsp[0][3*ru->frame_parms.ofdm_symbol_size]),
+    idft1536((int16_t*)(&dmrsp[0][3*ru->frame_parms->ofdm_symbol_size]),
 	     ru->dmrssync,
 	     1); /// complex output
     break;
   case 100:
-    idft2048((int16_t*)(&dmrsp[0][3*ru->frame_parms.ofdm_symbol_size]),
+    idft2048((int16_t*)(&dmrsp[0][3*ru->frame_parms->ofdm_symbol_size]),
 	     ru->dmrssync, /// complex output
 	     1);
     break;
   default:
-    AssertFatal(1==0,"Unsupported N_RB_DL %d\n",ru->frame_parms.N_RB_DL);
+    AssertFatal(1==0,"Unsupported N_RB_DL %d\n",ru->frame_parms->N_RB_DL);
     break;
   }
 
   return(0);
 }
+
 
 void ru_sync_time_free(RU_t *ru) {
 
@@ -551,7 +541,6 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
                       uint32_t *peak_val_out,
                       uint32_t *sync_corr_eNB)
 {
-
   // perform a time domain correlation using the oversampled sync sequence
 
   unsigned int n, ar, peak_val, peak_pos;
@@ -634,17 +623,19 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
 }
 
+
 static inline int64_t abs64(int64_t x)
 {
   return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)
 ((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
 }
 
+
 int ru_sync_time(RU_t *ru,
                  int64_t *lev,
                  int64_t *avg)
 {
-  LTE_DL_FRAME_PARMS *frame_parms = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = ru->frame_parms;
   RU_CALIBRATION *calibration = &ru->calibration;
 		      
   // perform a time domain correlation using the oversampled sync sequence
@@ -713,8 +704,4 @@ int ru_sync_time(RU_t *ru,
   if ((int64_t)maxlev0 > (10*avg0)) {*lev = maxlev0; *avg=avg0; return((length+maxpos0-dmrsoffset)%length);}
 
   return(-1);
-
-
 }
-
-

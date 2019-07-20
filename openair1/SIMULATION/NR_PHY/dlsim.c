@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+    exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);

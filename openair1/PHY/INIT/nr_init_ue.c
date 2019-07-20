@@ -596,7 +596,8 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
  * \param[in] frame_parms LTE_DL_FRAME_PARMS structure.
  * \note This function is optimistic in that it expects malloc() to succeed.
  */
-void phy_init_nr_ue__PDSCH( NR_UE_PDSCH* const pdsch, const NR_DL_FRAME_PARMS* const fp )
+void phy_init_nr_ue__PDSCH(NR_UE_PDSCH* const pdsch,
+                           const NR_DL_FRAME_PARMS* const fp)
 {
   AssertFatal( pdsch, "pdsch==0" );
 
@@ -646,22 +647,20 @@ void phy_init_nr_ue__PDSCH( NR_UE_PDSCH* const pdsch, const NR_DL_FRAME_PARMS* c
   }
 }
 
-void phy_init_nr_ue_PUSCH( NR_UE_PUSCH* const pusch, const NR_DL_FRAME_PARMS* const fp )
+void phy_init_nr_ue_PUSCH(NR_UE_PUSCH* const pusch,
+                          const NR_DL_FRAME_PARMS* const fp)
 {
-
-  int i;
   AssertFatal( pusch, "pusch==0" );
 
-  for (i=0; i<NR_MAX_NB_LAYERS; i++){
+  for (int i=0; i<NR_MAX_NB_LAYERS; i++){
     pusch->txdataF_layers[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
-
   }
 
 }
 
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
-		       int nb_connected_eNB,
-		       uint8_t abstraction_flag)
+                      int nb_connected_eNB,
+                      uint8_t abstraction_flag)
 {
   // create shortcuts
   NR_DL_FRAME_PARMS* const fp            = &ue->frame_parms;
@@ -986,13 +985,12 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
 }
 
-void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
-
-  int i,j,k;
-
-  for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-    for (j=0; j<2; j++) {
-      for (k=0; k<RX_NB_TH_MAX; k++) {
+void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
+                          int abstraction_flag)
+{
+  for (int i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+    for (int j=0; j<2; j++) {
+      for (int k=0; k<RX_NB_TH_MAX; k++) {
         AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
 
@@ -1043,8 +1041,9 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 
 }
 
-void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms) {
-
+void set_default_frame_parms_single(nfapi_nr_config_request_t *config,
+                                    NR_DL_FRAME_PARMS *frame_parms)
+{
   //int CC_id;
 
   //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

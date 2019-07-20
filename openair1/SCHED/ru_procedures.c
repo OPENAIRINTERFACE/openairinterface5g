@@ -72,12 +72,13 @@ void feptx0(RU_t *ru,
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   //int dummy_tx_b[7680*2] __attribute__((aligned(32)));
 
-  unsigned int aa,slot_offset;
+  unsigned int aa, slot_offset;
   int slot_sizeF = (fp->ofdm_symbol_size) * ((fp->Ncp==1) ? 6 : 7);
+  int subframe = ru->proc.tti_tx;
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 1 );
 
-  slot_offset = slot*(fp->samples_per_tti>>1);
+  slot_offset = slot*(fp->samples_per_tti>>1); //slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
   //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
 
@@ -88,10 +89,35 @@ void feptx0(RU_t *ru,
                                           6,
                                           fp->nb_prefix_samples,
                                           CYCLIC_PREFIX);
-    else                     normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
-                                               (int*)&ru->common.txdata[aa][slot_offset],
-                                               7,
-                                               fp);
+    else {
+       /* AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
+		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
+		  fp->frame_type,ru->is_slave);
+       */
+      int num_symb = 7;
+
+      if (subframe_select(fp,subframe) == SF_S) num_symb=fp->dl_symbols_in_S_subframe+1;
+   
+      if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
+        //int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
+        //int32_t *dmrsp[2] ={dmrs,NULL}; //{&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
+        generate_drs_pusch((PHY_VARS_UE *)NULL,
+                           (UE_rxtx_proc_t*)NULL,
+                           fp,
+                           ru->common.txdataF_BF,
+                           0,
+                           AMP,
+                           0,
+                           0,
+                           fp->N_RB_DL,
+                           aa);
+      } 
+      normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                        (int*)&ru->common.txdata[aa][slot_offset],
+                        num_symb,
+                        fp);
+    }
+
 
    /* 
     len = fp->samples_per_tti>>1;

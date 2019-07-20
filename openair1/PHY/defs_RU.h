@@ -37,6 +37,7 @@
 #include "common_lib.h"
 #include "openairinterface5g_limits.h"
 #include "PHY/TOOLS/time_meas.h"
+#include "openair1/PHY/defs_common.h"
 
 
 #define MAX_BANDS_PER_RRU 4
@@ -46,7 +47,18 @@
 #ifdef OCP_FRAMEWORK
 #include <enums.h>
 #else
-typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
+
+typedef enum {
+  normal_txrx=0,
+  rx_calib_ue=1,
+  rx_calib_ue_med=2,
+  rx_calib_ue_byp=3,
+  debug_prach=4,
+  no_L2_connect=5,
+  calib_prach_tx=6,
+  rx_dump_frame=7,
+  loop_through_memory=8
+} runmode_t;
 
 /*! \brief Extension Type */
 typedef enum {
@@ -64,7 +76,7 @@ enum transmission_access_mode {
   SCHEDULED_ACCESS,
   CBA_ACCESS};
 
-typedef enum  {
+typedef enum {
   eNodeB_3GPP=0,   // classical eNodeB function
   NGFI_RAU_IF5,    // RAU with NGFI IF5
   NGFI_RAU_IF4p5,  // RAU with NFGI IF4p5
@@ -75,7 +87,6 @@ typedef enum  {
 } node_function_t;
 
 typedef enum {
-
   synch_to_ext_device=0,  // synch to RF or Ethernet device
   synch_to_other,          // synch to another source_(timer, other RU)
   synch_to_mobipass_standalone  // special case for mobipass in standalone mode
@@ -117,6 +128,22 @@ typedef struct {
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
 } RU_COMMON;
+
+
+typedef struct {
+  /// \brief Received frequency-domain signal after extraction.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t **rxdataF_ext;
+  /// \brief Hold the channel estimates in time domain based on DRS.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..4*ofdm_symbol_size[
+  int32_t **drs_ch_estimates_time;
+  /// \brief Hold the channel estimates in frequency domain based on DRS.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **drs_ch_estimates;
+} RU_CALIBRATION;
 
 
 typedef struct RU_proc_t_s {

@@ -100,7 +100,6 @@ typedef enum {
   /*!\brief device is UEDv2 */
   UEDv2_DEV,
   MAX_RF_DEV_TYPE
-
 } dev_type_t;
 
 /*!\brief transport protocol types
@@ -112,7 +111,6 @@ typedef enum {
   /*!\brief no transport protocol*/
   NONE_TP,
   MAX_TRANSP_TYPE
-
 } transport_type_t;
 
 
@@ -124,7 +122,6 @@ typedef enum {
   /*!\brief device functions within a RRU */
   RRU_HOST,
   MAX_HOST_TYPE
-
 } host_type_t;
 
 
@@ -183,7 +180,6 @@ typedef struct {
   //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
-
   //! mode for rxgain (ExpressMIMO2)
   rx_gain_t rxg_mode[4];
   //! \brief Gain for RX in dB.
@@ -230,7 +226,6 @@ typedef struct {
   unsigned int   sf_write_delay;    // write delay in replay mode
   unsigned int   eth_mtu;           // ethernet MTU
 #endif
-
   //! number of samples per tti
   unsigned int  samples_per_tti;
   //! the sample rate for receive.
@@ -239,7 +234,6 @@ typedef struct {
   double tx_sample_rate;
   //! check for threequarter sampling rate
   int8_t threequarter_fs;
-
 } openair0_config_t;
 
 /*! \brief RF mapping */
@@ -271,7 +265,6 @@ typedef struct {
   uint8_t if_compress;
 } eth_params_t;
 
-
 typedef struct {
   //! Tx buffer for if device, keep one per subframe now to allow multithreading
   void *tx[10];
@@ -280,7 +273,6 @@ typedef struct {
   //! Rx buffer for if device
   void *rx;
 } if_buffer_t;
-
 
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
@@ -456,23 +448,10 @@ typedef struct {
 
 #define sample_t struct complex16 // 2*16 bits complex number
 
-typedef struct {
-  uint64_t magic;          // Magic value (see defines above)
-  uint32_t size;           // Number of samples per antenna to follow this header
-  uint32_t nbAnt;          // Total number of antennas following this header
-  // Samples per antenna follow this header,
-  // i.e. nbAnt = 2 => this header+samples_antenna_0+samples_antenna_1
-  // data following this header in bytes is nbAnt*size*sizeof(sample_t)
-  uint64_t timestamp;      // Timestamp value of first sample
-  uint32_t option_value;   // Option value
-  uint32_t option_flag;    // Option flag
-} samplesBlockHeader_t;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
 
 /*! \brief Initialize openair RF target. It returns 0 if OK */
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);

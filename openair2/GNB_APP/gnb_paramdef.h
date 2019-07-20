@@ -111,7 +111,12 @@ typedef enum {
 #define RU_GNB_LIST_IDX               14
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
-#define RU_NBIOTRRC_LIST_IDX          17
+#define RU_IS_SLAVE_IDX               17
+#define RU_NBIOTRRC_LIST_IDX          18
+#define RU_SDR_ADDRS                  19
+#define RU_SDR_CLK_SRC                20
+#define RU_SF_EXTENSION_IDX           21
+#define RU_END_OF_BURST_DELAY_IDX     22
 
 
 

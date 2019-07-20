@@ -40,7 +40,6 @@
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
-
 #include "UTIL/FIFO/types.h"
 
 #define RF
@@ -48,19 +47,16 @@
 //#define DEBUG_SIM 1
 
 
-
-
 void do_DL_sig(sim_t *sim,
-	       uint16_t subframe,
-	       uint32_t offset,
-	       uint32_t length,
-	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
-	       uint8_t UE_id,
-	       int CC_id)
+               uint16_t subframe,
+               uint32_t offset,
+               uint32_t length,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t UE_id,
+               int CC_id)
 {
-
   int32_t **txdata,**rxdata;
-
   uint32_t ru_id=0;
   double tx_pwr;
   double rx_pwr;
@@ -301,13 +297,14 @@ void do_DL_sig(sim_t *sim,
 }
 
 
-
-
 void do_UL_sig(sim_t *sim,
-	       uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
-	       uint32_t frame,int ru_id,uint8_t CC_id)
+               uint16_t subframe,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *frame_parms,
+               uint32_t frame,
+               int ru_id,
+               uint8_t CC_id)
 {
-
   int32_t **txdata,**rxdata;
   uint8_t UE_id=0;
 
@@ -477,9 +474,4 @@ void do_UL_sig(sim_t *sim,
   UNUSED_VARIABLE(rx_pwr);
   UNUSED_VARIABLE(rx_pwr2);
 #endif
-    
 }
-
-
-
-

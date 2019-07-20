@@ -393,8 +393,7 @@ int main(int argc, char **argv) {
   cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
-  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
-              "cannot load configuration module, exiting\n");
+  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL, "Cannot load configuration module, exiting\n");
   logInit();
   set_glog(OAILOG_WARNING);
   T_stdout = 1;

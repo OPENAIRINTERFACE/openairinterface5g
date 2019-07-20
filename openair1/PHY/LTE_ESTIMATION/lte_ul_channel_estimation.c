@@ -35,13 +35,14 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 #define SCALE 0x3FFF
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
-				  L1_rxtx_proc_t *proc,
+                                  L1_rxtx_proc_t *proc,
                                   module_id_t UE_id,
                                   unsigned char l,
-                                  unsigned char Ns) {
+                                  unsigned char Ns)
+{
   RU_t *ru;
   ru = RC.ru[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = (eNB!=NULL) ? &eNB->frame_parms : &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = (eNB!=NULL) ? &eNB->frame_parms : ru->frame_parms;
   LTE_eNB_PUSCH *pusch_vars = (eNB!=NULL) ? eNB->pusch_vars[UE_id] : NULL;
   RU_CALIBRATION *calibration = &ru->calibration;
   int32_t **ul_ch_estimates = (eNB!=NULL) ? pusch_vars->drs_ch_estimates : calibration->drs_ch_estimates;
@@ -54,7 +55,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
  
   int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
 
-  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.subframe_rx;
+  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.tti_rx;
 
   uint8_t harq_pid; 
   int16_t delta_phase = 0;
