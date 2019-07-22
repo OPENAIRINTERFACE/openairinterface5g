@@ -169,7 +169,7 @@
 #define MAX_NUM_SLICES 10
 
 
-#define U_PLANE_INACTIVITY_VALUE 6000
+#define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
 /*
  * eNB part
