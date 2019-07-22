@@ -158,7 +158,7 @@ typedef struct UE_RRC_INFO_NR_s {
   uint8_t                                             SIB1systemInfoValueTag;
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
-#if defined(Rel10) || defined(Rel14)
+#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t                                             MCCHStatus[8];             // MAX_MBSFN_AREA
 #endif
   uint8_t                                             SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
@@ -260,7 +260,7 @@ typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-#if defined(Rel10) || defined(Rel14)
+#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
   NR_SRB_ToAddModList_t*             SRB_configList;

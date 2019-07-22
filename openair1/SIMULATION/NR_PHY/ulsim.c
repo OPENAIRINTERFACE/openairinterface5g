@@ -73,36 +73,16 @@ double cpuf;
 
 // dummy functions
 int nfapi_mode = 0;
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-  return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-  return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-  return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
-  return (0);
-}
-int32_t get_uldl_offset(int eutra_bandP) {
-  return (0);
-}
+int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return (0); }
+int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return (0); }
+int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return (0); }
+int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return (0); }
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) { return (0); }
+//uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) { return (0); }
+int32_t get_uldl_offset(int eutra_bandP) { return (0); }
 
 NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-  return (NULL);
-}
+NR_IF_Module_init(int Mod_id) { return (NULL); }
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   const char *msg = s == NULL ? "no comment" : s;
@@ -477,17 +457,17 @@ int main(int argc, char **argv) {
   rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
   ///////////////////////////////////////////////////
 
-  fapi_nr_ul_config_request_t ul_config;
+  /*fapi_nr_ul_config_request_t ul_config;
   //fapi_nr_tx_request_t tx_request;
 
-  /*nr_scheduled_response_t scheduled_response;
+  nr_scheduled_response_t scheduled_response;
   scheduled_response.module_id = 0;
   scheduled_response.CC_id = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot = slot;
   scheduled_response.dl_config = NULL;
   scheduled_response.ul_config = &ul_config;
-  scheduled_response.dl_config = NULL;*/
+  scheduled_response.dl_config = NULL;
   
 
   ul_config.sfn_slot = slot;
@@ -501,7 +481,7 @@ int main(int argc, char **argv) {
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;*/
   //there are plenty of other parameters that we don't seem to be using for now. e.g.
   //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0; 
 

@@ -126,7 +126,7 @@ unsigned char NB_gNB_INST = 1;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
-double snr_dB=20;
+static double snr_dB=20;
 
 FILE *input_fd=NULL;
 
@@ -510,7 +510,7 @@ static void get_options(void) {
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv;
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
-  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC ;
+  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
   if (strlen(in_path) > 0) {
@@ -1047,7 +1047,7 @@ int main( int argc, char **argv )
 
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
-    init_RU(rf_config_file);
+    init_NR_RU(rf_config_file);
 
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;

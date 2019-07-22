@@ -103,7 +103,7 @@
 /*   optname         helpstr          paramflags          XXXptr                     defXXXval            type           numelt   */
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 #define START_MSC                softmodem_params.start_msc
-#define CMDLINE_LOGPARAMS_DESC {  \
+#define CMDLINE_LOGPARAMS_DESC_NR {  \
     {"R" ,           CONFIG_HLP_FLOG, 0,                  uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},       \
     {"g" ,           CONFIG_HLP_LOGL, 0,                  uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},       \
     {"G" ,           CONFIG_HLP_LOGV, 0,                  uptr:&glog_verbosity,      defintval:0,         TYPE_UINT16,   0},       \

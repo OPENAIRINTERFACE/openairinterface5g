@@ -293,6 +293,8 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_eNBs;
   /// condition variable for gNB signal
   pthread_cond_t cond_gNBs;
+  /// condition variable for ru_thread
+  pthread_cond_t cond_ru_thread;
   /// mutex for RU FH
   pthread_mutex_t mutex_FH;
   pthread_mutex_t mutex_FH1;
@@ -419,6 +421,8 @@ typedef struct RU_t_s{
   int north_out_cnt;
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate if the RU has to perform OTA sync
+  int ota_sync_enable;
   /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
   int generate_dmrs_sync;
   /// flag to indicate if the RU has a control channel

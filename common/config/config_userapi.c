@@ -184,7 +184,7 @@ void config_printhelp(paramdef_t *params,int numparams, char *prefix) {
   printf("--------------------------------------------------------------------\n\n");
 }
 
-int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
+int config_execcheck(paramdef_t *params, int numparams, char *prefix) {
   int st=0;
 
   for (int i=0 ; i<numparams ; i++) {
@@ -204,7 +204,7 @@ int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
   return st;
 }
 
-int config_get(paramdef_t *params,int numparams, char *prefix) {
+int config_get(paramdef_t *params, int numparams, char *prefix) {
   int ret= -1;
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
@@ -215,11 +215,11 @@ int config_get(paramdef_t *params,int numparams, char *prefix) {
   configmodule_interface_t *cfgif = config_get_if();
 
   if (cfgif != NULL) {
-    ret = config_get_if()->get(params, numparams,prefix);
+    ret = config_get_if()->get(params, numparams, prefix);
 
     if (ret >= 0) {
-      config_process_cmdline(params,numparams,prefix);
-      config_execcheck(params,numparams,prefix);
+      config_process_cmdline(params, numparams, prefix);
+      config_execcheck(params, numparams, prefix);
     }
 
     return ret;

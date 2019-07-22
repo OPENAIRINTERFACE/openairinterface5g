@@ -471,7 +471,7 @@ void eNB_top(PHY_VARS_eNB *eNB,
   proc->subframe_rx      = subframe_rx;
 
   if (!oai_exit) {
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(ru_proc->frame_rx), T_INT(ru_proc->subframe_rx));
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(ru_proc->frame_rx), T_INT(ru_proc->tti_rx));
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
     L1_proc->frame_rx     = ru_proc->frame_rx;
     L1_proc->subframe_rx  = ru_proc->tti_rx;
@@ -523,7 +523,7 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,
   for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
     ru      = eNB->RU_list[ru_id];
     ru_proc = &ru->proc;
-    fp = &ru->frame_parms;
+    fp      = ru->frame_parms;
     if (((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL))||
         (eNB->RU_list[ru_id]->state == RU_SYNC)||
         (eNB->RU_list[ru_id]->wait_cnt>0)){
@@ -536,7 +536,7 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,
     AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_eNBs))==0,"ERROR pthread_mutex_lock failed on mutex_eNBs L1_thread_tx with ret=%d\n",ret);
 
     if (ru_proc->instance_cnt_eNBs == 0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->subframe_rx);
       AssertFatal((ret=pthread_mutex_lock(&eNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
       eNB->proc.RU_mask_tx = 0;
       AssertFatal((ret=pthread_mutex_unlock(&eNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
@@ -609,7 +609,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int ret;
 
-  LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->subframe_rx);
+  LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->tti_rx);
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
@@ -617,7 +617,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,
 
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
    AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"mutex_unlock return %d\n",ret);
-   LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->subframe_rx); 
+   LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx);
    return(0);
   }
  

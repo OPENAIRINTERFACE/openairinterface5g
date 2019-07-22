@@ -51,13 +51,13 @@
 #include <linux/in.h>
 #include <net/ndisc.h>
 
-
-
 #include "constant.h"
 #include "platform_types.h"
 #include "sap.h"
 
-#define MAKE_VERSION(a,b,c) ((a)*256+(b)*16+(c))
+#ifndef MAKE_VERSION
+  #define MAKE_VERSION(a,b,c) ((a)*256+(b)*16+(c))
+#endif
 
 typedef struct ue_ip_priv_s {
   int                        irq;

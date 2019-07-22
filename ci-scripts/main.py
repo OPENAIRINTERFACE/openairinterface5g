@@ -58,6 +58,11 @@ OAI_UE_PROCESS_FAILED = -23
 OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
 OAI_UE_PROCESS_OK = +6
 
+UE_STATUS_DETACHED = 0
+UE_STATUS_DETACHING = 1
+UE_STATUS_ATTACHING = 2
+UE_STATUS_ATTACHED = 3
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -82,6 +87,7 @@ logging.basicConfig(
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
+		self.prematureExit = False
 		self.ranRepository = ''
 		self.ranBranch = ''
 		self.ranAllowMerge = False
@@ -128,6 +134,7 @@ class SSHConnection():
 		self.iperf_profile = ''
 		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
+		self.UEDevicesStatus = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -141,6 +148,7 @@ class SSHConnection():
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
+		self.repeatCounts = []
 		self.finalStatus = False
 		self.OsVersion = ''
 		self.KernelVersion = ''
@@ -390,6 +398,7 @@ class SSHConnection():
 					self.close()
 					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 					return
+
 		self.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
@@ -459,6 +468,18 @@ class SSHConnection():
 		result = re.search(self.air_interface + '-softmodem', str(self.ssh.before))
 		if result is None:
 			buildStatus = False
+		else:
+			# Generating a BUILD INFO file
+			self.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if (self.ranAllowMerge):
+				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				if self.ranTargetBranch == '':
+					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				else:
+					self.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			else:
+				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 		self.command('mkdir -p build_log_' + testcaseId, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
@@ -747,7 +768,6 @@ class SSHConnection():
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
 				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
-				self.CreateHtmlTabFooter(False)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -763,7 +783,8 @@ class SSHConnection():
 						copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + self.EPC_PcapFileName, '.')
 						if (copyin_res == 0):
 							self.copyout(lIpAddr, lUserName, lPassWord, self.EPC_PcapFileName, lSourcePath + '/cmake_targets/.')
-				sys.exit(1)
+				self.prematureExit = True
+				return
 			else:
 				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
 				if rruCheck:
@@ -957,8 +978,6 @@ class SSHConnection():
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 
 	def checkDevTTYisUnlocked(self):
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1109,8 +1128,8 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			self.prematureExit = True
+			return
 		try:
 			statusQueue = SimpleQueue()
 			lock = Lock()
@@ -1192,8 +1211,6 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
 				self.AutoTerminateUEandeNB()
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -1254,14 +1271,14 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		lock = Lock()
 		nb_ue_to_connect = 0
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
+				self.UEDevicesStatus[nb_ue_to_connect] = UE_STATUS_ATTACHING
 				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,))
 				p.daemon = True
 				p.start()
@@ -1272,9 +1289,8 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
-			self.CreateHtmlTabFooter(False)
 			self.AutoTerminateUEandeNB()
-			sys.exit(1)
+			return
 		else:
 			attach_status = True
 			html_queue = SimpleQueue()
@@ -1290,6 +1306,11 @@ class SSHConnection():
 					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
 				html_queue.put(html_cell)
 			if (attach_status):
+				cnt = 0
+				while cnt < len(self.UEDevices):
+					if self.UEDevicesStatus[cnt] == UE_STATUS_ATTACHING:
+						self.UEDevicesStatus[cnt] = UE_STATUS_ATTACHED
+					cnt += 1
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -1298,8 +1319,6 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
 
 	def DetachUE_common(self, device_id):
 		try:
@@ -1320,14 +1339,16 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		multi_jobs = []
+		cnt = 0
 		for device_id in self.UEDevices:
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
 			p = Process(target = self.DetachUE_common, args = (device_id,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			cnt += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1335,6 +1356,10 @@ class SSHConnection():
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
+		cnt = 0
+		while cnt < len(self.UEDevices):
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHED
+			cnt += 1
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -1455,6 +1480,11 @@ class SSHConnection():
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
 				sys.exit(1)
+		if len(self.UEDevicesStatus) == 0:
+			cnt = 0
+			while cnt < len(self.UEDevices):
+				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
+				cnt += 1
 		self.close()
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
@@ -1561,8 +1591,6 @@ class SSHConnection():
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(htmlOptions, 'KO', ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 		else:
 			check_status = True
 			html_queue = SimpleQueue()
@@ -1579,8 +1607,6 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
 
 	def GetAllUEIPAddresses(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -1605,7 +1631,11 @@ class SSHConnection():
 			self.close()
 			return ue_ip_status
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		idx = 0
 		for device_id in self.UEDevices:
+			if self.UEDevicesStatus[idx] != UE_STATUS_ATTACHED:
+				idx += 1
+				continue
 			count = 0
 			while count < 4:
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
@@ -1627,6 +1657,7 @@ class SSHConnection():
 					ue_ip_status -= 1
 					continue
 			self.UEIPAddresses.append(UE_IPAddress)
+			idx += 1
 		self.close()
 		return ue_ip_status
 
@@ -1721,8 +1752,7 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
 			if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
@@ -1825,14 +1855,12 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		multi_jobs = []
 		i = 0
 		lock = Lock()
@@ -1850,8 +1878,6 @@ class SSHConnection():
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 		else:
 			ping_status = True
 			html_queue = SimpleQueue()
@@ -1869,8 +1895,6 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -2348,8 +2372,6 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -2439,8 +2461,6 @@ class SSHConnection():
 		else:
 			self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 
 	def Iperf(self):
 		result = re.search('noS1', str(self.Initialize_eNB_args))
@@ -2459,14 +2479,12 @@ class SSHConnection():
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', UE_IP_ADDRESS_ISSUE)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+			return
 		multi_jobs = []
 		i = 0
 		ue_num = len(self.UEIPAddresses)
@@ -2485,8 +2503,6 @@ class SSHConnection():
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
 		else:
 			iperf_status = True
 			iperf_noperf = False
@@ -2509,8 +2525,6 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
-				self.CreateHtmlTabFooter(False)
-				sys.exit(1)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE):
 		multi_jobs = []
@@ -2838,10 +2852,17 @@ class SSHConnection():
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
-		if cdrxActivationMessageCount > 0:
-			rrcMsg = 'eNB activated the CDRX Configuration for ' + str(cdrxActivationMessageCount) + ' time(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if self.eNBOptions[int(self.eNB_instance)] != '':
+			res1 = re.search('drx_Config_present prSetup', self.eNBOptions[int(self.eNB_instance)])
+			if res1 is not None:
+				if cdrxActivationMessageCount > 0:
+					rrcMsg = 'eNB activated the CDRX Configuration for ' + str(cdrxActivationMessageCount) + ' time(s)'
+					logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rrcMsg + '\n'
+				else:
+					rrcMsg = 'eNB did NOT ACTIVATE the CDRX Configuration'
+					logging.debug('\u001B[1;37;43m ' + rrcMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rachCanceledProcedure > 0:
 			rachMsg = nodeB_prefix + 'NB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
@@ -2856,6 +2877,7 @@ class SSHConnection():
 					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
 					self.htmleNBFailureMsg += rruMsg + '\n'
+					self.prematureExit = True
 					return ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
@@ -3159,8 +3181,8 @@ class SSHConnection():
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
-					self.CreateHtmlTabFooter(False)
-					sys.exit(1)
+					self.preamtureExit = True
+					return
 				else:
 					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			else:
@@ -3300,8 +3322,6 @@ class SSHConnection():
 					if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB()
-					self.CreateHtmlTabFooter(False)
-					sys.exit(1)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Completed</b>\n' + self.htmlUEFailureMsg
@@ -3327,6 +3347,7 @@ class SSHConnection():
 			self.ShowTestID()
 			self.eNB_instance = '0'
 			self.TerminateeNB()
+		self.prematureExit = True
 
 	def IdleSleep(self):
 		time.sleep(self.idle_sleep_time)
@@ -3350,7 +3371,6 @@ class SSHConnection():
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('echo ' + Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
@@ -3611,6 +3631,7 @@ class SSHConnection():
 				pillMsg = '    <li><a data-toggle="pill" href="#'
 				pillMsg += self.htmlTabRefs[count]
 				pillMsg += '">'
+				pillMsg += '__STATE_' + self.htmlTabNames[count] + '__'
 				pillMsg += self.htmlTabNames[count]
 				pillMsg += ' <span class="glyphicon glyphicon-'
 				pillMsg += self.htmlTabIcons[count]
@@ -3664,6 +3685,14 @@ class SSHConnection():
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  </div>\n')
+			self.htmlFile.close()
+			time.sleep(1)
+			if passStatus:
+				cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__//' test_results.html"
+				subprocess.run(cmd, shell=True)
+			else:
+				cmd = "sed -i -e 's/__STATE_" + self.htmlTabNames[0] + "__/<span class=\"glyphicon glyphicon-remove\"><\/span>/' test_results.html"
+				subprocess.run(cmd, shell=True)
 		self.htmlFooterCreated = False
 
 	def CreateHtmlFooter(self, passStatus):
@@ -4264,6 +4293,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	requested_tests=xmlRoot.findtext('TestCaseRequestedList',default='')
 	if (SSH.nbTestXMLfiles == 1):
 		SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
+		SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
+		repeatCount = xmlRoot.findtext('repeatCount',default='1')
+		SSH.repeatCounts.append(int(repeatCount))
 	all_tests=xmlRoot.findall('testCase')
 
 	exclusion_tests=exclusion_tests.split()
@@ -4305,89 +4337,102 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	SSH.CreateHtmlTabHeader()
 
-	for test_case_id in todo_tests:
-		for test in all_tests:
-			id = test.get('id')
-			if test_case_id != id:
-				continue
-			SSH.testCase_id = id
-			SSH.desc = test.findtext('desc')
-			action = test.findtext('class')
-			mode = test.findtext('mode')
-			if (CheckClassValidity(action, id) == False):
-				continue
-			SSH.ShowTestID()
-			GetParametersFromXML(action)
-			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-				if (SSH.ADBIPAddress != 'none'):
-					terminate_ue_flag = False
-					SSH.GetAllUEDevices(terminate_ue_flag)
-			if action == 'Build_eNB':
-				SSH.BuildeNB()
-			elif action == 'WaitEndBuild_eNB':
-				SSH.WaitBuildeNBisFinished()
-			elif action == 'Initialize_eNB':
-				SSH.InitializeeNB()
-			elif action == 'Terminate_eNB':
-				SSH.TerminateeNB()
-			elif action == 'Initialize_UE':
-				SSH.InitializeUE()
-			elif action == 'Terminate_UE':
-				SSH.TerminateUE()
-			elif action == 'Attach_UE':
-				SSH.AttachUE()
-			elif action == 'Detach_UE':
-				SSH.DetachUE()
-			elif action == 'DataDisable_UE':
-				SSH.DataDisableUE()
-			elif action == 'DataEnable_UE':
-				SSH.DataEnableUE()
-			elif action == 'CheckStatusUE':
-				SSH.CheckStatusUE()
-			elif action == 'Build_OAI_UE':
-				SSH.BuildOAIUE()
-			elif action == 'Initialize_OAI_UE':
-				SSH.InitializeOAIUE()
-			elif action == 'Terminate_OAI_UE':
-				SSH.TerminateOAIUE()
-			elif action == 'Initialize_CatM_module':
-				SSH.InitializeCatM()
-			elif action == 'Terminate_CatM_module':
-				SSH.TerminateCatM()
-			elif action == 'Attach_CatM_module':
-				SSH.AttachCatM()
-			elif action == 'Detach_CatM_module':
-				SSH.TerminateCatM()
-			elif action == 'Ping_CatM_module':
-				SSH.PingCatM()
-			elif action == 'Ping':
-				SSH.Ping()
-			elif action == 'Iperf':
-				SSH.Iperf()
-			elif action == 'Reboot_UE':
-				SSH.RebootUE()
-			elif action == 'Initialize_HSS':
-				SSH.InitializeHSS()
-			elif action == 'Terminate_HSS':
-				SSH.TerminateHSS()
-			elif action == 'Initialize_MME':
-				SSH.InitializeMME()
-			elif action == 'Terminate_MME':
-				SSH.TerminateMME()
-			elif action == 'Initialize_SPGW':
-				SSH.InitializeSPGW()
-			elif action == 'Terminate_SPGW':
-				SSH.TerminateSPGW()
-			elif action == 'Initialize_FlexranCtrl':
-				SSH.InitializeFlexranCtrl()
-			elif action == 'Terminate_FlexranCtrl':
-				SSH.TerminateFlexranCtrl()
-			elif action == 'IdleSleep':
-				SSH.IdleSleep()
-			else:
-				sys.exit('Invalid action')
-
-	SSH.CreateHtmlTabFooter(True)
+	cnt = 0
+	SSH.prematureExit = True
+	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
+		SSH.prematureExit = False
+		for test_case_id in todo_tests:
+			for test in all_tests:
+				id = test.get('id')
+				if test_case_id != id:
+					continue
+				SSH.testCase_id = id
+				SSH.desc = test.findtext('desc')
+				action = test.findtext('class')
+				if (CheckClassValidity(action, id) == False):
+					continue
+				SSH.ShowTestID()
+				GetParametersFromXML(action)
+				if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
+					if (SSH.ADBIPAddress != 'none'):
+						terminate_ue_flag = False
+						SSH.GetAllUEDevices(terminate_ue_flag)
+				if action == 'Build_eNB':
+					SSH.BuildeNB()
+				elif action == 'WaitEndBuild_eNB':
+					SSH.WaitBuildeNBisFinished()
+				elif action == 'Initialize_eNB':
+					SSH.InitializeeNB()
+				elif action == 'Terminate_eNB':
+					SSH.TerminateeNB()
+				elif action == 'Initialize_UE':
+					SSH.InitializeUE()
+				elif action == 'Terminate_UE':
+					SSH.TerminateUE()
+				elif action == 'Attach_UE':
+					SSH.AttachUE()
+				elif action == 'Detach_UE':
+					SSH.DetachUE()
+				elif action == 'DataDisable_UE':
+					SSH.DataDisableUE()
+				elif action == 'DataEnable_UE':
+					SSH.DataEnableUE()
+				elif action == 'CheckStatusUE':
+					SSH.CheckStatusUE()
+				elif action == 'Build_OAI_UE':
+					SSH.BuildOAIUE()
+				elif action == 'Initialize_OAI_UE':
+					SSH.InitializeOAIUE()
+				elif action == 'Terminate_OAI_UE':
+					SSH.TerminateOAIUE()
+				elif action == 'Initialize_CatM_module':
+					SSH.InitializeCatM()
+				elif action == 'Terminate_CatM_module':
+					SSH.TerminateCatM()
+				elif action == 'Attach_CatM_module':
+					SSH.AttachCatM()
+				elif action == 'Detach_CatM_module':
+					SSH.TerminateCatM()
+				elif action == 'Ping_CatM_module':
+					SSH.PingCatM()
+				elif action == 'Ping':
+					SSH.Ping()
+				elif action == 'Iperf':
+					SSH.Iperf()
+				elif action == 'Reboot_UE':
+					SSH.RebootUE()
+				elif action == 'Initialize_HSS':
+					SSH.InitializeHSS()
+				elif action == 'Terminate_HSS':
+					SSH.TerminateHSS()
+				elif action == 'Initialize_MME':
+					SSH.InitializeMME()
+				elif action == 'Terminate_MME':
+					SSH.TerminateMME()
+				elif action == 'Initialize_SPGW':
+					SSH.InitializeSPGW()
+				elif action == 'Terminate_SPGW':
+					SSH.TerminateSPGW()
+				elif action == 'Initialize_FlexranCtrl':
+					SSH.InitializeFlexranCtrl()
+				elif action == 'Terminate_FlexranCtrl':
+					SSH.TerminateFlexranCtrl()
+				elif action == 'IdleSleep':
+					SSH.IdleSleep()
+				else:
+					sys.exit('Invalid action')
+				if SSH.prematureExit:
+					break
+			if SSH.prematureExit:
+				break
+		cnt += 1
+	if cnt == SSH.repeatCounts[0] and SSH.prematureExit:
+		logging.debug('Testsuite failed ' + str(cnt) + ' time(s)')
+		SSH.CreateHtmlTabFooter(False)
+		sys.exit('Failed Scenario')
+	else:
+		logging.info('Testsuite passed after ' + str(cnt) + ' time(s)')
+		SSH.CreateHtmlTabFooter(True)
 else:
 	Usage()
 	sys.exit('Invalid mode')

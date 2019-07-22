@@ -287,7 +287,7 @@ void init_UE(int nb_inst,
       // needed for memcopy below. these are not used in the RU, but needed for UE
       RC.ru[0]->frame_parms->nb_antennas_rx = fp0->nb_antennas_rx;
       RC.ru[0]->frame_parms->nb_antennas_tx = fp0->nb_antennas_tx;
-      PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
+      PHY_vars_UE_g[inst][0]  = init_ue_vars(RC.ru[0]->frame_parms,inst,0);
     }
 
     // turn off timing control loop in UE

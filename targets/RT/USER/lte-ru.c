@@ -467,7 +467,7 @@ void fh_if5_north_asynch_in(RU_t *ru,
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->tti_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
   
   if (proc->first_tx != 0) {
     *subframe = tti_tx;
@@ -1622,7 +1622,7 @@ static void* ru_thread_tx( void* param )
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
 
-    LOG_D(PHY,"ru_thread_tx: TX in %d.%d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
+    LOG_D(PHY,"ru_thread_tx: TX in %d.%d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
     if (oai_exit) break;
 
@@ -2007,7 +2007,6 @@ void *ru_thread_synch(void *arg)
   RU_t *ru = (RU_t *)arg;
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   int64_t peak_val, avg;
-  uint32_t sync_corr[307200] __attribute__((aligned(32)));
   static int ru_thread_synch_status = 0;
   int cnt=0;
   thread_top_init("ru_thread_synch",0,5000000,10000000,10000000);
@@ -2040,7 +2039,7 @@ void *ru_thread_synch(void *arg)
 //exit(-1);
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
-          { 
+          {
               if (cnt>200) {
                  LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
                  LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
@@ -2408,7 +2407,7 @@ void init_RU_proc(RU_t *ru)
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
     ru->state=RU_RUN;
     fill_rf_config(ru,ru->rf_config_file);
-    init_frame_parms(&ru->frame_parms,1);
+    init_frame_parms(ru->frame_parms,1);
     ru->frame_parms->nb_antennas_rx = ru->nb_rx;
     phy_init_RU(ru);
 
@@ -2799,10 +2798,14 @@ void init_RU(char *rf_config_file,
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    //ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    if ((ru->is_slave == 0) && (ru->ota_sync_enable == 1))
+      ru->generate_dmrs_sync = 1;
+    else
+      ru->generate_dmrs_sync = 0;
     if (ru->generate_dmrs_sync == 1) {
       generate_ul_ref_sigs();
-      ru->dmrssync = (int16_t*)malloc16_clear(ofdm_symbol_size*2*sizeof(int16_t));
+      ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms->ofdm_symbol_size*2*sizeof(int16_t));
     }
     ru->wakeup_L1_sleeptime = 2000;
     ru->wakeup_L1_sleep_cnt_max  = 3;
@@ -3087,6 +3090,9 @@ void RCconfig_RU(void)
           printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
           else RC.ru[j]->is_slave=0;
+          printf("RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+          if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) RC.ru[j]->ota_sync_enable=1;
+          else RC.ru[j]->ota_sync_enable=0;
 	}
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);

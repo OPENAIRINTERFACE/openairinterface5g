@@ -69,7 +69,7 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return (0); }
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return (0); }
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return (0); }
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) { return (0); }
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) { return (0); }
+//uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) { return (0); }
 int32_t get_uldl_offset(int eutra_bandP) { return (0); }
 NR_IF_Module_t * NR_IF_Module_init(int Mod_id) { return (NULL); }
 

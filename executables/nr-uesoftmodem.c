@@ -48,6 +48,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -112,9 +113,9 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
+static clock_source_t    clock_source = internal;
 int                      single_thread_flag=1;
-double snr_dB=20;
+static double            snr_dB=20;
 
 int                      threequarter_fs=0;
 
@@ -409,7 +410,7 @@ static void get_options(void) {
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv=0;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
   if (strlen(in_path) > 0) {

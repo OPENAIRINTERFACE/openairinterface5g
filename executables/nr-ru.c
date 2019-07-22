@@ -123,7 +123,7 @@ extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 
-void init_RU(char *);
+void init_NR_RU(char *);
 void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
@@ -147,7 +147,8 @@ extern int numerology;
 
 extern void wait_gNBs(void);
 
-int attach_rru(RU_t *ru) {
+int attach_rru(RU_t *ru)
+{
   ssize_t      msg_len,len;
   RRU_CONFIG_msg_t rru_config_msg;
   int received_capabilities=0;
@@ -204,9 +205,10 @@ int attach_rru(RU_t *ru) {
   return 0;
 }
 
-int connect_rau(RU_t *ru) {
+int connect_rau(RU_t *ru)
+{
   RRU_CONFIG_msg_t   rru_config_msg;
-  ssize_t      msg_len;
+  ssize_t            msg_len;
   int                tick_received          = 0;
   int                configuration_received = 0;
   RRU_capabilities_t *cap;
@@ -238,15 +240,15 @@ int connect_rau(RU_t *ru) {
 
   switch (ru->function) {
     case NGFI_RRU_IF4p5:
-      cap->FH_fmt                                   = OAI_IF4p5_only;
+      cap->FH_fmt                                 = OAI_IF4p5_only;
       break;
 
     case NGFI_RRU_IF5:
-      cap->FH_fmt                                   = OAI_IF5_only;
+      cap->FH_fmt                                 = OAI_IF5_only;
       break;
 
     case MBP_RRU_IF5:
-      cap->FH_fmt                                   = MBP_IF5;
+      cap->FH_fmt                                 = MBP_IF5;
       break;
 
     default:
@@ -301,34 +303,39 @@ int connect_rau(RU_t *ru) {
 /* Southbound Fronthaul functions, RCC/RAU                   */
 
 // southbound IF5 fronthaul for 16-bit OAI format
-static inline void fh_if5_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
+static inline void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
+{
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
 }
 
 // southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru,int frame,int slot,uint64_t timestamp) {
+static inline void fh_if5_mobipass_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
+{
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   send_IF5(ru, timestamp, slot, &ru->seqno, IF5_MOBIPASS);
 }
 
 // southbound IF4p5 fronthaul
-static inline void fh_if4p5_south_out(RU_t *ru,int frame,int slot, uint64_t timestamp) {
+static inline void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
+{
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
-  if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL)
-    send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
+  if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL) send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
 /* Input Fronthaul from south RCC/RAU                        */
 
 // Synchronous if5 from south
-void fh_if5_south_in(RU_t *ru,int *frame, int *tti) {
+void fh_if5_south_in(RU_t *ru,
+                     int *frame,
+                     int *tti)
+{
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
   recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL);
@@ -355,7 +362,10 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *tti) {
 }
 
 // Synchronous if4p5 from south
-void fh_if4p5_south_in(RU_t *ru,int *frame,int *slot) {
+void fh_if4p5_south_in(RU_t *ru,
+                       int *frame,
+                       int *slot)
+{
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
   int f,sl;
@@ -1361,9 +1371,9 @@ static void *ru_thread( void *param ) {
     }
   } else {
     // Start IF device if any
-    if (ru->start_if) {
+    if (ru->nr_start_if) {
       LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
-      AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
+      AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
       if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
       else ret = attach_rru(ru);
@@ -1594,7 +1604,7 @@ void *ru_thread_synch(void *arg) {
 }
 */
 
-int start_if(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB) {
+int nr_start_if(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB) {
   return(ru->ifdevice.trx_start_func(&ru->ifdevice));
 }
 
@@ -1951,7 +1961,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->feprx                 = NULL;                   // nothing (this is a time-domain signal)
         ru->feptx_ofdm            = NULL;                   // nothing (this is a time-domain signal)
         ru->feptx_prec            = NULL;                   // nothing (this is a time-domain signal)
-        ru->start_if              = start_if;               // need to start the if interface for if5
+        ru->nr_start_if           = nr_start_if;            // need to start the if interface for if5
         ru->ifdevice.host_type    = RRU_HOST;
         ru->rfdevice.host_type    = RRU_HOST;
         ru->ifdevice.eth_params   = &ru->eth_params;
@@ -1975,7 +1985,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
         ru->feptx_ofdm            = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
         ru->feptx_prec            = NULL;
-        ru->start_if              = start_if;                 // need to start the if interface for if4p5
+        ru->nr_start_if           = nr_start_if;              // need to start the if interface for if4p5
         ru->ifdevice.host_type    = RRU_HOST;
         ru->rfdevice.host_type    = RRU_HOST;
         ru->ifdevice.eth_params   = &ru->eth_params;
@@ -1999,7 +2009,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
-        ru->start_if             = NULL;                    // no if interface
+        ru->nr_start_if          = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
       }
 
@@ -2025,14 +2035,14 @@ void set_function_spec_param(RU_t *ru) {
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
       ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
-      ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
-      ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
+      ru->feptx_prec             = feptx_prec;          // need to do transmit Precoding + IDFTs
+      ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread; // need to do transmit Precoding + IDFTs
       ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
       ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
-      ru->start_rf               = NULL;                 // no local RF
+      ru->start_rf               = NULL;                // no local RF
       ru->stop_rf                = NULL;
-      ru->start_if               = start_if;             // need to start if interface for IF5
+      ru->nr_start_if            = nr_start_if;         // need to start if interface for IF5
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
@@ -2058,7 +2068,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_north_asynch_in     = NULL;
       ru->start_rf               = NULL;                // no local RF
       ru->stop_rf                = NULL;
-      ru->start_if               = start_if;            // need to start if interface for IF4p5
+      ru->nr_start_if            = nr_start_if;         // need to start if interface for IF4p5
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
@@ -2081,7 +2091,8 @@ void set_function_spec_param(RU_t *ru) {
 
 extern void RCconfig_RU(void);
 
-void init_RU(char *rf_config_file) {
+void init_NR_RU(char *rf_config_file)
+{
   int ru_id;
   RU_t *ru;
   PHY_VARS_gNB *gNB0= (PHY_VARS_gNB *)NULL;
@@ -2105,10 +2116,10 @@ void init_RU(char *rf_config_file) {
 
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     LOG_D(PHY,"Process RC.ru[%d]\n",ru_id);
-    ru               = RC.ru[ru_id];
+    ru                 = RC.ru[ru_id];
     ru->rf_config_file = rf_config_file;
-    ru->idx          = ru_id;
-    ru->ts_offset    = 0;
+    ru->idx            = ru_id;
+    ru->ts_offset      = 0;
     // use gNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
 
@@ -2149,7 +2160,7 @@ void init_RU(char *rf_config_file) {
       }
     }
 
-    //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
+    //LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);
@@ -2160,9 +2171,8 @@ void init_RU(char *rf_config_file) {
 }
 
 
-
-
-void stop_RU(int nb_ru) {
+void stop_RU(int nb_ru)
+{
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
     kill_NR_RU_proc(inst);
@@ -2172,7 +2182,8 @@ void stop_RU(int nb_ru) {
 
 /* --------------------------------------------------------*/
 /* from here function to use configuration module          */
-void RCconfig_RU(void) {
+void RCconfig_RU(void)
+{
   int i = 0, j = 0;
   paramdef_t RUParams[] = GNBRUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};

@@ -578,8 +578,8 @@ void* ru_thread_control( void* param )
 
  					  
 		fill_rf_config(ru,ru->rf_config_file);
-		init_frame_parms(&ru->frame_parms,1);
-		ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+		init_frame_parms(ru->frame_parms,1);
+		ru->frame_parms->nb_antennas_rx = ru->nb_rx;
 		phy_init_RU(ru);
 					 
 		//if (ru->is_slave == 1) lte_sync_time_init(&ru->frame_parms);

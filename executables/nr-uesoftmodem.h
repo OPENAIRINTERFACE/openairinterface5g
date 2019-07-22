@@ -71,7 +71,7 @@
     {"A" ,                      CONFIG_HLP_TADV,        0,                      uptr:&timing_advance,                  defintval:0,                    TYPE_UINT,      0},                     \
     {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),      defuintval:2680000000,          TYPE_UINT,      0},                     \
     {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                    defintval:0,                    TYPE_INT,       0},                     \
-    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         iptr:&do_forms,                        defintval:0,                    TYPE_INT,       0},                     \
+    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:&do_forms,                        defintval:0,                    TYPE_INT,       0},                     \
     {"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         iptr:&threequarter_fs,                 defintval:0,                    TYPE_INT,       0},                     \
     {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                   defintval:0,                    TYPE_UINT,      0},                     \
     {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                   defintval:0,                    TYPE_UINT,      0},                     \

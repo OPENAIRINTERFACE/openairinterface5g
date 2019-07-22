@@ -35,15 +35,15 @@
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
 
-#define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
-#define ENB_CONFIG_STRING_CC_NODE_TIMING                                "node_timing"   
-#define ENB_CONFIG_STRING_CC_NODE_SYNCH_REF                             "node_synch_ref"   
+#define ENB_CONFIG_STRING_CC_NODE_FUNCTION  "node_function"
+#define ENB_CONFIG_STRING_CC_NODE_TIMING    "node_timing"
+#define ENB_CONFIG_STRING_CC_NODE_SYNCH_REF "node_synch_ref"
 
 // OTG config per ENB-UE DL
-#define ENB_CONF_STRING_OTG_CONFIG                         "otg_config"
-#define ENB_CONF_STRING_OTG_UE_ID                          "ue_id"
-#define ENB_CONF_STRING_OTG_APP_TYPE                       "app_type"
-#define ENB_CONF_STRING_OTG_BG_TRAFFIC                     "bg_traffic"
+#define ENB_CONF_STRING_OTG_CONFIG          "otg_config"
+#define ENB_CONF_STRING_OTG_UE_ID           "ue_id"
+#define ENB_CONF_STRING_OTG_APP_TYPE        "app_type"
+#define ENB_CONF_STRING_OTG_BG_TRAFFIC      "bg_traffic"
 
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
@@ -92,6 +92,7 @@ typedef enum {
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
 #define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
 #define CONFIG_STRING_RU_END_OF_BURST_DELAY       "end_of_burst_delay"
+#define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -116,6 +117,7 @@ typedef enum {
 #define RU_SDR_CLK_SRC                20
 #define RU_SF_EXTENSION_IDX           21
 #define RU_END_OF_BURST_DELAY_IDX     22
+#define RU_OTA_SYNC_ENABLE_IDX        23
 
 
 
@@ -147,6 +149,7 @@ typedef enum {
 {CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
 {CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
 {CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_OTA_SYNC_ENABLE,               NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
