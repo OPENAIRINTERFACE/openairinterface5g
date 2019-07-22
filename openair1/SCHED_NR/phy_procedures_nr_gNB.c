@@ -120,19 +120,20 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
 	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	  
+	  // it is supposed that each logical antenna port correspont to a different beam so each SSB is stored into its own index of txdataF
     	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-    	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-    	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+    	  nr_generate_pss(gNB->d_pss, txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
+    	  nr_generate_sss(gNB->d_sss, txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
 
 	  if (fp->Lmax == 4)
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
 	  else
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
 
     	  nr_generate_pbch(&gNB->pbch,
                       pbch_pdu,
                       gNB->nr_pbch_interleaver,
-                      txdataF[0],
+                      txdataF[ssb_index],
                       AMP,
                       ssb_start_symbol,
                       n_hf,fp->Lmax,ssb_index,
@@ -186,7 +187,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     if (nfapi_mode == 0 || nfapi_mode == 1) {
       nr_generate_dci_top(gNB->pdcch_vars,
                           gNB->nr_gold_pdcch_dmrs[slot],
-                          gNB->common_vars.txdataF[0],
+                          gNB->common_vars.txdataF[0],  // hardcoded to beam 0
                           AMP, *fp, *cfg);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
       if (num_pdsch_rnti) {
