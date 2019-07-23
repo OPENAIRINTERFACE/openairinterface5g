@@ -89,6 +89,10 @@ static int x2ap_eNB_decode_successful_outcome(X2AP_X2AP_PDU_t *pdu)
       X2AP_INFO("x2ap_eNB_decode_successfuloutcome_message!\n");
       break;
 
+    case X2AP_ProcedureCode_id_endcX2Setup:
+    	X2AP_INFO("x2ap_eNB_decode_successfuloutcome_message!\n");
+    	break;
+
     default:
       X2AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
                   (int)pdu->choice.successfulOutcome.procedureCode);
@@ -130,9 +134,9 @@ int x2ap_eNB_decode_pdu(X2AP_X2AP_PDU_t *pdu, const uint8_t *const buffer, uint3
                         length,
                         0,
                         0);
-  if (asn1_xer_print) {
+  //if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, pdu);
-  }
+  //}
 
   if (dec_ret.code != RC_OK) {
     X2AP_ERROR("Failed to decode pdu\n");

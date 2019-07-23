@@ -1581,6 +1581,16 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
 				      for (int i=0; i<ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.count;i++) {
 				    	  servedCellMember = (ServedNRcellsENDCX2ManagementList__Member *)ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list.array[i];
 				    	  x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedNRCellInfo.nrpCI;
+				    	  //servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity.buf[0]
+				    	  X2AP_INFO("TAC: %02x%02x%02x\n",
+				    			  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[0],
+				    			  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[1],
+				    			  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[2]);
+
+				    	  X2AP_INFO("PLMN: %02x%02x%02x\n",
+				    			  servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity.buf[0],
+				    			  servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity.buf[1],
+				    			  servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity.buf[2]);
 				      }
 				  }
 			  }
