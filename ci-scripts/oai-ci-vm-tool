@@ -180,12 +180,12 @@ function variant__v4__cppcheck {
 }
 
 function variant__v5__gnb_usrp {
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--gNB -w USRP"
 }
 
 function variant__v6__nr_ue_usrp {
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=9
     BUILD_OPTIONS="--nrUE -w USRP"
 }
 
