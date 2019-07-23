@@ -1843,7 +1843,7 @@ function run_test_on_vm {
                     fi
                 fi
 
-                if [ $S1_NOS1_CFG -eq 0 ]
+                if [ $S1_NOS1_CFG -eq 2 ]
                 then
                     get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
                     echo "############################################################"
