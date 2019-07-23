@@ -384,9 +384,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   unsigned int G;
   unsigned int crc=1;
   unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
-
-  if(harq_pid >= dlsch->Mdlharq) {
-    LOG_E(PHY,"dlsch_encoding_2threads illegal harq_pid %d\n", harq_pid);
+  if((harq_pid < 0) || (harq_pid >= dlsch->Mdlharq)) {
+    LOG_E(PHY,"dlsch_encoding_2threads illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
     return(-1);
   }
 
@@ -676,9 +675,8 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned int crc=1;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
-
-  if(harq_pid >= dlsch->Mdlharq) {
-    LOG_E(PHY,"dlsch_encoding illegal harq_pid %d\n", harq_pid);
+  if((harq_pid < 0) || (harq_pid >= dlsch->Mdlharq)) {
+    LOG_E(PHY,"dlsch_encoding illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
     return(-1);
   }
 

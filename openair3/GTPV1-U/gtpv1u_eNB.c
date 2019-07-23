@@ -905,6 +905,10 @@ gtpv1u_create_s1u_tunnel(
   int                      ip_offset            = 0;
   in_addr_t                in_addr;
   int                      addrs_length_in_bytes= 0;
+  int                      loop_counter         = 0;
+  int                      ret                  = 0;
+
+
   MSC_LOG_RX_MESSAGE(
     MSC_GTPU_ENB,
     MSC_RRC_ENB,
@@ -919,6 +923,7 @@ gtpv1u_create_s1u_tunnel(
 
   for (i = 0; i < create_tunnel_req_pP->num_tunnels; i++) {
     ip_offset               = 0;
+    loop_counter            = 0;
     eps_bearer_id = create_tunnel_req_pP->eps_bearer_id[i];
     LOG_D(GTPU, "Rx GTPV1U_ENB_CREATE_TUNNEL_REQ ue rnti %x eps bearer id %u\n",
           create_tunnel_req_pP->rnti, eps_bearer_id);
@@ -933,7 +938,13 @@ gtpv1u_create_s1u_tunnel(
       stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;
       rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
       LOG_D(GTPU, ".\n");
-    } while (rc != NW_GTPV1U_OK);
+      loop_counter++;
+    } while (rc != NW_GTPV1U_OK && loop_counter < 10);
+    if ( rc != NW_GTPV1U_OK && loop_counter == 10 ) {
+      LOG_E(GTPU,"NwGtpv1uCreateTunnelEndPoint failed 10 times,start next loop\n");
+      ret = -1;
+      continue;
+    }
 
     //-----------------------
     // PDCP->GTPV1U mapping
@@ -1015,7 +1026,8 @@ gtpv1u_create_s1u_tunnel(
   LOG_D(GTPU, "Tx GTPV1U_ENB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
         create_tunnel_req_pP->rnti,
         create_tunnel_resp_pP->status);
-  return 0;
+  //return 0;
+  return ret;
 }
 
 int gtpv1u_update_s1u_tunnel(
@@ -1046,9 +1058,15 @@ int gtpv1u_update_s1u_tunnel(
   memcpy(gtpv1u_ue_data_new_p,gtpv1u_ue_data_p,sizeof(gtpv1u_ue_data_t));
   gtpv1u_ue_data_new_p->ue_id       = create_tunnel_req_pP->rnti;
   hash_rc = hashtable_insert(RC.gtpv1u_data_g->ue_mapping, create_tunnel_req_pP->rnti, gtpv1u_ue_data_new_p);
-  AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting ue_mapping in GTPV1U hashtable");
+  //AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting ue_mapping in GTPV1U hashtable");
+  if ( hash_rc != HASH_TABLE_OK ) {
+    LOG_E(GTPU,"Failed to insert ue_mapping(rnti=%x) in GTPV1U hashtable\n",create_tunnel_req_pP->rnti);
+    return -1;
+  } else {
   LOG_I(GTPU, "inserting ue_mapping(rnti=%x) in GTPV1U hashtable\n",
         create_tunnel_req_pP->rnti);
+  }
+
   hash_rc = hashtable_remove(RC.gtpv1u_data_g->ue_mapping, prior_rnti);
   LOG_I(GTPU, "hashtable_remove ue_mapping(rnti=%x) in GTPV1U hashtable\n",
         prior_rnti);

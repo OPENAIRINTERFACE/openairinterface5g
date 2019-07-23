@@ -378,9 +378,14 @@ NwGtpv1uCreateTunnelEndPoint( NW_IN  NwGtpv1uStackT *thiz,
       *phStackSession = (NwGtpv1uStackSessionHandleT) pTunnelEndPoint;
       pTunnelEndPoint = RB_FIND(NwGtpv1uTunnelEndPointIdentifierMap,
                                 &(thiz->teidMap), pTunnelEndPoint);
-      NW_ASSERT(pTunnelEndPoint);
-      GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
-                 pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      //NW_ASSERT(pTunnelEndPoint);
+      if (!pTunnelEndPoint) {
+        GTPU_ERROR("Tunnel end-point cannot be NULL");
+        rc = NW_GTPV1U_FAILURE;
+      } else {
+        GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
+                   pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      }
     }
 
   } else {

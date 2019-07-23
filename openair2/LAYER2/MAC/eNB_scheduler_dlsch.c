@@ -717,9 +717,12 @@ schedule_ue_spec(module_id_t module_idP,
       eNB_UE_stats->harq_pid = harq_pid;
       eNB_UE_stats->harq_round = round_DL;
 
+      if (eNB_UE_stats->rrc_status < RRC_RECONFIGURED) {
+        ue_sched_ctrl->uplane_inactivity_timer = 0;
+      }
+
       if (eNB_UE_stats->rrc_status < RRC_CONNECTED) {
-        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n",
-              UE_id);
+        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n", UE_id);
         continue;
       }
 
@@ -1006,9 +1009,11 @@ schedule_ue_spec(module_id_t module_idP,
                                               , 0
 #endif
                                              );
-            pthread_mutex_lock(&rrc_release_freelist);
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
+              while(pthread_mutex_trylock(&rrc_release_freelist)){
+                /* spin... */
+              }
               uint16_t release_total = 0;
 
               for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
@@ -1055,9 +1060,9 @@ schedule_ue_spec(module_id_t module_idP,
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
               }
+              pthread_mutex_unlock(&rrc_release_freelist);
             }
 
-            pthread_mutex_unlock(&rrc_release_freelist);
 
             for (ra_ii = 0, ra = &eNB->common_channels[CC_id].ra[0]; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
               if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
@@ -3084,11 +3089,9 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_rb_dl,
-            first_rb,
-            4);
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(n_rb_dl, first_rb, 4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;

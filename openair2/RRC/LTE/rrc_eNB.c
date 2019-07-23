@@ -1241,6 +1241,34 @@ void release_UE_in_freeList(module_id_t mod_id) {
   }
 }
 
+int rrc_eNB_previous_SRB2(rrc_eNB_ue_context_t*         ue_context_pP)
+{
+  struct LTE_SRB_ToAddMod                *SRB2_config = NULL;
+  uint8_t i;
+  LTE_SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  LTE_SRB_ToAddModList_t**                SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[ue_context_pP->ue_context.reestablishment_xid];
+  if (*SRB_configList2 != NULL) {
+    if((*SRB_configList2)->list.count!=0){
+      LOG_D(RRC, "rrc_eNB_previous_SRB2 SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
+              SRB_configList2, (*SRB_configList2)->list.count,  (*SRB_configList2)->list.array[0]);
+    }
+    for (i = 0; (i < (*SRB_configList2)->list.count) && (i < 3); i++) {
+      if ((*SRB_configList2)->list.array[i]->srb_Identity == 2 ){
+        SRB2_config = (*SRB_configList2)->list.array[i];
+        break;
+      }
+    }
+  }else{
+    LOG_E(RRC, "rrc_eNB_previous_SRB2 SRB_configList2 NULL\n");
+  }
+
+  if (SRB2_config != NULL) {
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  }else{
+    LOG_E(RRC, "rrc_eNB_previous_SRB2 SRB2_config NULL\n");
+  }
+  return 0;
+}
 //-----------------------------------------------------------------------------
 /*
 * Process the rrc connection setup complete message from UE (SRB1 Active)
@@ -1556,10 +1584,6 @@ rrc_eNB_generate_RRCConnectionReestablishment(
           rnti);
   }
 
-  /* Activate release timer, if RRCComplete not received after 100 frames, remove UE */
-  ue_context_pP->ue_context.ue_reestablishment_timer = 1;
-  /* Remove UE after 100 frames after LTE_RRCConnectionReestablishmentReject is triggered */
-  ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
 }
 
 //-----------------------------------------------------------------------------
@@ -1606,6 +1630,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
   int                                    measurements_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
+  int ret = 0;
+
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
@@ -1711,10 +1737,36 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
   create_tunnel_req.rnti       = ctxt_pP->rnti; // warning put zero above
   create_tunnel_req.num_tunnels    = j;
-  gtpv1u_update_s1u_tunnel(
+
+    ret = gtpv1u_update_s1u_tunnel(
     ctxt_pP->instance,
     &create_tunnel_req,
     reestablish_rnti);
+    if ( ret != 0 ) {
+      LOG_E(RRC,"gtpv1u_update_s1u_tunnel failed,start to release UE %x\n",reestablish_rnti);
+      // update s1u tunnel failed,reset rnti?
+      if (eNB_ue_s1ap_id > 0) {
+        h_rc = hashtable_get(rrc_instance_p->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&rrc_ue_s1ap_ids_p);
+        if (h_rc == HASH_TABLE_OK ) {
+          rrc_ue_s1ap_ids_p->ue_rnti = reestablish_rnti;
+        }
+      }
+      if (ue_initial_id != 0) {
+        h_rc = hashtable_get(rrc_instance_p->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&rrc_ue_s1ap_ids_p);
+        if (h_rc == HASH_TABLE_OK ) {
+          rrc_ue_s1ap_ids_p->ue_rnti = reestablish_rnti;
+        }
+      }
+      ue_context_pP->ue_context.ue_release_timer_s1 = 1;
+      ue_context_pP->ue_context.ue_release_timer_thres_s1 = 100;
+      ue_context_pP->ue_context.ue_release_timer = 0;
+      ue_context_pP->ue_context.ue_reestablishment_timer = 0;
+      ue_context_pP->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+      rrc_eNB_free_UE(ctxt_pP->module_id,ue_context_pP);
+      ue_context_pP->ue_context.ul_failure_timer = 0;
+      put_UE_in_freelist(ctxt_pP->module_id, ctxt_pP->rnti, 0);
+      return;
+    }
   } /* EPC_MODE_ENABLED */
 
   /* Update RNTI in ue_context */
@@ -2236,8 +2288,9 @@ rrc_eNB_generate_RRCConnectionRelease(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
-  pthread_mutex_lock(&rrc_release_freelist);
-
+  while (pthread_mutex_trylock(&rrc_release_freelist)) {
+    /* spin... */
+  }
   for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
     if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
       if (ue_context_pP->ue_context.ue_release_timer_s1 > 0) {
@@ -7194,15 +7247,51 @@ rrc_eNB_decode_ccch(
             rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
             break;
           }
-
+      if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
+         (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)){
+         LOG_E(RRC,
+               PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the c-rnti UE\n",
+               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+         RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+         rrc_eNB_previous_SRB2(ue_context_p);
+         ue_context_p->ue_context.ue_reestablishment_timer = 0;
+      }
+      //previous rnti
+      rnti_t previous_rnti = 0;
+      for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+        if (reestablish_rnti_map[i][1] == c_rnti) {
+          previous_rnti = reestablish_rnti_map[i][0];
+          break;
+        }
+      }
+      if(previous_rnti != 0){
+        UE_id = find_UE_id(ctxt_pP->module_id, previous_rnti);
+        if(UE_id == -1){
+            LOG_E(RRC,
+                  PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentRequest without UE_id(MAC) previous rnti %x, let's reject the UE\n",
+                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),previous_rnti);
+            rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
+            break;
+        }
           if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
               (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)) {
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
             RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
-            ue_context_p->ue_context.ue_reestablishment_timer = 0;
-          }
+          rrc_eNB_previous_SRB2(ue_context_p);
+          ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        }
+      }
+
+      //c-plane not end
+      if((ue_context_p->ue_context.Status != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
+        LOG_E(RRC,
+             PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest (UE %x c-plane is not end), let's reject the UE\n",
+             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
+        rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
+        break;
+      }
 
           if(ue_context_p->ue_context.ue_reestablishment_timer > 0) {
             LOG_E(RRC,
@@ -7921,7 +8010,7 @@ rrc_eNB_decode_dcch(
           }
 
           RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-          ue_context_p->ue_context.ue_reestablishment_timer = 0;
+          ue_context_p->ue_context.reestablishment_xid = -1;
 
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.present ==
               LTE_RRCConnectionReestablishmentComplete__criticalExtensions_PR_rrcConnectionReestablishmentComplete_r8) {

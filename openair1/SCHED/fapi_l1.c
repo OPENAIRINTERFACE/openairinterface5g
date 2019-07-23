@@ -186,21 +186,11 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 
 #endif
   harq_pid        = dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_tx];
-  AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7 frame:%d subframe:%d subframe(TX):%d rnti:%x UE_id:%d dlsch0[harq_ids:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n",
-              harq_pid,
-              frame,subframe,
-              proc->subframe_tx,rel8->rnti,UE_id,
-              dlsch0->harq_ids[proc->frame_tx%2][0],
-              dlsch0->harq_ids[proc->frame_tx%2][1],
-              dlsch0->harq_ids[proc->frame_tx%2][2],
-              dlsch0->harq_ids[proc->frame_tx%2][3],
-              dlsch0->harq_ids[proc->frame_tx%2][4],
-              dlsch0->harq_ids[proc->frame_tx%2][5],
-              dlsch0->harq_ids[proc->frame_tx%2][6],
-              dlsch0->harq_ids[proc->frame_tx%2][7],
-              dlsch0->harq_ids[proc->frame_tx%2][8],
-              dlsch0->harq_ids[proc->frame_tx%2][9]
-             );
+  if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
+    LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
+    return;
+  }
+
   dlsch0_harq     = dlsch0->harq_processes[harq_pid];
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
   AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
