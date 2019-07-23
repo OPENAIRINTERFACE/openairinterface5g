@@ -261,7 +261,7 @@ typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
 #if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  SCellToAddMod_r10_t                sCell_config[2];
+  LTE_SCellToAddMod_r10_t            sCell_config[2];
 #endif
   NR_SRB_ToAddModList_t*             SRB_configList;
   NR_SRB_ToAddModList_t*             SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
