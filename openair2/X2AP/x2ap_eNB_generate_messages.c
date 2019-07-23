@@ -323,6 +323,10 @@ int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_instance_t *instance_p, x2ap_eN
                                    &servedCellMember->servedCellInfo.cellId.eUTRANcellIdentifier);
 
         INT16_TO_OCTET_STRING(instance_p->tac, &servedCellMember->servedCellInfo.tAC);
+        X2AP_INFO("TAC: %d -> %02x%02x\n", instance_p->tac,
+       		  	  servedCellMember->servedCellInfo.tAC.buf[0],
+				  servedCellMember->servedCellInfo.tAC.buf[1]);
+
         plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
         {
           MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
@@ -1341,7 +1345,7 @@ int x2ap_eNB_generate_ENDC_x2_setup_request(
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
-    X2AP_ERROR("Failed to encode X2 setup request\n");
+    X2AP_ERROR("Failed to encode X2 setup response\n");
     return -1;
   }
 
@@ -1357,6 +1361,7 @@ int x2ap_eNB_generate_ENDC_x2_setup_request(
 int x2ap_gNB_generate_ENDC_x2_setup_response(
   x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p)
 {
+	X2AP_INFO("In x2ap_gNB_generate_ENDC_x2_setup_response ()!\n");
   X2AP_X2AP_PDU_t                     	 pdu;
   X2AP_ENDCX2SetupResponse_t              *out;
   X2AP_ENDCX2SetupResponse_IEs_t          *ie;
@@ -1375,7 +1380,7 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
 
   /* Prepare the X2AP message to encode */
   memset(&pdu, 0, sizeof(pdu));
-  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_endcX2Setup;
   pdu.choice.successfulOutcome.criticality = X2AP_Criticality_reject;
   pdu.choice.successfulOutcome.value.present = X2AP_SuccessfulOutcome__value_PR_ENDCX2SetupResponse;
@@ -1394,6 +1399,12 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
 
   INT32_TO_OCTET_STRING(instance_p->eNB_id,
                                &ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID);
+
+  X2AP_INFO("%d -> %02x%02x%02x\n", instance_p->eNB_id,
+		  ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID.buf[0],
+		  ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID.buf[1],
+		  ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID.buf[2]);
+
   MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
                       &ie_GNB_ENDC->value.choice.GlobalGNB_ID.pLMN_Identity);
 
@@ -1414,6 +1425,12 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
                         &servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity);
           NR_CELL_ID_TO_BIT_STRING(instance_p->eNB_id,
                                      &servedCellMember->servedNRCellInfo.nrCellID.nRcellIdentifier);
+          NR_EXTENDED_TAC_ID_TO_BIT_STRING(instance_p->tac, &servedCellMember->servedNRCellInfo.eXtended_TAC);
+
+          X2AP_INFO("TAC: %d -> %02x%02x%02x\n", instance_p->tac,
+        		  	  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[0],
+					  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[1],
+					  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[2]);
 
           plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
           {
@@ -1421,9 +1438,9 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.broadcastPLMNs.list, plmn);
           }
 
-          if (instance_p->frame_type[i] == TDD) {
+          if (instance_p->frame_type[i] == TDD) { // Panos: Remember to change that to TDD
         	  servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
-        	  servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_ARFCN = instance_p->tdd_nRARFCN[i];
+        	  servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_ARFCN = 0; //instance_p->tdd_nRARFCN[i];
         	  /*Missing addition of Frequency Band List item here, can't find it...  */
         	  switch (instance_p->N_RB_DL[i]) {
         	  case 50:
@@ -1470,7 +1487,7 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
         	  AssertFatal(0,"nr_X2Setupresponse not supported for FDD!");
           }
           /*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
-          INT16_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
+          INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
 
         }
         ASN_SEQUENCE_ADD(&ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list, servedCellMember);

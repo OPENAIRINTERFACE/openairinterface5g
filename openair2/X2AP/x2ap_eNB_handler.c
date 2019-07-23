@@ -1463,7 +1463,8 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
   DevAssert(instance_p != NULL);
 
   // Panos: Here we should be calling an ENDC specific setup response function
-  return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
+  return x2ap_gNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
+  //return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
 int
