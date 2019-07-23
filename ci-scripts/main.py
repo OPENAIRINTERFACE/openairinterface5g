@@ -122,7 +122,7 @@ class SSHConnection():
 		self.backgroundBuild = False
 		self.backgroundBuildTestId = ['', '', '']
 		self.Initialize_eNB_args = ''
-        self.air_interface = 'lte'
+		self.air_interface = 'lte'
 		self.eNB_instance = ''
 		self.eNB_serverId = ''
 		self.eNBLogFiles = ['', '', '']
@@ -355,13 +355,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(lIpAddr, lUserName, lPassWord)
-        result = re.search('--gNB', self.Build_eNB_args)
+		result = re.search('--gNB', self.Build_eNB_args)
 		if result is not None:
 			self.air_interface = 'nr'
-			nodeB_prefix = 'g'
 		else:
 			self.air_interface = 'lte'
-			nodeB_prefix = 'e'
 		self.command('mkdir -p ' + lSourcePath, '\$', 5)
 		self.command('cd ' + lSourcePath, '\$', 5)
 		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
@@ -462,8 +460,12 @@ class SSHConnection():
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
 		self.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
-		self.command('ls lte_build_oai/build', '\$', 3)
-		self.command('ls lte_build_oai/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
+		self.command('ls ran_build/build', '\$', 3)
+		if self.air_interface == 'nr':
+			nodeB_prefix = 'g'
+		else:
+			nodeB_prefix = 'e'
 		buildStatus = True
 		result = re.search(self.air_interface + '-softmodem', str(self.ssh.before))
 		if result is None:
@@ -2736,7 +2738,7 @@ class SSHConnection():
 			result = re.search('[Cc]ore [dD]ump', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
-			result = re.search('./lte_build_oai/build/lte-softmodem', str(line))
+			result = re.search('./ran_build/build/lte-softmodem', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
@@ -3172,7 +3174,7 @@ class SSHConnection():
 				copyin_res = self.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
-                    self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'					
+					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					return
 				if self.eNB_serverId != '0':
@@ -3927,7 +3929,7 @@ def GetParametersFromXML(action):
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
-        SSH.eNB_serverId = test.findtext('eNB_serverId')
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
 		if (SSH.eNB_serverId is None):
 			SSH.eNB_serverId = '0'
 		SSH.air_interface = test.findtext('air_interface')
@@ -3940,7 +3942,7 @@ def GetParametersFromXML(action):
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
-        SSH.eNB_serverId = test.findtext('eNB_serverId')
+		SSH.eNB_serverId = test.findtext('eNB_serverId')
 		if (SSH.eNB_serverId is None):
 			SSH.eNB_serverId = '0'
 		SSH.air_interface = test.findtext('air_interface')
