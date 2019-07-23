@@ -488,7 +488,7 @@ schedule_ue_spec(module_id_t module_idP,
   COMMON_channels_t *cc = eNB->common_channels;
   UE_list_t *UE_list = &eNB->UE_list;
   int continue_flag = 0;
-  int32_t normalized_rx_power, target_rx_power;
+  int32_t snr, target_snr;
   int tpc = 1;
   UE_sched_ctrl_t *ue_sched_ctrl;
   int mcs;
@@ -1482,11 +1482,11 @@ schedule_ue_spec(module_id_t module_idP,
           }
 
           // do PUCCH power control
-          // this is the normalized RX power
+          // this is the snr
           // unit is not dBm, it's special from nfapi
-          // converting to dBm: ToDo: Noise power hard coded to 30
-          normalized_rx_power = (((5 * ue_sched_ctrl->pucch1_snr[CC_id]) - 640) / 10) + 30;
-          target_rx_power= (eNB->puCch10xSnr / 10) + 30;
+          // converting to dBm
+          snr = (5 * ue_sched_ctrl->pucch1_snr[CC_id] - 640) / 10;
+          target_snr = eNB->puCch10xSnr / 10;
           // this assumes accumulated tpc
           // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
           int32_t framex10psubframe = ue_template->pucch_tpc_tx_frame * 10 + ue_template->pucch_tpc_tx_subframe;
@@ -1498,22 +1498,22 @@ schedule_ue_spec(module_id_t module_idP,
               ue_template->pucch_tpc_tx_frame = frameP;
               ue_template->pucch_tpc_tx_subframe = subframeP;
 
-              if (normalized_rx_power > (target_rx_power + 4)) {
+              if (snr > target_snr + 4) {
                 tpc = 0;  //-1
-              } else if (normalized_rx_power < (target_rx_power - 4)) {
+              } else if (snr < target_snr - 4) {
                 tpc = 2;  //+1
               } else {
                 tpc = 1;  //0
               }
 
-              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
+              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d\n",
                     module_idP,
                     frameP,
                     subframeP,
                     harq_pid,
                     tpc,
-                    normalized_rx_power,
-                    target_rx_power);
+                    snr,
+                    target_snr);
             } // Po_PUCCH has been updated
             else {
               tpc = 1;  //0
@@ -1894,8 +1894,8 @@ schedule_ue_spec_br(module_id_t module_idP,
   int round_DL = 0;
   int ta_update = 0;
   int32_t tpc = 1;
-  int32_t normalized_rx_power = 0;
-  int32_t target_rx_power = 0;
+  int32_t snr = 0;
+  int32_t target_snr = 0;
   uint16_t TBS = 0;
   uint16_t j = 0;
   uint16_t sdu_lengths[NB_RB_MAX];
@@ -2373,10 +2373,10 @@ schedule_ue_spec_br(module_id_t module_idP,
             T_INT(harq_pid),
             T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
           /* Do PUCCH power control */
-          /* This is the normalized RX power */
-          /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-          normalized_rx_power = (5 * ue_sched_ctl->pucch1_snr[CC_id]-640) / 10 + 30;
-          target_rx_power = mac->puCch10xSnr / 10 + 30;
+          /* This is the snr */
+          /* unit is not dBm, it's special from nfapi, convert to dBm */
+          snr = (5 * ue_sched_ctl->pucch1_snr[CC_id] - 640) / 10;
+          target_snr = mac->puCch10xSnr / 10;
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
           int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame * 10 + UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
@@ -2389,22 +2389,22 @@ schedule_ue_spec_br(module_id_t module_idP,
               UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
               UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
-              if (normalized_rx_power > (target_rx_power + 4)) {
+              if (snr > target_snr + 4) {
                 tpc = 0; //-1
-              } else if (normalized_rx_power<(target_rx_power - 4)) {
+              } else if (snr < target_snr - 4) {
                 tpc = 2; //+1
               } else {
                 tpc = 1; //0
               }
 
-              LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
+              LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d\n",
                     module_idP,
                     frameP,
                     subframeP,
                     harq_pid,
                     tpc,
-                    normalized_rx_power,
-                    target_rx_power);
+                    snr,
+                    target_snr);
             } else { // Po_PUCCH has been updated
               tpc = 1; // 0
             }
