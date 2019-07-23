@@ -169,6 +169,7 @@ function variant__v2__basic_sim {
 function variant__v3__phy_sim {
     NB_PATTERN_FILES=12
     BUILD_OPTIONS="--phy_simulators"
+    VM_MEMORY=8192
     RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
 }
 
