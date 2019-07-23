@@ -99,11 +99,20 @@ int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int
   return rcved;
 }
 
-int sendSubFrame(UDPsock_t *sock, void *bufferZone) {
-  commonUDP_t *header=(commonUDP_t *)bufferZone ;
-  int nbBlocks=header->nbBlocks;
+int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize) {
+  commonUDP_t *UDPheader=(commonUDP_t *)bufferZone ;
+  int nbBlocks=UDPheader->nbBlocks;
+  int blockId=0;
 
   do {
+    if (blockId > 0 ) {
+      commonUDP_t *currentHeader=(commonUDP_t *)bufferZone;
+      *currentHeader=*UDPheader;
+      currentHeader->blockID=blockId;
+      memcpy(commonUDPdata((void *)currentHeader), commonUDPdata(bufferZone), secondHeaderSize);
+      blockId++;
+    }
+
     int sz=alignedSize(bufferZone);
     // Let's use the first address returned by getaddrinfo()
     int ret=sendto(sock->sockHandler, bufferZone, sz, 0,

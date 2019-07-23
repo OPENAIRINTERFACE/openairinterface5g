@@ -34,17 +34,44 @@ typedef struct frequency_s {
   int nbSamples;
 } frequency_t;
 
+typedef struct {
+  int frame;
+  int subframe;
+  uint16_t max_preamble[4];
+  uint16_t max_preamble_energy[4];
+  uint16_t max_preamble_delay[4];
+  uint16_t avg_preamble_energy[4];
+} fs6_ul_t;
+
+
+typedef struct {
+  int frame;
+  int subframe;
+  int num_pdcch_symbols;
+  int num_dci;
+  DCI_ALLOC_t dci_alloc[32];
+  int num_mdci;
+  int amp;
+  bool UE_active[NUMBER_OF_UE_MAX];
+  LTE_eNB_PHICH phich_vars;
+} fs6_dl_t;
+
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
 int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
-int sendSubFrame(UDPsock_t *sock, void *bufferZone);
+int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize);
 
-inline size_t alignedSize(void *ptr) {
+#define initBufferZone(xBuf) \
+  uint8_t xBuf[FS6_BUF_SIZE];\
+  ((commonUDP_t *)xBuf)->nbBlocks=0;
+
+
+inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
   return ((header->contentBytes+sizeof(commonUDP_t)+blockAlign-1)/blockAlign)*blockAlign;
 }
 
-inline void * commonUDPdata(void* ptr) {
-  return (void*) (((commonUDP_t*)ptr)+1);
+inline void *commonUDPdata(uint8_t *ptr) {
+  return (void *) (((commonUDP_t *)ptr)+1);
 }
 
 void *cu_fs6(void *arg);
@@ -54,7 +81,16 @@ void rx_rf(RU_t *ru,int *frame,int *subframe);
 void tx_rf(RU_t *ru);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
-
+bool dlsch_procedures(PHY_VARS_eNB *eNB,
+                      L1_rxtx_proc_t *proc,
+                      int harq_pid,
+                      LTE_eNB_DLSCH_t *dlsch,
+                      LTE_eNB_UE_stats *ue_stats) ;
+void pdsch_procedures(PHY_VARS_eNB *eNB,
+                      L1_rxtx_proc_t *proc,
+                      int harq_pid,
+                      LTE_eNB_DLSCH_t *dlsch,
+                      LTE_eNB_DLSCH_t *dlsch1);
 // mistakes in main OAI
 void  phy_init_RU(RU_t *);
 void feptx_prec(RU_t *);
