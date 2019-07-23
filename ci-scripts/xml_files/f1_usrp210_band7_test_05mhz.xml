@@ -24,7 +24,7 @@
 	<htmlTabRef>test-f1-05</htmlTabRef>
 	<htmlTabName>Test-F1-CU-DU-05MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
  030201
  040101
