@@ -4060,8 +4060,40 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0] = 0;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.size = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.bits_unused = 6;
-  MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = (LTE_Q_OffsetRange_t *) CALLOC(1,sizeof(LTE_Q_OffsetRange_t));
-  *(MeasObj->measObject.choice.measObjectEUTRA.offsetFreq) = ue_context_pP->ue_context.measurement_info->offsetFreq;   // Default is 15 or 0dB
+//<<<<<<< HEAD
+  MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = NULL;   // Default is 15 or 0dB
+  if (rrc_inst->carrier[0].sib1->tdd_Config!=NULL) {
+    MeasObj->measObject.choice.measObjectEUTRA.ext1 = CALLOC(1, sizeof(struct LTE_MeasObjectEUTRA__ext1));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measCycleSCell_r10 = NULL;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10 = CALLOC(1, sizeof(struct LTE_MeasSubframePatternConfigNeigh_r10));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->present=LTE_MeasSubframePatternConfigNeigh_r10_PR_setup;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.present=LTE_MeasSubframePattern_r10_PR_subframePatternTDD_r10;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.present=LTE_MeasSubframePattern_r10__subframePatternTDD_r10_PR_subframeConfig1_5_r10;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf=CALLOC(3, sizeof(uint8_t));
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.size=3;
+    MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.bits_unused=4; 
+    switch (rrc_inst->carrier[0].sib1->tdd_Config->subframeAssignment) {
+    case 1: //subframe 0,4,5,9
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[0]=0x8C;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[1]=0x63;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[2]=0x10;
+      break;
+
+    default: //subframe 0 , 5
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[0]=0x84;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[1]=0x21;
+      MeasObj->measObject.choice.measObjectEUTRA.ext1->measSubframePatternConfigNeigh_r10->choice.setup.measSubframePatternNeigh_r10.choice.subframePatternTDD_r10.choice.subframeConfig1_5_r10.buf[2]=0x00;
+      break;
+    }
+  }
+
+  MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
+    (LTE_CellsToAddModList_t *) CALLOC(1, sizeof(*CellsToAddModList));
+  CellsToAddModList = MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList;
+//=======
+//  MeasObj->measObject.choice.measObjectEUTRA.offsetFreq = (LTE_Q_OffsetRange_t *) CALLOC(1,sizeof(LTE_Q_OffsetRange_t));
+//  *(MeasObj->measObject.choice.measObjectEUTRA.offsetFreq) = ue_context_pP->ue_context.measurement_info->offsetFreq;   // Default is 15 or 0dB
+//>>>>>>> origin/OAI_develop
 
   if (RC.rrc[ctxt_pP->module_id]->num_neigh_cells > 0) {
     MeasObj->measObject.choice.measObjectEUTRA.cellsToAddModList =
@@ -4557,7 +4589,9 @@ rrc_eNB_process_MeasurementReport(
     /* HO info struct may not be needed anymore */
     ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
     ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
+
     /* HO Preparation message */
     msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ);
     rrc_eNB_generate_HandoverPreparationInformation(
@@ -4685,8 +4719,8 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   RB_INSERT(rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head, ue_context_target_p);
   LOG_D(RRC, "eNB %d: Created new UE context uid %u\n", mod_id, ue_context_target_p->local_uid);
   ue_context_target_p->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-  ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
-  ue_context_target_p->ue_context.handover_info->state = HO_ACK;
+  //ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  //ue_context_target_p->ue_context.handover_info->state = HO_ACK;
   ue_context_target_p->ue_context.handover_info->x2_id = m->x2_id;
   ue_context_target_p->ue_context.handover_info->assoc_id = m->target_assoc_id;
   memset (ue_context_target_p->ue_context.nh, 0, 32);
@@ -4760,6 +4794,10 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
           ue_context_target_p->ue_context.e_rab[i].param.e_rab_id,
           ue_context_target_p->ue_context.e_rab[i].param.gtp_teid);
   }
+  rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(mod_id, ue_context_target_p);
+
+  ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  ue_context_target_p->ue_context.handover_info->state = HO_ACK;
 }
 
 void rrc_eNB_process_handoverCommand(
@@ -4975,7 +5013,8 @@ check_handovers(
       if (ue_context_p->ue_context.handover_info->state == HO_ACK) {
         MessageDef *msg;
         // Configure target
-        ue_context_p->ue_context.handover_info->state = HO_CONFIGURED;
+        ue_context_p->ue_context.handover_info->state = HO_FORWARDING;
+
         msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_HANDOVER_REQ_ACK);
         rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p, X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
             &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
@@ -4988,12 +5027,161 @@ check_handovers(
         X2AP_HANDOVER_REQ_ACK(msg).nb_e_rabs_tobesetup = ue_context_p->ue_context.setup_e_rabs;
 
         for (int i=0; i<ue_context_p->ue_context.setup_e_rabs; i++) {
+          /* set gtpv teid info */
           X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
+	  X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].gtp_teid = ue_context_p->ue_context.enb_gtp_x2u_teid[i];
+          X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr = ue_context_p->ue_context.enb_gtp_x2u_addrs[i];
         }
 
         itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
         LOG_I(RRC, "RRC Sends X2 HO ACK to the source eNB at frame %d and subframe %d \n", ctxt_pP->frame,ctxt_pP->subframe);
       }
+    }
+
+    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED 
+	&& ue_context_p->ue_context.handover_info != NULL && 
+	ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_NO_EMPTY ) {
+
+#if defined(ENABLE_ITTI)
+      MessageDef	 *msg_p;
+      int		 result;
+      protocol_ctxt_t  ctxt;
+
+      do {
+        // Checks if a message has been sent to PDCP sub-task
+	itti_poll_msg (TASK_DATA_FORWARDING, &msg_p);
+  
+	if (msg_p != NULL) {
+  
+	  switch (ITTI_MSG_ID(msg_p)) {
+	    case GTPV1U_ENB_DATA_FORWARDING_IND:
+	    PROTOCOL_CTXT_SET_BY_MODULE_ID(
+			&ctxt,
+			GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).module_id,
+			GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).enb_flag,
+			GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rnti,
+			GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).frame, 
+		        0,
+		        GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).eNB_index);
+	    LOG_D(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+		  PROTOCOL_CTXT_ARGS(&ctxt),
+		  ITTI_MSG_NAME (msg_p),
+		  ITTI_MSG_ORIGIN_NAME(msg_p),
+		  ITTI_MSG_INSTANCE (msg_p),
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).mode);
+  
+	    LOG_I(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %d \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
+            result = pdcp_data_req (&ctxt,
+				    SRB_FLAG_NO,
+			            GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
+				    GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
+				    GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
+			            GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).sdu_size,
+				    GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).sdu_p,
+				    GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).mode
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+				    , NULL, NULL
+#endif
+				    );
+	    if (result != TRUE){
+              LOG_E(RRC, "target enb send data forwarding buffer to PDCP request failed!\n");   
+            }else{
+              LOG_D(RRC, "target enb send data forwarding buffer to PDCP!\n");
+            }
+
+            // Message buffer has been processed, free it now.
+	    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).sdu_p);
+	    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+            break;
+  
+	default:
+	  LOG_E(RRC, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
+	  break;
+	}
+  
+	result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+	AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      }
+    } while(msg_p != NULL);
+    ue_context_p->ue_context.handover_info->forwarding_state = FORWARDING_EMPTY;
+    }
+    if( ue_context_p->ue_context.Status == RRC_RECONFIGURED &&
+	ue_context_p->ue_context.handover_info != NULL &&
+	ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_EMPTY &&
+	ue_context_p->ue_context.handover_info->endmark_state == ENDMARK_NO_EMPTY &&
+	ue_context_p->ue_context.handover_info->state == HO_END_MARKER	  ){
+
+      MessageDef	 *msg_p;
+      int		 result;
+      protocol_ctxt_t  ctxt;
+
+      do {
+        // Checks if a message has been sent to PDCP sub-task
+        itti_poll_msg (TASK_END_MARKER, &msg_p);
+
+        if (msg_p != NULL) {
+
+	switch (ITTI_MSG_ID(msg_p)) {
+	  case GTPV1U_ENB_END_MARKER_IND:
+	    PROTOCOL_CTXT_SET_BY_MODULE_ID(
+	        &ctxt,
+		GTPV1U_ENB_END_MARKER_IND (msg_p).module_id,
+	        GTPV1U_ENB_END_MARKER_IND (msg_p).enb_flag,
+		GTPV1U_ENB_END_MARKER_IND (msg_p).rnti,
+		GTPV1U_ENB_END_MARKER_IND (msg_p).frame,
+		0,
+		GTPV1U_ENB_END_MARKER_IND (msg_p).eNB_index);
+	    LOG_I(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+		  PROTOCOL_CTXT_ARGS(&ctxt),
+		  ITTI_MSG_NAME (msg_p),
+		  ITTI_MSG_ORIGIN_NAME(msg_p),
+		  ITTI_MSG_INSTANCE (msg_p),
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
+		  GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).mode);
+
+	    LOG_D(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %d \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
+	    result = pdcp_data_req (&ctxt,
+		  		    SRB_FLAG_NO,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).rb_id,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).muip,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).confirmp,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).sdu_size,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).sdu_p,
+		  		    GTPV1U_ENB_END_MARKER_IND (msg_p).mode
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+		  		    , NULL, NULL
+#endif
+		  		   );
+	    if (result != TRUE){
+              LOG_E(RRC, "target enb send spgw buffer to PDCP request failed!\n");
+	    }else{
+	      LOG_D(RRC, "target enb send spgw buffer to PDCP!\n");
+	    }
+
+	    // Message buffer has been processed, free it now.
+	    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), GTPV1U_ENB_END_MARKER_IND (msg_p).sdu_p);
+	    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+	    break;
+
+	    default:
+	      LOG_E(RRC, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
+	      break;
+          }
+
+          result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+          AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+        }
+      } while(msg_p != NULL);
+
+      ue_context_p->ue_context.handover_info->endmark_state = ENDMARK_EMPTY;
+      ue_context_p->ue_context.handover_info->state = HO_FORWARDING_COMPLETE;
+
+#endif
     }
   }
 }
@@ -7557,6 +7745,9 @@ rrc_eNB_decode_dcch(
               dedicated_DRB = 3;
               RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+	      if(ue_context_p->ue_context.handover_info){
+	        ue_context_p->ue_context.handover_info->state = HO_CONFIGURED;
+	      }
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
@@ -7635,6 +7826,7 @@ rrc_eNB_decode_dcch(
             }
           } else if(dedicated_DRB == 0) {
             if(ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1) {
+              
               rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
                   ue_context_p);
             } else {
@@ -8540,7 +8732,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   instance = ITTI_MSG_INSTANCE(msg_p);
   /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
   if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
-    LOG_I(RRC,"Received message %s\n",msg_name_p);
+    LOG_D(RRC,"Received message %s\n",msg_name_p);
 
   switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -8679,6 +8871,9 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
     case X2AP_HANDOVER_REQ_ACK: {
       struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
+      x2ap_handover_req_ack_t 			  *x2ap_handover_req_ack = NULL;
+      hashtable_rc_t                	  hash_rc      = HASH_TABLE_KEY_NOT_EXISTS;
+      gtpv1u_ue_data_t             		  *gtpv1u_ue_data_p = NULL;
       ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_HANDOVER_REQ_ACK(msg_p).rnti);
       if (ue_context_p == NULL) {
         /* is it possible? */
@@ -8690,7 +8885,44 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       DevAssert(ue_context_p != NULL);
 
       if (ue_context_p->ue_context.handover_info->state != HO_REQUEST) abort();
+	  
+      hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, ue_context_p->ue_context.rnti, (void**)&gtpv1u_ue_data_p);
+      /* set target enb gtp teid */
+      if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+        LOG_E(RRC, "X2AP_HANDOVER_REQ_ACK func(), hashtable_get failed: while getting ue rnti %x in hashtable ue_mapping\n", ue_context_p->ue_context.rnti);
+      } else {
+        uint8_t nb_e_rabs_tobesetup = 0;
+	ebi_t   eps_bearer_id       = 0;
+	int     ip_offset           = 0;
+	in_addr_t  in_addr;
+	x2ap_handover_req_ack = &X2AP_HANDOVER_REQ_ACK(msg_p);
+	nb_e_rabs_tobesetup = x2ap_handover_req_ack->nb_e_rabs_tobesetup;
+        ue_context_p->ue_context.nb_x2u_e_rabs = nb_e_rabs_tobesetup;
+	for(int i=0; i< nb_e_rabs_tobesetup; i++){
+	  ip_offset               = 0;
+	  eps_bearer_id = x2ap_handover_req_ack->e_rabs_tobesetup[i].e_rab_id;
+          ue_context_p->ue_context.enb_gtp_x2u_ebi[i] = eps_bearer_id;
+          ue_context_p->ue_context.enb_gtp_x2u_teid[i] = x2ap_handover_req_ack->e_rabs_tobesetup[i].gtp_teid;
+	  gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_teNB = x2ap_handover_req_ack->e_rabs_tobesetup[i].gtp_teid; 
+			
+	  if ((x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.length == 4) ||
+	      (x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.length == 20)) {
+	      in_addr = *((in_addr_t*)x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.buffer);
+	      ip_offset = 4;
+	      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].tenb_ip_addr = in_addr;
+              ue_context_p->ue_context.enb_gtp_x2u_addrs[i] = x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr;
+	  }
 
+	  if ((x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.length == 16) ||
+	      (x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.length == 20)) {
+	      memcpy(gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].tenb_ip6_addr.s6_addr,
+		     &x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.buffer[ip_offset],
+		     16);
+          }
+
+        }
+      }
+	  
       rrc_eNB_process_handoverCommand(instance, ue_context_p, &X2AP_HANDOVER_REQ_ACK(msg_p));
       ue_context_p->ue_context.handover_info->state = HO_PREPARE;
       break;

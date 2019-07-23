@@ -50,11 +50,17 @@
 #include "common/ran_context.h"
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1u_eNB_task.h"
+#include "rrc_eNB_GTPV1U.h"
 
 #undef GTP_DUMP_SOCKET
 
 extern unsigned char NB_eNB_INST;
 extern RAN_CONTEXT_t RC;
+
+extern struct rrc_eNB_ue_context_s*
+rrc_eNB_get_ue_context(
+  eNB_RRC_INST* rrc_instance_pP,
+  rnti_t rntiP);
 
 #if defined(GTP_DUMP_SOCKET) && GTP_DUMP_SOCKET > 0
 #include <linux/if.h>
@@ -104,6 +110,27 @@ static void gtpv1u_eNB_write_dump_socket(uint8_t *buffer_pP, uint32_t buffer_len
 }
 
 #endif
+
+//-----------------------------------------------------------------------------
+static int gtpv1u_eNB_get_msgsource(struct rrc_eNB_ue_context_s *ue_context_p, teid_t teid)
+{
+  int erab_index = 0;
+
+  /* source enb */
+  if(ue_context_p->ue_context.handover_info != NULL && ue_context_p->ue_context.handover_info->state == HO_COMPLETE)
+  {
+    return GTPV1U_MSG_FROM_SPGW; 
+  }
+
+  /* target enb */
+  for (erab_index = 0; erab_index < ue_context_p->ue_context.nb_x2u_e_rabs; erab_index++) {
+    if(ue_context_p->ue_context.enb_gtp_x2u_teid[erab_index] == teid){
+      return GTPV1U_MSG_FROM_SOURCE_ENB;  
+    }
+  }
+  
+  return GTPV1U_MSG_FROM_SPGW;  
+}
 
 //-----------------------------------------------------------------------------
 static int gtpv1u_eNB_send_init_udp(const Gtpv1uS1Req *req) {
@@ -198,10 +225,16 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
     case NW_GTPV1U_ULP_API_RECV_TPDU: {
       uint8_t              buffer[4096];
       uint32_t             buffer_len;
+      struct rrc_eNB_ue_context_s        *ue_context_p;	
+      uint16_t             msgType = NW_GTP_GPDU;
+      NwGtpv1uMsgT 		 *pMsg = NULL;
+
       /* Nw-gptv1u stack has processed a PDU. we can schedule it to PDCP
        * for transmission.
        */
       teid = pUlpApi->apiInfo.recvMsgInfo.teid;
+      pMsg = (NwGtpv1uMsgT *) pUlpApi->apiInfo.recvMsgInfo.hMsg;
+      msgType = pMsg->msgType;
 
       if (NW_GTPV1U_OK != nwGtpv1uMsgGetTpdu(pUlpApi->apiInfo.recvMsgInfo.hMsg,
                                              buffer, &buffer_len)) {
@@ -243,6 +276,158 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
           0,0,
           (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
           buffer_len);
+
+    ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
+    if((ue_context_p != NULL) && 
+       (ue_context_p->ue_context.handover_info != NULL) &&
+       (ue_context_p->ue_context.handover_info->state < HO_FORWARDING_COMPLETE)) {
+
+      if(msgType == NW_GTP_END_MARKER){
+        /* in the source enb, UE in RRC_HO_EXECUTION mode */
+        if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
+          /* set handover state */
+          //ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
+                
+          MessageDef *msg;
+          // Configure end marker
+          msg = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_END_MARKER_REQ);
+          GTPV1U_ENB_END_MARKER_REQ(msg).buffer = itti_malloc(TASK_GTPV1_U, TASK_GTPV1_U, GTPU_HEADER_OVERHEAD_MAX + buffer_len);
+          memcpy(&GTPV1U_ENB_END_MARKER_REQ(msg).buffer[GTPU_HEADER_OVERHEAD_MAX], buffer, buffer_len);
+          GTPV1U_ENB_END_MARKER_REQ(msg).length = buffer_len;
+          GTPV1U_ENB_END_MARKER_REQ(msg).rnti   = ctxt.rnti;
+          GTPV1U_ENB_END_MARKER_REQ(msg).rab_id = gtpv1u_teid_data_p->eps_bearer_id;
+          GTPV1U_ENB_END_MARKER_REQ(msg).offset = GTPU_HEADER_OVERHEAD_MAX;
+          LOG_I(GTPU, "Send End Marker to GTPV1-U at frame %d and subframe %d \n", ctxt.frame,ctxt.subframe);
+          itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id), msg);
+          return NW_GTPV1U_OK;
+	}
+      }
+	  
+      if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION || ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+
+        int msgsrc = gtpv1u_eNB_get_msgsource(ue_context_p, teid);
+
+        LOG_D(GTPU,"UE INFO.ueStatus %d, handover state %d, forwarding state %d, from %s. message type %s\n", 
+              ue_context_p->ue_context.Status, 
+              ue_context_p->ue_context.handover_info->state,
+              ue_context_p->ue_context.handover_info->forwarding_state,
+              msgsrc == GTPV1U_MSG_FROM_SOURCE_ENB?"Source eNB":"EPC",
+              msgsrc != GTPV1U_MSG_FROM_SOURCE_ENB? "UDP DATA" :
+              msgType == NW_GTP_END_MARKER?"END MARKER":"DATA FORWARDING");
+
+	/* target enb */
+	if(msgType == NW_GTP_END_MARKER){
+	  LOG_I(GTPU, "target end receive END MARKER\n");
+	  ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
+          gtpv1u_enb_delete_tunnel_req_t delete_tunnel_req;
+          memset(&delete_tunnel_req, 0 , sizeof(delete_tunnel_req));
+          delete_tunnel_req.rnti = ctxt.rnti;
+    	  gtpv1u_delete_x2u_tunnel(ctxt.module_id, &delete_tunnel_req, GTPV1U_TARGET_ENB);
+	  return NW_GTPV1U_OK;
+	}
+
+        /* form source eNB message */
+        if(msgsrc == GTPV1U_MSG_FROM_SOURCE_ENB)
+        {
+          LOG_I(GTPU, "Received a message data forwarding length %d\n", buffer_len);
+
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+          LOG_T(GTPU, "forwarding data info:\n", buffer_len);	  
+
+          for(int i=1;i<=buffer_len; i++){
+	    LOG_T(GTPU, "%02x ", buffer[i-1]);
+	    if(i%20 == 0)LOG_T(GTPU, "\n");
+	  }
+	  LOG_T(GTPU, "\n");
+#endif
+			
+	  result = gtpv_data_req(
+				&ctxt,
+				(gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+				0, // mui
+				SDU_CONFIRM_NO, // confirm
+				buffer_len,
+				buffer,
+				PDCP_TRANSMISSION_MODE_DATA,
+                                TASK_DATA_FORWARDING
+				);
+			
+          if ( result == FALSE ) {
+	    LOG_W(GTPU, "DATA FORWARDING message save failed\n");	
+	    return NW_GTPV1U_FAILURE;
+	  }
+	  ue_context_p->ue_context.handover_info->forwarding_state = FORWARDING_NO_EMPTY;
+          return NW_GTPV1U_OK;
+	}
+        /* from epc message */
+        else
+        {
+          /* in the source enb, UE in RRC_HO_EXECUTION mode */
+          if (ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
+          MessageDef *msg;
+          // Configure target
+          msg = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_DATA_FORWARDING_REQ);
+          GTPV1U_ENB_DATA_FORWARDING_REQ(msg).buffer = itti_malloc(TASK_GTPV1_U, TASK_GTPV1_U, GTPU_HEADER_OVERHEAD_MAX + buffer_len);
+          memcpy(&GTPV1U_ENB_DATA_FORWARDING_REQ(msg).buffer[GTPU_HEADER_OVERHEAD_MAX], buffer, buffer_len);
+          GTPV1U_ENB_DATA_FORWARDING_REQ(msg).length = buffer_len;
+          GTPV1U_ENB_DATA_FORWARDING_REQ(msg).rnti   = ctxt.rnti;
+          GTPV1U_ENB_DATA_FORWARDING_REQ(msg).rab_id = gtpv1u_teid_data_p->eps_bearer_id;
+          GTPV1U_ENB_DATA_FORWARDING_REQ(msg).offset = GTPU_HEADER_OVERHEAD_MAX;
+
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+
+          LOG_T(GTPU, "Send data forwarding sdu_buffer to target enb. len %d info\n", buffer);
+          for(int i=1; i<=buffer_len; i++){
+            LOG_T(GTPU, "%02x ", buffer[i-1]);
+            if(i%20 == 0)LOG_T(GTPU, "\n");
+          }
+          LOG_T(GTPU, "\n");
+#endif
+
+          LOG_I(GTPU, "Send data forwarding to GTPV1-U at frame %d and subframe %d \n", ctxt.frame,ctxt.subframe);
+          itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id), msg);
+          return NW_GTPV1U_OK;
+        }
+
+          /* target eNB. x2ho forwarding is processing. spgw message save to TASK_END_MARKER */
+          if(ue_context_p->ue_context.handover_info->state != HO_COMPLETE &&
+             ue_context_p->ue_context.handover_info->state != HO_END_MARKER )
+          {
+            LOG_I(GTPU, "x2ho forwarding is processing. Received a spgw message. length %d\n", buffer_len);
+#if defined(LOG_GTPU) && LOG_GTPU > 0				
+	  LOG_T(GTPU, "spgw data info:\n", buffer_len);			
+	  for(int i=1;i<=buffer_len; i++){
+	    LOG_T(GTPU, "%02x ", buffer[i-1]);
+	    if(i%20 == 0)LOG_T(GTPU, "\n");
+	  }
+	  LOG_T(GTPU, "\n");
+#endif
+			
+	  result = gtpv_data_req(
+			&ctxt,
+			(gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
+			0, // mui
+			SDU_CONFIRM_NO, // confirm
+			buffer_len,
+			buffer,
+			PDCP_TRANSMISSION_MODE_DATA,
+		        TASK_END_MARKER
+			);
+
+	if ( result == FALSE ) {
+	  LOG_W(GTPU, "DATA FORWARDING message save failed\n");
+	  return NW_GTPV1U_FAILURE;
+        }
+
+	ue_context_p->ue_context.handover_info->endmark_state = ENDMARK_NO_EMPTY;
+        return NW_GTPV1U_OK;
+      }
+
+     }
+
+    }
+
+  }
         result = pdcp_data_req(
                    &ctxt,
                    SRB_FLAG_NO,
@@ -259,7 +444,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 
         if ( result == FALSE ) {
           if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "PDCP data request failed, cause: RB is not configured!\n") ;
+            LOG_W(GTPU, "PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
           else
             LOG_W(GTPU, "PDCP data request failed\n");
 
@@ -547,6 +732,154 @@ gtpv1u_new_data_req(
   }
 
   LOG_D(GTPU, "%s() return code OK\n", __FUNCTION__);
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int
+gtpv1u_create_x2u_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_enb_create_x2u_tunnel_req_t * const  create_tunnel_req_pP,
+        gtpv1u_enb_create_x2u_tunnel_resp_t * const create_tunnel_resp_pP
+  )
+{
+  /* Create a new nw-gtpv1-u stack req using API */
+  NwGtpv1uUlpApiT          stack_req;
+  NwGtpv1uRcT              rc                   = NW_GTPV1U_FAILURE;
+  /* Local tunnel end-point identifier */
+  teid_t                   x2u_teid             = 0;
+  gtpv1u_teid_data_t      *gtpv1u_teid_data_p   = NULL;
+  hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+  int                      i;
+  ebi_t                    eps_bearer_id        = 0;
+
+  MSC_LOG_RX_MESSAGE(
+		  MSC_GTPU_ENB,
+		  MSC_RRC_ENB,
+		  NULL,0,
+		  MSC_AS_TIME_FMT" CREATE_X2U_TUNNEL_REQ RNTI %"PRIx16" inst %u ntuns %u ebid %u enb-x2u teid %u",
+		  0,0,create_tunnel_req_pP->rnti, instanceP,
+		  create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->eps_bearer_id[0],
+		  create_tunnel_req_pP->tenb_X2u_teid[0]);
+
+  create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
+  create_tunnel_resp_pP->status      = 0;
+  create_tunnel_resp_pP->num_tunnels = 0;
+
+  for (i = 0; i < create_tunnel_req_pP->num_tunnels; i++) {
+    eps_bearer_id = create_tunnel_req_pP->eps_bearer_id[i];
+    LOG_D(GTPU, "Rx GTPV1U_ENB_CREATE_X2U_TUNNEL_REQ ue rnti %x eps bearer id %u\n",
+          create_tunnel_req_pP->rnti, eps_bearer_id);
+    memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
+
+    stack_req.apiType = NW_GTPV1U_ULP_API_CREATE_TUNNEL_ENDPOINT;
+
+    do {
+      x2u_teid = gtpv1u_new_teid();
+      LOG_D(GTPU, "gtpv1u_create_x2u_tunnel() 0x%x %u(dec)\n", x2u_teid, x2u_teid);
+      stack_req.apiInfo.createTunnelEndPointInfo.teid          = x2u_teid;
+      stack_req.apiInfo.createTunnelEndPointInfo.hUlpSession   = 0;
+      stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;
+
+      rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
+      LOG_D(GTPU, ".\n");
+    } while (rc != NW_GTPV1U_OK);
+
+      memcpy(&create_tunnel_resp_pP->enb_addr.buffer,
+             &RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up,
+             sizeof (in_addr_t));
+
+      LOG_D(GTPU, "gtpv1u_create_x2u_tunnel() end addr %d.%d.%d.%d\n",
+		create_tunnel_resp_pP->enb_addr.buffer[0],
+		create_tunnel_resp_pP->enb_addr.buffer[1],
+		create_tunnel_resp_pP->enb_addr.buffer[2],
+		create_tunnel_resp_pP->enb_addr.buffer[3]);
+
+    create_tunnel_resp_pP->enb_addr.length  = sizeof (in_addr_t);
+    create_tunnel_resp_pP->eps_bearer_id[i] = eps_bearer_id;
+    create_tunnel_resp_pP->num_tunnels      += 1;
+
+    //-----------------------
+    // GTPV1U->PDCP mapping
+    //-----------------------
+    create_tunnel_resp_pP->enb_X2u_teid[i] = x2u_teid;
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->teid_mapping, x2u_teid, (void**)&gtpv1u_teid_data_p);
+
+    if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+      gtpv1u_teid_data_p = calloc (1, sizeof(gtpv1u_teid_data_t));
+      gtpv1u_teid_data_p->enb_id        = 0; // TO DO
+      gtpv1u_teid_data_p->ue_id         = create_tunnel_req_pP->rnti;
+      gtpv1u_teid_data_p->eps_bearer_id = eps_bearer_id;
+      hash_rc = hashtable_insert(RC.gtpv1u_data_g->teid_mapping, x2u_teid, gtpv1u_teid_data_p);
+      AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting teid mapping in GTPV1U hashtable");
+    } else {
+      create_tunnel_resp_pP->enb_X2u_teid[i] = 0;
+      create_tunnel_resp_pP->status         = 0xFF;
+    }
+  }
+  MSC_LOG_TX_MESSAGE(
+		  MSC_GTPU_ENB,
+		  MSC_RRC_ENB,
+		  NULL,0,
+		  "0 GTPV1U_ENB_CREATE_TUNNEL_RESP rnti %x teid %x",
+		  create_tunnel_resp_pP->rnti,
+		  x2u_teid);
+
+  LOG_D(GTPU, "Tx GTPV1U_ENB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
+        create_tunnel_req_pP->rnti,
+        create_tunnel_resp_pP->status);
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int gtpv1u_delete_x2u_tunnel(
+  const instance_t                             instanceP,
+  const gtpv1u_enb_delete_tunnel_req_t * const req_pP,
+  int                             enbflag)
+{
+  gtpv1u_ue_data_t        *gtpv1u_ue_data_p     = NULL;
+  hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+  int                      erab_index           = 0;
+  ebi_t                    eps_bearer_id        = 0;
+  struct rrc_eNB_ue_context_s *ue_context_p     = NULL;
+
+  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instanceP], req_pP->rnti);
+  if(ue_context_p != NULL){
+    /* in the source enb */
+    if(enbflag == GTPV1U_SOURCE_ENB){
+      hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, req_pP->rnti, (void**)&gtpv1u_ue_data_p);
+
+      if (hash_rc == HASH_TABLE_OK) {
+        for (erab_index = 0; erab_index < ue_context_p->ue_context.nb_x2u_e_rabs; erab_index++) {
+          eps_bearer_id = ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index];
+          LOG_I(GTPU, "gtpv1u_delete_x2u_tunnel user rnti %x teNB X2U teid %u eps bearer id %u\n",
+            req_pP->rnti, 
+            gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_teNB,
+            ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index]);
+          
+          gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_teNB = 0;
+          gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].tenb_ip_addr = 0;
+          //gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].tenb_ip6_addr = 0;
+        }
+        ue_context_p->ue_context.nb_x2u_e_rabs = 0;
+      }
+    }
+    /* in the target enb */
+    else{
+      for (erab_index = 0; erab_index < ue_context_p->ue_context.nb_x2u_e_rabs; erab_index++) {
+        //-----------------------
+        // GTPV1U->PDCP mapping
+        //-----------------------
+        hash_rc = hashtable_remove(RC.gtpv1u_data_g->teid_mapping, ue_context_p->ue_context.enb_gtp_x2u_teid[erab_index]);
+        LOG_I(GTPU, "Removed user rnti %x , enb X2U teid %u\n", req_pP->rnti, ue_context_p->ue_context.enb_gtp_x2u_teid[erab_index]);
+
+        if (hash_rc != HASH_TABLE_OK) {
+          LOG_D(GTPU, "Removed user rnti %x , enb X2U teid %u not found\n", req_pP->rnti, ue_context_p->ue_context.enb_gtp_x2u_teid[erab_index]);
+        }
+      }
+      ue_context_p->ue_context.nb_x2u_e_rabs = 0;
+    }
+  }
   return 0;
 }
 
@@ -1040,6 +1373,176 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_OUT);
       /* Buffer still needed, do not free it */
       //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), data_req_p->buffer);
+    }
+    break;
+
+    case GTPV1U_ENB_DATA_FORWARDING_REQ: {
+    gtpv1u_enb_data_forwarding_req_t *data_req_p           = NULL;
+    NwGtpv1uUlpApiT               stack_req;
+    NwGtpv1uRcT                   rc                   = NW_GTPV1U_FAILURE;
+    hashtable_rc_t                hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+    gtpv1u_ue_data_t             *gtpv1u_ue_data_p     = NULL;
+    teid_t                        enb_s1u_teid         = 0;
+    teid_t                        tenb_x2u_teid         = 0;
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_IN);
+    data_req_p = &GTPV1U_ENB_DATA_FORWARDING_REQ(received_message_p);
+    //ipv4_send_data(ipv4_data_p->sd, data_ind_p->buffer, data_ind_p->length);
+
+#if defined(GTP_DUMP_SOCKET) && GTP_DUMP_SOCKET > 0
+    gtpv1u_eNB_write_dump_socket(&data_req_p->buffer[data_req_p->offset],data_req_p->length);
+#endif
+    memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
+
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, (uint64_t)data_req_p->rnti, (void**)&gtpv1u_ue_data_p);
+
+    if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+      LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
+    } else {
+      if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_LTE_DRB_Identity)) {
+        enb_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_eNB;
+        tenb_x2u_teid                       = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_teNB; // target enb teid
+        stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
+        stack_req.apiInfo.sendtoInfo.teid   = tenb_x2u_teid;
+        stack_req.apiInfo.sendtoInfo.ipAddr = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].tenb_ip_addr;// target enb ip
+
+        rc = nwGtpv1uGpduMsgNew(
+               RC.gtpv1u_data_g->gtpv1u_stack,
+               tenb_x2u_teid,
+               NW_FALSE,
+               RC.gtpv1u_data_g->seq_num++,
+               data_req_p->buffer,
+               data_req_p->length,
+               data_req_p->offset,
+               &(stack_req.apiInfo.sendtoInfo.hMsg));
+
+        if (rc != NW_GTPV1U_OK) {
+          LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
+          MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
+          		enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
+          (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
+        } else {
+          rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
+
+          if (rc != NW_GTPV1U_OK) {
+            LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
+            MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
+            		enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
+          } else {
+            MSC_LOG_TX_MESSAGE(
+            		MSC_GTPU_ENB,
+            		MSC_GTPU_SGW,
+            		NULL,
+            		0,
+            		MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
+            		0,0,
+            		enb_s1u_teid,
+            		tenb_x2u_teid,
+            		data_req_p->length);
+
+        }
+
+        rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
+                               stack_req.apiInfo.sendtoInfo.hMsg);
+
+        if (rc != NW_GTPV1U_OK) {
+          LOG_E(GTPU, "nwGtpv1uMsgDelete failed: 0x%x\n", rc);
+        }
+      }
+    }
+  }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_OUT);
+  /* Buffer still needed, do not free it */
+  //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), data_req_p->buffer)
+  }
+  break;
+
+  case GTPV1U_ENB_END_MARKER_REQ:{
+    gtpv1u_enb_end_marker_req_t   *data_req_p           = NULL;
+    NwGtpv1uUlpApiT               stack_req;
+    NwGtpv1uRcT                   rc                    = NW_GTPV1U_FAILURE;
+    hashtable_rc_t                hash_rc               = HASH_TABLE_KEY_NOT_EXISTS;
+    gtpv1u_ue_data_t              *gtpv1u_ue_data_p     = NULL;
+    teid_t                        enb_s1u_teid          = 0;
+    teid_t                        tenb_x2u_teid         = 0;
+    NwGtpv1uMsgT		  *pMsg                 = NULL;
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_IN);
+    data_req_p = &GTPV1U_ENB_END_MARKER_REQ(received_message_p);
+    //ipv4_send_data(ipv4_data_p->sd, data_ind_p->buffer, data_ind_p->length);
+
+#if defined(GTP_DUMP_SOCKET) && GTP_DUMP_SOCKET > 0
+    gtpv1u_eNB_write_dump_socket(&data_req_p->buffer[data_req_p->offset],data_req_p->length);
+#endif
+    memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
+
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, (uint64_t)data_req_p->rnti, (void**)&gtpv1u_ue_data_p);
+
+    if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+      LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
+    } else {
+      if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_LTE_DRB_Identity)) {
+        enb_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_eNB;
+        tenb_x2u_teid                       = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_teNB; // target enb teid
+        stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
+        stack_req.apiInfo.sendtoInfo.teid   = tenb_x2u_teid;
+        stack_req.apiInfo.sendtoInfo.ipAddr = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].tenb_ip_addr;// target enb ip
+
+	rc = nwGtpv1uGpduMsgNew(
+               RC.gtpv1u_data_g->gtpv1u_stack,
+               tenb_x2u_teid,
+               NW_FALSE,
+               RC.gtpv1u_data_g->seq_num++,
+               data_req_p->buffer,
+               data_req_p->length,
+               data_req_p->offset,
+               &(stack_req.apiInfo.sendtoInfo.hMsg));
+
+        if (rc != NW_GTPV1U_OK) {
+          LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
+          MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
+            		enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
+          (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
+        } else {
+	  pMsg = (NwGtpv1uMsgT *) stack_req.apiInfo.sendtoInfo.hMsg;
+	  pMsg->msgType = NW_GTP_END_MARKER;
+          rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
+
+          if (rc != NW_GTPV1U_OK) {
+            LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
+            MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
+              		enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
+          } else {
+            MSC_LOG_TX_MESSAGE(
+            	        MSC_GTPU_ENB,
+            	        MSC_GTPU_SGW,
+            		NULL,
+            		0,
+            		MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
+            		0,0,
+            		enb_s1u_teid,
+            		tenb_x2u_teid,
+            		data_req_p->length);
+
+          }
+
+          rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
+                                 stack_req.apiInfo.sendtoInfo.hMsg);
+
+          if (rc != NW_GTPV1U_OK) {
+            LOG_E(GTPU, "nwGtpv1uMsgDelete failed: 0x%x\n", rc);
+          }
+
+          gtpv1u_enb_delete_tunnel_req_t delete_tunnel_req;
+          memset(&delete_tunnel_req, 0 , sizeof(delete_tunnel_req));
+          delete_tunnel_req.rnti = data_req_p->rnti;
+	  gtpv1u_delete_x2u_tunnel(instance, &delete_tunnel_req, GTPV1U_SOURCE_ENB);
+        }
+       }
+      }
+
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_OUT);
     }
     break;
 

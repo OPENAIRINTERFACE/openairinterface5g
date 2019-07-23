@@ -2040,6 +2040,69 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
   return 0;
 }
 
+int rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(instance_t instance, rrc_eNB_ue_context_t* const ue_context_target_p) {
+  gtpv1u_enb_create_x2u_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_x2u_tunnel_resp_t create_tunnel_resp;
+  uint8_t                      		  e_rab_done;
+  uint8_t                         	  inde_list[NB_RB_MAX - 3]= {0};
+  
+  if (ue_context_target_p == NULL) {
+    
+    return (-1);
+  } else {
+    
+    /* Save e RAB information for later */
+    {
+      LOG_I(RRC, "[eNB %d] rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ: rnti %u nb_of_e_rabs %d\n",
+            instance, ue_context_target_p->ue_context.rnti, ue_context_target_p->ue_context.nb_of_e_rabs);
+      int i;
+      memset(&create_tunnel_req, 0, sizeof(create_tunnel_req));
+      uint8_t nb_e_rabs_tosetup = ue_context_target_p->ue_context.nb_of_e_rabs;
+      e_rab_done = 0;
+
+      for (i = 0;i < nb_e_rabs_tosetup; i++) {
+
+        if(ue_context_target_p->ue_context.e_rab[i].status >= E_RAB_STATUS_DONE)
+          continue;
+
+        create_tunnel_req.eps_bearer_id[e_rab_done]       = ue_context_target_p->ue_context.e_rab[i].param.e_rab_id;
+        LOG_I(RRC,"x2 tunnel setup: local index %d UE id %x, eps id %d \n",
+              i,
+              ue_context_target_p->ue_context.rnti,
+              create_tunnel_req.eps_bearer_id[i] );
+		inde_list[i] = e_rab_done;
+        e_rab_done++;
+      }
+
+      create_tunnel_req.rnti           = ue_context_target_p->ue_context.rnti; // warning put zero above
+      create_tunnel_req.num_tunnels    = e_rab_done;
+      // NN: not sure if we should create a new tunnel: need to check teid, etc.
+      gtpv1u_create_x2u_tunnel(
+        instance,
+        &create_tunnel_req,
+        &create_tunnel_resp);
+
+          ue_context_target_p->ue_context.nb_x2u_e_rabs = create_tunnel_resp.num_tunnels;
+	  for (i = 0; i < create_tunnel_resp.num_tunnels; i++) {
+		ue_context_target_p->ue_context.enb_gtp_x2u_teid[inde_list[i]]  = create_tunnel_resp.enb_X2u_teid[i];
+	    ue_context_target_p->ue_context.enb_gtp_x2u_addrs[inde_list[i]] = create_tunnel_resp.enb_addr;
+		ue_context_target_p->ue_context.enb_gtp_x2u_ebi[inde_list[i]]   = create_tunnel_resp.eps_bearer_id[i];
+
+		LOG_I(RRC, "rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ tunnel (%u, %u) bearer UE context index %u, msg index %u, eps bearer id %u, gtp addr len %d \n",
+            create_tunnel_resp.enb_X2u_teid[i],
+            ue_context_target_p->ue_context.enb_gtp_x2u_teid[inde_list[i]],            
+            inde_list[i],
+	    	i,
+            create_tunnel_resp.eps_bearer_id[i],
+	    	create_tunnel_resp.enb_addr.length);
+	  }
+    }
+
+    return (0);
+  }
+}
+
+
 int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance) {
   uint16_t                        ue_initial_id;
   uint32_t                        eNB_ue_s1ap_id;
