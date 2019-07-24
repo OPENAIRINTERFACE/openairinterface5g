@@ -118,6 +118,8 @@ extern "C" {
 #define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
 #define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
 #define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
+#define FLAG_FUNCT       0x0020
+#define FLAG_FILE_LINE   0x0040
 #define FLAG_TIME        0x0100
 #define FLAG_INITIALIZED 0x8000
 
@@ -306,6 +308,19 @@ void logClean (void);
 int  is_newline( char *str, int size);
 
 int register_log_component(char *name, char *fext, int compidx);
+
+#define LOG_MEM_SIZE 100*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+void flush_mem_to_file(void);
+void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
+int logInit_log_mem(void);
+void close_log_mem(void);
+  
+typedef struct {
+  char* buf_p;
+  int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
 
 /* @}*/
 

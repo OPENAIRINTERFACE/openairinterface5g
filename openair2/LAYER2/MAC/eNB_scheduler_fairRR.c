@@ -601,6 +601,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 #endif
   memset(rballoc_sub[0],0,(MAX_NUM_CCs)*(N_RBG_MAX)*sizeof(unsigned char));
   memset(min_rb_unit,0,sizeof(min_rb_unit));
+  memset(MIMO_mode_indicator[0], 0, MAX_NUM_CCs*N_RBG_MAX*sizeof(unsigned char));
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     if (mbsfn_flag[CC_id] > 0)  // If this CC is allocated for MBSFN skip it here
@@ -1029,7 +1030,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
          eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
        */
       if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-        eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+        eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       } else {
         eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       }
@@ -1781,6 +1782,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),ue_sched_ctl->dl_cqi[CC_id],format1);
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag                      = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
@@ -2420,8 +2422,8 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
             while ( (tbs < bytes_to_schedule) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-num_pucch_rb-first_rb[CC_id])) &&
                     ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
               rb_table_index++;
-              tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
-              tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+              tbs = get_TBS_UL(mcs,rb_table[rb_table_index]);
+              tx_power= estimate_ue_tx_power(tbs*8,rb_table[rb_table_index],0,frame_parms->Ncp,0);
             }
 
             if ( rb_table[rb_table_index]<3 ) {
@@ -2784,12 +2786,12 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         if (cc->tdd_Config) {
           switch (cc->tdd_Config->subframeAssignment) {
             case 1:
-              if( subframeP == 1 || subframeP == 6 ) cqi_req=0;
+              if( sched_subframeP == 1 || sched_subframeP == 6 ) cqi_req=0;
 
               break;
 
             case 3:
-              if( subframeP == 1 ) cqi_req=0;
+              if( sched_subframeP == 1 ) cqi_req=0;
 
               break;
 
@@ -2899,6 +2901,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         memset((void *)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
         hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
         hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+        hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag                            = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
@@ -3056,6 +3059,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         memset((void *)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
         hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
         hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+        hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag                            = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
