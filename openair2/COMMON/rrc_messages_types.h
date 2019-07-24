@@ -280,6 +280,7 @@ typedef struct RrcConfigurationReq_s {
   long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_repetitionLevelCEmodeA_r13				   [MAX_NUM_CCs];
   long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
 #endif
   //SIB18
