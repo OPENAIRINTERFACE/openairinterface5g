@@ -473,9 +473,8 @@ rx_sdu(const module_id_t enb_mod_idP,
                                ,ra->rach_resource_type > 0
 #endif
                               );
-              if (ret == 0) {
               /* Received a new rnti */
-              if(ret == 0){
+              if (ret == 0) {
               ra->state = MSGCRNTI;
               LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                     enb_mod_idP,
