@@ -41,7 +41,7 @@ int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_
   uint16_t i;
   int16_t first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
     if ((eNB->uci_vars[i].active >0) &&
 	(eNB->uci_vars[i].rnti==rnti) &&
 	(eNB->uci_vars[i].frame==frame) &&

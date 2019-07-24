@@ -1063,7 +1063,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #endif
           }
 
-          for (l2=0,l=(nsymb>>1); l<(nsymb-1); l++,l2++) {
+          for (l2=0,l=(nsymb>>1); l < nsymb; l++,l2++) {
             stat_re += (((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15))/nsymb;
             stat_im += (((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15))/nsymb;
             off+=2;
@@ -1092,7 +1092,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
 //    stat_max *= nsymb;  // normalize to energy per symbol
 //    stat_max /= (frame_parms->N_RB_UL*12); //
-    stat_max /= (nsymb*12);
+    stat_max /= 12;
     
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
@@ -1181,7 +1181,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
           stat_ref_re=0;
           stat_ref_im=0;
 
-          for (l2=0,l=(nsymb>>1); l<(nsymb-1); l++,l2++) {
+          for (l2=0,l=(nsymb>>1); l< nsymb; l++,l2++) {
             if ((l2<2) || ((l2>(nsymb>>1) - 3)) ) {  // data symbols
               stat_re += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
               stat_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);

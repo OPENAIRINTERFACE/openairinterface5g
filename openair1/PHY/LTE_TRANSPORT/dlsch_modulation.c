@@ -2257,8 +2257,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
 
     harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
-    if(harq_pid >= dlsch0->Mdlharq) {
-      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+    if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
+      LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
       return(-1);
     }
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
@@ -2278,8 +2278,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   }else if ((dlsch0 != NULL) && (dlsch1 == NULL)){
 
     harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
-    if(harq_pid >= dlsch0->Mdlharq) {
-      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+    if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
+      LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
       return(-1);
     }
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
@@ -2299,8 +2299,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   }else if ((dlsch0 == NULL) && (dlsch1 != NULL)){
 
     harq_pid = dlsch1->harq_ids[frame%2][subframe_offset];
-    if(harq_pid >= dlsch1->Mdlharq) {
-      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+    if((harq_pid < 0) || (harq_pid >= dlsch1->Mdlharq)) {
+      LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
       return(-1);
     }
     dlsch1_harq = dlsch1->harq_processes[harq_pid];

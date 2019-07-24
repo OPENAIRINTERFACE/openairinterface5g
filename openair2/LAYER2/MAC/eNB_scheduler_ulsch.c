@@ -460,7 +460,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
             if (RA_id != -1) {
               RA_t *ra = &(mac->common_channels[CC_idP].ra[RA_id]);
-              mac_rrc_data_ind(enb_mod_idP,
+              int8_t ret = mac_rrc_data_ind(enb_mod_idP,
                                CC_idP,
                                frameP, subframeP,
                                UE_id,
@@ -474,6 +474,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 #endif
                               );
               /* Received a new rnti */
+              if (ret == 0) {
               ra->state = MSGCRNTI;
               LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                     enb_mod_idP,
@@ -502,6 +503,9 @@ rx_sdu(const module_id_t enb_mod_idP,
               }
               UE_template_ptr->ul_SR = 1;
               UE_scheduling_control->crnti_reconfigurationcomplete_flag = 1;
+              } else {
+                cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+              }
               // break;
             }
           }
@@ -797,6 +801,10 @@ rx_sdu(const module_id_t enb_mod_idP,
           mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);  //(unsigned int*)crc_status);
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
+        
+          if (mac_eNB_get_rrc_status(enb_mod_idP, current_rnti) < RRC_RECONFIGURED) {
+            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+          }
         }
 
         break;
@@ -1329,8 +1337,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   uint32_t cshift = 0;
   uint32_t ndi = 0;
   uint32_t tpc = 0;
-  int32_t normalized_rx_power = 0;
-  int32_t target_rx_power = 0;
+  int32_t snr = 0;
+  int32_t target_snr = 0;
   int32_t framex10psubframe = 0;
   static int32_t tpc_accumulated = 0;
   int sched_frame = 0;
@@ -1555,13 +1563,12 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
           /* Power control */
           /*
-           * Compute the expected ULSCH RX power (for the stats)
-           * This is the normalized RX power and this should be constant (regardless of mcs)
+           * Compute the expected ULSCH RX snr (for the stats)
+           * This is the normalized RX snr and this should be constant (regardless of mcs)
            * Is not in dBm, unit from nfapi, converting to dBm
-           * ToDo: Noise power hard coded to 30
            */
-          normalized_rx_power = ((5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10) + 30;
-          target_rx_power = (mac->puSch10xSnr / 10) + 30;
+          snr = (5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10;
+          target_snr = mac->puSch10xSnr / 10;
 
           /*
            * This assumes accumulated tpc
@@ -1575,10 +1582,10 @@ schedule_ulsch_rnti(module_id_t   module_idP,
             UE_template_ptr->pusch_tpc_tx_frame = frameP;
             UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
 
-            if (normalized_rx_power > (target_rx_power + 4)) {
+            if (snr > target_snr + 4) {
               tpc = 0; // -1
               tpc_accumulated--;
-            } else if (normalized_rx_power < (target_rx_power - 4)) {
+            } else if (snr < target_snr - 4) {
               tpc = 2; // +1
               tpc_accumulated++;
             } else {
@@ -1589,21 +1596,21 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           }
 
           if (tpc != 1) {
-            LOG_D(MAC, "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+            LOG_D(MAC, "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, snr/target snr %d/%d\n",
               module_idP,
               frameP,
               subframeP,
               harq_pid,
               tpc,
               tpc_accumulated,
-              normalized_rx_power,
-              target_rx_power);
+              snr,
+              target_snr);
           }
 
           ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
           UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
-          UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power = normalized_rx_power;
-          UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
+          UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
+          UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
           UE_template_ptr->mcs_UL[harq_pid] = cmin(UE_template_ptr->pre_assigned_mcs_ul, sli->ul[slice_idx].maxmcs);
           UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template_ptr->mcs_UL[harq_pid];
 
@@ -1941,8 +1948,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   uint8_t           status         = 0;
   uint32_t          cshift         = 0;
   uint32_t          ndi            = 0;
-  int32_t           normalized_rx_power = 0;
-  int32_t           target_rx_power = -90;
+  int32_t           snr = 0;
+  int32_t           target_snr = 0;
   int               n       = 0;
   int               CC_id = 0;
   int               N_RB_UL = 0;
@@ -2050,10 +2057,10 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
         UE_template->ul_SR = 0;
         status = mac_eNB_get_rrc_status(module_idP,rnti);
         cqi_req = 0;
-        /* Power control: compute the expected ULSCH RX power (for the stats) */
-        /* This is the normalized RX power and this should be constant (regardless of mcs) */
-        normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-        target_rx_power = 178;
+        /* Power control: compute the expected ULSCH RX snr (for the stats) */
+        /* This is the normalized snr and this should be constant (regardless of mcs) */
+        snr = (5 * UE_sched_ctrl->pusch_snr[CC_id] - 640) / 10;
+        target_snr = eNB->puSch10xSnr / 10; /* TODO: target_rx_power was 178, what to put? */
         /* This assumes accumulated tpc */
         /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
         int32_t framex10psubframe = UE_template->pusch_tpc_tx_frame * 10 + UE_template->pusch_tpc_tx_subframe;
@@ -2063,10 +2070,10 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           UE_template->pusch_tpc_tx_frame = frameP;
           UE_template->pusch_tpc_tx_subframe = subframeP;
 
-          if (normalized_rx_power > (target_rx_power + 4)) {
+          if (snr > target_snr + 4) {
             tpc = 0; //-1
             UE_sched_ctrl->tpc_accumulated[CC_id]--;
-          } else if (normalized_rx_power < (target_rx_power - 4)) {
+          } else if (snr < target_snr - 4) {
             tpc = 2; //+1
             UE_sched_ctrl->tpc_accumulated[CC_id]++;
           } else {
@@ -2077,15 +2084,15 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
         }
 
         if (tpc != 1) {
-          LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+          LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, snr/target snr %d/%d\n",
                 module_idP,
                 frameP,
                 subframeP,
                 harq_pid,
                 tpc,
                 UE_sched_ctrl->tpc_accumulated[CC_id],
-                normalized_rx_power,
-                target_rx_power);
+                snr,
+                target_snr);
         }
 
         /* New transmission */
@@ -2094,8 +2101,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           UE_template->oldNDI_UL[harq_pid] = ndi;
           UE_template->mcs_UL[harq_pid] = 4;
           UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid], 6);
-          UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power = normalized_rx_power;
-          UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
+          UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
+          UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
           UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = 4;
           UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template->mcs_UL[harq_pid];
           UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += 6;

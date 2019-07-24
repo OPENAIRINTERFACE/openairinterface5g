@@ -2193,8 +2193,8 @@ add_new_ue(module_id_t mod_idP,
     UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
 
     for (j = 0; j < 8; j++) {
-      UE_list->UE_template[cc_idP][UE_id].oldNDI[j] = (j == 0) ? 1 : 0; // 1 because first transmission is with format1A (Msg4) for harq_pid 0
-      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = (j == harq_pidP) ? 0 : 1;  // 1st transmission is with Msg3;
+      UE_list->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
+      UE_list->UE_template[cc_idP][UE_id].oldNDI_UL[j] = 0;
       UE_list->UE_sched_ctrl[UE_id].round[cc_idP][j] = 8;
       UE_list->UE_sched_ctrl[UE_id].round_UL[cc_idP][j] = 0;
     }
@@ -2319,9 +2319,10 @@ rrc_mac_remove_ue(module_id_t mod_idP,
                    rntiP);
   }
 
-  pthread_mutex_lock(&rrc_release_freelist);
-
-  if (rrc_release_info.num_UEs > 0) {
+  if(rrc_release_info.num_UEs > 0){
+    while(pthread_mutex_trylock(&rrc_release_freelist)) {
+      /* spin... */
+    }
     uint16_t release_total = 0;
 
     for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
@@ -2341,6 +2342,7 @@ rrc_mac_remove_ue(module_id_t mod_idP,
         break;
       }
     }
+    pthread_mutex_unlock(&rrc_release_freelist);
   }
 
   pthread_mutex_unlock(&rrc_release_freelist);

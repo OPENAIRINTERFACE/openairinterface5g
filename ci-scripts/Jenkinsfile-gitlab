@@ -44,7 +44,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13", "Test-IF4p5-TDD-Band38-Multi-RRU"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13", "Test-IF4p5-TDD-Band38-Multi-RRU" , "Test-Mono-FDD-Band13-X2-HO"])
         ansiColor('xterm')
     }
 
@@ -481,6 +481,26 @@ pipeline {
                         }
                     }
                 }
+                stage ("Test X2 Handover - FDD - Band 13 - B210") {
+                    steps {
+                        script {
+                            sh "sleep 60"
+                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-X2HO-B210', 'Test-Mono-FDD-Band13-X2-HO')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-MONO-FDD-Band13-X2HO-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
                 stage ("Test IF4p5 - TDD - Band 38 - B210 - MultiRRU") {
                     steps {
                         script {
@@ -523,6 +543,7 @@ pipeline {
                 stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
                     steps {
                         script {
+                            sh "sleep 60"
                             triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13')
                         }
                     }
