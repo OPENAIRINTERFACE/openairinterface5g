@@ -86,6 +86,8 @@ $ sudo -E ./lte-uesoftmodem -C 2625000000 -r 25 --ue-rxgain 140 --basicsim [--no
 
 The `-r 25` is to use if in the conf file of the eNB you use N_RB_DL=25. Use 50 if you have N_RB_DL=50 and 100 if you have N_RB_DL=100.
 
+The `-C 2625000000` is the downlink frequency. Use the same value as `downlink_frequency` in the eNB configuration file.
+
 The `--noS1` is mandatory if you started the eNB in that mode.
 
 # 3. Testing the data plane
