@@ -21,10 +21,11 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-10</htmlTabRef>
-	<htmlTabName>Test-10MHz</htmlTabName>
+	<htmlTabRef>test-if4p5-10</htmlTabRef>
+	<htmlTabName>Test-IF4.5-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
+ 030201
  040101
  030111 030112 040301 040511 040614 040652 040401 040201 030201 030202
 	</TestCaseRequestedList>
@@ -34,7 +35,7 @@
 	<testCase id="030111">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RRU (FDD/Band7)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf --RUs.[0].max_rxgain 120</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 
@@ -67,30 +68,30 @@
 		<desc>Terminate UE</desc>
 	</testCase>
 
-        <testCase id="040301">
-                <class>Attach_UE</class>
-                <desc>Attach UE</desc>
-        </testCase>
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
 
-        <testCase id="040401">
-                <class>Detach_UE</class>
-                <desc>Detach UE</desc>
-        </testCase>
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
 
-        <testCase id="040511">
-                <class>Ping</class>
-                <desc>ping (10MHz - 20 sec)</desc>
-                <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>5</ping_packetloss_threshold>
-        </testCase>
+	<testCase id="040511">
+		<class>Ping</class>
+		<desc>ping (10MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
 
-        <testCase id="040614">
+	<testCase id="040614">
 		<class>Iperf</class>
 		<desc>iperf (10MHz - DL/32Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 32M -t 30 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
-        </testCase>
+	</testCase>
 
 	<testCase id="040652">
 		<class>Iperf</class>

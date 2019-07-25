@@ -1,5 +1,5 @@
 ## configuring the logging facility
-The logging facility is fully configurable and it uses the [config module](../../../config/config.md) to get its parameters at init time. The [telnet server](../../telnetsrv/DOC/telnetsrv.md) includes a set of commands which can be used to dynamically modify the logging facility behavior 
+The logging facility is fully configurable and it uses the [config module](../../../config/config.md) to get its parameters at init time. The [telnet server](../../telnetsrv/DOC/telnetsrv.md) includes a set of commands which can be used to dynamically modify the logging facility behavior
 
 All logging facility parameters are defined in the log_config section. Some parameters are global to the logging facility, they modify the way messages are printed to stdout. Conversely, some parameters are specific to a component and  only modify the behavior for messages issued by a given component. A third type of parameters can be used to activate conditional debug code or dump messages or buffers.
 
@@ -14,7 +14,7 @@ All logging facility parameters are defined in the log_config section. Some para
 ### Component specific parameters
 | name | type | default | description |
 |:---:|:---:|:---:|:----|
-| `<component>_log_level` | `boolean` | global log level, as defined by the  `global_log_level ` parameter) | 
+| `<component>_log_level` | `boolean` | global log level, as defined by the  `global_log_level ` parameter) |
 | `<component>_log_infile` | `boolean` | 0 = false| Triggers the redirection of log messages printed by the specified component in a file. The file path and name is /tmp/<componemt>.[extension] the extension is optional and component dependant, it can be `log `,  `dat `,  `txt `|
 
 The list of components defined within oai can be retrieved from the  [config module](../../../config/config.md) traces, when asking for config module debugging info on the command line:
@@ -215,7 +215,7 @@ The list of components defined within oai can be retrieved from the  [config mod
 log init done
 
 ```
-It can also be retrieved when using the telnet server, as explained  [below](### Using the telnet server to configure the logging facility) 
+It can also be retrieved when using the telnet server, as explained  [below](### Using the telnet server to configure the logging facility)
 
 ### parameters to activate conditional code
 | name | type | default | description |
@@ -238,15 +238,15 @@ The following example sets all components log level to info, exept for hw,phy,ma
    };
 ```
 ### Using the command line to configure the logging facility
-Command line parameter values supersedes values specified in the configuration file. 
+Command line parameter values supersedes values specified in the configuration file.
 ```bash
-./lte-softmodem -O --log_config.global_log_options nocolor,level,thread  --log_config.prach_log_level debug --log_config.PRACH_debug 
+./lte-softmodem -O --log_config.global_log_options nocolor,level,thread  --log_config.prach_log_level debug --log_config.PRACH_debug
 ```
 In this example to get all the debug PRACH messages it is necessary to also set the PRACH_debug flag. This is a choice from the developper.
 The log messages will be printed whithout color and the header will include the lmessage evel and the thread name:
 ```bash
-[PHY]I ru thread Time in secs now: 104652566 
-[PHY]I ru thread Time in secs last pps: 91827117 
+[PHY]I ru thread Time in secs now: 104652566
+[PHY]I ru thread Time in secs last pps: 91827117
 [PHY]I ru thread RU 0 rf device ready
 [PHY]I ru thread RU 0 no asynch_south interface
 [MAC]E rxtx processing SCHED_MODE=0
@@ -256,10 +256,10 @@ The log messages will be printed whithout color and the header will include the 
 [PHY]I lte-softmodem PRACH (eNB) : running rx_prach for subframe 1, prach_FreqOffset 2, prach_ConfigIndex 0 , rootSequenceIndex 0
 [PHY]I lte-softmodem PRACH (eNB) : running rx_prach for subframe 1, prach_FreqOffset 2, prach_ConfigIndex 0 , rootSequenceIndex 0
 ```
- 
+
 ### Using the telnet server to configure the logging facility
 The telnet server includes a `log` command which can be used to dymically modify the logging facility configuration parameters.
-[telnet server ***softmodem log*** commands](../../telnetsrv/DOC/telnetlog.md) 
+[telnet server ***softmodem log*** commands](../../telnetsrv/DOC/telnetlog.md)
 
-[logging facility  main page](log.md)  
+[logging facility  main page](log.md)
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

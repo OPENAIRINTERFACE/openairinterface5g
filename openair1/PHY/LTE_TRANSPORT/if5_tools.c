@@ -89,7 +89,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] Compress_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         ru->ifdevice.trx_write_func(&ru->ifdevice,
 				    (proc_timestamp + packet_id*spp_eth),
@@ -99,7 +99,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 				    0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
 
@@ -108,7 +108,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         ru->ifdevice.trx_write_func(&ru->ifdevice,
 				    (proc_timestamp + packet_id*spp_eth),
@@ -118,7 +118,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 				    0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );  
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
         for (i=0; i < fp->nb_antennas_tx; i++)
           txp[i] += spp_eth;
 
@@ -144,7 +144,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] Compress_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         ru->ifdevice.trx_write_func(&ru->ifdevice,
                                      (proc_timestamp + packet_id*spp_eth),
@@ -154,7 +154,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
                                      0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );
       }
     } else if (eth->compression == NO_COMPRESS) {
       for (i=0; i < fp->nb_antennas_rx; i++)
@@ -162,7 +162,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_comp);
         ru->ifdevice.trx_write_func(&ru->ifdevice,
 				    (proc_timestamp + packet_id*spp_eth),
@@ -172,7 +172,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 				    0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );            
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );            
         for (i=0; i < fp->nb_antennas_rx; i++)
           rxp[i] += spp_eth;
 
@@ -327,6 +327,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   uint16_t *j      = NULL;
 
   openair0_timestamp timestamp[spsf / spp_eth];
+  memset(timestamp, 0, sizeof(timestamp));
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
@@ -340,7 +341,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       }
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
@@ -350,7 +351,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         for (i=0; i < fp->nb_antennas_tx; i++) {
@@ -370,7 +371,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );  
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );  
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
@@ -379,7 +380,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   fp->nb_antennas_tx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );  
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );  
         for (i=0; i < fp->nb_antennas_tx; i++)
           txp[i] += spp_eth;
 
@@ -396,7 +397,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       }
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
@@ -405,7 +406,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   fp->nb_antennas_rx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         for (i=0; i < fp->nb_antennas_rx; i++) {
@@ -425,7 +426,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
         ru->ifdevice.trx_read_func(&ru->ifdevice,
 				   &timestamp[packet_id],
@@ -434,7 +435,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 				   fp->nb_antennas_rx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );            
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );            
         for (i=0; i < fp->nb_antennas_rx; i++)
           rxp[i] += spp_eth;
 
@@ -606,7 +607,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 	  }
 	}
 #endif
-
+      free(rx_buffer);
 
      
     }

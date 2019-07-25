@@ -52,13 +52,13 @@ CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel14"
 HW="None"
 TP="None"
-NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
+BUILD_COVERITY_SCAN=0
 T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
@@ -66,17 +66,15 @@ CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
-DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
-UE_NAS_USE_TUN="False"
-BASIC_SIMULATOR=0
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope msc"
 trap handle_ctrl_c INT
 
 function print_help() {
   echo_info "
 This program installs OpenAirInterface Software
-You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
+You should have ubuntu 16.xx or 18.04 updated
 Options
 -h
    This help
@@ -103,16 +101,15 @@ Options
    Specify conf_nvram_path (default \"$conf_nvram_path\")
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
+-a | --agent
+   Enables agent for software-defined control of the eNB
 -r | --3gpp-release
    default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, IRIS, None (Default)
+   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
--t | --transport protocol
-   ETHERNET , None
-   Adds this trasport protocol support in compilation
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -123,19 +120,17 @@ Options
    runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
--x | --xforms
-   Adds a software oscilloscope feature to the produced binaries. 
 --install-system-files
    Install OpenArInterface required files in Linux system
    (will ask root password)
---noS1 
-   Compiles lte-softmodem without S1 interface, using direct link to IP instead
 --verbose-compile
    Shows detailed compilation instructions in makefile
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
 --build-doxygen
    Builds doxygen based documentation.
+--build-coverity-scan
+   Builds Coverity-Scan objects for upload
 --disable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
@@ -152,26 +147,18 @@ Options
     Enable traces for UE debugging
 --ue-timing
     Enable traces for timing
---disable-log
-   Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
---build-telnet
-   Build telnet server, specify --telnetsrv on command line to start it (eNB only)
---build-msc
-   Build MSC tracing utility, specify --msc on command line to start it (eNB and UE)
+--build-lib <libraries>
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
 --usrp-recplay
    Build for I/Q record-playback modes
---ue-nas-use-tun
-   Use TUN devices for the UEs instead of ue_ip.ko
---basic-simulator
-   Generates a basic [1 UE + 1 eNB + no channel] simulator.
-   See targets/ARCH/tcp_bridge/README.tcp_bridge_oai for documentation.
+
 Usage (first build):
- NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
+ NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB --install-system-files -w USRP
 Usage (Regular):
- Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
+ Eurecom EXMIMO + OAI ENB : ./build_oai --eNB  
+ NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -w USRP"
 }
 
 
@@ -234,33 +221,18 @@ function main() {
             echo_info "Setting release to: $REL"
             shift 2;;
        -w | --hardware)
-            HW="$2" #"${i#*=}"
             # Use OAI_USRP  as the key word USRP is used inside UHD driver           
-            if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO" -a  "$HW" != "IRIS"  ] ; then 
-		echo_fatal "Unknown HW type $HW will exit..."		
-	    else
-		if [ "$HW" == "USRP" ] ; then 
-		    HW="OAI_USRP"
-		fi 
-		if [ "$HW" == "BLADERF" ] ; then 
-		    HW="OAI_BLADERF"
-		fi
-		if [ "$HW" == "LMSSDR" ] ; then 
-		    HW="OAI_LMSSDR"
-		fi 
-                if [ "$HW" == "IRIS" ] ; then
-                    HW="OAI_IRIS"
-                fi
+                case "$2" in
+                    "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU")
+                        HW="OAI_"$2
+                        ;;
+                    "None")
+                        HW="None"
+                        ;;
+                    *)
+                        echo_fatal "Unknown HW type $HW: exit..."
+                esac
 		echo_info "Setting hardware to: $HW"
-	    fi
-            shift 2;;
-	-t | --transport_protocol)
-            TP="$2" #"${i#*=}"
-	    if [ "$TP" != "ETHERNET" -a "$TP" != "None" ] ; then 
-		echo_fatal "Unknown TP type $TP will exit..."		
-	    else
-		echo_info "Setting transport protocol to: $TP"		
-	    fi
             shift 2;;
        --phy_simulators)
             SIMUS_PHY=1
@@ -285,17 +257,13 @@ function main() {
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
-            XFORMS="True"
+            XFORMS=1
             EXE_ARGUMENTS="$EXE_ARGUMENTS -d"
             echo_info "Will generate the software oscilloscope features"
             shift;;
        --install-system-files)
             INSTALL_SYSTEM_FILES=1
             echo_info "Will copy OpenAirInterface files in Linux directories"
-            shift;;
-       --noS1)
-	    NOS1=1
-            echo_info "Will compile without S1 interface"
             shift;;
        --verbose-compile)
 	    VERBOSE_COMPILE=1
@@ -309,6 +277,10 @@ function main() {
 	    BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
+       --build-coverity-scan)
+           BUILD_COVERITY_SCAN=1
+            echo_info "Will build Coverity-Scan objects for upload"
+            shift;;
        --disable-deadline)
             FORCE_DEADLINE_SCHEDULER_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
@@ -341,10 +313,6 @@ function main() {
             UE_TIMING_TRACE="True"
             echo_info "Enabling UE timing trace"
             shift 1;;
-        --disable-log)
-            DISABLE_LOG_X="True"
-            echo_info "Disabling all LOG_* traces"
-            shift 1;;
         --uhd-images-dir)
             UHD_IMAGES_DIR=$2
             echo_info "Downloading UHD images in the indicated location"
@@ -354,25 +322,23 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
             shift 1;;
-       --build-telnetsrv)
-            BUILD_TELNETSRV=1
-            echo_info "Build embedded telnet server"
-            shift ;;
-       --build-msc)
-            MSC_GEN=1
-            echo_info "Build MSC tracing utility"
-            shift ;;			
+       --build-lib) 
+            BUILD_OPTLIB="" 
+            for alib in $2 ; do 
+                for oklib in $OPTIONAL_LIBRARIES ; do
+                     if [ "$alib" = "$oklib" ] ; then
+                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                        echo_info "Enabling build of lib${alib}.so" 
+                     fi   
+                done
+            done
+	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+            fi
+            shift 2;;		
         --usrp-recplay)
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
-            shift 1;;
-        --ue-nas-use-tun)
-            UE_NAS_USE_TUN="True"
-            echo_info "Enabling UE NAS TUN device usage instead of ue_ip.ko"
-            shift 1;;
-        --basic-simulator)
-            BASIC_SIMULATOR=1
-            echo_info "Compiling the basic simulator"
             shift 1;;
         -h | --help)
             print_help
@@ -383,14 +349,22 @@ function main() {
             break;;
    esac
   done
-  
+
+  #########################################################
+  # check if cov-build is installed
+  #########################################################
+  if [ "$BUILD_COVERITY_SCAN" == "1" ] ; then
+      echo_info "Checking cov-build is installed"
+      IS_INSTALLED=`which cov-build | grep -c cov-build || true`
+      if [ $IS_INSTALLED -eq 1 ] ; then
+          echo_info "Found cov-build"
+      else
+          echo_fatal "Did NOT find cov-build in PATH!"
+      fi
+  fi
+
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
-    echo_error "Cannot build UE and eNB on one build_oai execution"
-    echo_error "use 2 build_oai invocations"
-    exit
-  fi  
   #########################################################
   # check validity of HW and TP parameters for eNB
   #########################################################
@@ -398,7 +372,7 @@ function main() {
   
   if [ "$eNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
-	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
+	  echo_info "No local radio head and no transport protocol selected"
       fi
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
@@ -409,33 +383,10 @@ function main() {
   fi
   
   echo_info "RF HW set to $HW" 
-  #Now we set flags to enable deadline scheduler settings
-  #By default: USRP: disable, 
-  #By default: BLADERF: enable,
-  #By default: EXMIMO: enable
-  if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-     if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
-     elif [ "$HW" = "ETHERNET" ] ; then 
+    # If the user doesn't specify the Linux scheduler to use, we set a value
+    if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
         DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_USRP" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_BLADERF" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_LMSSDR" ] ; then     
-        DEADLINE_SCHEDULER_FLAG_USER="False" 
-     elif [ "$HW" = "OAI_IRIS" ] ; then
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "None" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     else 
-        echo_error "Unknown HW type $HW. Exiting now..."
-        exit 
-     fi
-  else
-     DEADLINE_SCHEDULER_FLAG_USER=$FORCE_DEADLINE_SCHEDULER_FLAG_USER
   fi
-
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
      CPU_AFFINITY_FLAG_USER="False"
@@ -516,43 +467,27 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$NOS1" =  "1" ] ; then
-      lte_build_dir=lte_noS1_build_oai
-      if [ "$eNB" = "1" ] ; then
-         lte_exec=lte-softmodem-nos1
+    
+    if [ "$T_TRACER" =  "False" ] ; then
+        noLOGDirsuffix="_noLOG"
       fi
-      if [ "$UE" = "1" ] ; then
-         lte_exec=lte-uesoftmodem-nos1
-      fi
-  else
-      lte_build_dir=lte_build_oai
-      if [ "$eNB" = "1" ] ; then
-         lte_exec=lte-softmodem
-      fi
-      if [ "$UE" = "1" ] ; then
-         lte_exec=lte-uesoftmodem
-      fi
-  fi
-  if [ "$T_TRACER" =  "False" ] ; then
-      lte_build_dir=${lte_build_dir}_noLOG
-  fi
+    lte_build_dir=lte_build_oai
+      bin_suffix=""
+
+    lte_build_dir="lte_build_oai${noLOGDirsuffix}"
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 
     # LTE softmodem compilation
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
     mkdir -p $DIR/$lte_build_dir/build
     cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
-    if [ "$NOS1" = "1" ] ; then
-	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
-    fi
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
-    echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
 #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
@@ -568,20 +503,14 @@ function main() {
     echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"        >>  $cmake_file
     echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
     echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
-    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
     echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"        >>  $cmake_file
-    if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
-     echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
-     echo "set (LINUX True )"              >>  $cmake_file
-     echo "set (PDCP_USE_NETLINK True )"   >>  $cmake_file
-    fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     eval $CMAKE_CMD
   fi
 
-  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-    echo_info "Compiling $lte_exec"
+  if [ "$eNB" = "1" ] ; then
+    lte_exec=lte-softmodem${bin_suffix}
     compilations \
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
@@ -593,24 +522,41 @@ function main() {
     compilations \
           $lte_build_dir coding \
           libcoding.so $dbin/libcoding.so
-	  
-    if [ "$NOS1" = "1" ] ; then
-	compilations \
-	    $lte_build_dir nasmesh \
-	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-	compilations \
-	    $lte_build_dir rb_tool \
-	    rb_tool $dbin/rb_tool
-	cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-    fi
+# optional libs (used when noS1 with kernel modules 
+    compilations \
+          $lte_build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+    compilations \
+          $lte_build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin	  
   fi
 
-  if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
-    # ue_ip driver compilation
-    echo_info "Compiling UE specific part"
+  if [ "$UE" = 1  ] ; then
+    lte_exec=lte-uesoftmodem${bin_suffix}
     compilations \
-      $lte_build_dir ue_ip \
-      CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+        $lte_build_dir $lte_exec \
+        $lte_exec $dbin/$lte_exec.$REL
+        
+    # mandatory shared lib
+    compilations \
+        $lte_build_dir $config_libconfig_shlib \
+        lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+        $lte_build_dir coding \
+        libcoding.so $dbin/libcoding.so
+# optional libs (used when noS1 with kernel modules
+    compilations \
+          $lte_build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+    compilations \
+          $lte_build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    # ue_ip driver compilation
+    compilations \
+          $lte_build_dir ue_ip \
+          CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
@@ -708,32 +654,20 @@ function main() {
     fi
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
-
-
-
-  # Telnet server compilation
+  # optional libraries
   #####################
-  if [ "$BUILD_TELNETSRV" = "1" ] ; then
-              build_dir=$lte_build_dir
-              compilations \
-                  $build_dir telnetsrv \
-                  libtelnetsrv.so $dbin/libtelnetsrv.so
+  if [ ! -z "$BUILD_OPTLIB" ] ; then 
+     for oklib in $BUILD_OPTLIB ; do
+         compilations \
+            $lte_build_dir $oklib \
+                  lib${oklib}.so $dbin/lib${oklib}.so
+     done
 
   fi 
-  # Telnet server compilation
-  #####################
-  if [ "$MSC_GEN" = "1" ] ; then
-              build_dir=$lte_build_dir
-              compilations \
-                  $build_dir msc \
-                  libmsc.so $dbin/libmsc.so
-
-  fi  
+ 
   # build RF device and transport protocol libraries
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-
-      build_dir=$lte_build_dir	  
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
@@ -741,17 +675,9 @@ function main() {
 	  rm -f $dbin/liboai_device.so
 
 	  # link liboai_device.so with the selected RF device library
-	  if [ "$HW" == "EXMIMO" ] ; then
-	      compilations \
-		  $build_dir oai_exmimodevif \
-		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
-
-	      ln -sf liboai_exmimodevif.so liboai_device.so
-	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
-	      echo_info "liboai_device.so is linked to EXMIMO device library"       
-	  elif [ "$HW" == "OAI_USRP" ] ; then
+	  if [ "$HW" == "OAI_USRP" ] ; then
               compilations \
-                  $build_dir oai_usrpdevif \
+                    $lte_build_dir oai_usrpdevif \
                   liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 
 	      ln -sf liboai_usrpdevif.so liboai_device.so
@@ -760,7 +686,7 @@ function main() {
 	  elif [ "$HW" == "OAI_BLADERF" ] ; then
 	      if [ -f "/usr/include/libbladeRF.h" ] ; then
 		  compilations \
-		      $build_dir oai_bladerfdevif \
+                        $lte_build_dir oai_bladerfdevif \
 		      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
 	      fi
 
@@ -768,18 +694,18 @@ function main() {
 	      ln -sf $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
 	  elif [ "$HW" == "OAI_LMSSDR" ] ; then
-#	      if [ -f "/usr/include/libbladeRF.h" ] ; then
+                #       if [ -f "/usr/include/libbladeRF.h" ] ; then
 		  compilations \
-		      $build_dir oai_lmssdrdevif \
+                    $lte_build_dir oai_lmssdrdevif \
 		      liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
-#	      fi
+                #       fi
 
 	      ln -sf liboai_lmssdrdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to LMSSDR device library"	 
           elif [ "$HW" == "OAI_IRIS" ] ; then
                   compilations \
-                      $build_dir oai_irisdevif \
+                    $lte_build_dir oai_irisdevif \
                       liboai_irisdevif.so $dbin/liboai_irisdevif.so.$REL
 
               ln -s liboai_irisdevif.so liboai_device.so
@@ -790,22 +716,33 @@ function main() {
 	  fi
       fi
       
-      # build trasport protocol libraries (currently only ETHERNET is available)
-      if [ "$TP" != "None" ] ; then
+        # build simulators devices
+        echo_info "Compiling rfsimulator"
+        compilations \
+            $lte_build_dir rfsimulator \
+            librfsimulator.so $dbin/librfsimulator.so.$REL
+        echo_info "Compiling basicsimulator"
+        compilations \
+            $lte_build_dir tcp_bridge_oai \
+            libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
+        # build transport protocol libraries (currently only ETHERNET is available)
+
 	  rm -f liboai_transpro.so
 	  rm -f $dbin/liboai_transpro.so
-
-	  if [ "$TP" == "ETHERNET" ] ; then
 	      compilations \
-		  $build_dir oai_eth_transpro \
+            $lte_build_dir oai_eth_transpro \
 		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
 	      ln -sf liboai_eth_transpro.so liboai_transpro.so
 	      ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
-	  fi      
+        echo_info "liboai_transpro.so is linked to ETHERNET transport"
       fi
-fi
 
+    if [ "$RFSIMULATOR" == "true" -o "$HW" == "OAI_SIMU" ] ; then
+        echo_info "Compiling rfsimulator"
+        compilations \
+            $lte_build_dir rfsimulator \
+            librfsimulator.so $dbin/librfsimulator.so.$REL
+    fi
 
   # Doxygen Support
   #####################
@@ -849,123 +786,6 @@ fi
     echo_info "10. Bypassing the Tests ..."
   fi
 
-  # basic simulator
-  #####################
-  if [ "$BASIC_SIMULATOR" = "1" ]; then
-    echo_info "Build basic simulator"
-    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/basic_simulator
-    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
-    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator
-    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/enb
-    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/ue
-    mkdir -p $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
-
-    # enb
-
-    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/enb/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"         >  $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"  >> $cmake_file
-    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")"          >>  $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"         >>  $cmake_file
-    echo "set ( XFORMS $XFORMS )"                      >>  $cmake_file
-    echo "set ( RF_BOARD \"OAI_USRP\")"                >>  $cmake_file
-    echo "set ( TRANSP_PRO \"None\")"                  >>  $cmake_file
-    echo "set(PACKAGE_NAME \"simulator_enb\")"         >>  $cmake_file
-    echo "set (DEADLINE_SCHEDULER \"False\" )"         >>  $cmake_file
-    echo "set (CPU_AFFINITY \"False\" )"               >>  $cmake_file
-    echo "set ( T_TRACER \"True\" )"                   >>  $cmake_file
-    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"  >>  $cmake_file
-    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
-    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"      >>  $cmake_file
-    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"          >>  $cmake_file
-    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"          >>  $cmake_file
-    echo "set (BASIC_SIMULATOR \"True\" )"             >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
-
-    echo_info "Build eNB"
-    echo_info "logs are in $dlog/basic_simulator_enb.txt"
-    set +e
-    {
-      cd $OPENAIR_DIR/cmake_targets/basic_simulator/enb
-      cmake .
-      make -j`nproc` lte-softmodem
-      make -j`nproc` coding params_libconfig tcp_bridge_oai
-      ln -sf libtcp_bridge_oai.so liboai_device.so
-      cd ../..
-    } > $dlog/basic_simulator_enb.txt 2>&1
-    set -e
-    if [ -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/lte-softmodem          -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libcoding.so           -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libparams_libconfig.so -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libtcp_bridge_oai.so ] ; then
-      echo_success "eNB compiled"
-      check_warnings "$dlog/basic_simulator_enb.txt"
-    else
-      echo_error "eNB compilation failed"
-      exit 1
-    fi
-
-    # ue
-
-    echo_info "Compile conf2uedata"
-    cd $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
-    eval $CMAKE_CMD
-    compilations \
-        nas_sim_tools conf2uedata \
-        conf2uedata $dbin/conf2uedata
-
-    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/ue/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"        >  $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
-    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")"         >>  $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"        >>  $cmake_file
-    echo "set ( XFORMS $XFORMS )"                     >>  $cmake_file
-    echo "set ( RF_BOARD \"OAI_USRP\")"               >>  $cmake_file
-    echo "set ( TRANSP_PRO \"None\")"                 >>  $cmake_file
-    echo "set(PACKAGE_NAME \"simulator_ue\")"         >>  $cmake_file
-    echo "set (DEADLINE_SCHEDULER \"False\" )"        >>  $cmake_file
-    echo "set (CPU_AFFINITY \"False\" )"              >>  $cmake_file
-    echo "set ( T_TRACER \"True\" )"                  >>  $cmake_file
-    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)" >>  $cmake_file
-    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"       >>  $cmake_file
-    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"     >>  $cmake_file
-    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"         >>  $cmake_file
-    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"         >>  $cmake_file
-    echo "set (LINUX True )"                          >>  $cmake_file
-    echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
-    echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
-    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
-
-    echo_info "Build UE"
-    echo_info "logs are in $dlog/basic_simulator_ue.txt"
-    set +e
-    {
-      cd $OPENAIR_DIR/cmake_targets/basic_simulator/ue
-      cmake .
-      make -j`nproc` lte-uesoftmodem
-      make -j`nproc` coding params_libconfig tcp_bridge_oai
-      ln -sf libtcp_bridge_oai.so liboai_device.so
-      cd ../..
-    } > $dlog/basic_simulator_ue.txt 2>&1
-    set -e
-    if [ -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/lte-uesoftmodem -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libcoding.so -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libparams_libconfig.so -a \
-         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libtcp_bridge_oai.so ] ; then
-      echo_success "UE compiled"
-      check_warnings "$dlog/basic_simulator_ue.txt"
-    else
-      echo_error "UE compilation failed"
-      exit 1
-    fi
-
-    echo_info "Generate UE SIM data"
-    $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o $OPENAIR_DIR/cmake_targets/basic_simulator/ue
-
-  fi
 }
 
 main "$@"

@@ -22,7 +22,7 @@ softmodem> help
       softmodem show loglvl|thread|config
       softmodem log (enter help for details)
       softmodem thread (enter help for details)
-      softmodem exit 
+      softmodem exit
    module 2 = phy:
       phy disp [phycnt,uedump,uestat UE<x>]
    module 3 = loader:
@@ -34,24 +34,24 @@ softmodem> help
    module 4 = coding:
       coding [get set] maxiter <value>
       coding mode [sse,avx2,stdc,none]
-softmodem> 
-```  
+softmodem>
+```
 
-# oai telnet server, specific commands help  
+# oai telnet server, specific commands help
 
 ``` bash
 softmodem> softmodem log help
- log sub commands: 
- show:  		     display current log configuration 
- online, noonline:	     enable or disable console logs 
- enable, disable id1-id2:    enable or disable logs for components index id1 to id2 
- level_<level> id1-id2:      set log level to <level> for components index id1 to id2 
- level_<verbosity> id1-id2:  set log verbosity to <verbosity> for components index id1 to id2 
-use the show command to get the values for <level>, <verbosity> and the list of component indexes that can be used for id1 and id2 
+ log sub commands:
+ show:  		     display current log configuration
+ online, noonline:	     enable or disable console logs
+ enable, disable id1-id2:    enable or disable logs for components index id1 to id2
+ level_<level> id1-id2:      set log level to <level> for components index id1 to id2
+ level_<verbosity> id1-id2:  set log verbosity to <verbosity> for components index id1 to id2
+use the show command to get the values for <level>, <verbosity> and the list of component indexes that can be used for id1 and id2
 softmodem>
 
 
 ```
 
-[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver home](telnetsrv.md)
 [oai telnetserver usage home](telnetusage.md)

@@ -180,7 +180,7 @@ echo "Checking build status"
 echo "############################################################"
 
 LOG_PATTERN=.Rel14.txt
-NB_PATTERN_FILES=4
+NB_PATTERN_FILES=7
 
 LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
 STATUS=0
@@ -204,12 +204,13 @@ then
     STATUS=-1
 fi
 
+echo "COMMAND: build_oai -I -w USRP --eNB" > $ARCHIVES_LOC/build_final_status.log
 if [ $STATUS -eq 0 ]
 then
-    echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
+    echo "BUILD_OK" >> $ARCHIVES_LOC/build_final_status.log
     echo "STATUS seems OK"
 else
-    echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
+    echo "BUILD_KO" >> $ARCHIVES_LOC/build_final_status.log
     echo "STATUS failed?"
 fi
 exit $STATUS

@@ -6,5 +6,5 @@ It is defined in include file [ common/util/load_module_shlib.h ](https://gitlab
 | `fname`    | symbol name, is passed to the [`dlsym`](http://man7.org/linux/man-pages/man3/dlsym.3.html) system call performed by the loader to get a pointer to the symbol | I |
 | `fptr`     | pointer to the symbol name, set by the loader. `fptr` is defined as a `int (*fptr)(void)` function type | O |
 
-[loader home page](../../loader.md)  
+[loader home page](../../loader.md)
 [loader developer home page](../devusage.md)

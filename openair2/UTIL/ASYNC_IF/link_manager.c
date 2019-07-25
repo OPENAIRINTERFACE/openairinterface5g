@@ -46,15 +46,10 @@ static void *link_manager_sender_thread(void *_manager)
   LOG_D(MAC, "starting link manager sender thread\n");
 
   while (manager->run) {
-    while (message_get(manager->send_queue, &data, &size, &priority) == 0) {
-      link_send_packet(manager->socket_link, data, size);
+    while ((size = message_get(manager->send_queue, &data, &priority)) > 0) {
+      link_send_packet(manager->socket_link, data, size, manager->peer_addr, manager->peer_port);
       free(data);
     }
-    //    if (message_get(manager->send_queue, &data, &size, &priority))
-    //  goto error;
-    //if (link_send_packet(manager->socket_link, data, size))
-    //  goto error;
-    //free(data);
   }
 
   LOG_D(MAC, "link manager sender thread quits\n");
@@ -124,9 +119,6 @@ link_manager_t *create_link_manager(
   pthread_attr_setschedpolicy(&attr, SCHED_RR);
   //#endif
 
-  if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
-    goto error;
-
   if (pthread_create(&t, &attr, link_manager_sender_thread, ret))
     goto error;
   ret->sender = t;
@@ -151,9 +143,11 @@ error:
 
 void destroy_link_manager(link_manager_t *manager)
 {
-  LOG_D(MAC, "destroying link manager\n");
   manager->run = 0;
-  /* todo: force threads to stop (using a dummy message?) */
+  message_get_unlock(manager->send_queue);
+  pthread_join(manager->sender, NULL);
+  /* cancel aborts the read performed in the receiver, then cancels the thread */
+  pthread_cancel(manager->receiver);
 }
 
 #ifdef SERVER_TEST
@@ -186,7 +180,7 @@ int main(void)
   data = strdup("hello"); if (data == NULL) goto error;
   if (message_put(send_queue, data, 6, 100)) goto error;
 
-  if (message_get(receive_queue, &data, &size, &priority)) goto error;
+  if ((size = message_get(receive_queue, &data, &priority)) <= 0) goto error;
   printf("received message:\n");
   printf("    data: %s\n", (char *)data);
   printf("    size: %d\n", size);
@@ -230,7 +224,7 @@ int main(void)
   manager = create_link_manager(send_queue, receive_queue, link);
   if (manager == NULL) goto error;
 
-  if (message_get(receive_queue, &data, &size, &priority)) goto error;
+  if ((size = message_get(receive_queue, &data, &priority)) <= 0) goto error;
   printf("received message:\n");
   printf("    data: %s\n", (char *)data);
   printf("    size: %d\n", size);

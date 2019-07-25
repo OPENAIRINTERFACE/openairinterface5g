@@ -52,6 +52,10 @@ int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    int sample_offset,
                    int no_prefix);
 
+int slot_fep_mbsfn_khz_1dot25(PHY_VARS_UE *phy_vars_ue,
+                   int subframe,
+                   int sample_offset);
+
 int front_end_fft(PHY_VARS_UE *ue,
              unsigned char l,
              unsigned char Ns,

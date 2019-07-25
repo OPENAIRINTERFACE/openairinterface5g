@@ -12,6 +12,7 @@ enum flex_type {
      FLPT_HELLO = 0;
      FLPT_ECHO_REQUEST = 1;
      FLPT_ECHO_REPLY = 2;
+     FLPT_DISCONNECT = 20;
 
      // Statistics and measurement messages
      FLPT_STATS_REQUEST = 3;
@@ -33,6 +34,7 @@ enum flex_type {
 
      //Controller command messages
      FLPT_DL_MAC_CONFIG = 13;
+     FLPT_HO_COMMAND = 21;
 
      // UE state change messages
      FLPT_UE_STATE_CHANGE = 14;

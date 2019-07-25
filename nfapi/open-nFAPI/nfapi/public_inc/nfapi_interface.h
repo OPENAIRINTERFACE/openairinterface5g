@@ -146,6 +146,8 @@ typedef enum {
 	NFAPI_LBT_DL_INDICATION,
 	NFAPI_NB_HARQ_INDICATION,
 	NFAPI_NRACH_INDICATION,
+	NFAPI_UE_RELEASE_REQUEST,
+	NFAPI_UE_RELEASE_RESPONSE,
 
 	NFAPI_PNF_PARAM_REQUEST = 0x0100,
 	NFAPI_PNF_PARAM_RESPONSE,
@@ -703,6 +705,18 @@ typedef struct {
 #define NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG 0x003F
 
 typedef struct {
+       nfapi_uint8_tlv_t radioframe_allocation_period;
+       nfapi_uint8_tlv_t radioframe_allocation_offset;
+       nfapi_uint8_tlv_t non_mbsfn_config_flag;
+       nfapi_uint16_tlv_t non_mbsfn_subframeconfig;
+} nfapi_fembms_config_t;
+
+#define NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG 0x0042
+#define NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG 0x0043
+#define NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG 0x0044
+#define NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG 0x0045
+
+typedef struct {
 	nfapi_uint16_tlv_t bandwidth_configuration;
 	nfapi_uint16_tlv_t max_up_pts;
 	nfapi_uint16_tlv_t srs_subframe_configuration;
@@ -1097,6 +1111,7 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+	nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
 	nfapi_tdd_frame_structure_t tdd_frame_structure_config;
@@ -1118,6 +1133,7 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+        nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
 	nfapi_laa_config_t laa_config;
@@ -2378,6 +2394,19 @@ typedef struct {
 } nfapi_tx_request_body_t;
 #define NFAPI_TX_REQUEST_BODY_TAG 0x2022
 
+#define  NFAPI_RELEASE_MAX_RNTI  256
+typedef struct {
+    uint32_t handle;
+    uint16_t rnti;
+} nfapi_ue_release_request_TLVs_t;
+
+typedef struct {
+    nfapi_tl_t tl;
+    uint16_t number_of_TLVs;
+    nfapi_ue_release_request_TLVs_t ue_release_request_TLVs_list[NFAPI_RELEASE_MAX_RNTI];
+} nfapi_ue_release_request_body_t;
+#define NFAPI_UE_RELEASE_BODY_TAG 0x2068
+
 // P7 Message Structures
 typedef struct {
 	nfapi_p7_message_header_t header;
@@ -3403,6 +3432,19 @@ typedef struct {
 	};
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_error_indication_t;
+
+typedef struct {
+    nfapi_p7_message_header_t header;
+    uint16_t sfn_sf;
+    nfapi_ue_release_request_body_t ue_release_request_body;
+    nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_ue_release_request_t;
+
+typedef struct {
+	nfapi_p7_message_header_t header;
+	uint32_t error_code;
+	nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_ue_release_response_t;
 
 // 
 // P4 Messages

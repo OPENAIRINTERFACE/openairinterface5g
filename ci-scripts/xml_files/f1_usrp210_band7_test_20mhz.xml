@@ -1,0 +1,111 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-f1-20</htmlTabRef>
+	<htmlTabName>Test-F1-CU-DU-20MHz</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
+	<TestCaseRequestedList>
+ 030201
+ 040101
+ 030162 030161 000002 040301 000002 040561 040621 040661 040401 040201 030201 030202
+	</TestCaseRequestedList>
+	<TestCaseExclusionList>
+	</TestCaseExclusionList>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030161">
+		<class>Initialize_eNB</class>
+		<desc>Initialize DU (FDD/Band7/20MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/du.band7.tm1.100PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+	</testCase>
+
+	<testCase id="030162">
+		<class>Initialize_eNB</class>
+		<desc>Initialize CU (FDD/Band7/20MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/cu.band7.tm1.100PRB.conf</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate CU</desc>
+		<eNB_instance>0</eNB_instance>
+	</testCase>
+
+	<testCase id="030202">
+		<class>Terminate_eNB</class>
+		<desc>Terminate DU</desc>
+		<eNB_instance>1</eNB_instance>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+	<testCase id="040561">
+		<class>Ping</class>
+		<desc>ping (20MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040621">
+		<class>Iperf</class>
+		<desc>iperf (20MHz - DL/70Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 70M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040661">
+		<class>Iperf</class>
+		<desc>iperf (20MHz - UL/15Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>60</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+</testCaseList>

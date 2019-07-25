@@ -72,7 +72,7 @@ mac_rrc_data_req(
 }
 
 //------------------------------------------------------------------------------
-int8_t
+/*int8_t
 mac_rrc_data_ind(
   const module_id_t     module_idP,
   const int             CC_idP,
@@ -100,7 +100,7 @@ mac_rrc_data_ind(
            eNB_indexP,
            mbsfn_sync_area)
         );
-}
+}*/
 
 //------------------------------------------------------------------------------
 void

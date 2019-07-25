@@ -67,6 +67,9 @@ int message_put(message_queue_t *queue, void *data, int size, int priority) {
   message_t *overwritten_msg;
   message_t *m = NULL;
 
+  if (size <= 0)
+    goto error;
+
   LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
   lfds700_misc_prng_init(&ls);
   
@@ -94,12 +97,11 @@ int message_put(message_queue_t *queue, void *data, int size, int priority) {
   return 0;
 
  error:
-  free(m);
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
 
-int message_get(message_queue_t *queue, void **data, int *size, int *priority) {
+int message_get(message_queue_t *queue, void **data, int *priority) {
   message_t *m;
   struct lfds700_misc_prng_state ls;
   
@@ -111,10 +113,15 @@ int message_get(message_queue_t *queue, void **data, int *size, int *priority) {
   }
 
   *data = m->data;
-  *size = m->size;
+  const int size = m->size;
   *priority = m->priority;
   free(m);
-  return 0;
+  return size;
+}
+
+void message_get_unlock(message_queue_t *queue) {
+  /* don't do anything, this function exists to unlock a message_queue but is
+   * not needed in the case of the ringbuffer_queue */
 }
 
 void destroy_message_queue(message_queue_t *queue) {

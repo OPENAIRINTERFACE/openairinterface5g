@@ -437,6 +437,7 @@ static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm
         if (bytes < 0) {
           /* Failed to decrypt the message */
           *emm_cause = EMM_CAUSE_PROTOCOL_ERROR;
+          free(plain_msg);
           LOG_FUNC_RETURN (bytes);
         } else if (header.protocol_discriminator ==
                    EPS_MOBILITY_MANAGEMENT_MESSAGE) {

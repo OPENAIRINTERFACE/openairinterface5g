@@ -806,6 +806,7 @@ mem_block_t * rlc_am_get_pdu_to_retransmit(
 	  rlc_sn_t             sn          = rlc_pP->vt_a;
 	  rlc_sn_t             sn_end      = rlc_pP->vt_s;
 	  mem_block_t*         pdu_p        = NULL;
+	  mem_block_t*         mb_p         = NULL;
 	  rlc_am_tx_data_pdu_management_t* tx_data_pdu_management;
 //Assertion(eNB)_PRAN_DesignDocument_annex No.769
       if((rlc_pP->retrans_num_pdus <= 0) || (rlc_pP->vt_a ==  rlc_pP->vt_s))
@@ -884,6 +885,18 @@ mem_block_t * rlc_am_get_pdu_to_retransmit(
 					                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
 									tx_data_pdu_management->retx_count_next,
 					                sn);
+					  mb_p = rlc_pP->tx_data_pdu_buffer[sn % RLC_AM_WINDOW_SIZE].mem_block;
+					  if(mb_p != NULL){
+					    free_mem_block(mb_p, __func__);
+					    tx_data_pdu_management->mem_block = NULL;
+					    tx_data_pdu_management->flags.retransmit = 0;
+					    tx_data_pdu_management->flags.ack = 1;
+					    tx_data_pdu_management->flags.transmitted = 0;
+					    rlc_pP->retrans_num_bytes_to_retransmit -= tx_data_pdu_management->retx_payload_size;
+					    tx_data_pdu_management->retx_payload_size = 0;
+					    tx_data_pdu_management->num_holes = 0;
+					    rlc_pP->retrans_num_pdus --;
+					  }
 				  }
 			  }
 			  else if (rlc_pP->nb_bytes_requested_by_mac >= 5)
@@ -938,6 +951,18 @@ mem_block_t * rlc_am_get_pdu_to_retransmit(
 					  					                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
 					  									tx_data_pdu_management->retx_count_next,
 					  					                sn);
+					  mb_p = rlc_pP->tx_data_pdu_buffer[sn % RLC_AM_WINDOW_SIZE].mem_block;
+					  if(mb_p != NULL){
+					    free_mem_block(mb_p, __func__);
+					    tx_data_pdu_management->mem_block = NULL;
+					    tx_data_pdu_management->flags.retransmit = 0;
+					    tx_data_pdu_management->flags.ack = 1;
+					    tx_data_pdu_management->flags.transmitted = 0;
+					    rlc_pP->retrans_num_bytes_to_retransmit -= tx_data_pdu_management->retx_payload_size;
+					    tx_data_pdu_management->retx_payload_size = 0;
+					    tx_data_pdu_management->num_holes = 0;
+					    rlc_pP->retrans_num_pdus --;
+					  }
 				  }
 			  }
 

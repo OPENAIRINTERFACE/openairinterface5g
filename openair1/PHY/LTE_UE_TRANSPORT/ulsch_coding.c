@@ -80,7 +80,6 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
       }
     }
     free16(ulsch,sizeof(LTE_UE_ULSCH_t));
-    ulsch = NULL;
   }
 
 }

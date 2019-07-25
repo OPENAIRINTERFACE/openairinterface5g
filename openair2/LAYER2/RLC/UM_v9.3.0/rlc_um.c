@@ -582,6 +582,7 @@ rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,cons
     } /* while (tb_p != NULL) */
   } /* if (data_req.data.nb_elements > 0) */
 
+  data_req.buffer_occupancy_in_pdus = 0;
   return data_req;
 }
 

@@ -390,7 +390,7 @@ typedef struct {
 
 
 
-#define IDLE 0
+//#define IDLE 0
 #define NEED_RADIO_CONFIG 3
 #define RADIO_CONFIG_TX 2
 #define RADIO_CONFIG_OK 1

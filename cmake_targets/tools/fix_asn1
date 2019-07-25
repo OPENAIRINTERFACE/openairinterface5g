@@ -23,7 +23,7 @@ reset_color="$(tput sgr0)"
 function error()
 {
   echo -e "$red_color"ERROR: "$@""$reset_color"
-  exit 1
+#  exit 1
 }
 
 function check_sha1()
@@ -56,11 +56,11 @@ function patch_file()
 
   echo -e "$green_color""patch file $file with $OPENAIR_DIR/cmake_targets/tools/$patch""$reset_color"
 
-  patch "$file" "$OPENAIR_DIR/cmake_targets/tools/$patch"
-  if [ $? -ne 0 ]
-  then
-    error "patching of $file with $OPENAIR_DIR/cmake_targets/tools/$patch failed"
-  fi
+#  patch "$file" "$OPENAIR_DIR/cmake_targets/tools/$patch"
+#  if [ $? -ne 0 ]
+#  then
+#    error "patching of $file with $OPENAIR_DIR/cmake_targets/tools/$patch failed"
+#  fi
 }
 
 function apply_patches()
@@ -140,6 +140,22 @@ function patch_s1ap()
   esac
 }
 
+function patch_f1ap()
+{
+  local directory="$1"
+  local version="$2"
+
+  case "$version" in
+    R15 )
+      #nothing to do anymore (fixes went to asn1c)
+      ;;
+    * )
+      error unknwon/unhandled F1AP version \'"$version"\'
+      ;;
+  esac
+}
+
+
 function main()
 {
   if [ $# -ne 3 ]
@@ -166,6 +182,9 @@ function main()
       ;;
     S1AP )
       patch_s1ap "$directory" "$version"
+      ;;
+    F1AP )
+      patch_f1ap "$directory" "$version"
       ;;
     * )
       error unknown module "$module"
