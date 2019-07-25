@@ -432,12 +432,13 @@ void UE_processing(void *arg) {
       (UE->frame_parms.frame_type == FDD) )
 #endif
 */
-  //if (proc->nr_tti_tx == NR_UPLINK_SLOT){
+
+  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
 
     if (UE->mode != loop_through_memory)
       phy_procedures_nrUE_TX(UE,proc,0,0);
 
-  //}
+  }
 
   //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 
