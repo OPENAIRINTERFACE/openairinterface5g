@@ -2834,7 +2834,7 @@ void init_RU(char *rf_config_file,
 
       if (eNB0) {
         LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
-        memcpy((void *)&ru->frame_parms,(void *)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+        ru->frame_parms = &eNB0->frame_parms;
         // attach all RU to all eNBs in its list/
         LOG_D(PHY,"ru->num_eNB:%d eNB0->num_RU:%d\n", ru->num_eNB, eNB0->num_RU);
 
