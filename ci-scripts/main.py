@@ -3399,13 +3399,13 @@ class SSHConnection():
 				eNB_cnt = self.x2NbENBs
 				cnt = 0
 				while cnt < eNB_cnt:
-					cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
+					cmd = "curl --silent -XPOST http://" + self.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
 					logging.debug(cmd)
 					fullMessage += cmd + '\n'
 					subprocess.run(cmd, shell=True)
 					cnt += 1
 				# Waiting for the activation to be active
-				time.sleep(10)
+				time.sleep(20)
 				msg = "Switching UE(s) from eNB to eNB"
 				logging.debug(msg)
 				fullMessage += msg + '\n'
@@ -3413,13 +3413,13 @@ class SSHConnection():
 				while cnt < eNB_cnt:
 					ueIdx = 0
 					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
-						cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
+						cmd = "curl --silent -XPOST http://" + self.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
 						logging.debug(cmd)
 						fullMessage += cmd + '\n'
 						subprocess.run(cmd, shell=True)
 						ueIdx += 1
 					cnt += 1
-				time.sleep(10)
+				time.sleep(20)
 				# check
 				logging.debug("Checking the Status after X2 Handover")
 				fullMessage += self.X2_Status(1, self.testCase_id + '_post_ho.json') 
