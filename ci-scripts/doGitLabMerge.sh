@@ -103,6 +103,11 @@ esac
 
 done
 
+if [[ $TARGET_COMMIT_ID == "latest" ]]
+then
+    TARGET_COMMIT_ID=`git log -n1 --pretty=format:%H origin/$TARGET_BRANCH`
+fi
+
 echo "Source Branch is    : $SOURCE_BRANCH"
 echo "Source Commit ID is : $SOURCE_COMMIT_ID"
 echo "Target Branch is    : $TARGET_BRANCH"
@@ -120,7 +125,16 @@ fi
 git config user.email "jenkins@openairinterface.org"
 git config user.name "OAI Jenkins"
 
-git checkout -f $SOURCE_COMMIT_ID
+git checkout -f $SOURCE_COMMIT_ID > checkout.txt 2>&1
+STATUS=`egrep -c "fatal: reference is not a tree" checkout.txt`
+rm -f checkout.txt
+if [ $STATUS -ne 0 ]
+then
+    echo "fatal: reference is not a tree --> $SOURCE_COMMIT_ID"
+    STATUS=-1
+    exit $STATUS
+fi
+
 git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG
 
 git merge --ff $TARGET_COMMIT_ID -m "Temporary merge for CI"

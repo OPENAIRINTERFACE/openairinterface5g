@@ -72,7 +72,7 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  pdu->rx_indication_rel8.length         = buflen;
 	  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
 
-	  // ulsch_buffer is necessary to keep its value. 
+	  // ulsch_buffer is necessary to keep its value.
 	  //pdu->data                              = ulsch_buffer;
 	  pdu->data = malloc(buflen);
 	  memcpy(pdu->data,ulsch_buffer,buflen);
@@ -181,7 +181,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL
 	// change for mutiple UE's simulation.
 	// pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
 	pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
-	
+
 	// memory allocation and free memory of UL_INFO are done in UE_phy_stub_single_thread_rxn_txnp4.
 	// UL_INFO = (UL_IND_t*)malloc(sizeof(UL_IND_t));
 
@@ -236,8 +236,8 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subfram
 	// change for mutiple UE's simulation.
 	//pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
 	pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
-	nfapi_cqi_indication_pdu_t *pdu         = &UL_INFO->cqi_ind.cqi_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
-	nfapi_cqi_indication_raw_pdu_t *raw_pdu = &UL_INFO->cqi_ind.cqi_raw_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
+	nfapi_cqi_indication_pdu_t *pdu         = &UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
+	nfapi_cqi_indication_raw_pdu_t *raw_pdu = &UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
 
 	pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
 	pdu->rx_ue_information.rnti = rnti;
@@ -263,7 +263,7 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subfram
 
 
 
-  UL_INFO->cqi_ind.number_of_cqis++;
+  UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
   // change for mutiple UE's simulation.
   //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
   pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);

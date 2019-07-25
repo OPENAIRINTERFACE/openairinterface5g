@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_itti_messaging.c
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include "intertask_interface.h"
 
 #include "x2ap_eNB_itti_messaging.h"
@@ -53,4 +60,3 @@ void x2ap_eNB_itti_send_sctp_close_association(instance_t instance, int32_t asso
 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
-

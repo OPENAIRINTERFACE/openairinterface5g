@@ -37,6 +37,9 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "assertions.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 extern boolean_t pdcp_data_ind(
   const protocol_ctxt_t *const ctxt_pP,
   const srb_flag_t srb_flagP,
@@ -375,7 +378,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
   if(sdu_sizeP <= 0) {
-    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__ ,__LINE__);
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__,__LINE__);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -395,7 +398,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     }
 
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
-  }
+  }else
 
   if (sourceL2Id && destinationL2Id) {
     LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,
@@ -564,8 +567,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   }
 
 #else
-  }
-  else { /* MBMS_flag != 0 */
+  } else { /* MBMS_flag != 0 */
     free_mem_block(sdu_pP, __func__);
     LOG_E(RLC, "MBMS_flag != 0 while Rel10/Rel14 is not defined...\n");
     //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
@@ -585,27 +587,33 @@ void rlc_data_ind     (
   const sdu_size_t  sdu_sizeP,
   mem_block_t      *sdu_pP) {
   //-----------------------------------------------------------------------------
-#if defined(TRACE_RLC_PAYLOAD)
   LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] Display of rlc_data_ind: size %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         (srb_flagP) ? "SRB" : "DRB",
         rb_idP,
         sdu_sizeP);
   rlc_util_print_hex_octets(RLC, (unsigned char *)sdu_pP->data, sdu_sizeP);
-#endif
+
+  if (ctxt_pP->enb_flag) {
 #if T_TRACER
-
-  if (ctxt_pP->enb_flag)
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
-
 #endif
-  pdcp_data_ind (
-    ctxt_pP,
-    srb_flagP,
-    MBMS_flagP,
-    rb_idP,
-    sdu_sizeP,
-    sdu_pP);
+    const ngran_node_t type = RC.rrc[ctxt_pP->module_id]->node_type;
+    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+                "Can't be CU, bad node type %d\n", type);
+
+    if (NODE_IS_DU(type) && srb_flagP == 1) {
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;
+      F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_idP;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container = sdu_pP->data;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
+      itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+      return;
+    }
+  } // case monolithic eNodeB or UE
+
+  get_pdcp_data_ind_func()(ctxt_pP, srb_flagP, MBMS_flagP, rb_idP, sdu_sizeP, sdu_pP,NULL,NULL);
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
@@ -616,7 +624,7 @@ void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
   //-----------------------------------------------------------------------------
   if (srb_flagP) {
     if (rlc_rrc_data_conf != NULL) {
-      rlc_rrc_data_conf (ctxt_pP, rb_idP , muiP, statusP);
+      rlc_rrc_data_conf (ctxt_pP, rb_idP, muiP, statusP);
     }
   }
 }
@@ -640,8 +648,6 @@ rlc_module_init (void) {
   }
 
   for (module_id1=0; module_id1 < MAX_MOBILES_PER_ENB; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].service_id = 0;
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].session_id = 0;
@@ -650,23 +656,15 @@ rlc_module_init (void) {
     for (k=0; k < NB_RB_MBMS_MAX; k++) {
       rlc_mbms_rbid2lcid_ue[module_id1][k] = RLC_LC_UNALLOCATED;
     }
-
-#endif
   }
 
-  for (module_id1=0; module_id1 < NUMBER_OF_eNB_MAX; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  for (k=0; k < RLC_MAX_MBMS_LC; k++) {
+    rlc_mbms_lcid2service_session_id_eNB[0][k].service_id = 0;
+    rlc_mbms_lcid2service_session_id_eNB[0][k].session_id = 0;
+  }
 
-    for (k=0; k < RLC_MAX_MBMS_LC; k++) {
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].service_id = 0;
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].session_id = 0;
-    }
-
-    for (k=0; k < NB_RB_MBMS_MAX; k++) {
-      rlc_mbms_rbid2lcid_eNB[module_id1][k] = RLC_LC_UNALLOCATED;
-    }
-
-#endif
+  for (k=0; k < NB_RB_MBMS_MAX; k++) {
+    rlc_mbms_rbid2lcid_eNB[0][k] = RLC_LC_UNALLOCATED;
   }
 
   pool_buffer_init();
@@ -677,7 +675,7 @@ void
 rlc_module_cleanup (void)
 //-----------------------------------------------------------------------------
 {
-  hashtable_destroy(rlc_coll_p);
+  hashtable_destroy(&rlc_coll_p);
 }
 //-----------------------------------------------------------------------------
 void

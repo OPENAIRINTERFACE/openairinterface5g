@@ -65,7 +65,7 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
 {
     // currently there is one-to-one mapping between sf allocation pattern and sync area
-    if (mbsfn_sync_area > MAX_MBSFN_AREA) {
+    if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
 	LOG_W(MAC,
 	      "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
 	      module_idP, CC_id, mbsfn_sync_area);
@@ -542,7 +542,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      "[eNB %d] CC_id %d Frame %d Subframe %d: Schedule MCCH MESSAGE (area %d, sfAlloc %d)\n",
 	      module_idP, CC_id, frameP, subframeP, i, j);
 
-	mcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MCCH, 1, &cc->MCCH_pdu.payload[0], 
+	mcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MCCH, 0xFFFC, 1, &cc->MCCH_pdu.payload[0], 
 					   i);	// this is the mbsfn sync area index
 
 	if (mcch_sdu_length > 0) {

@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB.c
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +40,8 @@
 #include "x2ap_eNB_handler.h"
 #include "x2ap_eNB_generate_messages.h"
 #include "x2ap_common.h"
+#include "x2ap_ids.h"
+#include "x2ap_timers.h"
 
 #include "queue.h"
 #include "assertions.h"
@@ -63,6 +72,18 @@ void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
                            uint16_t             out_streams,
                            uint32_t             enb_port_for_X2C,
                            int                  multi_sd);
+
+static
+void x2ap_eNB_handle_handover_req(instance_t instance,
+                                  x2ap_handover_req_t *x2ap_handover_req);
+
+static
+void x2ap_eNB_handle_handover_req_ack(instance_t instance,
+                                      x2ap_handover_req_ack_t *x2ap_handover_req_ack);
+
+static
+void x2ap_eNB_ue_context_release(instance_t instance,
+                                 x2ap_ue_context_release_t *x2ap_ue_context_release);
 
 
 static
@@ -116,7 +137,7 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
-    x2ap_handle_x2_setup_message(x2ap_enb_data_p,
+    x2ap_handle_x2_setup_message(instance_p, x2ap_enb_data_p,
                                  sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
     return;
   }
@@ -280,6 +301,11 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     new_instance->mnc_digit_length = x2ap_register_eNB->mnc_digit_length;
     new_instance->num_cc           = x2ap_register_eNB->num_cc;
 
+    x2ap_id_manager_init(&new_instance->id_manager);
+    x2ap_timers_init(&new_instance->timers,
+                     x2ap_register_eNB->t_reloc_prep,
+                     x2ap_register_eNB->tx2_reloc_overall);
+
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
       new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
       new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
@@ -353,6 +379,99 @@ void x2ap_eNB_handle_sctp_init_msg_multi_cnf(
   }
 }
 
+static
+void x2ap_eNB_handle_handover_req(instance_t instance,
+                                  x2ap_handover_req_t *x2ap_handover_req)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  x2ap_id_manager     *id_manager;
+  int                 ue_id;
+
+  int target_pci = x2ap_handover_req->target_physCellId;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  target = x2ap_is_eNB_pci_in_list(target_pci);
+  DevAssert(target != NULL);
+
+  /* allocate x2ap ID */
+  id_manager = &instance_p->id_manager;
+  ue_id = x2ap_allocate_new_id(id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    /* TODO: cancel handover: send (to be defined) message to RRC */
+    exit(1);
+  }
+  /* id_source is ue_id, id_target is unknown yet */
+  x2ap_set_ids(id_manager, ue_id, x2ap_handover_req->rnti, ue_id, -1);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_SOURCE_PREPARE);
+  x2ap_set_reloc_prep_timer(id_manager, ue_id,
+                            x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, target);
+
+  x2ap_eNB_generate_x2_handover_request(instance_p, target, x2ap_handover_req, ue_id);
+}
+
+static
+void x2ap_eNB_handle_handover_req_ack(instance_t instance,
+                                      x2ap_handover_req_ack_t *x2ap_handover_req_ack)
+{
+  /* TODO: remove this hack (the goal is to find the correct
+   * eNodeB structure for the other end) - we need a proper way for RRC
+   * and X2AP to identify eNodeBs
+   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
+   * the configuration file)
+   * as far as I understand.. CROUX
+   */
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int source_assoc_id = x2ap_handover_req_ack->source_assoc_id;
+  int                 ue_id;
+  int                 id_source;
+  int                 id_target;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  target = x2ap_get_eNB(NULL, source_assoc_id, 0);
+  DevAssert(target != NULL);
+
+  /* rnti is a new information, save it */
+  ue_id     = x2ap_handover_req_ack->x2_id_target;
+  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  id_target = ue_id;
+  x2ap_set_ids(&instance_p->id_manager, ue_id, x2ap_handover_req_ack->rnti, id_source, id_target);
+
+  x2ap_eNB_generate_x2_handover_request_ack(instance_p, target, x2ap_handover_req_ack);
+}
+
+static
+void x2ap_eNB_ue_context_release(instance_t instance,
+                                 x2ap_ue_context_release_t *x2ap_ue_context_release)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int source_assoc_id = x2ap_ue_context_release->source_assoc_id;
+  int ue_id;
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  target = x2ap_get_eNB(NULL, source_assoc_id, 0);
+  DevAssert(target != NULL);
+
+  x2ap_eNB_generate_x2_ue_context_release(instance_p, target, x2ap_ue_context_release);
+
+  /* free the X2AP UE ID */
+  ue_id = x2ap_find_id_from_rnti(&instance_p->id_manager, x2ap_ue_context_release->rnti);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not find UE %x\n", x2ap_ue_context_release->rnti);
+    exit(1);
+  }
+  x2ap_release_id(&instance_p->id_manager, ue_id);
+}
+
 void *x2ap_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
@@ -369,9 +488,28 @@ void *x2ap_task(void *arg) {
         itti_exit_task();
         break;
 
+      case X2AP_SUBFRAME_PROCESS:
+        x2ap_check_timers(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        break;
+
       case X2AP_REGISTER_ENB_REQ:
         x2ap_eNB_handle_register_eNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                      &X2AP_REGISTER_ENB_REQ(received_msg));
+        break;
+
+      case X2AP_HANDOVER_REQ:
+        x2ap_eNB_handle_handover_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                     &X2AP_HANDOVER_REQ(received_msg));
+        break;
+
+      case X2AP_HANDOVER_REQ_ACK:
+        x2ap_eNB_handle_handover_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                         &X2AP_HANDOVER_REQ_ACK(received_msg));
+        break;
+
+      case X2AP_UE_CONTEXT_RELEASE:
+        x2ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                                &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
 
       case SCTP_INIT_MSG_MULTI_CNF:
@@ -408,4 +546,38 @@ void *x2ap_task(void *arg) {
   return NULL;
 }
 
+#include "common/config/config_userapi.h"
 
+int is_x2ap_enabled(void)
+{
+  static volatile int config_loaded = 0;
+  static volatile int enabled = 0;
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+  if (pthread_mutex_lock(&mutex)) goto mutex_error;
+
+  if (config_loaded) {
+    if (pthread_mutex_unlock(&mutex)) goto mutex_error;
+    return enabled;
+  }
+
+  char *enable_x2 = NULL;
+  paramdef_t p[] = {
+   { "enable_x2", "yes/no", 0, strptr:&enable_x2, defstrval:"", TYPE_STRING, 0 }
+  };
+
+  /* TODO: do it per module - we check only first eNB */
+  config_get(p, sizeof(p)/sizeof(paramdef_t), "eNBs.[0]");
+  if (enable_x2 != NULL && strcmp(enable_x2, "yes") == 0)
+    enabled = 1;
+
+  config_loaded = 1;
+
+  if (pthread_mutex_unlock(&mutex)) goto mutex_error;
+
+  return enabled;
+
+mutex_error:
+  LOG_E(X2AP, "mutex error\n");
+  exit(1);
+}

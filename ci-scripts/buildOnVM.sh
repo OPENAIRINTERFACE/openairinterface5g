@@ -25,7 +25,7 @@ function build_usage {
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo "   Default:"
     echo "     -- eNB with USRP"
     echo ""
@@ -33,31 +33,8 @@ function build_usage {
     echo "------"
     echo "    oai-ci-vm-tool build [OPTIONS]"
     echo ""
-    echo "Mandatory Options:"
-    echo "--------"
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    echo "Options:"
-    echo "--------"
-    variant_usage
-    echo "    Specify the variant to build."
-    echo ""
-    echo "    --keep-vm-alive OR -k"
-    echo "    Keep the VM alive after the build."
-    echo ""
-    echo "    --daemon OR -D"
-    echo "    Run as daemon"
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
+    command_options_usage
+
 }
 
 function build_on_vm {
@@ -95,7 +72,7 @@ function build_on_vm {
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
         echo "Waiting for VM to be started"
         uvt-kvm wait $VM_NAME --insecure
 
@@ -111,7 +88,7 @@ function build_on_vm {
     fi
 
     echo "############################################################"
-    echo "Copying GIT repo into VM ($VM_NAME)" 
+    echo "Copying GIT repo into VM ($VM_NAME)"
     echo "############################################################"
     if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then
@@ -213,6 +190,6 @@ function build_on_vm {
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
         fi
     fi
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
 }

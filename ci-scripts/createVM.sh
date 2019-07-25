@@ -25,7 +25,7 @@ function create_usage {
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
-    echo "     -- xenial image already synced"
+    echo "     -- $VM_OSREL image already synced"
     echo "   Default:"
     echo "     -- eNB with USRP"
     echo ""
@@ -90,7 +90,7 @@ function create_vm {
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
     acquire_vm_create_lock
-    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+    uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
     echo "Waiting for VM to be started"
     uvt-kvm wait $VM_NAME --insecure
 

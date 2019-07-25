@@ -39,22 +39,24 @@ mac_rrc_data_req(
   const int             CC_idP,
   const frame_t         frameP,
   const rb_id_t         srb_idP,
+  const rnti_t          rntiP,
   const uint8_t         nb_tbP,
   uint8_t* const        buffer_pP,
   const uint8_t         mbsfn_sync_areaP
 );
 
-int8_t
+/*int8_t
 mac_rrc_data_ind(
   const module_id_t     module_idP,
-  const int             CC_idP,
+  const int             CC_id,
   const frame_t         frameP,
   const sub_frame_t     sub_frameP,
+  const int             UE_id,
   const rnti_t          rntiP,
   const rb_id_t         srb_idP,
-  const uint8_t        *sduP,
+  const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_area
+  const uint8_t         mbsfn_sync_areaP
 );
 
 int8_t
@@ -81,7 +83,7 @@ mac_rrc_data_ind_ue(
   const sdu_size_t      sdu_lenP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_area
-);
+);*/
 
 void mac_lite_sync_ind(
   const module_id_t module_idP,

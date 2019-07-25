@@ -150,7 +150,7 @@ int msc_init(const msc_env_t envP, const int max_threadsP)
     pointer_p = malloc(MSC_MAX_MESSAGE_LENGTH);
     AssertFatal (pointer_p, "malloc failed!\n");
     rv = lfds611_stack_guaranteed_push( g_msc_memory_stack_p, pointer_p );
-    AssertFatal (rv, "lfds611_stack_guaranteed_push failed for item %u\n", i);
+    AssertFatal (rv, "lfds611_stack_guaranteed_push failed for item %d\n", i);
   }
 
   for (i = MIN_MSC_PROTOS; i < MAX_MSC_PROTOS; i++) {
@@ -476,7 +476,20 @@ int msc_init(const msc_env_t envP, const int max_threadsP)
         }
 
         break;
-
+      case MSC_F1AP_CU:
+        rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "F1AP_CU");
+        if (rv >= MSC_MAX_PROTO_NAME_LENGTH) {g_msc_proto2str[i][MSC_MAX_PROTO_NAME_LENGTH-1] = 0;}
+        //if ((envP == MSC_E_UTRAN) || (envP == MSC_MME_GW)  || (envP == MSC_MME)) {
+          msc_log_declare_proto(i);
+        //}
+        break;
+      case MSC_F1AP_DU:
+        rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "F1AP_DU");
+        if (rv >= MSC_MAX_PROTO_NAME_LENGTH) {g_msc_proto2str[i][MSC_MAX_PROTO_NAME_LENGTH-1] = 0;}
+        //if ((envP == MSC_E_UTRAN) || (envP == MSC_MME_GW)  || (envP == MSC_MME)) {
+          msc_log_declare_proto(i);
+        //}
+        break;
       default:
         rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "UNKNOWN");
 

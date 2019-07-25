@@ -774,3 +774,5 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   }//  for (i=0; i<eNB->phich_vars[subframe&1].num_hi; i++) { 
   eNB->phich_vars[subframe&1].num_hi=0;
 }
+
+

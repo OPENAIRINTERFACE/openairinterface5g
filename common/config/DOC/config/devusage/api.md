@@ -25,14 +25,14 @@ int config_get(paramdef_t *params,int numparams, char *prefix)
  - `PARAMFLAG_DISABLECMDLINE`: parameter cannot be modified via the command line
  - `PARAMFLAG_DONOTREAD`: ignore the parameter, can be used at run-time, to alter a pre-defined `paramdef_t` array which is used in several `config_get` or/and `config_getlist` calls.
  - `PARAMFLAG_NOFREE`: do not free the memory possibly allocated by the config module to store the value of the parameter. Default behavior is for the config module to free the memory it has allocated when the `config_end` function is called.
- - `PARAMFLAG_BOOL`: Only relevant for integer types. tell the config module that when processing the command line, the corresponding option can be specified without any arggument and that in this case it must set the value to 1.  
+ - `PARAMFLAG_BOOL`: Only relevant for integer types. tell the config module that when processing the command line, the corresponding option can be specified without any arggument and that in this case it must set the value to 1.
 
 * `params` is also used as an output parameter, `< XXX >ptr >` field  is used by the config module to store the value it has read. The following bits can possibly be set in the `paramflags` mask after the call:
   - `PARAMFLAG_MALLOCINCONFIG`: memory has been allocated for the ` < XXX >ptr > ` field
   - `PARAMFLAG_PARAMSET`: parameter has been found in the config source, it is not set to default value.
   - `PARAMFLAG_PARAMSET`: parameter has been set to its default value
 * `numparams` is the number of entries in the params array
-* `prefix` is a character string to be appended to the parameters name, it defines the parameters position in the configuration file hierarchy (the section name in libconfig terminology). 
+* `prefix` is a character string to be appended to the parameters name, it defines the parameters position in the configuration file hierarchy (the section name in libconfig terminology).
 * The returned value is the number of parameters which have been assigned a value or -1 if a severe error occured
 
 ```c
@@ -42,8 +42,8 @@ int config_libconfig_getlist(paramlist_def_t *ParamList, paramdef_t *params, int
 * Calls the `config_<config source>_get` function for each list occurrence
 * `params` points to an array of `paramdef_t` structures which describes the parameters in each occurrence of the list
 * `ParamList`  points to a structure, where `paramarray` field points to an array of `paramdef_t` structure, allocated by the function. It is used to return the values of the parameters.
-* The returned value is the number of occurrences in the list or -1 in case of severe error  
+* The returned value is the number of occurrences in the list or -1 in case of severe error
 
 
-[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module developer main page](../../config/devusage.md)
 [Configuration module home](../../config.md)

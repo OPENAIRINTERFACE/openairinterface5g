@@ -1,0 +1,191 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+ 030101 000002 030102 040301 040501 040601 040641 050401 000002 040502 040602 040642 050402 000002 040503 040603 040643 040401 040201 030201 030202
+-->
+<testCaseList>
+	<htmlTabRef>test-x2-ho-05-tm1</htmlTabRef>
+	<htmlTabName>Test-X2-HO-FDD-05MHz-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
+	<TestCaseRequestedList>
+ 030201 030202
+ 040101
+ 050102
+ 030101 000002 030102 040301 040501 050401 000002 040502 050402 000002 040503 040401 040201 030201 030202
+ 050202
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Waiting for 60 seconds</desc>
+		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Waiting for 10 seconds</desc>
+		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="050102">
+		<class>Initialize_FlexranCtrl</class>
+		<desc>Starting Flexran Controller</desc>
+	</testCase>
+
+	<testCase id="050202">
+		<class>Terminate_FlexranCtrl</class>
+		<desc>Stopping Flexran Controller</desc>
+	</testCase>
+
+	<testCase id="030101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize Master eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band13.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030102">
+		<class>Initialize_eNB</class>
+		<desc>Initialize Slave eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.slave.band13.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Master eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030202">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Slave eNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+	<testCase id="040501">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040502">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040503">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040601">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 8M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040602">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 8M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040603">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 8M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040641">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/5Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 5M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040642">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/5Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 5M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="040643">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/5Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 5M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="050401">
+		<class>Perform_X2_Handover</class>
+		<desc>Doing a Flexran-Controlled X2 Handover</desc>
+		<x2_ho_options>network</x2_ho_options>
+	</testCase>
+
+	<testCase id="050402">
+		<class>Perform_X2_Handover</class>
+		<desc>Doing a Flexran-Controlled X2 Handover</desc>
+		<x2_ho_options>network</x2_ho_options>
+	</testCase>
+
+</testCaseList>

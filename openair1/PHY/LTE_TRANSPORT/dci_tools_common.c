@@ -283,28 +283,32 @@ uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int sub
 }
 
 
-void conv_eMTC_rballoc(uint16_t resource_block_coding,
-		       uint32_t N_RB_DL,
-		       uint32_t *rb_alloc) {
+void conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
+{
 
 
-  int narrowband = resource_block_coding>>5;
-  int RIV        = resource_block_coding&31;
-  int N_NB_DL    = N_RB_DL/6;
-  int i0         = (N_RB_DL>>1) - (3*N_NB_DL);
-  int first_rb   = (6*narrowband)+i0;
-  int alloc      = localRIV2alloc_LUT6[RIV];
-  int ind        = first_rb>>5;
-  int ind_mod    = first_rb&31;
+  int             RIV = resource_block_coding&31;
+  int             narrowband = resource_block_coding>>5;
+  int             N_NB_DL = N_RB_DL / 6;
+  int             i0 = (N_RB_DL >> 1) - (3 * N_NB_DL);
+  int             first_rb = (6 * narrowband) + i0;
+  int             alloc = localRIV2alloc_LUT6[RIV];
+  int             ind = first_rb >> 5;
+  int             ind_mod = first_rb & 31;
 
-  if (((N_RB_DL&1) > 0) && (narrowband>=(N_NB_DL>>1))) first_rb++;
-  rb_alloc[0]                        = 0;
-  rb_alloc[1]                        = 0;
-  rb_alloc[2]                        = 0;
-  rb_alloc[3]                        = 0;
-  rb_alloc[ind]                      = alloc<<ind_mod;
-  if (ind_mod > 26)  rb_alloc[ind+1] = alloc>>(6-(ind_mod-26));
+  AssertFatal(RIV<32,"RIV is %d > 31\n",RIV);
+
+  if (((N_RB_DL & 1) > 0) && (narrowband >= (N_NB_DL >> 1)))
+    first_rb++;
+  rb_alloc[0] = 0;
+  rb_alloc[1] = 0;
+  rb_alloc[2] = 0;
+  rb_alloc[3] = 0;
+  rb_alloc[ind] = alloc << ind_mod;
+  if (ind_mod > 26)
+    rb_alloc[ind + 1] = alloc >> (6 - (ind_mod - 26));
 }
+
 
 void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t *rb_alloc2)
 {
@@ -363,11 +367,11 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
 	if ((rb_alloc&(1<<i)) != 0)
 	  rb_alloc2[(3*(16-i))>>5] |= (7<<((3*(16-i))%32));
       }
-      
+
       // bit mask across
       if ((rb_alloc2[0]>>31)==1)
 	rb_alloc2[1] |= 1;
-      
+
       if ((rb_alloc&1) != 0)
 	rb_alloc2[1] |= (3<<16);
     }
@@ -381,7 +385,7 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
       for (i=0; i<25; i++) {
 	if ((rb_alloc&(1<<(24-i))) != 0)
 	  rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
-	
+
 	//  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
       }
     }

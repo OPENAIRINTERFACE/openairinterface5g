@@ -378,9 +378,14 @@ NwGtpv1uCreateTunnelEndPoint( NW_IN  NwGtpv1uStackT *thiz,
       *phStackSession = (NwGtpv1uStackSessionHandleT) pTunnelEndPoint;
       pTunnelEndPoint = RB_FIND(NwGtpv1uTunnelEndPointIdentifierMap,
                                 &(thiz->teidMap), pTunnelEndPoint);
-      NW_ASSERT(pTunnelEndPoint);
-      GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
-                 pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      //NW_ASSERT(pTunnelEndPoint);
+      if (!pTunnelEndPoint) {
+        GTPU_ERROR("Tunnel end-point cannot be NULL");
+        rc = NW_GTPV1U_FAILURE;
+      } else {
+        GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
+                   pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      }
     }
 
   } else {
@@ -689,9 +694,9 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t st
   NwGtpv1uStackT *thiz;
 
   thiz = (NwGtpv1uStackT *) malloc( sizeof(NwGtpv1uStackT));
-  memset(thiz, 0, sizeof(NwGtpv1uStackT));
 
   if(thiz) {
+    memset(thiz, 0, sizeof(NwGtpv1uStackT));
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
     thiz->seq   = (uint16_t) ((uintptr_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
@@ -889,6 +894,17 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 #if defined(LOG_GTPU) && LOG_GTPU > 0
     GTPU_DEBUG("NW_GTP_GPDU: DATA COMING FROM UDP\n");
 #endif
+    ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
+    break;
+
+  case NW_GTP_END_MARKER:
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+    for(int i =1; i<= udpDataLen; i++){
+      printf("%02x ", udpData[i-1]);
+      if(i % 20 == 0)printf("\n");
+    }
+#endif  	
+    GTPU_INFO("NW_GTP_END_MARKER\n");
     ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
     break;
 

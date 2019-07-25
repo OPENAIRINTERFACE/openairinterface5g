@@ -38,30 +38,32 @@
 #include "common/ran_context.h"
 
 #if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
+  #include "intertask_interface.h"
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
 
+extern RAN_CONTEXT_t RC;
+
 //------------------------------------------------------------------------------
 uint8_t
 rrc_data_req(
-  const protocol_ctxt_t*   const ctxt_pP,
+  const protocol_ctxt_t   *const ctxt_pP,
   const rb_id_t                  rb_idP,
   const mui_t                    muiP,
   const confirm_t                confirmP,
   const sdu_size_t               sdu_sizeP,
-  uint8_t*                 const buffer_pP,
+  uint8_t                 *const buffer_pP,
   const pdcp_transmission_mode_t modeP
 )
 //------------------------------------------------------------------------------
 {
-  if(sdu_sizeP == 255)
-  {
+  if(sdu_sizeP == 255) {
     LOG_I(RRC,"sdu_sizeP == 255");
     return FALSE;
   }
+
   MSC_LOG_TX_MESSAGE(
     ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
@@ -72,60 +74,49 @@ rrc_data_req(
     ctxt_pP->rnti,
     muiP,
     sdu_sizeP);
+  MessageDef *message_p;
+  // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+  uint8_t *message_buffer;
+  message_buffer = itti_malloc (
+                     ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+                     ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
+                     sdu_sizeP);
+  memcpy (message_buffer, buffer_pP, sdu_sizeP);
+  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, RRC_DCCH_DATA_REQ);
+  RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
+  RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
+  RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
+  RRC_DCCH_DATA_REQ (message_p).muip      = muiP;
+  RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
+  RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
+  RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
+  //memcpy (RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
+  RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
+  RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
+  RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
+  RRC_DCCH_DATA_REQ (message_p).eNB_index = ctxt_pP->eNB_index;
+  itti_send_msg_to_task (
+    ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
+    ctxt_pP->instance,
+    message_p);
+  LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
 
-#if defined(ENABLE_ITTI)
-  {
-    MessageDef *message_p;
-    // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
-    uint8_t *message_buffer;
+  /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
+   * Ideally, PDCP would not neet to be triggered like this but react to ITTI
+   * messages automatically */
+  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
+    pdcp_run(ctxt_pP);
 
-    message_buffer = itti_malloc (
-                       ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
-                       ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
-                       sdu_sizeP);
-
-    memcpy (message_buffer, buffer_pP, sdu_sizeP);
-
-    message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, RRC_DCCH_DATA_REQ);
-    RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
-    RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
-    RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
-    RRC_DCCH_DATA_REQ (message_p).muip      = muiP;
-    RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
-    RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
-    RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
-    RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
-    RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
-    RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
-    RRC_DCCH_DATA_REQ (message_p).eNB_index = ctxt_pP->eNB_index;
-
-    itti_send_msg_to_task (
-      ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
-      ctxt_pP->instance,
-      message_p);
-    return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
-
-  }
-#else
-  return pdcp_data_req (
-           ctxt_pP,
-           SRB_FLAG_YES,
-           rb_idP,
-           muiP,
-           confirmP,
-           sdu_sizeP,
-           buffer_pP,
-           modeP);
-#endif
+  return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }
 
 //------------------------------------------------------------------------------
 void
 rrc_data_ind(
-  const protocol_ctxt_t* const ctxt_pP,
+  const protocol_ctxt_t *const ctxt_pP,
   const rb_id_t                Srb_id,
   const sdu_size_t             sdu_sizeP,
-  const uint8_t*   const       buffer_pP
+  const uint8_t   *const       buffer_pP
 )
 //------------------------------------------------------------------------------
 {
@@ -135,7 +126,7 @@ rrc_data_ind(
     LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   } else {
-    LOG_I(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
+    LOG_D(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           DCCH_index,
@@ -149,10 +140,8 @@ rrc_data_ind(
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
     uint8_t *message_buffer;
-
     message_buffer = itti_malloc (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, sdu_sizeP);
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
-
     message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, RRC_DCCH_DATA_IND);
     RRC_DCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
     RRC_DCCH_DATA_IND (message_p).dcch_index = DCCH_index;
@@ -161,16 +150,13 @@ rrc_data_ind(
     RRC_DCCH_DATA_IND (message_p).rnti       = ctxt_pP->rnti;
     RRC_DCCH_DATA_IND (message_p).module_id  = ctxt_pP->module_id;
     RRC_DCCH_DATA_IND (message_p).eNB_index  = ctxt_pP->eNB_index;
-
     itti_send_msg_to_task (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, ctxt_pP->instance, message_p);
   }
 #else
-
-    rrc_eNB_decode_dcch(
-      ctxt_pP,
-      DCCH_index,
-      buffer_pP,
-      sdu_sizeP);
-
+  rrc_eNB_decode_dcch(
+    ctxt_pP,
+    DCCH_index,
+    buffer_pP,
+    sdu_sizeP);
 #endif
 }

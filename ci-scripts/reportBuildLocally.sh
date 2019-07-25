@@ -28,56 +28,8 @@ function report_build_usage {
     echo "------"
     echo "    oai-ci-vm-tool report-build [OPTIONS]"
     echo ""
-    echo "Options:"
-    echo "--------"
-    echo ""
-    echo "    --help OR -h"
-    echo "    Print this help message."
-    echo ""
-    echo "Job Options:"
-    echo "------------"
-    echo ""
-    echo "    --git-url #### OR -gu ####"
-    echo "    Specify the URL of the GIT Repository."
-    echo ""
-    echo "    --job-name #### OR -jn ####"
-    echo "    Specify the name of the Jenkins job."
-    echo ""
-    echo "    --build-id #### OR -id ####"
-    echo "    Specify the build ID of the Jenkins job."
-    echo ""
-    echo "    --workspace #### OR -ws ####"
-    echo "    Specify the workspace."
-    echo ""
-    echo "    --trigger merge-request OR -mr"
-    echo "    --trigger push          OR -pu"
-    echo "    Specify trigger action of the Jenkins job. Either a merge-request event or a push event."
-    echo ""
-    echo "Merge-Request Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --src-branch #### OR -sb ####"
-    echo "    Specify the source branch of the merge request."
-    echo ""
-    echo "    --src-commit #### OR -sc ####"
-    echo "    Specify the source commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "    --target-branch #### OR -tb ####"
-    echo "    Specify the target branch of the merge request (usually develop)."
-    echo ""
-    echo "    --target-commit #### OR -tc ####"
-    echo "    Specify the target commit ID (SHA-1) of the merge request."
-    echo ""
-    echo "Push Options:"
-    echo "----------------------"
-    echo ""
-    echo "    --branch #### OR -br ####"
-    echo "    Specify the branch of the push event."
-    echo ""
-    echo "    --commit #### OR -co ####"
-    echo "    Specify the commit ID (SHA-1) of the push event."
-    echo ""
-    echo ""
+    command_options_usage
+
 }
 
 function trigger_usage {
@@ -143,13 +95,21 @@ function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
     if [ -f $2/build_final_status.log ]
     then
+        if [ `grep -c COMMAND $2/build_final_status.log` -eq 1 ]
+        then
+            COMMAND=`grep COMMAND $2/build_final_status.log | sed -e "s#COMMAND: ##"`
+        else
+            COMMAND="Unknown"
+        fi
         if [ `grep -c BUILD_OK $2/build_final_status.log` -eq 1 ]
         then
             echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
             echo "      <strong>BUILD was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
             echo "   </div>" >> ./build_results.html
         else
             echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
             echo "      <strong>BUILD was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
             echo "   </div>" >> ./build_results.html
         fi
@@ -218,25 +178,89 @@ function sca_summary_table_header {
     echo "   <h3>$2</h3>" >> ./build_results.html
     NB_ERRORS=`egrep -c "severity=\"error\"" $1`
     NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
+    ADDED_ERRORS="0"
+    ADDED_WARNINGS="0"
+    FINAL_LOG=`echo $1 | sed -e "s#cppcheck\.xml#build_final_status.log#"`
+    if [ `grep -c COMMAND $FINAL_LOG` -eq 1 ]
+    then
+        COMMAND=`grep COMMAND $FINAL_LOG | sed -e "s#COMMAND: ##"`
+    else
+        COMMAND="Unknown"
+    fi
+    if [ $MR_TRIG -eq 1 ]
+    then
+        if [ -d ../../cppcheck_archives ]
+        then
+            if [ -d ../../cppcheck_archives/$JOB_NAME ]
+            then
+                ADDED_ERRORS=`diff $1 ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep -c "severity=\"error"`
+                ADDED_WARNINGS=`diff $1 ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep -c "severity=\"warning"`
+            fi
+        fi
+        local TOTAL_NUMBER=$[$ADDED_ERRORS+$ADDED_WARNINGS]
+        if [ -f $JENKINS_WKSP/oai_cppcheck_added_errors.txt ]; then rm -f $JENKINS_WKSP/oai_cppcheck_added_errors.txt; fi
+        echo "$TOTAL_NUMBER" > $JENKINS_WKSP/oai_cppcheck_added_errors.txt
+    fi
     if [ $NB_ERRORS -eq 0 ] && [ $NB_WARNINGS -eq 0 ]
     then
         echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+        echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
         echo "      <strong>CPPCHECK found NO error and NO warning <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
         echo "   </div>" >> ./build_results.html
     else
         if [ $NB_ERRORS -eq 0 ]
         then
             echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
-            echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]
+            then
+                echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+            fi
+            if [ $MR_TRIG -eq 1 ]
+            then
+                if [ $ADDED_WARNINGS -eq 0 ]
+                then
+                    echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+                else
+                    echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+                fi
+            fi
             echo "   </div>" >> ./build_results.html
         else
             echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
-            echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]
+            then
+                echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            fi
+            if [ $MR_TRIG -eq 1 ]
+            then
+                if [ $ADDED_ERRORS -eq 0 ] && [ $ADDED_WARNINGS -eq 0 ]
+                then
+                    echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+                else
+                    echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span>" >> ./build_results.html
+                    echo "      <br>" >> ./build_results.html
+                    echo "      <br>" >> ./build_results.html
+                    echo "      <span class=\"glyphicon glyphicon-alert\"></span> This Merge Request may have introduced up to $ADDED_ERRORS errors and $ADDED_WARNINGS warnings. <span class=\"glyphicon glyphicon-alert\"></span></strong>" >> ./build_results.html
+                fi
+            fi
             echo "   </div>" >> ./build_results.html
+        fi
+    fi
+    if [ $PU_TRIG -eq 1 ]
+    then
+        if [ -d ../../cppcheck_archives ]
+        then
+            if [ -d ../../cppcheck_archives/$JOB_NAME ]
+            then
+                cp $1 ../../cppcheck_archives/$JOB_NAME
+            fi
         fi
     fi
     echo "   <button data-toggle=\"collapse\" data-target=\"#oai-cppcheck-details\">More details on CPPCHECK results</button>" >> ./build_results.html
     echo "   <div id=\"oai-cppcheck-details\" class=\"collapse\">" >> ./build_results.html
+    echo "   <br>" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Error / Warning Type</th>" >> ./build_results.html
@@ -301,6 +325,43 @@ function sca_summary_table_footer {
     echo "   </table>" >> ./build_results.html
     echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
     echo "   <p style=\"margin-left: 30px\">Graphical Interface tool : <strong><code>cppcheck-gui -l cppcheck/cppcheck.xml</code></strong></p>" >> ./build_results.html
+
+    if [ $MR_TRIG -eq 1 ]
+    then
+        if [ $ADDED_ERRORS -ne 0 ] || [ $ADDED_WARNINGS -ne 0 ]
+        then
+            echo "   <table border = \"1\">" >> ./build_results.html
+            echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
+            echo "        <th>Potential File(s) impacted by added errors/warnings</th>" >> ./build_results.html
+            echo "        <th>Line Number</th>" >> ./build_results.html
+            echo "        <th>Severity</th>" >> ./build_results.html
+            echo "        <th>Message</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            SEVERITY="none"
+            POTENTIAL_FILES=`diff $1  ../../cppcheck_archives/$JOB_NAME/cppcheck.xml | egrep --color=never "^<" | egrep "location file|severity" | sed -e "s# #@#g"`
+            for POT_FILE in $POTENTIAL_FILES
+            do
+                if [ `echo $POT_FILE | grep -c location` -eq 1 ]
+                then
+                    FILENAME=`echo $POT_FILE | sed -e "s#^.*file=\"##" -e "s#\"@line.*/>##"`
+                    LINE=`echo $POT_FILE | sed -e "s#^.*line=\"##" -e "s#\"/>##"`
+                    if [[ $SEVERITY != *"none" ]]
+                    then
+                        echo "      <tr>" >> ./build_results.html
+                        echo "        <td>$FILENAME</td>" >> ./build_results.html
+                        echo "        <td>$LINE</td>" >> ./build_results.html
+                        echo "        <td>$SEVERITY</td>" >> ./build_results.html
+                        echo "        <td>$MESSAGE</td>" >> ./build_results.html
+                        echo "      </tr>" >> ./build_results.html
+                    fi
+                else
+                    SEVERITY=`echo $POT_FILE | sed -e "s#^.*severity=\"##" -e "s#\"@msg=.*##"`
+                    MESSAGE=`echo $POT_FILE | sed -e "s#^.*msg=\"##" -e "s#\"@verbose=.*##" -e "s#@# #g"`
+                fi
+            done
+            echo "   </table>" >> ./build_results.html
+        fi
+    fi
     echo "   </div>" >> ./build_results.html
 }
 
@@ -452,13 +513,16 @@ function report_build {
     summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
     summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
     summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
-    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
+    summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_usrp/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_usrp_row4.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row5.html
     summary_table_footer
 
     summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
-    summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
-    summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
+    summary_table_row "LTE SoftModem - Release 14" ./archives/basic_sim/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./basic_sim_row1.html
+    summary_table_row "LTE UE SoftModem - Release 14" ./archives/basic_sim/lte-uesoftmodem.Rel14.txt "Built target lte-uesoftmodem" ./basic_sim_row2.htm
     summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
+    summary_table_row "RB Tool - Release 14" ./archives/basic_sim/rb_tool.Rel14.txt "Built target rb_tool" ./basic_sim_row4.html
+    summary_table_row "NASMESH - Release 14" ./archives/basic_sim/nasmesh.Rel14.txt "Built target nasmesh" ./basic_sim_row5.html
     summary_table_footer
 
     summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
@@ -489,32 +553,37 @@ function report_build {
     fi
 
     summary_table_header "OAI Build eNB -- ETHERNET transport option" ./archives/enb_eth
-    summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
+    summary_table_row "LTE SoftModem - Release 14" ./archives/enb_eth/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
     summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
     summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_eth_row4.html
-    summary_table_row "RB Tools - Release 14" ./archives/enb_eth/rb_tool.Rel14.txt "Built target rb_tool" ./enb_eth_row5.html
-    summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
+    summary_table_row "RF Simulator - Release 14" ./archives/enb_eth/rfsimulator.Rel14.txt "Built target rfsimulator" ./enb_eth_row5.html
+    summary_table_row "TCP OAI Bridge - Release 14" ./archives/enb_eth/tcp_bridge_oai.Rel14.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
     summary_table_footer
 
     summary_table_header "OAI Build UE -- ETHERNET transport option" ./archives/ue_eth
-    summary_table_row "LTE UE SoftModem w/o S1 - Release 14" ./archives/ue_eth/lte-uesoftmodem-nos1.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
+    summary_table_row "LTE UE SoftModem - Release 14" ./archives/ue_eth/lte-uesoftmodem.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
     summary_table_row "Coding - Release 14" ./archives/ue_eth/coding.Rel14.txt "Built target coding" ./ue_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 14" ./archives/ue_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
     summary_table_row "Parameters Lib Config - Release 14" ./archives/ue_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./ue_eth_row4.html
-    summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "Built target rb_tool" ./ue_eth_row5.html
-    summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
+    summary_table_row "RF Simulator - Release 14" ./archives/ue_eth/rfsimulator.Rel14.txt "Built target rfsimulator" ./ue_eth_row5.html
+    summary_table_row "TCP OAI Bridge - Release 14" ./archives/ue_eth/tcp_bridge_oai.Rel14.txt "Built target tcp_bridge_oai" ./ue_eth_row6.html
+    summary_table_row "Conf 2 UE Data - Release 14" ./archives/ue_eth/conf2uedata.Rel14.txt "Built target conf2uedata" ./ue_eth_row7.html
+    summary_table_row "NVRAM - Release 14" ./archives/ue_eth/nvram.Rel14.txt "Built target nvram" ./ue_eth_row8.html
+    summary_table_row "UE IP - Release 14" ./archives/ue_eth/ue_ip.Rel14.txt "Built target ue_ip" ./ue_eth_row9.html
+    summary_table_row "USIM - Release 14" ./archives/ue_eth/usim.Rel14.txt "Built target usim" ./ue_eth_row9a.html
     summary_table_footer
 
     if [ -e ./archives/red_hat ]
     then
-        echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
+        echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
 
         summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
         summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
         summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
         summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
-        summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row4.html
+        summary_table_row "OAI ETHERNET transport - Release 14" ./archives/red_hat/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_usrp_rh_row4.html
+        summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row5.html
         summary_table_footer
     fi
 
@@ -522,41 +591,61 @@ function report_build {
     echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
     echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
 
-    for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./basic_sim_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./phy_sim_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-
-    for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./enb_eth_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    for DETAILS_TABLE in `ls ./ue_eth_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
-    if [ -e ./archives/red_hat ]
+    if [ -f ./enb_usrp_row1.html ] || [ -f ./enb_usrp_row2.html ] || [ -f ./enb_usrp_row3.html ] || [ -f ./enb_usrp_row4.html ]
     then
-    for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
-    do
-        cat $DETAILS_TABLE >> ./build_results.html
-    done
+        for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ] || [ -f ./basic_sim_row4.html ] || [ -f ./basic_sim_row5.html ]
+    then
+        for DETAILS_TABLE in `ls ./basic_sim_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./phy_sim_row1.html ] || [ -f ./phy_sim_row2.html ] || [ -f ./phy_sim_row3.html ]
+    then
+        for DETAILS_TABLE in `ls ./phy_sim_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./gnb_usrp_row1.html ] || [ -f ./gnb_usrp_row2.html ] || [ -f ./gnb_usrp_row3.html ] || [ -f ./gnb_usrp_row4.html ]
+    then 
+        for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./nrue_usrp_row1.html ] || [ -f ./nrue_usrp_row2.html ] || [ -f ./nrue_usrp_row3.html ] || [ -f ./nrue_usrp_row4.html ]
+    then
+        for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ]
+    then
+        for DETAILS_TABLE in `ls ./enb_eth_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./ue_eth_row1.html ] || [ -f ./ue_eth_row2.html ] || [ -f ./ue_eth_row3.html ] || [ -f ./ue_eth_row4.html ] || [ -f ./ue_eth_row5.html ] || [ -f ./ue_eth_row6.html ]
+    then
+        for DETAILS_TABLE in `ls ./ue_eth_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
+    fi
+    if [ -f ./enb_usrp_rh_row1.html ] || [ -f ./enb_usrp_rh_row2.html ] || [ -f ./enb_usrp_rh_row3.html ] || [ -f ./enb_usrp_rh_row4.html ]
+    then
+        for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
+        do
+            cat $DETAILS_TABLE >> ./build_results.html
+        done
     fi
     rm -f ./*_row*.html
 

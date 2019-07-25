@@ -94,7 +94,7 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
             xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
             if (NULL != xml_char) {
               xml_char2 = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"name");
-              fprintf(stdout, "s1ap %p field name %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
+              fprintf(stdout, "s1ap %p field name %s  size %u value %s\n",s1ap, xml_char2, size, xml_char);
               xmlFree(xml_char2);
               // if success to get value, do not parse children
               //AssertFatal ((xmlStrlen(xml_char) == size), "ERROR %s() mismatch in size %d and strlen %d\n", __FUNCTION__, size, xmlStrlen(xml_char));
@@ -104,7 +104,7 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
               rc = et_hex2data( &s1ap->binary_stream[s1ap->binary_stream_pos], xml_char, xmlStrlen(xml_char));
               s1ap->binary_stream_pos += xmlStrlen(xml_char)/2;
               //et_display_node(cur_node, 0);
-              AssertFatal (rc >= 0, "ERROR in converting hex string %s len %d size %d rc %d\n", xml_char, xmlStrlen(xml_char), size, rc);
+              AssertFatal (rc >= 0, "ERROR in converting hex string %s len %d size %u rc %d\n", xml_char, xmlStrlen(xml_char), size, rc);
               go_deeper_in_tree = 0;
               //}
               xmlFree(xml_char);

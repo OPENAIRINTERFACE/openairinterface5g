@@ -47,7 +47,8 @@ typedef struct {
 
 message_queue_t * new_message_queue(int size);
 int message_put(message_queue_t *queue, void *data, int size, int priority);
-int message_get(message_queue_t *queue, void **data, int *size, int *priority);
+int message_get(message_queue_t *queue, void **data, int *priority);
+void message_get_unlock(message_queue_t *queue);
 void destroy_message_queue(message_queue_t *queue);
 
 #endif /* RINGBUFFER_QUEUE_H */

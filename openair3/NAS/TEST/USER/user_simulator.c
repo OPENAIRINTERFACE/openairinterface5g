@@ -143,7 +143,7 @@ int main (int argc, const char* argv[])
     }
 
     printf("INFO\t: The User Simulator is now connected to %s (%d)\n",
-           devpath, USER_GETFD());
+           devpath, (int)USER_GETFD());
   } else {
     /* Initialize network socket handlers */
     _user_simulator_id.open  = socket_udp_open;
@@ -163,7 +163,7 @@ int main (int argc, const char* argv[])
     }
 
     printf("INFO\t: The User Simulator is now connected to %s/%s (%d)\n",
-           host, port, USER_GETFD());
+           host, port, (int)USER_GETFD());
   }
 
 
@@ -231,7 +231,7 @@ int main (int argc, const char* argv[])
   /*
    * Termination cleanup
    */
-  printf("INFO\t: Closing user endpoint descriptor %d\n", USER_GETFD());
+  printf("INFO\t: Closing user endpoint descriptor %d\n", (int)USER_GETFD());
   USER_CLOSE();
 
   printf("INFO\t: User simulator exited\n");
@@ -282,7 +282,7 @@ static int _set_signal_handler(int signal, void (handler)(int))
 static void _signal_handler(int signal_number)
 {
   printf("\nWARNING\t: Signal %d received\n", signal_number);
-  printf("INFO\t: Closing user socket %d\n", USER_GETFD());
+  printf("INFO\t: Closing user socket %d\n", (int)USER_GETFD());
   USER_CLOSE();
   printf("INFO\t: User simulator exited\n");
   exit(EXIT_SUCCESS);

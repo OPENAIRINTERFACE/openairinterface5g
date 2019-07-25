@@ -33,15 +33,9 @@
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "flexran_agent.h"
-
-#if defined(ENABLE_ITTI)
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #ifdef PDCP_USE_NETLINK
-      #include "SIMULATION/ETH_TRANSPORT/proto.h"
-    #endif
-  #endif
-#endif
+#include "s1ap_eNB.h"
+#include "SIMULATION/ETH_TRANSPORT/proto.h"
+#include "proto_agent.h"
 
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
@@ -65,6 +59,8 @@
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
+#define CONFIG_HLP_EXTS          "tells hardware to use an external timing reference\n"
+#define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
@@ -94,6 +90,7 @@
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 #define CONFIG_HLP_NOS1          "Disable s1 interface\n"
+#define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
@@ -155,7 +152,6 @@
     {"usrp-clksrc",                CONFIG_HLP_USRP_CLK_SRC,0,               strptr:(char **)&usrp_clksrc,       defstrval:"internal", TYPE_STRING,   0},   \
     {"mmapped-dma",                CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
     {"clock",                      CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
-    {"s" ,                         CONFIG_HLP_SNR,         0,               iptr:&snr_dB,                       defintval:25,         TYPE_INT,      0},   \
     {"T" ,                         CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
     {"A",                          CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }
@@ -184,10 +180,11 @@
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
 #define CHAIN_OFFSET        softmodem_params.chain_offset
-#define DO_FORMS            softmodem_params.do_forms
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
+#define TIMING_SOURCE       softmodem_params.timing_source
+#define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)}, \
@@ -200,13 +197,16 @@
     {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
     {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
     {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&CHAIN_OFFSET,                 defintval:0,                    TYPE_INT,       0},                     \
-    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&DO_FORMS,         defintval:0,                    TYPE_INT8,      0},                     \
+    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
+    {"s" ,                         CONFIG_HLP_SNR,         0,               dblptr:&snr_dB,                       defdblval:25,         TYPE_DOUBLE,      0},   \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
-    {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,             defintval:0,      TYPE_INT, 0},                     \
+    {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,         defintval:0,      TYPE_INT, 0},                     \
+    {"rfsim",                   CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&rfsim,        defintval:0,      TYPE_INT, 0},                     \
+    {"basicsim",                CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&basicsim,     defintval:0,      TYPE_INT, 0},                     \
     {"nokrnmod",                CONFIG_HLP_NOKRNMOD,    PARAMFLAG_BOOL,         uptr:&nokrnmod,     defintval:0,      TYPE_INT, 0},                     \
     {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         uptr:&nonbiot,      defuintval:0,                   TYPE_INT,       0},                     \
   }
@@ -225,6 +225,7 @@
     {"g" ,           CONFIG_HLP_LOGL, 0,      uptr:&glog_level,     defintval:0,         TYPE_UINT,     0},        \
     {"telnetsrv",        CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,    defintval:0,         TYPE_UINT,     0},        \
     {"msc",                CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,            defintval:0,         TYPE_UINT,     0},                    \
+    {"log-mem",      NULL,            0,      strptr:(char **)&logmem_filename,    defstrval:NULL,          TYPE_STRING,   0},    \
   }
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
@@ -236,6 +237,7 @@
     { .s2=  { config_check_intrange,           {0,4}}},               \
     { .s5= {NULL }} ,                   \
     { .s5= {NULL }} ,                   \
+    { .s5= {NULL }} ,                   \
   }
 
 /***************************************************************************************************************************************/
@@ -245,6 +247,10 @@
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 #define SOFTMODEM_NONBIOT_BIT         (1<<2)
+#define SOFTMODEM_RFSIM_BIT           (1<<10)
+#define SOFTMODEM_BASICSIM_BIT        (1<<11)
+#define SOFTMODEM_SIML1_BIT           (1<<12)
+#define SOFTMODEM_DOFORMS_BIT         (1<<15)
 typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
@@ -255,25 +261,31 @@ typedef struct {
   int            wait_for_sync; //eNodeB only
   int            single_thread_flag; //eNodeB only
   int            chain_offset;
-  uint32_t       do_forms;
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
+  uint32_t       timing_source; 
   int            hw_timing_advance;
+  uint32_t       send_dmrs_sync; 
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
 #define IS_SOFTMODEM_NONBIOT         ( get_softmodem_optmask() & SOFTMODEM_NONBIOT_BIT)
+#define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
+#define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
+#define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
+#define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern void get_common_options(void);
 extern softmodem_params_t *get_softmodem_params(void);
-
+extern unsigned int is_nos1exec(char *exepath) ;
 uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
+extern double snr_dB;
 
 
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
@@ -299,7 +311,7 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
-extern void init_RU(char *);
+extern void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 extern void stop_ru(RU_t *ru);
 extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);

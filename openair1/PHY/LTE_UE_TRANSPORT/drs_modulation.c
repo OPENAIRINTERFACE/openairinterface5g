@@ -38,6 +38,8 @@
 
 int generate_drs_pusch(PHY_VARS_UE *ue,
 		       UE_rxtx_proc_t *proc,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       int32_t **txdataF,
                        uint8_t eNB_id,
                        short amp,
                        unsigned int subframe,
@@ -56,29 +58,37 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   int16_t alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
   int16_t alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
-  uint8_t cyclic_shift,cyclic_shift0,cyclic_shift1;
-  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  int32_t *txdataF = ue->common_vars.txdataF[ant];
+  uint8_t cyclic_shift,cyclic_shift0=0,cyclic_shift1=0;
+  LTE_DL_FRAME_PARMS *fp = (ue==NULL) ? frame_parms : &ue->frame_parms;
+  int32_t *txF = (ue==NULL) ? txdataF[ant] : ue->common_vars.txdataF[ant];
   uint32_t u,v,alpha_ind;
-  uint32_t u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  uint32_t u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-  uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-  uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  uint32_t u0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+  uint32_t u1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  uint32_t v0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  uint32_t v1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+
   int32_t ref_re,ref_im;
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_tx,subframe);
+  uint8_t harq_pid = (proc == NULL) ? 0: subframe2harq_pid(fp,proc->frame_tx,subframe);
 
-  cyclic_shift0 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-                   ue->ulsch[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
-                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+
-                   ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
-                   ant*6) % 12;
-  //  printf("PUSCH.cyclicShift %d, n_DMRS2 %d, nPRS %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,ue->ulsch[eNB_id]->n_DMRS2,ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]);
-  cyclic_shift1 = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-                   ue->ulsch[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
-                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
-                   ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
-                   ant*6) % 12;
+  if (ue!=NULL) {
+    cyclic_shift0 = (fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		     ue->ulsch[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
+		     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]+
+		     ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
+		     ant*6) % 12;
+    //  printf("PUSCH.cyclicShift %d, n_DMRS2 %d, nPRS %d\n",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,ue->ulsch[eNB_id]->n_DMRS2,ue->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[subframe<<1]);
+    cyclic_shift1 = (fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
+		     ue->ulsch[eNB_id]->harq_processes[harq_pid]->n_DMRS2 +
+		     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
+		     ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
+		     ant*6) % 12;
+    u0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+    u1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+    v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+    v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
+  }
 
+  
   //       cyclic_shift0 = 0;
   //        cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;
@@ -92,9 +102,9 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
     return(-1);
   }
 
-  for (l = (3 - frame_parms->Ncp),u=u0,v=v0,cyclic_shift=cyclic_shift0;
-       l<frame_parms->symbols_per_tti;
-       l += (7 - frame_parms->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
+  for (l = (3 - fp->Ncp),u=u0,v=v0,cyclic_shift=cyclic_shift0;
+       l<fp->symbols_per_tti;
+       l += (7 - fp->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
 
     drs_offset = 0;
 #ifdef DEBUG_DRS
@@ -102,17 +112,16 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 #endif
 
 
-    re_offset = frame_parms->first_carrier_offset;
-    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-    symbol_offset = subframe_offset + frame_parms->ofdm_symbol_size*l;
-
+    re_offset = fp->first_carrier_offset;
+    subframe_offset = subframe*fp->symbols_per_tti*fp->ofdm_symbol_size;
+    symbol_offset = subframe_offset + fp->ofdm_symbol_size*l;
 
 #ifdef DEBUG_DRS
     printf("generate_drs_pusch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,subframe_offset,cyclic_shift);
 #endif
     alpha_ind = 0;
 
-    for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
+    for (rb=0; rb<fp->N_RB_UL; rb++) {
 
       if ((rb >= first_rb) && (rb<(first_rb+nb_rb))) {
 
@@ -124,12 +133,12 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
           ref_re = (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1];
           ref_im = (int32_t) ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1];
 
-          ((int16_t*) txdataF)[2*(symbol_offset + re_offset)]   = (int16_t) (((ref_re*alpha_re[alpha_ind]) -
+          ((int16_t*) txF)[2*(symbol_offset + re_offset)]   = (int16_t) (((ref_re*alpha_re[alpha_ind]) -
               (ref_im*alpha_im[alpha_ind]))>>15);
-          ((int16_t*) txdataF)[2*(symbol_offset + re_offset)+1] = (int16_t) (((ref_re*alpha_im[alpha_ind]) +
+          ((int16_t*) txF)[2*(symbol_offset + re_offset)+1] = (int16_t) (((ref_re*alpha_im[alpha_ind]) +
               (ref_im*alpha_re[alpha_ind]))>>15);
-          ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)]*(int32_t)amp)>>15);
-          ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((short*) txdataF)[2*(symbol_offset + re_offset)+1]*(int32_t)amp)>>15);
+          ((short*) txF)[2*(symbol_offset + re_offset)]   = (short) ((((short*) txF)[2*(symbol_offset + re_offset)]*(int32_t)amp)>>15);
+          ((short*) txF)[2*(symbol_offset + re_offset)+1] = (short) ((((short*) txF)[2*(symbol_offset + re_offset)+1]*(int32_t)amp)>>15);
 
 
           alpha_ind = (alpha_ind + cyclic_shift);
@@ -142,14 +151,14 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
               symbol_offset,
               alpha_ind,
               re_offset,
-              ((short*) txdataF)[2*(symbol_offset + re_offset)],
-              ((short*) txdataF)[2*(symbol_offset + re_offset)+1]);
+              ((short*) txF)[2*(symbol_offset + re_offset)],
+              ((short*) txF)[2*(symbol_offset + re_offset)+1]);
 
 #endif  // DEBUG_DRS
           re_offset++;
           drs_offset++;
 
-          if (re_offset >= frame_parms->ofdm_symbol_size)
+          if (re_offset >= fp->ofdm_symbol_size)
             re_offset = 0;
         }
 
@@ -158,8 +167,8 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
         // check if we crossed the symbol boundary and skip DC
 
-        if (re_offset >= frame_parms->ofdm_symbol_size) {
-          if (frame_parms->N_RB_DL&1)  // odd number of RBs
+        if (re_offset >= fp->ofdm_symbol_size) {
+          if (fp->N_RB_DL&1)  // odd number of RBs
             re_offset=6;
           else                         // even number of RBs (doesn't straddle DC)
             re_offset=0;

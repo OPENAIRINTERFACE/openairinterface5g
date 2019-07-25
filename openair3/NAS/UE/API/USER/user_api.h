@@ -44,7 +44,7 @@ Description Implements the API used by the NAS layer running in the UE
 #include "networkDef.h"
 #include "at_command.h"
 #include "user_api_defs.h"
-#include "user_defs.h"
+#include "../../user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -58,13 +58,13 @@ Description Implements the API used by the NAS layer running in the UE
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char* port, const char* devname, const char* devparams);
+int user_api_initialize(user_api_id_t *user_api_id, const char *host, const char *port, const char *devname, const char *devparams);
 
-int user_api_emm_callback(user_api_id_t *user_api_id, Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT, const char* data, size_t size);
+int user_api_emm_callback(user_api_id_t *user_api_id, Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT, const char *data, size_t size);
 int user_api_esm_callback(user_api_id_t *user_api_id, int cid, network_pdn_state_t state);
 
 int user_api_get_fd(user_api_id_t *user_api_id);
-const void* user_api_get_data(user_at_commands_t *commands, int index);
+const void *user_api_get_data(user_at_commands_t *commands, int index);
 
 int user_api_read_data(user_api_id_t *user_api_id);
 int user_api_set_data(user_api_id_t *user_api_id, char *message);
@@ -72,6 +72,6 @@ int user_api_send_data(user_api_id_t *user_api_id, int length);
 void user_api_close(user_api_id_t *user_api_id);
 
 int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *commands, int length);
-int user_api_encode_data(user_api_id_t *user_api_id, const void* data, int add_success_code);
+int user_api_encode_data(user_api_id_t *user_api_id, const void *data, int add_success_code);
 
 #endif /* __USER_API_H__ */

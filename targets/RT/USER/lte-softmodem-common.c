@@ -34,9 +34,11 @@
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include <dlfcn.h>
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
+double snr_dB=25;
 
 uint64_t get_softmodem_optmask(void) {
   return softmodem_params.optmask;
@@ -58,6 +60,10 @@ void get_common_options(void) {
   uint32_t noS1;
   uint32_t nokrnmod;
   uint32_t nonbiot;
+  uint32_t rfsim;
+  uint32_t basicsim;
+  char *logmem_filename = NULL;
+  uint32_t do_forms;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
@@ -78,6 +84,13 @@ void get_common_options(void) {
     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
+  if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
+  }
+
   if (noS1) {
     set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
   }
@@ -90,7 +103,33 @@ void get_common_options(void) {
     set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
   }
 
+  if (rfsim) {
+    set_softmodem_optmask(SOFTMODEM_RFSIM_BIT);
+  }
+
+  if (basicsim) {
+    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+  }
+
+  if (do_forms) {
+    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
+  }
+
+#if BASIC_SIMULATOR
+  set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+#endif
+
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
+}
+
+unsigned int is_nos1exec(char *exepath) {
+  if ( strcmp( basename(exepath), "lte-softmodem-nos1") == 0)
+    return 1;
+
+  if ( strcmp( basename(exepath), "lte-uesoftmodem-nos1") == 0)
+    return 1;
+
+  return 0;
 }

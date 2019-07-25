@@ -125,6 +125,7 @@ void* device_open(int type, const char* devpath, const char* params)
       if (stty_set(fd, params) != RETURNok) {
         device_close(devid);
         devid = NULL;
+        close(fd);
       }
     }
   }

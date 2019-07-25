@@ -48,22 +48,17 @@ Description Defines functions used to handle EPS bearer contexts.
 
 #include "emm_sap.h"
 #include "system.h"
-
-#if defined(ENABLE_ITTI)
-# include "assertions.h"
-#endif
-
+#include "assertions.h"
+#include "pdcp.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef PDCP_USE_NETLINK
 #ifdef UESIM_EXPANSION
   #include "openairinterface5g_limits.h"
   extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
-#endif
-extern uint8_t  nfapi_mode;
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -107,18 +102,13 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
 int esm_ebr_context_create(
   esm_data_t *esm_data, int ueid,
   int pid, int ebi, int is_default,
-  const network_qos_t *qos, const network_tft_t *tft)
-{
+  const network_qos_t *qos, const network_tft_t *tft) {
   int                 bid     = 0;
   esm_data_context_t *esm_ctx = NULL;
   esm_pdn_t          *pdn     = NULL;
-
   LOG_FUNC_IN;
-
   esm_ctx = esm_data;
-
   bid = ESM_DATA_EPS_BEARER_MAX;
-
   LOG_TRACE(INFO, "ESM-PROC  - Create new %s EPS bearer context (ebi=%d) "
             "for PDN connection (pid=%d)",
             (is_default)? "default" : "dedicated", ebi, pid);
@@ -166,7 +156,7 @@ int esm_ebr_context_create(
     esm_bearer_t *ebr = (esm_bearer_t *)malloc(sizeof(esm_bearer_t));
 
     if (ebr != NULL) {
-      memset(ebr, 0 , sizeof(esm_bearer_t));
+      memset(ebr, 0, sizeof(esm_bearer_t));
       /* Increment the total number of active EPS bearers */
       esm_ctx->n_ebrs += 1;
       /* Increment the number of EPS bearer for this PDN connection */
@@ -207,147 +197,153 @@ int esm_ebr_context_create(
 
         // LG ADD TEMP
         {
-           char          *tmp          = NULL;
-           char           ipv4_addr[INET_ADDRSTRLEN];
-           //char           ipv6_addr[INET6_ADDRSTRLEN];
-           char          *netmask      = NULL;
-           char           broadcast[INET_ADDRSTRLEN];
-           struct in_addr in_addr;
-           char           command_line[500];
-           int            res = -1;
+          char          *tmp          = NULL;
+          char           ipv4_addr[INET_ADDRSTRLEN];
+          //char           ipv6_addr[INET6_ADDRSTRLEN];
+          char          *netmask      = NULL;
+          char           broadcast[INET_ADDRSTRLEN];
+          struct in_addr in_addr;
+          char           command_line[500];
+          int            res = -1;
 
-           switch (pdn->type) {
-           case NET_PDN_TYPE_IPV4V6:
-             //ipv6_addr[0] = pdn->ip_addr[4];
-             /* TODO? */
+          switch (pdn->type) {
+            case NET_PDN_TYPE_IPV4V6:
 
-             // etc
-           case NET_PDN_TYPE_IPV4:
-             // in_addr is in network byte order
-             in_addr.s_addr  = pdn->ip_addr[0] << 24                 |
-                               ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
-                               ((pdn->ip_addr[2] <<  8) & 0x0000FF00) |
-                               ( pdn->ip_addr[3]        & 0x000000FF);
+            //ipv6_addr[0] = pdn->ip_addr[4];
+            /* TODO? */
 
-             in_addr.s_addr = htonl(in_addr.s_addr);
-
-             tmp = inet_ntoa(in_addr);
-             //AssertFatal(tmp ,
-             //            "error in PDN IPv4 address %x",
-             //            in_addr.s_addr);
-             strcpy(ipv4_addr, tmp);
-
-             if (IN_CLASSA(ntohl(in_addr.s_addr))) {
-               netmask = "255.0.0.0";
-               in_addr.s_addr = pdn->ip_addr[0] << 24 |
-                                ((255  << 16) & 0x00FF0000) |
-                                ((255 <<  8)  & 0x0000FF00) |
-                                ( 255         & 0x000000FF);
-               in_addr.s_addr = htonl(in_addr.s_addr);
-               tmp = inet_ntoa(in_addr);
-               //                                AssertFatal(tmp ,
-               //                                        "error in PDN IPv4 address %x",
-               //                                        in_addr.s_addr);
-               strcpy(broadcast, tmp);
-             } else if (IN_CLASSB(ntohl(in_addr.s_addr))) {
-               netmask = "255.255.0.0";
-               in_addr.s_addr =  pdn->ip_addr[0] << 24 |
-                                 ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
-                                 ((255 <<  8)  & 0x0000FF00) |
-                                 ( 255         & 0x000000FF);
-               in_addr.s_addr = htonl(in_addr.s_addr);
-               tmp = inet_ntoa(in_addr);
-               //                                AssertFatal(tmp ,
-               //                                        "error in PDN IPv4 address %x",
-               //                                        in_addr.s_addr);
-               strcpy(broadcast, tmp);
-             } else if (IN_CLASSC(ntohl(in_addr.s_addr))) {
-               netmask = "255.255.255.0";
-               in_addr.s_addr = pdn->ip_addr[0] << 24 |
+            // etc
+            case NET_PDN_TYPE_IPV4:
+              // in_addr is in network byte order
+              in_addr.s_addr  = pdn->ip_addr[0] << 24                 |
                                 ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
                                 ((pdn->ip_addr[2] <<  8) & 0x0000FF00) |
-                                ( 255         & 0x000000FF);
-               in_addr.s_addr = htonl(in_addr.s_addr);
-               tmp = inet_ntoa(in_addr);
-               //                                AssertFatal(tmp ,
-               //                                        "error in PDN IPv4 address %x",
-               //                                        in_addr.s_addr);
-               strcpy(broadcast, tmp);
-             } else {
-               netmask = "255.255.255.255";
-               strcpy(broadcast, ipv4_addr);
-             }
+                                ( pdn->ip_addr[3]        & 0x000000FF);
+              in_addr.s_addr = htonl(in_addr.s_addr);
+              tmp = inet_ntoa(in_addr);
+              //AssertFatal(tmp ,
+              //            "error in PDN IPv4 address %x",
+              //            in_addr.s_addr);
+              strcpy(ipv4_addr, tmp);
 
-             if(nfapi_mode ==3){
+              if (IN_CLASSA(ntohl(in_addr.s_addr))) {
+                netmask = "255.0.0.0";
+                in_addr.s_addr = pdn->ip_addr[0] << 24 |
+                                 ((255  << 16) & 0x00FF0000) |
+                                 ((255 <<  8)  & 0x0000FF00) |
+                                 ( 255         & 0x000000FF);
+                in_addr.s_addr = htonl(in_addr.s_addr);
+                tmp = inet_ntoa(in_addr);
+                //                                AssertFatal(tmp ,
+                //                                        "error in PDN IPv4 address %x",
+                //                                        in_addr.s_addr);
+                strcpy(broadcast, tmp);
+              } else if (IN_CLASSB(ntohl(in_addr.s_addr))) {
+                netmask = "255.255.0.0";
+                in_addr.s_addr =  pdn->ip_addr[0] << 24 |
+                                  ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
+                                  ((255 <<  8)  & 0x0000FF00) |
+                                  ( 255         & 0x000000FF);
+                in_addr.s_addr = htonl(in_addr.s_addr);
+                tmp = inet_ntoa(in_addr);
+                //                                AssertFatal(tmp ,
+                //                                        "error in PDN IPv4 address %x",
+                //                                        in_addr.s_addr);
+                strcpy(broadcast, tmp);
+              } else if (IN_CLASSC(ntohl(in_addr.s_addr))) {
+                netmask = "255.255.255.0";
+                in_addr.s_addr = pdn->ip_addr[0] << 24 |
+                                 ((pdn->ip_addr[1] << 16) & 0x00FF0000) |
+                                 ((pdn->ip_addr[2] <<  8) & 0x0000FF00) |
+                                 ( 255         & 0x000000FF);
+                in_addr.s_addr = htonl(in_addr.s_addr);
+                tmp = inet_ntoa(in_addr);
+                //                                AssertFatal(tmp ,
+                //                                        "error in PDN IPv4 address %x",
+                //                                        in_addr.s_addr);
+                strcpy(broadcast, tmp);
+              } else {
+                netmask = "255.255.255.255";
+                strcpy(broadcast, ipv4_addr);
+              }
+
+              if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
                 // this is for L2 FAPI simulator.
                 // change for multiple UE's like 256UEs.
                 // if it's made too many tables , OS may crush so we use one table.
-#ifdef PDCP_USE_NETLINK
+                if(PDCP_USE_NETLINK) {
 #ifdef UESIM_EXPANSION
-                uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
-                res = sprintf(command_line,
-                           "ifconfig oip%d %s netmask %s broadcast %s up && "
-                           "ip rule add from %s/24 table %d && "
-                           "ip rule add to %s/24 table %d && "
-                           "ip route add default dev oip%d table %d",
-                           inst_nic + 1, ipv4_addr, netmask, broadcast,
-                           ipv4_addr, 201,
-                           ipv4_addr, 201,
-                           inst_nic + 1, 201);
-
-               inst_pdcp_list[inst_nic] = ueid;
+                  uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
+                  res = sprintf(command_line,
+                                "ifconfig %s%d %s netmask %s broadcast %s up && "
+                                "ip rule add from %s/24 table %d && "
+                                "ip rule add to %s/24 table %d && "
+                                "ip route add default dev %s%d table %d",
+                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                                inst_nic + 1, ipv4_addr, netmask, broadcast,
+                                ipv4_addr, 201,
+                                ipv4_addr, 201,
+                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                                inst_nic + 1, 201);
+                  inst_pdcp_list[inst_nic] = ueid;
 #else
-               res = sprintf(command_line,
-                          "ifconfig oip%d %s netmask %s broadcast %s up && "
-                          "ip rule add from %s/32 table %d && "
-                          "ip rule add to %s/32 table %d && "
-                          "ip route add default dev oip%d table %d",
-                          ueid + 1, ipv4_addr, netmask, broadcast,
-                          ipv4_addr, ueid + 201,
-                          ipv4_addr, ueid + 201,
-                          ueid + 1, ueid + 201);
+                  res = sprintf(command_line,
+                                "ifconfig %s%d %s netmask %s broadcast %s up && "
+                                "ip rule add from %s/32 table %d && "
+                                "ip rule add to %s/32 table %d && "
+                                "ip route add default dev %s%d table %d",
+                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                                ueid + 1, ipv4_addr, netmask, broadcast,
+                                ipv4_addr, ueid + 201,
+                                ipv4_addr, ueid + 201,
+                                UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                                ueid + 1, ueid + 201);
 #endif
-#endif
-             } else {
-               res = sprintf(command_line,
-                           "ifconfig oip%d %s netmask %s broadcast %s up && "
-                           "ip rule add from %s/32 table %d && "
-                           "ip rule add to %s/32 table %d && "
-                           "ip route add default dev oip%d table %d",
-                           ueid + 1, ipv4_addr, netmask, broadcast,
-                           ipv4_addr, ueid + 201,
-                           ipv4_addr, ueid + 201,
-                           ueid + 1, ueid + 201);
-             }
-             if ( res<0 ) {
+                } // PDCP_USE_NETLINK
+              } else {
+                res = sprintf(command_line,
+                              "ifconfig %s%d %s netmask %s broadcast %s up && "
+                              "ip rule add from %s/32 table %d && "
+                              "ip rule add to %s/32 table %d && "
+                              "ip route add default dev %s%d table %d",
+                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                              ueid + 1, ipv4_addr, netmask, broadcast,
+                              ipv4_addr, ueid + 201,
+                              ipv4_addr, ueid + 201,
+                              UE_NAS_USE_TUN?"oaitun_ue":"oip",
+                              ueid + 1, ueid + 201);
+              }
+
+              if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
-             }
-             LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
-                       command_line);
+              }
 
-             /* Calling system() here disrupts UE's realtime processing in some cases.
-              * This may be because of the call to fork(), which, for some
-              * unidentified reason, interacts badly with other (realtime) threads.
-              * background_system() is a replacement mechanism relying on a
-              * background process that does the system() and reports result to
-              * the parent process (lte-softmodem, oaisim, ...). The background
-              * process is created very early in the life of the parent process.
-              * The processes interact through standard pipes. See
-              * common/utils/system.c for details.
-              */
-             if (background_system(command_line) != 0)
-               LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
+              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
+                        command_line);
 
-             break;
+              /* Calling system() here disrupts UE's realtime processing in some cases.
+               * This may be because of the call to fork(), which, for some
+               * unidentified reason, interacts badly with other (realtime) threads.
+               * background_system() is a replacement mechanism relying on a
+               * background process that does the system() and reports result to
+               * the parent process (lte-softmodem, oaisim, ...). The background
+               * process is created very early in the life of the parent process.
+               * The processes interact through standard pipes. See
+               * common/utils/system.c for details.
+               */
+              if (background_system(command_line) != 0)
+                LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
 
-           case NET_PDN_TYPE_IPV6:
-             break;
+              break;
 
-           default:
-             break;
-           }
-         }
-         //                AssertFatal(0, "Forced stop in NAS UE");
+            case NET_PDN_TYPE_IPV6:
+              break;
+
+            default:
+              break;
+          }
+        }
+        //                AssertFatal(0, "Forced stop in NAS UE");
       }
 
       /* Return the EPS bearer identity of the default EPS bearer
@@ -382,16 +378,13 @@ int esm_ebr_context_create(
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_context_release(nas_user_t *user,
-  int ebi, int *pid, int *bid)
-{
+                            int ebi, int *pid, int *bid) {
   int found = FALSE;
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
   esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
   user_api_id_t *user_api_id = user->user_api_id;
-
   LOG_FUNC_IN;
-
   esm_ctx = user->esm_data;
 
   if (ebi != ESM_EBI_UNASSIGNED) {
@@ -496,7 +489,6 @@ int esm_ebr_context_release(nas_user_t *user,
        */
       for (i = 1; pdn->n_bearers > 0; i++) {
         if (pdn->bearer[i]) {
-
           LOG_TRACE(WARNING, "ESM-PROC  - Release EPS bearer context "
                     "(ebi=%d)", pdn->bearer[i]->ebi);
 
@@ -507,11 +499,9 @@ int esm_ebr_context_release(nas_user_t *user,
 
           /* Set the EPS bearer context state to INACTIVE */
           esm_ebr_set_status(user_api_id, esm_ebr_data, pdn->bearer[i]->ebi,
-                                    ESM_EBR_INACTIVE, TRUE);
-
+                             ESM_EBR_INACTIVE, TRUE);
           /* Release EPS bearer data */
           esm_ebr_release(esm_ebr_data, pdn->bearer[i]->ebi);
-
           // esm_ebr_release()
           /* Release dedicated EPS bearer data */
           free(pdn->bearer[i]);
@@ -532,7 +522,6 @@ int esm_ebr_context_release(nas_user_t *user,
         esm_ctx->emergency = FALSE;
       }
     }
-
 
     /* 3GPP TS 24.301, section 6.4.4.6
      * If the UE locally deactivated all EPS bearer contexts, the UE
@@ -582,10 +571,8 @@ int esm_ebr_context_release(nas_user_t *user,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_get_pid(esm_data_t *esm_data, int ebi)
-{
+int esm_ebr_context_get_pid(esm_data_t *esm_data, int ebi) {
   LOG_FUNC_IN;
-
   int pid;
 
   for (pid = 0; pid < ESM_DATA_PDN_MAX; pid++) {
@@ -633,10 +620,8 @@ int esm_ebr_context_get_pid(esm_data_t *esm_data, int ebi)
  ***************************************************************************/
 int esm_ebr_context_check_tft(esm_data_t *esm_data, int pid, int ebi,
                               const network_tft_t *tft,
-                              esm_ebr_context_tft_t operation)
-{
+                              esm_ebr_context_tft_t operation) {
   LOG_FUNC_IN;
-
   int rc = RETURNerror;
   int i;
 
@@ -702,8 +687,7 @@ int esm_ebr_context_check_tft(esm_data_t *esm_data, int pid, int ebi,
  **                                                                        **
  ***************************************************************************/
 static int _esm_ebr_context_check_identifiers(const network_tft_t *tft1,
-    const network_tft_t *tft2)
-{
+    const network_tft_t *tft2) {
   int i;
   int j;
 
@@ -744,8 +728,7 @@ static int _esm_ebr_context_check_identifiers(const network_tft_t *tft1,
  **                                                                        **
  ***************************************************************************/
 static int _esm_ebr_context_check_precedence(const network_tft_t *tft1,
-    const network_tft_t *tft2)
-{
+    const network_tft_t *tft2) {
   int i;
   int j;
 

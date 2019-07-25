@@ -118,6 +118,8 @@ extern "C" {
 #define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
 #define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
 #define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
+#define FLAG_FUNCT       0x0020
+#define FLAG_FILE_LINE   0x0040
 #define FLAG_TIME        0x0100
 #define FLAG_INITIALIZED 0x8000
 
@@ -198,13 +200,13 @@ typedef enum {
   NAS,
   PERF,
   OIP,
-  CLI,
   MSC,
   OCM,
   UDP_,
   GTPU,
   SPGW,
   S1AP,
+  F1AP,
   SCTP,
   HW,
   OSA,
@@ -215,9 +217,13 @@ typedef enum {
   TMR,
   USIM,
   LOCALIZE,
+  PROTO_AGENT,
+  F1U,
   X2AP,
   LOADER,
   ASN,
+  NFAPI_VNF,
+  NFAPI_PNF,
   MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
@@ -286,6 +292,7 @@ extern "C" {
 int  logInit (void);
 int isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
 int  set_log(int component, int level);
 void set_glog(int level);
@@ -301,6 +308,19 @@ void logClean (void);
 int  is_newline( char *str, int size);
 
 int register_log_component(char *name, char *fext, int compidx);
+
+#define LOG_MEM_SIZE 100*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+void flush_mem_to_file(void);
+void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
+int logInit_log_mem(void);
+void close_log_mem(void);
+  
+typedef struct {
+  char* buf_p;
+  int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
 
 /* @}*/
 
@@ -365,9 +385,9 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
 #    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0)
 #    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0)
+#    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
-#    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
 /* bitmask dependant macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
@@ -476,10 +496,10 @@ static inline void printMeas(char *txt, Meas *M, int period) {
             M->iterations,
             M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
             M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-#if DISABLE_LOG_X
-    printf("%s",txt2);
+#if T_TRACER
+    LOG_W(PHY,"%s",txt2);
 #else
-    LOG_W(PHY, "%s",txt2);
+    printf("%s",txt2);
 #endif
   }
 }

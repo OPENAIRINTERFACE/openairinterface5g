@@ -39,6 +39,8 @@
 #include "flexran_agent_defs.h"
 #include "flexran_agent_pdcp_defs.h"
 #include "flexran_agent_ran_api.h"
+// for flexran_agent_get_pdcp_xface()
+#include "flexran_agent_extern.h"
 
 /**********************************
  * FlexRAN agent - technology PDCP API
@@ -49,16 +51,17 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
           const report_config_t *report_config,
            Protocol__FlexUeStatsReport **ue_report,
            Protocol__FlexCellStatsReport **cell_report);
+int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* Get the stats from RAN API and aggregate them per USER*/
 void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
-					const mid_t ue_id,
+                                        uint16_t uid,
 					Protocol__FlexPdcpStats *pdcp_aggr_stats);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface);
+int flexran_agent_register_pdcp_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface*xface);
+int flexran_agent_unregister_pdcp_xface(mid_t mod_id);
 
 #endif
