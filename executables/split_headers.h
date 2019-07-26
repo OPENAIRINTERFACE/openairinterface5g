@@ -43,16 +43,20 @@ typedef struct {
   uint16_t avg_preamble_energy[4];
 } fs6_ul_t;
 
-
 typedef struct {
   int frame;
   int subframe;
+  int ul_frame;
+  int ul_subframe;
   int num_pdcch_symbols;
   int num_dci;
   DCI_ALLOC_t dci_alloc[32];
   int num_mdci;
   int amp;
-  bool UE_active[NUMBER_OF_UE_MAX];
+  int8_t UE_dl_active[NUMBER_OF_UE_MAX]; // the HARQ id for this UE (-1: disabled)
+  int8_t UE_ul_active[NUMBER_OF_UE_MAX];
+  int8_t UE_ul_first_rb[NUMBER_OF_UE_MAX]; //
+  int8_t UE_ul_last_rb[NUMBER_OF_UE_MAX]; //
   LTE_eNB_PHICH phich_vars;
 } fs6_dl_t;
 
@@ -91,6 +95,10 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
                       int harq_pid,
                       LTE_eNB_DLSCH_t *dlsch,
                       LTE_eNB_DLSCH_t *dlsch1);
+void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+void uci_procedures(PHY_VARS_eNB *eNB,
+                    L1_rxtx_proc_t *proc);
+
 // mistakes in main OAI
 void  phy_init_RU(RU_t *);
 void feptx_prec(RU_t *);
