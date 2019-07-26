@@ -79,5 +79,13 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 					  uint8_t subframe,
                       unsigned char clear,
                       short coef);
+                      
+void nr_ue_measurements(PHY_VARS_NR_UE *ue,
+                         unsigned int subframe_offset,
+                         unsigned char N0_symbol,
+                         unsigned char abstraction_flag,
+                         unsigned char rank_adaptation,
+                         uint8_t subframe);
+                     
 
 #endif
