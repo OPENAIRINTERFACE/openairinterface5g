@@ -382,10 +382,9 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  RC.gNB = (PHY_VARS_gNB ** *) malloc(sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  gNB = RC.gNB[0][0];
+  RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)

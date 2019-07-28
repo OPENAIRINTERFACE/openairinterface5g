@@ -35,6 +35,9 @@
 
 #include "NR_MAC-CellGroupConfig.h"
 
+
+
+
 void config_common_ue(NR_UE_MAC_INST_t *mac) {
 
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;

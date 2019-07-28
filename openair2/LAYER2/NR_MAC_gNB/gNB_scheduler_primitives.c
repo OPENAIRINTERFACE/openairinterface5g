@@ -463,56 +463,8 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
 
 }
 
-/// Target code rate tables indexed by Imcs
-uint16_t nr_target_code_rate_table1[29] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679, 340, 378, 434, 490, 553, \
-                                            616, 658, 438, 466, 517, 567, 616, 666, 719, 772, 822, 873, 910, 948};
-  // Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
-uint16_t nr_target_code_rate_table2[28] = {120, 193, 308, 449, 602, 378, 434, 490, 553, 616, 658, 466, 517, 567, \
-                                            616, 666, 719, 772, 822, 873, 1365, 711, 754, 797, 841, 885, 1833, 948};
-uint16_t nr_target_code_rate_table3[29] = {30, 40, 50, 64, 78, 99, 120, 157, 193, 251, 308, 379, 449, 526, 602, 340, \
-                                            378, 434, 490, 553, 616, 438, 466, 517, 567, 616, 666, 719, 772};
-uint16_t nr_tbs_table[93] = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 208, 224, 240, 256, 272, 288, 304, 320, \
-                              336, 352, 368, 384, 408, 432, 456, 480, 504, 528, 552, 576, 608, 640, 672, 704, 736, 768, 808, 848, 888, 928, 984, 1032, 1064, 1128, 1160, 1192, 1224, 1256, \
-                              1288, 1320, 1352, 1416, 1480, 1544, 1608, 1672, 1736, 1800, 1864, 1928, 2024, 2088, 2152, 2216, 2280, 2408, 2472, 2536, 2600, 2664, 2728, 2792, 2856, 2976, \
-                              3104, 3240, 3368, 3496, 3624, 3752, 3824};
 
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx) {
-  switch(table_idx) {
-    case 1:
-      return (((Imcs<10)||(Imcs==29))?2:((Imcs<17)||(Imcs==30))?4:((Imcs<29)||(Imcs==31))?6:-1);
-    break;
-
-    case 2:
-      return (((Imcs<5)||(Imcs==28))?2:((Imcs<11)||(Imcs==29))?4:((Imcs<20)||(Imcs==30))?6:((Imcs<28)||(Imcs==31))?8:-1);
-    break;
-
-    case 3:
-      return (((Imcs<15)||(Imcs==29))?2:((Imcs<21)||(Imcs==30))?4:((Imcs<29)||(Imcs==31))?6:-1);
-    break;
-
-    default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
-  }
-}
-
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
-  switch(table_idx) {
-    case 1:
-      return (nr_target_code_rate_table1[Imcs]);
-    break;
-
-    case 2:
-      return (nr_target_code_rate_table2[Imcs]);
-    break;
-
-    case 3:
-      return (nr_target_code_rate_table3[Imcs]);
-    break;
-
-    default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
-  }
-}
+extern uint16_t nr_tbs_table[93];
 
 void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_dl_config_dci_dl_pdu dci_pdu) {
@@ -579,23 +531,6 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
 
   LOG_D(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d nb_symbols %d\n",
   TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale, dlsch_rel15->nb_mod_symbols);
-}
-
-int NRRIV2BW(int locationAndBandwidth,int N_RB) {
-  int tmp = locationAndBandwidth/N_RB;
-  int tmp2 = locationAndBandwidth%N_RB;
-
-  if (tmp <= (N_RB-tmp2+1)) return(tmp);
-  else                      return(N_RB-tmp);
-
-}
-
-int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
-  int tmp = locationAndBandwidth/N_RB;
-  int tmp2 = locationAndBandwidth%N_RB;
-  
-  if (tmp <= (N_RB-tmp2+1)) return(tmp2);
-  else                      return(N_RB-tmp2);
 }
 
 int extract_startSymbol(int startSymbolAndLength) {

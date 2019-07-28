@@ -488,7 +488,6 @@ int main(int argc, char **argv) {
 	rel15->nb_symbols = nb_symb_sch;
 	rel15->modulation_order = mod_order;
 	rel15->nb_layers = Nl;
-	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
