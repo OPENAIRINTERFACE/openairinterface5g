@@ -107,6 +107,8 @@ typedef struct x2ap_register_enb_req_s {
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
+  uint32_t                subframeAssignment[MAX_NUM_CCs];
+  uint32_t                specialSubframe[MAX_NUM_CCs];
   int                     num_cc;
 
   /* To be considered for TDD */
@@ -205,7 +207,7 @@ typedef struct x2ap_handover_req_s {
 
   x2ap_lastvisitedcell_info_t lastvisitedcell_info;
 
-  uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
+  uint8_t rrc_buffer[8192 /* arbitrary, big enough */];
   int rrc_buffer_size;
 
   int target_assoc_id;

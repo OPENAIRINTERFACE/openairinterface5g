@@ -12,13 +12,16 @@
 // This problem will be fixed in the future.
 #            ifndef UESIM_EXPANSION
 #                define NUMBER_OF_UE_MAX 16
+#                define NUMBER_OF_UCI_VARS_MAX 56
 #                define NUMBER_OF_CONNECTED_eNB_MAX 3
 #            else
 #                define NUMBER_OF_UE_MAX 256
+#                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #            endif
 #        else
 #                define NUMBER_OF_UE_MAX 256
+#                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #        endif
 #else
@@ -32,13 +35,16 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 */
 #            ifndef UESIM_EXPANSION
 #                define NUMBER_OF_UE_MAX 16
+#                define NUMBER_OF_UCI_VARS_MAX 56
 #                define NUMBER_OF_CONNECTED_eNB_MAX 3
 #            else
 #                define NUMBER_OF_UE_MAX 256
+#                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #            endif
 #        else
 #                define NUMBER_OF_UE_MAX 256
+#                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #        endif
 #        if defined(STANDALONE) && STANDALONE==1

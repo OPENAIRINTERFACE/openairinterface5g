@@ -219,6 +219,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
 
 void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
+void release_rnti_of_phy(module_id_t mod_id);
 /*@}*/
 
 

@@ -217,6 +217,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   if (proc->symbol_mask[*subframe]==0) { // this is normal case, if not true then we received a PULTICK before the previous subframe was finished 
      do {
        recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
+	 LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, f %d, sf %d\n",ru->idx,*frame,*subframe,f,sf);
        if (oai_exit == 1 || ru->cmd== STOP_RU) break;
        if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
        else if (packet_type == IF4p5_PULTICK) {           
@@ -230,8 +231,8 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
        } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
        }
-       LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
-     } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
+       LOG_D(PHY,"rx_fh_if4p5 for RU %d: subframe %d, sf %d, symbol mask %x\n",ru->idx,*subframe,sf,proc->symbol_mask[sf]);
+     } while(proc->symbol_mask[sf] != symbol_mask_full);    
   }
   else {
    f = *frame;
@@ -437,10 +438,13 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
       proc->first_tx = 0;
       symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
     } else {
-      AssertFatal(frame_tx == *frame,
+     /* AssertFatal(frame_tx == *frame,
                   "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
       AssertFatal(subframe_tx == *subframe,
 		  "In frame_tx %d : subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
+     */
+      *frame    = frame_tx;
+      *subframe = subframe_tx;
     }
 
     if (packet_type == IF4p5_PDLFFT) {
@@ -1661,7 +1665,7 @@ void *ru_thread( void *param ) {
       proc->instance_cnt_asynch_rxtx=0;
       pthread_cond_signal(&proc->cond_asynch_rxtx);
       AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_asynch_rxtx))==0,"mutex_unlock returns %d\n",ret);
-    } else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
+    } else LOG_D(PHY,"RU %d no asynch_south interface\n",ru->idx);
     
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
@@ -1872,7 +1876,8 @@ void *ru_thread_synch(void *arg) {
 				   &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-      if (/*ru->rx_offset >= 0*/dB_fixed(peak_val)>=85 && cnt>10) {
+      //if (/*ru->rx_offset >= 0*/dB_fixed(peak_val)>=85 && cnt>10) {
+      if (ru->rx_offset >= 0 && avg>0 && dB_fixed(peak_val/avg)>=15 && cnt>10) {
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
 /*
@@ -2628,7 +2633,11 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-//    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    //ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+    if ((ru->is_slave == 0) && (ru->ota_sync_enable == 1))
+      ru->generate_dmrs_sync = 1;
+    else
+      ru->generate_dmrs_sync = 0;
     if (ru->generate_dmrs_sync == 1) {
       generate_ul_ref_sigs();
       ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
@@ -2915,10 +2924,15 @@ void RCconfig_RU(void) {
           printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
           else RC.ru[j]->is_slave=0;
+          printf("RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+          if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) RC.ru[j]->ota_sync_enable=1;
+          else RC.ru[j]->ota_sync_enable=0;
 	}
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
 	RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+	/* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
+        RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
 	for (i=0;i<RC.ru[j]->num_bands;i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i]; 
       } //strcmp(local_rf, "yes") == 0
       else {

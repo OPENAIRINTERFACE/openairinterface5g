@@ -104,6 +104,7 @@ typedef enum {
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
 #define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
 #define CONFIG_STRING_RU_END_OF_BURST_DELAY       "end_of_burst_delay"
+#define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -128,6 +129,7 @@ typedef enum {
 #define RU_SDR_CLK_SRC                20
 #define RU_SF_EXTENSION_IDX           21
 #define RU_END_OF_BURST_DELAY_IDX     22
+#define RU_OTA_SYNC_ENABLE_IDX        23
 
 
 
@@ -153,12 +155,13 @@ typedef enum {
 {CONFIG_STRING_RU_ENB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"no",         TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
 {CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
 {CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
 {CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
 {CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_OTA_SYNC_ENABLE,               NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

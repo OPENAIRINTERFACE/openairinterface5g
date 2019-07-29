@@ -600,10 +600,10 @@ typedef struct {
   uint32_t rbs_used_retx_rx;
   ///  total rb used for a new uplink transmission
   uint32_t total_rbs_used_rx;
-  /// normalized rx power
-  int32_t      normalized_rx_power;
-   /// target rx power
-  int32_t    target_rx_power;
+  /// snr
+  int32_t      snr;
+   /// target snr
+  int32_t    target_snr;
 
   /// num rx pdu
   uint32_t num_pdu_rx[NB_RB_MAX];

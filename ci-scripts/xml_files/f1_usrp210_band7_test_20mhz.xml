@@ -22,8 +22,9 @@
 -->
 <testCaseList>
 	<htmlTabRef>test-f1-20</htmlTabRef>
-	<htmlTabName>Test-F1-CU/DU-20MHz</htmlTabName>
+	<htmlTabName>Test-F1-CU-DU-20MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
 	<TestCaseRequestedList>
  030201
  040101

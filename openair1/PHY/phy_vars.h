@@ -45,6 +45,7 @@ int16_t *primary_synch2_time;
 #ifndef OCP_FRAMEWORK
 PHY_VARS_UE ***PHY_vars_UE_g;
 RAN_CONTEXT_t RC;
+UL_RCC_IND_t  UL_RCC_INFO;
 
 //PHY_VARS_eNB ***PHY_vars_eNB_g;
 //PHY_VARS_RN **PHY_vars_RN_g;

@@ -339,6 +339,8 @@ typedef struct RU_t_s{
   int north_out_cnt;
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate if the RU has to perform OTA sync
+  int ota_sync_enable;
   /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
   int generate_dmrs_sync;
   /// flag to indicate if the RU has a control channel
@@ -1049,7 +1051,7 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_PRACH        prach_vars_br;
 #endif
   LTE_eNB_COMMON       common_vars;
-  LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_VARS_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
