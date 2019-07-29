@@ -24,12 +24,14 @@
 
 #include <common/utils/assertions.h>
 #include <common/utils/LOG/log.h>
+#include <common/utils/load_module_shlib.h>
+#include <common/config/config_userapi.h>
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
 #include "openair1/PHY/defs_UE.h"
 #include <openair1/SIMULATION/TOOLS/sim.h>
 
-#define PORT 4043 //TCP port for this simulator
+#define PORT 4043 //default TCP port for this simulator
 #define CirSize 3072000 // 100ms is enough
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
@@ -42,6 +44,22 @@
 extern double snr_dB;
 extern RAN_CONTEXT_t RC;
 //
+#define MAX_RFSIMU_OPT 2
+#define RFSIMU_SECTION    "rfsimulator"
+#define RFSIMU_OPTIONS_PARAMNAME "options"
+# define RFSIM_CONFIG_HELP_OPTIONS     " list of comma separated options to enable rf simulator functionalities. Available options: \n"\
+  "        chanmod:   enable channel modelisation\n"\
+  "        saviq:     enable saving written iqs to a file\n"
+  /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+  /*                                            configuration parameters for the rfsimulator device                                                                              */
+  /*   optname                     helpstr                     paramflags           XXXptr                               defXXXval                          type         numelt  */
+  /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define RFSIMULATOR_PARAMS_DESC {\
+  {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
+  {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
+  {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0}, \
+  {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 }\
+};
 
 pthread_mutex_t Sockmutex;
 
@@ -63,6 +81,7 @@ typedef struct {
   uint64_t nextTimestamp;
   uint64_t typeStamp;
   char *ip;
+  uint16_t port;
   int saveIQfile;
   buffer_t buf[FD_SETSIZE];
   int rx_num_channels;
@@ -268,6 +287,44 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
     buf += l;
   }
 }
+ 
+
+
+void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
+  char *saveF=NULL;  
+  paramdef_t rfsimu_params[] = RFSIMULATOR_PARAMS_DESC; 
+  
+  int p = config_paramidx_fromname(rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t), RFSIMU_OPTIONS_PARAMNAME) ;
+  int ret = config_get( rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t),RFSIMU_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed");
+  rfsimulator->saveIQfile = -1; 
+  for(int i=0; i<rfsimu_params[p].numelt ; i++) {
+      if (strcmp(rfsimu_params[p].strlistptr[i],"saviq") == 0) {
+          rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
+          if ( rfsimulator->saveIQfile != -1 )
+             LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
+          else
+             LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
+          break;
+      } else if (strcmp(rfsimu_params[p].strlistptr[i],"chanmod") == 0) {
+      	  load_module_shlib("chanmod",NULL,0,NULL);
+      } else {
+        fprintf(stderr,"Unknown rfsimulator option: %s\n",rfsimu_params[p].strlistptr[i]);
+        exit(-1);
+      }
+  }
+  /* for compatibility keep environment variable usage */
+  if ( getenv("RFSIMULATOR") != NULL ) {
+     rfsimulator->ip=getenv("RFSIMULATOR");
+  }
+  
+  if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
+     strncasecmp(rfsimulator->ip,"server",3) == 0 )
+    rfsimulator->typeStamp = ENB_MAGICDL_FDD;
+  else
+    rfsimulator->typeStamp = UE_MAGICDL_FDD;
+  
+}
 
 int server_start(openair0_device *device) {
   rfsimulator_state_t *t = (rfsimulator_state_t *) device->priv;
@@ -279,7 +336,7 @@ int server_start(openair0_device *device) {
 sin_family:
     AF_INET,
 sin_port:
-    htons(PORT),
+    htons(t->port),
 sin_addr:
     { s_addr: INADDR_ANY }
   };
@@ -301,7 +358,7 @@ int start_ue(openair0_device *device) {
 sin_family:
     AF_INET,
 sin_port:
-    htons(PORT),
+    htons(t->port),
 sin_addr:
     { s_addr: INADDR_ANY }
   };
@@ -309,7 +366,7 @@ sin_addr:
   bool connected=false;
 
   while(!connected) {
-    LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", t->ip, PORT);
+    LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", t->ip, t->port);
 
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
       LOG_I(HW,"rfsimulator: connection established\n");
@@ -490,12 +547,15 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
+    if ( t->nextTimestamp == 0)
+      LOG_W(HW,"No connected device, generating void samples...\n");
     if (!flushInput(t, 10)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
       t->nextTimestamp+=nsamps;
-      LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
+      if ( ((t->nextTimestamp/nsamps)%100) == 0)
+        LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
       *ptimestamp = t->nextTimestamp-nsamps;
       pthread_mutex_unlock(&Sockmutex);
       return nsamps;
@@ -540,13 +600,22 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
 
-      for (int a=0; a<nbAnt; a++)
-        rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
-                    a,
-                    ptr->channel_model,
-                    nsamps,
-                    t->nextTimestamp
-                  );
+      for (int a=0; a<nbAnt; a++) {
+      	if ( ptr->channel_model != NULL ) // apply a channel model
+          rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+                      a,
+                      ptr->channel_model,
+                      nsamps,
+                      t->nextTimestamp
+                    );
+        else { // no channel modeling
+          sample_t *out=(sample_t *)samplesVoid[a];
+          for ( int i=0; i < nsamps; i++ ) {
+            out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].r;
+            out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].i;
+          }
+        } // end of no channel modeling
+      } // end for a...
     }
   }
 
@@ -589,31 +658,13 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // --log_config.hw_log_level debug
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
-  if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {
-    LOG_E(HW,helpTxt);
-    exit(1);
-  }
+  rfsimulator_readconfig(rfsimulator);
 
   pthread_mutex_init(&Sockmutex, NULL);
 
-  if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
-       strncasecmp(rfsimulator->ip,"server",3) == 0 )
-    rfsimulator->typeStamp = ENB_MAGICDL_FDD;
-  else
-    rfsimulator->typeStamp = UE_MAGICDL_FDD;
 
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL_FDD ? "(eg)NB" : "UE");
-  char *saveF;
 
-  if ((saveF=getenv("saveIQfile")) != NULL) {
-    rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
-
-    if ( rfsimulator->saveIQfile != -1 )
-      LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
-    else
-      LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
-  } else
-    rfsimulator->saveIQfile = -1;
 
   device->trx_start_func       = rfsimulator->typeStamp == ENB_MAGICDL_FDD ?
                                  server_start :
