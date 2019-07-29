@@ -126,9 +126,11 @@ void schedule_SRS(module_id_t module_idP,
             continue;
           }
 
-          AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
-                      "physicalConfigDedicated is null for UE %d\n",
-                      UE_id);
+	      if(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated == NULL) {
+	        LOG_E(MAC,"physicalConfigDedicated is null for UE %d\n",UE_id);
+	        printf("physicalConfigDedicated is null for UE %d\n",UE_id);
+	        return;
+	      }
 
           /* CDRX condition on Active Time and SRS type-0 report (36.321 5.7) */
           UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
@@ -462,6 +464,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       DL_req[CC_id].dl_config_request_body.number_dci++;
       DL_req[CC_id].dl_config_request_body.number_pdu++;
       DL_req[CC_id].dl_config_request_body.tl.tag                      = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+      DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
       LOG_D(MAC,
             "UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d), resource_block_coding %d \n",
             UE_id, rnti,
@@ -506,6 +509,13 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
     }
   }       // ul_failure_timer>0
+  
+  UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
+  if((U_PLANE_INACTIVITY_VALUE != 0) && (UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE * 10))){
+     LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
+     mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
+     UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
+  }// time > 60s
 }
 
 void

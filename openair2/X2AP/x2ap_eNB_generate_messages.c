@@ -144,7 +144,92 @@ int x2ap_eNB_generate_x2_setup_request(
           }
         }
         else {
-          AssertFatal(0,"X2Setuprequest not supported for TDD!");
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_tDD;
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.eARFCN = instance_p->fdd_earfcn_DL[i];
+          switch (instance_p->subframeAssignment[i]) {
+            case 0:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa0;
+              break;
+            case 1:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa1;
+              break;
+            case 2:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa2;
+              break;
+            case 3:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa3;
+              break;
+            case 4:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa4;
+              break;
+            case 5:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa5;
+              break;
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa6;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+          }
+          switch (instance_p->specialSubframe[i]) {
+            case 0:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp0;
+              break;
+            case 1:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp1;
+              break;
+            case 2:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp2;
+              break;
+            case 3:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp3;
+              break;
+            case 4:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp4;
+              break;
+            case 5:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp5;
+              break;
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp6;
+              break;
+            case 7:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp7;
+              break;
+            case 8:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp8;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+          }
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixDL=X2AP_CyclicPrefixDL_normal;
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixUL=X2AP_CyclicPrefixUL_normal;
+          
+          switch (instance_p->N_RB_DL[i]) {
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw6;
+              break;
+            case 15:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw15;
+              break;
+            case 25:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw25;
+              break;
+            case 50:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw50;
+              break;
+            case 75:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw75;
+              break;
+            case 100:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw100;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
+              break;
+          }
         }
       }
       ASN_SEQUENCE_ADD(&ie->value.choice.ServedCells.list, servedCellMember);
@@ -279,7 +364,92 @@ int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_instance_t *instance_p, x2ap_eN
           }
         }
         else {
-          AssertFatal(0,"X2Setupresponse not supported for TDD!");
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.present = X2AP_EUTRA_Mode_Info_PR_tDD;
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.eARFCN = instance_p->fdd_earfcn_DL[i];
+          switch (instance_p->subframeAssignment[i]) {
+            case 0:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa0;
+              break;
+            case 1:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa1;
+              break;
+            case 2:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa2;
+              break;
+            case 3:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa3;
+              break;
+            case 4:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa4;
+              break;
+            case 5:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa5;
+              break;
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.subframeAssignment = X2AP_SubframeAssignment_sa6;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+          }
+          switch (instance_p->specialSubframe[i]) {
+            case 0:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp0;
+              break;
+            case 1:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp1;
+              break;
+            case 2:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp2;
+              break;
+            case 3:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp3;
+              break;
+            case 4:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp4;
+              break;
+            case 5:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp5;
+              break;
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp6;
+              break;
+            case 7:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp7;
+              break;
+            case 8:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.specialSubframePatterns = X2AP_SpecialSubframePatterns_ssp8;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for subframeAssignment");
+              break;
+          }
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixDL=X2AP_CyclicPrefixDL_normal;
+          servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.specialSubframe_Info.cyclicPrefixUL=X2AP_CyclicPrefixUL_normal;
+          
+          switch (instance_p->N_RB_DL[i]) {
+            case 6:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw6;
+              break;
+            case 15:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw15;
+              break;
+            case 25:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw25;
+              break;
+            case 50:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw50;
+              break;
+            case 75:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw75;
+              break;
+            case 100:
+              servedCellMember->servedCellInfo.eUTRA_Mode_Info.choice.tDD.transmission_Bandwidth = X2AP_Transmission_Bandwidth_bw100;
+              break;
+            default:
+              AssertFatal(0,"Failed: Check value for N_RB_DL/N_RB_UL");
+              break;
+          }
         }
       }
       ASN_SEQUENCE_ADD(&ie->value.choice.ServedCells.list, servedCellMember);
@@ -627,6 +797,27 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
         e_RABs_Admitted_Item = &e_RABS_Admitted_ItemIEs->value.choice.E_RABs_Admitted_Item;
         {
           e_RABs_Admitted_Item->e_RAB_ID = x2ap_handover_req_ack->e_rabs_tobesetup[i].e_rab_id;
+	  e_RABs_Admitted_Item->uL_GTP_TunnelEndpoint = NULL;
+	  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint = (X2AP_GTPtunnelEndpoint_t *)calloc(1, sizeof(*e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint));
+		  
+	  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size = (uint8_t)x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.length;
+          e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.bits_unused = 0;
+          e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf =
+                        calloc(1, e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size);
+
+          memcpy (e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf,
+                  x2ap_handover_req_ack->e_rabs_tobesetup[i].eNB_addr.buffer,
+                  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size);
+
+          X2AP_DEBUG("X2 handover response target ip addr. length %lu bits_unused %d buf %d.%d.%d.%d\n",
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size,
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.bits_unused,
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf[0],
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf[1],
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf[2],
+		  e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf[3]);
+		  
+          INT32_TO_OCTET_STRING(x2ap_handover_req_ack->e_rabs_tobesetup[i].gtp_teid, &e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->gTP_TEID);
         }
         ASN_SEQUENCE_ADD(&ie->value.choice.E_RABs_Admitted_List.list, e_RABS_Admitted_ItemIEs);
       }

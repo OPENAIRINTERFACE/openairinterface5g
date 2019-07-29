@@ -160,7 +160,7 @@ void RCconfig_L1(void) {
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_inst=1 this is because phy_init_RU() uses that to index and not RC.num_eNB - why the 2 similar variables?\n", __FUNCTION__);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_CC[0]=%d for init_eNB_afterRU()\n", __FUNCTION__, RC.nb_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_macrlc_inst:%d because used by mac_top_init_eNB()\n", __FUNCTION__, RC.nb_macrlc_inst);
-        //mac_top_init_eNB();
+        mac_top_init_eNB();
         configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd,
                             RC.eNB[j][0]->eth_params_n     .remote_portd);
       } else { // other midhaul
@@ -2509,6 +2509,8 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
                   X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
                 } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
                   X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+                  X2AP_REGISTER_ENB_REQ (msg_p).subframeAssignment[J] = ccparams_lte.tdd_config;
+                  X2AP_REGISTER_ENB_REQ (msg_p).specialSubframe[J] = ccparams_lte.tdd_config_s;
                 } else {
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",

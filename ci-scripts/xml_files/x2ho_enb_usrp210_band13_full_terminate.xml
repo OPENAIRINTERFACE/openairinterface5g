@@ -21,31 +21,26 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-10mHz-sfr</htmlTabRef>
-	<htmlTabName>Test-10MHz-SFR</htmlTabName>
+	<htmlTabRef>test-x2-ho-full-end</htmlTabRef>
+	<htmlTabName>Test-X2-HO-Full-Terminate</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
 	<TestCaseRequestedList>
- 090109
- 090111 000001 090109
+ 030201 030202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="090111">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE -- sniffing SFR frequency</desc>
-		<Initialize_OAI_UE_args>-C 806000000 -r 50 --ue-rxgain 130 --ue-scan-carrier --no-L2-connect --nokrnmod 1</Initialize_OAI_UE_args>
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Master eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
 	</testCase>
 
-	<testCase id="000001">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
-	</testCase>
-
-	<testCase id="090109">
-		<class>Terminate_OAI_UE</class>
-		<desc>Terminate OAI UE</desc>
+	<testCase id="030202">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Slave eNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 </testCaseList>

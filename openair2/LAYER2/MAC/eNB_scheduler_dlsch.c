@@ -488,7 +488,7 @@ schedule_ue_spec(module_id_t module_idP,
   COMMON_channels_t *cc = eNB->common_channels;
   UE_list_t *UE_list = &eNB->UE_list;
   int continue_flag = 0;
-  int32_t normalized_rx_power, target_rx_power;
+  int32_t snr, target_snr;
   int tpc = 1;
   UE_sched_ctrl_t *ue_sched_ctrl;
   int mcs;
@@ -717,9 +717,12 @@ schedule_ue_spec(module_id_t module_idP,
       eNB_UE_stats->harq_pid = harq_pid;
       eNB_UE_stats->harq_round = round_DL;
 
+      if (eNB_UE_stats->rrc_status < RRC_RECONFIGURED) {
+        ue_sched_ctrl->uplane_inactivity_timer = 0;
+      }
+
       if (eNB_UE_stats->rrc_status < RRC_CONNECTED) {
-        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n",
-              UE_id);
+        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n", UE_id);
         continue;
       }
 
@@ -733,7 +736,7 @@ schedule_ue_spec(module_id_t module_idP,
                 eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-        eNB_UE_stats->dlsch_mcs1 = 10; // cqi_to_mcs[ue_sched_ctrl->dl_cqi[CC_id]];
+        eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctrl->dl_cqi[CC_id]];
       } else { // this operation is also done in the preprocessor
         eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,
                                         eNB->slice_info.dl[slice_idxP].maxmcs);  // cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
@@ -1006,9 +1009,11 @@ schedule_ue_spec(module_id_t module_idP,
                                               , 0
 #endif
                                              );
-            pthread_mutex_lock(&rrc_release_freelist);
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
+              while(pthread_mutex_trylock(&rrc_release_freelist)){
+                /* spin... */
+              }
               uint16_t release_total = 0;
 
               for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
@@ -1055,9 +1060,9 @@ schedule_ue_spec(module_id_t module_idP,
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
               }
+              pthread_mutex_unlock(&rrc_release_freelist);
             }
 
-            pthread_mutex_unlock(&rrc_release_freelist);
 
             for (ra_ii = 0, ra = &eNB->common_channels[CC_id].ra[0]; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
               if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
@@ -1477,11 +1482,11 @@ schedule_ue_spec(module_id_t module_idP,
           }
 
           // do PUCCH power control
-          // this is the normalized RX power
+          // this is the snr
           // unit is not dBm, it's special from nfapi
-          // converting to dBm: ToDo: Noise power hard coded to 30
-          normalized_rx_power = (((5 * ue_sched_ctrl->pucch1_snr[CC_id]) - 640) / 10) + 30;
-          target_rx_power= (eNB->puCch10xSnr / 10) + 30;
+          // converting to dBm
+          snr = (5 * ue_sched_ctrl->pucch1_snr[CC_id] - 640) / 10;
+          target_snr = eNB->puCch10xSnr / 10;
           // this assumes accumulated tpc
           // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
           int32_t framex10psubframe = ue_template->pucch_tpc_tx_frame * 10 + ue_template->pucch_tpc_tx_subframe;
@@ -1493,22 +1498,22 @@ schedule_ue_spec(module_id_t module_idP,
               ue_template->pucch_tpc_tx_frame = frameP;
               ue_template->pucch_tpc_tx_subframe = subframeP;
 
-              if (normalized_rx_power > (target_rx_power + 4)) {
+              if (snr > target_snr + 4) {
                 tpc = 0;  //-1
-              } else if (normalized_rx_power < (target_rx_power - 4)) {
+              } else if (snr < target_snr - 4) {
                 tpc = 2;  //+1
               } else {
                 tpc = 1;  //0
               }
 
-              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
+              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d\n",
                     module_idP,
                     frameP,
                     subframeP,
                     harq_pid,
                     tpc,
-                    normalized_rx_power,
-                    target_rx_power);
+                    snr,
+                    target_snr);
             } // Po_PUCCH has been updated
             else {
               tpc = 1;  //0
@@ -1889,8 +1894,8 @@ schedule_ue_spec_br(module_id_t module_idP,
   int round_DL = 0;
   int ta_update = 0;
   int32_t tpc = 1;
-  int32_t normalized_rx_power = 0;
-  int32_t target_rx_power = 0;
+  int32_t snr = 0;
+  int32_t target_snr = 0;
   uint16_t TBS = 0;
   uint16_t j = 0;
   uint16_t sdu_lengths[NB_RB_MAX];
@@ -2368,10 +2373,10 @@ schedule_ue_spec_br(module_id_t module_idP,
             T_INT(harq_pid),
             T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));
           /* Do PUCCH power control */
-          /* This is the normalized RX power */
-          /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-          normalized_rx_power = (5 * ue_sched_ctl->pucch1_snr[CC_id]-640) / 10 + 30;
-          target_rx_power = mac->puCch10xSnr / 10 + 30;
+          /* This is the snr */
+          /* unit is not dBm, it's special from nfapi, convert to dBm */
+          snr = (5 * ue_sched_ctl->pucch1_snr[CC_id] - 640) / 10;
+          target_snr = mac->puCch10xSnr / 10;
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
           int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame * 10 + UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
@@ -2384,22 +2389,22 @@ schedule_ue_spec_br(module_id_t module_idP,
               UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
               UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
-              if (normalized_rx_power > (target_rx_power + 4)) {
+              if (snr > target_snr + 4) {
                 tpc = 0; //-1
-              } else if (normalized_rx_power<(target_rx_power - 4)) {
+              } else if (snr < target_snr - 4) {
                 tpc = 2; //+1
               } else {
                 tpc = 1; //0
               }
 
-              LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
+              LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d\n",
                     module_idP,
                     frameP,
                     subframeP,
                     harq_pid,
                     tpc,
-                    normalized_rx_power,
-                    target_rx_power);
+                    snr,
+                    target_snr);
             } else { // Po_PUCCH has been updated
               tpc = 1; // 0
             }
@@ -3084,11 +3089,9 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_rb_dl,
-            first_rb,
-            4);
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(n_rb_dl, first_rb, 4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
