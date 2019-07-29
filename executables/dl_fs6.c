@@ -171,13 +171,14 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
-  uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
 
-    if (ulsch->ue_type > 0) harq_pid = 0;
-    else harq_pid=harq_pid0;
+    if (ulsch->ue_type > 0)
+      harq_pid = 0;
+    else
+      harq_pid= subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
     LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
 
@@ -297,9 +298,10 @@ void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
 
     LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
 
-    if (ulsch->rnti>0) LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
-                               i, harq_pid, frame,subframe,i,ulsch->rnti,
-                               ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
+    if (ulsch->rnti>0)
+      LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
+            i, harq_pid, frame,subframe,i,ulsch->rnti,
+            ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
 
     if ((ulsch) &&
         (ulsch->rnti>0) &&
@@ -550,6 +552,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   header->frame=frame;
   header->subframe=subframe;
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
+  // returns -1 (or 255) if there is no ul (tdd cases)
   header->ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
   header->ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
 
