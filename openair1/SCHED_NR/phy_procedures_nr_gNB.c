@@ -23,7 +23,9 @@
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
@@ -31,7 +33,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
-
+#include "PHY/MODULATION/nr_modulation.h"
 #include "T.h"
 
 #include "assertions.h"
@@ -167,10 +169,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,1);
   if (nfapi_mode == 0 || nfapi_mode == 1) { 
     if (!(frame%ssb_frame_periodicity))  // generate SSB only for given frames according to SSB periodicity
       nr_common_signal_procedures(gNB,frame, slot);
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,0);
 
   num_dci = gNB->pdcch_vars.num_dci;
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
@@ -189,11 +193,11 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
       if (num_pdsch_rnti) {
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
         LOG_D(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
-        nr_generate_pdsch(*gNB->dlsch[0][0],
-                          gNB->pdcch_vars.dci_alloc[0],
+        nr_generate_pdsch(gNB->dlsch[0][0],
+                          &gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
-                          AMP, frame,slot, *fp, *cfg);
+                          AMP, frame, slot, fp, cfg);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
     }
@@ -203,11 +207,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 }
 
 
-void phy_procedures_gNB_RX(PHY_VARS_gNB *gNB,
-                           int frame,int slot) {
-
-  NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+/*
 
   if ((cfg->subframe_config.duplex_mode.value == TDD) && 
       ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
@@ -216,5 +216,79 @@ void phy_procedures_gNB_RX(PHY_VARS_gNB *gNB,
 
 
   if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
+*/
+
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id, uint8_t harq_pid) {
+  
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
+  nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
+  
+  uint8_t ret;
+  uint32_t G;
+  int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
+
+  G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs, nfapi_ulsch_pdu_rel15->number_symbols, nfapi_ulsch_pdu_rel15->nb_re_dmrs, nfapi_ulsch_pdu_rel15->length_dmrs, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers);
+
+  //----------------------------------------------------------
+  //------------------- ULSCH unscrambling -------------------
+  //----------------------------------------------------------
+
+  nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr, G, 0, Nid_cell, rel15_ul->rnti);
+      
+
+  //----------------------------------------------------------
+  //--------------------- ULSCH decoding ---------------------
+  //----------------------------------------------------------
+
+  ret = nr_ulsch_decoding(gNB, UE_id, gNB->pusch_vars[UE_id]->llr, frame_parms, proc->frame_rx,
+                          nfapi_ulsch_pdu_rel15->number_symbols, proc->slot_rx, harq_pid, 0);
+        
+  // if (ret > ulsch_gNB->max_ldpc_iterations)
+  //   n_errors++;
+
+}
+
+
+void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
+
+  uint8_t symbol;
+  unsigned char aa;
+
+  for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
+    // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
+    for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+      nr_slot_fep_ul(&gNB->frame_parms,
+                     gNB->common_vars.rxdata[aa],
+                     gNB->common_vars.rxdataF[aa],
+                     symbol,
+                     proc->slot_rx,
+                     0,
+                     0);
+    }
+  }
+
+}
+
+
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end) {
+  
+  uint8_t UE_id;
+  uint8_t symbol;
+  uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
+                        //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
+
+  for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
+    
+    for(symbol = symbol_start; symbol < symbol_end; symbol++) {
+
+      nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
+
+    }
+      
+    nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
+        
+  }
+
 
 }

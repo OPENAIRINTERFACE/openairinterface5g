@@ -81,7 +81,7 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 {
   
   uint32_t x1, x2;
-  uint8_t reset;
+  uint8_t reset, q;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
 
@@ -89,16 +89,15 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
   uint8_t n_scid=0; // again works only for 1_0
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
-      for (uint8_t q=0; q<NR_MAX_NB_CODEWORDS; q++) {
-
         reset = 1;
         x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
         for (uint32_t n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-          pdsch_dmrs[slot][symb][q][n] = lte_gold_generic(&x1, &x2, reset);
+          pdsch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
           reset = 0;
-        }          
-      }
-    }  
-  }
+        }
 
+        for (q = 1; q < NR_MAX_NB_CODEWORDS; q++)
+          memcpy(pdsch_dmrs[slot][symb][q],pdsch_dmrs[slot][symb][0],sizeof(uint32_t)*NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD);
+    }
+  }
 }

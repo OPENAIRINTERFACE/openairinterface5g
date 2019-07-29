@@ -36,7 +36,9 @@
 
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
-void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx,int slot_tx, int do_meas);
+void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_meas);
+void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc);
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end);
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);

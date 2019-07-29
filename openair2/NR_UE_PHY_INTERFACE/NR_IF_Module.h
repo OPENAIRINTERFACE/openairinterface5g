@@ -65,6 +65,7 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
+    /// proc is needed to signal back decoded frame number to PHY. However, this is not really FAPI procedure and should be done differently
     UE_nr_rxtx_proc_t * proc;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2

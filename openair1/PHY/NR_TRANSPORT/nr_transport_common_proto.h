@@ -20,8 +20,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_transport_proto_common.h
-* \brief Prototypes of functions common to gNB and NR UE
+/*! \file PHY/NR_TRANSPORT/nr_transport_common_proto.h
+* \brief Some support routines
 * \author
 * \date 2019
 * \version 0.1
@@ -34,16 +34,26 @@
 #ifndef __NR_TRANSPORT_COMMON_PROTO__H__
 #define __NR_TRANSPORT_COMMON_PROTO__H__
 
+#include "PHY/defs_nr_common.h"
+
+#define MAX_NUM_NR_DLSCH_SEGMENTS 16
+#define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
 
 
-// Functions below implement minor procedures from 38-214
+#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
+#define NR_PUSCH_y 3 // UCI placeholder bit 
 
-/** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.
-    @param I_MCS */
-uint8_t get_nr_Qm(uint8_t I_MCS);
+/** \brief Computes Q based on I_MCS PDSCH and table_idx. Implements Table 5.1.3.1-2 from 38.214. */
+uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 
-/** \brief Computes Q based on I_MCS PUSCH. Implements Table 6.1.4.1-1 from 38.214.
-    @param I_MCS */
-uint8_t get_nr_Qm_ul(uint8_t I_MCS);
+uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
+
+void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                nfapi_nr_dl_config_dci_dl_pdu dci_pdu);
+
+/** \brief Computes available bits G. */
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint16_t length_dmrs, uint8_t Qm, uint8_t Nl);
+
+uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 
 #endif

@@ -133,13 +133,13 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
         case 106: //40 MHz
           if (fp->threequarter_fs) {
             fp->ofdm_symbol_size = 1536;
-            fp->first_carrier_offset = 900; //1536 - 636
+            fp->first_carrier_offset = 900; //1536 - ( (106*12) / 2 )
             fp->nb_prefix_samples0 = 132;
             fp->nb_prefix_samples = 108;
           }
           else {
             fp->ofdm_symbol_size = 2048;
-            fp->first_carrier_offset = 1412; //2048 - 636
+            fp->first_carrier_offset = 1412; //2048 - ( (106*12) / 2 )
             fp->nb_prefix_samples0 = 176;
             fp->nb_prefix_samples = 144;
           }
@@ -152,13 +152,13 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
         case 217: //80 MHz
           if (fp->threequarter_fs) {
             fp->ofdm_symbol_size = 3072;
-            fp->first_carrier_offset = 1770; //3072 - 1302
+            fp->first_carrier_offset = 1770; //3072 - ( (217*12) / 2 )
             fp->nb_prefix_samples0 = 264;
             fp->nb_prefix_samples = 216;
           }
 	  else {
 	    fp->ofdm_symbol_size = 4096;
-	    fp->first_carrier_offset = 2794; //4096 - 1302
+	    fp->first_carrier_offset = 2794; //4096 - ( (217*12) / 2 )
 	    fp->nb_prefix_samples0 = 352;
 	    fp->nb_prefix_samples = 288;
 	  }
@@ -167,14 +167,14 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
         case 245:
 	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
-	  fp->first_carrier_offset = 2626; //4096 - 1478
+	  fp->first_carrier_offset = 2626; //4096 - ( (245*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
         case 273:
 	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
-	  fp->first_carrier_offset = 2458; //4096 - 1638
+	  fp->first_carrier_offset = 2458; //4096 - ( (273*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;

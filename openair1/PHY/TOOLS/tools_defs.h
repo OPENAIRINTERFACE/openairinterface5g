@@ -310,6 +310,13 @@ void mmxcopy(void *dest,void *src,int size);
 */
 int32_t signal_energy(int32_t *,uint32_t);
 
+/*!\fn int32_t signal_energy_fixed_p9(int *input, uint32_t length);
+\brief Computes the signal energy per subcarrier
+\ the input signal has a fixed point representation of AMP_SHIFT bits
+\ the ouput energy has a fixed point representation of AMP_SHIFT bits
+*/
+int32_t signal_energy_amp_shift(int32_t *input, uint32_t length);
+
 #ifdef LOCALIZATION
 /*!\fn int32_t signal_energy(int *,uint32_t);
 \brief Computes the signal energy per subcarrier

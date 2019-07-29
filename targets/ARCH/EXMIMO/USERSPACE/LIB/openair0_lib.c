@@ -772,6 +772,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_set_gains_func   = trx_exmimo_set_gains;
   device->openair0_cfg = openair0_cfg;
   device->priv = (void *)exm;
+  device->uhd_set_thread_priority = NULL;
 
 
   printf("EXMIMO2: Getting addresses for memory-mapped DMA\n");

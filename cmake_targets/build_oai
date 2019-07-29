@@ -684,7 +684,7 @@ function main() {
     echo_info "Compiling unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
     #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
-    simlist="nr_prachsim nr_pucchsim dlsim ulsim polartest ldpctest smallblocktest nr_pbchsim nr_dlschsim nr_dlsim nr_ulschsim "
+    simlist="nr_prachsim nr_pucchsim dlsim ulsim polartest ldpctest smallblocktest nr_pbchsim nr_dlschsim nr_dlsim nr_ulschsim nr_ulsim"
     for f in $simlist ; do
       compilations \
       phy_simulators $f \

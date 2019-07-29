@@ -151,11 +151,11 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
          }
        }
 
-      dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
+      dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
     }
 
     for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
-      dlsch->mod_symbs[q] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
+      dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH*sizeof(int32_t));
 
      dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(64*sizeof(int32_t*));
      for (aa=0; aa<64; aa++) {

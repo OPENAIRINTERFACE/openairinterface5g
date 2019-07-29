@@ -44,6 +44,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
+#include "PHY/phy_vars.h"
 
 #include "SCHED_NR/sched_nr.h"
 
@@ -79,7 +80,6 @@ void exit_function(const char* file, const char* function, const int line,const 
 }
 
 // needed for some functions
-PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
@@ -636,10 +636,10 @@ int main(int argc, char **argv)
 	  uint8_t gNB_xtra_byte=0;
 	  for (int i=0; i<8; i++)
 	    gNB_xtra_byte |= ((gNB->pbch.pbch_a>>(31-i))&1)<<(7-i);
-	  
-	  payload_ret = (UE->rx_ind.rx_indication_body->mib_pdu.additional_bits == gNB_xtra_byte);
+
+	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->rx_ind.rx_indication_body->mib_pdu.pdu[i] == gNB->pbch_pdu[2-i]);
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == gNB->pbch_pdu[2-i]);
 	    //printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,gNB->pbch_pdu[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]); 
 	  } 
 	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
@@ -655,7 +655,6 @@ int main(int argc, char **argv)
 
     if (((float)n_errors/(float)n_trials <= target_error_rate) && (n_errors_payload==0)) {
       printf("PBCH test OK\n");
-      printf("Synchronization obtained for i_ssb = %d\n",UE->rx_ind.rx_indication_body[0].mib_pdu.ssb_index);
       break;
     }
       

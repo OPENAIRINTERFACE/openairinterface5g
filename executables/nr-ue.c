@@ -350,39 +350,42 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+
+  nr_dcireq_t dcireq;
+  nr_scheduled_response_t scheduled_response;
+
   // Process Rx data for one sub-frame
-  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
-    //clean previous FAPI MESSAGE
-    UE->rx_ind.number_pdus = 0;
-    UE->dci_ind.number_of_dcis = 0;
-    //clean previous FAPI MESSAGE
-    // call L2 for DL_CONFIG (DCI)
-    UE->dcireq.module_id = UE->Mod_id;
-    UE->dcireq.gNB_index = 0;
-    UE->dcireq.cc_id     = 0;
-    UE->dcireq.frame     = proc->frame_rx;
-    UE->dcireq.slot      = proc->nr_tti_rx;
-    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
-    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
-    UE_mac->scheduled_response.ul_config = NULL;
-    UE_mac->scheduled_response.tx_request = NULL;
-    UE_mac->scheduled_response.module_id = UE->Mod_id;
-    UE_mac->scheduled_response.CC_id     = 0;
-    UE_mac->scheduled_response.frame = proc->frame_rx;
-    UE_mac->scheduled_response.slot  = proc->nr_tti_rx;
-    nr_ue_scheduled_response(&UE_mac->scheduled_response);
-    //write_output("uerxdata_frame.m", "uerxdata_frame", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_frame, 1, 1);
+  if (nr_slot_select(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
+    //TODO: all of this has to be moved to the MAC!!!
+    dcireq.module_id = UE->Mod_id;
+    dcireq.gNB_index = 0;
+    dcireq.cc_id     = 0;
+    dcireq.frame     = proc->frame_rx;
+    dcireq.slot      = proc->nr_tti_rx;
+    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+
+    scheduled_response.dl_config = &dcireq.dl_config_req;
+    scheduled_response.ul_config = NULL;
+    scheduled_response.tx_request = NULL;
+    scheduled_response.module_id = UE->Mod_id;
+    scheduled_response.CC_id     = 0;
+    scheduled_response.frame = proc->frame_rx;
+    scheduled_response.slot  = proc->nr_tti_rx;
+    nr_ue_scheduled_response(&scheduled_response);
+
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, UE_mac->scheduled_response.dl_config);
+    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, scheduled_response.dl_config);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
   }
 
+  
+  // no UL for now
+  /*
   if (UE->mac_enabled==1) {
     //  trigger L2 to run ue_scheduler thru IF module
     //  [TODO] mapping right after NR initial sync
@@ -395,6 +398,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       UE->if_inst->ul_indication(&UE->ul_indication);
     }
   }
+  */
 }
 
 /*!
@@ -627,8 +631,9 @@ void *UE_thread(void *arg) {
     processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
-    curMsg->proc.nr_tti_rx= slot_nr;
     curMsg->UE->current_thread_id[slot_nr] = thread_idx;
+    curMsg->proc.CC_id = 0;
+    curMsg->proc.nr_tti_rx= slot_nr;
     curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;

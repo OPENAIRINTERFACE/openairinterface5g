@@ -89,6 +89,10 @@ void *get_idft(int ofdm_symbol_size)
       idft = idft2048;
       break;
 
+    case 3072:
+      idft = idft3072;
+      break;
+
     case 4096:
       idft = idft4096;
       break;

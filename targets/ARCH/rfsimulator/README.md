@@ -30,7 +30,7 @@ Then, you can use it freely
 
 # Usage
 Setting the env variable RFSIMULATOR enables the RF board simulator
-It should the set to "enb" in the eNB
+It should the set to "server" in the eNB or gNB
 
 ## 4G case
 For the UE, it should be set to the IP address of the eNB
@@ -61,6 +61,19 @@ sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C 3510000000
 ```
 Of course, set the gNB machine IP address if the UE and the gNB are not on the same machine
 In UE, you can add "-d" to get the softscope
+
+### Channel simulation
+The RF channel simulator is called.
+In current version all channel paramters are hard coded in the call to:
+new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
+                                          AWGN,
+                                          bridge->sample_rate,
+                                          bridge->tx_bw,
+                                          0.0, // forgetting_factor
+                                          0, // maybe used for TA
+                                          0); // path_loss in dB
+Only the input noise can be changed on command line with -s parameter.
+With path loss = 0 set "-s 5" to see a little noise
 
 #Caveacts
 Still issues in power control: txgain, rxgain are not used

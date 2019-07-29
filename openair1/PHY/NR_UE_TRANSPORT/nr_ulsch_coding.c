@@ -39,7 +39,6 @@
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 
 
 
@@ -205,7 +204,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t *pz; 
   uint8_t mod_order; 
   uint16_t Kr,r,r_offset;
-  //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG;
   uint32_t E;
   uint8_t Ilbrm; 
@@ -224,7 +222,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   crc = 1;
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->nb_rb;
-  nb_symb_sch = harq_process->nb_symbols;
+  nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
   mod_order = nr_get_Qm(harq_process->mcs,1);
@@ -250,12 +248,12 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  printf("ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);
+  LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);
 
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  printf("ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  
 
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
@@ -327,7 +325,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     //start_meas(te_stats);
     for (r=0; r<harq_process->C; r++) {
-      //d_tmp[r] = &harq_process->d[r][0];
       //channel_input[r] = &harq_process->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
       printf("Encoder: B %d F %d \n",harq_process->B, harq_process->F);
@@ -354,7 +351,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       }
       printf("\n");*/
 
-    //ldpc_encoder_optim_8seg(harq_process->c,d_tmp,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
     ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
@@ -446,7 +442,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   }
 
-  memcpy(ulsch->g,harq_process->f,G>>3); // g is the concatenated code block
+  memcpy(ulsch->g,harq_process->f,G); // g is the concatenated code block
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 

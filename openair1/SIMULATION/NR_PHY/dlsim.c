@@ -43,6 +43,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/phy_vars.h"
 
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
@@ -104,7 +105,10 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 			      const int8_t          channel,
 			      const uint8_t*        pduP,
 			      const sdu_size_t      pdu_len)
-{return(0);}
+{
+  return 0;
+}
+
 int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
@@ -115,8 +119,6 @@ void config_common(int Mod_idP,
 
 
 // needed for some functions
-PHY_VARS_NR_UE ***PHY_vars_UE_g;
-short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 void prepare_scc_sim(NR_ServingCellConfigCommon_t *scc) {
@@ -902,6 +904,8 @@ int main(int argc, char **argv)
   UE_mac->scheduled_response.slot = slot;
 
 
+  nr_ue_phy_config_request(&UE_mac->phy_config);
+
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
@@ -955,14 +959,13 @@ int main(int argc, char **argv)
 			       normal_txrx,
 			       &UE_mac->dl_config_request);
 
-
 	if (n_trials==1) {
 	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
 	  if (UE->frame_parms.nb_antennas_rx>1)
 	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
 	}
 	
-	if (UE->dci_ind.number_of_dcis==0) n_errors++;
+	if (UE_mac->dl_config_request.number_pdus==0) n_errors++;
       }
     } //noise trials
 

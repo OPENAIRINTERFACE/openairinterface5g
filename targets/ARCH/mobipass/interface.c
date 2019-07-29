@@ -132,6 +132,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg,
   device->trx_set_gains_func = mobipass_set_gains;
   device->trx_write_func   = mobipass_write;
   device->trx_read_func    = mobipass_read;
+  device->uhd_set_thread_priority = NULL;
 
   device->priv = mobi;
 

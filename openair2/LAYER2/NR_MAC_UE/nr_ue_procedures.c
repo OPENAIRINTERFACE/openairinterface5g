@@ -588,6 +588,7 @@ int8_t nr_ue_decode_mib(
   mac->type0_pdcch_ss_sfn_c = sfn_c;
   mac->type0_pdcch_ss_n_c = n_c;
         
+
   // fill in the elements in config request inside P5 message
   
   //mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
@@ -2023,7 +2024,6 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
 
   return 0;
 }
-
 
 
 void nr_ue_process_mac_pdu(

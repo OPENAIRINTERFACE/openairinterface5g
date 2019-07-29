@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dlsch_coding.c
+/*! \file PHY/NR_TRANSPORT/nr_tbs_tools.c
 * \brief Top-level routines for implementing LDPC-coded (DLSCH) transport channels from 38-212, 15.2
 * \author H.Wang
 * \date 2018
@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include "nr_dlsch.h"
+#include "nr_transport_common_proto.h"
 
 
 static inline uint8_t is_codeword_disabled(uint8_t format, uint8_t Imcs, uint8_t rv) {

@@ -238,6 +238,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
 
+
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &harq_process->dl_config_pdu;
   uint8_t dmrs_Type = dl_config_pdu->dmrs_Type;
   AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);

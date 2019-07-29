@@ -43,7 +43,7 @@
 int set_device(openair0_device *device) {
 
   switch (device->type) {
-    
+
   case EXMIMO_DEV:
     LOG_I(HW,"[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
@@ -95,6 +95,8 @@ int set_transport(openair0_device *device) {
   
 }
 typedef int(*devfunc_t)(openair0_device *, openair0_config_t *, eth_params_t *);
+//loader_shlibfunc_t shlib_fdesc[2];
+
 /* look for the interface library and load it */
 int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * cfg, uint8_t flag) {
   
@@ -102,9 +104,9 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   int ret=0;
   char *libname;
   if (flag == RAU_LOCAL_RADIO_HEAD) {
-	  if (getenv("RFSIMULATOR") != NULL) 
-     	  libname="rfsimulator";
-	  else 
+    if (getenv("RFSIMULATOR") != NULL) 
+      libname="rfsimulator";
+    else 
       libname=OAI_RF_LIBNAME;
       shlib_fdesc[0].fname="device_init";
     } else {
@@ -119,6 +121,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   }    
   return ret; 	       
 }
+
 
 
 

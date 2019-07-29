@@ -19,9 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs_UE.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/defs_gNB.h"
 #include "modulation_UE.h"
+#include "nr_modulation.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
@@ -88,6 +89,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     dft = dft2048;
     break;
 
+  case 3072:
+    dft = dft3072;
+    break;
+
   case 4096:
     dft = dft4096;
     break;
@@ -97,8 +102,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     break;
 
   default:
-    dft = dft512;
-    break;
+    printf("unsupported ofdm symbol size \n");
+    assert(0);
   }
 
   if (no_prefix) {
@@ -198,3 +203,71 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
+
+int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
+                   int32_t *rxdata,
+                   int32_t *rxdataF,
+                   unsigned char symbol,
+                   unsigned char Ns,
+                   int sample_offset,
+                   int no_prefix)
+{
+  uint32_t slot_offset;
+  uint32_t rxdata_offset;
+
+  unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
+  unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
+  
+  void (*dft)(int16_t *,int16_t *, int);
+
+  switch (frame_parms->ofdm_symbol_size) {
+    case 128:
+      dft = dft128;
+      break;
+
+    case 256:
+      dft = dft256;
+      break;
+
+    case 512:
+      dft = dft512;
+      break;
+
+    case 1024:
+      dft = dft1024;
+      break;
+
+    case 1536:
+      dft = dft1536;
+      break;
+
+    case 2048:
+      dft = dft2048;
+      break;
+
+    case 4096:
+      dft = dft4096;
+      break;
+
+    case 8192:
+      dft = dft8192;
+      break;
+
+    default:
+      dft = dft512;
+      break;
+  }
+  
+  slot_offset   = Ns * frame_parms->samples_per_slot;
+
+  
+  if(symbol == 0)
+    rxdata_offset = slot_offset + nb_prefix_samples0 - SOFFSET;
+  else
+    rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
+
+  dft((int16_t *)&rxdata[rxdata_offset],
+       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+
+  return(0);
+}
