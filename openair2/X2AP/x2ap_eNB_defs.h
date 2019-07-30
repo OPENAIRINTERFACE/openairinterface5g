@@ -173,6 +173,8 @@ typedef struct x2ap_eNB_instance_s {
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
+  uint32_t                subframeAssignment[MAX_NUM_CCs];
+  uint32_t                specialSubframe[MAX_NUM_CCs];
   int                     num_cc;
 
   net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];

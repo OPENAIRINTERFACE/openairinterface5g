@@ -348,10 +348,23 @@ typedef enum HO_STATE_e {
   HO_COMPLETE, // initiated by the target eNB
   HO_REQUEST,
   HO_ACK,
+  HO_FORWARDING,
   HO_CONFIGURED,
+  HO_END_MARKER,
+  HO_FORWARDING_COMPLETE,
   HO_RELEASE,
   HO_CANCEL
 } HO_STATE_t;
+
+typedef enum DATA_FORWARDING_STATE_e {
+  FORWARDING_EMPTY=0,
+  FORWARDING_NO_EMPTY
+} DATA_FORWARDING_STATE_t;
+
+typedef enum DATA_ENDMARK_STATE_e {
+  ENDMARK_EMPTY=0,
+  ENDMARK_NO_EMPTY
+} DATA_ENDMARK_STATE_t;
 
 typedef enum SL_TRIGGER_e {
   SL_RECEIVE_COMMUNICATION=0,
@@ -477,6 +490,9 @@ typedef struct HANDOVER_INFO_s {
   uint8_t buf[RRC_BUF_SIZE];  /* ASN.1 encoded handoverCommandMessage */
   int size;   /* size of above message in bytes */
   int x2_id;   /* X2AP UE ID in the target eNB */
+  uint32_t x2u_teid;
+  DATA_FORWARDING_STATE_t forwarding_state;
+  DATA_ENDMARK_STATE_t endmark_state;
 } HANDOVER_INFO;
 
 typedef struct PER_EVENT_s {
@@ -693,6 +709,12 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  /* Total number of e_rab already setup in the list */
+  uint8_t                            nb_x2u_e_rabs;
+  // LG: For GTPV1 TUNNELS(X2U)
+  uint32_t                           enb_gtp_x2u_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             enb_gtp_x2u_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            enb_gtp_x2u_ebi[S1AP_MAX_E_RAB];
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;

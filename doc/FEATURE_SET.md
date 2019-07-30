@@ -41,10 +41,12 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 - Max number of antennas: 2
 - CQI/PMI reporting: aperiodic, feedback mode 3 - 0 and 3 - 1
 - PRACH preamble format 0
-- All downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH
-- All uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
+- Downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH, MPDCCH
+- Uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
 - HARQ support (UL and DL)
 - Highly optimized base band processing (including turbo decoder)
+- Multi-RRU support: over the air synchro b/ multi RRU in TDD mode
+- Support for CE-modeA for LTE-M. Limited support for repeatition, single-LTE-M connection, legacy-LTE UE attach is disabled.
 
 ### Performances ###
 
@@ -144,6 +146,7 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - UE Context Release
  - X2 timers (t_reloc_prep, tx2_reloc_overall)
  - Handover Cancel
+ - X2-U interface implemented
 
 ## eNB Advanced Features ##
 

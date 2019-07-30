@@ -36,7 +36,7 @@ extern uint16_t sf_ahead;
 
 void add_sf(uint16_t *frameP, uint16_t *subframeP, int offset)
 {
-    *frameP    = *frameP + ((*subframeP + offset) / 10);
+    *frameP    = (*frameP + ((*subframeP + offset) / 10))%1024;
 
     *subframeP = ((*subframeP + offset) % 10);
 }
@@ -238,6 +238,16 @@ void deallocate_nfapi_lbt_dl_config_request(nfapi_lbt_dl_config_request_t* req, 
 	}
         req->lbt_dl_config_request_body.lbt_dl_config_req_pdu_list=0;
 
+	pnf_p7_free(pnf_p7, req);
+}
+
+nfapi_ue_release_request_t* allocate_nfapi_ue_release_request(pnf_p7_t* pnf_p7)
+{
+    return pnf_p7_malloc(pnf_p7, sizeof(nfapi_ue_release_request_t));
+}
+
+void deallocate_nfapi_ue_release_request(nfapi_ue_release_request_t* req, pnf_p7_t* pnf_p7)
+{
 	pnf_p7_free(pnf_p7, req);
 }
 
@@ -720,6 +730,21 @@ int pnf_p7_subframe_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn_sf)
 				}
 			}
 
+			if(tx_subframe_buffer->ue_release_req != 0)
+			{
+				if(pnf_p7->_public.ue_release_req)
+					(pnf_p7->_public.ue_release_req)(&(pnf_p7->_public), tx_subframe_buffer->ue_release_req);
+			}
+			else
+			{
+				//send dummy
+				if(pnf_p7->_public.ue_release_req && pnf_p7->_public.dummy_subframe.ue_release_req)
+				{
+					pnf_p7->_public.dummy_subframe.ue_release_req->sfn_sf = sfn_sf_tx;
+					(pnf_p7->_public.ue_release_req)(&(pnf_p7->_public), pnf_p7->_public.dummy_subframe.ue_release_req);
+				}
+			}
+
                         if(tx_subframe_buffer->dl_config_req != 0)
                         {
                           deallocate_nfapi_dl_config_request(tx_subframe_buffer->dl_config_req, pnf_p7);
@@ -734,6 +759,10 @@ int pnf_p7_subframe_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn_sf)
                         {
                           deallocate_nfapi_hi_dci0_request(tx_subframe_buffer->hi_dci0_req, pnf_p7);
                           tx_subframe_buffer->hi_dci0_req = 0;
+                        }
+                        if(tx_subframe_buffer->ue_release_req != 0){
+                            deallocate_nfapi_ue_release_request(tx_subframe_buffer->ue_release_req, pnf_p7);
+                            tx_subframe_buffer->ue_release_req = 0;
                         }
                 }
 		else
@@ -799,7 +828,7 @@ int pnf_p7_subframe_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn_sf)
                         }
                 } // sfn_sf match
 
-                if (subframe_buffer->dl_config_req == 0 && subframe_buffer->tx_req == 0 && subframe_buffer->ul_config_req == 0 && subframe_buffer->lbt_dl_config_req == 0)
+                if (subframe_buffer->dl_config_req == 0 && subframe_buffer->tx_req == 0 && subframe_buffer->ul_config_req == 0 && subframe_buffer->lbt_dl_config_req == 0 && subframe_buffer->ue_release_req == 0)
                 {
                   memset(&(pnf_p7->subframe_buffer[buffer_index]), 0, sizeof(nfapi_pnf_p7_subframe_buffer_t));
                   pnf_p7->subframe_buffer[buffer_index].sfn_sf = -1;
@@ -1310,6 +1339,80 @@ void pnf_handle_p7_vendor_extension(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pn
 	
 }
 
+void pnf_handle_ue_release_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
+{
+    nfapi_ue_release_request_t* req = allocate_nfapi_ue_release_request(pnf_p7);
+    if(req == NULL)
+    {
+        NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to alloced nfapi_ue_release_request structure\n");
+        return;
+    }
+
+    int unpack_result = nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, req, sizeof(nfapi_ue_release_request_t), &pnf_p7->_public.codec_config);
+    if(unpack_result == 0)
+    {
+        if(pthread_mutex_lock(&(pnf_p7->mutex)) != 0)
+        {
+            NFAPI_TRACE(NFAPI_TRACE_ERROR, "failed to lock mutex\n");
+            return;
+        }
+
+        if(is_p7_request_in_window(req->sfn_sf, "ue_release_request", pnf_p7))
+        {
+            uint32_t sfn_sf_dec = NFAPI_SFNSF2DEC(req->sfn_sf);
+            uint8_t buffer_index = sfn_sf_dec % pnf_p7->_public.subframe_buffer_size;
+
+            struct timespec t;
+            clock_gettime(CLOCK_MONOTONIC, &t);
+
+            NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE UE_RELEASE_REQ sfn_sf:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_sf_dec, buffer_index);
+
+            if (0 && NFAPI_SFNSF2DEC(req->sfn_sf)%100==0) NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() UE_RELEASE_REQ.req sfn_sf:%d rntis:%d - UE_RELEASE_REQ is within window\n",
+                            __FUNCTION__,
+                            NFAPI_SFNSF2DEC(req->sfn_sf),
+                            req->ue_release_request_body.number_of_TLVs);
+
+            if(pnf_p7->subframe_buffer[buffer_index].ue_release_req != 0)
+            {
+                deallocate_nfapi_ue_release_request(pnf_p7->subframe_buffer[buffer_index].ue_release_req, pnf_p7);
+            }
+
+            pnf_p7->subframe_buffer[buffer_index].sfn_sf = req->sfn_sf;
+            pnf_p7->subframe_buffer[buffer_index].ue_release_req = req;
+
+            pnf_p7->stats.tx_ontime++;
+        }
+        else
+        {
+            NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() UE_RELEASE_REQUEST Request is outside of window REQ:SFN_SF:%d CURR:SFN_SF:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), NFAPI_SFNSF2DEC(pnf_p7->sfn_sf));
+
+            deallocate_nfapi_ue_release_request(req, pnf_p7);
+            if(pnf_p7->_public.timing_info_mode_aperiodic)
+            {
+                pnf_p7->timing_info_aperiodic_send = 1;
+            }
+
+            pnf_p7->stats.tx_late++;
+        }
+        nfapi_ue_release_response_t resp;
+        memset(&resp, 0, sizeof(resp));
+        resp.header.message_id = NFAPI_UE_RELEASE_RESPONSE;
+        resp.header.phy_id = req->header.phy_id;
+        resp.error_code = NFAPI_MSG_OK;
+        nfapi_pnf_ue_release_resp(&(pnf_p7->_public), &resp);
+        NFAPI_TRACE(NFAPI_TRACE_INFO, "do ue_release_response\n");
+
+        if(pthread_mutex_unlock(&(pnf_p7->mutex)) != 0)
+        {
+            NFAPI_TRACE(NFAPI_TRACE_ERROR, "failed to unlock mutex\n");
+            return;
+        }
+    }
+    else
+    {
+        deallocate_nfapi_ue_release_request(req, pnf_p7);
+    }
+}
 
 uint32_t calculate_t2(uint32_t now_time_hr, uint16_t sfn_sf, uint32_t sf_start_time_hr)
 {
@@ -1445,7 +1548,11 @@ void pnf_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  
 		case NFAPI_LBT_DL_CONFIG_REQUEST:
 			pnf_handle_lbt_dl_config_request(pRecvMsg, recvMsgLen, pnf_p7);
 			break;
-		
+
+		case NFAPI_UE_RELEASE_REQUEST:
+			pnf_handle_ue_release_request(pRecvMsg, recvMsgLen, pnf_p7);
+			break;
+
 		default:
 			{
 				if(header.message_id >= NFAPI_VENDOR_EXT_MSG_MIN &&
@@ -1536,7 +1643,7 @@ void pnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  ui
 					NFAPI_TRACE(NFAPI_TRACE_NOTE, "Failed to allocate PNF_P7 reassemby buffer len:%d\n", length);
 					return;
 				}
-
+                                memset(pnf_p7->reassemby_buffer, 0, length);
 				pnf_p7->reassemby_buffer_size = length;
 			}
 			

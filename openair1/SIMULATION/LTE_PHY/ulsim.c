@@ -619,8 +619,8 @@ int main(int argc, char **argv) {
   eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
   eNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = eNB->sr_pdu_list;
   eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = eNB->harq_pdu_list;
-  eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
-  eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
+  eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_pdu_list = eNB->cqi_pdu_list;
+  eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
   printf("lte_param_init done\n");
   // for a call to phy_reset_ue later we need PHY_vars_UE_g allocated and pointing to UE
   PHY_vars_UE_g = (PHY_VARS_UE ** *)malloc(sizeof(PHY_VARS_UE **));

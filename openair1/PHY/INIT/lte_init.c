@@ -34,6 +34,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
+#include "nfapi/oai_integration/vendor_ext.h"
 
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
@@ -409,6 +410,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
 
     
+  if (NFAPI_MODE!=NFAPI_MODE_VNF){
   common_vars->rxdata  = (int32_t **)NULL;
   common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t*));
@@ -512,6 +514,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
     eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];
+  }
 
   eNB->pdsch_config_dedicated->p_a = dB0;       //defaul value until overwritten by RRCConnectionReconfiguration
 

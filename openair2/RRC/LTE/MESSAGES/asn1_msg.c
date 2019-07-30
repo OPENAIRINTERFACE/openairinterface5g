@@ -4071,6 +4071,7 @@ do_RRCConnectionReestablishment(
   LTE_DL_CCCH_Message_t dl_ccch_msg;
   LTE_RRCConnectionReestablishment_t *rrcConnectionReestablishment = NULL;
   int i = 0;
+  ue_context_pP->ue_context.reestablishment_xid = Transaction_id;
   LTE_SRB_ToAddModList_t **SRB_configList2 = NULL;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
 

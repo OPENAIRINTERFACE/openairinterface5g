@@ -194,14 +194,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
         eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs ||
         eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs ||
         eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles ||
-        eNB->UL_INFO.cqi_ind.number_of_cqis
+        eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis
        ) {
       LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d TX:%04d%d num_pdcch_symbols:%d\n",
             NFAPI_SFNSF2DEC(eNB->UL_INFO.rx_ind.sfn_sf),   eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.harq_ind.sfn_sf), eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.crc_ind.sfn_sf),  eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs,
             NFAPI_SFNSF2DEC(eNB->UL_INFO.rach_ind.sfn_sf), eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
-            eNB->UL_INFO.cqi_ind.number_of_cqis,
+          eNB->UL_INFO.cqi_ind.cqi_indication_body.number_of_cqis, 
             proc->frame_rx, proc->subframe_rx,
             proc->frame_tx, proc->subframe_tx, eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols);
     }
@@ -223,9 +223,11 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
-
-  release_UE_in_freeList(eNB->Mod_id);
-
+  if (NFAPI_MODE!=NFAPI_MODE_PNF) {
+    release_UE_in_freeList(eNB->Mod_id);
+  } else {
+    release_rnti_of_phy(eNB->Mod_id);
+  }
   // UE-specific RX processing for subframe n
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     phy_procedures_eNB_uespec_RX(eNB, proc);
@@ -436,13 +438,12 @@ static void *L1_thread( void *param )
     }
 
     LOG_D(PHY,"L1 RX %d.%d done\n",proc->frame_rx,proc->subframe_rx);
-
-    if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)              phy_procedures_eNB_TX(eNB, proc, 1);
-
-
     if (NFAPI_MODE!=NFAPI_MODE_VNF) {
-      if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB,proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,proc->timestamp_tx);
-      else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)     wakeup_txfh(eNB,proc,proc->frame_tx,proc->subframe_tx,proc->timestamp_tx);
+      if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)     wakeup_tx(eNB,proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx,proc->timestamp_tx); 
+      else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) {
+        phy_procedures_eNB_TX(eNB, proc, 1);
+        wakeup_txfh(eNB,proc,proc->frame_tx,proc->subframe_tx,proc->timestamp_tx);
+      }
     }
 
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
@@ -968,7 +969,9 @@ void init_eNB_proc(int inst)
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
+      pthread_create( &L1_proc->pthread, attr0, L1_thread, proc );
+    } else if ((get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
       pthread_create( &L1_proc->pthread, attr0, L1_thread, proc );
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread_tx, proc);
     } else if (NFAPI_MODE==NFAPI_MODE_VNF) { // this is neccesary in VNF or L2 FAPI simulator.
@@ -979,10 +982,12 @@ void init_eNB_proc(int inst)
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, L1_proc_tx);
     }
 
-    pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
+    if (NFAPI_MODE!=NFAPI_MODE_VNF) {
+      pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
+      pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
 #endif
+    }
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
     if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
@@ -1144,6 +1149,7 @@ void init_transport(PHY_VARS_eNB *eNB)
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   LOG_I(PHY, "Initialise transport\n");
 
+if (NFAPI_MODE!=NFAPI_MODE_VNF) {
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
 
@@ -1186,6 +1192,7 @@ void init_transport(PHY_VARS_eNB *eNB)
   LOG_D(PHY,"eNB %d.%d : RA %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_ra);
   eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
   LOG_D(PHY,"eNB %d.%d : MCH %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_MCH);
+}
   eNB->rx_total_gain_dB=130;
 
   for(i=0; i<NUMBER_OF_UE_MAX; i++)
@@ -1328,8 +1335,8 @@ void init_eNB(int single_thread_flag,
       eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
       eNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = eNB->sr_pdu_list;
       eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = eNB->harq_pdu_list;
-      eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
-      eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_pdu_list = eNB->cqi_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_indication_body.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
       eNB->prach_energy_counter = 0;
     }
   }

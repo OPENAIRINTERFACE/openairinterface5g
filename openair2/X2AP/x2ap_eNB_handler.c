@@ -749,6 +749,8 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 {
   X2AP_HandoverRequestAcknowledge_t             *x2HandoverRequestAck;
   X2AP_HandoverRequestAcknowledge_IEs_t         *ie;
+  X2AP_E_RABs_Admitted_ItemIEs_t		 		*e_RABS_Admitted_ItemIEs;
+  X2AP_E_RABs_Admitted_Item_t 		   			*e_RABs_Admitted_Item;
 
   x2ap_eNB_instance_t                           *instance_p;
   x2ap_eNB_data_t                               *x2ap_eNB_data;
@@ -816,6 +818,56 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   X2AP_HANDOVER_REQ_ACK(msg).rnti = rnti;
 
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
+                             X2AP_ProtocolIE_ID_id_E_RABs_Admitted_List, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n", __FILE__, __LINE__);
+    return -1;
+  }else{
+    if (ie->value.choice.E_RABs_Admitted_List.list.count > 0) {
+  
+      uint8_t nb_e_rabs_tobesetup;
+      nb_e_rabs_tobesetup = ie->value.choice.E_RABs_Admitted_List.list.count;
+      X2AP_HANDOVER_REQ_ACK(msg).nb_e_rabs_tobesetup = nb_e_rabs_tobesetup;
+  
+      for (int i=0; i<nb_e_rabs_tobesetup; i++) {
+        e_RABS_Admitted_ItemIEs = (X2AP_E_RABs_Admitted_ItemIEs_t *) ie->value.choice.E_RABs_Admitted_List.list.array[i];
+	e_RABs_Admitted_Item = &e_RABS_Admitted_ItemIEs->value.choice.E_RABs_Admitted_Item;
+  
+	X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].e_rab_id = e_RABs_Admitted_Item->e_RAB_ID ;
+	X2AP_ERROR("x2u tunnel: index %d e_rab_id %d\n", i, X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].e_rab_id);
+		  
+	if(e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint == NULL){
+	  X2AP_DEBUG("%s %d: X2AP_E_RABs_Admitted_Item_t->dL_GTP_TunnelEndpoint is a NULL pointer \n", __FILE__, __LINE__);
+	  continue;
+	}
+		  
+         memcpy(X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.buffer,
+		e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.buf,
+		e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size);
+  
+	X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.length = e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->transportLayerAddress.size;
+  
+	OCTET_STRING_TO_INT32(&e_RABs_Admitted_Item->dL_GTP_TunnelEndpoint->gTP_TEID,
+			      X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].gtp_teid);
+  
+  
+        X2AP_DEBUG("x2u tunnel: index %d target enb ip %d.%d.%d.%d length %d gtp teid %u\n", 
+		    i, 
+		    X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.buffer[0],
+		    X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.buffer[1],
+		    X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.buffer[2],
+		    X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.buffer[3],
+		    X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].eNB_addr.length,
+	            X2AP_HANDOVER_REQ_ACK(msg).e_rabs_tobesetup[i].gtp_teid);
+        }
+	
+      }
+
+    }
+  
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_TargeteNBtoSource_eNBTransparentContainer, true);
 

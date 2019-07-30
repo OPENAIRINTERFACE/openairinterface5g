@@ -169,7 +169,7 @@
 #define MAX_NUM_SLICES 10
 
 
-#define U_PLANE_INACTIVITY_VALUE 6000
+#define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
 /*
  * eNB part
@@ -754,10 +754,10 @@ typedef struct {
     uint32_t rbs_used_retx_rx;
     ///  total rb used for a new uplink transmission
     uint32_t total_rbs_used_rx;
-    /// normalized rx power
-    int32_t normalized_rx_power;
-    /// target rx power
-    int32_t target_rx_power;
+    /// snr
+    int32_t snr;
+    /// target snr
+    int32_t target_snr;
 
     /// num rx pdu
     uint32_t num_pdu_rx[NB_RB_MAX];
@@ -1438,6 +1438,8 @@ typedef struct eNB_MAC_INST_s {
   tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
   /// NFAPI DL PDU structure
   nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
+  /// NFAPI UE_release_req structure
+  nfapi_ue_release_request_t UE_release_req;
   /// UL handle
   uint32_t ul_handle;
   UE_list_t UE_list;

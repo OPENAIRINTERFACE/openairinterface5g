@@ -63,6 +63,12 @@ UE_STATUS_DETACHING = 1
 UE_STATUS_ATTACHING = 2
 UE_STATUS_ATTACHED = 3
 
+X2_HO_REQ_STATE__IDLE = 0
+X2_HO_REQ_STATE__TARGET_RECEIVES_REQ = 1
+X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE = 2
+X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ = 3
+X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK = 10
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -145,6 +151,10 @@ class SSHConnection():
 		self.htmlUEFailureMsg = ''
 		self.picocom_closure = False
 		self.idle_sleep_time = 0
+		self.x2_ho_options = 'network'
+		self.x2NbENBs = 0
+		self.x2ENBBsIds = []
+		self.x2ENBConnectedUEs = []
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
@@ -815,7 +825,10 @@ class SSHConnection():
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
 			# a dedicated script has to be installed inside the UE
 			# airplane mode on means call /data/local/tmp/off
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+			if device_id == '84B7N16418004022':
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+			else:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 			#airplane mode off means call /data/local/tmp/on
 			logging.debug('\u001B[1mUE (' + device_id + ') Initialize Completed\u001B[0m')
 			self.close()
@@ -1219,7 +1232,10 @@ class SSHConnection():
 	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
+			if device_id == '84B7N16418004022':
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+			else:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 			time.sleep(2)
 			max_count = 45
 			count = max_count
@@ -1246,9 +1262,15 @@ class SSHConnection():
 				count = count - 1
 				if count == 15 or count == 30:
 					logging.debug('\u001B[1;30;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+					if device_id == '84B7N16418004022':
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+					else:
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 					time.sleep(0.5)
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
+					if device_id == '84B7N16418004022':
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+					else:
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 					time.sleep(0.5)
 				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(max_count-count) + ' times)\u001B[0m')
 				time.sleep(1)
@@ -1325,7 +1347,10 @@ class SSHConnection():
 	def DetachUE_common(self, device_id):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+			if device_id == '84B7N16418004022':
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+			else:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
 			self.close()
 		except:
@@ -2718,7 +2743,36 @@ class SSHConnection():
 		isRRU = False
 		isSlave = False
 		slaveReceivesFrameResyncCmd = False
+		X2HO_state = X2_HO_REQ_STATE__IDLE
+		X2HO_inNbProcedures = 0
+		X2HO_outNbProcedures = 0
 		for line in enb_log_file.readlines():
+			if X2HO_state == X2_HO_REQ_STATE__IDLE:
+				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_RECEIVES_REQ
+				result = re.search('source eNB receives the X2 HO ACK X2AP_HANDOVER_REQ_ACK', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_RECEIVES_REQ:
+				result = re.search('Received LTE_RRCConnectionReconfigurationComplete from UE', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE:
+				result = re.search('issue rrc_eNB_send_PATH_SWITCH_REQ', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ:
+				result = re.search('received path switch ack S1AP_PATH_SWITCH_REQ_ACK', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__IDLE
+					X2HO_inNbProcedures += 1
+			if X2HO_state == X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK:
+				result = re.search('source eNB receives the X2 UE CONTEXT RELEASE X2AP_UE_CONTEXT_RELEASE', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__IDLE
+					X2HO_outNbProcedures += 1
+
 			if self.eNBOptions[int(self.eNB_instance)] != '':
 				res1 = re.search('max_rxgain (?P<requested_option>[0-9]+)', self.eNBOptions[int(self.eNB_instance)])
 				res2 = re.search('max_rxgain (?P<applied_option>[0-9]+)',  str(line))
@@ -2852,6 +2906,14 @@ class SSHConnection():
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if X2HO_inNbProcedures > 0:
+			rrcMsg = 'eNB completed ' + str(X2HO_inNbProcedures) + ' X2 Handover Connection procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if X2HO_outNbProcedures > 0:
+			rrcMsg = 'eNB completed ' + str(X2HO_outNbProcedures) + ' X2 Handover Release procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if self.eNBOptions[int(self.eNB_instance)] != '':
@@ -3354,6 +3416,116 @@ class SSHConnection():
 	def IdleSleep(self):
 		time.sleep(self.idle_sleep_time)
 		self.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', ALL_PROCESSES_OK)
+
+	def X2_Status(self, idx, fileName):
+		cmd = "curl --silent http://" + self.EPCIPAddress + ":9999/stats | jq '.' > " + fileName
+		message = cmd + '\n'
+		logging.debug(cmd)
+		subprocess.run(cmd, shell=True)
+		if idx == 0:
+			cmd = "jq '.mac_stats | length' " + fileName
+			strNbEnbs = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+			self.x2NbENBs = int(strNbEnbs.strip())
+		cnt = 0
+		while cnt < self.x2NbENBs:
+			cmd = "jq '.mac_stats[" + str(cnt) + "].bs_id' " + fileName
+			bs_id = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+			self.x2ENBBsIds[idx].append(bs_id.strip())
+			cmd = "jq '.mac_stats[" + str(cnt) + "].ue_mac_stats | length' " + fileName
+			stNbUEs = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+			nbUEs = int(stNbUEs.strip())
+			ueIdx = 0
+			self.x2ENBConnectedUEs[idx].append([])
+			while ueIdx < nbUEs:
+				cmd = "jq '.mac_stats[" + str(cnt) + "].ue_mac_stats[" + str(ueIdx) + "].rnti' " + fileName
+				rnti = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+				self.x2ENBConnectedUEs[idx][cnt].append(rnti.strip())
+				ueIdx += 1
+			cnt += 1
+
+		msg = "FlexRan Controller is connected to " + str(self.x2NbENBs) + " eNB(s)"
+		logging.debug(msg)
+		message += msg + '\n'
+		cnt = 0
+		while cnt < self.x2NbENBs:
+			msg = "   -- eNB: " + str(self.x2ENBBsIds[idx][cnt]) + " is connected to " + str(len(self.x2ENBConnectedUEs[idx][cnt])) + " UE(s)"
+			logging.debug(msg)
+			message += msg + '\n'
+			ueIdx = 0
+			while ueIdx < len(self.x2ENBConnectedUEs[idx][cnt]):
+				msg = "      -- UE rnti: " + str(self.x2ENBConnectedUEs[idx][cnt][ueIdx])
+				logging.debug(msg)
+				message += msg + '\n'
+				ueIdx += 1
+			cnt += 1
+		return message
+
+	def Perform_X2_Handover(self):
+		html_queue = SimpleQueue()
+		fullMessage = '<pre style="background-color:white">'
+		msg = 'Doing X2 Handover w/ option ' + self.x2_ho_options
+		logging.debug(msg)
+		fullMessage += msg + '\n'
+		if self.x2_ho_options == 'network':
+			if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+				self.x2ENBBsIds = []
+				self.x2ENBConnectedUEs = []
+				self.x2ENBBsIds.append([])
+				self.x2ENBBsIds.append([])
+				self.x2ENBConnectedUEs.append([])
+				self.x2ENBConnectedUEs.append([])
+				fullMessage += self.X2_Status(0, self.testCase_id + '_pre_ho.json') 
+
+				msg = "Activating the X2 Net control on each eNB"
+				logging.debug(msg)
+				fullMessage += msg + '\n'
+				eNB_cnt = self.x2NbENBs
+				cnt = 0
+				while cnt < eNB_cnt:
+					cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
+					logging.debug(cmd)
+					fullMessage += cmd + '\n'
+					subprocess.run(cmd, shell=True)
+					cnt += 1
+				# Waiting for the activation to be active
+				time.sleep(10)
+				msg = "Switching UE(s) from eNB to eNB"
+				logging.debug(msg)
+				fullMessage += msg + '\n'
+				cnt = 0
+				while cnt < eNB_cnt:
+					ueIdx = 0
+					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
+						cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
+						logging.debug(cmd)
+						fullMessage += cmd + '\n'
+						subprocess.run(cmd, shell=True)
+						ueIdx += 1
+					cnt += 1
+				time.sleep(10)
+				# check
+				logging.debug("Checking the Status after X2 Handover")
+				fullMessage += self.X2_Status(1, self.testCase_id + '_post_ho.json') 
+				cnt = 0
+				x2Status = True
+				while cnt < eNB_cnt:
+					if len(self.x2ENBConnectedUEs[0][cnt]) == len(self.x2ENBConnectedUEs[1][cnt]):
+						x2Status = False
+					cnt += 1
+				if x2Status:
+					msg = "X2 Handover was successful"
+					logging.debug(msg)
+					fullMessage += msg + '</pre>'
+					html_queue.put(fullMessage)
+					self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+				else:
+					msg = "X2 Handover FAILED"
+					logging.error(msg)
+					fullMessage += msg + '</pre>'
+					html_queue.put(fullMessage)
+					self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self):
 		if (self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != ''):
@@ -3892,7 +4064,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -4010,6 +4182,18 @@ def GetParametersFromXML(action):
 			SSH.idle_sleep_time = 5
 		else:
 			SSH.idle_sleep_time = int(string_field)
+
+	if action == 'Perform_X2_Handover':
+		string_field = test.findtext('x2_ho_options')
+		if (string_field is None):
+			SSH.x2_ho_options = 'network'
+		else:
+			if string_field != 'network':
+				logging.error('ERROR: test-case has wrong option ' + string_field)
+				SSH.x2_ho_options = 'network'
+			else:
+				SSH.x2_ho_options = string_field
+
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -4421,6 +4605,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.TerminateFlexranCtrl()
 				elif action == 'IdleSleep':
 					SSH.IdleSleep()
+				elif action == 'Perform_X2_Handover':
+					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
 				if SSH.prematureExit:

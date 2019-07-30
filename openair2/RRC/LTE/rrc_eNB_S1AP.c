@@ -256,6 +256,15 @@ rrc_eNB_S1AP_get_ue_ids(
         }
 
         if (ue_desc_p != NULL) {
+          struct s1ap_eNB_ue_context_s *s1ap_ue_context_p = NULL;
+          if ((s1ap_ue_context_p = RB_REMOVE(s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head, ue_desc_p)) != NULL) {
+            LOG_E(RRC, "Removed UE context eNB_ue_s1ap_id %u\n", s1ap_ue_context_p->eNB_ue_s1ap_id);
+            s1ap_eNB_free_ue_context(s1ap_ue_context_p);
+          } else {
+            LOG_E(RRC, "Removing UE context eNB_ue_s1ap_id %u: did not find context\n",ue_desc_p->eNB_ue_s1ap_id);
+          }
+          return NULL; //skip the operation below to avoid loop
+          result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
           if (ue_desc_p->ue_initial_id != UE_INITIAL_ID_INVALID) {
             result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
 
@@ -934,6 +943,8 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   uint8_t                         inde_list[NB_RB_MAX - 3]= {0};
+  int                             ret;
+
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
   ue_initial_id  = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).ue_initial_id;
@@ -975,10 +986,23 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       //      create_tunnel_req.num_tunnels    = i;
-      gtpv1u_create_s1u_tunnel(
+
+      ret = gtpv1u_create_s1u_tunnel(
         instance,
         &create_tunnel_req,
         &create_tunnel_resp);
+      if ( ret != 0 ) {
+        LOG_E(RRC,"rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_s1 = 1;
+        ue_context_p->ue_context.ue_release_timer_thres_s1 = 100;
+        ue_context_p->ue_context.ue_release_timer = 0;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        ue_context_p->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+        rrc_eNB_free_UE(ctxt.module_id,ue_context_p);
+        ue_context_p->ue_context.ul_failure_timer = 0;
+        return (0);
+      }
+
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
         &ctxt,
         &create_tunnel_resp,
@@ -1251,6 +1275,8 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
   uint8_t                      e_rab_done;
+  int                          ret = 0;
+
   ue_initial_id  = S1AP_E_RAB_SETUP_REQ (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_E_RAB_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
   ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
@@ -1313,10 +1339,22 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       create_tunnel_req.num_tunnels    = e_rab_done;
       // NN: not sure if we should create a new tunnel: need to check teid, etc.
-      gtpv1u_create_s1u_tunnel(
+      ret = gtpv1u_create_s1u_tunnel(
         instance,
         &create_tunnel_req,
         &create_tunnel_resp);
+      if ( ret != 0 ) {
+        LOG_E(RRC,"rrc_eNB_process_S1AP_E_RAB_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_s1 = 1;
+        ue_context_p->ue_context.ue_release_timer_thres_s1 = 100;
+        ue_context_p->ue_context.ue_release_timer = 0;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        ue_context_p->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+        rrc_eNB_free_UE(ctxt.module_id,ue_context_p);
+        ue_context_p->ue_context.ul_failure_timer = 0;
+        return (0);
+      }
+
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
         &ctxt,
         &create_tunnel_resp,
@@ -2037,6 +2075,68 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
      }
 
   return 0;
+}
+
+int rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(instance_t instance, rrc_eNB_ue_context_t* const ue_context_target_p) {
+  gtpv1u_enb_create_x2u_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_x2u_tunnel_resp_t create_tunnel_resp;
+  uint8_t                      		  e_rab_done;
+  uint8_t                         	  inde_list[NB_RB_MAX - 3]= {0};
+  
+  if (ue_context_target_p == NULL) {
+    
+    return (-1);
+  } else {
+    
+    /* Save e RAB information for later */
+    {
+      LOG_I(RRC, "[eNB %d] rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ: rnti %u nb_of_e_rabs %d\n",
+            instance, ue_context_target_p->ue_context.rnti, ue_context_target_p->ue_context.nb_of_e_rabs);
+      int i;
+      memset(&create_tunnel_req, 0, sizeof(create_tunnel_req));
+      uint8_t nb_e_rabs_tosetup = ue_context_target_p->ue_context.nb_of_e_rabs;
+      e_rab_done = 0;
+
+      for (i = 0;i < nb_e_rabs_tosetup; i++) {
+
+        if(ue_context_target_p->ue_context.e_rab[i].status >= E_RAB_STATUS_DONE)
+          continue;
+
+        create_tunnel_req.eps_bearer_id[e_rab_done]       = ue_context_target_p->ue_context.e_rab[i].param.e_rab_id;
+        LOG_I(RRC,"x2 tunnel setup: local index %d UE id %x, eps id %d \n",
+              i,
+              ue_context_target_p->ue_context.rnti,
+              create_tunnel_req.eps_bearer_id[i] );
+		inde_list[i] = e_rab_done;
+        e_rab_done++;
+      }
+
+      create_tunnel_req.rnti           = ue_context_target_p->ue_context.rnti; // warning put zero above
+      create_tunnel_req.num_tunnels    = e_rab_done;
+      // NN: not sure if we should create a new tunnel: need to check teid, etc.
+      gtpv1u_create_x2u_tunnel(
+        instance,
+        &create_tunnel_req,
+        &create_tunnel_resp);
+
+          ue_context_target_p->ue_context.nb_x2u_e_rabs = create_tunnel_resp.num_tunnels;
+	  for (i = 0; i < create_tunnel_resp.num_tunnels; i++) {
+		ue_context_target_p->ue_context.enb_gtp_x2u_teid[inde_list[i]]  = create_tunnel_resp.enb_X2u_teid[i];
+	    ue_context_target_p->ue_context.enb_gtp_x2u_addrs[inde_list[i]] = create_tunnel_resp.enb_addr;
+		ue_context_target_p->ue_context.enb_gtp_x2u_ebi[inde_list[i]]   = create_tunnel_resp.eps_bearer_id[i];
+
+		LOG_I(RRC, "rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ tunnel (%u, %u) bearer UE context index %u, msg index %u, eps bearer id %u, gtp addr len %d \n",
+            create_tunnel_resp.enb_X2u_teid[i],
+            ue_context_target_p->ue_context.enb_gtp_x2u_teid[inde_list[i]],            
+            inde_list[i],
+	    	i,
+            create_tunnel_resp.eps_bearer_id[i],
+	    	create_tunnel_resp.enb_addr.length);
+	  }
+    }
+
+    return (0);
+  }
 }
 
 int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p,

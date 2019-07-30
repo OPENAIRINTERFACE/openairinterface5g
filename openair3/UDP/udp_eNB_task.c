@@ -371,13 +371,13 @@ void *udp_eNB_task(void *args_p)
         udp_sd = udp_sock_p->sd;
         pthread_mutex_unlock(&udp_socket_list_mutex);
 
-#if defined(LOG_UDP) && LOG_UDP > 0
+//#if defined(LOG_UDP) && LOG_UDP > 0
         LOG_D(UDP_, "[%d] Sending message of size %u to "IPV4_ADDR" and port %u\n",
               udp_sd,
               udp_data_req_p->buffer_length,
               IPV4_ADDR_FORMAT(udp_data_req_p->peer_address),
               udp_data_req_p->peer_port);
-#endif
+//#endif
         bytes_written = sendto(
                           udp_sd,
                           &udp_data_req_p->buffer[udp_data_req_p->buffer_offset],

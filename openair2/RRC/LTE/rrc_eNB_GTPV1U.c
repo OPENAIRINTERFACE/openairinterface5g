@@ -27,14 +27,19 @@
  * \email: lionel.gauthier@eurecom.fr
  */
 
+//#if defined(ENABLE_USE_MME)
 # include "rrc_defs.h"
 # include "rrc_extern.h"
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_GTPV1U.h"
 # include "rrc_eNB_UE_context.h"
 # include "msc.h"
+
+//# if defined(ENABLE_ITTI)
 #   include "asn1_conversions.h"
 #   include "intertask_interface.h"
+//#endif
+
 # include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -88,6 +93,88 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   }
 }
 
+//------------------------------------------------------------------------------
+boolean_t
+gtpv_data_req(
+  const protocol_ctxt_t*   const ctxt_pP,
+  const rb_id_t                  rb_idP,
+  const mui_t                    muiP,
+  const confirm_t                confirmP,
+  const sdu_size_t               sdu_sizeP,
+  uint8_t*                 const buffer_pP,
+  const pdcp_transmission_mode_t modeP,
+  uint32_t task_id
+)
+//------------------------------------------------------------------------------
+{
+  if(sdu_sizeP == 0)
+  {
+    LOG_I(GTPU,"gtpv_data_req sdu_sizeP == 0");
+    return FALSE;
+  }
+  LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %d", ctxt_pP->rnti, sdu_sizeP, rb_idP);
+#if defined(ENABLE_ITTI)
+  {
+    MessageDef *message_p;
+    // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
+    uint8_t *message_buffer;
+
+    if(task_id == TASK_DATA_FORWARDING){
+
+      LOG_I(GTPU,"gtpv_data_req task_id = TASK_DATA_FORWARDING\n");
+
+      message_buffer = itti_malloc (TASK_GTPV1_U, TASK_DATA_FORWARDING, sdu_sizeP);
+
+      memcpy (message_buffer, buffer_pP, sdu_sizeP);
+
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_DATA_FORWARDING_IND);
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).frame 	= ctxt_pP->frame;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).rb_id 	= rb_idP;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).muip		= muiP;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).confirmp	= confirmP;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).sdu_size	= sdu_sizeP;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).sdu_p 	= message_buffer;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).mode		= modeP;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).module_id = ctxt_pP->module_id;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).rnti		 = ctxt_pP->rnti;
+      GTPV1U_ENB_DATA_FORWARDING_IND (message_p).eNB_index = ctxt_pP->eNB_index;
+
+      itti_send_msg_to_task (TASK_DATA_FORWARDING, ctxt_pP->instance, message_p);
+      return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+    }else if(task_id == TASK_END_MARKER){
+      
+      LOG_I(GTPU,"gtpv_data_req task_id = TASK_END_MARKER\n");
+
+      message_buffer = itti_malloc (TASK_GTPV1_U, TASK_END_MARKER, sdu_sizeP);
+
+      memcpy (message_buffer, buffer_pP, sdu_sizeP);
+
+      message_p = itti_alloc_new_message (TASK_GTPV1_U, GTPV1U_ENB_END_MARKER_IND);
+      GTPV1U_ENB_END_MARKER_IND (message_p).frame 	= ctxt_pP->frame;
+      GTPV1U_ENB_END_MARKER_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
+      GTPV1U_ENB_END_MARKER_IND (message_p).rb_id 	= rb_idP;
+      GTPV1U_ENB_END_MARKER_IND (message_p).muip		= muiP;
+      GTPV1U_ENB_END_MARKER_IND (message_p).confirmp	= confirmP;
+      GTPV1U_ENB_END_MARKER_IND (message_p).sdu_size	= sdu_sizeP;
+      GTPV1U_ENB_END_MARKER_IND (message_p).sdu_p 	= message_buffer;
+      GTPV1U_ENB_END_MARKER_IND (message_p).mode		= modeP;
+      GTPV1U_ENB_END_MARKER_IND (message_p).module_id = ctxt_pP->module_id;
+      GTPV1U_ENB_END_MARKER_IND (message_p).rnti		 = ctxt_pP->rnti;
+      GTPV1U_ENB_END_MARKER_IND (message_p).eNB_index = ctxt_pP->eNB_index;
+
+      itti_send_msg_to_task (TASK_END_MARKER, ctxt_pP->instance, message_p);
+      return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+    }
+  }
+#endif
+
+  return TRUE;
+
+}
+
+//#endif
+
 void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   module_id_t enb_mod_idP,
   const rrc_eNB_ue_context_t* const ue_context_pP
@@ -112,3 +199,5 @@ void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   }
   itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(enb_mod_idP), msg);
 }
+
+

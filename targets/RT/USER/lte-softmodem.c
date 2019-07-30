@@ -259,7 +259,7 @@ void exit_function(const char *file, const char *function, const int line, const
   if (s != NULL) {
     printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
-
+  close_log_mem();
   oai_exit = 1;
 
   if (RC.ru == NULL)
@@ -523,6 +523,7 @@ int main ( int argc, char **argv )
   int i;
   int CC_id = 0;
   int ru_id;
+  int node_type = ngran_eNB;
 
   if ( load_configmodule(argc,argv,0) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
@@ -603,12 +604,13 @@ int main ( int argc, char **argv )
       RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
+    node_type = RC.rrc[0]->node_type;
   } else {
     printf("RC.nb_inst = 0, Initializing L1\n");
     RCconfig_L1();
   }
 
-  if (RC.nb_inst > 0 && NODE_IS_CU(RC.rrc[0]->node_type)) {
+  if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
@@ -620,7 +622,7 @@ int main ( int argc, char **argv )
   }
     
   /* start threads if only L1 or not a CU */
-  if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
+  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
@@ -719,7 +721,7 @@ int main ( int argc, char **argv )
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
-  if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
+  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
     if(IS_SOFTMODEM_DOFORMS)
       end_forms();
 

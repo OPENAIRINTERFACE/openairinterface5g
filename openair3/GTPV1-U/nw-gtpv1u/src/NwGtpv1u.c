@@ -378,9 +378,14 @@ NwGtpv1uCreateTunnelEndPoint( NW_IN  NwGtpv1uStackT *thiz,
       *phStackSession = (NwGtpv1uStackSessionHandleT) pTunnelEndPoint;
       pTunnelEndPoint = RB_FIND(NwGtpv1uTunnelEndPointIdentifierMap,
                                 &(thiz->teidMap), pTunnelEndPoint);
-      NW_ASSERT(pTunnelEndPoint);
-      GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
-                 pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      //NW_ASSERT(pTunnelEndPoint);
+      if (!pTunnelEndPoint) {
+        GTPU_ERROR("Tunnel end-point cannot be NULL");
+        rc = NW_GTPV1U_FAILURE;
+      } else {
+        GTPU_DEBUG("Tunnel end-point 0x%p creation successful for teid 0x%x %u(dec)",
+                   pTunnelEndPoint, (unsigned int)teid, (unsigned int)teid);
+      }
     }
 
   } else {
@@ -893,8 +898,14 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     break;
 
   case NW_GTP_END_MARKER:
-    GTPU_DEBUG("NW_GTP_END_MARKER\n");
-    ret = NW_GTPV1U_OK;
+#if defined(LOG_GTPU) && LOG_GTPU > 0
+    for(int i =1; i<= udpDataLen; i++){
+      printf("%02x ", udpData[i-1]);
+      if(i % 20 == 0)printf("\n");
+    }
+#endif  	
+    GTPU_INFO("NW_GTP_END_MARKER\n");
+    ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
     break;
 
   default:
