@@ -110,7 +110,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
   if(rel_slot<10 && rel_slot>=0)  {
-     for (int i=0; i<2; i++)  {  // max two SSB per frame
+     for (int i=0; i<2; i++)  {  // max two SSB per slot
      
 	ssb_index = i + 2*rel_slot; // computing the ssb_index
 	if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1

@@ -76,7 +76,7 @@ void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *c
           ind++) {
 
       *current_band = nr_bandtable[ind].band;
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", ind, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
 
       if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
 	*current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
