@@ -87,9 +87,9 @@ uint8_t rb_table[34] = {
 // This table hold the possible number of MTC repetition for CE ModeA
 const uint8_t pusch_repetition_Table8_2_36213[3][4]=
 {
-		1 , 2 , 4 , 8 ,
-		1 , 4 , 8 , 16,
-		1 , 4 , 16, 32
+		{1 , 2 , 4 , 8 },
+		{1 , 4 , 8 , 16},
+		{1 , 4 , 16, 32}
 };
 
 extern mui_t rrc_eNB_mui;
@@ -1985,7 +1985,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   }
 
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &(eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body);
-  nfapi_hi_dci0_request_body_t   *hi_dci0_req_Rep;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu = NULL;
   nfapi_ul_config_request_body_t *ul_req_tmp = &(eNB->UL_req_tmp[CC_id][sched_subframeP].ul_config_request_body);
   nfapi_ul_config_request_body_t *ul_req_body_Rep;
@@ -2401,10 +2400,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
 	  if(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number < ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions)
 	  {
-		  hi_dci0_req_Rep = &eNB->HI_DCI0_req[CC_id][(sched_subframeP+1)%10].hi_dci0_request_body;
 		  ul_req_body_Rep = &eNB->UL_req_tmp[CC_id][(sched_subframeP+1)%10].ul_config_request_body;
 		  ul_config_pdu_Rep = &ul_req_body_Rep->ul_config_pdu_list[ul_req_body_Rep->number_of_pdus];
-//		  memset ((void *) ul_config_pdu_Rep, 0, sizeof (nfapi_ul_config_request_pdu_t));
 		  memcpy ((void *) ul_config_pdu_Rep, ul_config_pdu, sizeof (nfapi_ul_config_request_pdu_t));
 		  ul_config_pdu_Rep->ulsch_pdu.ulsch_pdu_rel8.handle = eNB->ul_handle++;
 		  ul_config_pdu_Rep->ulsch_pdu.ulsch_pdu_rel13.repetition_number = ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number +1;
