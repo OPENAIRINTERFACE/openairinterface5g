@@ -25,13 +25,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -45,48 +41,26 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "PHY/phy_vars.h"
-
 #include "SCHED_NR/sched_nr.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode=0;
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
-
-//uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
-int32_t get_uldl_offset(int nr_bandP) {return(0);}
-
-NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
-
-void exit_function(const char* file, const char* function, const int line,const char *s) { 
-   const char * msg= s==NULL ? "no comment": s;
-   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
-   exit(-1); 
-}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {
-
   char c;
-
   int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;

@@ -1203,17 +1203,17 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim_tm4</main_exec>
-      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
-                       -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
-                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
-                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
-                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
+      <main_exec_args>-m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
+                      -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                      -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
+                      -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
+                      -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                      -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
+                      -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
+                      -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
       <tags>dlsim_tm4.test1 dlsim_tm4.test5 dlsim_tm4.test6 dlsim_tm4.test6b dlsim_tm4.test7 dlsim_tm4.test7b dlsim_tm4.test10 dlsim_tm4.test10b dlsim_tm4.test11 dlsim_tm4.TM2_test1 dlsim_tm4.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

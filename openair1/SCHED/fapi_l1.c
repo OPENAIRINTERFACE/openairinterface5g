@@ -935,27 +935,27 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
     eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_pdcch_symbols=0;
   }
 
-if (NFAPI_MODE!=NFAPI_MODE_VNF)
-  for (i=0; i<number_hi_dci0_pdu; i++) {
-    hi_dci0_req_pdu = &HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[i];
-    LOG_D(PHY,"NFAPI: hi_dci0_pdu %d : type %d\n",i,hi_dci0_req_pdu->pdu_type);
+  if (NFAPI_MODE!=NFAPI_MODE_VNF)
+    for (i=0; i<number_hi_dci0_pdu; i++) {
+      hi_dci0_req_pdu = &HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[i];
+      LOG_D(PHY,"NFAPI: hi_dci0_pdu %d : type %d\n",i,hi_dci0_req_pdu->pdu_type);
 
-    switch (hi_dci0_req_pdu->pdu_type) {
-      case NFAPI_HI_DCI0_DCI_PDU_TYPE:
-        handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
-        eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_dci++;
-        break;
+      switch (hi_dci0_req_pdu->pdu_type) {
+        case NFAPI_HI_DCI0_DCI_PDU_TYPE:
+          handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
+          eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_dci++;
+          break;
 
-      case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE:
-        handle_nfapi_hi_dci0_mpdcch_dci_pdu(eNB,proc,hi_dci0_req_pdu);
-        eNB->mpdcch_vars[subframe&1].num_dci++;
-        break;
+        case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE:
+          handle_nfapi_hi_dci0_mpdcch_dci_pdu(eNB,proc,hi_dci0_req_pdu);
+          eNB->mpdcch_vars[subframe&1].num_dci++;
+          break;
 
-      case NFAPI_HI_DCI0_HI_PDU_TYPE:
-        handle_nfapi_hi_dci0_hi_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
-        break;
+        case NFAPI_HI_DCI0_HI_PDU_TYPE:
+          handle_nfapi_hi_dci0_hi_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
+          break;
+      }
     }
-  }
 
   if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
     if (number_ul_pdu>0) {
