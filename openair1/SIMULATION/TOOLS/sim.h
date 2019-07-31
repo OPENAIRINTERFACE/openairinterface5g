@@ -147,7 +147,7 @@ typedef struct {
   /// Rice factor???
   /// Walls (penetration loss)
   /// Nodes in the scenario
-  node_desc_t* nodes;
+  node_desc_t *nodes;
 } scenario_desc_t;
 
 typedef enum {
@@ -180,29 +180,59 @@ typedef enum {
   EPA_medium,
   EPA_high,
 } SCM_t;
+#define CHANNELMOD_MAP_INIT \
+  {"custom",custom},\
+  {"SCM_A",SCM_A},\
+  {"SCM_B",SCM_B},\
+  {"SCM_C",SCM_C},\
+  {"SCM_D",SCM_D},\
+  {"EPA",EPA},\
+  {"EVA",EVA},\
+  {"ETU",ETU},\
+  {"MBSFN",MBSFN},\
+  {"Rayleigh8",Rayleigh8},\
+  {"Rayleigh1",Rayleigh1},\
+  {"Rayleigh1_800",Rayleigh1_800},\
+  {"Rayleigh1_corr",Rayleigh1_corr},\
+  {"Rayleigh1_anticorr",Rayleigh1_anticorr},\
+  {"Rice8",Rice8},\
+  {"Rice1",Rice1},\
+  {"Rice1_corr",Rice1_corr},\
+  {"Rice1_anticorr",Rice1_anticorr},\
+  {"AWGN",AWGN},\
+  {"Rayleigh1_orthogonal",Rayleigh1_orthogonal},\
+  {"Rayleigh1_orth_eff_ch_TM4_prec_real",Rayleigh1_orth_eff_ch_TM4_prec_real},\
+  {"Rayleigh1_orth_eff_ch_TM4_prec_imag",Rayleigh1_orth_eff_ch_TM4_prec_imag},\
+  {"Rayleigh8_orth_eff_ch_TM4_prec_real",Rayleigh8_orth_eff_ch_TM4_prec_real},\
+  {"Rayleigh8_orth_eff_ch_TM4_prec_imag",Rayleigh8_orth_eff_ch_TM4_prec_imag},\
+  {"TS_SHIFT",TS_SHIFT},\
+  {"EPA_low",EPA_low},\
+  {"EPA_medium",EPA_medium},\
+  {"EPA_high",EPA_high},\
+  {NULL, -1}
 
 #include "platform_constants.h"
 
 typedef struct {
- channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
- channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
- double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
- double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
- double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
- int RU_output_mask[NUMBER_OF_UE_MAX];
- int UE_output_mask[NUMBER_OF_RU_MAX];
- pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
- pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
- pthread_mutex_t subframe_mutex;
- int subframe_ru_mask;
- int subframe_UE_mask;
- openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
- openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
- openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
- double ru_amp[NUMBER_OF_RU_MAX];
- pthread_t rfsim_thread;
+  channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+  channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
+  double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
+  double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
+  double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
+  int RU_output_mask[NUMBER_OF_UE_MAX];
+  int UE_output_mask[NUMBER_OF_RU_MAX];
+  pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
+  pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
+  pthread_mutex_t subframe_mutex;
+  int subframe_ru_mask;
+  int subframe_UE_mask;
+  openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+  openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+  openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+  double ru_amp[NUMBER_OF_RU_MAX];
+  pthread_t rfsim_thread;
 } sim_t;
 
 
@@ -231,7 +261,7 @@ typedef struct {
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-				     double sampling_rate,
+                                     double sampling_rate,
                                      double channel_bandwidth,
                                      double forgetting_factor,
                                      int32_t channel_offset,
@@ -395,8 +425,18 @@ void multipath_tv_channel(channel_desc_t *desc,
 /**@} */
 /**@} */
 
+void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+                 int rxAnt,
+                 channel_desc_t *channelDesc,
+                 int nbSamples,
+                 uint64_t TS,
+                 uint32_t CirSize
+               );
+void init_channelmod(void) ;
+
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
+
 
 #include "targets/RT/USER/rfsim.h"
 
@@ -409,8 +449,9 @@ void do_DL_sig(sim_t *sim,
                int CC_id);
 
 void do_UL_sig(sim_t *sim,
-               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
+               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,
                uint32_t frame,int ru_id,uint8_t CC_id);
+
 
 #endif
 
