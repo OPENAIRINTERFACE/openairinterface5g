@@ -1425,12 +1425,15 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
                         &servedCellMember->servedNRCellInfo.nrCellID.pLMN_Identity);
           NR_CELL_ID_TO_BIT_STRING(instance_p->eNB_id,
                                      &servedCellMember->servedNRCellInfo.nrCellID.nRcellIdentifier);
-          NR_EXTENDED_TAC_ID_TO_BIT_STRING(instance_p->tac, &servedCellMember->servedNRCellInfo.eXtended_TAC);
+          servedCellMember->servedNRCellInfo.fiveGS_TAC = calloc(1, sizeof(X2AP_FiveGS_TAC_t));
+          if (servedCellMember->servedNRCellInfo.fiveGS_TAC == NULL)
+            exit(1);
+          NR_FIVEGS_TAC_ID_TO_BIT_STRING(instance_p->tac, servedCellMember->servedNRCellInfo.fiveGS_TAC);
 
           X2AP_INFO("TAC: %d -> %02x%02x%02x\n", instance_p->tac,
-        		  	  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[0],
-					  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[1],
-					  servedCellMember->servedNRCellInfo.eXtended_TAC.buf[2]);
+        		  	  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[0],
+					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[1],
+					  servedCellMember->servedNRCellInfo.fiveGS_TAC->buf[2]);
 
           plmn = (X2AP_PLMN_Identity_t *)calloc(1,sizeof(X2AP_PLMN_Identity_t));
           {
@@ -1440,7 +1443,7 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
 
           if (instance_p->frame_type[i] == TDD) { // Panos: Remember to change that to TDD
         	  servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
-        	  servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nR_ARFCN = 0; //instance_p->tdd_nRARFCN[i];
+        	  servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = 0; //instance_p->tdd_nRARFCN[i];
         	  /*Missing addition of Frequency Band List item here, can't find it...  */
         	  switch (instance_p->N_RB_DL[i]) {
         	  case 50:

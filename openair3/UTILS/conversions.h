@@ -380,7 +380,7 @@ do {                            \
 } while(0)
 */
 
-#define NR_EXTENDED_TAC_ID_TO_BIT_STRING(x, aSN)      \
+#define NR_FIVEGS_TAC_ID_TO_BIT_STRING(x, aSN)      \
 do {                                                    \
     (aSN)->buf = calloc(3, sizeof(uint8_t));    \
     (aSN)->size = 3;              \
