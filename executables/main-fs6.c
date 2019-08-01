@@ -20,7 +20,6 @@
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
 
-
 void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, int frame,int subframe) {
   //commonUDP_t *UDPheader=(commonUDP_t *) bufferZone;
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
