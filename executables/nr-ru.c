@@ -1607,7 +1607,7 @@ extern void fep_full(RU_t *ru,int slot);
 extern void ru_fep_full_2thread(RU_t *ru,int slot);
 extern void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 extern void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
-extern void feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
+extern void nr_feptx_prec(RU_t *ru, int frame_tx,int tti_tx);
 extern void init_fep_thread(RU_t *ru);
 extern void init_nr_feptx_thread(RU_t *ru);
 
@@ -1990,7 +1990,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->do_prach             = 0;                       // no prach processing in RU
         ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
         ru->feptx_ofdm           = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;              // this is fep with idft and precoding
-        ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
+        ru->feptx_prec           = nr_feptx_prec;              // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->start_if             = NULL;                    // no if interface
@@ -2019,7 +2019,7 @@ void set_function_spec_param(RU_t *ru) {
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
       ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
-      ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
+      ru->feptx_prec             = nr_feptx_prec;                 // need to do transmit Precoding + IDFTs
       ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
       ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
       ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
@@ -2043,7 +2043,7 @@ void set_function_spec_param(RU_t *ru) {
     case REMOTE_IF4p5:
       ru->do_prach               = 0;
       ru->feprx                  = NULL;                // DFTs
-      ru->feptx_prec             = feptx_prec;          // Precoding operation
+      ru->feptx_prec             = nr_feptx_prec;          // Precoding operation
       ru->feptx_ofdm             = NULL;                // no OFDM mod
       ru->fh_south_in            = fh_if4p5_south_in;   // synchronous IF4p5 reception
       ru->fh_south_out           = fh_if4p5_south_out;  // synchronous IF4p5 transmission

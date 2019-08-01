@@ -37,6 +37,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "modulation_eNB.h"
+#include "nr_modulation.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 int beam_precoding(int32_t **txdataF,
@@ -88,4 +89,35 @@ int beam_precoding(int32_t **txdataF,
     }
   }
   return 0;
+}
+
+
+int nr_beam_precoding(int32_t **txdataF,
+	              int32_t **txdataF_BF,
+                      NR_DL_FRAME_PARMS *frame_parms,
+	              int32_t ***beam_weights,
+                      int slot,
+                      int symbol,
+                      int aa)
+{
+
+
+  uint8_t p;
+  int slot_offset_F;
+  int nb_antenna_ports = 1; // TODO get the actual value
+  
+  slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*(frame_parms->symbols_per_slot);
+
+  // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
+  memset(txdataF_BF[aa],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
+
+  for (p=0; p<nb_antenna_ports; p++) {
+      multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],
+			 (int16_t*)beam_weights[p][aa], 
+			 (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
+			 0, 
+			 frame_parms->ofdm_symbol_size, 
+			 15);
+  }
+return 0;
 }

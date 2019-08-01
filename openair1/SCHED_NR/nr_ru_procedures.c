@@ -34,7 +34,7 @@
 #include "PHY/phy_extern.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
-
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
@@ -124,12 +124,6 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   start_meas(&ru->ofdm_mod_stats);
 
   if (nr_slot_select(cfg,slot) == SF_UL) return;
-
-  // this copy should be done in the precoding thread (currently inactive)
-  for (int aa=0;aa<ru->nb_tx;aa++)
-    memcpy((void*)ru->common.txdataF_BF[aa],
-
-	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
@@ -227,11 +221,6 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
   start_meas(&ru->ofdm_mod_stats);
 
-  // this copy should be done in the precoding thread (currently inactive)
-  for (int aa=0;aa<ru->nb_tx;aa++)
-    memcpy((void*)ru->common.txdataF_BF[aa],
-	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
-
   if ((nr_slot_select(cfg,slot)==SF_DL)||
       ((nr_slot_select(cfg,slot)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
@@ -248,3 +237,39 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
 }
+
+
+
+void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
+
+  int l,aa;
+  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
+  int32_t ***bw;
+
+  if (ru->nb_tx == 1) {
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+
+    memcpy((void*)ru->common.txdataF_BF[0],
+	   (void*)ru->gNB_list[0]->common_vars.txdataF[0][tti_tx*fp->symbols_per_slot*fp->ofdm_symbol_size],
+	   fp->samples_per_slot_wCP*sizeof(int32_t));
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
+  }
+  else {
+    bw  = ru->beam_weights[0];
+    for (l=0;l<fp->symbols_per_slot;l++) {
+      for (aa=0;aa<ru->nb_tx;aa++) {
+	nr_beam_precoding(ru->gNB_list[0]->common_vars.txdataF,
+	  		  ru->common.txdataF_BF,
+			  fp,
+			  bw,
+			  tti_tx,
+			  l,
+			  aa);
+	
+      }
+    }
+  }
+}
+
