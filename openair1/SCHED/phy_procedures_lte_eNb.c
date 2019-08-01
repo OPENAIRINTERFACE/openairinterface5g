@@ -410,8 +410,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // clear previous allocation information for all UEs
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    if (eNB->dlsch[i][0])
-      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+    //if (eNB->dlsch[i][0])
+      //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
   /* TODO: check the following test - in the meantime it is put back as it was before */
@@ -548,7 +548,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
               ) {
       // clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
-      dlsch0->subframe_tx[subframe]=0;
+      //dlsch0->subframe_tx[subframe]=0;
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);

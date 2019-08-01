@@ -307,7 +307,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
   dlsch0_harq->codeword                     = 0;
   dlsch1_harq                               = dlsch1->harq_processes[rel8->harq_process];
   dlsch1_harq->codeword                     = 1;
-  dlsch0->subframe_tx[subframe]             = 1;
+  //dlsch0->subframe_tx[subframe]             = 1;
 
   LOG_D(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:SFN/SF:%04d%d dlsch0[rnti:%x harq_mask:%04x] dci_pdu[rnti:%x rnti_type:%d harq_process:%d ndi1:%d] dlsch0_harq[round:%d harq_mask:%x ndi:%d]\n", 
       frame,subframe,
@@ -658,7 +658,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     dlsch0_harq->codeword = 0;
 
     // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
-    dlsch0->subframe_tx[subframe] = 1;
+    //dlsch0->subframe_tx[subframe] = 1;
 
     conv_rballoc (rel8->resource_allocation_type, rel8->resource_block_coding, fp->N_RB_DL, dlsch0_harq->rb_alloc);
 
@@ -868,7 +868,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     dlsch0_harq = dlsch0->harq_processes[rel8->harq_process];
     dlsch1_harq = dlsch1->harq_processes[rel8->harq_process];
 
-    dlsch0->subframe_tx[subframe] = 1;
+    //dlsch0->subframe_tx[subframe] = 1;
 
     dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
     dlsch1->harq_ids[frame%2][subframe] = rel8->harq_process;
@@ -1316,7 +1316,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     }
 
     if (dlsch0 != NULL) {
-      dlsch0->subframe_tx[subframe] = 1;
+      //dlsch0->subframe_tx[subframe] = 1;
 
       dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
     }
@@ -1723,7 +1723,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dlsch0_harq->codeword = 0;
 
   // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
-  dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
+  //dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
   LOG_D(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
   conv_eMTC_rballoc (rel13->resource_block_coding,
@@ -1746,7 +1746,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
 
   dlsch0_harq->dl_power_off = 1;
 
-  dlsch0->subframe_tx[subframe] = 1;
+  //dlsch0->subframe_tx[subframe] = 1;
   if (dlsch0->rnti != rel13->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
     dlsch0_harq->round = 0;
     dlsch0->harq_mask =0;

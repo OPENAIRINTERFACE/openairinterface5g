@@ -53,12 +53,18 @@ typedef struct {
   DCI_ALLOC_t dci_alloc[32];
   int num_mdci;
   int amp;
-  int8_t UE_dl_active[NUMBER_OF_UE_MAX]; // the HARQ id for this UE (-1: disabled)
   int8_t UE_ul_active[NUMBER_OF_UE_MAX];
   int8_t UE_ul_first_rb[NUMBER_OF_UE_MAX]; //
   int8_t UE_ul_last_rb[NUMBER_OF_UE_MAX]; //
   LTE_eNB_PHICH phich_vars;
 } fs6_dl_t;
+
+typedef struct {
+  int UE_id;
+  int8_t harq_pid;
+  uint16_t rnti;
+  int dataLen;
+} fs6_dl_uespec_t;
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
 int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);

@@ -175,7 +175,7 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
 
-    if (ulsch->ue_type > 0)
+    if (ulsch->ue_type > NOCE)
       harq_pid = 0;
     else
       harq_pid= subframe2harq_pid(&eNB->frame_parms,frame,subframe);
@@ -232,14 +232,12 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
   }
 }
 
-void phy_procedures_eNB_uespec_RX_extract(uint8_t *buf, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
+void phy_procedures_eNB_uespec_RX_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   //RX processing for ue-specific resources (i
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int       subframe = proc->subframe_rx;
   const int       frame = proc->frame_rx;
   /* TODO: use correct rxdata */
-  T (T_ENB_PHY_INPUT_SIGNAL, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (0),
-     T_BUFFER (&eNB->RU_list[0]->common.rxdata[0][subframe * eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti * 4));
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
@@ -257,7 +255,7 @@ void phy_procedures_eNB_uespec_RX_extract(uint8_t *buf, int bufSize, PHY_VARS_eN
   uci_procedures (eNB, proc);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) { // If PNF or monolithic
-    pusch_procedures_extract(buf, bufSize, eNB,proc);
+    pusch_procedures_extract(bufferZone, bufSize, eNB,proc);
   }
 
   lte_eNB_I0_measurements (eNB, subframe, 0, eNB->first_run_I0_measurements);
@@ -277,9 +275,6 @@ void phy_procedures_eNB_uespec_RX_extract(uint8_t *buf, int bufSize, PHY_VARS_eN
     LOG_I (PHY, "max_I0 %d, min_I0 %d\n", max_I0, min_I0);
   }
 
-  commonUDP_t *header=(commonUDP_t *) buf;
-  header->contentBytes=1000;
-  header->nbBlocks=1;
   return;
 }
 
@@ -293,7 +288,7 @@ void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
 
-    if (ulsch->ue_type > 0) harq_pid = 0;
+    if (ulsch->ue_type > NOCE) harq_pid = 0;
     else harq_pid=harq_pid0;
 
     LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
@@ -454,6 +449,35 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
   eNB->pdcch_vars[subframe&1].num_dci=header->num_dci;
   uint8_t num_mdci = eNB->mpdcch_vars[subframe&1].num_dci = header->num_mdci;
 
+  // Remove all scheduled DL, we will populate from the CU sending
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
+
+    if ( dlsch0 && dlsch0->rnti>0 ) {
+#ifdef PHY_TX_THREAD
+      dlsch0->active[subframe] = 0;
+#else
+      dlsch0->active = 0;
+#endif
+    }
+  }
+
+  void *bufPtr=bufferZone;
+
+  for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
+    fs6_dl_uespec_t *dlPtr=(fs6_dl_uespec_t *)(commonUDPdata(bufPtr)+sizeof(fs6_dl_t));
+#ifdef PHY_TX_THREAD
+    eNB->dlsch[dlPtr->UE_id][0]->active[subframe] = 1;
+#else
+    eNB->dlsch[dlPtr->UE_id][0]->active = 1;
+#endif
+    eNB->dlsch[dlPtr->UE_id][0]->harq_ids[frame%2][subframe]=dlPtr->harq_pid;
+    eNB->dlsch[dlPtr->UE_id][0]->rnti=dlPtr->rnti;
+    memcpy(eNB->dlsch[dlPtr->UE_id][0]->harq_processes[dlPtr->harq_pid]->e,
+           commonUDPdata(((uint8_t *)dlPtr)+sizeof(fs6_dl_t)), dlPtr->dataLen);
+    bufPtr+=alignedSize(bufPtr);
+  }
+
   if (do_meas==1) {
     start_meas(&eNB->phy_proc_tx);
     start_meas(&eNB->dlsch_common_and_dci);
@@ -476,8 +500,8 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
 
   // clear previous allocation information for all UEs
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    if (eNB->dlsch[i][0])
-      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+    //if (eNB->dlsch[i][0])
+    //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -500,10 +524,17 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
   }
 
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    if (header->UE_dl_active[UE_id]) { // if we generate dlsch, we must generate pdsch
-      LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
-      LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
-      int harq_pid=dlsch0->harq_ids[frame%2][subframe]=header->UE_dl_active[UE_id];
+    LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
+    LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
+
+    if ((dlsch0)&&(dlsch0->rnti>0)&&
+#ifdef PHY_TX_THREAD
+        (dlsch0->active[subframe] == 1)
+#else
+        (dlsch0->active == 1)
+#endif
+       ) {
+      int harq_pid=dlsch0->harq_ids[frame%2][subframe];
       pdsch_procedures(eNB,
                        proc,
                        harq_pid,
@@ -518,7 +549,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
                      AMP);
 }
 
-void appendFs6DLUE(uint8_t *bufferZone, uint8_t *UEdata, int UEdataLen) {
+void appendFs6DLUE(uint8_t *bufferZone, int UE_id, int8_t harq_pid, uint16_t rnti, uint8_t *UEdata, int UEdataLen) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end
   uint8_t *firstFreeByte=bufferZone;
@@ -534,10 +565,14 @@ void appendFs6DLUE(uint8_t *bufferZone, uint8_t *UEdata, int UEdataLen) {
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   FirstUDPheader->nbBlocks++;
   newUDPheader->blockID=curBlock;
-  newUDPheader->contentBytes=sizeof(fs6_dl_t)+UEdataLen;
+  newUDPheader->contentBytes=sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) + UEdataLen;
   // We skip the fs6 DL header, that is populated by caller
   // This header will be duplicated during sending
-  memcpy(commonUDPdata(firstFreeByte+sizeof(fs6_dl_t)), UEdata, UEdataLen);
+  fs6_dl_uespec_t *tmp=(fs6_dl_uespec_t *) firstFreeByte+sizeof(fs6_dl_t);
+  tmp->UE_id=UE_id;
+  tmp->harq_pid=harq_pid;
+  tmp->rnti=rnti;
+  memcpy(commonUDPdata(((uint8_t *)tmp)+sizeof(fs6_dl_uespec_t)), UEdata, UEdataLen);
 }
 
 void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
@@ -558,8 +593,8 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
   // clear previous allocation information for all UEs
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    if (eNB->dlsch[i][0])
-      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+    //if (eNB->dlsch[i][0])
+    //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
   /* TODO: check the following test - in the meantime it is put back as it was before */
@@ -569,7 +604,8 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
       int harq_pid;
 
-      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0)
+      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type > NOCE)
+        // LTE-M case
         harq_pid = 0;
       else
         header->UE_ul_active[i] = harq_pid = subframe2harq_pid(fp,header->ul_frame,header->ul_subframe);
@@ -608,7 +644,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
   uint8_t num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   uint8_t num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
-  uint8_t num_mdci           = eNB->mpdcch_vars[subframe&1].num_dci;
+  uint8_t num_mdci          = eNB->mpdcch_vars[subframe&1].num_dci;
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -626,8 +662,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   LTE_eNB_DLSCH_t *dlsch0;
 
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    dlsch0 = eNB->dlsch[UE_id][0];
-    header->UE_dl_active[UE_id]=-1;
+    LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
 
     if ((dlsch0)&&(dlsch0->rnti>0)&&
 #ifdef PHY_TX_THREAD
@@ -641,7 +676,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
       AssertFatal(harq_pid>=0,"harq_pid is negative\n");
 
       if (harq_pid>=8) {
-        if (dlsch0->ue_type==0)
+        if (dlsch0->ue_type == NOCE)
           LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x [ %1d.%1d.%1d.%1d.%1d.%1d.%1d.%1d\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti,
                 dlsch0->harq_ids[frame%2][0],
                 dlsch0->harq_ids[frame%2][1],
@@ -652,8 +687,6 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
                 dlsch0->harq_ids[frame%2][6],
                 dlsch0->harq_ids[frame%2][7]);
       } else {
-        header->UE_dl_active[UE_id]=harq_pid;
-
         if (dlsch_procedures(eNB,
                              proc,
                              harq_pid,
@@ -673,6 +706,9 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
           */
           LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch0->harq_processes[harq_pid];
           appendFs6DLUE(bufferZone,
+                        UE_id,
+                        harq_pid,
+                        dlsch0->rnti,
                         dlsch0->harq_processes[harq_pid]->e,
                         get_G(fp,
                               dlsch_harq->nb_rb,
@@ -693,7 +729,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 #endif
               ) {
       // clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
-      dlsch0->subframe_tx[subframe]=0;
+      //dlsch0->subframe_tx[subframe]=0;
     }
   }
 
@@ -791,12 +827,17 @@ void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
   commonUDP_t *UDPheader=(commonUDP_t *) bufferZone;
   int nb_blocks=receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone) );
 
+  if (nb_blocks ==0) {
+    LOG_W(PHY, "CU lost a subframe\n");
+    return;
+  }
+
   if (nb_blocks != UDPheader->nbBlocks )
     LOG_W(PHY, "received %d blocks for %d expected\n", nb_blocks, UDPheader->nbBlocks);
 
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  L1_proc_t *proc           = &eNB->proc;
+  L1_proc_t *proc   = &eNB->proc;
   prach_eNB_process(bufferZone, sizeof(bufferZone), eNB,NULL,proc->frame_rx,proc->subframe_rx);
   release_UE_in_freeList(eNB->Mod_id);
 
