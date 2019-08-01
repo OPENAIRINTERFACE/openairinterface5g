@@ -60,4 +60,14 @@ int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_
                                           int x2_ue_id,
                                           x2ap_handover_cancel_cause_t cause);
 
+int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p
+                                             /* TODO: pass needed parameters */);
+
+int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                               x2ap_senb_addition_req_ack_t *x2ap_addition_req_ack);
+
+int x2ap_eNB_generate_ENDC_x2_setup_request(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
+
+int x2ap_gNB_generate_ENDC_x2_setup_response( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
+
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */
