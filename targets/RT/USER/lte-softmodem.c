@@ -593,7 +593,8 @@ int main( int argc, char **argv ) {
     
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */
-    init_pdcp();
+    if ( getenv("fs6") == NULL || strncasecmp( getenv("fs6"), "du", 2) != 0 )
+      init_pdcp();
     
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");

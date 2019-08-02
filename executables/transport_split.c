@@ -104,6 +104,11 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize) {
   int nbBlocks=UDPheader->nbBlocks;
   int blockId=0;
 
+  if (nbBlocks <= 0 ) {
+    LOG_E(PHY,"FS6: can't send blocks: %d\n", nbBlocks);
+    return 0;
+  }
+
   do {
     if (blockId > 0 ) {
       commonUDP_t *currentHeader=(commonUDP_t *)bufferZone;

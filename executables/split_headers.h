@@ -74,6 +74,8 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize);
   uint8_t xBuf[FS6_BUF_SIZE];\
   ((commonUDP_t *)xBuf)->nbBlocks=0;
 
+#define hUDP(xBuf) ((commonUDP_t *)xBuf)
+#define hDL(xBuf)  (((fs6_dl_t*)((commonUDP_t *)xBuf)+1))
 
 inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
