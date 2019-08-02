@@ -256,7 +256,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
 {
 
   fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
-  fp->frame_type = !(config->subframe_config.duplex_mode.value);
+  fp->frame_type = config->subframe_config.duplex_mode.value;
   fp->L_ssb = config->sch_config.ssb_scg_position_in_burst.value;
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
@@ -288,6 +288,8 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->samples_per_frame_wCP=%d\n",fp->samples_per_frame_wCP);
   LOG_I(PHY,"fp->samples_per_subframe=%d\n",fp->samples_per_subframe);
   LOG_I(PHY,"fp->samples_per_frame=%d\n",fp->samples_per_frame);
+  LOG_I(PHY,"fp->dl_CarrierFreq=%u\n",fp->dl_CarrierFreq);
+  LOG_I(PHY,"fp->ul_CarrierFreq=%u\n",fp->ul_CarrierFreq);
 }
 
 

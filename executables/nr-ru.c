@@ -734,8 +734,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
   int sf_extension = 0;
 
-  if ((SF_type == SF_DL) ||
-      (SF_type == SF_S)) {
     int siglen=fp->samples_per_slot,flags=1;
     /*
         if (SF_type == SF_S) {
@@ -776,7 +774,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
           (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
-  }
 }
 
 
@@ -1385,9 +1382,9 @@ static void *ru_thread( void *param ) {
     }
 
     if (ru->if_south == LOCAL_RF) { // configure RF parameters only
-      fill_rf_config(ru,ru->rf_config_file);
       nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
       nr_dump_frame_parms(fp);
+      fill_rf_config(ru,ru->rf_config_file);
       nr_phy_init_RU(ru);
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       AssertFatal(ret==0,"Cannot connect to local radio\n");

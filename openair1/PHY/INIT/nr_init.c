@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "executables/nr-softmodem-common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
@@ -31,6 +32,7 @@
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "assertions.h"
 #include <math.h>
 
@@ -428,23 +430,25 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->sch_config.ssb_periodicity.value		    = phy_config->cfg->sch_config.ssb_periodicity.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
-    gNB_config->subframe_config.duplex_mode.value    = TDD;
-  } else {
     gNB_config->subframe_config.duplex_mode.value    = FDD;
+  } else {
+    gNB_config->subframe_config.duplex_mode.value    = TDD;
   }
 
   RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  get_band(fp->dl_CarrierFreq, &gNB_config->nfapi_config.rf_bands.rf_band[0], &uplink_frequency_offset[CC_id][0], &fp->frame_type);
+  fp->ul_CarrierFreq = fp->dl_CarrierFreq + uplink_frequency_offset[CC_id][0];
   fp->threequarter_fs                    = openair0_cfg[0].threequarter_fs;
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u)\n",
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u, UL freq %u)\n",
         Mod_id,
         CC_id,
         gNB_config->nfapi_config.rf_bands.rf_band[0],
         gNB_config->rf_config.dl_carrier_bandwidth.value,
         gNB_config->rf_config.ul_carrier_bandwidth.value,
         gNB_config->sch_config.physical_cell_id.value,
-        fp->dl_CarrierFreq );
+        fp->dl_CarrierFreq,
+        fp->ul_CarrierFreq);
 
   nr_init_frame_parms(gNB_config, fp);
 
