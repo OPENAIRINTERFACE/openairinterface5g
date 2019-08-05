@@ -29,6 +29,7 @@
 #include "intertask_interface.h"
 
 #include "X2AP_LastVisitedCell-Item.h"
+#include "X2AP_FreqBandNrItem.h"
 
 #include "x2ap_common.h"
 #include "x2ap_eNB.h"
@@ -1345,7 +1346,7 @@ int x2ap_eNB_generate_ENDC_x2_setup_request(
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
-    X2AP_ERROR("Failed to encode X2 setup response\n");
+    X2AP_ERROR("Failed to encode ENDC X2 setup request\n");
     return -1;
   }
 
@@ -1442,9 +1443,17 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
           }
 
           if (instance_p->frame_type[i] == TDD) { // Panos: Remember to change that to TDD
+                  X2AP_FreqBandNrItem_t *freq_band;
         	  servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
         	  servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = 0; //instance_p->tdd_nRARFCN[i];
-        	  /*Missing addition of Frequency Band List item here, can't find it...  */
+
+                  /* addition of Frequency Band List */
+                  freq_band = calloc(1, sizeof(X2AP_FreqBandNrItem_t));
+                  if (freq_band == NULL)
+                    exit(1);
+                  freq_band->freqBandIndicatorNr = 1; /* TODO: put correct value */
+                  ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.freqBandListNr, freq_band);
+
         	  switch (instance_p->N_RB_DL[i]) {
         	  case 50:
         		  //This is not correct. Just to be able to test X2 only using an eNB instead of gNB
@@ -1491,7 +1500,6 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
           }
           /*Don't know where to extract the value of measurementTimingConfiguration from. Set it to 0 for now */
           INT8_TO_OCTET_STRING(0, &servedCellMember->servedNRCellInfo.measurementTimingConfiguration);
-
         }
         ASN_SEQUENCE_ADD(&ie_GNB_ENDC->value.choice.ServedNRcellsENDCX2ManagementList.list, servedCellMember);
       }
@@ -1502,7 +1510,7 @@ int x2ap_gNB_generate_ENDC_x2_setup_response(
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
-    X2AP_ERROR("Failed to encode X2 setup request\n");
+    X2AP_ERROR("Failed to encode ENDC X2 setup response\n");
     return -1;
   }
 
