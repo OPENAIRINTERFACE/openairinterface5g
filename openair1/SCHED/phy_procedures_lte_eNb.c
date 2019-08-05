@@ -409,10 +409,10 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
 
   // clear previous allocation information for all UEs
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  //for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     //if (eNB->dlsch[i][0])
       //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
-  }
+  //}
 
   /* TODO: check the following test - in the meantime it is put back as it was before */
   //if ((ul_subframe < 10)&&

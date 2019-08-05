@@ -56,7 +56,8 @@ bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPo
 
   int enable=1;
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))==0,"");
-  struct timeval tv= {0,UDP_TIMEOUT};
+  //struct timeval tv= {0,UDP_TIMEOUT};
+  struct timeval tv= {2,UDP_TIMEOUT}; //debug: wait 2 seconds for human understanding
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) ==0,"");
   // Make a send/recv buffer larger than a a couple of subframe
   // so the kernel will store for us in and out paquets
@@ -69,9 +70,9 @@ bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPo
 // sock: udp socket
 // expectedTS: the expected timestamp, 0 if unknown
 // bufferZone: a reception area of bufferSize
-int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize) {
+int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize, uint16_t contentType) {
   int rcved=0;
-  commonUDP_t *tmp=NULL;
+  commonUDP_t *bufOrigin=(commonUDP_t *)bufferZone;
 
   do {
     //read all subframe data from the control unit
@@ -85,22 +86,37 @@ int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int
         return -1;
       }
     } else {
-      tmp=(commonUDP_t *)bufferZone;
+      if (hUDP(bufferZone)->contentType != contentType)
+        abort();
 
-      if ( expectedTS && tmp->timestamp != expectedTS) {
-        LOG_W(HW,"Received a paquet in mixed subframes, dropping it\n");
+      if ( hUDP(bufferZone)->timestamp != expectedTS) {
+        if ( hUDP(bufferZone)->timestamp < expectedTS) {
+          LOG_W(HW,"Received a paquet from past subframes, dropping it\n");
+        } else {
+          LOG_W(HW,"Received a paquet in future subframes\n");
+
+          if ( rcved == 0 ) {
+            LOG_W(HW,"First paquet in the sub-frame, keeping it\n");
+            rcved++;
+            bufferZone+=ret;
+            expectedTS=hUDP(bufferZone)->timestamp;
+          }
+        }
       } else {
         rcved++;
         bufferZone+=ret;
       }
     }
-  } while ( !rcved || rcved < tmp->nbBlocks );
+  } while ( !rcved || rcved < hUDP(bufferZone)->nbBlocks );
 
+  LOG_D(HW,"Received: nb_blocks: %d, TS: %lu, frame: %d, subframe: %d\n",
+        rcved, bufOrigin->timestamp, *(((int *)bufOrigin)+1), *(((int *)bufOrigin)+2));
   return rcved;
 }
 
-int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize) {
+int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, uint16_t contentType) {
   commonUDP_t *UDPheader=(commonUDP_t *)bufferZone ;
+  UDPheader->contentType=contentType;
   int nbBlocks=UDPheader->nbBlocks;
   int blockId=0;
 
@@ -131,5 +147,7 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize) {
     nbBlocks--;
   } while (nbBlocks);
 
+  LOG_D(HW,"Sent: TS: %lu, frame: %d, subframe: %d\n",
+        UDPheader->timestamp, *(((int *)UDPheader)+1), *(((int *)UDPheader)+2));
   return 0;
 }

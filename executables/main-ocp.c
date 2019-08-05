@@ -582,13 +582,11 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   return(0);
 }
 
-void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru) {
+void eNB_top(PHY_VARS_eNB *eNB, int dummy1, int dummy2,  char *string,RU_t *ru) {
   L1_proc_t *proc           = &eNB->proc;
   L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
-  proc->frame_rx    = frame_rx;
-  proc->subframe_rx = subframe_rx;
 
   if (!oai_exit) {
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
@@ -649,16 +647,6 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
   proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
   proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-
-  if (proc->first_rx == 0) {
-    AssertFatal( proc->subframe_rx == *subframe && proc->frame_rx == *frame,
-                 "Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d) (proc->frame_rx %d frame %d)\n",
-                 (long long unsigned int)proc->timestamp_rx,proc->subframe_rx,*subframe, proc->frame_rx,*frame);
-  } else {
-    proc->first_rx = 0;
-    *frame = proc->frame_rx;
-    *subframe = proc->subframe_rx;
-  }
 
   if (rxs != fp->samples_per_tti) {
 #if defined(USRP_REC_PLAY)

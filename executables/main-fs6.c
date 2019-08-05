@@ -653,6 +653,8 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     hDL(bufferZone)->amp=AMP;
   }
 
+  if (num_mdci) abort();
+
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
 
   if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
@@ -741,21 +743,21 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   return;
 }
 
-void DL_du_fs6(RU_t *ru, int frame, int subframe, uint64_t TS) {
+void DL_du_fs6(RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
 
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
-    int nb_blocks=receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone) );
-    L1_rxtx_proc_t *L1_proc = &ru->eNB_list[i]->proc.L1_proc_tx;
-    L1_proc->timestamp_tx=hUDP(bufferZone)->timestamp;
-    L1_proc->frame_tx=hDL(bufferZone)->frame;
-    L1_proc->subframe_tx=hDL(bufferZone)->subframe;
+    int nb_blocks=receiveSubFrame(&sockFS6, ru_proc->timestamp_tx, bufferZone, sizeof(bufferZone), CTsentCUv0 );
 
-    if (nb_blocks>0)
+    if (nb_blocks > 0) {
+      L1_rxtx_proc_t *L1_proc = &ru->eNB_list[i]->proc.L1_proc_tx;
+      L1_proc->timestamp_tx=hUDP(bufferZone)->timestamp;
+      L1_proc->frame_tx=hDL(bufferZone)->frame;
+      L1_proc->subframe_tx=hDL(bufferZone)->subframe;
       phy_procedures_eNB_TX_process( bufferZone, nb_blocks, ru->eNB_list[i], &ru->eNB_list[i]->proc.L1_proc, 1);
-    else
-      LOG_E(PHY,"DL not received for subframe: %d\n", subframe);
+    } else
+      LOG_E(PHY,"DL not received for subframe\n");
   }
 
   /* OAI data model is wrong: hardcode link ru to enb index 0*/
@@ -799,8 +801,14 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
     phy_procedures_eNB_uespec_RX_extract(bufferZone, FS6_BUF_SIZE, eNB, &proc->L1_proc );
   }
 
+  if (hUDP(bufferZone)->nbBlocks==0) {
+    hUDP(bufferZone)->nbBlocks=1; // We have to send the signaling, even is there is no user plan data (no UE)
+    hUDP(bufferZone)->blockID=0;
+    hUDP(bufferZone)->contentBytes=sizeof(fs6_ul_t);
+  }
+
   for (int i=0; i<ru->num_eNB; i++) {
-    sendSubFrame(&sockFS6,bufferZone, sizeof(fs6_ul_t));
+    sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_ul_t), CTsentDUv0);
   }
 }
 
@@ -827,12 +835,12 @@ void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
     hUDP(bufferZone)->contentBytes=sizeof(fs6_dl_t);
   }
 
-  sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t) );
+  sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
 }
 
 void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
   initBufferZone(bufferZone);
-  int nb_blocks=receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone) );
+  int nb_blocks=receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone), CTsentDUv0 );
 
   if (nb_blocks ==0) {
     LOG_W(PHY, "CU lost a subframe\n");
@@ -878,7 +886,6 @@ void *cu_fs6(void *arg) {
 void *du_fs6(void *arg) {
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
-  int64_t           AbsoluteSubframe=-1;
   fill_rf_config(ru,ru->rf_config_file);
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
@@ -887,11 +894,9 @@ void *du_fs6(void *arg) {
   AssertFatal(createUDPsock(NULL, "7777", "127.0.0.1", "8888", &sockFS6),"");
 
   while(1) {
-    AbsoluteSubframe++;
-    int subframe=AbsoluteSubframe%10;
-    int frame=(AbsoluteSubframe/10)%1024;
-    UL_du_fs6(ru, frame,subframe);
-    DL_du_fs6(ru, frame,subframe, AbsoluteSubframe);
+    L1_rxtx_proc_t *proc = &ru->eNB_list[0]->proc;
+    UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
+    DL_du_fs6(ru);
   }
 
   return NULL;

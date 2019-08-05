@@ -18,6 +18,9 @@ typedef struct {
   int sockHandler;
 } UDPsock_t;
 
+#define CTsentCUv0 0xA500
+#define CTsentDUv0 0x5A00
+
 typedef struct commonUDP_s {
   uint64_t timestamp; // id of the group (subframe for LTE)
   uint16_t nbBlocks;       // total number of blocks for this timestamp
@@ -67,8 +70,8 @@ typedef struct {
 } fs6_dl_uespec_t;
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
-int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize);
-int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize);
+int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize, uint16_t contentType);
+int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, uint16_t contentType);
 
 #define initBufferZone(xBuf) \
   uint8_t xBuf[FS6_BUF_SIZE];\
@@ -77,12 +80,12 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize);
 #define hUDP(xBuf) ((commonUDP_t *)xBuf)
 #define hDL(xBuf)  (((fs6_dl_t*)((commonUDP_t *)xBuf)+1))
 
-inline size_t alignedSize(uint8_t *ptr) {
+static inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
   return ((header->contentBytes+sizeof(commonUDP_t)+blockAlign-1)/blockAlign)*blockAlign;
 }
 
-inline void *commonUDPdata(uint8_t *ptr) {
+static inline void *commonUDPdata(uint8_t *ptr) {
   return (void *) (((commonUDP_t *)ptr)+1);
 }
 
