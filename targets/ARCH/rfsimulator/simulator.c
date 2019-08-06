@@ -58,8 +58,9 @@ extern RAN_CONTEXT_t RC;
 #define RFSIMULATOR_PARAMS_DESC {\
     {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
     {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
-    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0}, \
-    {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 }\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0},\
+    {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
+    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 }\
   };
 
 pthread_mutex_t Sockmutex;
@@ -220,6 +221,7 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
 
 void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
   char *saveF=NULL;
+  char *modelname=NULL;
   paramdef_t rfsimu_params[] = RFSIMULATOR_PARAMS_DESC;
   int p = config_paramidx_fromname(rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t), RFSIMU_OPTIONS_PARAMNAME) ;
   int ret = config_get( rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t),RFSIMU_SECTION);
@@ -237,7 +239,7 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 
       break;
     } else if (strcmp(rfsimu_params[p].strlistptr[i],"chanmod") == 0) {
-      init_channelmod();
+      init_channelmod(modelname);
       rfsimulator->enable_channelmod=true;
     } else {
       fprintf(stderr,"Unknown rfsimulator option: %s\n",rfsimu_params[p].strlistptr[i]);

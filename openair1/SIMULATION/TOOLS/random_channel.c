@@ -250,7 +250,8 @@ struct complex R_sqrt_22_EPA_low_tap[16] = {{1.0,0.0}, {0.0,0.0}, {0.0,0.0}, {0.
 };
 struct complex *R_sqrt_22_EPA_low[1]     = {R_sqrt_22_EPA_low_tap};
 
-struct complex R_sqrt_22_EPA_high_tap[16] = {{0.7179,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.2821,0.0},
+struct complex R_sqrt_22_EPA_high_tap[16] = {
+  {0.7179,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.2821,0.0},
   {0.4500,0.0}, {0.7179,0.0}, {0.2821,0.0}, {0.4500,0.0},
   {0.4500,0.0}, {0.2821,0.0}, {0.7179,0.0}, {0.4500,0.0},
   {0.2821,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.7179,0.0}
@@ -1496,13 +1497,18 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   return 0;
 }
 
-void init_channelmod(void) {
+int init_channelmod(char *modelname) {
+  int modelid=map_str_to_int(channelmod_names,modelname);
+  AssertFatal(modelid>0,
+              "random_channel.c: Error channel model %s unknown\n",modelname);
   /* look for telnet server, if it is loaded, add the coding commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 
   if (addcmd != NULL) {
     addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
   }
+
+  return modelid;
 }
 
 #ifdef RANDOM_CHANNEL_MAIN

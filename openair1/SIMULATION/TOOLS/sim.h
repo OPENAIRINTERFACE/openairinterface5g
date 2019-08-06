@@ -432,7 +432,7 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
                  uint64_t TS,
                  uint32_t CirSize
                );
-void init_channelmod(void) ;
+int init_channelmod(char *channelname) ;
 
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);

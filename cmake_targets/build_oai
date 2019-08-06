@@ -515,21 +515,7 @@ function main() {
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
 
-# mandatory shared lib
-    compilations \
-	  $lte_build_dir $config_libconfig_shlib \
-	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-    compilations \
-          $lte_build_dir coding \
-          libcoding.so $dbin/libcoding.so
-# optional libs (used when noS1 with kernel modules 
-    compilations \
-          $lte_build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    compilations \
-          $lte_build_dir rb_tool \
-          rb_tool $dbin/rb_tool
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin	  
+	  
   fi
 
   if [ "$UE" = 1  ] ; then
@@ -538,21 +524,6 @@ function main() {
         $lte_build_dir $lte_exec \
         $lte_exec $dbin/$lte_exec.$REL
         
-    # mandatory shared lib
-    compilations \
-        $lte_build_dir $config_libconfig_shlib \
-        lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-    compilations \
-        $lte_build_dir coding \
-        libcoding.so $dbin/libcoding.so
-# optional libs (used when noS1 with kernel modules
-    compilations \
-          $lte_build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    compilations \
-          $lte_build_dir rb_tool \
-          rb_tool $dbin/rb_tool
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
     # ue_ip driver compilation
     compilations \
           $lte_build_dir ue_ip \
@@ -665,10 +636,25 @@ function main() {
 
   fi 
  
-  # build RF device and transport protocol libraries
+  # build RF device, transport protocol libraries and all
+  # shared libraries common to UE and eNB
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-
+# mandatory shared lib
+    compilations \
+	  $lte_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $lte_build_dir coding \
+          libcoding.so $dbin/libcoding.so
+# optional libs (used when noS1 with kernel modules 
+    compilations \
+          $lte_build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+    compilations \
+          $lte_build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
 	  rm -f liboai_device.so
