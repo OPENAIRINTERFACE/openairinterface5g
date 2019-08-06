@@ -104,7 +104,7 @@ int nr_beam_precoding(int32_t **txdataF,
 
   uint8_t p;
   int slot_offset_F;
-  int nb_antenna_ports = 1; // TODO get the actual value
+  int nb_antenna_ports = frame_parms->Lmax; // for now logical antenna ports corresponds to SSB
   
   slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*(frame_parms->symbols_per_slot);
 
