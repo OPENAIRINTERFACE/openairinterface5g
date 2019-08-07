@@ -50,8 +50,7 @@
     {"ue-max-power",             NULL,          0,    iptr:&(tx_max_power[0]),      defintval:90,   TYPE_INT,    0},     \
     {"r"  ,                        CONFIG_HLP_PRB,        0,                iptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT,    0},     \
     {"dlsch-demod-shift",        CONFIG_HLP_DLSHIFT,  0,      iptr:(int32_t *)&dlsch_demod_shift, defintval:0,         TYPE_INT,    0},        \
-    {"usrp-args",               CONFIG_HLP_USRP_ARGS,   0,                      strptr:(char **)&usrp_args,         defstrval:"type=b200",          TYPE_STRING,    0},                     \
-    {"usrp-clksrc",             CONFIG_HLP_USRP_CLK_SRC,0,                      strptr:(char **)&usrp_clksrc,       defstrval:"internal",           TYPE_STRING,    0}                     \
+    {"usrp-args",               CONFIG_HLP_USRP_ARGS,   0,                      strptr:(char **)&usrp_args,         defstrval:"type=b200",          TYPE_STRING,    0}                     \
   }
 
 #define DEFAULT_DLF 2680000000

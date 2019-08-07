@@ -225,7 +225,6 @@ int emulate_rf = 0;
 tpool_t *Tpool;
 
 char *usrp_args=NULL;
-char *usrp_clksrc=NULL;
 
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -657,24 +656,6 @@ void init_openair0(void) {
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
 
-    if (usrp_clksrc) {
-      if (strcmp(usrp_clksrc, "internal") == 0) {
-        openair0_cfg[card].clock_source = internal;
-        LOG_D(PHY, "USRP clock source set as internal\n");
-      } else if (strcmp(usrp_clksrc, "external") == 0) {
-        openair0_cfg[card].clock_source = external;
-        LOG_D(PHY, "USRP clock source set as external\n");
-      } else if (strcmp(usrp_clksrc, "gpsdo") == 0) {
-        openair0_cfg[card].clock_source = gpsdo;
-        LOG_D(PHY, "USRP clock source set as gpsdo\n");
-      } else {
-        openair0_cfg[card].clock_source = internal;
-        LOG_I(PHY, "USRP clock source unknown ('%s'). defaulting to internal\n", usrp_clksrc);
-      }
-    } else {
-      openair0_cfg[card].clock_source = internal;
-      LOG_I(PHY, "USRP clock source not specified. defaulting to internal\n");
-    }
   }
 }
 
