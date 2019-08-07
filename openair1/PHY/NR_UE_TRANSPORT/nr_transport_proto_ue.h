@@ -1818,6 +1818,6 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 			uint16_t n_RB_DLBWP,
 			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
 
-
+void *dlsch_thread(void *arg);
 /**@}*/
 #endif

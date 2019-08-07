@@ -60,7 +60,7 @@ typedef struct {
   uint8_t decoder_thread_available;
   uint8_t decoder_main_available;
   uint8_t decoder_switch;
-  int counter_decoder;
+  int num_seg;
   uint8_t channel_level;
   int eNB_id;
   int harq_pid;
