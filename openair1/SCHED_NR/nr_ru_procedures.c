@@ -257,8 +257,7 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
   }
   else {
-
-    bw  = ru->nrbeam_weights[0];
+    bw  = ru->beam_weights[0];
     for (l=0;l<fp->symbols_per_slot;l++) {
       for (aa=0;aa<ru->nb_tx;aa++) {
 	nr_beam_precoding(ru->gNB_list[0]->common_vars.txdataF,

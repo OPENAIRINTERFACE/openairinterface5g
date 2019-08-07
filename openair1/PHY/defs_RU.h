@@ -446,10 +446,8 @@ typedef struct RU_t_s{
   time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
-  /// beamforming weight vectors per eNB
+  /// beamforming weight vectors
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
-  /// beamforming weight vectors per eNB
-  int32_t **nrbeam_weights[NUMBER_OF_gNB_MAX+1][16];
   /// received frequency-domain signal for PRACH (IF4p5 RRU) 
   int16_t              **prach_rxsigF;
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU) 

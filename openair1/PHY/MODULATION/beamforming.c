@@ -105,19 +105,21 @@ int nr_beam_precoding(int32_t **txdataF,
   uint8_t p;
   int slot_offset_F;
   int nb_antenna_ports = frame_parms->Lmax; // for now logical antenna ports corresponds to SSB
-  
+
   slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*(frame_parms->symbols_per_slot);
 
   // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
   memset(txdataF_BF[aa],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
 
   for (p=0; p<nb_antenna_ports; p++) {
+    if ((frame_parms->L_ssb >> p) & 0x01)  {
       multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],
 			 (int16_t*)beam_weights[p][aa], 
 			 (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
 			 0, 
 			 frame_parms->ofdm_symbol_size, 
 			 15);
+    }
   }
 return 0;
 }

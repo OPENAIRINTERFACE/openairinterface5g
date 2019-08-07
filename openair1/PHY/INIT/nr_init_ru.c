@@ -106,35 +106,26 @@ int nr_phy_init_RU(RU_t *ru) {
     LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
 
     for (i=0; i<RC.nb_nr_L1_inst; i++) {
-      for (p=0;p<15;p++) {
-	if (p == 0|| p==5) {
+      for (p=0;p<fp->Lmax;p++) {
+        if ((fp->L_ssb >> p) & 0x01)  {
 	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	  for (j=0; j<ru->nb_tx; j++) {
 	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-	    // antenna ports 0-3 are mapped on antennas 0-3
-	    // antenna port 4 is mapped on antenna 0
-	    // antenna ports 5-14 are mapped on all antennas 
-	    if (((p<4) && (p==j)) || ((p==4) && (j==0))) {
+	    // setting identity matrix as first step for beam weights
+	    if (p==j) {
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-              {
 		ru->beam_weights[i][p][j][re] = 0x00007fff; 
-
-                //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
-              }
 	    }
-	    else if (p>4) {
+	    else {
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-              {
-		ru->beam_weights[i][p][j][re] = 0x00007fff/ru->nb_tx; 
-                //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d][%d][%d] = %d\n", i,p,j,re,ru->beam_weights[i][p][j][re]);
-              }
+		ru->beam_weights[i][p][j][re] = 0x00000000; 
 	    }  
-	    //LOG_D(PHY,"[INIT] lte_common_vars->beam_weights[%d][%d] = %p (%lu bytes)\n", i,j,ru->beam_weights[i][p][j], fp->ofdm_symbol_size*sizeof(int32_t)); 
-	  } // for (j=0
-	} // if (p<ru
-      } // for p
+	  } // for j
+	} // for p
+      }
     } //for i
   } // !=IF5
+
   ru->common.sync_corr = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_subframe_wCP );
 
   return(0);
