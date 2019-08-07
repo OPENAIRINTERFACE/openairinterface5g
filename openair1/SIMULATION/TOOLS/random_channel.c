@@ -30,9 +30,9 @@
 #include "sim.h"
 #include "scm_corrmat.h"
 #include "common/utils/LOG/log.h"
-#include "common/utils/load_module_shlib.h"
+#include "common/config/config_userapi.h"
 #include "common/utils/telnetsrv/telnetsrv.h"
-
+#include "common/utils/load_module_shlib.h"
 
 
 //#define DEBUG_CH
@@ -53,6 +53,9 @@ static telnetshell_cmddef_t channelmod_cmdarray[] = {
 static telnetshell_vardef_t channelmod_vardef[] = {
   {"",0,NULL}
 };
+
+static double snr_dB=25;
+static double sinr_dB=0;
 
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
@@ -1497,18 +1500,31 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   return 0;
 }
 
-int init_channelmod(char *modelname) {
+int modelid_fromname(char *modelname) {
   int modelid=map_str_to_int(channelmod_names,modelname);
   AssertFatal(modelid>0,
               "random_channel.c: Error channel model %s unknown\n",modelname);
-  /* look for telnet server, if it is loaded, add the coding commands to it */
+  return modelid;
+}
+
+double channelmod_get_snr_dB(void) {
+  return snr_dB;
+}
+
+double channelmod_get_sinr_dB(void) {
+  return sinr_dB;
+}
+
+void init_channelmod(void) {
+  paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
+  int ret = config_get( channelmod_params,sizeof(channelmod_params)/sizeof(paramdef_t),CHANNELMOD_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed");
+  /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 
   if (addcmd != NULL) {
     addcmd("channelmod",channelmod_vardef,channelmod_cmdarray);
   }
-
-  return modelid;
 }
 
 #ifdef RANDOM_CHANNEL_MAIN

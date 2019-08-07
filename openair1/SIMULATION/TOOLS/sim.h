@@ -211,6 +211,13 @@ typedef enum {
   {"EPA_high",EPA_high},\
   {NULL, -1}
 
+#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
+#define CHANNELMOD_SECTION "channelmod"
+#define CHANNELMOD_PARAMS_DESC {  \
+    {"s" ,CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED ,               dblptr:&snr_dB,                       defdblval:25,         TYPE_DOUBLE,      0},\
+    {"sinr_dB" ,NULL,     0                                 ,               dblptr:&sinr_dB,                       defdblval:0,         TYPE_DOUBLE,      0},\
+  }
+
 #include "platform_constants.h"
 
 typedef struct {
@@ -432,7 +439,11 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
                  uint64_t TS,
                  uint32_t CirSize
                );
-int init_channelmod(char *channelname) ;
+
+int modelid_fromname(char *modelname);
+double channelmod_get_snr_dB(void);
+double channelmod_get_sinr_dB(void);
+void init_channelmod(void) ;
 
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);

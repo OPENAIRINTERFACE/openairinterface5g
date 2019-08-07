@@ -52,7 +52,7 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
   // the parameter "-s" is declared as SNR, but the input power is not well defined
   // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain= 132.24 - snr_dB;
+  const double rxGain= 132.24 - channelmod_get_snr_dB();
   // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
   // fixme: the last constant is pure trial results to make decent noise
   const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;

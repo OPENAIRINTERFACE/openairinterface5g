@@ -78,7 +78,6 @@
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
-#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
@@ -200,7 +199,6 @@
     {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
-    {"s" ,                         CONFIG_HLP_SNR,         0,               dblptr:&snr_dB,                       defdblval:25,         TYPE_DOUBLE,      0},   \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
@@ -264,9 +262,9 @@ typedef struct {
   int            numerology;
   unsigned int   start_msc;
   uint32_t       clock_source;
-  uint32_t       timing_source; 
+  uint32_t       timing_source;
   int            hw_timing_advance;
-  uint32_t       send_dmrs_sync; 
+  uint32_t       send_dmrs_sync;
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
@@ -285,8 +283,6 @@ uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
-extern double snr_dB;
-
 
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -311,7 +307,7 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
-extern void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
+extern void init_RU(char *,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 extern void stop_ru(RU_t *ru);
 extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);
@@ -337,7 +333,7 @@ extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
 extern void RCConfig_sim(void);
-extern void init_ocm(double,double);
+extern void init_ocm(void);
 extern void init_ue_devices(PHY_VARS_UE *);
 
 PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,

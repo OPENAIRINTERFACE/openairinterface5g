@@ -1833,7 +1833,7 @@ ${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
 ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
 ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
 ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
-${OPENAIR_DIR}/targets/ARCH/rfsimulator/channelmod.c
+${OPENAIR_DIR}/targets/ARCH/rfsimulator/apply_channelmod.c
 #${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
 )
 

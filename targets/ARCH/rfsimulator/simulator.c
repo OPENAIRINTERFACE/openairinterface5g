@@ -42,7 +42,7 @@
 
 // Fixme: datamodel, external variables in .h files, ...
 #include <common/ran_context.h>
-extern double snr_dB;
+
 extern RAN_CONTEXT_t RC;
 //
 
@@ -91,7 +91,7 @@ typedef struct {
   int tx_num_channels;
   double sample_rate;
   double tx_bw;
-  bool   enable_channelmod;
+  int channelmod;
 } rfsimulator_state_t;
 
 
@@ -112,7 +112,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ev.data.fd = sock;
   AssertFatal(epoll_ctl(bridge->epollfd, EPOLL_CTL_ADD,  sock, &ev) != -1, "");
 
-  if ( bridge->enable_channelmod==true) {
+  if ( bridge->channelmod > 0) {
     // create channel simulation model for this mode reception
     // snr_dB is pure global, coming from configuration paramter "-s"
     // Fixme: referenceSignalPower should come from the right place
@@ -126,7 +126,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // Legacy changes directlty the variable channel_model->path_loss_dB place to place
     // while calling new_channel_desc_scm() with path losses = 0
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
-                                            AWGN,
+                                            bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
                                             0.0, // forgetting_factor
@@ -239,8 +239,8 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 
       break;
     } else if (strcmp(rfsimu_params[p].strlistptr[i],"chanmod") == 0) {
-      init_channelmod(modelname);
-      rfsimulator->enable_channelmod=true;
+      init_channelmod();
+      rfsimulator->channelmod=modelid_fromname(modelname);
     } else {
       fprintf(stderr,"Unknown rfsimulator option: %s\n",rfsimu_params[p].strlistptr[i]);
       exit(-1);
