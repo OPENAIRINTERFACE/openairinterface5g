@@ -549,6 +549,7 @@ void *UE_thread(void *arg) {
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
   const uint16_t table_sf_slot[20] = {0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9};
+  uint32_t total_gain_dB_prev = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -640,7 +641,15 @@ void *UE_thread(void *arg) {
     curMsg->proc.frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
     curMsg->proc.frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
-    LOG_D(PHY,"Process slot %d thread Idx %d \n", slot_nr, thread_idx);
+    //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
+
+#ifdef OAI_ADRV9371_ZC706
+    if (total_gain_dB_prev != UE->rx_total_gain_dB) {
+		total_gain_dB_prev = UE->rx_total_gain_dB;
+        openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB-20;
+        UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
+    }
+#endif
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
@@ -747,6 +756,7 @@ void init_UE(int nb_inst) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   pthread_t threads[nb_inst];
+  pthread_t dlsch0_threads;
 
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
@@ -768,6 +778,11 @@ void init_UE(int nb_inst) {
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
+
+#ifdef UE_DLSCH_PARALLELISATION
+    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
+#endif
+
   }
 
   printf("UE threads created by %ld\n", gettid());

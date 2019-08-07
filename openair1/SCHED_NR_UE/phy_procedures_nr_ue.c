@@ -2485,12 +2485,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
 
   harq_pid = 0; //temporary implementation
 
-
+  /*
   generate_ue_ulsch_params(ue,
                            0,
                            gNB_id,
                            harq_pid);
-
+  */
+  
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
@@ -2590,30 +2591,23 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 {
   LOG_D(PHY,"ue_measurement_procedures l %u Ncp %d\n",l,ue->frame_parms.Ncp);
 
-#if 0
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int nr_tti_rx = proc->nr_tti_rx;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
 
-  if (l==0) {
+  if (l==2) {
     // UE measurements on symbol 0
-    if (abstraction_flag==0) {
       LOG_D(PHY,"Calling measurements nr_tti_rx %d, rxdata %p\n",nr_tti_rx,ue->common_vars.rxdata);
 
-      lte_ue_measurements(ue,
-			  (nr_tti_rx*frame_parms->samples_per_tti+ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME),
-			  (nr_tti_rx == 1) ? 1 : 0,
+      nr_ue_measurements(ue,
+			  0,
+			  0,
 			  0,
 			  0,
 			  nr_tti_rx);
-    } else {
-      lte_ue_measurements(ue,
-			  0,
-			  0,
-			  1,
-			  0,
-			  nr_tti_rx);
-    }
+			  
+			  //(nr_tti_rx*frame_parms->samples_per_tti+ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
+
 #if T_TRACER
     if(slot == 0)
       T(T_UE_PHY_MEAS, T_INT(eNB_id),  T_INT(ue->Mod_id), T_INT(proc->frame_rx%1024), T_INT(proc->nr_tti_rx),
@@ -2626,7 +2620,7 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 	T_INT((int)ue->common_vars.freq_offset));
 #endif
   }
-
+#if 0
   if (l==(6-ue->frame_parms.Ncp)) {
 
     // make sure we have signal from PSS/SSS for N0 measurement
@@ -2641,6 +2635,19 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 
   }
 #endif
+
+  // accumulate and filter timing offset estimation every subframe (instead of every frame)
+  if (( slot == 2) && (l==(2-frame_parms->Ncp))) {
+
+    // AGC
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
+
+
+    //printf("start adjust gain power avg db %d\n", ue->measurements.rx_power_avg_dB[eNB_id]);
+    phy_adjust_gain_nr (ue,ue->measurements.rx_power_avg_dB[eNB_id],eNB_id);
+
+}
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
@@ -4190,7 +4197,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n",ue->Mod_id,frame_rx,nr_tti_rx,dci_cnt);
     
     if (ue->no_timing_correction==0) {
-      LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+      LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
       nr_adjust_synch_ue(&ue->frame_parms,
 			 ue,
 			 eNB_id,
@@ -4216,9 +4223,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		  nr_tti_rx,
 		  0,
 		  0);
-      
-      //printf("phy procedure pdsch start measurement\n"); 
-      nr_ue_measurement_procedures(m,ue,proc,eNB_id,(nr_tti_rx<<1),mode);
+ 
       
     }
     //set active for testing, to be removed
@@ -4239,6 +4244,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   PDSCH,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
 			   NULL);
+			   
+    //printf("phy procedure pdsch start measurement\n"); 
+    nr_ue_measurement_procedures(2,ue,proc,eNB_id,nr_tti_rx,mode);
 
     /*
     write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);

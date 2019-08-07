@@ -54,7 +54,7 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
-#include "PHY/phy_vars.h"
+#include "PHY/phy_vars_nr_ue.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 //#include "PHY/MODULATION/modulation_common.h"
@@ -66,8 +66,6 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
-
 
 double cpuf;
 
@@ -422,6 +420,10 @@ int main(int argc, char **argv) {
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
+  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
+  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
+  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
+  PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   //phy_init_nr_top(frame_parms);
@@ -502,11 +504,12 @@ int main(int argc, char **argv) {
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
   //there are plenty of other parameters that we don't seem to be using for now. e.g.
   //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0; 
 
   // set FAPI parameters for UE, put them in the scheduled response and call 
-  //nr_ue_scheduled_response(&scheduled_response);
+  nr_ue_scheduled_response(&scheduled_response);
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
