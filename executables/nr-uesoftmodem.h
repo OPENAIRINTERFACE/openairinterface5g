@@ -85,7 +85,8 @@
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"s" ,                      CONFIG_HLP_SNR,         0,                      dblptr:&snr_dB,                       defdblval:25,                   TYPE_DOUBLE,       0}, \
-    {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,      defintval:0,      TYPE_INT, 0} \
+      {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,      defintval:0,      TYPE_INT, 0}, \
+    {"ue-timing-correction-disable",           CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL,         iptr:&UE_no_timing_correction,      defintval:0,      TYPE_INT, 0} \
 }
 
 
