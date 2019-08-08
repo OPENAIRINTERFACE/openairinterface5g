@@ -1134,9 +1134,9 @@ int x2ap_eNB_handle_senb_addition_request (instance_t instance,
   X2AP_E_RABs_ToBeAdded_Item_t       *e_RABs_ToBeAdded_Item;
 
   x2ap_eNB_instance_t                *instance_p;
-  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  //x2ap_eNB_data_t                    *x2ap_eNB_data;
   MessageDef                         *msg;
-  int                                ue_id;
+  //int                                ue_id;
 
   DevAssert (pdu != NULL);
   x2SeNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SeNBAdditionRequest;

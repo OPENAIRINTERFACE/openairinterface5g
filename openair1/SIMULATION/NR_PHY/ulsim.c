@@ -31,7 +31,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_vars.h"
+#include "PHY/phy_vars_nr_ue.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
@@ -353,6 +353,10 @@ int main(int argc, char **argv)
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
+  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
+  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
+  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
+  PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   //phy_init_nr_top(frame_parms);
@@ -408,10 +412,10 @@ int main(int argc, char **argv)
   rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
   ///////////////////////////////////////////////////
 
-  /*fapi_nr_ul_config_request_t ul_config;
+  nr_scheduled_response_t scheduled_response;
+  fapi_nr_ul_config_request_t ul_config;
   //fapi_nr_tx_request_t tx_request;
 
-  nr_scheduled_response_t scheduled_response;
   scheduled_response.module_id = 0;
   scheduled_response.CC_id = 0;
   scheduled_response.frame = frame;
@@ -432,12 +436,13 @@ int main(int argc, char **argv)
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;*/
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
   //there are plenty of other parameters that we don't seem to be using for now. e.g.
   //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0; 
 
   // set FAPI parameters for UE, put them in the scheduled response and call 
-  //nr_ue_scheduled_response(&scheduled_response);
+  nr_ue_scheduled_response(&scheduled_response);
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;

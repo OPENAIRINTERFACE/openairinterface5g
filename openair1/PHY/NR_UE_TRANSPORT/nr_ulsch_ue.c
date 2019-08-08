@@ -56,6 +56,8 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
 
+  LOG_W(PHY,"This function should not be used. Use FAPI interfaces instead\n");
+  
   //--------------------------Temporary configuration-----------------------------//
   length_dmrs = 1;
   n_rnti = 0x1234;

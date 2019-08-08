@@ -36,7 +36,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_vars.h"
+#include "PHY/phy_vars_nr_ue.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"

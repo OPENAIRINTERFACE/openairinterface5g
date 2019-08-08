@@ -1102,14 +1102,14 @@ int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p
                                                x2ap_senb_addition_req_ack_t *x2ap_addition_req_ack)
 {
 
-  X2AP_X2AP_PDU_t                        pdu;
-  X2AP_SeNBAdditionRequestAcknowledge_t      *out;
-  X2AP_SeNBAdditionRequestAcknowledge_IEs_t  *ie;
+  X2AP_X2AP_PDU_t                                  pdu;
+  X2AP_SeNBAdditionRequestAcknowledge_t            *out;
+  X2AP_SeNBAdditionRequestAcknowledge_IEs_t        *ie;
   X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs_t         *e_RABS_Admitted_ToBeAdded_ItemIEs;
   X2AP_E_RABs_Admitted_ToBeAdded_Item_t            *e_RABs_Admitted_ToBeAdded_Item;
-  int                                    ue_id;
-  int                                    ue_id_MeNB;
-  int                                    ue_id_SeNB;
+  //int                                    ue_id;
+  //int                                    ue_id_MeNB;
+  //int                                    ue_id_SeNB;
 
   uint8_t  *buffer;
   uint32_t  len;

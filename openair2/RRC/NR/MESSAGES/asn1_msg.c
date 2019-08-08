@@ -341,7 +341,11 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     //(*servingcellconfigcommon)->lte_CRS_ToMatchAround           = CALLOC(1,sizeof(struct NR_SetupRelease_RateMatchPatternLTE_CRS));
     (*servingcellconfigcommon)->rateMatchPatternToAddModList              = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToAddModList));
     (*servingcellconfigcommon)->rateMatchPatternToReleaseList             = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToReleaseList));
+#if (NR_RRC_VERSION >= MAKE_VERSION(15, 5, 0))
+    (*servingcellconfigcommon)->ssbSubcarrierSpacing                      = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
+#else 
     (*servingcellconfigcommon)->subcarrierSpacing                         = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
+#endif
     (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon             = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
 
 
@@ -869,7 +873,11 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->rateMatchPatternToReleaseList->list,&ratematchpatternid);
 
   //subcarrierSpacing
+#if (NR_RRC_VERSION >= MAKE_VERSION(15, 5, 0))
+  *(*servingcellconfigcommon)->ssbSubcarrierSpacing         = configuration->NIA_SubcarrierSpacing[CC_id];
+#else
   *(*servingcellconfigcommon)->subcarrierSpacing            = configuration->NIA_SubcarrierSpacing[CC_id];
+#endif
 
   //tdd_UL_DL_ConfigurationCommon
   (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing             = configuration->referenceSubcarrierSpacing[CC_id];
