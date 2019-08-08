@@ -316,13 +316,13 @@ extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;
-  int tddflag;
-  char *loopfile=NULL;
+  int tddflag = 0;
+  char *loopfile = NULL;
 
-  int dumpframe=0;
-  int timingadv;
-  uint8_t nfapi_mode;
-  int simL1flag ;
+  int dumpframe = 0;
+  int timingadv = 0;
+  uint8_t nfapi_mode = NFAPI_MONOLITHIC;
+  int simL1flag = 0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -419,7 +419,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS *) malloc(sizeof(LTE_DL_FRAME_PARMS));
+    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS *) calloc(1, sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
     frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
