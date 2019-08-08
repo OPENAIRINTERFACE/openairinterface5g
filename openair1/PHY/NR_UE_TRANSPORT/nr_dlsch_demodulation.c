@@ -2397,7 +2397,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
     //if ((frame_parms->N_RB_DL&1) == 0){  // even number of RBs
 
-      for (rb=start_rb;rb<nb_rb_pdsch;rb++) {
+      for (rb = start_rb; rb < nb_rb_pdsch + start_rb; rb++) {
 
         // For second half of RBs skip DC carrier
         if (k>=frame_parms->ofdm_symbol_size) {
