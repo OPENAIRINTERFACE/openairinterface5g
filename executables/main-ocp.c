@@ -632,10 +632,12 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   }
 
   if (proc->first_rx == 1) {
-    ru->ts_offset = proc->timestamp_rx;
-    proc->timestamp_rx = 0;
+    //ru->ts_offset = proc->timestamp_rx;
+    //proc->timestamp_rx = 0;
+    proc->first_rx = false;
   } else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
+      LOG_E(HW,"impossible shift in RFSIM\n");
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       proc->timestamp_rx = ts-ru->ts_offset;
     }

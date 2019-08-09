@@ -20,6 +20,48 @@
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
 
+// Fixme: there are many mistakes in the datamodel and in redondant variables
+// TDD is also mode complex
+void setAllfromTS(uint64_t TS) {
+  for (int i=0; i <RC.nb_RU; i++) {
+    LTE_DL_FRAME_PARMS *fp=&RC.ru[i]->frame_parms;
+    uint64_t TStx=TS+sf_ahead*fp->samples_per_tti;
+    RU_proc_t *proc =&RC.ru[i]->proc;
+    proc->timestamp_rx=  TS;
+    proc->timestamp_tx=  TStx;
+    proc->subframe_rx=   (TS    / fp->samples_per_tti)%10;
+    proc->subframe_tx=   (TStx  / fp->samples_per_tti)%10;
+    proc->subframe_prach=(TS    / fp->samples_per_tti)%10;
+    proc->subframe_prach_br=(TS / fp->samples_per_tti)%10;
+    proc->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
+    proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
+  }
+
+  for (int i=0; i < RC.nb_inst; i++) {
+    for (int j=0; j<RC.nb_CC[i]; j++) {
+      LTE_DL_FRAME_PARMS *fp=&RC.eNB[i][j]->frame_parms;
+      uint64_t TStx=TS+sf_ahead*fp->samples_per_tti;
+      L1_proc_t *proc      =&RC.eNB[i][j]->proc;
+      L1_rxtx_proc_t *proc1=&RC.eNB[i][j]->proc.L1_proc;
+      proc->timestamp_rx=  TS;
+      proc->timestamp_tx=  TStx;
+      proc->subframe_rx=   (TS    / fp->samples_per_tti)%10;
+      proc->subframe_prach=(TS    / fp->samples_per_tti)%10;
+      proc->subframe_prach_br=(TS / fp->samples_per_tti)%10;
+      proc->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
+      proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
+      proc1->timestamp_tx=  TStx;
+      proc1->subframe_rx=   (TS    / fp->samples_per_tti)%10;
+      proc1->subframe_tx=   (TStx  / fp->samples_per_tti)%10;
+      proc1->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
+      proc1->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
+    }
+  }
+
+  return;
+}
+
+
 void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, int frame,int subframe) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
 
@@ -436,10 +478,9 @@ void phy_procedures_eNB_uespec_RX_process(uint8_t *bufferZone, int nbBlocks, PHY
 }
 
 void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
-  // TBD: read frame&subframe from received data
-  int frame=proc->frame_tx=hDL(bufferZone)->frame;
-  int subframe=proc->subframe_tx=hDL(bufferZone)->subframe;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int subframe=proc->subframe_tx;
+  int frame=proc->frame_tx;
   //LTE_UL_eNB_HARQ_t *ulsch_harq;
   eNB->pdcch_vars[subframe&1].num_pdcch_symbols=hDL(bufferZone)->num_pdcch_symbols;
   eNB->pdcch_vars[subframe&1].num_dci=hDL(bufferZone)->num_dci;
@@ -462,16 +503,16 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
 
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
     if ( ((commonUDP_t *)bufPtr)->contentBytes >= sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) ) {
-      fs6_dl_uespec_t *dlPtr=(fs6_dl_uespec_t *)(commonUDPdata(bufPtr)+sizeof(fs6_dl_t));
+      int curUE=hDLUE(bufPtr)->UE_id;
 #ifdef PHY_TX_THREAD
-      eNB->dlsch[dlPtr->UE_id][0]->active[subframe] = 1;
+      eNB->dlsch[curUE][0]->active[subframe] = 1;
 #else
-      eNB->dlsch[dlPtr->UE_id][0]->active = 1;
+      eNB->dlsch[curUE][0]->active = 1;
 #endif
-      eNB->dlsch[dlPtr->UE_id][0]->harq_ids[frame%2][subframe]=dlPtr->harq_pid;
-      eNB->dlsch[dlPtr->UE_id][0]->rnti=dlPtr->rnti;
-      memcpy(eNB->dlsch[dlPtr->UE_id][0]->harq_processes[dlPtr->harq_pid]->e,
-             commonUDPdata(((uint8_t *)dlPtr)+sizeof(fs6_dl_t)), dlPtr->dataLen);
+      eNB->dlsch[curUE][0]->harq_ids[frame%2][subframe]=hDLUE(bufPtr)->harq_pid;
+      eNB->dlsch[curUE][0]->rnti=hDLUE(bufPtr)->rnti;
+      memcpy(eNB->dlsch[curUE][0]->harq_processes[hDLUE(bufPtr)->harq_pid]->e,
+             hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
     }
 
     bufPtr+=alignedSize(bufPtr);
@@ -514,7 +555,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
                      hDL(bufferZone)->amp,
                      fp,
                      eNB->common_vars.txdataF,
-                     hDL(bufferZone)->subframe);
+                     subframe);
 
     if (num_mdci > 0) {
       LOG_D (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
@@ -567,11 +608,11 @@ void appendFs6DLUE(uint8_t *bufferZone, int UE_id, int8_t harq_pid, uint16_t rnt
   newUDPheader->contentBytes=sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) + UEdataLen;
   // We skip the fs6 DL header, that is populated by caller
   // This header will be duplicated during sending
-  fs6_dl_uespec_t *tmp=(fs6_dl_uespec_t *) firstFreeByte+sizeof(fs6_dl_t);
-  tmp->UE_id=UE_id;
-  tmp->harq_pid=harq_pid;
-  tmp->rnti=rnti;
-  memcpy(commonUDPdata(((uint8_t *)tmp)+sizeof(fs6_dl_uespec_t)), UEdata, UEdataLen);
+  hDLUE(newUDPheader)->UE_id=UE_id;
+  hDLUE(newUDPheader)->harq_pid=harq_pid;
+  hDLUE(newUDPheader)->rnti=rnti;
+  hDLUE(newUDPheader)->dataLen=UEdataLen;
+  memcpy(hDLUE(newUDPheader)+1, UEdata, UEdataLen);
 }
 
 void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
@@ -579,15 +620,15 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   int subframe=proc->subframe_tx;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
-  if ((fp->frame_type == TDD) && (subframe_select (fp, subframe) == SF_UL))
+  if ((fp->frame_type == TDD) && (subframe_select (fp, subframe) == SF_UL)) {
+    LOG_W(HW,"no sending in eNB_TX\n");
     return;
+  }
 
-  hDL(bufferZone)->frame=frame;
-  hDL(bufferZone)->subframe=subframe;
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   // returns -1 (or 255) if there is no ul (tdd cases)
-  hDL(bufferZone)->ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
-  hDL(bufferZone)->ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
+  int ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
+  int ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
 
   // clear previous allocation information for all UEs
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
@@ -598,7 +639,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   /* TODO: check the following test - in the meantime it is put back as it was before */
   //if ((ul_subframe < 10)&&
   //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
-  if (hDL(bufferZone)->ul_subframe < 10) { // This means that there is a potential UL subframe that will be schedulyed here
+  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be schedulyed here
     for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
       int harq_pid;
 
@@ -606,8 +647,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
         // LTE-M case
         harq_pid = 0;
       else
-        hDL(bufferZone)->UE_ul_active[i] = harq_pid = subframe2harq_pid(fp, hDL(bufferZone)->ul_frame,
-                                           hDL(bufferZone)->ul_subframe);
+        hDL(bufferZone)->UE_ul_active[i] = harq_pid = subframe2harq_pid(fp, ul_frame, ul_subframe);
 
       if (eNB->ulsch[i]) {
         //LTE_UL_eNB_HARQ_t *ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
@@ -652,8 +692,6 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     hDL(bufferZone)->num_mdci=num_mdci;
     hDL(bufferZone)->amp=AMP;
   }
-
-  if (num_mdci) abort();
 
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
 
@@ -740,6 +778,9 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
 
+  // MBMS is not working in OAI
+  if (hDL(bufferZone)->num_mdci) abort();
+
   return;
 }
 
@@ -748,23 +789,24 @@ void DL_du_fs6(RU_t *ru) {
 
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
-    int nb_blocks=receiveSubFrame(&sockFS6, ru_proc->timestamp_tx, bufferZone, sizeof(bufferZone), CTsentCUv0 );
+    int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
 
     if (nb_blocks > 0) {
-      L1_rxtx_proc_t *L1_proc = &ru->eNB_list[i]->proc.L1_proc_tx;
-      L1_proc->timestamp_tx=hUDP(bufferZone)->timestamp;
-      L1_proc->frame_tx=hDL(bufferZone)->frame;
-      L1_proc->subframe_tx=hDL(bufferZone)->subframe;
+      L1_proc_t *L1_proc = &ru->eNB_list[i]->proc;
+
+      if ( L1_proc->timestamp_tx != hUDP(bufferZone)->timestamp) {
+        LOG_E(HW,"Missed a subframe: expecting: %lu, received %lu\n",
+              L1_proc->timestamp_tx,
+              hUDP(bufferZone)->timestamp);
+      }
+
+      setAllfromTS(hUDP(bufferZone)->timestamp -
+                   sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti);
       phy_procedures_eNB_TX_process( bufferZone, nb_blocks, ru->eNB_list[i], &ru->eNB_list[i]->proc.L1_proc, 1);
     } else
       LOG_E(PHY,"DL not received for subframe\n");
   }
 
-  /* OAI data model is wrong: hardcode link ru to enb index 0*/
-  L1_rxtx_proc_t *L1_proc = &ru->eNB_list[0]->proc.L1_proc_tx;
-  ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-  ru_proc->subframe_tx  = L1_proc->subframe_tx;
-  ru_proc->frame_tx     = L1_proc->frame_tx;
   feptx_prec(ru);
   feptx_ofdm(ru);
   tx_rf(ru);
@@ -776,13 +818,10 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   rx_rf(ru,&tmpf,&tmpsf);
   AssertFatal(tmpf==frame && tmpsf==subframe, "lost synchronization\n");
   ru_proc->frame_tx = (ru_proc->frame_tx+ru_proc->frame_offset)&1023;
+  setAllfromTS(ru_proc->timestamp_rx);
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   L1_proc_t *proc           = &eNB->proc;
-  //L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
-  //LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  proc->frame_rx    = frame;
-  proc->subframe_rx = subframe;
 
   if (NFAPI_MODE==NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
@@ -792,8 +831,6 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 
   initBufferZone(bufferZone);
-  hDL(bufferZone)->frame=frame;
-  hDL(bufferZone)->subframe=subframe;
   hUDP(bufferZone)->timestamp=ru->proc.timestamp_rx;
   prach_eNB_extract(bufferZone, FS6_BUF_SIZE, eNB, proc->frame_rx,proc->subframe_rx );
 
@@ -812,7 +849,7 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 }
 
-void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
+void DL_cu_fs6(RU_t *ru, uint64_t TS) {
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   L1_proc_t *proc           = &eNB->proc;
@@ -826,8 +863,6 @@ void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
   initBufferZone(bufferZone);
   phy_procedures_eNB_TX_extract(bufferZone, eNB, &proc->L1_proc, 1, bufferZone, FS6_BUF_SIZE);
   hUDP(bufferZone)->timestamp=proc->L1_proc.timestamp_tx;
-  hDL(bufferZone)->frame=frame;
-  hDL(bufferZone)->subframe=subframe;
 
   if (hUDP(bufferZone)->nbBlocks==0) {
     hUDP(bufferZone)->nbBlocks=1; // We have to send the signaling, even is there is no user plan data (no UE)
@@ -838,9 +873,9 @@ void DL_cu_fs6(RU_t *ru,int frame, int subframe) {
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
 }
 
-void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
+void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
   initBufferZone(bufferZone);
-  int nb_blocks=receiveSubFrame(&sockFS6, TS, bufferZone, sizeof(bufferZone), CTsentDUv0 );
+  int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
 
   if (nb_blocks ==0) {
     LOG_W(PHY, "CU lost a subframe\n");
@@ -850,34 +885,34 @@ void UL_cu_fs6(RU_t *ru,int frame, int subframe, uint64_t TS) {
   if (nb_blocks != hUDP(bufferZone)->nbBlocks )
     LOG_W(PHY, "received %d blocks for %d expected\n", nb_blocks, hUDP(bufferZone)->nbBlocks);
 
-  // Fixme: datamodel issue
+  if ( *TS != hUDP(bufferZone)->timestamp ) {
+    LOG_W(HW, "CU received time: %lu instead of %lu expected\n", hUDP(bufferZone)->timestamp, *TS);
+    *TS=hUDP(bufferZone)->timestamp;
+  }
+
+  setAllfromTS(hUDP(bufferZone)->timestamp);
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  L1_proc_t *proc   = &eNB->proc;
-  proc->timestamp_rx=hUDP(bufferZone)->timestamp;
-  prach_eNB_process(bufferZone, sizeof(bufferZone), eNB,NULL,proc->frame_rx,proc->subframe_rx);
   release_UE_in_freeList(eNB->Mod_id);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX_process(bufferZone, sizeof(bufferZone), eNB, &proc->L1_proc);
+    phy_procedures_eNB_uespec_RX_process(bufferZone, sizeof(bufferZone), eNB, &eNB->proc.L1_proc);
   }
 }
 
 void *cu_fs6(void *arg) {
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
-  int64_t           AbsoluteSubframe=-1;
   fill_rf_config(ru,ru->rf_config_file);
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
   wait_sync("ru_thread");
-  AssertFatal(createUDPsock(NULL, "8888", "127.0.0.1", "7777", &sockFS6), "");
+  AssertFatal(createUDPsock(NULL, CU_PORT, CU_IP, DU_PORT, &sockFS6), "");
+  uint64_t timeStamp=0;
 
   while(1) {
-    AbsoluteSubframe++;
-    int subframe=AbsoluteSubframe%10;
-    int frame=(AbsoluteSubframe/10)%1024;
-    UL_cu_fs6(ru, frame,subframe, AbsoluteSubframe);
-    DL_cu_fs6(ru, frame,subframe);
+    timeStamp+=ru->frame_parms.samples_per_tti;
+    UL_cu_fs6(ru, &timeStamp);
+    DL_cu_fs6(ru, timeStamp);
   }
 
   return NULL;
@@ -891,10 +926,16 @@ void *du_fs6(void *arg) {
   phy_init_RU(ru);
   openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   wait_sync("ru_thread");
-  AssertFatal(createUDPsock(NULL, "7777", "127.0.0.1", "8888", &sockFS6),"");
+  AssertFatal(createUDPsock(NULL, DU_PORT, DU_IP, CU_PORT, &sockFS6),"");
+
+  if (ru->start_rf) {
+    if (ru->start_rf(ru) != 0)
+      LOG_E(HW,"Could not start the RF device\n");
+    else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
+  } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
   while(1) {
-    L1_rxtx_proc_t *proc = &ru->eNB_list[0]->proc;
+    L1_proc_t *proc = &ru->eNB_list[0]->proc;
     UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
     DL_du_fs6(ru);
   }

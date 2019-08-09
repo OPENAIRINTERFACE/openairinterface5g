@@ -4,10 +4,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <openair1/PHY/defs_eNB.h>
+
+#define CU_IP "127.0.0.1"
+#define CU_PORT "7878"
+#define DU_IP "127.0.0.1"
+#define DU_PORT "8787"
+
 #define MTU 65536
 #define UDP_TIMEOUT 100000L // in nano second
 #define MAX_BLOCKS 16
 #define blockAlign 32 //bytes
+
 
 typedef struct {
   char *sourceIP;
@@ -38,8 +45,6 @@ typedef struct frequency_s {
 } frequency_t;
 
 typedef struct {
-  int frame;
-  int subframe;
   uint16_t max_preamble[4];
   uint16_t max_preamble_energy[4];
   uint16_t max_preamble_delay[4];
@@ -47,10 +52,6 @@ typedef struct {
 } fs6_ul_t;
 
 typedef struct {
-  int frame;
-  int subframe;
-  int ul_frame;
-  int ul_subframe;
   int num_pdcch_symbols;
   int num_dci;
   DCI_ALLOC_t dci_alloc[32];
@@ -70,15 +71,17 @@ typedef struct {
 } fs6_dl_uespec_t;
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
-int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize, uint16_t contentType);
+int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t contentType);
 int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, uint16_t contentType);
 
 #define initBufferZone(xBuf) \
-  uint8_t xBuf[FS6_BUF_SIZE];\
+  uint8_t xBuf[FS6_BUF_SIZE];   \
   ((commonUDP_t *)xBuf)->nbBlocks=0;
 
 #define hUDP(xBuf) ((commonUDP_t *)xBuf)
-#define hDL(xBuf)  (((fs6_dl_t*)((commonUDP_t *)xBuf)+1))
+#define hDL(xBuf)  ((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))
+#define hUL(xBuf)  ((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))
+#define hDLUE(xBuf) ((fs6_dl_uespec_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
 
 static inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
@@ -115,4 +118,5 @@ void  phy_init_RU(RU_t *);
 void feptx_prec(RU_t *);
 void feptx_ofdm(RU_t *);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+extern uint16_t sf_ahead;
 #endif

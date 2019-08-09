@@ -68,11 +68,20 @@ bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPo
 }
 
 // sock: udp socket
-// expectedTS: the expected timestamp, 0 if unknown
 // bufferZone: a reception area of bufferSize
-int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int bufferSize, uint16_t contentType) {
+int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t contentType) {
   int rcved=0;
   commonUDP_t *bufOrigin=(commonUDP_t *)bufferZone;
+  static uint8_t crossData[65536];
+  static int crossDataSize=0;
+
+  if (crossDataSize) {
+    LOG_D(HW,"copy a block received in previous subframe\n");
+    memcpy(bufferZone, crossData, crossDataSize);
+    rcved=1;
+    bufferZone+=crossDataSize;
+    crossDataSize=0;
+  }
 
   do {
     //read all subframe data from the control unit
@@ -80,7 +89,8 @@ int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int
 
     if ( ret==-1) {
       if ( errno == EWOULDBLOCK || errno== EINTR ) {
-        return  rcved; // Timeout, subframe incomplete
+        LOG_I(HW,"Received: Timeout, subframe incomplete\n");
+        return  rcved;
       } else {
         LOG_E(HW,"Critical issue in socket: %s\n", strerror(errno));
         return -1;
@@ -89,28 +99,26 @@ int receiveSubFrame(UDPsock_t *sock, uint64_t expectedTS, void *bufferZone,  int
       if (hUDP(bufferZone)->contentType != contentType)
         abort();
 
-      if ( hUDP(bufferZone)->timestamp != expectedTS) {
-        if ( hUDP(bufferZone)->timestamp < expectedTS) {
-          LOG_W(HW,"Received a paquet from past subframes, dropping it\n");
+      if (rcved && bufOrigin->timestamp != hUDP(bufferZone)->timestamp ) {
+        if ( hUDP(bufferZone)->timestamp > bufOrigin->timestamp ) {
+          LOG_W(HW,"Received data for TS: %lu before end of TS : %lu completion\n",
+                hUDP(bufferZone)->timestamp,
+                bufOrigin->timestamp);
+          memcpy(crossData, bufferZone, ret );
+          crossDataSize=ret;
+          return rcved;
         } else {
-          LOG_W(HW,"Received a paquet in future subframes\n");
-
-          if ( rcved == 0 ) {
-            LOG_W(HW,"First paquet in the sub-frame, keeping it\n");
-            rcved++;
-            bufferZone+=ret;
-            expectedTS=hUDP(bufferZone)->timestamp;
-          }
+          LOG_W(HW,"Dropping late packet\n");
+          continue;
         }
-      } else {
-        rcved++;
-        bufferZone+=ret;
       }
-    }
-  } while ( !rcved || rcved < hUDP(bufferZone)->nbBlocks );
 
-  LOG_D(HW,"Received: nb_blocks: %d, TS: %lu, frame: %d, subframe: %d\n",
-        rcved, bufOrigin->timestamp, *(((int *)bufOrigin)+1), *(((int *)bufOrigin)+2));
+      rcved++;
+      bufferZone+=ret;
+    }
+  } while ( rcved == 0 || rcved < bufOrigin->nbBlocks );
+
+  LOG_D(HW,"Received: nb_blocks: %d, TS: %lu\n",rcved, bufOrigin->timestamp);
   return rcved;
 }
 
