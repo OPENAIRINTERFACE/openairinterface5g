@@ -88,11 +88,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h and GNB_APP/gnb_paramdef.h */
-//static int DEFBANDS[] = {7};
-//static int DEFENBS[] = {0};
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
 
-static int DEFNRBANDS[] = {7};
-static int DEFGNBS[] = {0};
+//static int DEFNRBANDS[] = {7};
+//static int DEFGNBS[] = {0};
 
 #include "ENB_APP/enb_paramdef.h"
 #include "GNB_APP/gnb_paramdef.h"
@@ -2006,7 +2006,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->do_prach             = 0;                       // no prach processing in RU
         ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
         ru->feptx_ofdm           = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;              // this is fep with idft and precoding
-        ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
+        ru->feptx_prec           = NULL;              // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface
@@ -2185,7 +2185,7 @@ void stop_RU(int nb_ru)
 void RCconfig_RU(void)
 {
   int i = 0, j = 0;
-  paramdef_t RUParams[] = GNBRUPARAMS_DESC;
+  paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
