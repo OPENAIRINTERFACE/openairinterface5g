@@ -582,7 +582,7 @@ typedef struct {
   uint8_t time_allocation_type;
 	uint8_t freq_allocation_type;
   uint8_t start_prb;
-  uint8_t n_prb;
+  uint16_t n_prb;////it was uint8_t
   uint8_t start_symbol;
   uint8_t nb_symbols;
   uint8_t mcs_idx;
