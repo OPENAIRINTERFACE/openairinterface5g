@@ -574,6 +574,7 @@ void* ru_thread_control( void* param )
 		      ((RRU_config_t *)&rru_config_msg.msg[0])->prach_FreqOffset[0],
 		      ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
 	      
+		ru->frame_parms = calloc(1, sizeof(*ru->frame_parms));
 		configure_rru(ru->idx, (void*)&rru_config_msg.msg[0]);
 
  					  

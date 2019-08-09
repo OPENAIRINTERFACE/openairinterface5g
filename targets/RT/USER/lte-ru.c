@@ -1706,7 +1706,6 @@ static void *ru_thread( void *param )
 {
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp      = ru->frame_parms;
   int subframe = 9;
   int frame = 1023;
   int resynch_done = 0;
@@ -1895,13 +1894,13 @@ static void *ru_thread( void *param )
       }
       else {
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d (do_prach %d, is_prach_subframe %d)\n",
-              ru->idx, frame, subframe, ru->do_prach, is_prach_subframe(fp, proc->frame_rx, proc->tti_rx));
-        if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->tti_rx)==1)) {
+              ru->idx, frame, subframe, ru->do_prach, is_prach_subframe(ru->frame_parms, proc->frame_rx, proc->tti_rx));
+        if ((ru->do_prach>0) && (is_prach_subframe(ru->frame_parms, proc->frame_rx, proc->tti_rx)==1)) {
           LOG_D(PHY,"Waking up prach for %d.%d\n", proc->frame_rx, proc->tti_rx);
           wakeup_prach_ru(ru);
         }
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-        else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->tti_rx)>1)) {
+        else if ((ru->do_prach>0) && (is_prach_subframe(ru->frame_parms, proc->frame_rx, proc->tti_rx)>1)) {
           wakeup_prach_ru_br(ru);
         }
 #endif
@@ -1963,11 +1962,11 @@ static void *ru_thread( void *param )
         for (int i=0; i<ru->nb_tx; i++) {
           if(proc->frame_tx == 2) {
             sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
-            LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
+            LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],ru->frame_parms->symbols_per_tti*ru->frame_parms->ofdm_symbol_size, 1, 1);
           }
           if(proc->frame_tx == 2 && proc->tti_tx==0){
             sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
-            LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
+            LOG_M(filename,"txdata_frame",ru->common.txdata[i],ru->frame_parms->samples_per_tti*10, 1, 1);
           }
         }
       }
@@ -1999,7 +1998,6 @@ static void *ru_thread( void *param )
   }
   return NULL;
 }
-
 
 // This thread run the initial synchronization like a UE
 void *ru_thread_synch(void *arg)
