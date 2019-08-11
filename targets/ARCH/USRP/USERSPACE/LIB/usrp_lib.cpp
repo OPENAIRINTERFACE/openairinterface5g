@@ -119,6 +119,36 @@ typedef struct {
 //  std::cout << boost::format("****************************************************************************************************************\n");
 //}
 
+int check_ref_locked(usrp_state_t *s,size_t mboard) {
+  std::vector<std::string> sensor_names = s->usrp->get_mboard_sensor_names(mboard);
+  bool ref_locked = false;
+
+  if(std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end()) {
+    std::cout << "Waiting for reference lock..." << std::flush;
+
+    for (int i = 0; i < 30 and not ref_locked; i++) {
+      ref_locked = s->usrp->get_mboard_sensor("ref_locked", mboard).to_bool();
+      
+      if (not ref_locked) {
+	std::cout << "." << std::flush;
+	boost::this_thread::sleep(boost::posix_time::seconds(1));
+      }
+    }
+
+    if(ref_locked) {
+      std::cout << "LOCKED" << std::endl;
+    } else {
+      std::cout << "FAILED" << std::endl;
+    }
+
+  } else {
+    std::cout << boost::format("ref_locked sensor not present on this board.\n");
+  }
+
+  return ref_locked;
+
+}
+
 static int sync_to_gps(openair0_device *device) {
   uhd::set_thread_priority_safe();
   //std::string args;
@@ -149,37 +179,14 @@ static int sync_to_gps(openair0_device *device) {
 
     for (size_t mboard = 0; mboard < num_mboards; mboard++) {
       std::cout << "Synchronizing mboard " << mboard << ": " << s->usrp->get_mboard_name(mboard) << std::endl;
-      //Set references to GPSDO
-      s->usrp->set_clock_source("gpsdo", mboard);
-      s->usrp->set_time_source("gpsdo", mboard);
-      //std::cout << std::endl;
-      //print_notes();
-      //std::cout << std::endl;
-      //Check for 10 MHz lock
-      std::vector<std::string> sensor_names = s->usrp->get_mboard_sensor_names(mboard);
 
-      if(std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end()) {
-        std::cout << "Waiting for reference lock..." << std::flush;
-        bool ref_locked = false;
+      bool ref_locked = check_ref_locked(s,mboard);
 
-        for (int i = 0; i < 30 and not ref_locked; i++) {
-          ref_locked = s->usrp->get_mboard_sensor("ref_locked", mboard).to_bool();
-
-          if (not ref_locked) {
-            std::cout << "." << std::flush;
-            boost::this_thread::sleep(boost::posix_time::seconds(1));
-          }
-        }
-
-        if(ref_locked) {
-          std::cout << "LOCKED" << std::endl;
-        } else {
-          std::cout << "FAILED" << std::endl;
-          std::cout << "Failed to lock to GPSDO 10 MHz Reference. Exiting." << std::endl;
-          exit(EXIT_FAILURE);
-        }
+      if (ref_locked) {
+	std::cout << boost::format("Ref Locked\n");
       } else {
-        std::cout << boost::format("ref_locked sensor not present on this board.\n");
+	std::cout << "Failed to lock to GPSDO 10 MHz Reference. Exiting." << std::endl;
+	exit(EXIT_FAILURE);
       }
 
       //Wait for GPS lock
@@ -316,8 +323,8 @@ static int trx_usrp_start(openair0_device *device) {
     s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    LOG_I(PHY,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
-    LOG_I(PHY,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
+    LOG_I(HW,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
+    LOG_I(HW,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
 
     if (s->use_gps == 1 || device->openair0_cfg[0].time_source == external) {
       s->wait_for_first_pps = 1;
@@ -521,7 +528,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
        ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
     } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
 
-     if (ret != nsamps) LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
+     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
  
 #if defined(USRP_REC_PLAY)
   } else {
@@ -632,10 +639,10 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     }
 
     if (samples_received < nsamps)
-      LOG_E(PHY,"[recv] received %d samples out of %d\n",samples_received,nsamps);
+      LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
 
     if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
-      LOG_E(PHY, "%s\n", s->rx_md.to_pp_string(true).c_str());
+      LOG_E(HW, "%s\n", s->rx_md.to_pp_string(true).c_str());
 
     s->rx_count += nsamps;
     s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
@@ -799,13 +806,13 @@ int trx_usrp_set_gains(openair0_device *device,
 
   // limit to maximum gain
   if (openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] > gain_range.stop()) {
-    LOG_E(PHY,"RX Gain 0 too high, reduce by %f dB\n",
+    LOG_E(HW,"RX Gain 0 too high, reduce by %f dB\n",
           openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] - gain_range.stop());
     exit(-1);
   }
 
   s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
-  LOG_I(PHY,"Setting USRP RX gain to %f (rx_gain %f,gain_range.stop() %f)\n",
+  LOG_I(HW,"Setting USRP RX gain to %f (rx_gain %f,gain_range.stop() %f)\n",
         openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0],
         openair0_cfg[0].rx_gain[0],gain_range.stop());
   return(0);
@@ -888,7 +895,7 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
         break;
 
       default:
-        LOG_E(PHY,"unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
+        LOG_E(HW,"unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
         //exit(-1);
         break;
     }
@@ -896,7 +903,7 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
 
   while (openair0_cfg->rx_gain_calib_table[i].freq>0) {
     diff = fabs(openair0_cfg->rx_freq[chain_index] - openair0_cfg->rx_gain_calib_table[i].freq);
-    LOG_I(PHY,"cal %d: freq %f, offset %f, diff %f\n",
+    LOG_I(HW,"cal %d: freq %f, offset %f, diff %f\n",
           i,
           openair0_cfg->rx_gain_calib_table[i].freq,
           openair0_cfg->rx_gain_calib_table[i].offset,diff);
@@ -1002,8 +1009,6 @@ extern "C" {
 
 extern "C" {
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
-    LOG_D(PHY, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
-    LOG_D(PHY, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
 #if defined(USRP_REC_PLAY)
     paramdef_t usrp_recplay_params[7];
     struct sysinfo systeminfo;
@@ -1072,9 +1077,6 @@ extern "C" {
 #endif
       usrp_state_t *s = (usrp_state_t *)calloc(sizeof(usrp_state_t),1);
 
-      if (openair0_cfg[0].clock_source==gpsdo)
-        s->use_gps =1;
-
       // Initialize USRP device
       device->openair0_cfg = openair0_cfg;
       int vers=0,subvers=0,subsubvers=0;
@@ -1087,7 +1089,7 @@ extern "C" {
 
 #endif
       sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
-      LOG_I(PHY,"UHD version %s (%d.%d.%d)\n",
+      LOG_I(HW,"UHD version %s (%d.%d.%d)\n",
             uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
       std::string args;
@@ -1095,7 +1097,7 @@ extern "C" {
         args = "type=b200";
       } else {
         args = openair0_cfg[0].sdr_addrs;
-	LOG_I(PHY,"Checking for USRP with args %s\n",openair0_cfg[0].sdr_addrs);
+	LOG_I(HW,"Checking for USRP with args %s\n",openair0_cfg[0].sdr_addrs);
       }
 
       uhd::device_addrs_t device_adds = uhd::device::find(args);
@@ -1140,21 +1142,53 @@ extern "C" {
 
       s->usrp = uhd::usrp::multi_usrp::make(args);
 
-      // lock mboard clocks
-      if (openair0_cfg[0].clock_source == internal) {
-        s->usrp->set_clock_source("internal");
-        printf("Setting clock source to internal\n");
+      if (args.find("clock_source")==std::string::npos) {
+	LOG_I(HW, "Using clock_source == '%d'\n", openair0_cfg[0].clock_source);
+
+	if (openair0_cfg[0].clock_source == internal) {
+	  //in UHD 3.14 we could use
+	  //s->usrp->set_sync_source("clock_source=internal","time_source=internal");
+	  s->usrp->set_time_source("internal");
+	  s->usrp->set_clock_source("internal");
+	}
+	else if (openair0_cfg[0].clock_source == external ) {
+	  //s->usrp->set_sync_source("clock_source=external","time_source=external");
+	  s->usrp->set_time_source("external");
+	  s->usrp->set_clock_source("external");
+	}
+	else if (openair0_cfg[0].clock_source==gpsdo) {
+	  s->usrp->set_clock_source("gpsdo");
+	  s->usrp->set_time_source("gpsdo");
+	}
       } else {
-        s->usrp->set_clock_source("external");
-        printf("Setting clock source to external\n");
+	LOG_W(HW, "clock_source already specified in device arguments! Ignoring command line parameter\n");
       }
 
+      if (s->usrp->get_clock_source(0) == "gpsdo") {
+	s->use_gps = 1;
+        if (sync_to_gps(device)) {
+          LOG_I(HW,"USRP synced with GPS!\n");
+	}
+	else {
+          LOG_I(HW,"USRP fails to sync with GPS. Exiting.\n");
+          exit(EXIT_FAILURE);
+        }
+      }	else if (s->usrp->get_clock_source(0) == "external") {
+	if (check_ref_locked(s,0)) {
+	  LOG_I(HW,"USRP locked to external reference!\n");
+	} else {
+	  LOG_I(HW,"Failed to lock to external reference. Exiting.\n");
+	  exit(EXIT_FAILURE);
+	}
+      }
+      
+      
       if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
         std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
 #endif
-        LOG_I(PHY,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
+        LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
         switch ((int)openair0_cfg[0].sample_rate) {
           case 122880000:
@@ -1218,7 +1252,7 @@ extern "C" {
             break;
 
           default:
-            LOG_E(PHY,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+            LOG_E(HW,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
             exit(-1);
             break;
         }
@@ -1289,7 +1323,7 @@ extern "C" {
             break;
 
           default:
-            LOG_E(PHY,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+            LOG_E(HW,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
             exit(-1);
             break;
         }
@@ -1312,14 +1346,14 @@ extern "C" {
                        "RX Gain too high, lower by %f dB\n",
                        openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
           s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
-          LOG_I(PHY,"RX Gain %d %f (%f) => %f (max %f)\n",i,
+          LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
                 openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
                 openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
         }
       }
 
-      LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
-      LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
+      LOG_D(HW, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
+      LOG_D(HW, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
 
       for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
         ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
@@ -1328,27 +1362,28 @@ extern "C" {
           s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
           s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
           s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
-          LOG_I(PHY,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
+          LOG_I(HW,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
         }
       }
 
       //s->usrp->set_clock_source("external");
       //s->usrp->set_time_source("external");
       // display USRP settings
-      LOG_I(PHY,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
+      LOG_I(HW,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
       sleep(1);
+
       // create tx & rx streamer
       uhd::stream_args_t stream_args_rx("sc16", "sc16");
       int samples=openair0_cfg[0].sample_rate;
       int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
       samples/=10000;
-      LOG_I(PHY,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
+      LOG_I(HW,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
 
       if ( samples < max ) {
         stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
       }
 
-      LOG_I(PHY,"rx_max_num_samps %zu\n",
+      LOG_I(HW,"rx_max_num_samps %zu\n",
             s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
 
       for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
@@ -1370,25 +1405,25 @@ extern "C" {
         s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
 
       for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {
-        LOG_I(PHY,"RX Channel %d\n",i);
-        LOG_I(PHY,"  Actual RX sample rate: %fMSps...\n",s->usrp->get_rx_rate(i)/1e6);
-        LOG_I(PHY,"  Actual RX frequency: %fGHz...\n", s->usrp->get_rx_freq(i)/1e9);
-        LOG_I(PHY,"  Actual RX gain: %f...\n", s->usrp->get_rx_gain(i));
-        LOG_I(PHY,"  Actual RX bandwidth: %fM...\n", s->usrp->get_rx_bandwidth(i)/1e6);
-        LOG_I(PHY,"  Actual RX antenna: %s...\n", s->usrp->get_rx_antenna(i).c_str());
+        LOG_I(HW,"RX Channel %d\n",i);
+        LOG_I(HW,"  Actual RX sample rate: %fMSps...\n",s->usrp->get_rx_rate(i)/1e6);
+        LOG_I(HW,"  Actual RX frequency: %fGHz...\n", s->usrp->get_rx_freq(i)/1e9);
+        LOG_I(HW,"  Actual RX gain: %f...\n", s->usrp->get_rx_gain(i));
+        LOG_I(HW,"  Actual RX bandwidth: %fM...\n", s->usrp->get_rx_bandwidth(i)/1e6);
+        LOG_I(HW,"  Actual RX antenna: %s...\n", s->usrp->get_rx_antenna(i).c_str());
       }
 
       for (int i=0; i<openair0_cfg[0].tx_num_channels; i++) {
-        LOG_I(PHY,"TX Channel %d\n",i);
-        LOG_I(PHY,"  Actual TX sample rate: %fMSps...\n", s->usrp->get_tx_rate(i)/1e6);
-        LOG_I(PHY,"  Actual TX frequency: %fGHz...\n", s->usrp->get_tx_freq(i)/1e9);
-        LOG_I(PHY,"  Actual TX gain: %f...\n", s->usrp->get_tx_gain(i));
-        LOG_I(PHY,"  Actual TX bandwidth: %fM...\n", s->usrp->get_tx_bandwidth(i)/1e6);
-        LOG_I(PHY,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
-	LOG_I(PHY,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
+        LOG_I(HW,"TX Channel %d\n",i);
+        LOG_I(HW,"  Actual TX sample rate: %fMSps...\n", s->usrp->get_tx_rate(i)/1e6);
+        LOG_I(HW,"  Actual TX frequency: %fGHz...\n", s->usrp->get_tx_freq(i)/1e9);
+        LOG_I(HW,"  Actual TX gain: %f...\n", s->usrp->get_tx_gain(i));
+        LOG_I(HW,"  Actual TX bandwidth: %fM...\n", s->usrp->get_tx_bandwidth(i)/1e6);
+        LOG_I(HW,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
+	LOG_I(HW,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
       }
 
-      LOG_I(PHY,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
+      LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
       device->priv = s;
       device->trx_start_func = trx_usrp_start;
       device->trx_write_func = trx_usrp_write;
@@ -1414,12 +1449,6 @@ extern "C" {
       if(is_equal(s->sample_rate, (double)7.68e6))
         s->tx_forward_nsamps = 50;
 
-      if (s->use_gps == 1) {
-        if (sync_to_gps(device)) {
-          LOG_I(PHY,"USRP fails to sync with GPS...\n");
-          exit(0);
-        }
-      }
 
 #if defined(USRP_REC_PLAY)
     }

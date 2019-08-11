@@ -127,6 +127,7 @@ extern int16_t nr_dlsch_demod_shift;
 int UE_scan = 0;
 int UE_scan_carrier = 0;
 int UE_fo_compensation = 0;
+int UE_no_timing_correction = 0;
 runmode_t mode = normal_txrx;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
@@ -238,7 +239,6 @@ int emulate_rf = 0;
 tpool_t *Tpool;
 
 char *usrp_args=NULL;
-char *usrp_clksrc=NULL;
 
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -670,24 +670,6 @@ void init_openair0(void) {
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
 
-    if (usrp_clksrc) {
-      if (strcmp(usrp_clksrc, "internal") == 0) {
-        openair0_cfg[card].clock_source = internal;
-        LOG_D(PHY, "USRP clock source set as internal\n");
-      } else if (strcmp(usrp_clksrc, "external") == 0) {
-        openair0_cfg[card].clock_source = external;
-        LOG_D(PHY, "USRP clock source set as external\n");
-      } else if (strcmp(usrp_clksrc, "gpsdo") == 0) {
-        openair0_cfg[card].clock_source = gpsdo;
-        LOG_D(PHY, "USRP clock source set as gpsdo\n");
-      } else {
-        openair0_cfg[card].clock_source = internal;
-        LOG_I(PHY, "USRP clock source unknown ('%s'). defaulting to internal\n", usrp_clksrc);
-      }
-    } else {
-      openair0_cfg[card].clock_source = internal;
-      LOG_I(PHY, "USRP clock source not specified. defaulting to internal\n");
-    }
   }
 }
 
@@ -768,6 +750,7 @@ int main( int argc, char **argv ) {
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
     UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
     UE[CC_id]->mode    = mode;
+    UE[CC_id]->no_timing_correction = UE_no_timing_correction;
     printf("UE[%d]->mode = %d\n",CC_id,mode);
 
     for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {

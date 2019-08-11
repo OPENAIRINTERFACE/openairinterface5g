@@ -496,7 +496,7 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
-  if (UE->no_timing_correction==0) {
+
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
     void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
@@ -515,7 +515,7 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       free(dummy_tx[i]);
-  }
+
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {

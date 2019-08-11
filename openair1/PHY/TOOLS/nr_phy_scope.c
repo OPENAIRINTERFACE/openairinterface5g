@@ -513,8 +513,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   int num_re = 4500;
   int Qm = 2;
   int coded_bits_per_codeword = num_re*Qm;
-  int symbol, first_symbol,nb_re;
-  int nb_rb_pdsch =50;
+  int symbol, first_symbol=2,nb_re;
+  int nb_rb_pdsch=50,nb_symb_sch=9;
   float ymax=1;
   float **chest_t_abs;
   float Re,Im;
@@ -792,14 +792,19 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
     fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
   }
 
+  first_symbol = 2;
+  ind = 0;
   // PDSCH I/Q of MF Output
   if (pdsch_comp!=NULL) {
-    for (i=0; i<nb_rb_pdsch*12; i++) {
-      I[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i  ];
-      Q[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i+1];
+    for (symbol=0;symbol<nb_symb_sch;symbol++) {
+      for (i=0; i<nb_rb_pdsch*12; i++) {
+	I[ind] = pdsch_comp[2*((first_symbol+symbol)*frame_parms->N_RB_DL*12+i)  ];
+	Q[ind] = pdsch_comp[2*((first_symbol+symbol)*frame_parms->N_RB_DL*12+i)+1];
+	ind++;
+      }
     }
     
-    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_rb_pdsch*12,"","","");
+    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_symb_sch*nb_rb_pdsch*12,"","","");
   }
   /*
 

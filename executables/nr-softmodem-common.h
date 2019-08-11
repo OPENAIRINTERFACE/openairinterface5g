@@ -58,7 +58,7 @@
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
-#define CONFIG_HLP_EXCCLK        "tells hardware to use an external clock reference\n"
+#define CONFIG_HLP_EXCCLK        "tells hardware to use a clock reference (0:internal(default), 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
@@ -82,6 +82,7 @@
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
+#define CONFIG_HLP_DISABLETIMECORR   "disable UE timing correction\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
@@ -90,7 +91,6 @@
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
-#define CONFIG_HLP_USRP_CLK_SRC  "USRP clock source: 'internal' or 'external'\n"
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
