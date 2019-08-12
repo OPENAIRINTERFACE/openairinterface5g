@@ -150,7 +150,7 @@ Options
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 --build-lib <libraries>
-   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
 
@@ -324,16 +324,21 @@ function main() {
             shift 1;;
        --build-lib) 
             BUILD_OPTLIB="" 
-            for alib in $2 ; do 
+            if [  "$2" == "all" ] ; then
+              BUILD_OPTLIB="$OPTIONAL_LIBRARIES"
+              echo_info "Enabling build of all optional shared libraries ($OPTIONAL_LIBRARIES)" 
+            else
+              for alib in $2 ; do 
                 for oklib in $OPTIONAL_LIBRARIES ; do
-                     if [ "$alib" = "$oklib" ] ; then
-                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
-                        echo_info "Enabling build of lib${alib}.so" 
-                     fi   
+                  if [ "$alib" = "$oklib" ] ; then
+                    BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                    echo_info "Enabling build of lib${alib}.so" 
+                    fi   
+                  done
                 done
-            done
-	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
-               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+	          if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+              fi
             fi
             shift 2;;		
         --usrp-recplay)
