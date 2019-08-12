@@ -752,11 +752,16 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 #else
   int num_plmn = 1;
 #endif
-  LTE_PLMN_IdentityInfo_t PLMN_identity_info[num_plmn];
-  LTE_MCC_MNC_Digit_t dummy_mcc[num_plmn][3], dummy_mnc[num_plmn][3];
+  LTE_PLMN_IdentityInfo_t *PLMN_identity_info;
+  LTE_MCC_MNC_Digit_t *dummy_mcc_0;
+  LTE_MCC_MNC_Digit_t *dummy_mcc_1;
+  LTE_MCC_MNC_Digit_t *dummy_mcc_2;
+  LTE_MCC_MNC_Digit_t *dummy_mnc_0;
+  LTE_MCC_MNC_Digit_t *dummy_mnc_1;
+  LTE_MCC_MNC_Digit_t *dummy_mnc_2;
   asn_enc_rval_t enc_rval;
-  LTE_SchedulingInfo_t schedulingInfo;
-  LTE_SIB_Type_t sib_type;
+  LTE_SchedulingInfo_t *schedulingInfo;
+  LTE_SIB_Type_t *sib_type;
 
   uint8_t *buffer;
   LTE_BCCH_DL_SCH_Message_t *bcch_message;
@@ -782,57 +787,75 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
   //  memcpy(&bcch_message.message.choice.c1.choice.systemInformationBlockType1,sib1,sizeof(SystemInformationBlockType1_t));
   *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
-  memset(PLMN_identity_info,0,num_plmn * sizeof(LTE_PLMN_IdentityInfo_t));
-  memset(&schedulingInfo,0,sizeof(LTE_SchedulingInfo_t));
-  memset(&sib_type,0,sizeof(LTE_SIB_Type_t));
+  PLMN_identity_info = CALLOC(1, sizeof(LTE_PLMN_IdentityInfo_t) * num_plmn);
+  if (PLMN_identity_info == NULL)
+    exit(1);
+  schedulingInfo = CALLOC(1, sizeof(LTE_SchedulingInfo_t));
+  if (schedulingInfo == NULL)
+    exit(1);
+  sib_type = CALLOC(1, sizeof(LTE_SIB_Type_t));
+  if (sib_type == NULL)
+    exit(1);
 
   /* as per TS 36.311, up to 6 PLMN_identity_info are allowed in list -> add one by one */
-  for (int i = 0; i < configuration->num_plmn; ++i) {
+  for (int i = 0; i < num_plmn; ++i) {
     PLMN_identity_info[i].plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
     memset(PLMN_identity_info[i].plmn_Identity.mcc,0,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
     asn_set_empty(&PLMN_identity_info[i].plmn_Identity.mcc->list);//.size=0;
+    dummy_mcc_0 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    dummy_mcc_1 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    dummy_mcc_2 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    if (dummy_mcc_0 == NULL || dummy_mcc_1 == NULL || dummy_mcc_2 == NULL)
+      exit(1);
 #if defined(ENABLE_ITTI)
-    dummy_mcc[i][0] = (configuration->mcc[i] / 100) % 10;
-    dummy_mcc[i][1] = (configuration->mcc[i] / 10) % 10;
-    dummy_mcc[i][2] = (configuration->mcc[i] / 1) % 10;
+    *dummy_mcc_0 = (configuration->mcc[i] / 100) % 10;
+    *dummy_mcc_1 = (configuration->mcc[i] / 10) % 10;
+    *dummy_mcc_2 = (configuration->mcc[i] / 1) % 10;
 #else
-    dummy_mcc[i][0] = 0;
-    dummy_mcc[i][1] = 0;
-    dummy_mcc[i][2] = 1;
+    *dummy_mcc_0 = 0;
+    *dummy_mcc_1 = 0;
+    *dummy_mcc_2 = 1;
 #endif
-    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][0]);
-    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][1]);
-    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][2]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list, dummy_mcc_0);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list, dummy_mcc_1);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list, dummy_mcc_2);
+
     PLMN_identity_info[i].plmn_Identity.mnc.list.size=0;
     PLMN_identity_info[i].plmn_Identity.mnc.list.count=0;
-#if defined(ENABLE_ITTI)
 
+    dummy_mnc_0 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    dummy_mnc_1 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    dummy_mnc_2 = CALLOC(1, sizeof(LTE_MCC_MNC_Digit_t));
+    if (dummy_mnc_0 == NULL || dummy_mnc_1 == NULL || dummy_mnc_2 == NULL)
+      exit(1);
+#if defined(ENABLE_ITTI)
     if (configuration->mnc[i] >= 100) {
-      dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 10;
-      dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
-      dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
+      *dummy_mnc_0 = (configuration->mnc[i] / 100) % 10;
+      *dummy_mnc_1 = (configuration->mnc[i] / 10) % 10;
+      *dummy_mnc_2 = (configuration->mnc[i] / 1) % 10;
     } else {
       if (configuration->mnc_digit_length[i] == 2) {
-        dummy_mnc[i][0] = (configuration->mnc[i] / 10) % 10;
-        dummy_mnc[i][1] = (configuration->mnc[i] / 1) % 10;
-        dummy_mnc[i][2] = 0xf;
+        *dummy_mnc_0 = (configuration->mnc[i] / 10) % 10;
+        *dummy_mnc_1 = (configuration->mnc[i] / 1) % 10;
+        *dummy_mnc_2 = 0xf;
       } else {
-        dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 100;
-        dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
-        dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
+        *dummy_mnc_0 = (configuration->mnc[i] / 100) % 100;
+        *dummy_mnc_1 = (configuration->mnc[i] / 10) % 10;
+        *dummy_mnc_2 = (configuration->mnc[i] / 1) % 10;
       }
     }
-
 #else
-    dummy_mnc[i][0] = 0;
-    dummy_mnc[i][1] = 1;
-    dummy_mnc[i][2] = 0xf;
+    *dummy_mnc_0 = 0;
+    *dummy_mnc_1 = 1;
+    *dummy_mnc_2 = 0xf;
 #endif
-    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][0]);
-    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][1]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list, dummy_mnc_0);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list, dummy_mnc_1);
 
-    if (dummy_mnc[i][2] != 0xf) {
-      ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][2]);
+    if (*dummy_mnc_2 != 0xf) {
+      ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list, dummy_mnc_2);
+    } else {
+      free(dummy_mnc_2);
     }
 
     //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
@@ -881,11 +904,11 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 #else
   7;
 #endif
-  schedulingInfo.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
+  schedulingInfo->si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
   // This is for SIB2/3
-  sib_type=LTE_SIB_Type_sibType3;
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
+  *sib_type = LTE_SIB_Type_sibType3;
+  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list, sib_type);
+  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list, schedulingInfo);
   //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 #if defined(ENABLE_ITTI)
 
