@@ -4216,6 +4216,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     //to update from pdsch config
     nr_gold_pdsch(ue,nb_symb_pdcch,0, 1);
+
+    nb_symb_sch = dlsch0_harq->nb_symbols;
     
     for (uint16_t m=nb_symb_pdcch;m<=(nb_symb_sch+nb_symb_pdcch-1) ; m++){
       nr_slot_fep(ue,
