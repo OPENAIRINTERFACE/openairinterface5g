@@ -75,7 +75,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
-#ifdef XFORMS
 #include <forms.h>
 
 /* Callbacks, globals and object handlers */
@@ -103,9 +102,8 @@ FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
-#endif //XFORMS
+
 #include <executables/nr-uesoftmodem.h>
 
 RAN_CONTEXT_t RC;
@@ -292,8 +290,6 @@ void exit_function(const char *file, const char *function, const int line, const
   itti_terminate_tasks (TASK_UNKNOWN);
 }
 
-#ifdef XFORMS
-
 
 void reset_stats(FL_OBJECT *button, long arg) {
   //int i,j,k;
@@ -337,10 +333,9 @@ static void *scope_thread(void *arg) {
 
   pthread_exit((void *)arg);
 }
-#endif
+
 
 void init_scope(void) {
-#ifdef XFORMS
   int fl_argc=1;
 
   if (do_forms==1) {
@@ -353,7 +348,6 @@ void init_scope(void) {
     threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
   }
 
-#endif
 }
 
 
