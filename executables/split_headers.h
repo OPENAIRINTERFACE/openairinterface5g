@@ -52,6 +52,7 @@ typedef struct {
 } fs6_ul_t;
 
 typedef struct {
+  uint8_t pbch_pdu[4];
   int num_pdcch_symbols;
   int num_dci;
   DCI_ALLOC_t dci_alloc[32];

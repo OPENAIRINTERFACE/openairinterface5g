@@ -49,6 +49,9 @@ int create_tasks(uint32_t enb_nb) {
   int rc;
 
   if (enb_nb == 0) return 0;
+  bool fs6Du=false;
+  if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 )
+	  fs6Du=true;
 
   LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
   rc = itti_create_task (TASK_ENB_APP, eNB_app_task, NULL);
@@ -64,7 +67,7 @@ int create_tasks(uint32_t enb_nb) {
   }
 
 
-  if (EPC_MODE_ENABLED && !NODE_IS_DU(type)) {
+  if (EPC_MODE_ENABLED && !NODE_IS_DU(type) && !fs6Du ) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
     if (!(get_softmodem_params()->emulate_rf)){

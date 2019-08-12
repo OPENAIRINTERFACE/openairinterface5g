@@ -155,7 +155,6 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
     nbBlocks--;
   } while (nbBlocks);
 
-  LOG_D(HW,"Sent: TS: %lu, frame: %d, subframe: %d\n",
-        UDPheader->timestamp, *(((int *)UDPheader)+1), *(((int *)UDPheader)+2));
+  LOG_D(HW,"Sent: TS: %lu\n", UDPheader->timestamp);
   return 0;
 }

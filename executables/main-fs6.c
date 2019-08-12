@@ -485,6 +485,8 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
   eNB->pdcch_vars[subframe&1].num_pdcch_symbols=hDL(bufferZone)->num_pdcch_symbols;
   eNB->pdcch_vars[subframe&1].num_dci=hDL(bufferZone)->num_dci;
   uint8_t num_mdci = eNB->mpdcch_vars[subframe&1].num_dci = hDL(bufferZone)->num_mdci;
+  eNB->pbch_configured=true;
+  memcpy(eNB->pbch_pdu,hDL(bufferZone)->pbch_pdu, 4);
 
   // Remove all scheduled DL, we will populate from the CU sending
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
@@ -684,6 +686,8 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   uint8_t num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   uint8_t num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
   uint8_t num_mdci          = eNB->mpdcch_vars[subframe&1].num_dci;
+  memcpy(hDL(bufferZone)->pbch_pdu,eNB->pbch_pdu,4);
+
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -691,6 +695,7 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     hDL(bufferZone)->num_dci=num_dci;
     hDL(bufferZone)->num_mdci=num_mdci;
     hDL(bufferZone)->amp=AMP;
+    LOG_D(PHY, "pbch configured: %d\n", eNB->pbch_configured);
   }
 
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
