@@ -704,32 +704,27 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                          unsigned char rank_adaptation,
                          uint8_t subframe)
 {
-
-
   int aarx,aatx,eNB_id=0; //,gain_offset=0;
   //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
-  int i;
-  unsigned int limit,subband;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch0_128,*dl_ch1_128;
+
+/*#if defined(__x86_64__) || defined(__i386__)
+  __m128i *dl_ch0_128, *dl_ch1_128;
 #elif defined(__arm__)
   int16x8_t *dl_ch0_128, *dl_ch1_128get_PL;
-#endif
-  int *dl_ch0,*dl_ch1;
+#endif*/
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  int nb_subbands,subband_size,last_subband_size;
-  int N_RB_DL = frame_parms->N_RB_DL;
+  //unsigned int limit, subband;
+  //int nb_subbands, subband_size, last_subband_size, *dl_ch0, *dl_ch1, N_RB_DL = frame_parms->N_RB_DL;
 
-
-  int rank_tm3_tm4, ch_offset;
-  int16_t *dl_ch;
-
+  int ch_offset, rank_tm3_tm4 = 0;
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
-  dl_ch = (int16_t *)&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset];
   
-  ch_offset     = ue->frame_parms.ofdm_symbol_size*2;
+  /*int16_t *dl_ch;
+  dl_ch = (int16_t *)&ue->pdsch_vars[ue->current_thread_id[subframe]][0]->dl_ch_estimates[eNB_id][ch_offset];*/
+
+  ch_offset = ue->frame_parms.ofdm_symbol_size*2;
 
 printf("testing measurements\n");
   // signal measurements

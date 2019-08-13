@@ -17,19 +17,23 @@
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 
-UL_IND_t *UL_INFO;
-
-nfapi_tx_request_pdu_t* tx_request_pdu_list;
+// this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
+FILL_UL_INFO_MUTEX_t fill_ul_mutex;
+//below 2 difinitions move to phy_stub_UE.c to add initialization when difinition.
+extern UL_IND_t *UL_INFO;
+extern nfapi_tx_request_pdu_t* tx_request_pdu_list;
 // New
 /// Pointers to config_request types. Used from nfapi callback functions.
-nfapi_dl_config_request_t* dl_config_req;
-nfapi_ul_config_request_t* ul_config_req;
-nfapi_hi_dci0_request_t* hi_dci0_req;
+//below 3 difinitions move to phy_stub_UE.c to add initialization when difinition.
+extern nfapi_dl_config_request_t* dl_config_req;
+extern nfapi_ul_config_request_t* ul_config_req;
+extern nfapi_hi_dci0_request_t* hi_dci0_req;
 
 int	tx_req_num_elems;
 
-int next_ra_frame;
-module_id_t next_Mod_id;
+//below 2 difinitions move to lte-ue.c to add initialization when difinition.
+//int next_ra_frame;
+//module_id_t next_Mod_id;
 eth_params_t         stub_eth_params;
 
 

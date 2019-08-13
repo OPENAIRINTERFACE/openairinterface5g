@@ -27,15 +27,18 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_UE.h"
 
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "TDD-Config.h"
-#include "PHICH-Config.h"
-#include "MBSFN-SubframeConfigList.h"
-#include "MobilityControlInfo.h"
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#include "SCellToAddMod-r10.h"
+#include "LTE_RadioResourceConfigDedicated.h"
+#include "LTE_TDD-Config.h"
+#include "LTE_PHICH-Config.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_MobilityControlInfo.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#include "LTE_SCellToAddMod-r10.h"
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#include "LTE_NonMBSFN-SubframeConfig-r14.h"
 #endif
 /** @addtogroup _PHY_STRUCTURES_
  * @{
@@ -114,7 +117,7 @@ void phy_config_mib_eNB(int                    Mod_id,
 			int                    CC_id,
 			int                    eutra_band,
 			int                    N_RB_DL,
-			PHICH_Config_t         *phich_config,
+			LTE_PHICH_Config_t    *phich_config,
 			int                    Nid_cell,
 			int                    Ncp,
 			int                    p_eNB,
@@ -132,7 +135,7 @@ void phy_config_mib_eNB(int                    Mod_id,
 @param SIperiod Periodicity of System Information Messages (in multiples of a frame)*/
 void phy_config_sib1_eNB(module_id_t    Mod_id,
                          int CC_id,
-                         TDD_Config_t  *tdd_Config,
+                         LTE_TDD_Config_t  *tdd_Config,
                          uint8_t           SIwindowsize,
                          uint16_t            SIperiod);
 
@@ -147,10 +150,9 @@ void phy_config_sib1_eNB(module_id_t    Mod_id,
 void phy_config_sib1_ue(module_id_t   Mod_id,
                         int CC_id,
                         uint8_t          CH_index,
-                        TDD_Config_t *tdd_Config,
+                        LTE_TDD_Config_t *tdd_Config,
                         uint8_t          SIwindowsize,
                         uint16_t           SIperiod);
-
 
 /*!
   \fn void phy_config_sib2_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
@@ -170,14 +172,14 @@ void phy_config_sib1_ue(module_id_t   Mod_id,
   @param additionalSpectrumEmission UL parameter (see 36.101)
   @param mbsfn_SubframeConfigList MBSFN subframe configuration
  */
-void phy_config_sib2_ue(module_id_t                     Mod_id,
-                        int                         CC_id,
-                        uint8_t                         CH_index,
-                        RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
-                        ARFCN_ValueEUTRA_t              *ul_CArrierFreq,
-                        long                            *ul_Bandwidth,
-                        AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
-                        struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
+void phy_config_sib2_ue(module_id_t                          Mod_id,
+                        int                                  CC_id,
+                        uint8_t                              CH_index,
+                        LTE_RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
+                        LTE_ARFCN_ValueEUTRA_t              *ul_CArrierFreq,
+                        long                                *ul_Bandwidth,
+                        LTE_AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
+                        struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
 
 
 /*!
@@ -192,7 +194,7 @@ void phy_config_sib2_ue(module_id_t                     Mod_id,
 void phy_config_afterHO_ue(module_id_t Mod_id,
                            uint8_t CC_id,
                            uint8_t eNB_index,
-                           MobilityControlInfo_t *mobilityControlInfo,
+                           LTE_MobilityControlInfo_t *mobilityControlInfo,
                            uint8_t ho_failed);
 /*!
   \fn void phy_config_sib2_eNB(module_id_t Mod_id,
@@ -210,13 +212,13 @@ void phy_config_afterHO_ue(module_id_t Mod_id,
   @param additionalSpectrumEmission UL parameter (see 36.101)
   @param mbsfn_SubframeConfigList MBSFN subframe configuration
  */
-void phy_config_sib2_eNB(module_id_t                            Mod_id,
-                         int                                CC_id,
-                         RadioResourceConfigCommonSIB_t         *radioResourceConfigCommon,
-                         ARFCN_ValueEUTRA_t                     *ul_CArrierFreq,
+void phy_config_sib2_eNB(module_id_t                             Mod_id,
+                         int                                     CC_id,
+                         LTE_RadioResourceConfigCommonSIB_t     *radioResourceConfigCommon,
+                         LTE_ARFCN_ValueEUTRA_t                 *ul_CArrierFreq,
                          long                                   *ul_Bandwidth,
-                         AdditionalSpectrumEmission_t           *additionalSpectrumEmission,
-                         struct MBSFN_SubframeConfigList        *mbsfn_SubframeConfigList);
+                         LTE_AdditionalSpectrumEmission_t       *additionalSpectrumEmission,
+                         struct LTE_MBSFN_SubframeConfigList    *mbsfn_SubframeConfigList);
 
 
 /*!
@@ -233,7 +235,7 @@ void phy_config_sib2_eNB(module_id_t                            Mod_id,
 void phy_config_dedicated_ue(module_id_t Mod_id,
                              int CC_id,
                              uint8_t CH_index,
-                             struct PhysicalConfigDedicated *physicalConfigDedicated);
+                             struct LTE_PhysicalConfigDedicated *physicalConfigDedicated);
 
 /*!
 \fn void phy_config_harq_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
@@ -261,6 +263,10 @@ void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t CH_index,
 void phy_config_sib13_ue(module_id_t Mod_id,
                          int CC_id,uint8_t CH_index,int mbsfn_Area_idx,
                          long mbsfn_AreaId_r9);
+
+void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
+                        uint8_t eNB_id,
+			struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig);
 
 /**
 \brief Configure eNB MBSFN common parameters.
@@ -312,7 +318,7 @@ void phy_config_meas_ue(module_id_t Mod_id,
 void phy_config_dedicated_eNB(module_id_t Mod_id,
                               int CC_id,
                               rnti_t rnti,
-                              struct PhysicalConfigDedicated *physicalConfigDedicated);
+                              struct LTE_PhysicalConfigDedicated *physicalConfigDedicated);
 
 /*!
 \fn void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
@@ -353,15 +359,15 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 		    uint32_t perfect_ce);
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
-                                   SCellToAddMod_r10_t *sCellToAddMod_r10,
+                                   LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                                    int CC_id);
 
 void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     uint16_t rnti,
-                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
+                                    LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                                     int CC_id);
 
 #endif

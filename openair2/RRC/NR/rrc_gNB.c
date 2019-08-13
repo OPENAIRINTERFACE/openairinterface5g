@@ -58,10 +58,6 @@
 
 #include "T.h"
 
-//#if defined(Rel10) || defined(Rel14)
-#include "MeasResults.h"
-//#endif
-
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #include "OCG.h"

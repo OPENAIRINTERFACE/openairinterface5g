@@ -19,119 +19,65 @@
  *      contact@openairinterface.org
  */
 
-#include <string.h>
-#include <math.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
+#include <unistd.h>
+#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
-#include "common/ran_context.h" 
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
-#include "PHY/types.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_defs.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_extern.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/defs_gNB.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/phy_vars_nr_ue.h"
+#include "PHY/types.h"
+#include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "PHY/phy_vars_nr_ue.h"
-
-#include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
+#include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
-
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_UE/mac_defs.h"
-#include "LAYER2/NR_MAC_UE/mac_extern.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
-
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
-
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode=0;
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
 
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
-
-int32_t get_uldl_offset(int nr_bandP) {return(0);}
-
-NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
-
-int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
-int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
-
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
-
-void exit_function(const char* file, const char* function, const int line,const char *s) { 
-   const char * msg= s==NULL ? "no comment": s;
-   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
-   exit(-1); 
-}
-
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
-{
-  return 0;
-}
-
+//Dummy Functions
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
 int rlc_module_init (void) {return(0);}
-void pdcp_layer_init(void) {}
-int rrc_init_nr_global_param(void){return(0);}
-
-void config_common(int Mod_idP, 
-                   int CC_idP,
-		   int Nid_cell,
-                   int nr_bandP,
-		   uint64_t SSB_positions,
-		   uint16_t ssb_periodicity,
-                   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-		   );
-
+void pdcp_layer_init (void) {}
+int rrc_init_nr_global_param (void) {return(0);}
+void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
+                              const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {
-
   char c;
-
   int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
@@ -195,8 +141,8 @@ int main(int argc, char **argv)
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);
@@ -449,8 +395,8 @@ int main(int argc, char **argv)
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
- 				fs, 
-				bw, 
+ 				fs,
+				bw,
                                 0,
                                 0,
                                 0);
@@ -705,7 +651,7 @@ int main(int argc, char **argv)
 
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	  
+
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
@@ -728,7 +674,7 @@ int main(int argc, char **argv)
 	UE_proc.frame_rx = frame;
 	UE_proc.nr_tti_rx= slot;
 	UE_proc.subframe_rx = slot;
-	
+
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
 	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
@@ -744,8 +690,8 @@ int main(int argc, char **argv)
 	  if (UE->frame_parms.nb_antennas_rx>1)
 	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
 	}
-	
-	if (UE_mac->dl_config_request.number_pdus==0) n_errors++;
+
+	if (UE_mac->dl_config_request.number_pdus==0) n_errors++; //if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }
     } //noise trials
 

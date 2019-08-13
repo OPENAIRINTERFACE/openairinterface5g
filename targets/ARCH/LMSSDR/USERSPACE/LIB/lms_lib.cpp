@@ -193,7 +193,7 @@ int trx_lms_start(openair0_device *device){
         LMS_EnableChannel(lms_device,LMS_CH_RX,1,true);
         LMS_EnableChannel(lms_device,LMS_CH_TX,1,true);
     } */
-    LMS_VCTCXOWrite(lms_device,129);
+    LMS_VCTCXOWrite(lms_device, 129);
 
     if (LMS_SetSampleRate(lms_device,device->openair0_cfg->sample_rate,2)!=0)
     {

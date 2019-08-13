@@ -45,7 +45,7 @@ Description Defines functions used to handle state of EPS bearer contexts
 #include "esmData.h"
 
 #include "nas_timer.h"
-#include "user_defs.h"
+#include "../user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/

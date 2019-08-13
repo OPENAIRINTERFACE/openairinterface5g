@@ -5,7 +5,6 @@ import "config_common.proto";
 
 message flex_cell_config {
 	optional uint32 phy_cell_id = 1;		// The PCI of this cell
-	optional uint32 cell_id = 2;			// The PLMN cell id of this cell
 	optional uint32 pusch_hopping_offset = 3;	// PUSCH resources in RBs for hopping
 	optional uint32 hopping_mode = 4;		// One of the FLHM_* enum values
 	optional uint32 n_sb = 5;			// The number of subbands
@@ -43,8 +42,10 @@ message flex_cell_config {
 	optional uint32 eutra_band= 37;       // operating band 
 	optional int32 dl_pdsch_power = 38;       // operating downlink power 
 	optional int32 ul_pusch_power = 39;       // operating uplink power
+	repeated flex_plmn plmn_id = 40;                   // The PLMN cell id of this cell
 
 	optional flex_slice_config slice_config = 42;
+        optional bool x2_ho_net_control = 43;
 }
 
 message flex_slice_config {
@@ -97,6 +98,8 @@ message flex_ue_config {
 	optional uint64 imsi = 30;
 	optional uint32 dl_slice_id = 31;
 	optional uint32 ul_slice_id = 32;
+  // Configuration about RRC measurements
+  optional flex_measurement_info info = 33;
 }
 
 message flex_lc_ue_config {

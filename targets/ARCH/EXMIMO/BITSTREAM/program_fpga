@@ -1,4 +1,0 @@
-#!/bin/bash
-
-impact -batch prom_generate.cmd
-impact -batch prom_load.cmd

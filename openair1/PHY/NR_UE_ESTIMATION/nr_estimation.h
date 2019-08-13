@@ -43,49 +43,51 @@
 \param symbol symbol within frame
 */
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_offset,
-				unsigned char Ns,
-				unsigned char symbol,
-				unsigned short coreset_start_subcarrier,
-				unsigned short nb_rb_coreset);
+                                uint8_t eNB_offset,
+                                unsigned char Ns,
+                                unsigned char symbol,
+                                unsigned short coreset_start_subcarrier,
+                                unsigned short nb_rb_coreset);
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              uint8_t eNB_offset,
                              unsigned char Ns,
                              unsigned char symbol,
-			     int dmrss,
-			     NR_UE_SSB *current_ssb);
+                             int dmrss,
+                             NR_UE_SSB *current_ssb);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                uint8_t eNB_offset,
                                unsigned char Ns,
                                unsigned char symbol,
-			       int dmrss,
-			       uint8_t ssb_index,
-			       uint8_t n_hf);
+                               int dmrss,
+                               uint8_t ssb_index,
+                               uint8_t n_hf);
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_offset,
-                              unsigned char Ns,
-                              unsigned short p,
-                              unsigned char symbol,
-			      unsigned short bwp_start_subcarrier,
-			      unsigned short nb_rb_pdsch);
+                                uint8_t eNB_offset,
+                                unsigned char Ns,
+                                unsigned short p,
+                                unsigned char symbol,
+                                unsigned short bwp_start_subcarrier,
+                                unsigned short nb_rb_pdsch);
 
-							  
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
-                      PHY_VARS_NR_UE *ue,
-                      module_id_t eNB_id,
-					  uint8_t subframe,
-                      unsigned char clear,
-                      short coef);
+                        PHY_VARS_NR_UE *ue,
+                        module_id_t eNB_id,
+                        uint8_t subframe,
+                        unsigned char clear,
+                        short coef);
                       
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
-                         unsigned int subframe_offset,
-                         unsigned char N0_symbol,
-                         unsigned char abstraction_flag,
-                         unsigned char rank_adaptation,
-                         uint8_t subframe);
-                     
+                        unsigned int subframe_offset,
+                        unsigned char N0_symbol,
+                        unsigned char abstraction_flag,
+                        unsigned char rank_adaptation,
+                        uint8_t subframe);
+
+void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
+                        uint32_t rx_power_fil_dB,
+                        uint8_t eNB_id);
 
 #endif

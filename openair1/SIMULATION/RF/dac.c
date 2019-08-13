@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include "PHY/TOOLS/tools_defs.h"
 #include "rf.h"
+#include "common/utils/LOG/log.h"
+
+
 void dac(double *s_re[2],
          double *s_im[2],
          int32_t **input,
@@ -56,7 +59,7 @@ void dac(double *s_re[2],
 
   V /= (meas_length);
 #ifdef DEBUG_DAC
-  printf("DAC: 10*log10(V)=%f (%f)\n",10*log10(V),V);
+  LOG_I(OCM,"DAC: 10*log10(V)=%f (%f)\n",10*log10(V),V);
 #endif
 
   if (V) {
@@ -73,7 +76,7 @@ void dac(double *s_re[2],
     }
   }
 }
-
+ 
 double dac_fixed_gain(double *s_re[2],
                       double *s_im[2],
                       int32_t **input,
@@ -107,21 +110,20 @@ double dac_fixed_gain(double *s_re[2],
   }
 
 
+#ifdef DEBUG_DAC
+  LOG_I(OCM,"DAC: amp %f, amp1 %f dB (%d,%d), tx_power target %f (actual %f %f),length %d,pos %d\n",
+	  20*log10(amp),
+	  20*log10(*amp1p),
+	  input_offset,
+	  input_offset_meas,
+	  txpwr_dBm,
+	  10*log10((double)signal_energy((int32_t*)&input[0][input_offset_meas],length_meas)/NB_RE),
+	  10*log10((double)signal_energy((int32_t*)&input[1][input_offset_meas],length_meas)/NB_RE),
+	  length, 
+	  input_offset_meas);
 
-  //  printf("DAC: amp %f, amp1 %f dB (%d,%d), tx_power %f (%f),length %d,pos %d\n",20*log10(amp),20*log10(*amp1p),input_offset,input_offset_meas,txpwr_dBm,length, 10*log10((double)signal_energy((int32_t*)&input[0][input_offset_meas],length_meas)/NB_RE),input_offset_meas);
+#endif
 
-  /*
-    if (nb_tx_antennas==2)
-      amp1 = AMP/2;
-    else if (nb_tx_antennas==4)
-      amp1 = ((AMP*ONE_OVER_SQRT2_Q15)>>16);
-    else //assume (nb_tx_antennas==1)
-      amp1 = ((AMP*ONE_OVER_SQRT2_Q15)>>15);
-    amp1 = amp1*sqrt(512.0/300.0); //account for loss due to null carriers
-    //printf("DL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
-  */
-
-  //  printf("DAC: amp/amp1p %f amp1 %f dB (%d,%d), tx_power %f\n",amp/(*amp1p),20*log10(*amp1p),input_offset,input_offset_meas,txpwr_dBm);
   for (i=0; i<length; i++) {
     for (aa=0; aa<nb_tx_antennas; aa++) {
       s_re[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)])/(*amp1p); 
@@ -129,7 +131,8 @@ double dac_fixed_gain(double *s_re[2],
     }
   }
 
-  //  printf("ener %e\n",signal_energy_fp(s_re,s_im,nb_tx_antennas,length<length_meas?length:length_meas,0));
-
+#ifdef DEBUG_DAC
+  LOG_I(OCM,"ener %e\n",signal_energy_fp(s_re,s_im,nb_tx_antennas,length<length_meas?length:length_meas,0));
+#endif
   return(signal_energy_fp(s_re,s_im,nb_tx_antennas,length<length_meas?length:length_meas,0)/NB_RE);
 }

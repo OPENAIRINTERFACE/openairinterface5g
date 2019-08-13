@@ -1,0 +1,163 @@
+package protocol;
+
+
+message fsp_header {
+        optional uint32 version = 1;
+        optional uint32 type = 2;
+        optional uint32 xid = 4;
+}
+
+enum fsp_type {
+     // Discovery and maintenance messages
+     FSPT_HELLO = 0;
+     FSPT_ECHO_REQUEST = 1;
+     FSPT_ECHO_REPLY = 2;
+     FSPT_RLC_DATA_REQ = 3;
+     FSPT_RLC_DATA_REQ_ACK = 4;
+     FSPT_PDCP_DATA_IND = 5;
+     FSPT_PDCP_DATA_IND_ACK = 6;
+}
+
+enum f1u_type {
+     // Discovery and maintenance messages
+     F1U_DL_DATA = 0;
+     F1U_DL_STATUS = 1;
+}
+
+
+message f1u_message{
+     optional flexsplit_direction msg_dir = 100;
+     oneof msg{
+	dl_user_data dl_data = 1;
+        dl_data_delivery_status dl_status = 2;
+     }
+}
+
+
+
+message flexsplit_message {
+     optional flexsplit_direction msg_dir = 100;
+	oneof msg {
+              fsp_hello hello_msg = 1;
+              fsp_echo_request echo_request_msg = 2;
+              fsp_echo_reply echo_reply_msg = 3;
+              fspRlcDataReq data_req_msg = 4;
+	      fspRlcDataReqAck data_req_ack = 5;
+	      fspPdcpDataInd data_ind_msg = 6;
+	      fspPdcpDataIndAck data_ind_ack = 7;
+	}
+}
+
+enum flexsplit_direction {
+     //option allow_alias = true;
+     NOT_SET = 0;
+     INITIATING_MESSAGE = 1;
+     SUCCESSFUL_OUTCOME=2;
+     UNSUCCESSFUL_OUTCOME=3;	
+}
+
+enum flexsplit_err {
+	// message errors
+	NO_ERR = 0;	
+	MSG_DEQUEUING = -1;
+	MSG_ENQUEUING = -2;
+	MSG_DECODING = -3;
+	MSG_ENCODING = -4;
+	MSG_BUILD = -5;
+	MSG_NOT_SUPPORTED = -6; 
+	MSG_NOT_HANDLED = -7;
+	MSG_NOT_VALIDATED = -8;
+	MSG_OUT_DATED = -9;
+	
+	// other erros
+	UNEXPECTED = -100;	
+}
+
+message fsp_ctxt {
+        optional uint32 fsp_mod_id = 1;
+        optional bool fsp_enb_flag = 2;
+        optional uint32 fsp_instance = 3;
+        optional uint32 fsp_rnti = 4;
+        optional uint32 fsp_frame = 5;
+        optional uint32 fsp_subframe = 6;
+        optional uint32 fsp_eNB_index = 7;
+
+}
+
+message fspRlcPdu {
+        optional bytes fsp_pdu_data = 1; // Maximum PDU to be transfered
+}
+
+message fspRlcData {
+        optional fsp_ctxt fsp_ctxt = 1;
+        optional bool fsp_srb_flag = 2;
+        optional bool fsp_mbms_flag = 3;
+        optional uint32 fsp_rb_id = 4;
+        optional uint32 fsp_muip = 5;
+        optional uint32 fsp_confirm = 6;
+        optional int32 fsp_sdu_buffer_size = 7;
+        optional fspRlcPdu fsp_pdu = 8;
+}
+
+//
+// Maintenance and discovery messages
+//
+
+message fsp_hello {
+      optional fsp_header header = 1;
+}
+
+message fsp_echo_request {
+        optional fsp_header header = 1;
+//        extensions 100 to 199;
+}
+
+
+message fsp_echo_reply {
+        optional fsp_header header = 1;
+//        extensions 100 to 199;
+}
+
+
+message fspRlcDataReq {
+        optional fsp_header header = 1;
+	optional uint32 eNB_id = 2;
+        optional fspRlcData pdcp_data = 3;
+}
+
+message fspRlcDataReqAck {
+	optional fsp_header header = 1;
+	optional uint32 result = 2;
+}
+
+message fspPdcpDataInd {
+        optional fsp_header header = 1;
+	optional uint32 eNB_id = 2;
+        optional fspRlcData rlc_data = 3;
+}
+
+message fspPdcpDataIndAck {
+        optional fsp_header header = 1;
+	optional uint32 result = 2;
+}
+
+message dl_data_header {
+        required uint32 fields = 1;
+}
+
+message dl_user_data {
+	required dl_data_header header = 1;
+	required bytes pdu = 2;
+	required uint32 frame = 3;
+	required uint32 subframe = 4;
+	required uint32 rnti = 5;
+}
+
+
+message dl_data_delivery_status {
+	required dl_data_header header = 1;
+	required bytes pdu = 2;
+	required uint32 frame = 3;
+	required uint32 subframe = 4;
+	required uint32 rnti = 5;
+}

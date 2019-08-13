@@ -22,33 +22,25 @@
 #include "phy_init.h"
 #include "common/utils/LOG/log.h"
 
-uint16_t dl_S_table_normal[10]={3,9,10,11,12,3,9,10,11,6};
-uint16_t dl_S_table_extended[10]={3,8,9,10,3,8,9,5,0,0};
+uint16_t dl_S_table_normal[10]= {3,9,10,11,12,3,9,10,11,6};
+uint16_t dl_S_table_extended[10]= {3,8,9,10,3,8,9,5,0,0};
 
-void set_S_config(LTE_DL_FRAME_PARMS *fp) {
-
+void set_S_config(LTE_DL_FRAME_PARMS *fp)
+{
   int X = fp->srsX;
-
   fp->ul_symbols_in_S_subframe=(1+X);
 
   if ((fp->Ncp==EXTENDED) && (fp->tdd_config_S>7))
     AssertFatal(1==0,"Illegal S subframe configuration for Extended Prefix mode\n");
 
   fp->dl_symbols_in_S_subframe = (fp->Ncp==NORMAL)?dl_S_table_normal[fp->tdd_config_S] : dl_S_table_extended[fp->tdd_config_S];
-
-  
 }
 
-int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
+int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
+		             uint8_t osf)
 {
-
   uint8_t log2_osf;
-
-#if DISABLE_LOG_X
-  printf("Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
-#else
   LOG_I(PHY,"Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
-#endif
 
   if (frame_parms->Ncp==EXTENDED) {
     frame_parms->nb_prefix_samples0=512;
@@ -58,125 +50,115 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
     frame_parms->nb_prefix_samples0 = 160;
     frame_parms->nb_prefix_samples = 144;
     frame_parms->symbols_per_tti = 14;
-      
   }
 
-
   switch(osf) {
-  case 1:
-    log2_osf = 0;
-    break;
+    case 1:
+      log2_osf = 0;
+      break;
 
-  case 2:
-    log2_osf = 1;
-    break;
+    case 2:
+      log2_osf = 1;
+      break;
 
-  case 4:
-    log2_osf = 2;
-    break;
+    case 4:
+      log2_osf = 2;
+      break;
 
-  case 8:
-    log2_osf = 3;
-    break;
+    case 8:
+      log2_osf = 3;
+      break;
 
-  case 16:
-    log2_osf = 4;
-    break;
+    case 16:
+      log2_osf = 4;
+      break;
 
-  default:
-    AssertFatal(1==0,"Illegal oversampling %d\n",osf);
-    
+    default:
+      AssertFatal(1==0,"Illegal oversampling %d\n",osf);
   }
 
   switch (frame_parms->N_RB_DL) {
+    case 100:
+      AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
 
-  case 100:
-    AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
-    
+      if (frame_parms->threequarter_fs) {
+        frame_parms->ofdm_symbol_size = 1536;
+        frame_parms->samples_per_tti = 23040;
+        frame_parms->first_carrier_offset = 1536-600;
+        frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
+        frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
+      } else {
+        frame_parms->ofdm_symbol_size = 2048;
+        frame_parms->samples_per_tti = 30720;
+        frame_parms->first_carrier_offset = 2048-600;
+      }
 
-    if (frame_parms->threequarter_fs) {
+      frame_parms->N_RBGS = 4;
+      frame_parms->N_RBG = 25;
+      break;
+
+    case 75:
+      AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       frame_parms->ofdm_symbol_size = 1536;
       frame_parms->samples_per_tti = 23040;
-      frame_parms->first_carrier_offset = 1536-600;
+      frame_parms->first_carrier_offset = 1536-450;
       frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
       frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
+      frame_parms->N_RBGS = 4;
+      frame_parms->N_RBG = 25;
+      break;
 
-    }
-    else {
-      frame_parms->ofdm_symbol_size = 2048;
-      frame_parms->samples_per_tti = 30720;
-      frame_parms->first_carrier_offset = 2048-600;
-    }
-    frame_parms->N_RBGS = 4;
-    frame_parms->N_RBG = 25;
-    break;
+    case 50:
+      AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      frame_parms->ofdm_symbol_size = 1024*osf;
+      frame_parms->samples_per_tti = 15360*osf;
+      frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300;
+      frame_parms->nb_prefix_samples>>=(1-log2_osf);
+      frame_parms->nb_prefix_samples0>>=(1-log2_osf);
+      frame_parms->N_RBGS = 3;
+      frame_parms->N_RBG = 17;
+      break;
 
-  case 75:
-    AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+    case 25:
+      AssertFatal(osf<=2,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      frame_parms->ofdm_symbol_size = 512*osf;
+      frame_parms->samples_per_tti = 7680*osf;
+      frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150;
+      frame_parms->nb_prefix_samples>>=(2-log2_osf);
+      frame_parms->nb_prefix_samples0>>=(2-log2_osf);
+      frame_parms->N_RBGS = 2;
+      frame_parms->N_RBG = 13;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      frame_parms->ofdm_symbol_size_khz_1dot25     = 6144*osf;
+      frame_parms->first_carrier_offset_khz_1dot25 = frame_parms->ofdm_symbol_size_khz_1dot25 - 1800; //4344
+      frame_parms->nb_prefix_samples_khz_1dot25>>=(2-log2_osf);
+      frame_parms->nb_prefix_samples0_khz_1dot25>>=(2-log2_osf);
+#endif
+      break;
 
-    frame_parms->ofdm_symbol_size = 1536;
-    frame_parms->samples_per_tti = 23040;
-    frame_parms->first_carrier_offset = 1536-450;
-    frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
-    frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
-    frame_parms->N_RBGS = 4;
-    frame_parms->N_RBG = 25;
-    break;
+    case 15:
+      frame_parms->ofdm_symbol_size = 256*osf;
+      frame_parms->samples_per_tti = 3840*osf;
+      frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 90;
+      frame_parms->nb_prefix_samples>>=(3-log2_osf);
+      frame_parms->nb_prefix_samples0>>=(3-log2_osf);
+      frame_parms->N_RBGS = 2;
+      frame_parms->N_RBG = 8;
+      break;
 
-  case 50:
-    AssertFatal(osf==1,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+    case 6:
+      frame_parms->ofdm_symbol_size = 128*osf;
+      frame_parms->samples_per_tti = 1920*osf;
+      frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 36;
+      frame_parms->nb_prefix_samples>>=(4-log2_osf);
+      frame_parms->nb_prefix_samples0>>=(4-log2_osf);
+      frame_parms->N_RBGS = 1;
+      frame_parms->N_RBG = 6;
+      break;
 
-    frame_parms->ofdm_symbol_size = 1024*osf;
-    frame_parms->samples_per_tti = 15360*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300;
-    frame_parms->nb_prefix_samples>>=(1-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(1-log2_osf);
-    frame_parms->N_RBGS = 3;
-    frame_parms->N_RBG = 17;
-    break;
-
-  case 25:
-    AssertFatal(osf<=2,"Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
-    
-
-    frame_parms->ofdm_symbol_size = 512*osf;
-
-
-    frame_parms->samples_per_tti = 7680*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150;
-    frame_parms->nb_prefix_samples>>=(2-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(2-log2_osf);
-    frame_parms->N_RBGS = 2;
-    frame_parms->N_RBG = 13;
-
-    break;
-
-  case 15:
-    frame_parms->ofdm_symbol_size = 256*osf;
-    frame_parms->samples_per_tti = 3840*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 90;
-    frame_parms->nb_prefix_samples>>=(3-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(3-log2_osf);
-    frame_parms->N_RBGS = 2;
-    frame_parms->N_RBG = 8;
-
-    break;
-
-  case 6:
-    frame_parms->ofdm_symbol_size = 128*osf;
-    frame_parms->samples_per_tti = 1920*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 36;
-    frame_parms->nb_prefix_samples>>=(4-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(4-log2_osf);
-    frame_parms->N_RBGS = 1;
-    frame_parms->N_RBG = 6;
-
-    break;
-
-  default:
-    AssertFatal(1==0,"Number of resource blocks (N_RB_DL %d) undefined, frame_parms = %p \n",frame_parms->N_RB_DL, frame_parms);
-
-    break;
+    default:
+      AssertFatal(1==0,"Number of resource blocks (N_RB_DL %d) undefined, frame_parms = %p \n",frame_parms->N_RB_DL, frame_parms);
+      break;
   }
 
   LOG_I(PHY,"lte_parms.c: Setting N_RB_DL to %d, ofdm_symbol_size %d\n",frame_parms->N_RB_DL, frame_parms->ofdm_symbol_size);

@@ -19,15 +19,21 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_handler.h
+ * \brief x2ap handler procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #ifndef X2AP_ENB_HANDLERS_H_
 #define X2AP_ENB_HANDLERS_H_
 
 #include "x2ap_eNB_defs.h"
 
-void x2ap_handle_x2_setup_message(x2ap_eNB_data_t *eNB_desc_p, int sctp_shutdown);
+void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *eNB_desc_p, int sctp_shutdown);
 
 int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
                             const uint8_t * const data, const uint32_t data_length);
 
 #endif /* X2AP_ENB_HANDLERS_H_ */
-

@@ -36,7 +36,7 @@
 
 int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id)
 {
-    RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
+    LTE_RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
 
     AssertFatal(CC_id == 0,
 		"Transmission on secondary CCs is not supported yet\n");

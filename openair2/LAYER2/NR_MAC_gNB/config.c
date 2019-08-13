@@ -80,13 +80,13 @@ void config_nr_mib(int Mod_idP,
 
 void config_common(int Mod_idP, 
                    int CC_idP,
-		   int cellid,
+				   int cellid,
                    int nr_bandP,
                    uint64_t ssb_pattern,
-		   uint16_t ssb_periodicity,
-		   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP){
-
+				   uint16_t ssb_periodicity,
+				   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP)
+{
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[CC_idP];
 
   int mu = 1;
@@ -134,19 +134,17 @@ void config_common(int Mod_idP,
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_idP,
-			   int cellid,
+						   int cellid,
                            int p_gNB,
                            int nr_bandP,
-			   uint64_t ssb_pattern,
+						   uint64_t ssb_pattern,
                            uint16_t ssb_enum_periodicity,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
-                           NR_ServingCellConfigCommon_t *servingcellconfigcommon
-                           ){
-
-
-  uint16_t ssb_periodicity;
+                           NR_ServingCellConfigCommon_t *servingcellconfigcommon)
+{
+  uint16_t ssb_periodicity=0;
 
   switch (ssb_enum_periodicity) {
     case 0:
@@ -167,7 +165,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     case 5:
       ssb_periodicity = 160;
       break;
-
   }      
 
   if( mib != NULL ){
@@ -191,16 +188,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if( servingcellconfigcommon != NULL ){
     config_common(Mod_idP, 
                   CC_idP,
-		  cellid,
+				  cellid,
                   nr_bandP,
-		  ssb_pattern,
+				  ssb_pattern,
                   ssb_periodicity,
                   dl_CarrierFreqP,
                   dl_BandwidthP
                   );  
   }//END if( servingcellconfigcommon != NULL )
-
-
 
   LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
 
@@ -227,4 +222,3 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   return(0);
 
 }// END rrc_mac_config_req_gNB
-

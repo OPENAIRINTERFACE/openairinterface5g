@@ -735,7 +735,7 @@ Paging-v1130-IEs ::=			SEQUENCE {
 }
 
 Paging-v1310-IEs ::=			SEQUENCE {
-	redistributionIndication-r13	ENUMERATED {true}					OPTIONAL,	--Need ON
+	redistributionIndication-r13	ENUMERATED {true}					OPTIONAL,	-- Need ON
 	systemInfoModification-eDRX-r13	ENUMERATED {true}					OPTIONAL,	-- Need ON
 	nonCriticalExtension			SEQUENCE {}							OPTIONAL
 }

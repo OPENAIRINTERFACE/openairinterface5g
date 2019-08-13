@@ -40,8 +40,6 @@ extern int number_of_cards;
 
 extern short conjugate[8],conjugate2[8];
 
-
-
 extern RAN_CONTEXT_t RC;
 
 extern short primary_synch0[144];
@@ -67,7 +65,7 @@ extern unsigned char NB_RU;
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 

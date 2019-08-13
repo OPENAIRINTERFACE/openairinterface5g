@@ -55,7 +55,7 @@
 #        include "rlc_am_rx_list.h"
 #        include "rlc_am_reassembly.h"
 #        include "rlc_am_init.h"
-#        include "RLC-Config.h"
+#        include "LTE_RLC-Config.h"
 #        include "assertions.h"
 //#        include "rlc_am_test.h"
 
@@ -65,7 +65,7 @@
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
           rLC_Pp->rb_id
 
-#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %"PRIx16" %s %02u]"
+#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02u]"
 #define PROTOCOL_RLC_AM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
         CTXT_Pp->rnti,\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
@@ -79,13 +79,13 @@
 	  if (pmtl_rc != 0){\
         if (pmtl_rc == EBUSY) {\
           MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                       "0 "PROTOCOL_RLC_AM_MSC_FMT" Warning try lock %s busy",\
+                       "0 " PROTOCOL_RLC_AM_MSC_FMT " Warning try lock %s busy",\
                        PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
                        #mUTEX);\
           pthread_mutex_lock(mUTEX);\
         } else {\
             MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-            		"0 "PROTOCOL_RLC_AM_MSC_FMT" Error try lock %s %d",\
+                    "0 " PROTOCOL_RLC_AM_MSC_FMT " Error try lock %s %d",\
                     PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
                     #mUTEX, pmtl_rc);\
         }\
@@ -138,7 +138,7 @@ config_req_rlc_am (
 void config_req_rlc_am_asn1 (
                 const protocol_ctxt_t* const ctxtP,
                 const srb_flag_t srb_flagP,
-                const struct RLC_Config__am * const config_amP,
+                const struct LTE_RLC_Config__am * const config_amP,
                 const rb_id_t rb_idP,
                 const logical_chan_id_t chan_idP);
 

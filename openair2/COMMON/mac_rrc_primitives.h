@@ -30,13 +30,13 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 
-#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "MeasGapConfig.h"
-#include "TDD-Config.h"
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "MBSFN-AreaInfoList-r9.h"
-#include "MBSFN-SubframeConfigList.h"
+#include "LTE_RadioResourceConfigCommonSIB.h"
+#include "LTE_RadioResourceConfigDedicated.h"
+#include "LTE_MeasGapConfig.h"
+#include "LTE_TDD-Config.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_MBSFN-AreaInfoList-r9.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
 #endif
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
@@ -347,25 +347,25 @@ typedef struct {
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   int (*rrc_mac_config_req)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t UE_id,uint8_t eNB_index,
-                            RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-                            struct PhysicalConfigDedicated *physicalConfigDedicated,
-                            MAC_MainConfig_t *mac_MainConfig,
+                            LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+                            struct LTE_PhysicalConfigDedicated *physicalConfigDedicated,
+                            LTE_MAC_MainConfig_t *mac_MainConfig,
                             long logicalChannelIdentity,
-                            LogicalChannelConfig_t *logicalChannelConfig,
-                            MeasGapConfig_t *measGapConfig,
-                            TDD_Config_t *tdd_Config,
+                            LTE_LogicalChannelConfig_t *logicalChannelConfig,
+                            LTE_MeasGapConfig_t *measGapConfig,
+                            LTE_TDD_Config_t *tdd_Config,
                             uint8_t *SIwindowsize,
                             uint16_t *SIperiod
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             ,
                             MBMS_flag_t MBMS_Flag,
-                            struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
-                            MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-                            struct PMCH_InfoList_r9 *pmch_InfoList
+                            struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+                            LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                            struct LTE_PMCH_InfoList_r9 *pmch_InfoList
 #endif
                            );
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char*
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                   ,uint32_t
                                   ,uint32_t
 #endif
@@ -373,7 +373,7 @@ typedef struct {
   void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
   mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, sub_frame_t subframeP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
       logical_chan_id_t channel_idP, tb_size_t tb_sizeP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       ,uint32_t sourceL2Id
       ,uint32_t destinationL2Id
 #endif
@@ -390,7 +390,7 @@ typedef struct {
 
 
 
-#define IDLE 0
+//#define IDLE 0
 #define NEED_RADIO_CONFIG 3
 #define RADIO_CONFIG_TX 2
 #define RADIO_CONFIG_OK 1

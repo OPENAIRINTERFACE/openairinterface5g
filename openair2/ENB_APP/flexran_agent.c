@@ -26,12 +26,13 @@
  * \version 0.1
  */
 
+#define _GNU_SOURCE
 #include "flexran_agent.h"
 #include <common/utils/system.h>
 
+#include <pthread.h>
 #include <arpa/inet.h>
 
-void *send_thread(void *args);
 void *receive_thread(void *args);
 Protocol__FlexranMessage *flexran_agent_timeout(void* args);
 
@@ -110,10 +111,11 @@ void *receive_thread(void *args) {
   err_code_t             err_code=0;
 
   Protocol__FlexranMessage *msg;
+  pthread_setname_np(pthread_self(), "flexran_rx_thr");
   
   while (1) {
 
-    while (flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
+    while ((size = flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &priority)) > 0) {
       
       LOG_D(FLEXRAN_AGENT,"received message with size %d\n", size);
   
@@ -169,6 +171,11 @@ int flexran_agent_start(mid_t mod_id)
   /*Create the async channel info*/
   flexran_agent_async_channel_t *channel_info = flexran_agent_async_channel_info(mod_id, in_ip, in_port);
 
+  if (!channel_info) {
+    LOG_E(FLEXRAN_AGENT, "could not create channel_info\n");
+    exit(1);
+  }
+
   /*Create a channel using the async channel info*/
   channel_id = flexran_agent_create_channel((void *) channel_info, 
 					flexran_agent_async_msg_send, 
@@ -177,12 +184,14 @@ int flexran_agent_start(mid_t mod_id)
 
   
   if (channel_id <= 0) {
+    LOG_E(FLEXRAN_AGENT, "could not create channel\n");
     goto error;
   }
 
   flexran_agent_channel_t *channel = get_channel(channel_id);
   
   if (channel == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not get channel for channel_id %d\n", channel_id);
     goto error;
   }
 
@@ -196,19 +205,43 @@ int flexran_agent_start(mid_t mod_id)
   /*Initialize the continuous stats update mechanism*/
   flexran_agent_init_cont_stats_update(mod_id);
   pthread_t t; 
- threadCreate(&t, receive_thread, flexran, "flexran", -1, OAI_PRIORITY_RT);
+  threadCreate(&t, receive_thread, flexran, "flexran", -1, OAI_PRIORITY_RT);
 
-  /*Initialize and register the mac xface. Must be modified later
-   *for more flexibility in agent management */
+  /* Register and initialize the control modules depending on capabilities.
+   * After registering, calling flexran_agent_get_*_xface() tells whether a
+   * control module is operational */
+  uint16_t caps = flexran_get_capabilities_mask(mod_id);
+  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s\n",
+        flexran_get_bs_id(mod_id), caps,
+        FLEXRAN_CAP_LOPHY(caps) ? " LOPHY" : "",
+        FLEXRAN_CAP_HIPHY(caps) ? " HIPHY" : "",
+        FLEXRAN_CAP_LOMAC(caps) ? " LOMAC" : "",
+        FLEXRAN_CAP_HIMAC(caps) ? " HIMAC" : "",
+        FLEXRAN_CAP_RLC(caps)   ? " RLC"   : "",
+        FLEXRAN_CAP_PDCP(caps)  ? " PDCP"  : "",
+        FLEXRAN_CAP_SDAP(caps)  ? " SDAP"  : "",
+        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "");
 
-  AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
-  flexran_agent_register_mac_xface(mod_id, mac_agent_xface);
-  
-  AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
-  flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
+  if (FLEXRAN_CAP_LOPHY(caps) || FLEXRAN_CAP_HIPHY(caps)) {
+    flexran_agent_register_phy_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered PHY interface/CM for eNB %d\n", mod_id);
+  }
 
-  AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
-  flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
+  if (FLEXRAN_CAP_LOMAC(caps) || FLEXRAN_CAP_HIMAC(caps)) {
+    flexran_agent_register_mac_xface(mod_id);
+    flexran_agent_init_mac_agent(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered MAC interface/CM for eNB %d\n", mod_id);
+  }
+
+  if (FLEXRAN_CAP_RRC(caps)) {
+    flexran_agent_register_rrc_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered RRC interface/CM for eNB %d\n", mod_id);
+  }
+
+  if (FLEXRAN_CAP_PDCP(caps)) {
+    flexran_agent_register_pdcp_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered PDCP interface/CM for eNB %d\n", mod_id);
+  }
 
   /* 
    * initilize a timer 
@@ -216,11 +249,6 @@ int flexran_agent_start(mid_t mod_id)
   
   flexran_agent_init_timer();
 
-  /*
-   * Initialize the mac agent
-   */
-  flexran_agent_init_mac_agent(mod_id);
-  
   /* 
    * start the enb agent task for tx and interaction with the underlying network function
    */ 
@@ -256,7 +284,7 @@ int flexran_agent_start(mid_t mod_id)
   return 0;
 
 error:
-  LOG_I(FLEXRAN_AGENT,"there was an error\n");
+  LOG_E(FLEXRAN_AGENT, "%s(): there was an error\n", __func__);
   return 1;
 
 }

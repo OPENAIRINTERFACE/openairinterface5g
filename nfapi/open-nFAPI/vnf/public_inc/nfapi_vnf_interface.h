@@ -18,6 +18,7 @@
 #define _NFAPI_VNF_INTERFACE_H_
 
 #include "nfapi_interface.h"
+#include "nfapi_nr_interface.h"
 #include "debug.h"
 
 #include "netinet/in.h"
@@ -937,6 +938,7 @@ int nfapi_vnf_p7_del_pnf(nfapi_vnf_p7_config_t* config, int phy_id);
  *  may be released after this function call has returned or at a later pointer
  */
 int nfapi_vnf_p7_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_dl_config_request_t* req);
+int nfapi_vnf_p7_nr_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_nr_dl_config_request_t* req);
 
 /*! Send the UL_CONFIG.request
  *  \param config A pointer to the vnf p7 configuration
@@ -988,6 +990,15 @@ int nfapi_vnf_p7_lbt_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_lbt_dl_c
  */
 int nfapi_vnf_p7_vendor_extension(nfapi_vnf_p7_config_t* config, nfapi_p7_message_header_t* msg);
 
+/*! Send the RELEASE_RNTI.request
+ *  \param config A pointer to the vnf p7 configuration
+ *  \param req A data structure for the decoded RELEASE_RNTI.request.
+ *  \return A status value. 0 equal success, -1 indicates failure
+ *
+ *  The caller is responsiable for memory management of any pointers set in the req, which
+ *  may be released after this function call has returned or at a later pointer
+ */
+int nfapi_vnf_p7_ue_release_req(nfapi_vnf_p7_config_t* config, nfapi_ue_release_request_t* req);
 #if defined(__cplusplus)
 }
 #endif

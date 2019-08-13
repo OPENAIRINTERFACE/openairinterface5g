@@ -48,6 +48,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -74,7 +75,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
-#ifdef XFORMS
 #include <forms.h>
 
 /* Callbacks, globals and object handlers */
@@ -102,9 +102,8 @@ FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
-#endif //XFORMS
+
 #include <executables/nr-uesoftmodem.h>
 
 RAN_CONTEXT_t RC;
@@ -112,9 +111,9 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
+static clock_source_t    clock_source = internal;
 int                      single_thread_flag=1;
-double snr_dB=20;
+static double            snr_dB=20;
 
 int                      threequarter_fs=0;
 
@@ -162,10 +161,27 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
+typedef struct {
+  uint64_t       optmask;
+  THREAD_STRUCT  thread_struct;
+  char           rf_config_file[1024];
+  int            phy_test;
+  uint8_t        usim_test;
+  int            emulate_rf;
+  int            wait_for_sync; //eNodeB only
+  int            single_thread_flag; //eNodeB only
+  int            chain_offset;
+  int            numerology;
+  unsigned int   start_msc;
+  uint32_t       clock_source;
+  int            hw_timing_advance;
+} softmodem_params_t;
+static softmodem_params_t softmodem_params;
 
+static char *parallel_config = NULL;
+static char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
+
 void set_parallel_conf(char *parallel_conf) {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
@@ -185,20 +201,16 @@ PARALLEL_CONF_t get_thread_parallel_conf(void) {
 WORKER_CONF_t get_thread_worker_conf(void) {
   return thread_struct.worker_conf;
 }
-int                         rx_input_level_dBm;
+int rx_input_level_dBm;
 
-//static int                      online_log_messages=0;
+//static int online_log_messages=0;
 
-#ifdef XFORMS
-  extern int                      otg_enabled;
-  int                             do_forms=0;
-#else
-  int                             otg_enabled;
-#endif
+uint32_t do_forms=0;
+int otg_enabled;
 //int                             number_of_cards =   1;
 
-static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-int16_t   node_synch_ref[MAX_NUM_CCs];
+static NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
+int16_t node_synch_ref[MAX_NUM_CCs];
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -278,8 +290,6 @@ void exit_function(const char *file, const char *function, const int line, const
   itti_terminate_tasks (TASK_UNKNOWN);
 }
 
-#ifdef XFORMS
-
 
 void reset_stats(FL_OBJECT *button, long arg) {
   //int i,j,k;
@@ -323,10 +333,9 @@ static void *scope_thread(void *arg) {
 
   pthread_exit((void *)arg);
 }
-#endif
+
 
 void init_scope(void) {
-#ifdef XFORMS
   int fl_argc=1;
 
   if (do_forms==1) {
@@ -339,7 +348,6 @@ void init_scope(void) {
     threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
   }
 
-#endif
 }
 
 
@@ -396,7 +404,7 @@ static void get_options(void) {
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv=0;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
   if (strlen(in_path) > 0) {
@@ -425,8 +433,8 @@ static void get_options(void) {
     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
-  paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
-  paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
+  paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
 
@@ -665,7 +673,7 @@ int main( int argc, char **argv ) {
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
 
-  if ( load_configmodule(argc,argv) == NULL) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -691,7 +699,7 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
+    if (init_opt() == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 
@@ -783,7 +791,7 @@ int main( int argc, char **argv ) {
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_UE(1);
+  init_NR_UE(1);
 
   while(true)
     sleep(3600);

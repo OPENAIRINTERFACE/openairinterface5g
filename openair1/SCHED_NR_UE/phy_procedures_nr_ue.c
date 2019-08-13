@@ -38,8 +38,8 @@
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/phy_vars_nr_ue.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
@@ -2463,10 +2463,12 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 
 
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id, uint8_t thread_id) {
-
-
-  NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
+		                    UE_nr_rxtx_proc_t *proc,
+							uint8_t gNB_id,
+							uint8_t thread_id)
+{
+  //NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;
@@ -2495,7 +2497,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
-
   TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
 
 //-----------------------------------------------------//
@@ -2521,7 +2522,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t g
     ue_srs_procedures(ue,proc,eNB_id,abstraction_flag);
   } // UE_mode==PUSCH
 */
-
 
 
   nr_ue_pusch_common_procedures(ue,
@@ -4115,13 +4115,12 @@ int is_pbch_in_slot(fapi_nr_pbch_config_t *pbch_config, int frame, int slot, int
 }
 
 
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
-			   uint8_t do_pdcch_flag,runmode_t mode) {
-
-
-
-  int l,l2;
-  int pilot1;
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
+		                   UE_nr_rxtx_proc_t *proc,
+						   uint8_t eNB_id,
+						   uint8_t do_pdcch_flag,
+						   runmode_t mode)
+{
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;
@@ -4158,7 +4157,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   uint16_t coreset_start_rb = 6 * coreset_start;
 
 #ifdef NR_PDCCH_SCHED
-  nr_gold_pdcch(ue,0, 2);
+  nr_gold_pdcch(ue, 0, 2);
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
@@ -4168,17 +4167,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
-		l,
-		nr_tti_rx,
-		0,
-		0);
-
-    nr_pdcch_channel_estimation(ue,0,
+    		    l,
 				nr_tti_rx,
-				l,
-				ue->frame_parms.first_carrier_offset+coreset_start_rb*12,
-				coreset_nb_rb);
+				0,
+				0);
 
+    nr_pdcch_channel_estimation(ue,
+    		                    0,
+								nr_tti_rx,
+								l,
+								ue->frame_parms.first_carrier_offset+coreset_start_rb*12,
+								coreset_nb_rb);
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -4190,7 +4189,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       
   }
 
-  dci_cnt = nr_ue_pdcch_procedures(eNB_id,ue,proc);
+  dci_cnt = nr_ue_pdcch_procedures(eNB_id, ue, proc);
 
   if (dci_cnt > 0) {
 
@@ -4199,14 +4198,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     if (ue->no_timing_correction==0) {
       LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
       nr_adjust_synch_ue(&ue->frame_parms,
-			 ue,
-			 eNB_id,
-			 nr_tti_rx,
-			 0,
-			 16384);
+    		             ue,
+						 eNB_id,
+						 nr_tti_rx,
+						 0,
+						 16384);
     }
-  }
-  else {
+  } else {
     LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);
   }
 #endif //NR_PDCCH_SCHED
@@ -4520,9 +4518,9 @@ return (0);
 }
 
 
-
-
-uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,
+		            UE_nr_rxtx_proc_t *proc,
+					uint8_t gNB_id)
 {
   int subframe = proc->subframe_tx;
   int frame    = proc->frame_tx;
@@ -4542,10 +4540,10 @@ uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
 }
 
 
-uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,
+		           UE_nr_rxtx_proc_t *proc,
+				   uint8_t gNB_id)
 {
-
-
   int subframe = proc->subframe_tx;
   int frame    = proc->frame_tx;
   CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[gNB_id].CQI_ReportPeriodic;

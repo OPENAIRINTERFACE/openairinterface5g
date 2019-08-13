@@ -23,9 +23,6 @@ typedef struct {
   view *pdcpview;
   view *rrcview;
   view *legacy;
-  widget *current_ue_label;
-  widget *prev_ue_button;
-  widget *next_ue_button;
   widget *pdsch_iq_ue_xy_plot;
   widget *dl_estimate_ue_xy_plot;
   widget *pdcch_energy_ue_xy_plot;
@@ -121,15 +118,14 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
-static filter *ticktime_filter(void *database, char *event, int i, int ue)
+static filter *ticktime_filter(void *database, char *event, int i)
 {
-  /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0" */
+  /* filter is "harq_pid == i and eNB_id == 0" */
   return
     filter_and(
       filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
-      filter_and(
-        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(ue)),
-        filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0))));
+      filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0)));
+
 }
 
 static void set_current_ue(gui *g, ue_data *e, int ue)
@@ -137,8 +133,6 @@ static void set_current_ue(gui *g, ue_data *e, int ue)
   int i;
   char s[256];
 
-  sprintf(s, "[UE %d]  ", ue);
-  label_set_text(g, e->e->current_ue_label, s);
   sprintf(s, "PDSCH IQ [UE %d]", ue);
   xy_plot_set_title(g, e->e->pdsch_iq_ue_xy_plot, s);
   sprintf(s, "DL estimated channel [UE %d]", ue);
@@ -161,97 +155,24 @@ static void set_current_ue(gui *g, ue_data *e, int ue)
   xy_plot_set_title(g, e->e->pucch_power_xy_plot, s);
   sprintf(s, "PHY Measurements [UE %d]", ue);
   xy_plot_set_title(g, e->e->phy_meas_xy_plot, s);
-  
-  logger_set_filter(e->e->pdsch_iq_ue_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PDSCH_IQ", "UE_ID"),
-        filter_int(ue)));
-  logger_set_filter(e->e->dl_estimate_ue_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_DL_CHANNEL_ESTIMATE", "UE_ID"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pdcch_energy_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PDCCH_ENERGY", "UE_ID"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pdsch_energy_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PDSCH_ENERGY", "UE_ID"),
-        filter_int(ue)));
-  logger_set_filter(e->e->phy_meas_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_MEAS", "UE_ID"),
-        filter_int(ue)));  
-  /*logger_set_filter(e->pucch1_energy_ue_energy_logger,
-      filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
-        filter_int(ue)));*/
-  /*logger_set_filter(e->e->pdcch_iq_ue_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PDCCH_IQ", "UE_ID"),
-        filter_int(ue)));*/
+
   for (i = 0; i < 8; i++) {
     logger_set_filter(e->e->dl_dci_logger[i],
-        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_DCI", i, ue));
+        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_DCI", i));
     logger_set_filter(e->e->dl_ack_logger[i],
-        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_ACK", i, ue));
+        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_ACK", i));
     logger_set_filter(e->e->dl_nack_logger[i],
-        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_NACK", i, ue));
+        ticktime_filter(e->database, "UE_PHY_DLSCH_UE_NACK", i));
     logger_set_filter(e->e->ul_dci_logger[i],
-        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_DCI", i, ue));
+        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_DCI", i));
     /*logger_set_filter(e->ul_dci_retransmission_logger[i],
         ticktime_filter(e->database,
-            "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", i, ue));*/
+            "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", i));*/
     logger_set_filter(e->e->ul_ack_logger[i],
-        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_ACK", i, ue));
+        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_ACK", i));
     logger_set_filter(e->e->ul_nack_logger[i],
-        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_NACK", i, ue));
+        ticktime_filter(e->database, "UE_PHY_ULSCH_UE_NACK", i));
   }
-  logger_set_filter(e->e->dl_mcs_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_DLSCH_UE_DCI", "UE_id"),
-        filter_int(ue)));
-  logger_set_filter(e->e->ul_mcs_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_ULSCH_UE_DCI", "UE_id"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pusch_power_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PUSCH_TX_POWER", "UE_id"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pusch_ampl_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PUSCH_TX_POWER", "UE_id"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pucch_power_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PUCCH_TX_POWER", "UE_id"),
-        filter_int(ue)));
-  logger_set_filter(e->e->pucch_ampl_logger,
-      filter_eq(
-        filter_evarg(e->database, "UE_PHY_PUCCH_TX_POWER", "UE_id"),
-        filter_int(ue)));
-}
-
-static void click(void *private, gui *g,
-    char *notification, widget *w, void *notification_data)
-{
-  int *d = notification_data;
-  int button = d[0];
-  ue_data *ed = private;
-  ue_gui *e = ed->e;
-  int ue = ed->ue;
-
-  if (button != 1) return;
-  if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
-  if (w == e->next_ue_button) ue++;
-
-  if (pthread_mutex_lock(&ed->lock)) abort();
-  if (ue != ed->ue) {
-    set_current_ue(g, ed, ue);
-    ed->ue = ue;
-  }
-  if (pthread_mutex_unlock(&ed->lock)) abort();
 }
 
 static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
@@ -271,7 +192,7 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   widget *text;
   view *textview;
   int i;
-  widget *w, *w2;
+  widget *w;
   view *v;
   logger *l;
 
@@ -283,24 +204,8 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   widget_add_child(g, top_container, line, -1);
   logo = new_image(g, openair_logo_png, openair_logo_png_len);
 
-  /* logo + prev/next UE buttons */
-  col = new_container(g, VERTICAL);
-  widget_add_child(g, col, logo, -1);
-  w = new_container(g, HORIZONTAL);
-  widget_add_child(g, col, w, -1);
-  w2 = new_label(g, "");
-  widget_add_child(g, w, w2, -1);
-  e->current_ue_label = w2;
-  /* TODO: use button widget, not label widget */
-  w2 = new_label(g, "  [prev UE]  ");
-  widget_add_child(g, w, w2, -1);
-  label_set_clickable(g, w2, 1);
-  e->prev_ue_button = w2;
-  w2 = new_label(g, "  [next UE]  ");
-  widget_add_child(g, w, w2, -1);
-  label_set_clickable(g, w2, 1);
-  e->next_ue_button = w2;
-  widget_add_child(g, line, col, -1);
+  /* logo */
+  widget_add_child(g, line, logo, -1);
 
   input_signal_plot = new_xy_plot(g, 256, 55, "input signal", 20);
   widget_add_child(g, line, input_signal_plot, -1);
@@ -356,80 +261,13 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   v = new_view_tti(10, g, w, new_color(g, "#0c720c"));
   logger_add_view(l, v);
   e->phy_meas_logger = l;
-    
-  /* UE x PDSCH energy */
-  w = new_xy_plot(g, 128, 55, "", 50);
-  e->pdsch_energy_ue_xy_plot = w;
+
+  /* a bit of space */
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  w = new_space(g, 1, 10);
   widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
-  l = new_ttilog(h, database,
-      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level00", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
-  logger_add_view(l, v);
-  e->pdsch_energy_logger = l;
-  l = new_ttilog(h, database,
-      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level01", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#00ff00"));
-  logger_add_view(l, v);
-  e->pdsch_energy_logger = l;
-  l = new_ttilog(h, database,
-      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level10", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#0f0f0f"));
-  logger_add_view(l, v);
-  e->pdsch_energy_logger = l;  
-  l = new_ttilog(h, database,
-      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level11", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#0000ff"));
-  logger_add_view(l, v);
-  e->pdsch_energy_logger = l;
-  
-  /* UE x PDCCH energy */
-  w = new_xy_plot(g, 128, 55, "", 50);
-  e->pdcch_energy_ue_xy_plot = w;
-  widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
-  l = new_ttilog(h, database,
-      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level00", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
-  logger_add_view(l, v);
-  e->pdcch_energy_logger = l;
-  l = new_ttilog(h, database,
-      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level01", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#00ff00"));
-  logger_add_view(l, v);
-  e->pdcch_energy_logger = l;
-  l = new_ttilog(h, database,
-      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level10", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#0f0f0f"));
-  logger_add_view(l, v);
-  e->pdcch_energy_logger = l;  
-  l = new_ttilog(h, database,
-      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level11", 1);
-  v = new_view_tti(10, g, w, new_color(g, "#0000ff"));
-  logger_add_view(l, v);
-  e->pdcch_energy_logger = l;
-    
-    /* UE x PDCCH IQ data */
-  w = new_xy_plot(g, 55, 55, "", 50);
-  e->pdcch_iq_ue_xy_plot = w;
-  widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, -100, 100, -100, 100);
-  l = new_iqlog(h, database, "UE_PHY_PDCCH_IQ", "nb_rb",
-      "NB_RB_DL", "symbols_per_tti", "rxdataF_comp");
-  v = new_view_xy(100*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
-  logger_add_view(l, v);
-  e->pdcch_iq_ue_logger = l;
-  
-  /* UE x PDCCH IQ data */
-  /*w = new_xy_plot(g, 55, 55, "", 50);
-  e->pdcch_iq_ue_xy_plot = w;
-  widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, -2000, 2000, -2000, 2000);
-  l = new_iqdotlog(h, database, "UE_PHY_PDCCH_IQ", "I", "Q");
-  v = new_view_xy(500, 10, g, w, new_color(g,"#000"), XY_LOOP_MODE);
-  logger_add_view(l, v);
-  e->pdcch_iq_ue_logger = l;*/
-  
+
   /* UE x DL mcs */
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
@@ -448,7 +286,7 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   xy_plot_set_range(g, w, 0, 1024*10, -2, 30);
   e->ul_mcs_xy_plot = w;
   widget_add_child(g, line, w, -1);
-  l = new_ticked_ttilog(h, database, "UE_PHY_UL_TICK", "frame", "subframe",
+  l = new_ticked_ttilog(h, database, "UE_PHY_DL_TICK", "frame", "subframe",
       "UE_PHY_ULSCH_UE_DCI", "mcs", 0, -1);
   v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
   logger_add_view(l, v);
@@ -471,7 +309,7 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   v = new_view_tti(10, g, w, new_color(g, "#720c0c"));
   logger_add_view(l, v);
   e->pusch_ampl_logger = l;
-  
+
       /* UE x PUCCH TX Power */
 //  line = new_container(g, HORIZONTAL);
 //  widget_add_child(g, top_container, line, -1);
@@ -489,8 +327,81 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
   v = new_view_tti(10, g, w, new_color(g, "#720c0c"));
   logger_add_view(l, v);
   e->pucch_ampl_logger = l;
-  
-  
+
+  /* UE x PDSCH energy */
+  w = new_xy_plot(g, 128, 55, "", 50);
+  e->pdsch_energy_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
+  l = new_ttilog(h, database,
+      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level00", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
+  logger_add_view(l, v);
+  e->pdsch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level01", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#00ff00"));
+  logger_add_view(l, v);
+  e->pdsch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level10", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#0f0f0f"));
+  logger_add_view(l, v);
+  e->pdsch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDSCH_ENERGY", "frame", "subframe", "pdsch_ch_level11", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#0000ff"));
+  logger_add_view(l, v);
+  e->pdsch_energy_logger = l;
+
+  /* UE x PDCCH energy */
+  w = new_xy_plot(g, 128, 55, "", 50);
+  e->pdcch_energy_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
+  l = new_ttilog(h, database,
+      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level00", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
+  logger_add_view(l, v);
+  e->pdcch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level01", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#00ff00"));
+  logger_add_view(l, v);
+  e->pdcch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level10", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#0f0f0f"));
+  logger_add_view(l, v);
+  e->pdcch_energy_logger = l;
+  l = new_ttilog(h, database,
+      "UE_PHY_PDCCH_ENERGY", "frame", "subframe", "pdcch_ch_level11", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#0000ff"));
+  logger_add_view(l, v);
+  e->pdcch_energy_logger = l;
+
+    /* UE x PDCCH IQ data */
+  w = new_xy_plot(g, 55, 55, "", 50);
+  e->pdcch_iq_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, -100, 100, -100, 100);
+  l = new_iqlog(h, database, "UE_PHY_PDCCH_IQ", "nb_rb",
+      "NB_RB_DL", "symbols_per_tti", "rxdataF_comp");
+  v = new_view_xy(100*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
+  logger_add_view(l, v);
+  e->pdcch_iq_ue_logger = l;
+
+  /* UE x PDCCH IQ data */
+  /*w = new_xy_plot(g, 55, 55, "", 50);
+  e->pdcch_iq_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, -2000, 2000, -2000, 2000);
+  l = new_iqdotlog(h, database, "UE_PHY_PDCCH_IQ", "I", "Q");
+  v = new_view_xy(500, 10, g, w, new_color(g,"#000"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  e->pdcch_iq_ue_logger = l;*/
+
+
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
       new_label(g,"DL/UL TICK/DCI/ACK/NACK [all UEs]"), -1);
@@ -600,14 +511,14 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
     logger_add_view(timelog, subview);
     e->ul_dci_logger[i] = timelog;
     /* retransmission */
-    
+
     timelog = new_ticklog(h, database,
         "ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION", "frame", "subframe");
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#99f"), 3600*1000);
     logger_add_view(timelog, subview);
     e->ul_dci_retransmission_logger[i] = timelog;
-    
+
   }
 
   /* UL ACK */
@@ -707,8 +618,6 @@ static void ue_main_gui(ue_gui *e, gui *g, event_handler *h, void *database,
 #endif
 
   set_current_ue(g, ed, 0);
-  register_notifier(g, "click", e->prev_ue_button, click, ed);
-  register_notifier(g, "click", e->next_ue_button, click, ed);
 }
 
 void view_add_log(view *v, char *log, event_handler *h, void *database,
@@ -824,21 +733,17 @@ int main(int n, char **v)
   on_off(database, "UE_PHY_PUSCH_TX_POWER", is_on, 1);
   on_off(database, "UE_PHY_PUCCH_TX_POWER", is_on, 1);
   on_off(database, "UE_PHY_MEAS", is_on, 1);
-  
+
   on_off(database, "LEGACY_GROUP_INFO", is_on, 1);
   on_off(database, "LEGACY_GROUP_ERROR", is_on, 1);
   on_off(database, "LEGACY_GROUP_WARNING", is_on, 1);
-  
-  view_add_log(eg.phyview, "UE_PHY_UL_TICK", h, database, is_on);
-  view_add_log(eg.phyview, "UE_PHY_DL_TICK", h, database, is_on);
+
   view_add_log(eg.phyview, "UE_PHY_DLSCH_UE_DCI", h, database, is_on);
   view_add_log(eg.phyview, "UE_PHY_DLSCH_UE_ACK", h, database, is_on);
   view_add_log(eg.phyview, "UE_PHY_DLSCH_UE_NACK",h, database, is_on);
   view_add_log(eg.phyview, "UE_PHY_ULSCH_UE_DCI", h, database, is_on);
   view_add_log(eg.phyview, "UE_PHY_ULSCH_UE_ACK", h, database, is_on);
   view_add_log(eg.phyview, "UE_PHY_ULSCH_UE_NACK", h, database, is_on);
-
-
 
   /* deactivate those two by default, they are a bit heavy */
   //on_off(database, "ENB_MAC_UE_UL_SDU_WITH_DATA", is_on, 0);

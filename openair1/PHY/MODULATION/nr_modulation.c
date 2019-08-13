@@ -26,20 +26,19 @@ extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 void nr_modulation(uint32_t *in,
                    uint16_t length,
                    uint16_t mod_order,
-                   int16_t *out) {
-
+                   int16_t *out)
+{
   uint16_t offset;
-	uint16_t order;
-	int i,j;
   uint8_t idx, b_idx;
 
   offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
                     (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
 
-  for (i=0; i<length/mod_order; i++) {
+  for (int i=0; i<length/mod_order; i++)
+  {
     idx = 0;
-
-    for (j=0; j<mod_order; j++) {
+    for (int j=0; j<mod_order; j++)
+    {
       b_idx = (i*mod_order+j)&0x1f;
       if (i && (!b_idx))
         in++;

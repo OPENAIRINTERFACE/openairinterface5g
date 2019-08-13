@@ -59,13 +59,13 @@
 
 extern RAN_CONTEXT_t RC;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 int8_t
 get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
 {
     // currently there is one-to-one mapping between sf allocation pattern and sync area
-    if (mbsfn_sync_area > MAX_MBSFN_AREA) {
+    if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
 	LOG_W(MAC,
 	      "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
 	      module_idP, CC_id, mbsfn_sync_area);
@@ -151,7 +151,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
 	// 1st: Check the MBSFN subframes from SIB2 info (SF allocation pattern i, max 8 non-overlapping patterns exist)
 	if (frameP % mbsfn_period == cc->mbsfn_SubframeConfig[j]->radioframeAllocationOffset) {	// MBSFN frameP
-	    if (cc->mbsfn_SubframeConfig[j]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {	// one-frameP format
+	    if (cc->mbsfn_SubframeConfig[j]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {	// one-frameP format
 
 		//  Find the first subframeP in this MCH to transmit MSI
 		if (frameP % mch_scheduling_period ==
@@ -542,7 +542,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      "[eNB %d] CC_id %d Frame %d Subframe %d: Schedule MCCH MESSAGE (area %d, sfAlloc %d)\n",
 	      module_idP, CC_id, frameP, subframeP, i, j);
 
-	mcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MCCH, 1, &cc->MCCH_pdu.payload[0], 
+	mcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MCCH, 0xFFFC, 1, &cc->MCCH_pdu.payload[0], 
 					   i);	// this is the mbsfn sync area index
 
 	if (mcch_sdu_length > 0) {
@@ -585,7 +585,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     TBS =
 	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
@@ -633,7 +633,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
 #endif
                                     );
@@ -652,7 +652,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES, MTCH, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                  0
 #endif
@@ -676,7 +676,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    header_len_mtch = 0;
 	}
     }
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     //  }
 #endif
 

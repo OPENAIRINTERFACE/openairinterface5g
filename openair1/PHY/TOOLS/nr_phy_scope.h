@@ -65,7 +65,6 @@ typedef struct {
     FL_OBJECT * pdsch_llr1;
     FL_OBJECT * pdsch_tput;
     FL_OBJECT * button_0;
-
 } FD_phy_scope_nrue;
 
 extern unsigned char scope_enb_num_ue;

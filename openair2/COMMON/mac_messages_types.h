@@ -37,6 +37,9 @@
 #define RRC_MAC_BCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_req
 #define RRC_MAC_BCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_ind
 
+#define RRC_MAC_BCCH_MBMS_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_req
+#define RRC_MAC_BCCH_MBMS_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_ind
+
 #define RRC_MAC_CCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_req
 #define RRC_MAC_CCCH_DATA_CNF(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_cnf
 #define RRC_MAC_CCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_ind
@@ -47,6 +50,7 @@
 
 // Some constants from "LAYER2/MAC/defs.h"
 #define BCCH_SDU_SIZE                           (512)
+#define BCCH_SDU_MBMS_SIZE                      (512)
 #define CCCH_SDU_SIZE                           (512)
 #define MCCH_SDU_SIZE                           (512)
 #define PCCH_SDU_SIZE                           (512)
@@ -77,6 +81,25 @@ typedef struct RrcMacBcchDataInd_s {
   uint8_t   rsrq;
   uint8_t   rsrp;
 } RrcMacBcchDataInd;
+
+
+typedef struct RrcMacBcchMbmsDataReq_s {
+  uint32_t  frame;
+  uint32_t  sdu_size;
+  uint8_t   sdu[BCCH_SDU_MBMS_SIZE];
+  uint8_t   enb_index;
+} RrcMacBcchMbmsDataReq;
+
+typedef struct RrcMacBcchMbmsDataInd_s {
+  uint32_t  frame;
+  uint8_t   sub_frame;
+  uint32_t  sdu_size;
+  uint8_t   sdu[BCCH_SDU_MBMS_SIZE];
+  uint8_t   enb_index;
+  uint8_t   rsrq;
+  uint8_t   rsrp;
+} RrcMacBcchMbmsDataInd;
+
 
 typedef struct RrcMacCcchDataReq_s {
   uint32_t  frame;

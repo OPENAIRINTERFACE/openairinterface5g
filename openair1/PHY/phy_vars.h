@@ -42,9 +42,9 @@ int16_t *primary_synch2_time;
 #include "PHY/MODULATION/modulation_vars.h"
 
 
-
 PHY_VARS_UE ***PHY_vars_UE_g;
 RAN_CONTEXT_t RC;
+UL_RCC_IND_t UL_RCC_INFO;
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
@@ -60,7 +60,7 @@ unsigned char NB_RU=0;
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;
-unsigned char NB_UE_INST=0;
+uint16_t NB_UE_INST=0;
 unsigned char NB_RN_INST=0;
 unsigned char NB_INST=0;
 #endif

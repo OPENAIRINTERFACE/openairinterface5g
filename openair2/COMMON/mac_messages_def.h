@@ -34,6 +34,9 @@ MESSAGE_DEF(RRC_MAC_OUT_OF_SYNC_IND,    MESSAGE_PRIORITY_MED_PLUS, RrcMacOutOfSy
 MESSAGE_DEF(RRC_MAC_BCCH_DATA_REQ,      MESSAGE_PRIORITY_MED_PLUS, RrcMacBcchDataReq,           rrc_mac_bcch_data_req)
 MESSAGE_DEF(RRC_MAC_BCCH_DATA_IND,      MESSAGE_PRIORITY_MED_PLUS, RrcMacBcchDataInd,           rrc_mac_bcch_data_ind)
 
+MESSAGE_DEF(RRC_MAC_BCCH_MBMS_DATA_REQ,      MESSAGE_PRIORITY_MED_PLUS, RrcMacBcchMbmsDataReq,           rrc_mac_bcch_mbms_data_req)
+MESSAGE_DEF(RRC_MAC_BCCH_MBMS_DATA_IND,      MESSAGE_PRIORITY_MED_PLUS, RrcMacBcchMbmsDataInd,           rrc_mac_bcch_mbms_data_ind)
+
 MESSAGE_DEF(RRC_MAC_CCCH_DATA_REQ,      MESSAGE_PRIORITY_MED_PLUS, RrcMacCcchDataReq,           rrc_mac_ccch_data_req)
 MESSAGE_DEF(RRC_MAC_CCCH_DATA_CNF,      MESSAGE_PRIORITY_MED_PLUS, RrcMacCcchDataCnf,           rrc_mac_ccch_data_cnf)
 MESSAGE_DEF(RRC_MAC_CCCH_DATA_IND,      MESSAGE_PRIORITY_MED_PLUS, RrcMacCcchDataInd,           rrc_mac_ccch_data_ind)

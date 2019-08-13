@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_decoder.c
+ * \brief x2ap decoder procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdio.h>
 
 #include "assertions.h"
@@ -33,8 +40,27 @@ static int x2ap_eNB_decode_initiating_message(X2AP_X2AP_PDU_t *pdu)
   switch(pdu->choice.initiatingMessage.procedureCode) {
 
     case X2AP_ProcedureCode_id_x2Setup:
-      asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
       X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_handoverPreparation:
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_uEContextRelease:
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_handoverCancel:
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_endcX2Setup:
+      X2AP_INFO("X2AP_ProcedureCode_id_endcX2Setup message!\n");
       break;
 
     default:
@@ -54,9 +80,18 @@ static int x2ap_eNB_decode_successful_outcome(X2AP_X2AP_PDU_t *pdu)
 
   switch(pdu->choice.successfulOutcome.procedureCode) {
     case X2AP_ProcedureCode_id_x2Setup:
-      asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
       X2AP_INFO("x2ap_eNB_decode_successfuloutcome_message!\n");
       break;
+
+    case X2AP_ProcedureCode_id_handoverPreparation:
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      X2AP_INFO("x2ap_eNB_decode_successfuloutcome_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_endcX2Setup:
+    	X2AP_INFO("x2ap_eNB_decode_successfuloutcome_message!\n");
+    	break;
 
     default:
       X2AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
@@ -73,7 +108,7 @@ static int x2ap_eNB_decode_unsuccessful_outcome(X2AP_X2AP_PDU_t *pdu)
 
   switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
     case X2AP_ProcedureCode_id_x2Setup:
-      asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
       X2AP_INFO("x2ap_eNB_decode_unsuccessfuloutcome_message!\n");
       break;
 
@@ -99,8 +134,9 @@ int x2ap_eNB_decode_pdu(X2AP_X2AP_PDU_t *pdu, const uint8_t *const buffer, uint3
                         length,
                         0,
                         0);
-
-  xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, pdu);
+  //if (asn1_xer_print) {
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, pdu);
+  //}
 
   if (dec_ret.code != RC_OK) {
     X2AP_ERROR("Failed to decode pdu\n");
