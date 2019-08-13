@@ -506,14 +506,30 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
     if ( ((commonUDP_t *)bufPtr)->contentBytes >= sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) ) {
       int curUE=hDLUE(bufPtr)->UE_id;
+      LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[curUE][0];
+      LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch0->harq_processes[hDLUE(bufPtr)->harq_pid];
 #ifdef PHY_TX_THREAD
-      eNB->dlsch[curUE][0]->active[subframe] = 1;
+      dlsch0->active[subframe] = 1;
 #else
-      eNB->dlsch[curUE][0]->active = 1;
+      dlsch0->active = 1;
 #endif
-      eNB->dlsch[curUE][0]->harq_ids[frame%2][subframe]=hDLUE(bufPtr)->harq_pid;
-      eNB->dlsch[curUE][0]->rnti=hDLUE(bufPtr)->rnti;
-      memcpy(eNB->dlsch[curUE][0]->harq_processes[hDLUE(bufPtr)->harq_pid]->e,
+      dlsch0->harq_ids[frame%2][subframe]=hDLUE(bufPtr)->harq_pid;
+      dlsch0->rnti=hDLUE(bufPtr)->rnti;
+      dlsch0->sqrt_rho_a=hDLUE(bufPtr)->sqrt_rho_a;
+      dlsch0->sqrt_rho_b=hDLUE(bufPtr)->sqrt_rho_b;
+      dlsch_harq->nb_rb=hDLUE(bufPtr)->nb_rb;
+      memcpy(dlsch_harq->rb_alloc, hDLUE(bufPtr)->rb_alloc, sizeof(hDLUE(bufPtr)->rb_alloc));
+      dlsch_harq->Qm=hDLUE(bufPtr)->Qm;
+      dlsch_harq->Nl=hDLUE(bufPtr)->Nl;
+      dlsch_harq->pdsch_start=hDLUE(bufPtr)->pdsch_start;
+#ifdef PHY_TX_THREAD
+      dlsch_harq->i0=hDLUE(bufPtr)->i0;
+      dlsch_harq->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
+#else
+      dlsch0->i0=hDLUE(bufPtr)->i0;
+      dlsch0->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
+#endif
+      memcpy(dlsch_harq->e,
              hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
     }
 
@@ -550,6 +566,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
     for (int i=0; i< hDL(bufferZone)->num_dci; i++)
       eNB->pdcch_vars[subframe&1].dci_alloc[i]=hDL(bufferZone)->dci_alloc[i];
 
+    LOG_D (PHY, "Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %" PRIu8 ")\n", frame, subframe, hDL(bufferZone)->num_dci);
     generate_dci_top(hDL(bufferZone)->num_pdcch_symbols,
                      hDL(bufferZone)->num_dci,
                      &eNB->pdcch_vars[subframe&1].dci_alloc[0],
@@ -576,6 +593,14 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
         (dlsch0->active == 1)
 #endif
        ) {
+      uint64_t sum=0;
+
+      for ( int i= subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti);
+            i< (subframe+1) * fp->ofdm_symbol_size * (fp->symbols_per_tti);
+            i++)
+        sum+=((int32_t *)(eNB->common_vars.txdataF[0]))[i];
+
+      LOG_D(PHY,"frame: %d, subframe: %d, sum of dlsch mod v1: %lx\n", frame, subframe, sum);
       int harq_pid=dlsch0->harq_ids[frame%2][subframe];
       pdsch_procedures(eNB,
                        proc,
@@ -591,7 +616,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
                      AMP);
 }
 
-void appendFs6DLUE(uint8_t *bufferZone, int UE_id, int8_t harq_pid, uint16_t rnti, uint8_t *UEdata, int UEdataLen) {
+void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end
   uint8_t *firstFreeByte=bufferZone;
@@ -603,6 +628,14 @@ void appendFs6DLUE(uint8_t *bufferZone, int UE_id, int8_t harq_pid, uint16_t rnt
     curBlock++;
   }
 
+  int UEdataLen= get_G(fp,
+                       harqData->nb_rb,
+                       harqData->rb_alloc,
+                       harqData->Qm,
+                       harqData->Nl,
+                       harqData->pdsch_start,
+                       frame,subframe,
+                       0);
   AssertFatal(firstFreeByte+UEdataLen+sizeof(fs6_dl_t) <= bufferZone+FS6_BUF_SIZE, "");
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   FirstUDPheader->nbBlocks++;
@@ -612,9 +645,26 @@ void appendFs6DLUE(uint8_t *bufferZone, int UE_id, int8_t harq_pid, uint16_t rnt
   // This header will be duplicated during sending
   hDLUE(newUDPheader)->UE_id=UE_id;
   hDLUE(newUDPheader)->harq_pid=harq_pid;
-  hDLUE(newUDPheader)->rnti=rnti;
+  hDLUE(newUDPheader)->rnti=dlsch0->rnti;
+  hDLUE(newUDPheader)->sqrt_rho_a=dlsch0->sqrt_rho_a;
+  hDLUE(newUDPheader)->sqrt_rho_b=dlsch0->sqrt_rho_b;
+  hDLUE(newUDPheader)->nb_rb=harqData->nb_rb;
+  memcpy(hDLUE(newUDPheader)->rb_alloc, harqData->rb_alloc, sizeof(harqData->rb_alloc));
+  hDLUE(newUDPheader)->Qm=harqData->Qm;
+  hDLUE(newUDPheader)->Nl=harqData->Nl;
+  hDLUE(newUDPheader)->pdsch_start=harqData->pdsch_start;
+#ifdef PHY_TX_THREAD
+  hDLUE(newUDPheader)->i0=harqData->i0;
+  hDLUE(newUDPheader)->sib1_br_flag=harqData->sib1_br_flag;
+#else
+  hDLUE(newUDPheader)->i0=dlsch0->i0;
+  hDLUE(newUDPheader)->sib1_br_flag=dlsch0->sib1_br_flag;
+#endif
   hDLUE(newUDPheader)->dataLen=UEdataLen;
-  memcpy(hDLUE(newUDPheader)+1, UEdata, UEdataLen);
+  memcpy(hDLUE(newUDPheader)+1, harqData->e, UEdataLen);
+
+  for (int i=0; i < UEdataLen; i++)
+    LOG_D(PHY,"buffer e:%hhx\n", ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
 }
 
 void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
@@ -687,7 +737,6 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   uint8_t num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
   uint8_t num_mdci          = eNB->mpdcch_vars[subframe&1].num_dci;
   memcpy(hDL(bufferZone)->pbch_pdu,eNB->pbch_pdu,4);
-
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -695,6 +744,10 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     hDL(bufferZone)->num_dci=num_dci;
     hDL(bufferZone)->num_mdci=num_mdci;
     hDL(bufferZone)->amp=AMP;
+
+    for (int i=0; i< hDL(bufferZone)->num_dci; i++)
+      hDL(bufferZone)->dci_alloc[i]=eNB->pdcch_vars[subframe&1].dci_alloc[i];
+
     LOG_D(PHY, "pbch configured: %d\n", eNB->pbch_configured);
   }
 
@@ -750,18 +803,13 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
           */
           LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch0->harq_processes[harq_pid];
           appendFs6DLUE(bufferZone,
+                        fp,
                         UE_id,
                         harq_pid,
-                        dlsch0->rnti,
-                        dlsch0->harq_processes[harq_pid]->e,
-                        get_G(fp,
-                              dlsch_harq->nb_rb,
-                              dlsch_harq->rb_alloc,
-                              dlsch_harq->Qm,
-                              dlsch_harq->Nl,
-                              dlsch_harq->pdsch_start,
-                              frame,subframe,
-                              0)
+                        dlsch0,
+                        dlsch_harq,
+                        frame,
+                        subframe
                        );
         }
       }

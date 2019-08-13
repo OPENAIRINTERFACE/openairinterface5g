@@ -68,6 +68,15 @@ typedef struct {
   int UE_id;
   int8_t harq_pid;
   uint16_t rnti;
+  int16_t sqrt_rho_a;
+  int16_t sqrt_rho_b;
+  uint16_t nb_rb;
+  uint8_t Qm;
+  int8_t Nl;
+  uint8_t pdsch_start;
+  uint8_t sib1_br_flag;
+  uint16_t i0;
+  uint32_t rb_alloc[4];
   int dataLen;
 } fs6_dl_uespec_t;
 
