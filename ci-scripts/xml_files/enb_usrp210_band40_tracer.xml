@@ -24,7 +24,7 @@
 	<htmlTabRef>tracer-test</htmlTabRef>
 	<htmlTabName>T-Tracer</htmlTabName>
 	<htmlTabIcon>duplicate</htmlTabIcon>
-        <TestCaseRequestedList>
+	<TestCaseRequestedList>
  040101
  030100 040300 040401 040201 030201
 	</TestCaseRequestedList>
@@ -51,15 +51,15 @@
 		<desc>Terminate UE</desc>
 	</testCase>
 
-        <testCase id="040300">
-                <class>Attach_UE</class>
-                <desc>Attach single UE</desc>
-                <nbMaxUEtoAttach>1</nbMaxUEtoAttach>
-        </testCase>
+	<testCase id="040300">
+		<class>Attach_UE</class>
+		<desc>Attach single UE</desc>
+		<nbMaxUEtoAttach>1</nbMaxUEtoAttach>
+	</testCase>
 
-        <testCase id="040401">
-                <class>Detach_UE</class>
-                <desc>Detach UE</desc>
-        </testCase>
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
 
 </testCaseList>

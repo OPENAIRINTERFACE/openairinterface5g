@@ -41,7 +41,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 
 #include "commonDef.h"
 #include "networkDef.h"
-#include "user_defs.h"
+#include "../user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -58,7 +58,7 @@ Description Defines the EPS Mobility Management procedure call manager,
  * EPS Mobility Management sublayer
  */
 typedef int (*emm_indication_callback_t) (user_api_id_t *user_api_id, Stat_t, tac_t, ci_t, AcT_t,
-    const char*, size_t);
+    const char *, size_t);
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/

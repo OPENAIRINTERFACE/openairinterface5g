@@ -254,7 +254,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   }
 
   /* dummy initialisation of global structure PHY_vars_UE_g */
-  unsigned char NB_UE_INST=1;
+  uint16_t NB_UE_INST=1;
   PHY_vars_UE_g = (PHY_VARS_NR_UE ** *)calloc( NB_UE_INST, sizeof(PHY_VARS_NR_UE **));
 
   for (int UE_id=0; UE_id<NB_UE_INST; UE_id++) {

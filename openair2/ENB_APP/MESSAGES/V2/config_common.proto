@@ -218,6 +218,9 @@ enum flex_aperiodic_cqi_report_mode {
      FLACRM_RM30 = 3;
      FLACRM_RM31 = 4;
      FLACRM_NONE = 5;
+     FLACRM_RM32_v1250 = 6;
+     FLACRM_RM10_v1310 = 7;
+     FLACRM_RM11_v1310 = 8;
 }
 
 enum flex_tdd_ack_nack_feedback_mode {
@@ -258,4 +261,78 @@ enum flex_ue_state_change_type {
      FLUESC_ACTIVATED = 1;
      FLUESC_DEACTIVATED = 2;
      FLUESC_MOVED = 3;
+}
+
+message flex_plmn {
+        optional uint32 mcc = 1;
+        optional uint32 mnc = 2;
+        optional uint32 mnc_length = 3;
+}
+
+//
+// UE-related RRC configuration
+
+message flex_measurement_info {
+  // arbitrary offset OFS, from TS
+  optional int64 offset_freq_serving = 1;
+  // arbitrary offset OFN
+  optional int64 offset_freq_neighbouring = 2;
+  // arbitrary offset OCS + OCN
+  repeated int64 cell_individual_offset = 3;
+  // Parameter k for exponential moving average calculation coefficient
+  // a = 1/2^(k/4) of all measured RSRPs
+  optional int64 filter_coefficient_rsrp = 4;
+  // Parameter k for RSRQ filtering
+  optional int64 filter_coefficient_rsrq = 5;
+  optional flex_measurement_event event = 6;
+}
+
+message flex_measurement_event {
+  optional flex_per_event periodical = 1;
+  optional flex_a1_event a1 = 2;
+  optional flex_a2_event a2 = 3;
+  optional flex_a3_event a3 = 4;
+  optional flex_a4_event a4 = 5;
+  optional flex_a5_event a5 = 6;
+}
+
+message flex_per_event {
+  optional int64 max_report_cells = 1;
+}
+
+message flex_a1_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a2_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a3_event {
+  optional int64 a3_offset = 1;
+  optional int32 report_on_leave = 2;
+  optional int64 hysteresis = 3;
+  optional int64 time_to_trigger = 4;
+  optional int64 max_report_cells = 5;
+}
+
+message flex_a4_event {
+  optional int64 threshold_rsrp = 1;
+  optional int64 hysteresis = 2;
+  optional int64 time_to_trigger = 3;
+  optional int64 max_report_cells = 4;
+}
+
+message flex_a5_event {
+  optional int64 threshold_rsrp_1 = 1;
+  optional int64 threshold_rsrp_2 = 2;
+  optional int64 hysteresis = 3;
+  optional int64 time_to_trigger = 4;
+  optional int64 max_report_cells = 5;
 }

@@ -75,7 +75,7 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (NR_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
 #endif

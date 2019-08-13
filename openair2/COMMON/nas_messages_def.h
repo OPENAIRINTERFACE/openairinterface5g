@@ -26,7 +26,6 @@
  *      Author: winckel
  */
 
-#if defined(ENABLE_USE_MME) && defined(ENABLE_NAS_UE_LOGGING)
 //-------------------------------------------------------------------------------------------//
 // Messages for NAS logging
 MESSAGE_DEF(NAS_DL_EMM_RAW_MSG,                 MESSAGE_PRIORITY_MED,   nas_raw_msg_t,              nas_dl_emm_raw_msg)
@@ -46,4 +45,4 @@ MESSAGE_DEF(NAS_DL_ESM_PROTECTED_MSG,           MESSAGE_PRIORITY_MED,   nas_esm_
 MESSAGE_DEF(NAS_UL_ESM_PROTECTED_MSG,           MESSAGE_PRIORITY_MED,   nas_esm_protected_msg_t,    nas_ul_esm_protected_msg)
 
 //-------------------------------------------------------------------------------------------//
-#endif /* ENABLE_USE_MME */
+

@@ -27,9 +27,9 @@
 
 #include "common/ran_context.h"
 
-char* namepointer_chMag ;
+char *namepointer_chMag ;
 char fmageren_name2[512];
-char* namepointer_log2;
+char *namepointer_log2;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
@@ -51,10 +51,10 @@ short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 
 #ifndef OPENAIR2
-unsigned char NB_eNB_INST=0;
-unsigned char NB_UE_INST=0;
-unsigned char NB_RN_INST=0;
-unsigned char NB_INST=0;
+  unsigned char NB_eNB_INST=0;
+  uint16_t NB_UE_INST=0;
+  unsigned char NB_RN_INST=0;
+  unsigned char NB_INST=0;
 #endif
 
 unsigned int ULSCH_max_consecutive_errors = 20;
@@ -123,7 +123,7 @@ double beta2_dlsch[6][MCS_COUNT] = { {2.52163, 0.83231, 0.77472, 1.36536, 1.1682
 #ifdef OCP_FRAMEWORK
 #include <enums.h>
 #else
-char NB_functions[7][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RAU_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5",};
+char NB_functions[7][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RAU_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5","gNodeB_3GPP",};
 char NB_timing[2][20]={"synch_to_ext_device","synch_to_other"};
 char ru_if_types[MAX_RU_IF_TYPES][20]={"local RF","IF5 RRU","IF5 Mobipass","IF4p5 RRU","IF1pp RRU"};
 #endif

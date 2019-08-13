@@ -752,9 +752,9 @@ int subframe_num(LTE_DL_FRAME_PARMS *frame_parms){
     }
 }
 
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,
+		                       unsigned char subframe)
 {
-
   // if FDD return dummy value
   if (frame_parms->frame_type == FDD)
     return(SF_DL);
@@ -860,7 +860,7 @@ dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 uint8_t phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
 {
 
-  //LOG_D(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  LOG_D(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
   return(subframe2harq_pid(frame_parms,
                            phich_frame2_pusch_frame(frame_parms,frame,subframe),
                            phich_subframe2_pusch_subframe(frame_parms,subframe)));

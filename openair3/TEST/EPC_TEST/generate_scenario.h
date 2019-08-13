@@ -37,11 +37,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "s1ap_messages_types.h"
-#ifdef CMAKER
 #include "SystemInformationBlockType2.h"
-#else
-#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
-#endif
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\

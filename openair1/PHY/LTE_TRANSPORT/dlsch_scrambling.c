@@ -52,7 +52,6 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 {
 
   int n;
-
   //  uint8_t reset;
   uint32_t x1, x2, s=0;
   uint8_t *dlsch_e=dlsch->harq_processes[harq_pid]->e;
@@ -60,7 +59,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   // Rule for accumulation of subframes for BL/CE UEs
   uint8_t Nacc=4;
   uint16_t j0,j,idelta;
@@ -97,7 +96,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   //  reset = 1;
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #ifdef PHY_TX_THREAD
     if (dlsch->harq_processes[harq_pid]->i0 != 0xFFFF) {
 #else
@@ -115,7 +114,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_SCRAMBLING
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf("scrambling: i0 %d rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->i0,dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
 #else
   printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
@@ -168,7 +167,6 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
     //    ((__m128i *)e)[1] = _mm_xor_si128(((__m128i *)e)[1],((__m128i *)scrambling_lut)[s>>16]);
 
 
-    
     
     s = lte_gold_generic(&x1, &x2, 0);
     e += 32;

@@ -249,12 +249,20 @@ void RCconfig_nr_flexran()
     RC.flexran[i]->mod_id   = i;
     RC.flexran[i]->agent_id = (((uint64_t)i) << 48) | (((uint64_t)gnb_id) << 16) | ((uint64_t)Nid_cell_tr);
 
-    /* assume for the moment the monolithic case, i.e. agent can provide
-     * information for all layers */
-    RC.flexran[i]->capability_mask = FLEXRAN_CAP_LOPHY | FLEXRAN_CAP_HIPHY
-                                   | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
-                                   | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
-                                   | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
+    /*
+     * Assume for the moment the monolithic case, i.e. agent can provide information for all layers
+     * Consider using uint16_t flexran_get_capabilities_mask(mid_t mod_id),
+     *                    with RC.rrc[mod_id]->node_type = ngran_gNB
+     */
+    RC.flexran[i]->capability_mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)
+    		                       | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
+								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
+
   }
 }
 
@@ -634,7 +642,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
-  //paramdef_t SRB1Params[] = SRB1PARAMS_DESC;
+  //paramdef_t SRB1Params[] = GNBSRB1PARAMS_DESC;
 
   /* get global parameters, defined outside any section in the config file */
  
@@ -701,7 +709,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         char gnbpath[MAX_OPTNAME_SIZE + 8];
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
 
-        paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+        paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
         paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
         /* map parameter checking array instances to parameter definition array instances */
         checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
@@ -1617,21 +1625,21 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }// End switch (rach_ra_Msg3SizeGroupA)
 
               if (strcmp(rach_messagePowerOffsetGroupB,"minusinfinity")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_minusinfinity;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_minusinfinity;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB0;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB0;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB5")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB5;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB5;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB8")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB8;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB8;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB10")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB10;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB10;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB12")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB12;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB12;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB15")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB15;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB15;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB18")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB18;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB18;
               }else{
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
                              RC.config_file_name, i, rach_messagePowerOffsetGroupB);
@@ -2740,7 +2748,7 @@ int RCconfig_nr_gtpu(void ) {
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   
-  paramdef_t GTPUParams[]  = GTPUPARAMS_DESC;
+  paramdef_t GTPUParams[]  = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -2845,7 +2853,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
 	// search if in active list
 	for (j=0; j < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt; j++) {
 	  if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[j], *(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr)) == 0) {
-            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+            paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
             paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
             /* map parameter checking array instances to parameter definition array instances */
             checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
@@ -2853,11 +2861,11 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
             for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
               PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-	    paramdef_t S1Params[]  = S1PARAMS_DESC;
+	    paramdef_t S1Params[]  = GNBS1PARAMS_DESC;
 	    paramlist_def_t S1ParamList = {GNB_CONFIG_STRING_MME_IP_ADDRESS,NULL,0};
 	    
-	    paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-	    paramdef_t NETParams[]  =  NETPARAMS_DESC;
+	    paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+	    paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
 	    char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	    
 	    S1AP_REGISTER_ENB_REQ (msg_p).eNB_id = gnb_id;

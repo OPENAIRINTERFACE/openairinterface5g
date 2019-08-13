@@ -125,7 +125,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
 
     if (tb_src != NULL) {
       tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
-      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
+      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %u sizeof (mac_rlc_max_rx_header_size_t) %d\n",
              ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
              tb_size, sizeof (mac_rlc_max_rx_header_size_t));
 

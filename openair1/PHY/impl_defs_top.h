@@ -299,8 +299,16 @@ typedef struct {
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
+
+#ifdef __cplusplus
+#ifdef min
+#undef min
+#undef max
+#endif
+#else
 #define max(a,b) cmax(a,b)
 #define min(a,b) cmin(a,b)
+#endif
 
 #ifndef malloc16
 #  ifdef __AVX2__

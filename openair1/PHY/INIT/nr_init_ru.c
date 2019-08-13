@@ -23,13 +23,14 @@
 #include "SCHED/sched_common.h"
 #include "PHY/phy_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "RadioResourceConfigCommonSIB.h"
+/*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "MBSFN-SubframeConfigList.h"
+#include "MBSFN-SubframeConfigList.h"*/
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
+#include "openair1/PHY/defs_RU.h"
 
 int nr_phy_init_RU(RU_t *ru) {
 

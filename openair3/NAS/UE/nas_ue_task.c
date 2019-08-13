@@ -40,7 +40,7 @@
 
 // FIXME review these externs
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 
 char *make_port_str_from_ueid(const char *base_port_str, int ueid);
 

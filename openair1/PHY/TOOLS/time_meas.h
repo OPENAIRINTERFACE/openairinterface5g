@@ -34,10 +34,9 @@
 // global var to enable openair performance profiler
 extern int opp_enabled;
 double cpu_freq_GHz;
+
 #if defined(__x86_64__) || defined(__i386__)
-
 typedef struct {
-
   long long in;
   long long diff;
   long long p_time; /*!< \brief absolute process duration */
@@ -55,29 +54,27 @@ typedef struct {
   uint32_t max;
   int trials;
 } time_stats_t;
-
 #endif
+
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
 
-void print_meas_now(time_stats_t *ts, const char* name, FILE* file_name);
-void print_meas(time_stats_t *ts, const char* name, time_stats_t * total_exec_time, time_stats_t * sf_exec_time);
+void print_meas_now(time_stats_t *ts, const char *name, FILE *file_name);
+void print_meas(time_stats_t *ts, const char *name, time_stats_t *total_exec_time, time_stats_t *sf_exec_time);
 double get_time_meas_us(time_stats_t *ts);
 double get_cpu_freq_GHz(void);
 
 #if defined(__i386__)
 static inline unsigned long long rdtsc_oai(void) __attribute__((always_inline));
-static inline unsigned long long rdtsc_oai(void)
-{
+static inline unsigned long long rdtsc_oai(void) {
   unsigned long long int x;
   __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
   return x;
 }
 #elif defined(__x86_64__)
 static inline unsigned long long rdtsc_oai(void) __attribute__((always_inline));
-static inline unsigned long long rdtsc_oai(void)
-{
+static inline unsigned long long rdtsc_oai(void) {
   unsigned long long a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
   return (d<<32) | a;
@@ -85,49 +82,45 @@ static inline unsigned long long rdtsc_oai(void)
 
 #elif defined(__arm__)
 static inline uint32_t rdtsc_oai(void) __attribute__((always_inline));
-static inline uint32_t rdtsc_oai(void)
-{
+static inline uint32_t rdtsc_oai(void) {
   uint32_t r = 0;
   asm volatile("mrc p15, 0, %0, c9, c13, 0" : "=r"(r) );
   return r;
 }
 #endif
 
-static inline void start_meas(time_stats_t *ts)
-{
-
+#define CPUMEAS_DISABLE  0
+#define CPUMEAS_ENABLE   1
+#define CPUMEAS_GETSTATE 2
+int cpumeas(int action);
+static inline void start_meas(time_stats_t *ts) {
   if (opp_enabled) {
     if (ts->meas_flag==0) {
       ts->trials++;
       ts->in = rdtsc_oai();
       ts->meas_flag=1;
-    }
-    else {
+    } else {
       ts->in = rdtsc_oai();
     }
   }
 }
 
-static inline void stop_meas(time_stats_t *ts)
-{
-
+static inline void stop_meas(time_stats_t *ts) {
   if (opp_enabled) {
     long long out = rdtsc_oai();
-    
     ts->diff += (out-ts->in);
     /// process duration is the difference between two clock points
     ts->p_time = (out-ts->in);
     ts->diff_square += (out-ts->in)*(out-ts->in);
-    
+
     if ((out-ts->in) > ts->max)
       ts->max = out-ts->in;
 
-    ts->meas_flag=0;    
+    ts->meas_flag=0;
   }
 }
 
 static inline void reset_meas(time_stats_t *ts) {
-
   ts->in=0;
   ts->diff=0;
   ts->p_time=0;
@@ -135,12 +128,9 @@ static inline void reset_meas(time_stats_t *ts) {
   ts->max=0;
   ts->trials=0;
   ts->meas_flag=0;
-  
 }
 
-static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts)
-{
-
+static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
   if (opp_enabled) {
     dst_ts->trials=src_ts->trials;
     dst_ts->diff=src_ts->diff;

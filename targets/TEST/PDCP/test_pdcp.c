@@ -249,7 +249,7 @@ BOOL test_pdcp_data_req(void)
        * information if we pass mem_block_ts via a linked list?
        */
 
-      if (pdcp_test_pdu_buffer_size == 0 || pdcp_test_pdu_buffer == NULL) {
+      if (pdcp_test_pdu_buffer_size == 0 ) {
         msg("[TEST] PDU created by pdcp_data_req() is invalid!\n");
         return FALSE;
       }

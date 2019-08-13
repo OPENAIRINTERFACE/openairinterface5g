@@ -1,4 +1,9 @@
+# vim swp
+*.swp
+
+# log and exec file
 cmake_targets/log/
 cmake_targets/*/build/
+log/
+lte_build_oai/
 targets/bin/
-

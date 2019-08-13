@@ -105,9 +105,9 @@
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// index of the current UE RX/TX proc
-  int                  proc_id;
+  int proc_id;
   /// Component Carrier index
-  uint8_t              CC_id;
+  uint8_t CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for transmission
@@ -204,6 +204,12 @@ typedef struct {
 	/// condition variable for timer_thread;
 	pthread_cond_t cond_ticking;
 	//time_stats_t timer_stats;
+
+	// below 3 members is used for waiting each UE threads(multiple UEs test) in L2 FAPI simulator.
+	// This used in UE_phy_stub_single_thread_rxn_txnp4
+	pthread_mutex_t mutex_single_thread;
+	pthread_cond_t  cond_single_thread;
+	int             num_single_thread[NUMBER_OF_UE_MAX];
 } SF_ticking;
 
 typedef struct {
@@ -615,6 +621,11 @@ typedef struct {
   //uint8_t local_flag;
   /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
   runmode_t mode;
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// \brief Indicator that UE is configured for FeMBMS functionality (This flag should be avoided) ... just kept for PBCH initical scan (TODO)
+  int FeMBMS_active;
+#endif
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
   /// \brief Indicator that UE should perform coarse scanning around carrier
@@ -697,6 +708,10 @@ typedef struct {
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150];
+#endif
 
   uint32_t X_u[64][839];
 
@@ -847,6 +862,7 @@ typedef struct {
   time_stats_t pdsch_procedures_stat[RX_NB_TH];
   time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_procedures_stat[RX_NB_TH];
+  time_stats_t crnti_procedures_stats;
 
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
@@ -889,6 +905,7 @@ typedef struct {
 struct rx_tx_thread_data {
   PHY_VARS_UE    *UE;
   UE_rxtx_proc_t *proc;
+  uint16_t       ue_thread_id;
 };
 
 

@@ -138,14 +138,14 @@ typedef enum {
   FLEXRAN_AGENT_TIMER_STATE_MAX,
 } flexran_agent_timer_state_t;
 
-#define FLEXRAN_CAP_LOPHY 1
-#define FLEXRAN_CAP_HIPHY 2
-#define FLEXRAN_CAP_LOMAC 4
-#define FLEXRAN_CAP_HIMAC 8
-#define FLEXRAN_CAP_RLC   16
-#define FLEXRAN_CAP_PDCP  32
-#define FLEXRAN_CAP_SDAP  64
-#define FLEXRAN_CAP_RRC   128
+#define FLEXRAN_CAP_LOPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)) > 0)
+#define FLEXRAN_CAP_HIPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)) > 0)
+#define FLEXRAN_CAP_LOMAC(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)) > 0)
+#define FLEXRAN_CAP_HIMAC(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)) > 0)
+#define FLEXRAN_CAP_RLC(cApS)   (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC))   > 0)
+#define FLEXRAN_CAP_PDCP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP))  > 0)
+#define FLEXRAN_CAP_SDAP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP))  > 0)
+#define FLEXRAN_CAP_RRC(cApS)   (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC))   > 0)
 
 typedef enum {
   ENB_NORMAL_OPERATION = 0x0,
@@ -163,7 +163,7 @@ typedef struct {
 
   mid_t    mod_id;
   uint64_t agent_id;
-  uint8_t  capability_mask;
+  uint16_t capability_mask;
 
   /* lock for waiting before starting or soft-restart */
   pthread_cond_t      cond_node_ctrl;

@@ -38,7 +38,7 @@
 #include "tools_defs.h"
 #else
 #include "time_meas.h"
-#include "UTIL/LOG/log.h"
+#include "LOG/log.h"
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
@@ -9315,7 +9315,7 @@ int main(int argc, char**argv)
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    idft2048((int16_t *)x,(int16_t *)y,1);
+    dft2048((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
@@ -9576,7 +9576,7 @@ int main(int argc, char**argv)
   LOG_M("x24576.m","x24576",x,24576,1,1);
 
   int dftsizes[33]={24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,768,864,900,960,972,1080,1152,1200};
-  void (*dft[33])(int16_t *x,int16_t *y,uint8_t scale) = {dft24,dft36,dft48,dft60,dft72,dft96,dft108,dft120,dft144,dft180,dft192,dft216,dft240,dft288,dft300,dft324,dft360,dft384,dft432,dft480,dft540,dft576,dft600,dft648,dft720,dft768,dft864,dft900,dft960,dft972,dft1080,dft1152,dft1200};
+  void (*dft)(int16_t *x,int16_t *y,uint8_t scale)[33] = {dft24,dft36,dft48,dft60,dft72,dft96,dft108,dft120,dft144,dft180,dft192,dft216,dft240,dft288,dft300,dft324,dft360,dft384,dft432,dft480,dft540,dft576,dft600,dft648,dft720,dft768,dft864,dft900,dft960,dft972,dft1080,dft1152,dft1200};
   for (int n=0;n<33;n++) {
     // 4xN-point DFT
     memset((void*)x,0,dftsizes[n]*8*sizeof(int16_t));
