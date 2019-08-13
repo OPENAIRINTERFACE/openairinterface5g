@@ -140,6 +140,19 @@ function command_options_usage {
     echo ""
 }
 
+# function to set specific behavior depending on the TESTPLATFORM_OWNER variable
+# which may be set by a jenkins server for exemple
+function platform_set {
+	if [ "$TESTPLATFORM_OWNER" != "" ]
+	then
+	  echo "Running on $TESTPLATFORM_OWNER platform"
+	  if [ -x "${TESTPLATFORM_OWNER}_setenv.sh" ]
+	  then
+	    . ${TESTPLATFORM_OWNER}_setenv.sh
+	  fi
+	fi
+}
+
 function setvar_usage {
 	declare -A HELP_VAR
 	HELP_VAR["VM_OSREL"]="OS release to use in virtual machines"
@@ -315,6 +328,7 @@ function check_setvar {
     exit 1
 }	
 
+platform_set
 MY_DIR=$(dirname $(readlink -f $0))
 . $MY_DIR/createVM.sh
 . $MY_DIR/buildOnVM.sh
@@ -323,6 +337,7 @@ MY_DIR=$(dirname $(readlink -f $0))
 . $MY_DIR/runTestOnVM.sh
 . $MY_DIR/reportBuildLocally.sh
 . $MY_DIR/reportTestLocally.sh
+
 
 if [ $# -lt 1 ]
 then
