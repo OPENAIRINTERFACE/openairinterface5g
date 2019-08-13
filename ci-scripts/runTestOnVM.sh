@@ -476,7 +476,7 @@ function install_epc_on_vm {
     local LOC_EPC_VM_IP_ADDR=`uvt-kvm ip $LOC_EPC_VM_NAME`
 
     echo "$LOC_EPC_VM_NAME has for IP addr = $LOC_EPC_VM_IP_ADDR"
-    scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
+    [ -f /etc/apt/apt.conf.d/01proxy ] && scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
 
     # ltebox specific actions (install and start)
     LTE_BOX_TO_INSTALL=1
@@ -500,7 +500,7 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "Install EPC on EPC VM ($LOC_EPC_VM_NAME)"
         echo "############################################################"
-        echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $LOC_EPC_VM_CMDS
+        echo "sudo [ -f 01proxy ] && cp 01proxy /etc/apt/apt.conf.d/" > $LOC_EPC_VM_CMDS
         echo "touch /home/ubuntu/.hushlogin" >> $LOC_EPC_VM_CMDS
         echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf\"" >> $LOC_EPC_VM_CMDS
         echo "sudo apt-get update > zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
