@@ -456,7 +456,7 @@ RUN_OPTIONS="none"
 
 
 # list of variables that can be set via the --setvar option
-AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL")
+AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL OPTIONAL_APTCACHER")
 
 
 #variables to set which OS VM should use
