@@ -2193,6 +2193,10 @@ add_library(minimal_lib
   )
 target_link_libraries(minimal_lib pthread dl)
 
+add_executable(
+  ${OPENAIR_DIR}/openair2/NR_PHY_INTERFACE/nfapi_5g_test.c
+  )
+
 add_executable(replay_node
   ${OPENAIR_TARGETS}/ARCH/rfsimulator/stored_node.c
   )
@@ -2870,7 +2874,5 @@ ADD_CUSTOM_TARGET(oarf
 )
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
-
-
 
 
