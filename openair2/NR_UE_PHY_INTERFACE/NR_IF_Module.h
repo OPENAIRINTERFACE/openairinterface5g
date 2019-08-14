@@ -52,6 +52,7 @@ typedef struct {
   int slot;
 
   fapi_nr_dl_config_request_t dl_config_req;
+  fapi_nr_ul_config_request_t ul_config_req;
 } nr_dcireq_t;
 
 typedef struct {

@@ -355,6 +355,9 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  uint32_t nb_rb, start_rb;
+  uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
+  uint16_t n_rnti;
 
   // Process Rx data for one sub-frame
   if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
@@ -367,12 +370,38 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
     scheduled_response.dl_config = &dcireq.dl_config_req;
-    scheduled_response.ul_config = NULL;
+    scheduled_response.ul_config = &dcireq.ul_config_req;
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
+
+    //--------------------------Temporary configuration-----------------------------//
+    n_rnti = 0x1234;
+    nb_rb = 50;
+    start_rb = 30;
+    nb_symb_sch = 12;
+    start_symbol = 2;
+    precod_nbr_layers = 1;
+    mcs = 9;
+    harq_pid = 0;
+    rvidx = 0;
+  //------------------------------------------------------------------------------//
+
+    scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
+    scheduled_response.ul_config->number_pdus = 1;
+    scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = mcs;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
     nr_ue_scheduled_response(&scheduled_response);
 
 #ifdef UE_SLOT_PARALLELISATION
@@ -417,6 +446,7 @@ typedef struct processingData_s {
 }  processingData_t;
 
 void UE_processing(void *arg) {
+  uint8_t thread_id;
   processingData_t *rxtxD=(processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
@@ -433,10 +463,14 @@ void UE_processing(void *arg) {
 #endif
 */
 
+
   if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
 
+    thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
+
+
     if (UE->mode != loop_through_memory)
-      phy_procedures_nrUE_TX(UE,proc,0,0);
+      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
 
   }
 
