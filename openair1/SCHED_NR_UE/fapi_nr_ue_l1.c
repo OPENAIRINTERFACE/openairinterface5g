@@ -213,7 +213,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
-  fapi_nr_config_request_t nrUE_config = PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
+  fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
   
   if(phy_config != NULL){
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
@@ -229,7 +229,7 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
       LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
       LOG_I(MAC,"-------------------------------\n");
 
-      memcpy(&nrUE_config.pbch_config,&phy_config->config_req.pbch_config,sizeof(fapi_nr_pbch_config_t));
+      memcpy(&nrUE_config->pbch_config,&phy_config->config_req.pbch_config,sizeof(fapi_nr_pbch_config_t));
       
     }
         
