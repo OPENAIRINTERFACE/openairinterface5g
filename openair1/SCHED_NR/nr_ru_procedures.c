@@ -252,9 +252,14 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
 
-    memcpy((void*)ru->common.txdataF_BF[0],
-	   (void*)gNB->common_vars.txdataF[0],
-	   fp->samples_per_slot_wCP*sizeof(int32_t));
+    AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
+
+    for (int p=0; p<fp->Lmax; p++) {
+      if ((fp->L_ssb >> p) & 0x01)
+        memcpy((void*)ru->common.txdataF_BF[0],
+	       (void*)gNB->common_vars.txdataF[p],
+	       fp->samples_per_slot_wCP*sizeof(int32_t));
+    }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
   }

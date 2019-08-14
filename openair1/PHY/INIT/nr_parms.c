@@ -245,6 +245,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   else
     fp->Lmax = 64;
 
+  fp->N_ssb = 0;
+  for (int p=0; p<fp->Lmax; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
 }
