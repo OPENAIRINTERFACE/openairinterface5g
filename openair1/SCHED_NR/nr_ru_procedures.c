@@ -253,7 +253,7 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
 
     memcpy((void*)ru->common.txdataF_BF[0],
-	   (void*)&gNB->common_vars.txdataF[0][tti_tx*fp->symbols_per_slot*fp->ofdm_symbol_size],
+	   (void*)gNB->common_vars.txdataF[0],
 	   fp->samples_per_slot_wCP*sizeof(int32_t));
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);

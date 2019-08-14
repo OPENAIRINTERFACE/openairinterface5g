@@ -165,7 +165,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
   // clear the transmit data array for the current subframe
-  for (aa=0; aa<1/*15*/; aa++) {
+  for (aa=0; aa<fp->Lmax; aa++) {
     memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
 
