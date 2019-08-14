@@ -2495,12 +2495,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
-  TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+  TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
 
   LOG_I(PHY, "[phy_procedures_nrUE_TX] mcs = %d, nb_rb = %d \n , Nsymb_pusch = %d, nb_re_dmrs = %d, length_dmrs = %d, precod_nbr_layers = %d, TBS = %d\n",
   harq_process_ul_ue->mcs,
   harq_process_ul_ue->nb_rb,
-  ulsch_ue->Nsymb_pusch,
+  harq_process_ul_ue->number_of_symbols,
   ulsch_ue->nb_re_dmrs,
   ulsch_ue->length_dmrs,
   harq_process_ul_ue->Nl,

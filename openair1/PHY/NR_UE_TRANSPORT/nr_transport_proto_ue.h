@@ -1055,18 +1055,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
                      uint8_t harq_pid);
 
-/*! \brief Fill up NR_UE_ULSCH_t and NR_UL_UE_HARQ_t structs
-  @param[in] UE, Pointer to PHY_VARS_NR_UE struct
-  @param[in] thread_id, thread id
-  @param[in] gNB_id, gNB id
-  @param[in] harq_pid, harq id
-*/
-
-int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
-                             uint8_t thread_id,
-                             int gNB_id,
-                             unsigned char harq_pid);
-
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
   @param[in] in, Pointer to input bits
   @param[in] size, of input bits
