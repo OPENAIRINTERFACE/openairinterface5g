@@ -94,7 +94,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   unsigned int available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  int32_t *mod_symbols[NR_MAX_NB_CODEWORDS];
   uint32_t ***pusch_dmrs;
   int16_t **tx_layers;
   int32_t **txdataF;
@@ -180,14 +179,12 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                   mod_order,
                   (int16_t *)ulsch_ue->d_mod);
 
+
     // pusch_transform_precoding(ulsch_ue, frame_parms, harq_pid);
 
     ///////////
     ////////////////////////////////////////////////////////////////////////
 
-    mod_symbols[cwd_index] = (int32_t *)malloc16((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
-
-    memcpy(mod_symbols[cwd_index],ulsch_ue->d_mod,(available_bits/mod_order)*sizeof(int32_t));
 
   }
 
@@ -212,13 +209,10 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
-  nr_layer_mapping((int16_t **)mod_symbols,
+  nr_ue_layer_mapping(UE->ulsch[thread_id][eNB_id],
                    harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
-  
-  for (uint32_t i = 0; i < 2*available_bits/mod_order; i++)
-      tx_layers[0][i] = (tx_layers[0][i] * AMP) >> 15;
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -323,14 +317,9 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       }
     }
   }
+
   ///////////
   ////////////////////////////////////////////////////////////////////////
-
-  for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
-
-    free(mod_symbols[cwd_index]);
-
-  }
 
   return 0;
 }
