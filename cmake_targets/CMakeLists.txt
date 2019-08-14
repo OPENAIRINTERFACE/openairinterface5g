@@ -2193,7 +2193,7 @@ add_library(minimal_lib
   )
 target_link_libraries(minimal_lib pthread dl)
 
-add_executable(
+add_executable(nfapi_test
   ${OPENAIR_DIR}/openair2/NR_PHY_INTERFACE/nfapi_5g_test.c
   )
 
