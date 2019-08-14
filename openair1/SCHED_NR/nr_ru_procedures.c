@@ -243,40 +243,47 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
 
   int l,aa;
-  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-  int32_t ***bw;
   PHY_VARS_gNB **gNB_list = ru->gNB_list,*gNB;
-  gNB = gNB_list[0];
+  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
+  nfapi_nr_config_request_t *cfg;
+  int32_t ***bw;
 
-  if (ru->nb_tx == 1) {
+
+  if (ru->num_gNB == 1){
+    gNB = gNB_list[0];
+    cfg = &gNB->gNB_config;
+    if (nr_slot_select(cfg,tti_tx) == SF_UL) return;
+
+    if (ru->nb_tx == 1) {
     
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
 
-    AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
+      AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
 
-    for (int p=0; p<fp->Lmax; p++) {
+      for (int p=0; p<fp->Lmax; p++) {
       if ((fp->L_ssb >> p) & 0x01)
         memcpy((void*)ru->common.txdataF_BF[0],
-	       (void*)gNB->common_vars.txdataF[p],
-	       fp->samples_per_slot_wCP*sizeof(int32_t));
-    }
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
-  }
-  else {
-    bw  = ru->beam_weights[0];
-    for (l=0;l<fp->symbols_per_slot;l++) {
-      for (aa=0;aa<ru->nb_tx;aa++) {
-	nr_beam_precoding(ru->gNB_list[0]->common_vars.txdataF,
-	  		  ru->common.txdataF_BF,
-			  fp,
-			  bw,
-			  tti_tx,
-			  l,
-			  aa);
-	
+               (void*)gNB->common_vars.txdataF[p],
+               fp->samples_per_slot_wCP*sizeof(int32_t));
       }
-    }
-  }
+
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
+    }// if (ru->nb_tx == 1)
+    else {
+      bw  = ru->beam_weights[0];
+      for (l=0;l<fp->symbols_per_slot;l++) {
+        for (aa=0;aa<ru->nb_tx;aa++) {
+          nr_beam_precoding(gNB->common_vars.txdataF,
+                            ru->common.txdataF_BF,
+                            fp,
+                            bw,
+                            tti_tx,
+                            l,
+                            aa);
+
+        }// for (aa=0;aa<ru->nb_tx;aa++)
+      }// for (l=0;l<fp->symbols_per_slot;l++)
+    }// if (ru->nb_tx == 1)
+  }// if (ru->num_gNB == 1)
 }
 
