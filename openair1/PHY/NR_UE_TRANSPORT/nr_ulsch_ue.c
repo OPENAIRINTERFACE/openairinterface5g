@@ -168,10 +168,12 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
   uint16_t n_dmrs;
-  uint8_t dmrs_type;
+  uint8_t dmrs_type, length_dmrs;
   uint8_t mapping_type;
-  int ap, start_symbol, i;
-  int sample_offsetF;
+  int ap, start_symbol, Nid_cell, i;
+  int sample_offsetF, N_RE_prime, N_PRB_oh;
+  uint16_t n_rnti;
+  uint32_t TBS;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
@@ -179,11 +181,33 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][eNB_id];
 
   num_of_codewords = 1; // tmp assumption
+  length_dmrs = 1;
+  n_rnti = 0x1234;
+  Nid_cell = 0;
+  N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+
+
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
     ulsch_ue = UE->ulsch[thread_id][eNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+
+    ulsch_ue->length_dmrs = length_dmrs;
+    ulsch_ue->rnti        = n_rnti;
+    ulsch_ue->Nid_cell    = Nid_cell;
+    ulsch_ue->Nsc_pusch   = harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB;
+    ulsch_ue->Nsymb_pusch = harq_process_ul_ue->number_of_symbols;
+    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+
+    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs - N_PRB_oh;
+
+    harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
+
+    TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+
+    harq_process_ul_ue->TBS = TBS;
+
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
