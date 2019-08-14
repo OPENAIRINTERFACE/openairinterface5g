@@ -324,6 +324,7 @@ typedef enum {
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_NR_UE_TX_ULSCH_UESPEC,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PUCCH,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_COMMON,
   VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH,
@@ -549,12 +550,20 @@ extern int ouput_vcd;
 
 #include "T.h"
 
+#define VCD_SIGNAL_DUMPER_INIT(x)         /* nothing */
+#define VCD_SIGNAL_DUMPER_CLOSE()         /* nothing */
+#define VCD_SIGNAL_DUMPER_CREATE_HEADER() /* nothing */
 #define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(var, val) T_VCD_VARIABLE(var, val)
 #define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(var, val) T_VCD_FUNCTION(var, val)
-#else
 
-#define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(var, val)
-#define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(var, val)
+#else /* T_TRACER */
+
+#define VCD_SIGNAL_DUMPER_INIT(aRgUmEnT)                   vcd_signal_dumper_init(aRgUmEnT)
+#define VCD_SIGNAL_DUMPER_CLOSE()                          vcd_signal_dumper_close()
+#define VCD_SIGNAL_DUMPER_CREATE_HEADER()                  vcd_signal_dumper_create_header()
+#define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(vAr1,vAr2) vcd_signal_dumper_dump_variable_by_name(vAr1,vAr2)
+#define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(vAr1,vAr2) vcd_signal_dumper_dump_function_by_name(vAr1,vAr2)
+
  
 #endif /* T_TRACER */
 

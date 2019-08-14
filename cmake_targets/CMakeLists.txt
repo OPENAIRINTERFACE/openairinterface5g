@@ -244,6 +244,7 @@ add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" )
+add_boolean_option(ENABLE_VCD          True  "always true now, time measurements of proc calls and var displays")
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
@@ -1032,7 +1033,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/LISTS/list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
-#  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
+  ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
 #  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
@@ -2537,6 +2538,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
+  ${UTIL_SRC}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
