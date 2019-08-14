@@ -120,6 +120,7 @@ int                      threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
+
 extern int16_t nr_dlsch_demod_shift;
 
 int UE_scan = 0;
@@ -397,7 +398,7 @@ int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;
-  int tddflag=0, nonbiotflag;
+  int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
   uint32_t online_log_messages;
@@ -465,6 +466,9 @@ static void get_options(void) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
       frame_parms[CC_id]->frame_type = TDD;
   }
+
+  if (vcdflag > 0)
+    ouput_vcd = 1;
 
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
@@ -703,6 +707,10 @@ int main( int argc, char **argv ) {
       LOG_E(OPT,"failed to run OPT \n");
   }
 
+  if (ouput_vcd) {
+    vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
+  }
+
 #ifdef PDCP_USE_NETLINK
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
@@ -795,6 +803,9 @@ int main( int argc, char **argv ) {
 
   while(true)
     sleep(3600);
+
+  if (ouput_vcd)
+    vcd_signal_dumper_close();
 
   return 0;
 }

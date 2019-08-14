@@ -343,6 +343,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_nr_ue_tx_ulsch_uespec",
   "phy_procedures_ue_tx_pucch",
   "phy_procedures_ue_tx_ulsch_common",
   "phy_procedures_ue_tx_prach",
