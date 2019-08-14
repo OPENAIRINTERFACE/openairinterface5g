@@ -60,11 +60,23 @@ typedef enum {
 
 //3.3.1 PARAM
 
+typedef struct {
+	nfapi_tl_t tl;
+	uint16_t value;
+
+} nfapi_nr_param_tlv_t;
+
 //same with nfapi_param_request_t
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_param_request_t;
+
+typedef enum {
+  NFAPI_NR_PARAM_MSG_OK = 0,
+	NFAPI_NR_PARAM_MSG_INVALID_STATE
+
+} nfapi_nr_param_errors_e;
 
 typedef struct {
   nfapi_nr_param_errors_e error_code;
@@ -73,18 +85,9 @@ typedef struct {
   nfapi_nr_param_tlv_t TLV;
 } nfapi_nr_param_response_t;
 
-typedef enum {
-  NFAPI_NR_PARAM_MSG_OK = 0,
-	NFAPI_NR_PARAM_MSG_INVALID_STATE
-
-} nfapi_nr_param_errors_e;
 
 //PARAM and CONFIG TLVs are used in the PARAM and CONFIG message exchanges, respectively
-typedef struct {
-	nfapi_tl_t tl;
-	uint16_t value;
 
-} nfapi_nr_param_tlv_t;
 
 //nfapi_nr_param_tlv_format_t cell param ~ measurement_param:
 
@@ -145,6 +148,11 @@ typedef struct {
 #define  NFAPI_NR_PARAM_TLV_MAX_PRACH_FD_OCCASIONS_IN_A_SLOT_TAG 0x0035
 #define  NFAPI_NR_PARAM_TLV_RSSI_MEASUREMENT_SUPPORT_TAG 0x0036
 
+typedef struct{
+  uint16_t num_config_tlvs_to_report;
+  nfapi_nr_param_tlv_t tlv;
+} nfapi_nr_num_config_tlvs_to_report;
+
 typedef struct 
 {
   uint16_t release_capability;//TAG 0x0001
@@ -153,11 +161,6 @@ typedef struct
   uint8_t  skip_blank_ul_config;
   nfapi_nr_num_config_tlvs_to_report* num_config_tlvs_to_report_list;
 } nfapi_nr_cell_param_t;
-
-typedef struct{
-  uint16_t num_config_tlvs_to_report;
-  nfapi_nr_param_tlv_t tlv;
-} nfapi_nr_num_config_tlvs_to_report;
 
 //table 3-10 Carrier parameters
 typedef struct 
@@ -252,16 +255,20 @@ typedef struct
 
 //-------------------------------------------//
 //3.3.2 CONFIG
+typedef struct {
+	nfapi_tl_t tl;
+	uint16_t value;
+} nfapi_nr_config_tlv_t;
 
 typedef struct {
 	uint8_t number_of_tlvs;
 	nfapi_nr_config_tlv_t tlv;
 } nfapi_nr_config_request_t;
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint16_t value;
-} nfapi_nr_config_tlv_t;
+typedef enum {
+  NFAPI_NR_CONFIG_MSG_OK = 0,
+	NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
+} nfapi_nr_config_errors_e;
 
 typedef struct {
 	nfapi_nr_config_errors_e error_code;
@@ -274,11 +281,6 @@ typedef struct {
   nfapi_nr_config_tlv_t* tlv_missing_list;
 
 } nfapi_nr_config_response_t;
-
-typedef enum {
-  NFAPI_NR_CONFIG_MSG_OK = 0,
-	NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
-} nfapi_nr_config_errors_e;
 
 //nfapi_nr_config_tlv_format_t carrier config ~ precoding config:
 
@@ -363,17 +365,12 @@ typedef struct
 } nfapi_nr_ssb_config_t;
 
 //table 3-24
+
 typedef struct 
 {
-  uint8_t prach_sequence_length;//RACH sequence length. Long or Short sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
-  uint8_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
-  uint8_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
-  uint8_t num_prach_fd_occasions;//Number of RACH frequency domain occasions. Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
-  nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
-  uint8_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
-  uint8_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+  uint8_t unused_root_sequences;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
 
-} nfapi_nr_prach_config_t;
+} nfapi_nr_num_unused_root_sequences_t;
 
 typedef struct 
 {
@@ -389,11 +386,29 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t unused_root_sequences;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
+  uint8_t prach_sequence_length;//RACH sequence length. Long or Short sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
+  uint8_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
+  uint8_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
+  uint8_t num_prach_fd_occasions;//Number of RACH frequency domain occasions. Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
+  uint8_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
+  uint8_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
 
-} nfapi_nr_num_unused_root_sequences_t;
+} nfapi_nr_prach_config_t;
 
 //table 3-25
+typedef struct 
+{
+  uint32_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
+
+} nfapi_nr_ssb_mask_size_2_t;
+
+typedef struct 
+{
+  uint8_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+
+} nfapi_nr_ssb_mask_size_64_t;
+
 typedef struct 
 {
   uint16_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Given in PRB [38.211, section 4.4.4.2] Value: 0->2199
@@ -408,27 +423,14 @@ typedef struct
 
 } nfapi_nr_ssb_table_t;
 
-typedef struct 
-{
-  uint32_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
-
-} nfapi_nr_ssb_mask_size_2_t;
-
-typedef struct 
-{
-  uint8_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
-
-} nfapi_nr_ssb_mask_size_64_t;
-
 //table 3-26
 
 //? 
 typedef struct 
 {
-  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 
-  nfapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
+  uint8_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
 
-} nfapi_nr_tdd_table_t;
+} nfapi_nr_max_num_of_symbol_per_slot_t;
 
 typedef struct 
 {
@@ -438,9 +440,10 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
+  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 
+  nfapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
 
-} nfapi_nr_max_num_of_symbol_per_slot_t;
+} nfapi_nr_tdd_table_t;
 
 //table 3-27
 typedef struct 
@@ -478,6 +481,17 @@ typedef enum {
 } nfapi_nr_stop_errors_e;
 
 //3.3.5 PHY Notifications
+typedef enum {
+  NFAPI_NR_PHY_API_MSG_OK              =0x0,
+	NFAPI_NR_PHY_API_MSG_INVALID_STATE   =0x1,
+  NFAPI_NR_PHY_API_MSG_INVALID_CONFIG  =0x2,
+  NFAPI_NR_PHY_API_SFN_OUT_OF_SYNC     =0X3,
+  NFAPI_NR_PHY_API_MSG_SLOR_ERR        =0X4,
+  NFAPI_NR_PHY_API_MSG_BCH_MISSING     =0X5,
+  NFAPI_NR_PHY_API_MSG_INVALID_SFN     =0X6,
+  NFAPI_NR_PHY_API_MSG_UL_DCI_ERR      =0X7,
+  NFAPI_NR_PHY_API_MSG_TX_ERR          =0X8
+} nfapi_nr_phy_notifications_errors_e;
 
 typedef struct {
 	uint16_t sfn; //0~1023
@@ -486,31 +500,11 @@ typedef struct {
   nfapi_nr_phy_notifications_errors_e error_code;
 } nfapi_nr_phy_notifications_error_indicate_t;
 
-typedef enum {
-  NFAPI_NR_PHY_API_MSG_OK =0x0,
-	NFAPI_NR_PHY_API_MSG_INVALID_STATE  =0x1,
-  NFAPI_NR_PHY_API_MSG_INVALID_CONFIG  =0x2,
-  NFAPI_NR_PHY_API_SFN_OUT_OF_SYNC  =0X03,
-  NFAPI_NR_PHY_API_MSG_SLOR_ERR     =0X04,
-  NFAPI_NR_PHY_API_MSG_BCH_MISSING  =0X05,
-  NFAPI_NR_PHY_API_MSG_INVALID_SFN  =0X06,
-  NFAPI_NR_PHY_API_MSG_UL_DCI_ERR   =0X07,
-  NFAPI_NR_PHY_API_MSG_TX_ERR       =0X08
-} nfapi_nr_phy_notifications_errors_e;
-
-
 //-----------------------//
 //3.3.6 Storing Precoding and Beamforming Tables
 
 //table 3-32
 //? 
-typedef struct {
-	uint16_t num_dig_beams; //0~65535
-  uint16_t num_txrus;    //0~65535
-  nfapi_nr_dig_beam_t* dig_beam_list;
-  nfapi_nr_txru_t*  txru_list;
-} nfapi_nr_dbt_pdu_t;
-
 typedef struct {
 	uint16_t beam_idx;     //0~65535
 } nfapi_nr_dig_beam_t;
@@ -520,12 +514,21 @@ typedef struct {
   uint16_t dig_beam_weight_Im;
 } nfapi_nr_txru_t;
 
-//? table 3-33
 typedef struct {
-	uint16_t pm_idx;       //0~65535
-  nfapi_nr_num_layers_t* num_layers_list;   //0~65535
-  nfapi_nr_num_ant_ports_t* num_ant_ports_list;
-} nfapi_nr_pm_pdu_t;
+	uint16_t num_dig_beams; //0~65535
+  uint16_t num_txrus;    //0~65535
+  nfapi_nr_dig_beam_t* dig_beam_list;
+  nfapi_nr_txru_t*  txru_list;
+} nfapi_nr_dbt_pdu_t;
+
+
+//table 3-33
+//?
+typedef struct {
+  uint16_t num_ant_ports;
+	int16_t precoder_weight_Re;
+  int16_t precoder_weight_Im;
+} nfapi_nr_num_ant_ports_t;
 
 typedef struct {
   uint16_t numLayers;   //0~65535
@@ -533,12 +536,11 @@ typedef struct {
 } nfapi_nr_num_layers_t;
 
 typedef struct {
-  uint16_t num_ant_ports;
-	int16_t precoder_weight_Re;
-  int16_t precoder_weight_Im;
-} nfapi_nr_num_ant_ports_t;
+	uint16_t pm_idx;       //0~65535
+  nfapi_nr_num_layers_t* num_layers_list;   //0~65535
+  //nfapi_nr_num_ant_ports_t* num_ant_ports_list;
+} nfapi_nr_pm_pdu_t;
 
 // Section 3.4
-
 
 #endif
