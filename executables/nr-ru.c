@@ -2100,6 +2100,7 @@ void init_NR_RU(char *rf_config_file)
 {
   int ru_id;
   RU_t *ru;
+  PHY_VARS_gNB *gNB_RC;
   PHY_VARS_gNB *gNB0= (PHY_VARS_gNB *)NULL;
   NR_DL_FRAME_PARMS *fp = (NR_DL_FRAME_PARMS *)NULL;
   int i;
@@ -2143,6 +2144,7 @@ void init_NR_RU(char *rf_config_file)
       }
     }
 
+    gNB_RC           = RC.gNB[0][0];
     gNB0             = ru->gNB_list[0];
     fp               = ru->nr_frame_parms;
     LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
@@ -2151,10 +2153,11 @@ void init_NR_RU(char *rf_config_file)
       if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
         AssertFatal(gNB0!=NULL,"gNB0 is null!\n");
 
-      if (gNB0) {
-        LOG_I(PHY,"Copying frame parms from gNB %d to ru %d\n",gNB0->Mod_id,ru->idx);
-        memcpy((void *)fp,(void *)&gNB0->frame_parms,sizeof(NR_DL_FRAME_PARMS));
-        memset((void *)ru->nr_frame_parms, 0, sizeof(NR_DL_FRAME_PARMS));
+      if (gNB0 && gNB_RC) {
+        LOG_I(PHY,"Copying frame parms from gNB in RC to gNB %d in ru %d and frame_parms in ru\n",gNB0->Mod_id,ru->idx);
+        memset((void *)fp, 0, sizeof(NR_DL_FRAME_PARMS));
+        memcpy((void *)fp,&gNB_RC->frame_parms,sizeof(NR_DL_FRAME_PARMS));
+        memcpy((void *)&gNB0->frame_parms,(void *)&gNB_RC->frame_parms,sizeof(NR_DL_FRAME_PARMS));
         // attach all RU to all gNBs in its list/
         LOG_D(PHY,"ru->num_gNB:%d gNB0->num_RU:%d\n", ru->num_gNB, gNB0->num_RU);
 
