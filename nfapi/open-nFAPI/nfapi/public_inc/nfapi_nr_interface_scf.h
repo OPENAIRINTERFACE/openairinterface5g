@@ -73,8 +73,8 @@ typedef struct {
 } nfapi_nr_param_request_t;
 
 typedef enum {
-  NFAPI_NR_MSG_OK = 0, //NFAPI_NR_PARAM_MSG_OK = 0, 
-	NFAPI_NR_MSG_INVALID_STATE  //NFAPI_NR_PARAM_MSG_INVALID_STATE
+  NFAPI_NR_PARAM_MSG_OK = 0, 
+	NFAPI_NR_PARAM_MSG_INVALID_STATE
 
 } nfapi_nr_param_errors_e;
 
@@ -262,8 +262,8 @@ typedef struct {
 } nfapi_nr_config_request_t;
 
 typedef enum {
-  NFAPI_NR_MSG_OK = 0, //NFAPI_NR_CONFIG_MSG_OK = 0,
-	NFAPI_NR_MSG_INVALID_CONFIG //NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
+  NFAPI_NR_CONFIG_MSG_OK = 0,
+	NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
 } nfapi_nr_config_errors_e;
 
 typedef struct {
@@ -454,7 +454,7 @@ typedef struct {
 } nfapi_nr_start_request_t;
 
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE //NFAPI_NR_START_MSG_INVALID_STATE
+	NFAPI_NR_START_MSG_INVALID_STATE
 } nfapi_nr_start_errors_e;
 
 //3.3.4 STOP
@@ -470,7 +470,7 @@ typedef struct {
 } nfapi_nr_stop_indication_t;
 
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE //NFAPI_NR_STOP_MSG_INVALID_STATE
+	NFAPI_NR_STOP_MSG_INVALID_STATE
 } nfapi_nr_stop_errors_e;
 
 //3.3.5 PHY Notifications
@@ -1067,23 +1067,23 @@ typedef struct
 
 //3.4.5 slot_errors
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE,
-  NFAPI_NR_SFN_OUT_OF_SYNC,
-  NFAPI_NR_MSG_BCH_MISSING,
-  NFAPI_NR_MSG_SLOT_ERR
+	NFAPI_NR_SLOT_UL_TTI_MSG_INVALID_STATE,
+  NFAPI_NR_SLOT_UL_TTI_SFN_OUT_OF_SYNC,
+  NFAPI_NR_SLOT_UL_TTI_MSG_BCH_MISSING,
+  NFAPI_NR_SLOT_UL_TTI_MSG_SLOT_ERR
 
 } nfapi_nr_slot_errors_ul_tti_e;
 
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE,
-  NFAPI_NR_MSG_SLOT_ERR
+	NFAPI_NR_SLOT_DL_TTI_MSG_INVALID_STATE,
+  NFAPI_NR_SLOT_DL_TTI_MSG_SLOT_ERR
 
 } nfapi_nr_slot_errors_dl_tti_e;
 
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE,
-  NFAPI_NR_MSG_INVALID_SFN,
-  NFAPI_NR_MSG_UL_DCI_ERR
+	NFAPI_NR_SLOT_UL_DCI_MSG_INVALID_STATE,
+  NFAPI_NR_SLOT_UL_DCI_MSG_INVALID_SFN,
+  NFAPI_NR_SLOT_UL_DCI_MSG_UL_DCI_ERR
 
 } nfapi_nr_slot_errors_ul_dci_e;
 
@@ -1111,9 +1111,9 @@ typedef struct
 } nfapi_nr_tx_data_request_t;
 
 typedef enum {
-	NFAPI_NR_MSG_INVALID_STATE,
-  NFAPI_NR_MSG_INVALID_SFN,
-  NFAPI_NR_MSG_TX_ERR
+	NFAPI_NR_DL_DATA_MSG_INVALID_STATE,
+  NFAPI_NR_DL_DATA_MSG_INVALID_SFN,
+  NFAPI_NR_DL_DATA_MSG_TX_ERR
 
 } nfapi_nr_dl_data_errors_e;
 
@@ -1172,6 +1172,64 @@ typedef struct
 
 //3.4.9 uci_indication
 
+//table 3-67
+typedef struct
+{
+  uint8_t sr_indication;
+  uint8_t sr_confidence_level;
+
+} nfapi_nr_sr_pdu_0_1_t;
+//table 3-69
+typedef struct
+{
+  uint16_t sr_bit_len;
+  //! fixme
+  uint8_t* sr_payload;//sr_payload[ceil(sr_bit_len/8)];
+
+} nfapi_nr_sr_pdu_2_3_4_t;
+//table 3-68
+typedef struct
+{
+  uint8_t  harq_value;//Indicates result on HARQ data. Value: 0 = pass 1 = fail 2 = not present
+
+} nfapi_nr_harq_t;
+
+//table 3-70
+typedef struct
+{
+  uint8_t  harq_crc;
+  uint16_t harq_bit_len;
+  //! fixme
+  uint8_t*  harq_payload;//harq_payload[ceil(harq_bit_len)];
+} nfapi_nr_harq_pdu_2_3_4_t;
+
+typedef struct
+{
+  uint8_t num_harq;
+  uint8_t harq_confidence_level;
+  nfapi_nr_harq_t* harq_list;
+
+} nfapi_nr_harq_pdu_0_1_t;
+
+//table 3-71
+typedef struct
+{
+  uint8_t  csi_part1_crc;
+  uint16_t csi_part1_bit_len;
+  //! fixme
+  uint8_t*  csi_part1_payload;//uint8_t[ceil(csiPart1BitLen/8)]
+  
+} nfapi_nr_csi_part1_pdu_t;
+
+//table 3-72
+typedef struct
+{
+  uint8_t  csi_part2_crc;
+  uint16_t csi_part2_bit_len;
+  //! fixme
+  uint8_t*  csi_part2_payload;//uint8_t[ceil(csiPart2BitLen/8)]
+} nfapi_nr_csi_part2_pdu_t;
+
 //table 3-63
 
   //for dci_pusch_pdu
@@ -1223,62 +1281,6 @@ typedef struct
 }nfapi_nr_uci_pucch_pdu_format_2_3_4_t;
 
 //for SR, HARQ and CSI Part 1/ 2 PDUs
-//table 3-67
-typedef struct
-{
-  uint8_t sr_indication;
-  uint8_t sr_confidence_level;
-
-} nfapi_nr_sr_pdu_0_1_t;
-//table 3-69
-typedef struct
-{
-  uint16_t sr_bit_len;
-  //! fixme
-  uint8_t* sr_payload;//sr_payload[ceil(sr_bit_len/8)];
-
-} nfapi_nr_sr_pdu_2_3_4_t;
-//table 3-68
-typedef struct
-{
-  uint8_t  harq_value;//Indicates result on HARQ data. Value: 0 = pass 1 = fail 2 = not present
-
-} nfapi_nr_harq_t;
-
-typedef struct
-{
-  uint8_t num_harq;
-  uint8_t harq_confidence_level;
-  nfapi_nr_harq_t* harq_list;
-
-} nfapi_nr_harq_pdu_0_1_t;
-//table 3-70
-typedef struct
-{
-  uint8_t  harq_crc;
-  uint16_t harq_bit_len;
-  //! fixme
-  uint8_t*  harq_payload;//harq_payload[ceil(harq_bit_len)];
-} nfapi_nr_harq_pdu_2_3_4_t;
-
-//table 3-71
-typedef struct
-{
-  uint8_t  csi_part1_crc;
-  uint16_t csi_part1_bit_len;
-  //! fixme
-  uint8_t*  csi_part1_payload;//uint8_t[ceil(csiPart1BitLen/8)]
-  
-} nfapi_nr_csi_part1_pdu_t;
-
-//table 3-72
-typedef struct
-{
-  uint8_t  csi_part2_crc;
-  uint16_t csi_part2_bit_len;
-  //! fixme
-  uint8_t*  csi_part2_payload;//uint8_t[ceil(csiPart2BitLen/8)]
-} nfapi_nr_csi_part2_pdu_t;
 
 typedef struct
 {
