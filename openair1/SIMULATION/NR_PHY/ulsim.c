@@ -338,7 +338,7 @@ int main(int argc, char **argv)
 
   crcTableInit();
 
-  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell, SSB_positions);
+  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
   phy_init_nr_gNB(gNB, 0, 0);
   //init_eNB_afterRU();
@@ -582,6 +582,9 @@ int main(int argc, char **argv)
 
     printf("\n");
   }
+
+  free(test_input_bit);
+  free(estimated_output_bit);
 
   if (output_fd)
     fclose(output_fd);
