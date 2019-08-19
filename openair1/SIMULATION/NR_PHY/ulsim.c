@@ -110,7 +110,7 @@ int main(int argc, char **argv)
   int tx_offset;
   double txlev_float;
   int32_t txlev;
-  int start_rb = 30;
+  int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
 
 
