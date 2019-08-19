@@ -1076,19 +1076,21 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
     - transform precoding
 */
 
-uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id);
+                               int gNB_id);
 
 
 /** \brief This function does IFFT for PUSCH
 */
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
+                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t Nl,
+                                      uint8_t thread_id,
+                                      uint8_t gNB_id,
                                       NR_DL_FRAME_PARMS *frame_parms);
 
 
