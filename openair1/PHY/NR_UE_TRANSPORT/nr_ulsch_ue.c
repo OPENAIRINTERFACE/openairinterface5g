@@ -45,7 +45,6 @@
 //#define DEBUG_SCFDMA
 //#define DEBUG_PUSCH_MAPPING
 
-
 void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint16_t size,
                          uint32_t Nid,
@@ -85,11 +84,11 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 }
 
-uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id) {
+                               int gNB_id) {
 
   unsigned int available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
@@ -105,12 +104,11 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
   uint16_t n_rnti;
-  uint32_t TBS;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][eNB_id];
+  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
 
   num_of_codewords = 1; // tmp assumption
   length_dmrs = 1;
@@ -118,11 +116,9 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
 
-
-
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
-    ulsch_ue = UE->ulsch[thread_id][eNB_id][cwd_index];
+    ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
     ulsch_ue->length_dmrs = length_dmrs;
@@ -134,10 +130,20 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
 
-    TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+    harq_process_ul_ue->TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
 
-    harq_process_ul_ue->TBS = TBS;
+    //-----------------------------------------------------//
+    // to be removed later when MAC is ready
 
+    if (harq_process_ul_ue != NULL){
+      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++)
+        harq_process_ul_ue->a[i] = (unsigned char) rand();
+    } else {
+      LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+      return;
+    }
+
+    //-----------------------------------------------------//
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
@@ -209,7 +215,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
-  nr_ue_layer_mapping(UE->ulsch[thread_id][eNB_id],
+  nr_ue_layer_mapping(UE->ulsch[thread_id][gNB_id],
                    harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
@@ -321,19 +327,22 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  return 0;
+  return;
 }
 
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
+                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t Nl,
+                                      uint8_t thread_id,
+                                      uint8_t gNB_id,
                                       NR_DL_FRAME_PARMS *frame_parms) {
 
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
   int timing_advance;
+  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->Nl; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////

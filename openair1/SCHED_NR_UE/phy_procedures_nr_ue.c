@@ -2468,12 +2468,9 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                             uint8_t gNB_id,
                             uint8_t thread_id)
 {
-  NR_UE_ULSCH_t *ulsch_ue;
-  NR_UL_UE_HARQ_t *harq_process_ul_ue;
   //int32_t ulsch_start=0;
   int slot_tx = proc->nr_tti_tx;
   int frame_tx = proc->frame_tx;
-  int harq_pid, i, TBS;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
@@ -2483,47 +2480,12 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->phy_proc_tx);
 #endif
 
-  harq_pid = 0; //temporary implementation
-
-  /*
-  generate_ue_ulsch_params(ue,
-                           0,
-                           gNB_id,
-                           harq_pid);
-  */
-  
-  ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
-  harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-
-  TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
-
-  LOG_I(PHY, "[phy_procedures_nrUE_TX] mcs = %d, nb_rb = %d \n , Nsymb_pusch = %d, nb_re_dmrs = %d, length_dmrs = %d, precod_nbr_layers = %d, TBS = %d\n",
-  harq_process_ul_ue->mcs,
-  harq_process_ul_ue->nb_rb,
-  harq_process_ul_ue->number_of_symbols,
-  ulsch_ue->nb_re_dmrs,
-  ulsch_ue->length_dmrs,
-  harq_process_ul_ue->Nl,
-  TBS);
-
-
-//-----------------------------------------------------//
-  // to be removed later when MAC is ready
-
-  if (harq_process_ul_ue != NULL){
-    for (i = 0; i < TBS / 8; i++)
-      harq_process_ul_ue->a[i] = (unsigned char) rand();
-  } else {
-    LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
-    return;
-  }
-
-//-----------------------------------------------------//
+  uint8_t harq_pid = 0; //temporary implementation
 
   nr_ue_ulsch_procedures(ue,
                          harq_pid,
                          slot_tx,
-                         0,
+                         thread_id,
                          gNB_id);
 
 
@@ -2538,8 +2500,10 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
 
   nr_ue_pusch_common_procedures(ue,
+                                harq_pid,
                                 slot_tx,
-                                harq_process_ul_ue->Nl,
+                                thread_id,
+                                gNB_id,
                                 &ue->frame_parms);
 
 
