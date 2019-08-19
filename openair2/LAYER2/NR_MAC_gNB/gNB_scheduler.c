@@ -33,9 +33,9 @@
 #include "assertions.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -365,10 +365,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frame_txP, slot_txP);
   }
 
-  // TbD once RACH is available, start ta_timer when UE is connected
+  // TBR once RACH is available, start ta_timer when UE is connected
   if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
 
-  if (ue_sched_ctl->ta_timer == 0) {
+  if (ue_sched_ctl->ta_timer == 0) { // TBR check phy_test (see below)
     gNB->ta_command = ue_sched_ctl->ta_update;
     /* if time is up, then set the timer to not send it for 5 frames
     // regardless of the TA value */
@@ -380,8 +380,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // Phytest scheduling
-  if (phy_test && slot_txP==1){
+  if (phy_test && slot_txP==1){ // TBR check phy_test
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
+    // This schedules Random-Access for NR starting in subframeP
+    nr_schedule_RA(module_idP, frame_txP, slot_txP);
     // resetting ta flag
     gNB->ta_len = 0;
   }

@@ -223,6 +223,29 @@ typedef struct {
   NR_PRACH_CONFIG_INFO prach_ConfigInfo;
 } NR_PRACH_CONFIG_COMMON;
 
+typedef struct {
+  /// Preamble index for PRACH (0-63)
+  uint8_t ra_PreambleIndex;
+  /// RACH MaskIndex
+  uint8_t ra_RACH_MaskIndex;
+  /// Target received power at eNB (-120 ... -82 dBm)
+  uint32_t ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
+  uint8_t ra_TDD_map_index;
+  /// RA Preamble Power Ramping Step in dB
+  uint32_t RA_PREAMBLE_POWER_RAMPING_STEP;
+  ///
+  uint8_t RA_PREAMBLE_BACKOFF;
+  ///
+  uint8_t RA_SCALING_FACTOR_BI;
+  ///
+  uint8_t RA_PCMAX;
+  /// Corresponding RA-RNTI for UL-grant
+  uint16_t ra_RNTI;
+  /// Pointer to Msg3 payload for UL-grant
+  uint8_t *Msg3;
+} NR_PRACH_RESOURCES_t;
+
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;

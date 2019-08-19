@@ -124,8 +124,6 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
-
-
 /* \brief Get payload (MAC PDU) from UE PHY
 @param module_idP Instance id of UE in machine
 @param CC_id Component Carrier index
@@ -169,6 +167,40 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
                          int nrofUplinkSlots,   int nrofUplinkSymbols);
+
+/** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
+    @param Mod_id Module id of UE
+    @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
+*/
+int8_t nr_get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id);
+
+/** \brief Function to compute DELTA_PREAMBLE from 38.321 subclause 7.3
+   (for RA power ramping procedure and Msg3 PUSCH power control policy)
+    @param Mod_id Module id of UE
+    @returns DELTA_PREAMBLE
+*/
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id);
+
+/* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
+@param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
+@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
+@param t_crnti Pointer to PHY variable containing the T_CRNTI
+@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
+random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
+@returns timing advance or 0xffff if preamble doesn't match
+*/
+uint16_t nr_ue_process_rar(const module_id_t mod_id,
+                           const int CC_id,
+                           const frame_t frameP,
+                           const rnti_t ra_rnti,
+                           uint8_t * const dlsch_buffer,
+                           rnti_t * const t_crnti,
+                           const uint8_t preamble_index,
+                           uint8_t * selected_rar_buffer);
 
 #endif
 /** @}*/

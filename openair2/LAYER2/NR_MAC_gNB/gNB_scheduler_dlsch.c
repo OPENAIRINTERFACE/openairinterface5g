@@ -34,9 +34,9 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
-#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac.h"
+#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 
 /*NFAPI*/
@@ -97,6 +97,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     }
 
     LOG_D(MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
+
     mac_ce_size = sizeof(NR_MAC_CE_TA);
 
     // Copying  bytes for MAC CEs to the mac pdu pointer

@@ -54,7 +54,8 @@
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
+
 #include "NR_asn_constant.h"
 #include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"

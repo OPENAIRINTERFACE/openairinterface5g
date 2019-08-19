@@ -110,23 +110,25 @@ void nr_fill_du(uint8_t prach_fmt)
 int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t subframe) {
 
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  /*
+
   // For FR1 paired
-  if (((frame%table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][3]) &&
-  ((table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
-  // using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
-  return(1);
-  } else {
-  return(0);
-  }
-  */
+  if (frame_parms->frame_type == FDD && frame_parms->freq_range == nr_FR1){
+    if (((frame%table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][3]) &&
+    ((table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
+    // using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
+    return 1;
+    } else {
+    return 0;
+    }
+  } else if (frame_parms->frame_type == TDD && frame_parms->freq_range == nr_FR1) {
   // For FR1 unpaired
-  if (((frame%table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][3]) &&
-      ((table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
-    // using table 6.3.3.2-2: Random access configurations for FR1 and unpaired
-    return(1);
-  } else {
-    return(0);
+    if (((frame%table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][3]) &&
+        ((table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
+      // using table 6.3.3.2-2: Random access configurations for FR1 and unpaired
+      return 1;
+    } else {
+      return 0;
+    }
   }
   /*
   // For FR2: FIXME

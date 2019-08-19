@@ -41,6 +41,10 @@
 
 #define NR_BCCH_BCH 5    // MIB
 
+#define CCCH_PAYLOAD_SIZE_MAX 128
+
+#define RAR_PAYLOAD_SIZE_MAX  128
+
 //  For both DL/UL-SCH
 //  Except:
 //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -65,6 +69,12 @@
 //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
 //  F: lenght of L is 0:8 or 1:16 bits wide
 //  R: Reserved bit, set to zero.
+
+typedef enum {
+  RA_IDLE = 0,
+  WAIT_RAR = 1,
+  WAIT_CONTENTION_RESOLUTION = 2
+} RA_state_t;
 
 typedef struct {
     uint8_t LCID:6;     // octet 1 [5:0]
@@ -91,6 +101,31 @@ typedef struct {
     uint8_t TA_COMMAND:6;   // octet 1 [5:0]
     uint8_t TAGID:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
+
+// /*! \brief CCCH payload */ // TBR
+// typedef struct {
+//     uint8_t payload[CCCH_PAYLOAD_SIZE_MAX];
+// } __attribute__ ((__packed__)) CCCH_PDU;
+// 
+// /*! \brief RAR payload */ // TBR
+// typedef struct {
+//     uint8_t payload[RAR_PAYLOAD_SIZE_MAX];
+// } __attribute__ ((__packed__)) RAR_PDU;
+
+/*!\brief MAC header of Random Access Response for Random access preamble identifier (RAPID) */
+typedef struct {
+    uint8_t RAPID:6;
+    uint8_t T:1;
+    uint8_t E:1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_RAPID;
+
+/*!\brief MAC header of Random Access Response for backoff indicator (BI)*/
+typedef struct {
+    uint8_t BI:4;
+    uint8_t R:2;
+    uint8_t T:1;
+    uint8_t E:1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_BI;
 
 //  38.321 ch6.2.1, 38.331
 #define DL_SCH_LCID_CCCH                           0x00

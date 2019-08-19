@@ -72,8 +72,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/INIT/phy_init.h"
 #include "system.h"
 #include <openair2/RRC/NR_UE/rrc_proto.h>
-#include <openair2/LAYER2/NR_MAC_UE/mac_defs.h>
-#include <openair2/LAYER2/NR_MAC_UE/mac_proto.h>
+#include "NR_MAC_UE/mac_defs.h"
+#include "NR_MAC_UE/mac_proto.h"
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 

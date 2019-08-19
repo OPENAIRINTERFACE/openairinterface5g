@@ -1605,7 +1605,7 @@ add_library(PHY_MEX ${PHY_MEX_UE} ${CONFIG_LIB})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
-set(NR_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
+set(NR_GNB_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
 set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
 set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
@@ -1757,14 +1757,17 @@ set (MAC_SRC
 
 set (MAC_NR_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
-  ${NR_MAC_DIR}/main.c
-  ${NR_MAC_DIR}/config.c
-  ${NR_MAC_DIR}/gNB_scheduler.c
-  ${NR_MAC_DIR}/gNB_scheduler_bch.c
-  ${NR_MAC_DIR}/gNB_scheduler_dlsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_ulsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_primitives.c
-  ${NR_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/main.c
+  ${NR_GNB_MAC_DIR}/config.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_dlsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_ulsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_primitives.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_RA.c
+  ${NR_UE_MAC_DIR}/nr_l1_helpers.c
+  ${NR_UE_MAC_DIR}/nr_ra_procedures.c
  )
 
 
@@ -1776,7 +1779,6 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
-  
  )
  
 set (MAC_NR_SRC_UE
@@ -1786,6 +1788,9 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
+  ${NR_UE_MAC_DIR}/nr_l1_helpers.c
+  ${NR_UE_MAC_DIR}/nr_ra_procedures.c
+  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
@@ -1849,7 +1854,7 @@ add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_compute_tbs_common.c)
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
-include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")
+include_directories("${OPENAIR2_DIR}/LAYER2")
 include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
 #include_directories("${NFAPI_USER_DIR}"")
 
@@ -2636,9 +2641,9 @@ add_executable(nr-uesoftmodem
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON S1AP_LIB S1AP_ENB
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})

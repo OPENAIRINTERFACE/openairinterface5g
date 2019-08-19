@@ -930,7 +930,7 @@ typedef struct {
   uint8_t               pucch_sel[10];
   uint8_t               pucch_payload[22];
 
-  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  UE_MODE_t           UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
@@ -967,10 +967,10 @@ typedef struct {
 
 
 
-  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
+  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_gNB_MAX];
+  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.
   /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)

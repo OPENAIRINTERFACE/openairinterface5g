@@ -41,9 +41,6 @@
 
 #include "T.h"
 
-
-
-
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
 extern uint16_t NCS_restricted_TypeB_delta_f_RA_125[13];
@@ -58,13 +55,6 @@ extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
-
-
-
-
-
-
-
 
 int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {

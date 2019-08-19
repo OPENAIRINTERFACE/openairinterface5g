@@ -42,7 +42,7 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "rrc_vars.h"
-#include "mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 
 extern int phy_test;

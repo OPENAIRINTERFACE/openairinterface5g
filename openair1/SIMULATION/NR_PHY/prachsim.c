@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   uint8_t subframe=9;
   uint16_t preamble_energy, preamble_tx=50, preamble_delay;
   uint16_t preamble_max,preamble_energy_max;
-  PRACH_RESOURCES_t prach_resources;
+  NR_PRACH_RESOURCES_t prach_resources;
   //uint8_t prach_fmt;
   //int N_ZC;
   int delay = 0;
@@ -518,8 +518,7 @@ int main(int argc, char **argv)
 			     0); //Nf */ //commented for testing purpose
 
   UE_nr_rxtx_proc_t proc={0};
-  nr_ue_prach_procedures(UE,&proc,0,0,0);
-
+  nr_ue_prach_procedures(UE,&proc,0,0);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);

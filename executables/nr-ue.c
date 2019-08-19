@@ -21,7 +21,7 @@
 #include "executables/thread-common.h"
 #include "executables/nr-uesoftmodem.h"
 
-#include "LAYER2/NR_MAC_UE/mac.h"
+#include "NR_MAC_UE/mac.h"
 //#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 
@@ -32,7 +32,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
 //#ifndef NO_RAT_NR

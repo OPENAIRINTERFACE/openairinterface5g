@@ -28,7 +28,7 @@
  * @ingroup _mac
  */
 
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
 
 /*
 * When data are received on PHY and transmitted to MAC

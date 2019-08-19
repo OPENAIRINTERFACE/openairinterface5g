@@ -42,30 +42,95 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Commmon */
+#include "targets/ARCH/COMMON/common_lib.h"
+#include "COMMON/platform_constants.h"
+#include "common/ran_context.h"
+
+/* RRC */
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MeasConfig.h"
 
+/* PHY */
+#include "PHY/defs_gNB.h"
+#include "PHY/TOOLS/time_meas.h"
+
+/* Interface */
 #include "nfapi_nr_interface_scf.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
-#include "COMMON/platform_constants.h"
-#include "common/ran_context.h"
+/* MAC */
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "NR_TAG.h"
 
-#include "nr_mac_common.h"
-
+/* Defs */
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+/*!\brief Maximum number of random access process */
+#define NR_NB_RA_PROC_MAX 4
 
-#include "NR_TAG.h"
+/*! \brief gNB template for the Random access information */
+typedef struct {
+    /// Flag to indicate this process is active
+    RA_state_t state;
+    /// Subframe where preamble was received
+    uint8_t preamble_subframe;
+    /// Subframe where Msg2 is to be sent
+    uint8_t Msg2_subframe;
+    /// Frame where Msg2 is to be sent
+    frame_t Msg2_frame;
+    /// Subframe where Msg3 is to be sent
+    sub_frame_t Msg3_subframe;
+    /// Frame where Msg3 is to be sent
+    frame_t Msg3_frame;
+    /// Subframe where Msg4 is to be sent
+    sub_frame_t Msg4_subframe;
+    /// Frame where Msg4 is to be sent
+    frame_t Msg4_frame;
+    /// harq_pid used for Msg4 transmission
+    uint8_t harq_pid;
+    /// UE RNTI allocated during RAR
+    rnti_t rnti;
+    /// RA RNTI allocated from received PRACH
+    uint16_t RA_rnti;
+    /// Received preamble_index
+    uint8_t preamble_index;
+    /// Received UE Contention Resolution Identifier
+    uint8_t cont_res_id[6];
+    /// Timing offset indicated by PHY
+    int16_t timing_offset;
+    /// Timeout for RRC connection
+    int16_t RRC_timer;
+    /// Msg3 first RB
+    uint8_t msg3_first_rb;
+    /// Msg3 number of RB
+    uint8_t msg3_nb_rb;
+    /// Msg3 MCS
+    uint8_t msg3_mcs;
+    /// Msg3 TPC command
+    uint8_t msg3_TPC;
+    /// Msg3 ULdelay command
+    uint8_t msg3_ULdelay;
+    /// Msg3 cqireq command
+    uint8_t msg3_cqireq;
+    /// Round of Msg3 HARQ
+    uint8_t msg3_round;
+    /// TBS used for Msg4
+    int msg4_TBsize;
+    /// MCS used for Msg4
+    int msg4_mcs;
+    ///
+    int32_t  crnti_rrc_mui; // TBR
+    ///
+    int8_t   crnti_harq_pid; // TBR
+
+} NR_RA_t;
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -93,7 +158,7 @@ typedef struct {
   /// Outgoing RAR pdu for PHY
   RAR_PDU RAR_pdu;
   /// Template for RA computations
-  RA_t ra[NB_RA_PROC_MAX];
+  NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
   uint8_t vrb_map[100];
   /// VRB map for common channels and retransmissions by PHICH
@@ -107,9 +172,8 @@ typedef struct {
   int dummy;
 } NR_UE_sched_ctrl_t;
 
-/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
+/*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
-
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
@@ -192,66 +256,63 @@ typedef struct gNB_MAC_INST_s {
 
 typedef struct {
 
+  uint8_t format_indicator; //1 bit
+  uint16_t frequency_domain_assignment; //up to 16 bits
+  uint8_t time_domain_assignment; // 4 bits
+  uint8_t frequency_hopping_flag; //1 bit
 
-uint8_t format_indicator; //1 bit
-uint16_t frequency_domain_assignment; //up to 16 bits
-uint8_t time_domain_assignment; // 4 bits
-uint8_t frequency_hopping_flag; //1 bit
+  uint8_t ra_preamble_index; //6 bits
+  uint8_t ss_pbch_index; //6 bits
+  uint8_t prach_mask_index; //4 bits
 
-uint8_t ra_preamble_index; //6 bits
-uint8_t ss_pbch_index; //6 bits
-uint8_t prach_mask_index; //4 bits
+  uint8_t vrb_to_prb_mapping; //0 or 1 bit
+  uint8_t mcs; //5 bits
+  uint8_t ndi; //1 bit
+  uint8_t rv; //2 bits
+  uint8_t harq_pid; //4 bits
+  uint8_t dai; //0, 2 or 4 bits
+  uint8_t dai1; //1 or 2 bits
+  uint8_t dai2; //0 or 2 bits
+  uint8_t tpc; //2 bits
+  uint8_t pucch_resource_indicator; //3 bits
+  uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
 
-uint8_t vrb_to_prb_mapping; //0 or 1 bit
-uint8_t mcs; //5 bits
-uint8_t ndi; //1 bit
-uint8_t rv; //2 bits
-uint8_t harq_pid; //4 bits
-uint8_t dai; //0, 2 or 4 bits
-uint8_t dai1; //1 or 2 bits
-uint8_t dai2; //0 or 2 bits
-uint8_t tpc; //2 bits
-uint8_t pucch_resource_indicator; //3 bits
-uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+  uint8_t short_messages_indicator; //2 bits
+  uint8_t short_messages; //8 bits
+  uint8_t tb_scaling; //2 bits
 
-uint8_t short_messages_indicator; //2 bits
-uint8_t short_messages; //8 bits
-uint8_t tb_scaling; //2 bits
+  uint8_t carrier_indicator; //0 or 3 bits
+  uint8_t bwp_indicator; //0, 1 or 2 bits
+  uint8_t prb_bundling_size_indicator; //0 or 1 bits
+  uint8_t rate_matching_indicator; //0, 1 or 2 bits
+  uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
+  uint8_t transmission_configuration_indication; //0 or 3 bits
+  uint8_t srs_request; //2 bits
+  uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
+  uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
+  uint8_t dmrs_sequence_initialization; //0 or 1 bit
 
-uint8_t carrier_indicator; //0 or 3 bits
-uint8_t bwp_indicator; //0, 1 or 2 bits
-uint8_t prb_bundling_size_indicator; //0 or 1 bits
-uint8_t rate_matching_indicator; //0, 1 or 2 bits
-uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-uint8_t transmission_configuration_indication; //0 or 3 bits
-uint8_t srs_request; //2 bits
-uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
-uint8_t dmrs_sequence_initialization; //0 or 1 bit
+  uint8_t srs_resource_indicator;
+  uint8_t precoding_information;
+  uint8_t csi_request;
+  uint8_t ptrs_dmrs_association;
+  uint8_t beta_offset_indicator; //0 or 2 bits
 
-uint8_t srs_resource_indicator;
-uint8_t precoding_information;
-uint8_t csi_request;
-uint8_t ptrs_dmrs_association;
-uint8_t beta_offset_indicator; //0 or 2 bits
+  uint8_t slot_format_indicator_count;
+  uint8_t *slot_format_indicators;
 
-uint8_t slot_format_indicator_count;
-uint8_t *slot_format_indicators;
+  uint8_t pre_emption_indication_count;
+  uint16_t *pre_emption_indications; //14 bit
 
-uint8_t pre_emption_indication_count;
-uint16_t *pre_emption_indications; //14 bit
+  uint8_t block_number_count;
+  uint8_t *block_numbers;
 
-uint8_t block_number_count;
-uint8_t *block_numbers;
+  uint8_t ul_sul_indicator; //0 or 1 bit
+  uint8_t antenna_ports;
 
-uint8_t ul_sul_indicator; //0 or 1 bit
-uint8_t antenna_ports;
-
-uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
-uint16_t padding;
+  uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+  uint16_t padding;
 
 } dci_pdu_rel15_t;
-
-
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

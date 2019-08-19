@@ -52,8 +52,9 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 //#define DEBUG_ULSIM
 

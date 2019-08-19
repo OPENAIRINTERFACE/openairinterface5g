@@ -30,35 +30,35 @@
  * \warning
  */
 
+
+#include <stdio.h>
+#include <math.h>
+
+/* exe */
 #include "executables/nr-softmodem.h"
 
-/* MAC related headers */
-#include "mac_proto.h"
+/* MAC */
 #include "mac_defs.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
-#include "mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac.h"
+#include "NR_MAC_UE/mac_proto.h"
+#include "NR_MAC_UE/mac_extern.h"
 #include "common/utils/nr/nr_common.h"
 
-//#include "LAYER2/MAC/mac_vars.h" // TODO Note that mac_vars.h is not NR specific and this should be updated
+//#include "LAYER2/MAC/mac_vars.h" // TBR Note that mac_vars.h is not NR specific and this should be updated
                                  // also, the use of the same should be updated in nr-softmodem and nr-uesoftmodem
 
-/* PHY UE related headers*/
+/* PHY UE */
 #include "SCHED_NR_UE/defs.h"
-
-#include "RRC/NR_UE/rrc_proto.h"
-#include "assertions.h"
 #include "PHY/defs_nr_UE.h"
 
 /*Openair Packet Tracer */
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 
-/* log utils */
+/* utils */
+#include "assertions.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
-#include <stdio.h>
-#include <math.h>
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 #define DEBUG_EXTRACT_DCI 1

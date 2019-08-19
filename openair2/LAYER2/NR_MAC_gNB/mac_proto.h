@@ -31,8 +31,9 @@
 #ifndef __LAYER2_NR_MAC_PROTO_H__
 #define __LAYER2_NR_MAC_PROTO_H__
 
-#include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
+
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
 
 void set_cset_offset(uint16_t);
@@ -75,6 +76,61 @@ int nr_generate_dlsch_pdu(module_id_t Mod_idP,
 void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+
+/////// Random Access MAC-PHY interface functions and primitives ///////
+
+void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+
+/* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
+@param module_idP Instance ID of gNB
+@param preamble_index index of the received RA request
+@param slotP Slot number on which to act
+@param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to
+@param rnti RA rnti corresponding to this PRACH preamble
+@param rach_resource type (0=non BL/CE,1 CE level 0,2 CE level 1, 3 CE level 2,4 CE level 3)
+*/
+void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, 
+  uint16_t preamble_index, int16_t timing_offset, uint16_t rnti
+  #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  , uint8_t rach_resource_type
+  #endif
+  );
+
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+
+boolean_t nr_CCE_allocation_infeasible(int module_idP,
+                                       int CC_idP,
+                                       int common_flag,
+                                       int slot,
+                                       int aggregation,
+                                       int rnti);
+
+int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
+
+void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
+                      sub_frame_t current_subframe,
+                      frame_t current_frame, 
+                      frame_t *frame,
+                      sub_frame_t *subframe);
+
+/* \brief Function in gNB to fill RAR pdu when requested by PHY. This provides a single RAR SDU for the moment and returns the t-CRNTI.
+@param Mod_id Instance ID of gNB
+@param dlsch_buffer Pointer to DLSCH input buffer
+@param N_RB_UL Number of UL resource blocks
+@returns t_CRNTI
+*/
+unsigned short nr_fill_rar(const module_id_t module_idP,
+                           const int CC_id,
+                           NR_RA_t *ra,
+                           const frame_t frameP,
+                           uint8_t * const dlsch_buffer,
+                           const uint16_t N_RB_UL,
+                           const uint8_t input_buffer_length);
+
+
+uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
+
+/////// Phy test scheduler ///////
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
@@ -214,5 +270,43 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                uint8_t * sduP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance, const uint8_t ul_cqi);
+
+/* Random Access */ 
+
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure. 
+If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC 
+attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB 
+index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for 
+andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+@param mod_id Index of UE instance
+@param CC_id Component Carrier Index
+@param frame
+@param gNB_id gNB index
+@param nr_tti_tx slot for PRACH transmission
+@returns A pointer to a PRACH_RESOURCES_t */
+NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
+                                     int CC_id,
+                                     UE_MODE_t UE_mode,
+                                     frame_t frame,
+                                     uint8_t gNB_id,
+                                     int nr_tti_tx);
+
+/* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
+@param module_idP Index of UE instance
+@param CC_id Component Carrier Index
+@param gNB_index gNB index
+@param t_id 
+@param rach_ConfigDedicated 
+@returns A pointer to a PRACH_RESOURCES_t */
+void nr_get_prach_resources(module_id_t mod_id, 
+                            int CC_id,
+                            uint8_t gNB_id,
+                            uint8_t t_id,
+                            uint8_t first_Msg3,
+                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
+
+void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
+
+void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

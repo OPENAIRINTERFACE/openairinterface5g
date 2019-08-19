@@ -38,7 +38,6 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "nfapi_nr_interface.h"
 
 /*

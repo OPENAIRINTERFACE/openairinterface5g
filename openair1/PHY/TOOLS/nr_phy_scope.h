@@ -26,7 +26,7 @@
 #include <simple_executable.h>
 #include <common/utils/system.h>
 #include <openairinterface5g_limits.h>
-#include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "common/ran_context.h"
 #include <openair1/PHY/defs_gNB.h>
 #include <forms.h>

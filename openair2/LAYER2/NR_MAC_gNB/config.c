@@ -44,7 +44,7 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 
 #include "NR_MIB.h"
-#include "nr_mac_common.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);

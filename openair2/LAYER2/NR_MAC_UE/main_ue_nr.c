@@ -31,8 +31,8 @@
  */
 
 //#include "defs.h"
-#include "mac_proto.h"
 #include "executables/nr-softmodem.h"
+#include "NR_MAC_UE/mac_proto.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 

@@ -32,6 +32,8 @@
 #ifndef __LAYER2_NR_MAC_COMMON_H__
 #define __LAYER2_NR_MAC_COMMON_H__
 
+#include "NR_PDSCH-Config.h"
+
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
