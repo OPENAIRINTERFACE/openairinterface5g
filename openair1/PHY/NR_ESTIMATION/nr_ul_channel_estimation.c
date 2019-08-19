@@ -30,12 +30,12 @@
 
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
-				                uint8_t gNB_offset,
-								unsigned char Ns,
-								unsigned short p,
-								unsigned char symbol,
-								unsigned short bwp_start_subcarrier,
-								unsigned short nb_rb_pusch)
+                                uint8_t gNB_offset,
+                                unsigned char Ns,
+                                unsigned short p,
+                                unsigned char symbol,
+                                unsigned short bwp_start_subcarrier,
+                                unsigned short nb_rb_pusch)
 {
   int pilot[1320] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -44,6 +44,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   int16_t ch[2],*pil,*rxF,*ul_ch,*fl,*fm,*fr,*fml,*fmr,*fmm;
   int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
   unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
+  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(32)));
+  int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
 
 #ifdef DEBUG_CH
   FILE *debug_ch_est;
@@ -253,8 +255,68 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ch,
                                          ul_ch,
                                          8);
-    //}
 
+      // Convert to time domain
+      memset(temp_in_ifft_0,0,gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t));
+
+    for(int ii = 0; ii < nb_rb_pusch*12; ii++)
+      ((int32_t*)temp_in_ifft_0)[ii] = ul_ch_estimates[aarx][symbol_offset+ii];
+
+    switch (gNB->frame_parms.ofdm_symbol_size) {
+      case 128:
+        idft128((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 256:
+        idft256((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 512:
+        idft512((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 1024:
+        idft1024((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 1536:
+        idft1536((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 2048:
+        idft2048((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 4096:
+        idft4096((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      case 8192:
+        idft8192((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+
+      default:
+        idft512((int16_t*) temp_in_ifft_0,
+               (int16_t*) ul_ch_estimates_time[aarx],
+               1);
+        break;
+    }
   }
 
 #ifdef DEBUG_CH
