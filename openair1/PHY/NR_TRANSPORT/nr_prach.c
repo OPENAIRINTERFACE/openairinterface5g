@@ -201,13 +201,13 @@ void rx_nr_prach_ru(RU_t *ru,
 	  dft2048(prach2+4096*3,rxsigF[aa]+4096*3,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xc2) {     
+	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xB4) {     
 	  dft2048(prach2+4096*4,rxsigF[aa]+4096*4,1);
 	  dft2048(prach2+4096*5,rxsigF[aa]+4096*5,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xc2) {
-	  for (int i=6;i<11;i++) dft2048(prach2+(3072*i),rxsigF[aa]+(3072*i),1);
+	if (prach_fmt == 0xB4) {
+	  for (int i=6;i<11;i++) dft2048(prach2+(4096*i),rxsigF[aa]+(4096*i),1);
 	  reps+=6;
 	}
       } else {
@@ -223,8 +223,8 @@ void rx_nr_prach_ru(RU_t *ru,
 	  reps++;
 	}
 	if (prach_fmt == 2) {
-	  dft36864(prach2+(98304*2),rxsigF[aa]+(98304*2),1);
-	  dft36864(prach2+(98304*3),rxsigF[aa]+(98304*3),1);
+	  dft36864(prach2+(73728*2),rxsigF[aa]+(73728*2),1);
+	  dft36864(prach2+(73728*3),rxsigF[aa]+(73728*3),1);
 	  reps+=2;
 	}
 	if (prach_fmt == 3) {
@@ -243,12 +243,12 @@ void rx_nr_prach_ru(RU_t *ru,
 	  dft1536(prach2+3072*3,rxsigF[aa]+3072*3,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xc2) {     
+	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xB4) {     
 	  dft1536(prach2+3072*4,rxsigF[aa]+3072*4,1);
 	  dft1536(prach2+3072*5,rxsigF[aa]+3072*5,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xc2) {
+	if (prach_fmt == 0xB4) {
 	  for (int i=6;i<11;i++) dft1536(prach2+(3072*i),rxsigF[aa]+(3072*i),1);
 	  reps+=6;
 	}
@@ -258,20 +258,20 @@ void rx_nr_prach_ru(RU_t *ru,
       if (fp->threequarter_fs==0) {
 	prach2 = prach[aa] + (Ncp<<3); 
 	dftlen=98304;
-	//80,90,100 MHz @ 61.44 Ms/s 
+	//80,90,100 MHz @ 122.88 Ms/s 
 	if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2)
 	  dft98304(prach2,rxsigF[aa],1);
 	if (prach_fmt == 1 || prach_fmt == 2) {
 	  dft98304(prach2+196608,rxsigF[aa]+196608,1);
 	  reps++;
 	}
-	if (prach_fmt == 1 || prach_fmt == 2) {
-	  dft98304(prach2+196608,rxsigF[aa]+196608,1);
-	  dft98304(prach2+(196608*2),rxsigF[aa]+(196608*2),1);
+	if (prach_fmt == 2) {
+	  dft98304(prach2+196608*2,rxsigF[aa]+196608*2,1);
+	  dft98304(prach2+(196608*3),rxsigF[aa]+(196608*3),1);
 	  reps+=2;
 	}
 	if (prach_fmt == 3) {
-	  dft24576(prach2+(2*49152),rxsigF[aa]+(2*49152),1);
+	  for (int i=0;i<4;i++) dft24576(prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
 	  reps=4;
 	  dftlen=24576;
 	}
@@ -288,19 +288,19 @@ void rx_nr_prach_ru(RU_t *ru,
 	  dft4096(prach2+8192*3,rxsigF[aa]+8192*3,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xc2) {     
+	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xB4) {     
 	  dft4096(prach2+8192*4,rxsigF[aa]+8192*4,1);
 	  dft4096(prach2+8192*5,rxsigF[aa]+8192*5,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xc2) {
+	if (prach_fmt == 0xB4) {
 	  for (int i=6;i<11;i++) dft4096(prach2+(8192*i),rxsigF[aa]+(8192*i),1);
 	  reps+=6;
 	}
       } else {
 	AssertFatal(fp->N_RB_UL <= 217,"cannot do more than 217 PRBs with 3/4 sampling\n");
 	prach2 = prach[aa] + (6*Ncp);
-	//	80 MHz @ 46.08 Ms/s
+	//	80 MHz @ 92.16 Ms/s
 	dftlen=73728;
 	if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
 	  dft73728(prach2,rxsigF[aa],1);
@@ -311,7 +311,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	  reps++;
 	}
 	if (prach_fmt == 3) {
-	  dft73728(prach2+(4*73728),rxsigF[aa]+(4*73728),1);
+	  for (int i=0;i<4;i++) dft18432(prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
 	  reps=4;
 	  dftlen=18432;
 	}
@@ -329,12 +329,12 @@ void rx_nr_prach_ru(RU_t *ru,
 	  dft3072(prach2+6144*3,rxsigF[aa]+6144*3,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xc2) {     
+	if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xB4) {     
 	  dft3072(prach2+6144*4,rxsigF[aa]+6144*4,1);
 	  dft3072(prach2+6144*5,rxsigF[aa]+6144*5,1);
 	  reps+=2;
 	} 
-	if (prach_fmt == 0xc2) {
+	if (prach_fmt == 0xB4) {
 	  for (int i=6;i<11;i++) dft3072(prach2+(6144*i),rxsigF[aa]+(6144*i),1);
 	  reps+=6;
 	}
