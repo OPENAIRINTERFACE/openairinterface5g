@@ -65,6 +65,7 @@ extern RAN_CONTEXT_t RC;
 
 pthread_mutex_t Sockmutex;
 
+typedef struct complex16 sample_t; // 2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
