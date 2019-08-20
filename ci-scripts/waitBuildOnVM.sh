@@ -168,6 +168,9 @@ function check_on_vm_build {
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "COMMAND: cppcheck $BUILD_OPTIONS . 2> cppcheck.xml" > $ARCHIVES_LOC/build_final_status.log
+    elif [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        echo "COMMAND: $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
     else
         echo "COMMAND: build_oai -I $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
     fi
