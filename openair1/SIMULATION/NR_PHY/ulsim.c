@@ -173,7 +173,7 @@ int main(int argc, char **argv)
             break;
 
           default:
-            msg("Unsupported channel model!\n");
+            printf("Unsupported channel model!\n");
             exit(-1);
         }
 
@@ -193,13 +193,13 @@ int main(int argc, char **argv)
 
       case 's':
         snr0 = atof(optarg);
-        msg("Setting SNR0 to %f\n", snr0);
+        printf("Setting SNR0 to %f\n", snr0);
         break;
 
       case 'S':
         snr1 = atof(optarg);
         snr1set = 1;
-        msg("Setting SNR1 to %f\n", snr1);
+        printf("Setting SNR1 to %f\n", snr1);
         break;
 
       case 'p':
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
         n_tx = atoi(optarg);
 
         if ((n_tx == 0) || (n_tx > 2)) {
-          msg("Unsupported number of tx antennas %d\n", n_tx);
+          printf("Unsupported number of tx antennas %d\n", n_tx);
           exit(-1);
         }
 
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
         n_rx = atoi(optarg);
 
         if ((n_rx == 0) || (n_rx > 2)) {
-          msg("Unsupported number of rx antennas %d\n", n_rx);
+          printf("Unsupported number of rx antennas %d\n", n_rx);
           exit(-1);
         }
 
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
                                 0, 0, 0);
 
   if (gNB2UE == NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 

@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 		case 'S':
 			snr1 = atof(optarg);
 			snr1set = 1;
-			msg("Setting SNR1 to %f\n", snr1);
+			printf("Setting SNR1 to %f\n", snr1);
 #ifdef DEBUG_NR_DLSCHSIM
 			printf("Setting SNR1 to %f\n", snr1);
 #endif
