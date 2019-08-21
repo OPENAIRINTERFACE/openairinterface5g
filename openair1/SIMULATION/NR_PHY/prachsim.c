@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   int N_RB_UL=273;
   uint32_t prach_errors=0;
   uint8_t subframe=9;
-  uint16_t preamble_energy_list[64],preamble_tx=50,preamble_delay_list[64];
+  uint16_t preamble_energy, preamble_tx=50, preamble_delay;
   uint16_t preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
   //uint8_t prach_fmt;
@@ -599,17 +599,17 @@ int main(int argc, char **argv)
 		    0,
 		    subframe,
 		    &preamble_rx,
-		    preamble_energy_list,
-		    preamble_delay_list);
-	
+		    &preamble_energy,
+		    &preamble_delay);
+        printf("preamble_rx %d\n", preamble_rx);
         if (preamble_rx!=preamble_tx)
           prach_errors++;
         else {
-          delay_avg += (double)preamble_delay_list[preamble_tx];
+          delay_avg += (double)preamble_delay;
         }
 
         if (n_frames==1) {
-	  printf("preamble %d (tx %d) : energy %d, delay %d\n",preamble_rx,preamble_tx,preamble_energy_list[0],preamble_delay_list[0]);
+	  printf("preamble %d (tx %d) : energy %d, delay %d\n",preamble_rx,preamble_tx,preamble_energy,preamble_delay);
 	  
           
           LOG_M("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_slot<<1],frame_parms->samples_per_slot<<1,1,1);
