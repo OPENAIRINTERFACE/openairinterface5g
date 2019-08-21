@@ -1,10 +1,10 @@
-#General
+# General
 This is a RF simulator that allows to test OAI without a RF board.
 It replaces a actual RF board driver.
 
 As much as possible, it works like a RF board, but not in realtime: it can run faster than realtime if there is enough CPU or slower (it is CPU bound instead of real time RF sampling bound)
 
-#build
+# build
 
 ## From [build_oai](../../../doc/BUILD.md) script
 The RF simulator is implemented as an oai device and is always build when you build the oai eNB or the oai UE.
@@ -119,5 +119,5 @@ new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
 Only the input noise can be changed on command line with -s parameter.
 With path loss = 0 set "-s 5" to see a little noise. -s is a shortcut to `channelmod.s`. It is expected to enhance the channel modedelization flexibility via the addition of more parameters in the channelmod section.
 
-#Caveacts
+# Caveacts
 Still issues in power control: txgain, rxgain are not used
