@@ -728,7 +728,7 @@ function main() {
         echo_info "liboai_transpro.so is linked to ETHERNET transport"
       fi
 
-    if [ "$RFSIMULATOR" == "true" -o "$HW" == "OAI_SIMU" ] ; then
+    if [ "$HW" == "OAI_SIMU" ] ; then
         echo_info "Compiling rfsimulator"
         compilations \
             $lte_build_dir rfsimulator \
