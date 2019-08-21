@@ -2402,7 +2402,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t e
   int frame_tx = proc->frame_tx;
   int nr_tti_tx = proc->nr_tti_tx;
   int prach_power;
-  uint16_t preamble_tx=50;
+  uint16_t preamble_tx=ue->prach_resources[0]->ra_PreambleIndex;
   PRACH_RESOURCES_t prach_resources;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
