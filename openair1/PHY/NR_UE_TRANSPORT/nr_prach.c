@@ -280,7 +280,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
    *
    *********************************************************/
 
-  AssertFatal(prach_fmt>3,"prach_fmt<=3: Fix this for other formats\n");
+  AssertFatal(prach_fmt>=3,"prach_fmt<=3: Fix this for other formats\n");
   int dftlen=2048;
   if (fp->N_RB_UL >= 137) dftlen=4096;
   if (fp->threequarter_fs==1) dftlen=(3*dftlen)/4;
@@ -325,9 +325,9 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       memset((void*)prachF,0,4*18432);
     break;
 
-  case 106:
+  /*case 106:
     memset((void*)prachF,0,4*24576);
-    break;
+    break;*/
 }
 
   int mu = 1; // numerology is hardcoded. FIXME!!!
@@ -470,7 +470,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
 	memmove(prach2+(2048<<2),prach2,(2048<<3));
 	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | empty2048 | empty2048
-	memmove(prach2+((2048<<1)*3),prach2,(2048<<3));
+	memmove(prach2+(2048<<3),prach2,(2048<<3));
 	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048
 	memmove(prach,prach+(2048<<1),(Ncp<<2));
 	// here we have |Prefix | Prach2048 |
@@ -566,7 +566,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
 	memmove(prach2+(1536<<2),prach2,(1536<<3));
 	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | empty1536 | empty1536
-	memmove(prach2+((1536<<1)*3),prach2,(1536<<3));
+	memmove(prach2+(1536<<3),prach2,(1536<<3));
 	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536
 	memmove(prach,prach+(1536<<1),(Ncp<<2));
 	// here we have |Prefix | Prach1536 | 
@@ -666,7 +666,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
 	memmove(prach2+(4096<<2),prach2,(4096<<3));
 	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | empty4096 | empty4096
-	memmove(prach2+((4096<<1)*3),prach2,(4096<<3));
+	memmove(prach2+(4096<<3),prach2,(4096<<3));
 	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096
 	memmove(prach,prach+(4096<<1),(Ncp<<2));
 	// here we have |Prefix | Prach4096 | 
@@ -751,7 +751,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
 	memmove(prach2+(3072<<2),prach2,(3072<<3));
 	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | empty3072 | empty3072
-	memmove(prach2+((3072<<1)*3),prach2,(3072<<3));
+	memmove(prach2+(3072<<3),prach2,(3072<<3));
 	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072
 	memmove(prach,prach+(3072<<1),(Ncp<<2));
 	// here we have |Prefix | Prach3072 | 
