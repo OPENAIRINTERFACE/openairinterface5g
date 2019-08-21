@@ -626,6 +626,32 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     }
   }// preamble_index
 
+
+  // The conversion from *max_preamble_delay from TA value is done here.
+  // It is normalized to the 30.72 Ms/s, considering the numerology, N_RB and the sampling rate
+  // See table 6.3.3.1 -1 and -2 in 38211.
+
+  // Format 0, 1, 2: 24576 samples @ 30.72 Ms/s, 98304 samples @ 122.88 Ms/s
+  // By solving:
+  // max_preamble_delay * ( (24576*(fs/30.72M)) / 1024 ) / fs = TA * 16 * 64 / 2^mu * Tc
+
+  // Format 3: 6144 samples @ 30.72 Ms/s, 24576 samples @ 122.88 Ms/s
+  // By solving:
+  // max_preamble_delay * ( (6144*(fs/30.72M)) / 1024 ) / fs = TA * 16 * 64 / 2^mu * Tc
+
+  // Format >3: 2048/2^mu samples @ 30.72 Ms/s, 2048/2^mu * 4 samples @ 122.88 Ms/s
+  // By solving:
+  // max_preamble_delay * ( (2048/2^mu*(fs/30.72M)) / 256 ) / fs = TA * 16 * 64 / 2^mu * Tc
+  uint16_t *TA = max_preamble_delay;
+  int mu = fp->numerology_index;
+  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2)
+    *TA = *TA*3*(1<<mu)/2;
+  else if (prach_fmt == 3)
+    *TA = *TA*3*(1<<mu)/8;
+  else if (prach_fmt > 3)
+    *TA = *TA/2;
+
+
   if (LOG_DUMPFLAG(PRACH)) {
     int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));  
     if (en>60) {
