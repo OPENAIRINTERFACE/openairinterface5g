@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   int slot = 0;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
-  int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
+  int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
   uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
   uint16_t Nid_cell = 0;
@@ -113,7 +113,6 @@ int main(int argc, char **argv)
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
 
-
   cpuf = get_cpu_freq_GHz();
 
 
@@ -127,8 +126,21 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
+  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:")) != -1) {
     switch (c) {
+
+      /*case 'd':
+        frame_type = 1;
+        break;*/
+
+      case 'd':
+        delay = atoi(optarg);
+        break;
+
+      case 'f':
+        number_of_frames = atoi(optarg);
+        break;
+
       /*case 'f':
          write_output_file = 1;
          output_fd = fopen(optarg, "w");
@@ -139,10 +151,6 @@ int main(int argc, char **argv)
          }
 
          break;*/
-
-      /*case 'd':
-        frame_type = 1;
-        break;*/
 
       case 'g':
         switch ((char) *optarg) {
@@ -189,23 +197,29 @@ int main(int argc, char **argv)
         interf2 = atoi(optarg);
         break;*/
 
+      case 'l':
+        nb_symb_sch = atoi(optarg);
+        break;
+
+      case 'm':
+        Imcs = atoi(optarg);
+        break;
+
       case 'n':
-        number_of_frames = atoi(optarg);
+        n_trials = atoi(optarg);
+        break;
+
+      case 'p':
+        extended_prefix_flag = 1;
+        break;
+
+      case 'r':
+        nb_rb = atoi(optarg);
         break;
 
       case 's':
         snr0 = atof(optarg);
         printf("Setting SNR0 to %f\n", snr0);
-        break;
-
-      case 'S':
-        snr1 = atof(optarg);
-        snr1set = 1;
-        printf("Setting SNR1 to %f\n", snr1);
-        break;
-
-      case 'p':
-        extended_prefix_flag = 1;
         break;
 
       /*
@@ -217,6 +231,10 @@ int main(int argc, char **argv)
        }
        break;
        */
+
+      /*case 'x':
+        transmission_mode = atoi(optarg);
+        break;*/
 
       case 'y':
         n_tx = atoi(optarg);
@@ -238,6 +256,16 @@ int main(int argc, char **argv)
 
         break;
 
+      case 'F':
+        input_fd = fopen(optarg, "r");
+
+        if (input_fd == NULL) {
+            printf("Problem with filename %s\n", optarg);
+            exit(-1);
+        }
+
+        break;
+
       case 'M':
         SSB_positions = atoi(optarg);
         break;
@@ -251,56 +279,39 @@ int main(int argc, char **argv)
         N_RB_UL = N_RB_DL;
         break;
 
-      case 'F':
-        input_fd = fopen(optarg, "r");
-
-        if (input_fd == NULL) {
-            printf("Problem with filename %s\n", optarg);
-            exit(-1);
-        }
-
+      case 'S':
+        snr1 = atof(optarg);
+        snr1set = 1;
+        printf("Setting SNR1 to %f\n", snr1);
         break;
-
-      case 'm':
-        Imcs = atoi(optarg);
-        break;
-
-      case 'l':
-        nb_symb_sch = atoi(optarg);
-        break;
-
-      case 'r':
-        nb_rb = atoi(optarg);
-        break;
-
-      /*case 'x':
-        transmission_mode = atoi(optarg);
-        break;*/
 
       default:
         case 'h':
           printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
-          printf("-h This message\n");
-          printf("-p Use extended prefix mode\n");
           //printf("-d Use TDD\n");
-          printf("-n Number of frames to simulate\n");
-          printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
-          printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-          printf("-t Delay spread for multipath channel\n");
+          printf("-d Introduce delay in terms of number of samples\n");
+          printf("-f Number of frames to simulate\n");
           printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+          printf("-h This message\n");
+          //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+          //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+          printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
+          printf("-m MCS value\n");
+          printf("-n Number of trials to simulate\n");
+          printf("-p Use extended prefix mode\n");
+          printf("-t Delay spread for multipath channel\n");
           //printf("-x Transmission mode (1,2,6 for the moment)\n");
           printf("-y Number of TX antennas used in eNB\n");
           printf("-z Number of RX antennas used in UE\n");
-          //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-          //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-          printf("-M Multiple SSB positions in burst\n");
-          printf("-N Nid_cell\n");
-          printf("-R N_RB_DL\n");
-          printf("-O oversampling factor (1,2,4,8,16)\n");
+
           printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
           //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-          //printf("-f Output filename (.txt format) for Pe/SNR results\n");
           printf("-F Input filename (.txt format) for RX conformance testing\n");
+          printf("-M Multiple SSB positions in burst\n");
+          printf("-N Nid_cell\n");
+          printf("-O oversampling factor (1,2,4,8,16)\n");
+          printf("-R N_RB_DL\n");
+          printf("-S Ending SNR, runs from SNR0 to SNR1\n");
           exit(-1);
           break;
     }
@@ -492,8 +503,8 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         for (i=0; i<frame_length_complex_samples; i++) {
           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
-            ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
+            ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
+            ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
           }
         }
         ////////////////////////////////////////////////////////////
