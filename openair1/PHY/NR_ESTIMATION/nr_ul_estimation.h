@@ -47,5 +47,6 @@
 				                     unsigned short bwp_start_subcarrier,
 				                     unsigned short nb_rb_pusch);
 
+int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 
 #endif

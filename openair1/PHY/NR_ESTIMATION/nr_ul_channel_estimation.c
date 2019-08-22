@@ -44,7 +44,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   int16_t ch[2],*pil,*rxF,*ul_ch,*fl,*fm,*fr,*fml,*fmr,*fmm;
   int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
   unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
-  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(32)));
+  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(16)));
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
 
 #ifdef DEBUG_CH
@@ -256,11 +256,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ul_ch,
                                          8);
 
-      // Convert to time domain
-      memset(temp_in_ifft_0,0,gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t));
-
-    for(int ii = 0; ii < nb_rb_pusch*12; ii++)
-      ((int32_t*)temp_in_ifft_0)[ii] = ul_ch_estimates[aarx][symbol_offset+ii];
+    // Convert to time domain
+    memset(temp_in_ifft_0, 0, gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t));
+    memcpy(temp_in_ifft_0, &ul_ch_estimates[aarx][symbol_offset], nb_rb_pusch * NR_NB_SC_PER_RB * sizeof(int32_t));
 
     switch (gNB->frame_parms.ofdm_symbol_size) {
       case 128:
