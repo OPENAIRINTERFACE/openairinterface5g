@@ -393,83 +393,87 @@ int main(int argc, char **argv)
   
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
-  uint32_t errors_bit        = 0;
+  uint32_t errors_decoding   = 0;
   uint32_t errors_scrambling = 0;
-  uint32_t frames_in_error   = 0;
+  uint32_t is_frame_in_error = 0;
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
-
-  for (int frame = 0; frame < number_of_frames; frame++) {
-
-    // printf("***********\n");
-    // printf("frame = %d\n", frame);
-    // printf("***********\n");
-    UE_proc.nr_tti_tx = slot;
-    UE_proc.frame_tx = frame;
-
-    // --------- setting rel15_ul parameters for gNB --------
-    rel15_ul->rnti                           = n_rnti;
-    rel15_ul->ulsch_pdu_rel15.start_rb       = start_rb;
-    rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
-    rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
-    rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-    rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = nb_re_dmrs;
-    rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
-    rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
-    rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
-    rel15_ul->ulsch_pdu_rel15.rv             = 0;
-    rel15_ul->ulsch_pdu_rel15.ndi            = 0;
-    rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
-    ///////////////////////////////////////////////////
-
-    //fapi_nr_tx_request_t tx_request;
   
-    scheduled_response.module_id = 0;
-    scheduled_response.CC_id = 0;
-    scheduled_response.frame = frame;
-    scheduled_response.slot = slot;
-    scheduled_response.dl_config = NULL;
-    scheduled_response.ul_config = &ul_config;
-    scheduled_response.dl_config = NULL;
+  printf("\n");
 
-    ul_config.sfn_slot = slot;
-    ul_config.number_pdus = 1;
-    ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-    ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
-    //there are plenty of other parameters that we don't seem to be using for now. e.g.
-    //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0;
+  for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
-    // set FAPI parameters for UE, put them in the scheduled response and call
-    nr_ue_scheduled_response(&scheduled_response);
+    printf("-------------------\n");
+    printf("SNR %f\n", SNR);
+    printf("-------------------\n");
 
-    /////////////////////////phy_procedures_nr_ue_TX///////////////////////
-    ///////////
+    is_frame_in_error = 0;
+    for (int frame = 0; frame < number_of_frames; frame++) {
 
-    phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+      UE_proc.nr_tti_tx = slot;
+      UE_proc.frame_tx = frame;
 
-    ///////////
-    ////////////////////////////////////////////////////
-    tx_offset = slot*frame_parms->samples_per_slot;
+      // --------- setting rel15_ul parameters for gNB --------
+      rel15_ul->rnti                           = n_rnti;
+      rel15_ul->ulsch_pdu_rel15.start_rb       = start_rb;
+      rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
+      rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
+      rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
+      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = nb_re_dmrs;
+      rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
+      rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
+      rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
+      rel15_ul->ulsch_pdu_rel15.rv             = 0;
+      rel15_ul->ulsch_pdu_rel15.ndi            = 0;
+      rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
+      ///////////////////////////////////////////////////
 
-    txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-            frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+      //fapi_nr_tx_request_t tx_request;
 
-    txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
+      scheduled_response.module_id = 0;
+      scheduled_response.CC_id = 0;
+      scheduled_response.frame = frame;
+      scheduled_response.slot = slot;
+      scheduled_response.dl_config = NULL;
+      scheduled_response.ul_config = &ul_config;
+      scheduled_response.dl_config = NULL;
 
-    for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+      ul_config.sfn_slot = slot;
+      ul_config.number_pdus = 1;
+      ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+      ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
+      //there are plenty of other parameters that we don't seem to be using for now. e.g.
+      //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0;
+
+      // set FAPI parameters for UE, put them in the scheduled response and call
+      nr_ue_scheduled_response(&scheduled_response);
+
+      /////////////////////////phy_procedures_nr_ue_TX///////////////////////
+      ///////////
+
+      phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+
+      ///////////
+      ////////////////////////////////////////////////////
+      tx_offset = slot*frame_parms->samples_per_slot;
+
+      txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+              frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+      txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
 
       n_errors = 0;
       n_false_positive = 0;
@@ -481,21 +485,29 @@ int main(int argc, char **argv)
       for (trial = 0; trial < n_trials; trial++) {
 
         errors_scrambling  = 0;
-        errors_bit         = 0;
+        errors_decoding    = 0;
 
+        //----------------------------------------------------------
+        //------------------------ add noise -----------------------
+        //----------------------------------------------------------
         for (i=0; i<frame_length_complex_samples; i++) {
           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
             ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
             ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
           }
         }
+        ////////////////////////////////////////////////////////////
 
+        //----------------------------------------------------------
+        //------------------- gNB phy procedures -------------------
+        //----------------------------------------------------------
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot, rel15_ul->ulsch_pdu_rel15.start_symbol, rel15_ul->ulsch_pdu_rel15.start_symbol + rel15_ul->ulsch_pdu_rel15.number_symbols);
+        ////////////////////////////////////////////////////////////
 
         //----------------------------------------------------------
-        //---------------------- count errors ----------------------
+        //----------------- count and print errors -----------------
         //----------------------------------------------------------
 
         for (i = 0; i < available_bits; i++) {
@@ -503,54 +515,49 @@ int main(int argc, char **argv)
           if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
              ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
           {
-            if(errors_scrambling == 0) {
-              printf("\n");
-              printf("First bit in error in unscrambling in frame %d = %d\n", frame, i);
-            }
+            if(errors_scrambling == 0)
+              printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);
             errors_scrambling++;
           }
+        }
+
+        if (errors_scrambling > 0) {
+          printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %d\n" "\x1B[0m", frame, trial, errors_scrambling);
         }
 
         for (i = 0; i < TBS; i++) {
 
           estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-          test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
+          test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
 
           if (estimated_output_bit[i] != test_input_bit[i]) {
-            if(errors_bit == 0)
-              printf("First bit in error in decoding in frame %d = %d\n", frame, i);
-            errors_bit++;
+            if(errors_decoding == 0)
+              printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);
+            errors_decoding++;
           }
         }
 
-        ////////////////////////////////////////////////////////////
-
-        if (errors_scrambling > 0) {
-          if (n_trials == 1)
-            printf("frame %d, errors_scrambling = %d (trial %d)\n", frame, errors_scrambling, trial);
-        }
-
-        if (errors_bit > 0) {
-          frames_in_error++;
+        if (errors_decoding > 0) {
+          is_frame_in_error = 1;
           n_false_positive++;
-
-          if (n_trials == 1)
-            printf("frame %d, errors_bit = %d (trial %d)\n", frame, errors_bit, trial);
-
-          printf("*****************************************\n");
-          printf("SNR %f, (false positive %f)\n", SNR,
-                 (float) n_false_positive / (float) n_trials);
-          printf("*****************************************\n");
-          printf("\n");
+          printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %d\n" "\x1B[0m", frame, trial, errors_decoding);
+        } else {
+          is_frame_in_error = 0;
+          break;
         }
-      } // [hna] for (trial = 0; trial < n_trials; trial++)
+        ////////////////////////////////////////////////////////////
+      } // trial loop
 
-      if (errors_bit == 0)
+      if (is_frame_in_error == 1)
         break;
-    } // [hna] for (SNR = snr0; SNR < snr1; SNR += snr_step)
-  } // frame loop
+    } // frame loop
 
-  if(frames_in_error == 0) {
+    if(is_frame_in_error == 0)
+      break;
+  } // SNR loop
+
+  if(is_frame_in_error == 0) {
+    printf("\n");
     printf("*************\n");
     printf("PUSCH test OK\n");
     printf("*************\n");
