@@ -337,7 +337,7 @@ void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
       for(j=0; j<2; j++) {
 	//DL HARQ
 	if(ue->dlsch[l][i][j]) {
-	  for(k=0; k<NUMBER_OF_HARQ_PID_MAX && ue->dlsch[l][i][j]->harq_processes[k]; k++) {
+	  for(k=0; k<NR_MAX_DLSCH_HARQ_PROCESSES && ue->dlsch[l][i][j]->harq_processes[k]; k++) {
 	    ue->dlsch[l][i][j]->harq_processes[k]->status = SCH_IDLE;
 	    for (s=0; s<10; s++) {
 	      // reset ACK/NACK bit to DTX for all nr_tti_rxs s = 0..9
@@ -352,7 +352,7 @@ void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 
       //UL HARQ
       if(ue->ulsch[i]) {
-	for(k=0; k<NUMBER_OF_HARQ_PID_MAX && ue->ulsch[i]->harq_processes[k]; k++) {
+	for(k=0; k<NR_MAX_ULSCH_HARQ_PROCESSES && ue->ulsch[i]->harq_processes[k]; k++) {
 	  ue->ulsch[i]->harq_processes[k]->status = SCH_IDLE;
 	  //Set NDIs for all UL HARQs to 0
 	  //  ue->ulsch[i]->harq_processes[k]->Ndi = 0;
