@@ -262,6 +262,13 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
       rx_ulsch(eNB, proc, i);
       stop_meas(&eNB->ulsch_demodulation_stats);
       // TBD: add datablock for transmission
+      start_meas(&eNB->ulsch_decoding_stats);
+      ulsch_decoding(eNB,proc,
+                     i,
+                     0, // control_only_flag
+                     ulsch_harq->V_UL_DAI,
+                     ulsch_harq->nb_rb>20 ? 1 : 0);
+      stop_meas(&eNB->ulsch_decoding_stats);
     }
   }
 }
@@ -323,14 +330,28 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
 
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
   decoder_if_t *tc;
-  int offset, ret;
+  int offset, ret=-1;
 
   if (llr8_flag == 0)
     tc = *decoder16;
   else
     tc = *decoder8;
 
-  for (int r=0; r<ulsch_harq->C; r++) {
+  // This is a new packet, so compute quantities regarding segmentation
+  //Fixme: very dirty: all the variables produced by let_segmentation are only used localy
+  // Furthermore, variables as 1 letter and global is "time consuming" for everybody !!!
+  ulsch_harq->B = ulsch_harq->TBS+24;
+  lte_segmentation(NULL,
+                   NULL,
+                   ulsch_harq->B,
+                   &ulsch_harq->C,
+                   &ulsch_harq->Cplus,
+                   &ulsch_harq->Cminus,
+                   &ulsch_harq->Kplus,
+                   &ulsch_harq->Kminus,
+                   &ulsch_harq->F);
+
+  for (int r=0; r<ulsch_harq->CcC; r++) {
     //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
     // Get Turbo interleaver parameters
     int Kr;
@@ -379,13 +400,13 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
       if (r==0) {
         memcpy(ulsch_harq->bb,
                &ulsch_harq->c[0][(ulsch_harq->F>>3)],
-               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
-        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
+               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->CcC>1)?3:0));
+        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->CcC>1)?3:0);
       } else {
         memcpy(ulsch_harq->bb+offset,
                ulsch_harq->c[r],
-               Kr_bytes - ((ulsch_harq->C>1)?3:0));
-        offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+               Kr_bytes - ((ulsch_harq->CcC>1)?3:0));
+        offset += (Kr_bytes- ((ulsch_harq->CcC>1)?3:0));
       }
     } else {
       break;
@@ -666,6 +687,7 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
           ulsch_harq->first_rb=hTxULUE(bufPtr)->first_rb;
           ulsch_harq->V_UL_DAI=hTxULUE(bufPtr)->V_UL_DAI;
           ulsch_harq->Qm=hTxULUE(bufPtr)->Qm;
+          ulsch_harq->CcC=hTxULUE(bufPtr)->CcC;
           ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
           ulsch_harq->TBS=hTxULUE(bufPtr)->TBS;
           ulsch_harq->Nsymb_pusch=hTxULUE(bufPtr)->Nsymb_pusch;
@@ -809,6 +831,7 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   cpyToDuHarq(first_rb);
   cpyToDuHarq(V_UL_DAI);
   cpyToDuHarq(Qm);
+  cpyToDuHarq(CcC);
   cpyToDuHarq(srs_active);
   cpyToDuHarq(TBS);
   cpyToDuHarq(Nsymb_pusch);
@@ -1052,9 +1075,7 @@ void DL_du_fs6(RU_t *ru) {
 
 void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   RU_proc_t *ru_proc=&ru->proc;
-  int tmpf=frame, tmpsf=subframe;
   rx_rf(ru);
-  AssertFatal(tmpf==frame && tmpsf==subframe, "lost synchronization\n");
   setAllfromTS(ru_proc->timestamp_rx);
   // front end processing: convert from time domain to frequency domain
   // fills rxdataF buffer
