@@ -58,13 +58,43 @@ typedef struct {
   DCI_ALLOC_t dci_alloc[32];
   int num_mdci;
   int amp;
-  int8_t UE_ul_active[NUMBER_OF_UE_MAX];
-  int8_t UE_ul_first_rb[NUMBER_OF_UE_MAX]; //
-  int8_t UE_ul_last_rb[NUMBER_OF_UE_MAX]; //
   LTE_eNB_PHICH phich_vars;
 } fs6_dl_t;
 
+enum pckType {
+  fs6UlConfig=25,
+  fs6DlConfig=26,
+};
+
 typedef struct {
+  enum pckType type:8;
+  uint16_t UE_id;
+  int8_t harq_pid;
+  UE_type_t ue_type;
+  uint16_t harq_mask;
+  uint16_t nb_rb;
+  uint8_t Qm;
+  uint16_t first_rb;
+  uint8_t V_UL_DAI;
+  uint8_t srs_active;
+  uint32_t TBS;
+  uint8_t Nsymb_pusch;
+  uint8_t Mlimit;
+  uint8_t max_turbo_iterations;
+  uint8_t bundling;
+  uint16_t beta_offset_cqi_times8;
+  uint16_t beta_offset_ri_times8;
+  uint16_t beta_offset_harqack_times8;
+  uint8_t Msg3_active;
+  uint16_t rnti;
+  uint8_t cyclicShift;
+  uint8_t cooperation_flag;
+  uint8_t num_active_cba_groups;
+  uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
+} fs6_dl_ulsched_t;
+
+typedef struct {
+  enum pckType type:8;
   int UE_id;
   int8_t harq_pid;
   uint16_t rnti;
@@ -76,9 +106,16 @@ typedef struct {
   uint8_t pdsch_start;
   uint8_t sib1_br_flag;
   uint16_t i0;
-  uint32_t rb_alloc[4];
+  uint32_t rb_alloc[4];;
   int dataLen;
 } fs6_dl_uespec_t;
+
+typedef struct {
+  short UE_id;
+  short harq_id;
+  short segment;
+  short segLen;
+} fs6_ul_uespec_t;
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
 int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t contentType);
@@ -92,6 +129,8 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
 #define hDL(xBuf)  ((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))
 #define hUL(xBuf)  ((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))
 #define hDLUE(xBuf) ((fs6_dl_uespec_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
+#define hTxULUE(xBuf) ((fs6_dl_ulsched_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
+#define hULUE(xBuf) ((fs6_ul_uespec_t*) (((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))+1))
 
 static inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;
@@ -102,10 +141,11 @@ static inline void *commonUDPdata(uint8_t *ptr) {
   return (void *) (((commonUDP_t *)ptr)+1);
 }
 
+void setAllfromTS(uint64_t TS);
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
-void rx_rf(RU_t *ru,int *frame,int *subframe);
+void rx_rf(RU_t *ru);
 void tx_rf(RU_t *ru);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
@@ -128,5 +168,6 @@ void  phy_init_RU(RU_t *);
 void feptx_prec(RU_t *);
 void feptx_ofdm(RU_t *);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+void fep_full(RU_t *ru);
 extern uint16_t sf_ahead;
 #endif

@@ -16,62 +16,18 @@
 #include <openair1/PHY/INIT/lte_init.c>
 #include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
 #include <executables/split_headers.h>
+#include <openair1/PHY/CODING/coding_extern.h>
 
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
 
-// Fixme: there are many mistakes in the datamodel and in redondant variables
-// TDD is also mode complex
-void setAllfromTS(uint64_t TS) {
-  for (int i=0; i <RC.nb_RU; i++) {
-    LTE_DL_FRAME_PARMS *fp=&RC.ru[i]->frame_parms;
-    uint64_t TStx=TS+sf_ahead*fp->samples_per_tti;
-    RU_proc_t *proc =&RC.ru[i]->proc;
-    proc->timestamp_rx=  TS;
-    proc->timestamp_tx=  TStx;
-    proc->subframe_rx=   (TS    / fp->samples_per_tti)%10;
-    proc->subframe_tx=   (TStx  / fp->samples_per_tti)%10;
-    proc->subframe_prach=(TS    / fp->samples_per_tti)%10;
-    proc->subframe_prach_br=(TS / fp->samples_per_tti)%10;
-    proc->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
-    proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
-  }
 
-  for (int i=0; i < RC.nb_inst; i++) {
-    for (int j=0; j<RC.nb_CC[i]; j++) {
-      LTE_DL_FRAME_PARMS *fp=&RC.eNB[i][j]->frame_parms;
-      uint64_t TStx=TS+sf_ahead*fp->samples_per_tti;
-      L1_proc_t *proc      =&RC.eNB[i][j]->proc;
-      L1_rxtx_proc_t *proc1=&RC.eNB[i][j]->proc.L1_proc;
-      proc->timestamp_rx=  TS;
-      proc->timestamp_tx=  TStx;
-      proc->subframe_rx=   (TS    / fp->samples_per_tti)%10;
-      proc->subframe_prach=(TS    / fp->samples_per_tti)%10;
-      proc->subframe_prach_br=(TS / fp->samples_per_tti)%10;
-      proc->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
-      proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
-      proc1->timestamp_tx=  TStx;
-      proc1->subframe_rx=   (TS    / fp->samples_per_tti)%10;
-      proc1->subframe_tx=   (TStx  / fp->samples_per_tti)%10;
-      proc1->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
-      proc1->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
-    }
-  }
-
-  return;
-}
-
-
-void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, int frame,int subframe) {
+void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
 
-  if (is_prach_subframe(&eNB->frame_parms, frame,subframe)<=0)
+  if (is_prach_subframe(&eNB->frame_parms, eNB->proc.frame_prach,eNB->proc.subframe_prach)<=0)
     return;
 
-  eNB->proc.frame_prach = frame;
-  eNB->proc.subframe_prach = subframe;
-  eNB->proc.frame_prach_br = frame;
-  eNB->proc.subframe_prach_br = subframe;
   RU_t *ru;
   int aa=0;
   int ru_aa;
@@ -88,19 +44,19 @@ void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, int 
     }
   }
 
-  /* Fixme: the orgin code calls the two funtiosn, so one overwrite the second?
-     rx_prach(eNB,
-     eNB->RU_list[0],
-     header->max_preamble,
-     header->max_preamble_energy,
-     header->max_preamble_delay,
-     header->avg_preamble_energy,
-     frame,
-     0,
-     false
-     );
-  */
+  rx_prach(eNB,
+           eNB->RU_list[0],
+           header->max_preamble,
+           header->max_preamble_energy,
+           header->max_preamble_delay,
+           header->avg_preamble_energy,
+           eNB->proc.frame_prach,
+           0,
+           false
+          );
   // run PRACH detection for CE-level 0 only for now when br_flag is set
+  /* fixme: seems not operational and may overwrite regular LTE prach detection
+   * OAI code can call is sequence
   rx_prach(eNB,
            eNB->RU_list[0],
            header->max_preamble,
@@ -111,17 +67,26 @@ void prach_eNB_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, int 
            0,
            true
           );
+  */
+  LOG_D(PHY,"RACH detection index 0: max preamble: %u, energy: %u, delay: %u, avg energy: %u\n",
+        header->max_preamble[0],
+        header->max_preamble_energy[0],
+        header->max_preamble_delay[0],
+        header->avg_preamble_energy[0]
+       );
   return;
 }
 
-void prach_eNB_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+void prach_eNB_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
   uint16_t *max_preamble=header->max_preamble;
   uint16_t *max_preamble_energy=header->max_preamble_energy;
   uint16_t *max_preamble_delay=header->max_preamble_delay;
   uint16_t *avg_preamble_energy=header->avg_preamble_energy;
+  int subframe=eNB->proc.subframe_prach;
+  int frame=eNB->proc.frame_prach;
   // Fixme: not clear why we call twice with "br" and without
-  int br_flag=1;
+  int br_flag=0;
 
   if (br_flag==1) {
     int             prach_mask;
@@ -206,6 +171,29 @@ void prach_eNB_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,RU_t 
   }
 }
 
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen) {
+  uint8_t *bufferZone=eNB->FS6bufferZone;
+  commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
+  // move to the end
+  uint8_t *firstFreeByte=bufferZone;
+  int curBlock=0;
+
+  for (int i=0; i < FirstUDPheader->nbBlocks; i++) {
+    AssertFatal( ((commonUDP_t *) firstFreeByte)->blockID==curBlock,"");
+    firstFreeByte+=alignedSize(firstFreeByte);
+    curBlock++;
+  }
+
+  commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
+  FirstUDPheader->nbBlocks++;
+  newUDPheader->blockID=curBlock;
+  newUDPheader->contentBytes=sizeof(fs6_ul_t)+sizeof(fs6_ul_uespec_t) + dataLen;
+  hULUE(newUDPheader)->UE_id=UE_id;
+  hULUE(newUDPheader)->harq_id=harq_pid;
+  hULUE(newUDPheader)->segment=segmentID;
+  memcpy(hULUE(newUDPheader)+1, data, dataLen);
+}
+
 void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   uint32_t harq_pid;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -223,9 +211,14 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
     LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
 
     if (ulsch->rnti>0)
-      LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
+      LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d active: %d handled:%d]\n",
             i, harq_pid, frame,subframe,i,ulsch->rnti,
-            ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
+            ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->status, ulsch_harq->handled);
+
+    if ((ulsch) &&
+        (ulsch->rnti>0) &&
+        (ulsch_harq->status == ACTIVE))
+      LOG_E(PHY,"active ulsch harq\n");
 
     if ((ulsch) &&
         (ulsch->rnti>0) &&
@@ -265,7 +258,8 @@ void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
             ulsch_harq->O_ACK,
             ulsch->beta_offset_cqi_times8);
       start_meas(&eNB->ulsch_demodulation_stats);
-      rx_ulsch(eNB,proc, i);
+      eNB->FS6bufferZone=bufferZone;
+      rx_ulsch(eNB, proc, i);
       stop_meas(&eNB->ulsch_demodulation_stats);
       // TBD: add datablock for transmission
     }
@@ -318,12 +312,97 @@ void phy_procedures_eNB_uespec_RX_extract(uint8_t *bufferZone, int bufSize, PHY_
   return;
 }
 
-void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
+int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
+  int harq_pid;
+  LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
+
+  if (ulsch->ue_type>0)
+    harq_pid = 0;
+  else
+    harq_pid = subframe2harq_pid(&eNB->frame_parms,eNB->proc.frame_rx,eNB->proc.subframe_rx);
+
+  LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
+  decoder_if_t *tc;
+  int offset, ret;
+
+  if (llr8_flag == 0)
+    tc = *decoder16;
+  else
+    tc = *decoder8;
+
+  for (int r=0; r<ulsch_harq->C; r++) {
+    //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
+    // Get Turbo interleaver parameters
+    int Kr;
+
+    if (r<ulsch_harq->Cminus)
+      Kr = ulsch_harq->Kminus;
+    else
+      Kr = ulsch_harq->Kplus;
+
+    int Kr_bytes = Kr>>3;
+    int crc_type;
+
+    if (ulsch_harq->C == 1)
+      crc_type = CRC24_A;
+    else
+      crc_type = CRC24_B;
+
+    start_meas(&eNB->ulsch_turbo_decoding_stats);
+    ret = tc(&ulsch_harq->d[r][96],
+             NULL,
+             ulsch_harq->c[r],
+             NULL,
+             Kr,
+             ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
+             crc_type,
+             (r==0) ? ulsch_harq->F : 0,
+             &eNB->ulsch_tc_init_stats,
+             &eNB->ulsch_tc_alpha_stats,
+             &eNB->ulsch_tc_beta_stats,
+             &eNB->ulsch_tc_gamma_stats,
+             &eNB->ulsch_tc_ext_stats,
+             &eNB->ulsch_tc_intl1_stats,
+             &eNB->ulsch_tc_intl2_stats);
+    stop_meas(&eNB->ulsch_turbo_decoding_stats);
+
+    // Reassembly of Transport block here
+
+    if (ret != (1+ulsch->max_turbo_iterations)) {
+      if (r<ulsch_harq->Cminus)
+        Kr = ulsch_harq->Kminus;
+      else
+        Kr = ulsch_harq->Kplus;
+
+      Kr_bytes = Kr>>3;
+
+      if (r==0) {
+        memcpy(ulsch_harq->bb,
+               &ulsch_harq->c[0][(ulsch_harq->F>>3)],
+               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
+        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
+      } else {
+        memcpy(ulsch_harq->bb+offset,
+               ulsch_harq->c[r],
+               Kr_bytes - ((ulsch_harq->C>1)?3:0));
+        offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
+      }
+    } else {
+      break;
+    }
+  }
+
+  return(ret);
+}
+
+void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   //LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  const int subframe = proc->subframe_rx;
-  const int frame    = proc->frame_rx;
+  const int subframe = eNB->proc.subframe_rx;
+  const int frame    = eNB->proc.frame_rx;
   uint32_t harq_pid;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
+
+  // TBD: read UL data
 
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
@@ -353,11 +432,16 @@ void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
       }
 
       start_meas(&eNB->ulsch_decoding_stats);
-      int ret = ulsch_decoding(eNB,proc,
+      /*
+      int ret = ulsch_decoding(eNB,&eNB->proc.L1_proc,
                                i,
                                0, // control_only_flag
                                ulsch_harq->V_UL_DAI,
                                ulsch_harq->nb_rb>20 ? 1 : 0);
+      */
+      int ret = ulsch_decoding_process(eNB,
+                                       i,
+                                       ulsch_harq->nb_rb>20 ? 1 : 0);
       stop_meas(&eNB->ulsch_decoding_stats);
       LOG_D(PHY,
             "[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d ulsch_harq->cqi_crc_status:%d ackBits:%d ulsch_decoding_stats[t:%lld max:%lld]\n",
@@ -474,7 +558,26 @@ void pusch_procedures_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++)
 }
 
-void phy_procedures_eNB_uespec_RX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc) {
+void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
+  void *bufPtr=bufferZone;
+
+  for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
+    if ( ((commonUDP_t *)bufPtr)->contentBytes >= sizeof(fs6_ul_t)+sizeof(fs6_ul_uespec_t) ) {
+      LTE_eNB_ULSCH_t *ulsch =eNB->ulsch[hULUE(bufPtr)->UE_id];
+      LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hULUE(bufPtr)->harq_id];
+      memcpy(&ulsch_harq->d[hULUE(bufPtr)->segment][96],
+             hULUE(bufPtr)+1,
+             hULUE(bufPtr)->segLen);
+      bufPtr+=alignedSize(bufPtr);
+      LOG_W(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
+    }
+  }
+}
+
+void phy_procedures_eNB_uespec_RX_process(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB) {
+  // The configuration arrived in Dl, so we can extract the UL data
+  recvFs6Ul(bufferZone, nbBlocks, eNB);
+  pusch_procedures_process(bufferZone, nbBlocks, eNB);
 }
 
 void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
@@ -504,36 +607,75 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
   void *bufPtr=bufferZone;
 
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
-    if ( ((commonUDP_t *)bufPtr)->contentBytes >= sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) ) {
-      int curUE=hDLUE(bufPtr)->UE_id;
-      LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[curUE][0];
-      LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch0->harq_processes[hDLUE(bufPtr)->harq_pid];
-#ifdef PHY_TX_THREAD
-      dlsch0->active[subframe] = 1;
-#else
-      dlsch0->active = 1;
-#endif
-      dlsch0->harq_ids[frame%2][subframe]=hDLUE(bufPtr)->harq_pid;
-      dlsch0->rnti=hDLUE(bufPtr)->rnti;
-      dlsch0->sqrt_rho_a=hDLUE(bufPtr)->sqrt_rho_a;
-      dlsch0->sqrt_rho_b=hDLUE(bufPtr)->sqrt_rho_b;
-      dlsch_harq->nb_rb=hDLUE(bufPtr)->nb_rb;
-      memcpy(dlsch_harq->rb_alloc, hDLUE(bufPtr)->rb_alloc, sizeof(hDLUE(bufPtr)->rb_alloc));
-      dlsch_harq->Qm=hDLUE(bufPtr)->Qm;
-      dlsch_harq->Nl=hDLUE(bufPtr)->Nl;
-      dlsch_harq->pdsch_start=hDLUE(bufPtr)->pdsch_start;
-#ifdef PHY_TX_THREAD
-      dlsch_harq->i0=hDLUE(bufPtr)->i0;
-      dlsch_harq->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
-#else
-      dlsch0->i0=hDLUE(bufPtr)->i0;
-      dlsch0->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
-#endif
-      memcpy(dlsch_harq->e,
-             hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
-    }
+    if ( ((commonUDP_t *)bufPtr)->contentBytes > sizeof(fs6_dl_t) ) {
+      int type=hDLUE(bufPtr)->type;
 
-    bufPtr+=alignedSize(bufPtr);
+      if ( type == fs6DlConfig) {
+        int curUE=hDLUE(bufPtr)->UE_id;
+        LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[curUE][0];
+        LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch0->harq_processes[hDLUE(bufPtr)->harq_pid];
+#ifdef PHY_TX_THREAD
+        dlsch0->active[subframe] = 1;
+#else
+        dlsch0->active = 1;
+#endif
+        dlsch0->harq_ids[frame%2][subframe]=hDLUE(bufPtr)->harq_pid;
+        dlsch0->rnti=hDLUE(bufPtr)->rnti;
+        dlsch0->sqrt_rho_a=hDLUE(bufPtr)->sqrt_rho_a;
+        dlsch0->sqrt_rho_b=hDLUE(bufPtr)->sqrt_rho_b;
+        dlsch_harq->nb_rb=hDLUE(bufPtr)->nb_rb;
+        memcpy(dlsch_harq->rb_alloc, hDLUE(bufPtr)->rb_alloc, sizeof(hDLUE(bufPtr)->rb_alloc));
+        dlsch_harq->Qm=hDLUE(bufPtr)->Qm;
+        dlsch_harq->Nl=hDLUE(bufPtr)->Nl;
+        dlsch_harq->pdsch_start=hDLUE(bufPtr)->pdsch_start;
+#ifdef PHY_TX_THREAD
+        dlsch_harq->i0=hDLUE(bufPtr)->i0;
+        dlsch_harq->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
+#else
+        dlsch0->i0=hDLUE(bufPtr)->i0;
+        dlsch0->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
+#endif
+        memcpy(dlsch_harq->e,
+               hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
+      } else if (type == fs6UlConfig) {
+        int nbUE=(((commonUDP_t *)bufPtr)->contentBytes - sizeof(fs6_dl_t)) / sizeof( fs6_dl_ulsched_t ) ;
+
+        for ( int i=0; i < nbUE; i++ ) {
+          int curUE=hTxULUE(bufPtr)->UE_id;
+          LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[curUE];
+          LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hTxULUE(bufPtr)->harq_pid];
+          ulsch->ue_type=hTxULUE(bufPtr)->ue_type;
+          ulsch->harq_mask=hTxULUE(bufPtr)->harq_mask;
+          ulsch->Mlimit=hTxULUE(bufPtr)->Mlimit;
+          ulsch->max_turbo_iterations=hTxULUE(bufPtr)->max_turbo_iterations;
+          ulsch->bundling=hTxULUE(bufPtr)->bundling;
+          ulsch->beta_offset_cqi_times8=hTxULUE(bufPtr)->beta_offset_cqi_times8;
+          ulsch->beta_offset_ri_times8=hTxULUE(bufPtr)->beta_offset_ri_times8;
+          ulsch->beta_offset_harqack_times8=hTxULUE(bufPtr)->beta_offset_harqack_times8;
+          ulsch->Msg3_active=hTxULUE(bufPtr)->Msg3_active;
+          ulsch->cyclicShift=hTxULUE(bufPtr)->cyclicShift;
+          ulsch->cooperation_flag=hTxULUE(bufPtr)->cooperation_flag;
+          ulsch->num_active_cba_groups=hTxULUE(bufPtr)->num_active_cba_groups;
+          memcpy(ulsch->cba_rnti,hTxULUE(bufPtr)->cba_rnti,sizeof(ulsch->cba_rnti));//NUM_MAX_CBA_GROUP];
+          ulsch->rnti=hTxULUE(bufPtr)->rnti;
+          ulsch_harq->nb_rb=hTxULUE(bufPtr)->nb_rb;
+          ulsch_harq->handled=0;
+          ulsch_harq->status = ACTIVE;
+          ulsch_harq->frame = frame;
+          ulsch_harq->subframe = subframe;
+          ulsch_harq->first_rb=hTxULUE(bufPtr)->first_rb;
+          ulsch_harq->V_UL_DAI=hTxULUE(bufPtr)->V_UL_DAI;
+          ulsch_harq->Qm=hTxULUE(bufPtr)->Qm;
+          ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
+          ulsch_harq->TBS=hTxULUE(bufPtr)->TBS;
+          ulsch_harq->Nsymb_pusch=hTxULUE(bufPtr)->Nsymb_pusch;
+          LOG_W(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
+        }
+      } else
+        LOG_E(PHY, "Impossible block in fs6 DL\n");
+
+      bufPtr+=alignedSize(bufPtr);
+    }
   }
 
   if (do_meas==1) {
@@ -616,6 +758,63 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
                      AMP);
 }
 
+#define cpyToDu(a) hTxULUE(newUDPheader)->a=ulsch->a
+#define cpyToDuHarq(a) hTxULUE(newUDPheader)->a=ulsch_harq->a
+
+void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE_eNB_ULSCH_t *ulsch, int frame, int subframe) {
+  commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
+  // move to the end
+  uint8_t *firstFreeByte=bufferZone;
+  int curBlock=0;
+
+  for (int i=0; i < FirstUDPheader->nbBlocks; i++) {
+    AssertFatal( ((commonUDP_t *) firstFreeByte)->blockID==curBlock,"");
+    firstFreeByte+=alignedSize(firstFreeByte);
+    curBlock++;
+  }
+
+  commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
+  FirstUDPheader->nbBlocks++;
+  newUDPheader->blockID=curBlock;
+  newUDPheader->contentBytes=sizeof(fs6_dl_t)+sizeof(fs6_dl_ulsched_t);
+  // We skip the fs6 DL header, that is populated by caller
+  // This header will be duplicated during sending
+  hTxULUE(newUDPheader)->type=fs6UlConfig;
+  hTxULUE(newUDPheader)->UE_id=curUE;
+  int harq_pid;
+
+  if (ulsch->ue_type > NOCE)
+    // LTE-M case
+    harq_pid = 0;
+  else
+    harq_pid = subframe2harq_pid(fp, frame, subframe);
+
+  LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[harq_pid];
+  hTxULUE(newUDPheader)->harq_pid=harq_pid;
+  cpyToDu(ue_type);
+  cpyToDu(harq_mask);
+  cpyToDu(Mlimit);
+  cpyToDu(max_turbo_iterations);
+  cpyToDu(bundling);
+  cpyToDu(beta_offset_cqi_times8);
+  cpyToDu(beta_offset_ri_times8);
+  cpyToDu(beta_offset_harqack_times8);
+  cpyToDu(Msg3_active);
+  cpyToDu(cyclicShift);
+  cpyToDu(cooperation_flag);
+  cpyToDu(num_active_cba_groups);
+  memcpy(hTxULUE(newUDPheader)->cba_rnti,ulsch->cba_rnti,sizeof(ulsch->cba_rnti));//NUM_MAX_CBA_GROUP];
+  cpyToDu(rnti);
+  cpyToDuHarq(nb_rb);
+  cpyToDuHarq(first_rb);
+  cpyToDuHarq(V_UL_DAI);
+  cpyToDuHarq(Qm);
+  cpyToDuHarq(srs_active);
+  cpyToDuHarq(TBS);
+  cpyToDuHarq(Nsymb_pusch);
+  LOG_W(PHY,"Added request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
+}
+
 void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end
@@ -643,6 +842,7 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
   newUDPheader->contentBytes=sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_t) + UEdataLen;
   // We skip the fs6 DL header, that is populated by caller
   // This header will be duplicated during sending
+  hDLUE(newUDPheader)->type=fs6DlConfig;
   hDLUE(newUDPheader)->UE_id=UE_id;
   hDLUE(newUDPheader)->harq_pid=harq_pid;
   hDLUE(newUDPheader)->rnti=dlsch0->rnti;
@@ -662,9 +862,8 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
 #endif
   hDLUE(newUDPheader)->dataLen=UEdataLen;
   memcpy(hDLUE(newUDPheader)+1, harqData->e, UEdataLen);
-
-  for (int i=0; i < UEdataLen; i++)
-    LOG_D(PHY,"buffer e:%hhx\n", ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
+  //for (int i=0; i < UEdataLen; i++)
+  //LOG_D(PHY,"buffer e:%hhx\n", ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
 }
 
 void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
@@ -677,59 +876,51 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     return;
   }
 
-  // clear existing ulsch dci allocations before applying info from MAC  (this is table
-  // returns -1 (or 255) if there is no ul (tdd cases)
-  int ul_subframe = pdcch_alloc2ul_subframe (fp, subframe);
-  int ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
-
   // clear previous allocation information for all UEs
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     //if (eNB->dlsch[i][0])
     //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
-  /* TODO: check the following test - in the meantime it is put back as it was before */
-  //if ((ul_subframe < 10)&&
-  //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
-  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be schedulyed here
-    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-      int harq_pid;
+  // Send to DU the UL scheduled for future UL subframe
+  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+    int harq_pid;
+    LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
 
-      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type > NOCE)
-        // LTE-M case
-        harq_pid = 0;
-      else
-        hDL(bufferZone)->UE_ul_active[i] = harq_pid = subframe2harq_pid(fp, ul_frame, ul_subframe);
+    if (ulsch->ue_type > NOCE)
+      harq_pid = 0;
+    else
+      harq_pid= subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
-      if (eNB->ulsch[i]) {
-        //LTE_UL_eNB_HARQ_t *ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
-        /* Store first_rb and n_DMRS for correct PHICH generation below.
-         * For PHICH generation we need "old" values of last scheduling
-         * for this HARQ process. 'generate_eNB_dlsch_params' below will
-         * overwrite first_rb and n_DMRS and 'generate_phich_top', done
-         * after 'generate_eNB_dlsch_params', would use the "new" values
-         * instead of the "old" ones.
-         *
-         * This has been tested for FDD only, may be wrong for TDD.
-         *
-         * TODO: maybe we should restructure the code to be sure it
-         *       is done correctly. The main concern is if the code
-         *       changes and first_rb and n_DMRS are modified before
-         *       we reach here, then the PHICH processing will be wrong,
-         *       using wrong first_rb and n_DMRS values to compute
-         *       ngroup_PHICH and nseq_PHICH.
-         *
-         * TODO: check if that works with TDD.
-         */
-        /* seems useless: unused variables
-        header->previous_first_rb=
-          ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
-        header->previous_n_DMRS =
-          ulsch_harq->previous_n_DMRS = ulsch_harq->n_DMRS;
-        */
-        hDL(bufferZone)->UE_ul_active[i] = harq_pid;
-      } else
-        hDL(bufferZone)->UE_ul_active[i] = -1;
+    LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
+
+    if (ulsch->rnti>0) {
+      LOG_I(PHY,"check in UL scheduled harq %d: rnti %d, tx frame %d/%d, ulsch: %d, %d/%d (handled: %d)\n",
+            harq_pid, ulsch->rnti, frame, subframe, ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
+
+      for (int k=0; k<8; k++)
+        if ( ulsch->harq_processes[k]->status == ACTIVE)
+          LOG_I(PHY,"check in UL scheduledi (harq_pid %d): rnti %d, tx frame %d/%d, ulsch: %d, %d/%d (handled: %d)\n", k,
+                ulsch->rnti, frame, subframe, ulsch->harq_processes[k]->status,  ulsch->harq_processes[k]->frame, ulsch->harq_processes[k]->subframe,  ulsch->harq_processes[k]->handled);
+    }
+
+    for (int k=0; k<8; k++) {
+      ulsch_harq = ulsch->harq_processes[k];
+
+      if (ulsch &&
+          (ulsch->rnti>0) &&
+          (ulsch_harq->status == ACTIVE) &&
+          (ulsch_harq->frame == frame) &&
+          (ulsch_harq->subframe == subframe) &&
+          (ulsch_harq->handled == 0)
+         )
+        appendFs6TxULUE(bufferZone,
+                        fp,
+                        i,
+                        ulsch,
+                        frame,
+                        subframe
+                       );
     }
   }
 
@@ -754,9 +945,6 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
 
   if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
-
-  // Now scan UE specific DLSCH
-  LTE_eNB_DLSCH_t *dlsch0;
 
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
@@ -838,8 +1026,6 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 }
 
 void DL_du_fs6(RU_t *ru) {
-  RU_proc_t *ru_proc=&ru->proc;
-
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
     int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
@@ -853,8 +1039,7 @@ void DL_du_fs6(RU_t *ru) {
               hUDP(bufferZone)->timestamp);
       }
 
-      setAllfromTS(hUDP(bufferZone)->timestamp -
-                   sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti);
+      setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti);
       phy_procedures_eNB_TX_process( bufferZone, nb_blocks, ru->eNB_list[i], &ru->eNB_list[i]->proc.L1_proc, 1);
     } else
       LOG_E(PHY,"DL not received for subframe\n");
@@ -868,13 +1053,15 @@ void DL_du_fs6(RU_t *ru) {
 void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   RU_proc_t *ru_proc=&ru->proc;
   int tmpf=frame, tmpsf=subframe;
-  rx_rf(ru,&tmpf,&tmpsf);
+  rx_rf(ru);
   AssertFatal(tmpf==frame && tmpsf==subframe, "lost synchronization\n");
-  ru_proc->frame_tx = (ru_proc->frame_tx+ru_proc->frame_offset)&1023;
   setAllfromTS(ru_proc->timestamp_rx);
+  // front end processing: convert from time domain to frequency domain
+  // fills rxdataF buffer
+  fep_full(ru);
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  L1_proc_t *proc           = &eNB->proc;
+  L1_proc_t *proc   = &eNB->proc;
 
   if (NFAPI_MODE==NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
@@ -885,7 +1072,7 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
 
   initBufferZone(bufferZone);
   hUDP(bufferZone)->timestamp=ru->proc.timestamp_rx;
-  prach_eNB_extract(bufferZone, FS6_BUF_SIZE, eNB, proc->frame_rx,proc->subframe_rx );
+  prach_eNB_extract(bufferZone, FS6_BUF_SIZE, eNB);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     phy_procedures_eNB_uespec_RX_extract(bufferZone, FS6_BUF_SIZE, eNB, &proc->L1_proc );
@@ -902,7 +1089,7 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 }
 
-void DL_cu_fs6(RU_t *ru, uint64_t TS) {
+void DL_cu_fs6(RU_t *ru) {
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   L1_proc_t *proc           = &eNB->proc;
@@ -945,10 +1132,11 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
 
   setAllfromTS(hUDP(bufferZone)->timestamp);
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
+  prach_eNB_process(bufferZone, sizeof(bufferZone), eNB);
   release_UE_in_freeList(eNB->Mod_id);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX_process(bufferZone, sizeof(bufferZone), eNB, &eNB->proc.L1_proc);
+    phy_procedures_eNB_uespec_RX_process(bufferZone, nb_blocks, eNB);
   }
 }
 
@@ -965,7 +1153,7 @@ void *cu_fs6(void *arg) {
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
     UL_cu_fs6(ru, &timeStamp);
-    DL_cu_fs6(ru, timeStamp);
+    DL_cu_fs6(ru);
   }
 
   return NULL;

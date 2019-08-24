@@ -649,7 +649,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       preamble_shift2 = ((preamble_shift==0) ? 0 : ((preamble_shift<<log2_ifft_size)/N_ZC));
 
       for (i=0; i<NCS2; i++) {
-        lev = (int32_t)prach_ifft[(preamble_shift2+i)];
+	lev = (int32_t)prach_ifft[(preamble_shift2+i)];
 	avg_en += lev;
         levdB = dB_fixed_times10(lev);
 
