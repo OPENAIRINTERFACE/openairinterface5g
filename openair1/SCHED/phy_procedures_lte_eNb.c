@@ -46,6 +46,7 @@
 #include <time.h>
 
 #include "intertask_interface.h"
+void sendFs6Ulharq(int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask);
 
 nfapi_ue_release_request_body_t release_rntis;
 
@@ -768,7 +769,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
                   frame,subframe,
                   pucch_b0b1[0][0],metric[0]);
             uci->stat = metric[0];
-            fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
+            fill_uci_harq_indication(i, eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
           } else { // frame_type == TDD
             LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
                   frame,subframe,i,
@@ -881,7 +882,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
               }
 
               uci->stat = metric[0];
-              fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
+              fill_uci_harq_indication(i, eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
             } else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==2)) { // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
               if (pucch_b0b1[0][0] == 4 ||
                   pucch_b0b1[1][0] == 4) { // there isn't a likely transmission
@@ -917,7 +918,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
               }
 
               uci->stat = max(metric[0],metric[1]);
-              fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+              fill_uci_harq_indication(i, eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
             } //else if ((uci->tdd_bundling == 0) && (res==2))
             else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==3)) { // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
               if (harq_ack[0] == 4 ||
@@ -988,7 +989,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
                 }
 
                 uci->stat = max_metric;
-                fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+                fill_uci_harq_indication(i, eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
               }
             } //else if ((uci->tdd_bundling == 0) && (res==3))
             else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==4)) { // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
@@ -1110,14 +1111,14 @@ uci_procedures(PHY_VARS_eNB *eNB,
               }
 
               uci->stat = max_metric;
-              fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+              fill_uci_harq_indication(i, eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
             } // else if ((uci->tdd_bundling == 0) && (res==4))
             else { // bundling
               harq_ack[0] = pucch_b0b1[0][0];
               harq_ack[1] = pucch_b0b1[0][1];
               uci->stat = metric[0];
               LOG_D(PHY,"bundling: (%d,%d), metric %d\n",harq_ack[0],harq_ack[1],uci->stat);
-              fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
+              fill_uci_harq_indication(i, eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
             }
 
 #ifdef DEBUG_PHY_PROC
@@ -1754,7 +1755,12 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void fill_uci_harq_indication (PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
+void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
+  if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
+    sendFs6Ulharq(UEid, eNB, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask);
+    return;
+  }
+  
   int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST);
 
   //AssertFatal(UE_id>=0,"UE_id doesn't exist rnti:%x\n", uci->rnti);

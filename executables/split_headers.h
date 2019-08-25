@@ -64,6 +64,9 @@ typedef struct {
 enum pckType {
   fs6UlConfig=25,
   fs6DlConfig=26,
+  fs6ULConfigCCH=27,
+  fs6ULsch=28,
+  fs6ULcch=29,
 };
 
 typedef struct {
@@ -111,11 +114,38 @@ typedef struct {
 } fs6_dl_uespec_t;
 
 typedef struct {
+  int16_t UE_id;
+  LTE_eNB_UCI cch_vars;
+} fs6_dl_uespec_ulcch_element_t;
+
+typedef struct {
+  enum pckType type:8;
+  int16_t nb_active_ue;
+} fs6_dl_uespec_ulcch_t;
+
+typedef struct {
+  enum pckType type:8;
   short UE_id;
   short harq_id;
   short segment;
   short segLen;
 } fs6_ul_uespec_t;
+
+typedef struct {
+  int UEid;
+  int frame;
+  int subframe;
+  uint8_t harq_ack[4];
+  uint8_t tdd_mapping_mode;
+  uint16_t tdd_multiplexing_mask;
+  unsigned short n0_subband_power_dB;
+} fs6_ul_uespec_uci_element_t;
+
+typedef struct {
+  enum pckType type:8;
+  int16_t nb_active_ue;
+}  fs6_ul_uespec_uci_t;
+
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result);
 int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t contentType);
@@ -130,7 +160,9 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
 #define hUL(xBuf)  ((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))
 #define hDLUE(xBuf) ((fs6_dl_uespec_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
 #define hTxULUE(xBuf) ((fs6_dl_ulsched_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
+#define hTxULcch(xBuf) ((fs6_dl_uespec_ulcch_t*) (((fs6_dl_t*)(((commonUDP_t *)xBuf)+1))+1))
 #define hULUE(xBuf) ((fs6_ul_uespec_t*) (((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))+1))
+#define hULUEuci(xBuf) ((fs6_ul_uespec_uci_t*) (((fs6_ul_t*)(((commonUDP_t *)xBuf)+1))+1))
 
 static inline size_t alignedSize(uint8_t *ptr) {
   commonUDP_t *header=(commonUDP_t *) ptr;

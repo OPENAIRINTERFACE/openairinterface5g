@@ -46,6 +46,7 @@
 #include "transport_proto.h"
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen);
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   int i,r;
@@ -619,7 +620,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
       // r is the segment id,
       // Kr is the segment length in short 
-      sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t));
+// *3 because LTE redudancy scheme
+      sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t)*3);
       return 0;
     }
       

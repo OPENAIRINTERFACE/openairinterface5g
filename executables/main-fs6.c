@@ -171,6 +171,49 @@ void prach_eNB_process(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   }
 }
 
+void sendFs6Ulharq(int UEid,  PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
+  static int current_fsf=-1;
+  int fsf=frame*16+subframe;
+  uint8_t *bufferZone=eNB->FS6bufferZone;
+  commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
+  // move to the end
+  uint8_t *firstFreeByte=bufferZone;
+  int curBlock=0;
+
+  if ( current_fsf != fsf ) {
+    for (int i=0; i < FirstUDPheader->nbBlocks; i++) {
+      AssertFatal( ((commonUDP_t *) firstFreeByte)->blockID==curBlock,"");
+      firstFreeByte+=alignedSize(firstFreeByte);
+      curBlock++;
+    }
+
+    commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
+    FirstUDPheader->nbBlocks++;
+    newUDPheader->blockID=curBlock;
+    newUDPheader->contentBytes=sizeof(fs6_ul_t)+sizeof(fs6_ul_uespec_uci_t);
+    hULUEuci(newUDPheader)->type=fs6ULcch;
+    hULUEuci(newUDPheader)->nb_active_ue=0;
+  } else
+    for (int i=0; i < FirstUDPheader->nbBlocks-1; i++) {
+      AssertFatal( ((commonUDP_t *) firstFreeByte)->blockID==curBlock,"");
+      firstFreeByte+=alignedSize(firstFreeByte);
+      curBlock++;
+    }
+
+  commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
+  fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(newUDPheader)+1);
+  tmp+=hULUEuci(newUDPheader)->nb_active_ue;
+  tmp->UEid=UEid;
+  tmp->frame=frame;
+  tmp->subframe=subframe;
+  memcpy(tmp->harq_ack, harq_ack, 4);
+  tmp->tdd_mapping_mode=tdd_mapping_mode;
+  tmp->tdd_multiplexing_mask=tdd_multiplexing_mask;
+  tmp->n0_subband_power_dB=eNB->measurements.n0_subband_power_dB[0][0];
+  hULUEuci(newUDPheader)->nb_active_ue++;
+  newUDPheader->contentBytes+=sizeof(fs6_ul_uespec_uci_element_t);
+}
+
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen) {
   uint8_t *bufferZone=eNB->FS6bufferZone;
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
@@ -188,10 +231,12 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   FirstUDPheader->nbBlocks++;
   newUDPheader->blockID=curBlock;
   newUDPheader->contentBytes=sizeof(fs6_ul_t)+sizeof(fs6_ul_uespec_t) + dataLen;
+  hULUE(newUDPheader)->type=fs6ULsch;
   hULUE(newUDPheader)->UE_id=UE_id;
   hULUE(newUDPheader)->harq_id=harq_pid;
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)+1, data, dataLen);
+  hULUE(newUDPheader)->segLen=dataLen;
 }
 
 void pusch_procedures_extract(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
@@ -351,7 +396,7 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
                    &ulsch_harq->Kminus,
                    &ulsch_harq->F);
 
-  for (int r=0; r<ulsch_harq->CcC; r++) {
+  for (int r=0; r<ulsch_harq->C; r++) {
     //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
     // Get Turbo interleaver parameters
     int Kr;
@@ -400,13 +445,13 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
       if (r==0) {
         memcpy(ulsch_harq->bb,
                &ulsch_harq->c[0][(ulsch_harq->F>>3)],
-               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->CcC>1)?3:0));
-        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->CcC>1)?3:0);
+               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
+        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
       } else {
         memcpy(ulsch_harq->bb+offset,
                ulsch_harq->c[r],
-               Kr_bytes - ((ulsch_harq->CcC>1)?3:0));
-        offset += (Kr_bytes- ((ulsch_harq->CcC>1)?3:0));
+               Kr_bytes - ((ulsch_harq->C>1)?3:0));
+        offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
       }
     } else {
       break;
@@ -583,15 +628,32 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
   void *bufPtr=bufferZone;
 
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
-    if ( ((commonUDP_t *)bufPtr)->contentBytes >= sizeof(fs6_ul_t)+sizeof(fs6_ul_uespec_t) ) {
-      LTE_eNB_ULSCH_t *ulsch =eNB->ulsch[hULUE(bufPtr)->UE_id];
-      LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hULUE(bufPtr)->harq_id];
-      memcpy(&ulsch_harq->d[hULUE(bufPtr)->segment][96],
-             hULUE(bufPtr)+1,
-             hULUE(bufPtr)->segLen);
-      bufPtr+=alignedSize(bufPtr);
-      LOG_W(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
+    if ( ((commonUDP_t *)bufPtr)->contentBytes > sizeof(fs6_ul_t) ) {
+      int type=hULUE(bufPtr)->type;
+
+      if ( type == fs6ULsch)  {
+        LTE_eNB_ULSCH_t *ulsch =eNB->ulsch[hULUE(bufPtr)->UE_id];
+        LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hULUE(bufPtr)->harq_id];
+        memcpy(&ulsch_harq->d[hULUE(bufPtr)->segment][96],
+               hULUE(bufPtr)+1,
+               hULUE(bufPtr)->segLen);
+        LOG_W(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
+      } else if ( type == fs6ULcch ) {
+        int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
+        fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
+
+        for (int i=0; i < nb_uci ; i++) {
+          eNB->measurements.n0_subband_power_dB[0][0]=tmp->n0_subband_power_dB;
+          fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
+                                    tmp->frame, tmp->subframe, tmp->harq_ack,
+                                    tmp->tdd_mapping_mode, tmp->tdd_multiplexing_mask);
+          tmp++;
+        }
+      } else
+        LOG_E(PHY, "FS6 ul packet type impossible\n" );
     }
+
+    bufPtr+=alignedSize(bufPtr);
   }
 }
 
@@ -601,30 +663,7 @@ void phy_procedures_eNB_uespec_RX_process(uint8_t *bufferZone, int nbBlocks,PHY_
   pusch_procedures_process(bufferZone, nbBlocks, eNB);
 }
 
-void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  int subframe=proc->subframe_tx;
-  int frame=proc->frame_tx;
-  //LTE_UL_eNB_HARQ_t *ulsch_harq;
-  eNB->pdcch_vars[subframe&1].num_pdcch_symbols=hDL(bufferZone)->num_pdcch_symbols;
-  eNB->pdcch_vars[subframe&1].num_dci=hDL(bufferZone)->num_dci;
-  uint8_t num_mdci = eNB->mpdcch_vars[subframe&1].num_dci = hDL(bufferZone)->num_mdci;
-  eNB->pbch_configured=true;
-  memcpy(eNB->pbch_pdu,hDL(bufferZone)->pbch_pdu, 4);
-
-  // Remove all scheduled DL, we will populate from the CU sending
-  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
-
-    if ( dlsch0 && dlsch0->rnti>0 ) {
-#ifdef PHY_TX_THREAD
-      dlsch0->active[subframe] = 0;
-#else
-      dlsch0->active = 0;
-#endif
-    }
-  }
-
+void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, int subframe) {
   void *bufPtr=bufferZone;
 
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
@@ -687,18 +726,49 @@ void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_e
           ulsch_harq->first_rb=hTxULUE(bufPtr)->first_rb;
           ulsch_harq->V_UL_DAI=hTxULUE(bufPtr)->V_UL_DAI;
           ulsch_harq->Qm=hTxULUE(bufPtr)->Qm;
-          ulsch_harq->CcC=hTxULUE(bufPtr)->CcC;
           ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
           ulsch_harq->TBS=hTxULUE(bufPtr)->TBS;
           ulsch_harq->Nsymb_pusch=hTxULUE(bufPtr)->Nsymb_pusch;
           LOG_W(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
         }
-      } else
-        LOG_E(PHY, "Impossible block in fs6 DL\n");
+      } else if ( type == fs6ULConfigCCH ) {
+        fs6_dl_uespec_ulcch_element_t *tmp=(fs6_dl_uespec_ulcch_element_t *)(hTxULcch(bufPtr)+1);
 
-      bufPtr+=alignedSize(bufPtr);
+        for (int i=0; i< hTxULcch(bufPtr)->nb_active_ue; i++ )
+          memcpy(&eNB->uci_vars[tmp->UE_id], &tmp->cch_vars, sizeof(tmp->cch_vars));
+      }  else
+        LOG_E(PHY, "Impossible block in fs6 DL\n");
+    }
+
+    bufPtr+=alignedSize(bufPtr);
+  }
+}
+
+void phy_procedures_eNB_TX_process(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas ) {
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+  int subframe=proc->subframe_tx;
+  int frame=proc->frame_tx;
+  //LTE_UL_eNB_HARQ_t *ulsch_harq;
+  eNB->pdcch_vars[subframe&1].num_pdcch_symbols=hDL(bufferZone)->num_pdcch_symbols;
+  eNB->pdcch_vars[subframe&1].num_dci=hDL(bufferZone)->num_dci;
+  uint8_t num_mdci = eNB->mpdcch_vars[subframe&1].num_dci = hDL(bufferZone)->num_mdci;
+  eNB->pbch_configured=true;
+  memcpy(eNB->pbch_pdu,hDL(bufferZone)->pbch_pdu, 4);
+
+  // Remove all scheduled DL, we will populate from the CU sending
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
+
+    if ( dlsch0 && dlsch0->rnti>0 ) {
+#ifdef PHY_TX_THREAD
+      dlsch0->active[subframe] = 0;
+#else
+      dlsch0->active = 0;
+#endif
     }
   }
+
+  rcvFs6DL(bufferZone, nbBlocks, eNB, frame, subframe);
 
   if (do_meas==1) {
     start_meas(&eNB->phy_proc_tx);
@@ -831,13 +901,11 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   cpyToDuHarq(first_rb);
   cpyToDuHarq(V_UL_DAI);
   cpyToDuHarq(Qm);
-  cpyToDuHarq(CcC);
   cpyToDuHarq(srs_active);
   cpyToDuHarq(TBS);
   cpyToDuHarq(Nsymb_pusch);
   LOG_W(PHY,"Added request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
 }
-
 void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end
@@ -887,6 +955,50 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
   memcpy(hDLUE(newUDPheader)+1, harqData->e, UEdataLen);
   //for (int i=0; i < UEdataLen; i++)
   //LOG_D(PHY,"buffer e:%hhx\n", ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
+}
+
+void appendFs6DLUEcch(uint8_t *bufferZone, PHY_VARS_eNB *eNB, int frame, int subframe) {
+  commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
+  // move to the end
+  uint8_t *firstFreeByte=bufferZone;
+  int curBlock=0;
+
+  for (int i=0; i < FirstUDPheader->nbBlocks; i++) {
+    AssertFatal( ((commonUDP_t *) firstFreeByte)->blockID==curBlock,"");
+    firstFreeByte+=alignedSize(firstFreeByte);
+    curBlock++;
+  }
+
+  commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
+  bool first_UE=true;
+
+  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
+    LTE_eNB_UCI *uci = &(eNB->uci_vars[i]);
+
+    if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
+      LOG_D(PHY,"Frame %d, subframe %d: adding uci procedures (type %d) for %d \n",
+            frame,
+            subframe,
+            uci->type,
+            i);
+
+      if ( first_UE ) {
+        FirstUDPheader->nbBlocks++;
+        newUDPheader->blockID=curBlock;
+        newUDPheader->contentBytes=sizeof(fs6_dl_t)+sizeof(fs6_dl_uespec_ulcch_t);
+        hTxULcch(newUDPheader)->type=fs6ULConfigCCH;
+        hTxULcch(newUDPheader)->nb_active_ue=0;
+        first_UE=false;
+      }
+
+      fs6_dl_uespec_ulcch_element_t *tmp=(fs6_dl_uespec_ulcch_element_t *)(hTxULcch(newUDPheader)+1);
+      tmp+=hTxULcch(newUDPheader)->nb_active_ue;
+      tmp->UE_id=i;
+      memcpy(&tmp->cch_vars,uci, sizeof(tmp->cch_vars));
+      hTxULcch(newUDPheader)->nb_active_ue++;
+      newUDPheader->contentBytes+=sizeof(fs6_dl_uespec_ulcch_element_t);
+    }
+  }
 }
 
 void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int do_meas, uint8_t *buf, int bufSize) {
@@ -947,6 +1059,11 @@ void phy_procedures_eNB_TX_extract(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     }
   }
 
+  appendFs6DLUEcch(bufferZone,
+                   eNB,
+                   frame,
+                   subframe
+                  );
   uint8_t num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   uint8_t num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
   uint8_t num_mdci          = eNB->mpdcch_vars[subframe&1].num_dci;

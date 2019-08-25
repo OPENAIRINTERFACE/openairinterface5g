@@ -139,9 +139,9 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
       *currentHeader=*UDPheader;
       currentHeader->blockID=blockId;
       memcpy(commonUDPdata((void *)currentHeader), commonUDPdata(bufferZone), secondHeaderSize);
-      blockId++;
     }
 
+    blockId++;
     int sz=alignedSize(bufferZone);
     // Let's use the first address returned by getaddrinfo()
     int ret=sendto(sock->sockHandler, bufferZone, sz, 0,
@@ -155,6 +155,7 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
     nbBlocks--;
   } while (nbBlocks);
 
-  LOG_D(HW,"Sent: TS: %lu\n", UDPheader->timestamp);
+  LOG_D(HW,"Sent: TS: %lu, nb blocks %d, size of first block: %lu \n",
+        UDPheader->timestamp, UDPheader->nbBlocks, alignedSize((void *)UDPheader));
   return 0;
 }
