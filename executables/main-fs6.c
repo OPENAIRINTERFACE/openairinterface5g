@@ -171,7 +171,7 @@ void prach_eNB_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   }
 }
 
-void sendFs6Ulharq(int UEid,  PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,  int32_t stat) {
   static int current_fsf=-1;
   int fsf=frame*16+subframe;
   uint8_t *bufferZone=eNB->FS6bufferZone;
@@ -200,16 +200,22 @@ void sendFs6Ulharq(int UEid,  PHY_VARS_eNB *eNB, int frame, int subframe, uint8_
       curBlock++;
     }
 
+  LOG_D(PHY,"FS6 du, block: %d: adding ul harq/sr: %d, rnti: %d, ueid: %d\n",
+	curBlock, type, rnti, UEid);
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(newUDPheader)+1);
   tmp+=hULUEuci(newUDPheader)->nb_active_ue;
+  tmp->type=type;
   tmp->UEid=UEid;
   tmp->frame=frame;
   tmp->subframe=subframe;
-  memcpy(tmp->harq_ack, harq_ack, 4);
+  if (harq_ack != NULL)
+    memcpy(tmp->harq_ack, harq_ack, 4);
   tmp->tdd_mapping_mode=tdd_mapping_mode;
   tmp->tdd_multiplexing_mask=tdd_multiplexing_mask;
   tmp->n0_subband_power_dB=eNB->measurements.n0_subband_power_dB[0][0];
+  tmp->rnti=rnti;
+  tmp->stat=stat;
   hULUEuci(newUDPheader)->nb_active_ue++;
   newUDPheader->contentBytes+=sizeof(fs6_ul_uespec_uci_element_t);
 }
@@ -636,12 +642,19 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
-
-        for (int i=0; i < nb_uci ; i++) {
+        for (int j=0; j < nb_uci ; j++) {
+	  LOG_D(PHY,"FS6 cu, block: %d/%d: received ul harq/sr: %d, rnti: %d, ueid: %d\n",
+		i, j, type, tmp->rnti, tmp->UEid);
           eNB->measurements.n0_subband_power_dB[0][0]=tmp->n0_subband_power_dB;
-          fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
-                                    tmp->frame, tmp->subframe, tmp->harq_ack,
-                                    tmp->tdd_mapping_mode, tmp->tdd_multiplexing_mask);
+	  
+	  if ( tmp->type == fs6ULindicationHarq )
+	    fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
+				      tmp->frame, tmp->subframe, tmp->harq_ack,
+				      tmp->tdd_mapping_mode, tmp->tdd_multiplexing_mask);
+	  else if ( tmp->type == fs6ULindicationSr )
+	    fill_sr_indication(tmp->UEid, eNB,tmp->rnti,tmp->frame,tmp->subframe,tmp->stat);
+	  else
+	    LOG_E(PHY, "Split FS6: impossible UL harq type\n");
           tmp++;
         }
       } else
@@ -655,6 +668,13 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
 void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB) {
   // The configuration arrived in Dl, so we can extract the UL data
   recvFs6Ul(bufferZone, nbBlocks, eNB);
+  
+  // dirty memory allocation in OAI...
+  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
+    if ( eNB->uci_vars[i].frame == eNB->proc.frame_rx &&
+	 eNB->uci_vars[i].subframe == eNB->proc.subframe_rx )
+      eNB->uci_vars[i].active=0;
+
   pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB);
 }
 
@@ -1025,13 +1045,8 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
     LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
 
     if (ulsch->rnti>0) {
-      LOG_I(PHY,"check in UL scheduled harq %d: rnti %d, tx frame %d/%d, ulsch: %d, %d/%d (handled: %d)\n",
+      LOG_D(PHY,"check in UL scheduled harq %d: rnti %d, tx frame %d/%d, ulsch: %d, %d/%d (handled: %d)\n",
             harq_pid, ulsch->rnti, frame, subframe, ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
-
-      for (int k=0; k<8; k++)
-        if ( ulsch->harq_processes[k]->status == ACTIVE)
-          LOG_I(PHY,"check in UL scheduledi (harq_pid %d): rnti %d, tx frame %d/%d, ulsch: %d, %d/%d (handled: %d)\n", k,
-                ulsch->rnti, frame, subframe, ulsch->harq_processes[k]->status,  ulsch->harq_processes[k]->frame, ulsch->harq_processes[k]->subframe,  ulsch->harq_processes[k]->handled);
     }
 
     for (int k=0; k<8; k++) {

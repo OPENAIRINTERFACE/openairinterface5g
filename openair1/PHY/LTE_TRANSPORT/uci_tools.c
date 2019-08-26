@@ -49,7 +49,9 @@ int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_
     else if ((eNB->uci_vars[i].active == 0) && (first_free_index==-1)) first_free_index=i;
   }
   if (type == SEARCH_EXIST) return(-1);
-  else return(first_free_index);
+  if (first_free_index==-1)
+	  LOG_E(MAC,"UCI table is full\n");
+  return(first_free_index);
 }
 
 

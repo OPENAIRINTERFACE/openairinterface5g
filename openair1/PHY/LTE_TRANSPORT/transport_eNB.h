@@ -274,7 +274,7 @@ typedef struct {
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
-  uint32_t RTCC[MAX_NUM_ULSCH_SEGMENTS];
+  uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
   /// SRS active flag

@@ -44,9 +44,10 @@
 //#define DEBUG_ULSCH_DECODING
 #include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
+#include <executables/split_headers.h>
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen);
+
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   int i,r;
@@ -275,7 +276,7 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
 
     Kr_bytes = Kr>>3;
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
-    ulsch_harq->RTCC[r] = generate_dummy_w(4+(Kr_bytes*8),
+    ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
@@ -287,7 +288,7 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
            ulsch_harq->Nl);
 #endif
 
-    if (lte_rate_matching_turbo_rx(ulsch_harq->RTCC[r],
+    if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
@@ -449,7 +450,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
     Kr_bytes = Kr>>3;
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
-    ulsch_harq->RTCC[r] = generate_dummy_w(4+(Kr_bytes*8),
+    ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
@@ -462,7 +463,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
 
-    if (lte_rate_matching_turbo_rx(ulsch_harq->RTCC[r],
+    if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
@@ -572,7 +573,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 
     Kr_bytes = Kr>>3;
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
-    ulsch_harq->RTCC[r] = generate_dummy_w(4+(Kr_bytes*8),
+    ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
@@ -585,7 +586,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
 
-    if (lte_rate_matching_turbo_rx(ulsch_harq->RTCC[r],
+    if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
@@ -620,8 +621,24 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
       // r is the segment id,
       // Kr is the segment length in short 
-// *3 because LTE redudancy scheme
+      // *3 because LTE redudancy scheme
       sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t)*3);
+      LOG_D(PHY, "Cu should decode in %d iter\n",tc(&ulsch_harq->d[r][96],
+             NULL,
+             ulsch_harq->c[r],
+             NULL,
+             Kr,
+             ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
+             crc_type,
+             (r==0) ? ulsch_harq->F : 0,
+             &eNB->ulsch_tc_init_stats,
+             &eNB->ulsch_tc_alpha_stats,
+             &eNB->ulsch_tc_beta_stats,
+             &eNB->ulsch_tc_gamma_stats,
+             &eNB->ulsch_tc_ext_stats,
+             &eNB->ulsch_tc_intl1_stats,
+             &eNB->ulsch_tc_intl2_stats));
+
       return 0;
     }
       
@@ -642,6 +659,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
              &eNB->ulsch_tc_intl1_stats,
              &eNB->ulsch_tc_intl2_stats);
     stop_meas(&eNB->ulsch_turbo_decoding_stats);
+    LOG_D(PHY,"turbo decode in %d iter\n",ret);
 
     // Reassembly of Transport block here
 

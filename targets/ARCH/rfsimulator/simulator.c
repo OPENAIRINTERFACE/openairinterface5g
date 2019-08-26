@@ -487,7 +487,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
-    if (!flushInput(t, 10)) {
+    if (!flushInput(t, 100)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 

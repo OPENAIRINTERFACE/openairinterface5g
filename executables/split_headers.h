@@ -67,6 +67,8 @@ enum pckType {
   fs6ULConfigCCH=27,
   fs6ULsch=28,
   fs6ULcch=29,
+  fs6ULindicationHarq=40,
+  fs6ULindicationSr=41,
 };
 
 typedef struct {
@@ -132,6 +134,7 @@ typedef struct {
 } fs6_ul_uespec_t;
 
 typedef struct {
+  enum pckType type:8;
   int UEid;
   int frame;
   int subframe;
@@ -139,6 +142,8 @@ typedef struct {
   uint8_t tdd_mapping_mode;
   uint16_t tdd_multiplexing_mask;
   unsigned short n0_subband_power_dB;
+  uint16_t rnti;
+  int32_t stat;
 } fs6_ul_uespec_uci_element_t;
 
 typedef struct {
@@ -174,6 +179,8 @@ static inline void *commonUDPdata(uint8_t *ptr) {
 }
 
 void setAllfromTS(uint64_t TS);
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,  int32_t stat);
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen);
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);

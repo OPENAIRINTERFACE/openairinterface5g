@@ -46,7 +46,7 @@
 #include <time.h>
 
 #include "intertask_interface.h"
-void sendFs6Ulharq(int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask);
+#include <executables/split_headers.h> 
 
 nfapi_ue_release_request_body_t release_rntis;
 
@@ -590,7 +590,11 @@ void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   }
 }
 
-void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,uint32_t stat) {
+void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,uint32_t stat) {
+  if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
+    sendFs6Ulharq(fs6ULindicationSr, UEid, eNB, frame, subframe, NULL,0,0, rnti, stat);
+    return;
+  }
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_sr_indication_t       *sr_ind =         &eNB->UL_INFO.sr_ind;
   nfapi_sr_indication_body_t  *sr_ind_body =    &sr_ind->sr_indication_body;
@@ -706,7 +710,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
 
           if (uci->type == SR) {
             if (SR_payload == 1) {
-              fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+              fill_sr_indication(i, eNB,uci->rnti,frame,subframe,metric_SR);
               break;
             } else {
               break;
@@ -742,7 +746,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
 
             /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
             if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
-            else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+            else if (SR_payload == 1) fill_sr_indication(i, eNB,uci->rnti,frame,subframe,metric_SR);
 
             if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
               /* when transmitting ACK/NACK on SR PUCCH resource index, SR payload is always 1 */
@@ -793,7 +797,7 @@ uci_procedures(PHY_VARS_eNB *eNB,
                                 );
 
             if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
-            else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+            else if (SR_payload == 1) fill_sr_indication(i, eNB,uci->rnti,frame,subframe,metric_SR);
 
             if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
               SR_payload = 1;
@@ -1757,7 +1761,7 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
 
 void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
   if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
-    sendFs6Ulharq(UEid, eNB, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask);
+    sendFs6Ulharq(fs6ULindicationHarq, UEid, eNB, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask, 0, 0);
     return;
   }
   
