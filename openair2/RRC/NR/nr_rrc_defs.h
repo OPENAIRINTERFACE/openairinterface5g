@@ -385,7 +385,9 @@ typedef struct {
   int ssb_SubcarrierOffset;                  
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
-
+  int num_UEs;
+  NR_RRCReconfiguration_t                   *reconfig[MAX_NR_RRC_UE_CONTEXTS];
+  NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
 
