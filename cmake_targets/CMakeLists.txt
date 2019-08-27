@@ -1059,6 +1059,10 @@ set(SCHED_SRC
 add_library(SCHED_LIB ${SCHED_SRC})
 add_dependencies(SCHED_LIB rrc_flag)
 
+add_library(SCHED_LIB_FS6 ${SCHED_SRC})
+target_compile_definitions(SCHED_LIB_FS6 PRIVATE FS6=1)
+add_dependencies(SCHED_LIB_FS6 rrc_flag)
+
 set(SCHED_SRC_RU
   ${OPENAIR1_DIR}/SCHED/ru_procedures.c
   ${OPENAIR1_DIR}/SCHED/prach_procedures.c
@@ -1290,6 +1294,9 @@ endif ()
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_dependencies(PHY_COMMON rrc_flag)
 add_library(PHY ${PHY_SRC})
+add_library(PHY_FS6 ${PHY_SRC})
+target_compile_definitions(PHY_FS6 PRIVATE FS6=1)
+
 add_dependencies(PHY rrc_flag)
 add_library(PHY_UE ${PHY_SRC_UE})
 add_dependencies(PHY_UE rrc_flag)
@@ -2116,11 +2123,12 @@ add_executable(ocp-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
+target_compile_definitions(ocp-softmodem PRIVATE FS6=1)
 add_dependencies(ocp-softmodem rrc_flag s1ap_flag x2_flag)
 
 target_link_libraries (ocp-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
+  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB_FS6 SCHED_RU_LIB PHY_COMMON PHY_FS6 PHY_RU LFDS L2
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)

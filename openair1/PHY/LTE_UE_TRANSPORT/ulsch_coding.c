@@ -353,6 +353,11 @@ uint32_t ulsch_encoding(uint8_t *a,
         	(r==0) ? ulsch->harq_processes[harq_pid]->F : 0
                );
         stop_meas(te_stats);
+/*
+	for (int i=0; i< Kr ; i++ )
+		printf("%hx", ulsch->harq_processes[harq_pid]->d[r][96+i]);
+	printf ("\n");
+*/
 #ifdef DEBUG_ULSCH_CODING
 
         if (r==0)

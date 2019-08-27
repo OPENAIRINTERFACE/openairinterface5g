@@ -158,7 +158,7 @@ typedef struct {
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
-  //uint8_t subframe_tx[10];
+  uint8_t subframe_tx[10];
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids

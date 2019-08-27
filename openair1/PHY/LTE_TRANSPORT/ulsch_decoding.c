@@ -617,13 +617,13 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
-
+#ifdef FS6
     if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
       // r is the segment id,
       // Kr is the segment length in short 
       // *3 because LTE redudancy scheme
       sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t)*3);
-      LOG_D(PHY, "Cu should decode in %d iter\n",tc(&ulsch_harq->d[r][96],
+      int iter=tc(&ulsch_harq->d[r][96],
              NULL,
              ulsch_harq->c[r],
              NULL,
@@ -637,11 +637,18 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
              &eNB->ulsch_tc_gamma_stats,
              &eNB->ulsch_tc_ext_stats,
              &eNB->ulsch_tc_intl1_stats,
-             &eNB->ulsch_tc_intl2_stats));
+             &eNB->ulsch_tc_intl2_stats);
+      LOG_D(PHY, "Cu should decode in %d iter\n",iter);
+      if ( iter == 5 ) { 
+	      for (int i=0; i < Kr; i++ )
+		      printf("%hx:", ulsch_harq->d[r][96+i]);
+	      printf("\n");
+      }
 
       return 0;
     }
-      
+
+    #endif
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     ret = tc(&ulsch_harq->d[r][96],
              NULL,
@@ -788,7 +795,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   Q_m = ulsch_harq->Qm;
   G = nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
   //#ifdef DEBUG_ULSCH_DECODING
-  LOG_D(PHY,"[PUSCH %d] Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d, Q_m %d Nsymb_pusch %d nb_rb %d\n",
+  LOG_D(PHY,"[PUSCH harq %d] Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): TBS %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d, Q_m %d Nsymb_pusch %d nb_rb %d\n",
         harq_pid,
         proc->frame_rx,subframe,
         frame_parms->Nid_cell,ulsch->rnti,x2,
