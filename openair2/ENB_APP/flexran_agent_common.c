@@ -29,6 +29,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_common_internal.h"
@@ -424,32 +427,71 @@ long timer_end(struct timespec start_time) {
 int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexControlDelegation *control_delegation_msg = input->control_delegation_msg;
-  //  struct timespec vartime = timer_start();
-  //Write the payload lib into a file in the cache and load the lib
-  char lib_name[120];
-  char target[512];
-  snprintf(lib_name, sizeof(lib_name), "/%s.so", control_delegation_msg->name);
-  strcpy(target, RC.flexran[mod_id]->cache_name);
-  strcat(target, lib_name);
-  FILE *f;
-  f = fopen(target, "wb");
+  *msg = NULL;
 
-  if (f) {
-    fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
-    fclose(f);
-  } else {
-    LOG_W(FLEXRAN_AGENT, "[%d] can not write control delegation data to %s\n",
-          mod_id, target);
+  char target[512];
+  int len = snprintf(target, sizeof(target), "%s/libflex.%s.so",
+                     RC.flexran[mod_id]->cache_name,
+                     control_delegation_msg->name);
+  if (len >= sizeof(target)) {
+    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot write file\n");
+    return 0;
   }
 
-  //  long time_elapsed_nanos = timer_end(vartime);
-  *msg = NULL;
+  /* use low-level API: check whether exists while creating so we can abort if
+   * it exists to not overwrite anything */
+  int fd = open(target, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+  if (fd >= 0) {
+    ssize_t l = write(fd,
+                      control_delegation_msg->payload.data,
+                      control_delegation_msg->payload.len);
+    close(fd);
+    if (l < control_delegation_msg->payload.len) {
+      LOG_E(FLEXRAN_AGENT,
+            "could not write complete control delegation to %s: only %ld out of "
+            "%ld bytes\n",
+            target,
+            l,
+            control_delegation_msg->payload.len);
+      return 0;
+    } else if (l < 0) {
+      LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+            target, strerror(errno));
+      return 0;
+    }
+    LOG_I(FLEXRAN_AGENT, "wrote shared object %s\n", target);
+  } else {
+    if (errno == EEXIST) {
+      LOG_I(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
+    } else {
+      LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+            target, strerror(errno));
+      return 0;
+    }
+  }
+
   return 0;
 }
 
 int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg) {
   /*TODO: Dealocate memory for a dynamically allocated control delegation message*/
   return 0;
+}
+
+void *flexran_agent_load_delegated_code(mid_t mod_id, const char *name) {
+  char target[512];
+  int len = snprintf(target, sizeof(target), "%s/libflex.%s.so",
+                     RC.flexran[mod_id]->cache_name, name);
+  if (len >= sizeof(target)) {
+    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot read object\n");
+    return 0;
+  }
+
+  LOG_I(FLEXRAN_AGENT, "Opening pushed code: %s\n", target);
+  void *lib = dlopen(target, RTLD_NOW);
+  if (lib == NULL)
+    LOG_E(FLEXRAN_AGENT, "Could not load library: %s\n", dlerror());
+  return lib;
 }
 
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {

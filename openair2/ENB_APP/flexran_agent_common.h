@@ -131,6 +131,7 @@ int flexran_agent_destroy_lc_config_request(Protocol__FlexranMessage *msg);
 /* Control delegation message constructor and destructor */
 int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg);
+void *flexran_agent_load_delegated_code(mid_t mod_id, const char *name);
 
 /* Policy reconfiguration message constructor and destructor */
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
