@@ -3374,6 +3374,11 @@ class SSHConnection():
 			self.ShowTestID()
 			self.eNB_instance = '0'
 			self.TerminateeNB()
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.testCase_id = 'AUTO-KILL-flexran-ctl'
+			self.desc = 'Automatic Termination of FlexRan CTL'
+			self.ShowTestID()
+			self.TerminateFlexranCtrl()
 		self.prematureExit = True
 
 	def IdleSleep(self):
