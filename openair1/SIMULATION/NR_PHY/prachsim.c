@@ -530,7 +530,7 @@ int main(int argc, char **argv)
   // multipath channel
   dump_nr_prach_config(&gNB->frame_parms,subframe);
 
-  for (i=0; i<2*frame_parms->samples_per_slot<<1; i++) {
+  for (i=0; i<frame_parms->samples_per_slot<<1; i++) {
     for (aa=0; aa<1; aa++) {
       if (awgn_flag == 0) {
         s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)]);
@@ -573,7 +573,7 @@ int main(int argc, char **argv)
 
         if (awgn_flag == 0) {
           multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
-                               2*frame_parms->samples_per_slot<<1,0);
+                               frame_parms->samples_per_slot<<1,0);
         }
 
         if (n_frames==1) {
