@@ -426,7 +426,7 @@ void multipath_tv_channel(channel_desc_t *desc,
                           double **tx_sig_im,
                           double **rx_sig_re,
                           double **rx_sig_im,
-                          uint16_t length,
+                          uint32_t length,
                           uint8_t keep_channel);
 
 /**@} */
