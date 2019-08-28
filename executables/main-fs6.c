@@ -1280,7 +1280,8 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
 
   setAllfromTS(hUDP(bufferZone)->timestamp);
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  prach_eNB_fromsplit(bufferZone, sizeof(bufferZone), eNB);
+  if (is_prach_subframe(&eNB->frame_parms, eNB->proc.frame_prach,eNB->proc.subframe_prach)>0)
+    prach_eNB_fromsplit(bufferZone, sizeof(bufferZone), eNB);
   release_UE_in_freeList(eNB->Mod_id);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -1295,7 +1296,12 @@ void *cu_fs6(void *arg) {
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
   wait_sync("ru_thread");
-  AssertFatal(createUDPsock(NULL, CU_PORT, CU_IP, DU_PORT, &sockFS6), "");
+  char * remoteIP;
+  if ( getenv("FS6_REMOTE_IP") )
+    remoteIP=getenv("FS6_REMOTE_IP");
+  else
+    remoteIP=DU_IP;
+  AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
   uint64_t timeStamp=0;
 
   while(1) {
@@ -1315,7 +1321,12 @@ void *du_fs6(void *arg) {
   phy_init_RU(ru);
   openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   wait_sync("ru_thread");
-  AssertFatal(createUDPsock(NULL, DU_PORT, DU_IP, CU_PORT, &sockFS6),"");
+    char * remoteIP;
+  if ( getenv("FS6_REMOTE_IP") )
+    remoteIP=getenv("FS6_REMOTE_IP");
+  else
+    remoteIP=CU_IP;
+  AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
 
   if (ru->start_rf) {
     if (ru->start_rf(ru) != 0)
