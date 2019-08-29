@@ -108,8 +108,8 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern int transmission_mode;
 
-uint16_t sl_ahead=4;
-uint16_t sf_ahead=4;
+uint16_t sl_ahead=6;
+uint16_t sf_ahead=6;
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
