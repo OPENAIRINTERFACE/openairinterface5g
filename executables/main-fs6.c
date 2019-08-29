@@ -171,7 +171,8 @@ void prach_eNB_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   }
 }
 
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,  int32_t stat) {
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,
+                   int32_t stat) {
   static int current_fsf=-1;
   int fsf=frame*16+subframe;
   uint8_t *bufferZone=eNB->FS6bufferZone;
@@ -201,7 +202,7 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, in
     }
 
   LOG_D(PHY,"FS6 du, block: %d: adding ul harq/sr: %d, rnti: %d, ueid: %d\n",
-	curBlock, type, rnti, UEid);
+        curBlock, type, rnti, UEid);
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(newUDPheader)+1);
   tmp+=hULUEuci(newUDPheader)->nb_active_ue;
@@ -209,8 +210,10 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, in
   tmp->UEid=UEid;
   tmp->frame=frame;
   tmp->subframe=subframe;
+
   if (harq_ack != NULL)
     memcpy(tmp->harq_ack, harq_ack, 4);
+
   tmp->tdd_mapping_mode=tdd_mapping_mode;
   tmp->tdd_multiplexing_mask=tdd_multiplexing_mask;
   tmp->n0_subband_power_dB=eNB->measurements.n0_subband_power_dB[0][0];
@@ -240,6 +243,9 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->type=fs6ULsch;
   hULUE(newUDPheader)->UE_id=UE_id;
   hULUE(newUDPheader)->harq_id=harq_pid;
+  memcpy(hULUE(newUDPheader)->ulsch_power,
+         eNB->pusch_vars[UE_id]->ulsch_power,
+         sizeof(int)*2);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)+1, data, dataLen);
   hULUE(newUDPheader)->segLen=dataLen;
@@ -444,12 +450,12 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
       Kr_bytes = Kr>>3;
 
       if (r==0) {
-        memcpy(ulsch_harq->bb,
+        memcpy(ulsch_harq->b,
                &ulsch_harq->c[0][(ulsch_harq->F>>3)],
                Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
         offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
       } else {
-        memcpy(ulsch_harq->bb+offset,
+        memcpy(ulsch_harq->b+offset,
                ulsch_harq->c[r],
                Kr_bytes - ((ulsch_harq->C>1)?3:0));
         offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
@@ -638,23 +644,28 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
         memcpy(&ulsch_harq->d[hULUE(bufPtr)->segment][96],
                hULUE(bufPtr)+1,
                hULUE(bufPtr)->segLen);
+        memcpy(eNB->pusch_vars[hULUE(bufPtr)->UE_id]->ulsch_power,
+               hULUE(bufPtr)->ulsch_power,
+               sizeof(int)*2);
         LOG_W(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
+
         for (int j=0; j < nb_uci ; j++) {
-	  LOG_D(PHY,"FS6 cu, block: %d/%d: received ul harq/sr: %d, rnti: %d, ueid: %d\n",
-		i, j, type, tmp->rnti, tmp->UEid);
+          LOG_D(PHY,"FS6 cu, block: %d/%d: received ul harq/sr: %d, rnti: %d, ueid: %d\n",
+                i, j, type, tmp->rnti, tmp->UEid);
           eNB->measurements.n0_subband_power_dB[0][0]=tmp->n0_subband_power_dB;
-	  
-	  if ( tmp->type == fs6ULindicationHarq )
-	    fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
-				      tmp->frame, tmp->subframe, tmp->harq_ack,
-				      tmp->tdd_mapping_mode, tmp->tdd_multiplexing_mask);
-	  else if ( tmp->type == fs6ULindicationSr )
-	    fill_sr_indication(tmp->UEid, eNB,tmp->rnti,tmp->frame,tmp->subframe,tmp->stat);
-	  else
-	    LOG_E(PHY, "Split FS6: impossible UL harq type\n");
+
+          if ( tmp->type == fs6ULindicationHarq )
+            fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
+                                      tmp->frame, tmp->subframe, tmp->harq_ack,
+                                      tmp->tdd_mapping_mode, tmp->tdd_multiplexing_mask);
+          else if ( tmp->type == fs6ULindicationSr )
+            fill_sr_indication(tmp->UEid, eNB,tmp->rnti,tmp->frame,tmp->subframe,tmp->stat);
+          else
+            LOG_E(PHY, "Split FS6: impossible UL harq type\n");
+
           tmp++;
         }
       } else
@@ -668,11 +679,11 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
 void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB) {
   // The configuration arrived in Dl, so we can extract the UL data
   recvFs6Ul(bufferZone, nbBlocks, eNB);
-  
+
   // dirty memory allocation in OAI...
   for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
     if ( eNB->uci_vars[i].frame == eNB->proc.frame_rx &&
-	 eNB->uci_vars[i].subframe == eNB->proc.subframe_rx )
+         eNB->uci_vars[i].subframe == eNB->proc.subframe_rx )
       eNB->uci_vars[i].active=0;
 
   pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB);
@@ -739,6 +750,10 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
           ulsch_harq->frame = frame;
           ulsch_harq->subframe = subframe;
           ulsch_harq->first_rb=hTxULUE(bufPtr)->first_rb;
+          ulsch_harq->O_RI=hTxULUE(bufPtr)->O_RI;
+          ulsch_harq->Or1=hTxULUE(bufPtr)->Or1;
+          ulsch_harq->Msc_initial=hTxULUE(bufPtr)->Msc_initial;
+          ulsch_harq->Nsymb_initial=hTxULUE(bufPtr)->Nsymb_initial;
           ulsch_harq->V_UL_DAI=hTxULUE(bufPtr)->V_UL_DAI;
           ulsch_harq->Qm=hTxULUE(bufPtr)->Qm;
           ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
@@ -913,6 +928,10 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   memcpy(hTxULUE(newUDPheader)->cba_rnti,ulsch->cba_rnti,sizeof(ulsch->cba_rnti));//NUM_MAX_CBA_GROUP];
   cpyToDu(rnti);
   cpyToDuHarq(nb_rb);
+  cpyToDuHarq(Msc_initial);
+  cpyToDuHarq(Nsymb_initial);
+  cpyToDuHarq(O_RI);
+  cpyToDuHarq(Or1);
   cpyToDuHarq(first_rb);
   cpyToDuHarq(V_UL_DAI);
   cpyToDuHarq(Qm);
@@ -1280,8 +1299,10 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
 
   setAllfromTS(hUDP(bufferZone)->timestamp);
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
+
   if (is_prach_subframe(&eNB->frame_parms, eNB->proc.frame_prach,eNB->proc.subframe_prach)>0)
     prach_eNB_fromsplit(bufferZone, sizeof(bufferZone), eNB);
+
   release_UE_in_freeList(eNB->Mod_id);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
@@ -1296,11 +1317,13 @@ void *cu_fs6(void *arg) {
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
   wait_sync("ru_thread");
-  char * remoteIP;
+  char *remoteIP;
+
   if ( getenv("FS6_REMOTE_IP") )
     remoteIP=getenv("FS6_REMOTE_IP");
   else
     remoteIP=DU_IP;
+
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
   uint64_t timeStamp=0;
 
@@ -1321,11 +1344,13 @@ void *du_fs6(void *arg) {
   phy_init_RU(ru);
   openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   wait_sync("ru_thread");
-    char * remoteIP;
+  char *remoteIP;
+
   if ( getenv("FS6_REMOTE_IP") )
     remoteIP=getenv("FS6_REMOTE_IP");
   else
     remoteIP=CU_IP;
+
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
 
   if (ru->start_rf) {

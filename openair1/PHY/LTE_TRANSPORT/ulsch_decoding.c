@@ -55,9 +55,9 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   if (ulsch) {
     for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {
-        if (ulsch->harq_processes[i]->bb) {
-          free16(ulsch->harq_processes[i]->bb,MAX_ULSCH_PAYLOAD_BYTES);
-          ulsch->harq_processes[i]->bb = NULL;
+        if (ulsch->harq_processes[i]->b) {
+          free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
+          ulsch->harq_processes[i]->b = NULL;
         }
 
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
@@ -116,10 +116,10 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
 
       if (ulsch->harq_processes[i]) {
         memset(ulsch->harq_processes[i],0,sizeof(LTE_UL_eNB_HARQ_t));
-        ulsch->harq_processes[i]->bb = (uint8_t *)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        ulsch->harq_processes[i]->b = (uint8_t *)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
 
-        if (ulsch->harq_processes[i]->bb)
-          memset(ulsch->harq_processes[i]->bb,0,MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        if (ulsch->harq_processes[i]->b)
+          memset(ulsch->harq_processes[i]->b,0,MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
         else
           exit_flag=3;
 
@@ -292,7 +292,7 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
-                                   ulsch_harq->eE+r_offset,
+                                   ulsch_harq->e+r_offset,
                                    ulsch_harq->C,
                                    NSOFT,
                                    0,   //Uplink
@@ -342,7 +342,7 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
         Kr = ulsch_harq->Kplus;
 
       Kr_bytes = Kr>>3;
-      memcpy(ulsch_harq->bb+offset,
+      memcpy(ulsch_harq->b+offset,
              ulsch_harq->c[r],
              Kr_bytes - ((ulsch_harq->C>1)?3:0));
       offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
@@ -467,7 +467,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
-                                   ulsch_harq->eE+r_offset,
+                                   ulsch_harq->e+r_offset,
                                    ulsch_harq->C,
                                    NSOFT,
                                    0,   //Uplink
@@ -523,12 +523,12 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       Kr_bytes = Kr>>3;
 
       if (r==0) {
-        memcpy(ulsch_harq->bb,
+        memcpy(ulsch_harq->b,
                &ulsch_harq->c[0][(ulsch_harq->F>>3)],
                Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
         offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
       } else {
-        memcpy(ulsch_harq->bb+offset,
+        memcpy(ulsch_harq->b+offset,
                ulsch_harq->c[r],
                Kr_bytes - ((ulsch_harq->C>1)?3:0));
         offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
@@ -555,7 +555,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
   int G = ulsch_harq->G;
-  unsigned int EE;
+  unsigned int E;
   decoder_if_t *tc;
 
   if (llr8_flag == 0)
@@ -580,8 +580,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
            r, G,
            Kr*3,
-           Q_m,
-           nb_rb,
+           ulsch_harq->Qm,
            ulsch_harq->Nl);
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
@@ -590,7 +589,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[r][0],
-                                   ulsch_harq->eE+r_offset,
+                                   ulsch_harq->e+r_offset,
                                    ulsch_harq->C,
                                    NSOFT,
                                    0,   //Uplink
@@ -600,13 +599,13 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                    ulsch_harq->Qm,
                                    1,
                                    r,
-                                   &EE)==-1) {
+                                   &E)==-1) {
       LOG_E(PHY,"ulsch_decoding.c: Problem in rate matching\n");
       return(-1);
     }
 
     stop_meas(&eNB->ulsch_rate_unmatching_stats);
-    r_offset += EE;
+    r_offset += E;
     start_meas(&eNB->ulsch_deinterleaving_stats);
     sub_block_deinterleaving_turbo(4+Kr,
                                    &ulsch_harq->d[r][96],
@@ -623,6 +622,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       // Kr is the segment length in short 
       // *3 because LTE redudancy scheme
       sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t)*3);
+/*
       int iter=tc(&ulsch_harq->d[r][96],
              NULL,
              ulsch_harq->c[r],
@@ -644,7 +644,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 		      printf("%hx:", ulsch_harq->d[r][96+i]);
 	      printf("\n");
       }
-
+*/
       return 0;
     }
 
@@ -679,12 +679,12 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       Kr_bytes = Kr>>3;
 
       if (r==0) {
-        memcpy(ulsch_harq->bb,
+        memcpy(ulsch_harq->b,
                &ulsch_harq->c[0][(ulsch_harq->F>>3)],
                Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
         offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
       } else {
-        memcpy(ulsch_harq->bb+offset,
+        memcpy(ulsch_harq->b+offset,
                ulsch_harq->c[r],
                Kr_bytes - ((ulsch_harq->C>1)?3:0));
         offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
@@ -794,6 +794,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   A = ulsch_harq->TBS;
   Q_m = ulsch_harq->Qm;
   G = nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
+  LOG_D(PHY, "PUSCH nb_rb %d Q_m %d ulsch_harq->Nsymb_pusch %d\n",nb_rb, Q_m, ulsch_harq->Nsymb_pusch);  
   //#ifdef DEBUG_ULSCH_DECODING
   LOG_D(PHY,"[PUSCH harq %d] Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): TBS %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d, Q_m %d Nsymb_pusch %d nb_rb %d\n",
         harq_pid,
@@ -848,6 +849,12 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
               subframe);
   // Compute Q_ri
   Qprime = ulsch_harq->O_RI*ulsch_harq->Msc_initial*ulsch_harq->Nsymb_initial * ulsch->beta_offset_ri_times8;
+  LOG_D(PHY, "Qprime %d, O_RI %d, Msc %d, Nym %d beta %d\n",
+		  Qprime,
+		  ulsch_harq->O_RI,
+		  ulsch_harq->Msc_initial,
+		  ulsch_harq->Nsymb_initial,
+		  ulsch->beta_offset_ri_times8);
 
   if (Qprime > 0 ) {
     if ((Qprime % (8*sumKr)) > 0)
@@ -1224,8 +1231,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
             j2+=2;
           }
 
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
         }
 
         break;
@@ -1237,10 +1244,10 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
             j2+=4;
           }
 
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
         }
 
         break;
@@ -1252,12 +1259,12 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
             j2+=6;
           }
 
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
-          ulsch_harq->eE[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->e[iprime++] = y[j2++];
         }
 
         break;
@@ -1295,7 +1302,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
     */
     int16_t *yp,*ep;
 
-    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->eE[0];
+    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->e[0];
          iprime<G;
          iprime+=8,j2+=8,ep+=8,yp+=8) {
       ep[0] = yp[0];

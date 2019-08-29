@@ -266,11 +266,11 @@ typedef struct {
   /// coded RI bits
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  int16_t eE[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  int16_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload
-  uint8_t *bb;
+  uint8_t *b;
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)

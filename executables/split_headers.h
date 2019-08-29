@@ -80,6 +80,10 @@ typedef struct {
   uint16_t nb_rb;
   uint8_t Qm;
   uint16_t first_rb;
+  uint8_t O_RI;
+  uint8_t Or1;
+  uint16_t Msc_initial;
+  uint8_t Nsymb_initial;
   uint8_t V_UL_DAI;
   uint8_t srs_active;
   uint32_t TBS;
@@ -131,6 +135,7 @@ typedef struct {
   short harq_id;
   short segment;
   short segLen;
+  int ulsch_power[2];
 } fs6_ul_uespec_t;
 
 typedef struct {

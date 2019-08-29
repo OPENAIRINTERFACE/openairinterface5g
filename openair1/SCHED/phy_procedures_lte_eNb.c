@@ -410,10 +410,10 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   ul_frame = pdcch_alloc2ul_frame (fp, frame, subframe);
 
   // clear previous allocation information for all UEs
-  //for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    //if (eNB->dlsch[i][0])
-      //eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
-  //}
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (eNB->dlsch[i][0])
+      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+  }
 
   /* TODO: check the following test - in the meantime it is put back as it was before */
   //if ((ul_subframe < 10)&&
@@ -549,7 +549,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
               ) {
       // clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
-      //dlsch0->subframe_tx[subframe]=0;
+      dlsch0->subframe_tx[subframe]=0;
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
@@ -1424,7 +1424,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->bb;
+  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
