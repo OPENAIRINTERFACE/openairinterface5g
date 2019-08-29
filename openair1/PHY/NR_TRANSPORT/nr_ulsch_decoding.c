@@ -270,10 +270,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
   }
 }
 
-#ifdef PRINT_CRC_CHECK
-  static uint32_t prnt_crc_cnt = 0;
-#endif
-
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t UE_id,
                            short *ulsch_llr,
@@ -292,11 +288,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
-
-#ifdef PRINT_CRC_CHECK
-  prnt_crc_cnt++;
-#endif
-  
 
   NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id+1][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
@@ -590,14 +581,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
   #ifdef PRINT_CRC_CHECK
-        if (prnt_crc_cnt % 10 == 0)
-          LOG_I(PHY, "Segment %d CRC OK\n",r);
+        LOG_I(PHY, "Segment %d CRC OK\n",r);
   #endif
         ret = no_iteration_ldpc;
       } else {
   #ifdef PRINT_CRC_CHECK
-        if (prnt_crc_cnt%10 == 0)
-          LOG_I(PHY, "CRC NOK\n");
+        LOG_I(PHY, "CRC NOK\n");
   #endif
         ret = ulsch->max_ldpc_iterations + 1;
       }

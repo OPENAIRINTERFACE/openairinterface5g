@@ -514,7 +514,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   
       // --------- setting rel15_ul parameters ----------
       rel15_ul->rnti                           = 0x1234;
-      rel15_ul->ulsch_pdu_rel15.start_rb       = 30;
+      rel15_ul->ulsch_pdu_rel15.start_rb       = 0;
       rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
       rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
       rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
