@@ -131,7 +131,12 @@ int flexran_agent_destroy_lc_config_request(Protocol__FlexranMessage *msg);
 /* Control delegation message constructor and destructor */
 int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg);
-void *flexran_agent_load_delegated_code(mid_t mod_id, const char *name);
+/* Map a name from a control_delegation message to a file name. The function
+ * stat()s the file to check existence and returns the complete path name in
+ * path. The length in path needs to be maxlen, the maximum length the path may
+ * have. */
+int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
+    char *path, int maxlen);
 
 /* Policy reconfiguration message constructor and destructor */
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);

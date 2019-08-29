@@ -478,20 +478,22 @@ int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg) {
   return 0;
 }
 
-void *flexran_agent_load_delegated_code(mid_t mod_id, const char *name) {
-  char target[512];
-  int len = snprintf(target, sizeof(target), "%s/libflex.%s.so",
+int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
+    char *path, int maxlen) {
+  int len = snprintf(path, maxlen, "%s/libflex.%s.so",
                      RC.flexran[mod_id]->cache_name, name);
-  if (len >= sizeof(target)) {
-    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot read object\n");
-    return 0;
+  if (len >= maxlen) {
+    LOG_E(FLEXRAN_AGENT, "path has been truncated, cannot read object\n");
+    return -1;
   }
 
-  LOG_I(FLEXRAN_AGENT, "Opening pushed code: %s\n", target);
-  void *lib = dlopen(target, RTLD_NOW);
-  if (lib == NULL)
-    LOG_E(FLEXRAN_AGENT, "Could not load library: %s\n", dlerror());
-  return lib;
+  struct stat buf;
+  int status = stat(path, &buf);
+  if (status < 0) {
+    LOG_E(FLEXRAN_AGENT, "Could not stat object %s: %s\n", path, strerror(errno));
+    return -1;
+  }
+  return 0;
 }
 
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
