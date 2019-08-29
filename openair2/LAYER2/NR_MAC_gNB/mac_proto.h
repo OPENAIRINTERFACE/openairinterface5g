@@ -149,6 +149,10 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 int32_t get_nr_uldl_offset(int nr_bandP);
 
+int find_nrUE_id(module_id_t mod_idP, rnti_t rntiP);
+
+int nrUE_PCCID(module_id_t mod_idP, int ue_idP);
+
 void config_nr_mib(int Mod_idP, 
                    int CC_idP,
                    int p_gNBP,
@@ -158,5 +162,23 @@ void config_nr_mib(int Mod_idP,
                    uint32_t pdcch_ConfigSIB1,
                    int cellBarred,
                    int intraFreqReselection);
+
+/* \brief Function to indicate a received SDU on ULSCH.
+@param Mod_id Instance ID of gNB
+@param CC_id Component carrier index
+@param rnti RNTI of UE transmitting the SDU
+@param sdu Pointer to received SDU
+@param sdu_len Length of SDU
+@param timing_advance timing advance adjustment after this pdu
+@param ul_cqi Uplink CQI estimate after this pdu (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
+*/
+void nr_rx_sdu(const module_id_t gnb_mod_idP,
+      const int CC_idP,
+      const frame_t frameP,
+      const sub_frame_t subframeP,
+      const rnti_t rntiP,
+      uint8_t * sduP,
+      const uint16_t sdu_lenP,
+      const uint16_t timing_advance, const uint8_t ul_cqi);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

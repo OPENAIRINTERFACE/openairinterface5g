@@ -464,3 +464,21 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
 
 }
 
+int find_nrUE_id(module_id_t mod_idP, rnti_t rntiP) {
+  
+  int UE_id;
+  UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
+
+  for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
+    if (UE_list->active[UE_id] == TRUE) {
+      if (UE_list->UE_template[nrUE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
+        return UE_id;
+      }
+    }
+  }
+  return -1;
+}
+
+int nrUE_PCCID(module_id_t mod_idP, int ue_idP) {
+  return (RC.nrmac[mod_idP]->UE_list.pCC_id[ue_idP]);
+}

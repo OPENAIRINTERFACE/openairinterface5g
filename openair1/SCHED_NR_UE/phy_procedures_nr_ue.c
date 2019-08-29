@@ -1551,10 +1551,10 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing
 
   int factor_mu = 1 << mu;
 
-  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * 1024 / factor_mu ;
+  //PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * 1024 / factor_mu ;
 
 
-  LOG_D(PHY,"[UE %d] Got timing advance %d from MAC, new value is %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
+  LOG_D(PHY,"[UE %d] Got timing advance %u from MAC, new value is %u\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
 
 void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,

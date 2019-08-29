@@ -1642,6 +1642,7 @@ set (MAC_NR_SRC
   ${NR_MAC_DIR}/gNB_scheduler.c
   ${NR_MAC_DIR}/gNB_scheduler_bch.c
   ${NR_MAC_DIR}/gNB_scheduler_dlsch.c
+  ${NR_MAC_DIR}/gNB_scheduler_ulsch.c
   ${NR_MAC_DIR}/gNB_scheduler_primitives.c
   ${NR_MAC_DIR}/gNB_scheduler_phytest.c
  )

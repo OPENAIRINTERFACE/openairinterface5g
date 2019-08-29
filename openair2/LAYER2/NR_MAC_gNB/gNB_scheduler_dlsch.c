@@ -185,7 +185,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   uint16_t sdu_lengths[NR_MAX_NB_RB] = {0};
 
   int padding = 0, post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
-  int CC_id, sub_pdu_id, lcid, offset, i, j=0, k=0;
+  int CC_id, sub_pdu_id, lcid, offset, i, j=0, k=0, ta_update;
 
   // hardcoded parameters
   // for DMRS configuration type 1
@@ -195,11 +195,11 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   uint16_t R = 697;
   uint16_t nb_rb = 50 ;
   uint32_t TBS = nr_compute_tbs(Qm, R, nb_rb, 12, 6, 0, 1)/8; // this is in bits TODO use nr_get_tbs
-  int ta_update = 17;
   NR_TAG_Id_t tag_id = 0;
   int UE_id = 0; // UE_list->head is -1 !
 
   UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  ta_update = ue_sched_ctl->ta_update;
   
   for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP] + 1; CC_id++) {
     LOG_D(MAC, "doing nr_schedule_ue_spec for CC_id %d\n", CC_id);
@@ -214,13 +214,14 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       } else {	// This is a potentially new SDU opportunity */
 
         if (gNB->tag->timeAlignmentTimer != NULL) {
+          printf(" SHOULD NOT ENTER HERE \n");
           if (gNB->tag->timeAlignmentTimer == 0) {
             ta_update = ue_sched_ctl->ta_update;
             /* if we send TA then set timer to not send it for a while */
             if (ta_update != 31)
               ue_sched_ctl->ta_timer = 20;
             /* reset ta_update */
-            ue_sched_ctl->ta_update = 31;
+            ue_sched_ctl->ta_update = 31; 
           } else {
             ta_update = 31;
           }
