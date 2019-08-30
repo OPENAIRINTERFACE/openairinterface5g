@@ -244,6 +244,8 @@ typedef struct RU_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_fep;
+  /// \internal This variable is protected by \ref mutex_feptx
+  int instance_cnt_feptx;
   /// \internal This variable is protected by \ref mutex_ru_thread
   int instance_cnt_ru;
   /// This varible is protected by \ref mutex_emulatedRF
@@ -263,6 +265,8 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
   pthread_t pthread_fep;
+  /// pthread struct for RU TX FEP worker thread
+  pthread_t pthread_feptx;
   /// pthread struct for emulated RF
   pthread_t pthread_emulateRF;
   /// pthread structure for asychronous RX/TX processing thread
@@ -288,6 +292,8 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_asynch_rxtx;
   /// pthread attributes for worker fep thread
   pthread_attr_t attr_fep;
+  /// pthread attributes for worker feptx thread
+  pthread_attr_t attr_feptx;
   /// pthread attributes for emulated RF
   pthread_attr_t attr_emulateRF;
   /// scheduling parameters for RU FH thread
@@ -318,6 +324,8 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_asynch_rxtx;
   /// condition varible for RU RX FEP thread
   pthread_cond_t cond_fep;
+  /// condition varible for RU TX FEP thread
+  pthread_cond_t cond_feptx;
   /// condition varible for emulated RF
   pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
@@ -345,6 +353,8 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for fep RX worker thread
   pthread_mutex_t mutex_fep;
+  /// mutex for fep TX worker thread
+  pthread_mutex_t mutex_feptx;
   /// mutex for ru_thread
   pthread_mutex_t mutex_ru;
   /// mutex for emulated RF thread
