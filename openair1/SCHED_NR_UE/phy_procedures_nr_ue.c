@@ -2412,6 +2412,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t e
     ue->prach_resources[eNB_id] = &prach_resources;
  ue->prach_resources[eNB_id]->ra_PreambleIndex = preamble_tx;
   ue->prach_resources[eNB_id]->ra_TDD_map_index = 0;
+  ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
+  ue->prach_resources[eNB_id]->ra_RNTI = 93;
  }
 
   if (ue->mac_enabled==1){

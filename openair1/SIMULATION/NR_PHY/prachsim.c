@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   uint8_t hs_flag=0;
   int n_frames=1;
   channel_desc_t *UE2gNB;
-  uint32_t nsymb,tx_lev; //,tx_lev_dB;
+  uint32_t nsymb,tx_lev=10000; //,tx_lev_dB;
   //  int8_t interf1=-19,interf2=-19;
   NR_DL_FRAME_PARMS *frame_parms;
 
@@ -613,7 +613,7 @@ int main(int argc, char **argv)
 	  
           
           LOG_M("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_slot<<1],frame_parms->samples_per_slot<<1,1,1);
-          LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0],24576,1,1);
+          LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0],1024,1,1);
           LOG_M("rxsig0.m","rxs0",
                        &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_slot<<1],
                        frame_parms->samples_per_slot<<1,1,1);
