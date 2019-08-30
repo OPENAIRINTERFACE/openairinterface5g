@@ -256,7 +256,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
         //Sending SDUs with size 1
         //Initialize elements of sdu_lcids and sdu_lengths
         //TODO this will be eventually be removed
-        while (TBS - header_length_total - sdu_length_total - ta_len >= 3){
+        while (TBS >= 3 + header_length_total + sdu_length_total + ta_len){
           if (k < NR_MAX_NB_RB && j < NR_MAX_NB_RB){
             sdu_lcids[j] = 0x05; // DRB
             sdu_lengths[k] = 1;
@@ -289,7 +289,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
         if (ta_len + sdu_length_total + header_length_total > 0) {
 
           // Check if there is data from RLC or CE 
-          if (TBS - header_length_total - sdu_length_total - ta_len >= 2) {
+          if (TBS >= 2 + header_length_total + sdu_length_total + ta_len) {
             // we have to consider padding
 	          // padding param currently not in use
             padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
