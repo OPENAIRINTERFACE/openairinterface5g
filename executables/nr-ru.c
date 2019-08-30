@@ -1213,6 +1213,10 @@ static void *ru_stats_thread(void *param) {
     sleep(1);
 
     if (opp_enabled == 1) {
+      if (ru->feptx_prec) {
+        print_meas(&ru->total_precoding_stats,"feptx_prec",NULL,NULL);
+      }
+
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
 
       if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
@@ -1273,7 +1277,7 @@ static void *ru_thread_tx( void *param ) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
+    //if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
 
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
@@ -1488,7 +1492,7 @@ static void *ru_thread( void *param ) {
 
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_gNB==0) {
       // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
+      //if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
 
       // do OFDM if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
@@ -1704,6 +1708,7 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feprx) init_fep_thread(ru);
 
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
+    //if (ru->feptx_prec) nr_init_feptx_prec_thread(ru);
   }
 
   if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
@@ -2018,7 +2023,7 @@ void set_function_spec_param(RU_t *ru) {
         ru->do_prach             = 0;                       // no prach processing in RU
         ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread : fep_full;                // RX DFTs
         ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;              // this is fep with idft and precoding
-        ru->feptx_prec           = nr_feptx_prec;              // this is fep with idft and precoding
+        ru->feptx_prec           = nr_feptx_prec;           // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface

@@ -103,6 +103,10 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..]
   int32_t **txdataF_BF;
+  /// \brief holds the transmit data before beamforming in the frequency domain.
+  /// - first index: tx antenna [0..nb_antennas_tx[
+  /// - second index: sample [0..]
+  int32_t **txdataF;
   /// \brief holds the transmit data before beamforming for epdcch/mpdcch
   /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
   /// - second index: sampl [0..]
@@ -145,6 +149,41 @@ typedef struct {
   int32_t **drs_ch_estimates;
 } RU_CALIBRATION;
 
+
+typedef struct RU_prec_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx_prec;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx_prec;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx_prec;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx_prec;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx_prec;
+  int symbol;
+  int p;//logical
+  int aa;//physical MAX nb_tx
+  struct RU_t_s *ru;
+  int index;
+} RU_prec_t;
+
+typedef struct RU_feptx_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx;
+  struct RU_t_s *ru;
+  int aa;//physical MAX nb_tx
+  int half_slot;//first or second half of a slot
+  int slot;//current slot
+}RU_feptx_t;
 
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
@@ -205,8 +244,6 @@ typedef struct RU_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_fep;
-  /// \internal This variable is protected by \ref mutex_feptx
-  int instance_cnt_feptx;
   /// \internal This variable is protected by \ref mutex_ru_thread
   int instance_cnt_ru;
   /// This varible is protected by \ref mutex_emulatedRF
@@ -226,8 +263,6 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
   pthread_t pthread_fep;
-  /// pthread struct for RU TX FEP worker thread
-  pthread_t pthread_feptx;
   /// pthread struct for emulated RF
   pthread_t pthread_emulateRF;
   /// pthread structure for asychronous RX/TX processing thread
@@ -253,8 +288,6 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_asynch_rxtx;
   /// pthread attributes for worker fep thread
   pthread_attr_t attr_fep;
-  /// pthread attributes for worker feptx thread
-  pthread_attr_t attr_feptx;
   /// pthread attributes for emulated RF
   pthread_attr_t attr_emulateRF;
   /// scheduling parameters for RU FH thread
@@ -285,8 +318,6 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_asynch_rxtx;
   /// condition varible for RU RX FEP thread
   pthread_cond_t cond_fep;
-  /// condition varible for RU TX FEP thread
-  pthread_cond_t cond_feptx;
   /// condition varible for emulated RF
   pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
@@ -314,8 +345,6 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for fep RX worker thread
   pthread_mutex_t mutex_fep;
-  /// mutex for fep TX worker thread
-  pthread_mutex_t mutex_feptx;
   /// mutex for ru_thread
   pthread_mutex_t mutex_ru;
   /// mutex for emulated RF thread
@@ -360,8 +389,11 @@ typedef struct RU_proc_t_s {
   int ru_rx_ready;
   int ru_tx_ready;
   int emulate_rf_busy;
-} RU_proc_t;
 
+  RU_prec_t prec[16];
+  /// structure for feptx thread
+  RU_feptx_t feptx[16];
+} RU_proc_t;
 
 typedef enum {
   LOCAL_RF        =0,
@@ -518,6 +550,8 @@ typedef struct RU_t_s{
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
   void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru);
 
+  /// Timing statistics (TX)
+  time_stats_t total_precoding_stats;
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)

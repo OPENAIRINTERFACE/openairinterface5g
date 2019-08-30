@@ -74,6 +74,10 @@ int nr_phy_init_RU(RU_t *ru) {
     }
   
 
+    // allocate precoding input buffers (TX)
+    ru->common.txdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
+    for(i=0; i< 15; ++i)  ru->common.txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
+
     // allocate IFFT input buffers (TX)
     ru->common.txdataF_BF = (int32_t **)malloc16(ru->nb_tx*sizeof(int32_t*));
     LOG_I(PHY,"[INIT] common.txdata_BF= %p (%lu bytes)\n",ru->common.txdataF_BF,

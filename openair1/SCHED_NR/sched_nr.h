@@ -42,10 +42,12 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, u
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
-void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols);
+void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa);
 void nr_init_feptx_thread(RU_t *ru);
 void fep_full(RU_t *ru,int slot);
 void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
+void nr_init_feptx_prec_thread(RU_t *ru);
+void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx);
 int nr_phy_init_RU(RU_t *ru);
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,

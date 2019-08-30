@@ -205,7 +205,6 @@ for (int i=0; i<n_dmrs>>4; i++) {
  printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",
 	start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
 #endif
-
   for (int ap=0; ap<rel15->nb_layers; ap++) {
 
     // DMRS params for this ap
