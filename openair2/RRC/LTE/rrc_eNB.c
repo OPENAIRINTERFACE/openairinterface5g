@@ -3219,7 +3219,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
       /* Process the IE drx_Config */
       if (cc_id < MAX_NUM_CCs) {
-        mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+        mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
       } else {
         LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
       }
@@ -3951,7 +3951,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 
       /* Process the IE drx_Config */
       if (cc_id < MAX_NUM_CCs) {
-        mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+        mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
       } else {
         LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
       }
