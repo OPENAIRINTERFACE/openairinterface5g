@@ -667,7 +667,6 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
   } else {
     struct LTE_DRX_Config__setup *choiceSetup = &drxConfig->choice.setup;
     choiceSetup->onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
-    // drxConfig->choice.setup.onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
     choiceSetup->drx_InactivityTimer = configuration->radioresourceconfig[CC_id].drx_InactivityTimer;
     choiceSetup->drx_RetransmissionTimer = configuration->radioresourceconfig[CC_id].drx_RetransmissionTimer;
     choiceSetup->longDRX_CycleStartOffset.present = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset_present;

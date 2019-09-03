@@ -6503,8 +6503,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
       UE_scheduling_control->cdrx_waiting_ack = FALSE;
-      UE_scheduling_control->cdrx_configured = TRUE;
-      LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+      // UE_scheduling_control->cdrx_configured = TRUE;
+      LOG_I(RRC, "CDRX configuration after first RRC Connection Reconfiguration Complete reception\n");
     }
   } // No CDRX with the CU/DU split in this version of the code
 
