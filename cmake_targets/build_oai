@@ -150,7 +150,7 @@ Options
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 --build-lib <libraries>
-   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
 
@@ -324,16 +324,21 @@ function main() {
             shift 1;;
        --build-lib) 
             BUILD_OPTLIB="" 
-            for alib in $2 ; do 
+            if [  "$2" == "all" ] ; then
+              BUILD_OPTLIB="$OPTIONAL_LIBRARIES"
+              echo_info "Enabling build of all optional shared libraries ($OPTIONAL_LIBRARIES)" 
+            else
+              for alib in $2 ; do 
                 for oklib in $OPTIONAL_LIBRARIES ; do
-                     if [ "$alib" = "$oklib" ] ; then
-                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
-                        echo_info "Enabling build of lib${alib}.so" 
-                     fi   
+                  if [ "$alib" = "$oklib" ] ; then
+                    BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                    echo_info "Enabling build of lib${alib}.so" 
+                    fi   
+                  done
                 done
-            done
-	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
-               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+	          if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+              fi
             fi
             shift 2;;		
         --usrp-recplay)
@@ -515,21 +520,7 @@ function main() {
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
 
-# mandatory shared lib
-    compilations \
-	  $lte_build_dir $config_libconfig_shlib \
-	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-    compilations \
-          $lte_build_dir coding \
-          libcoding.so $dbin/libcoding.so
-# optional libs (used when noS1 with kernel modules 
-    compilations \
-          $lte_build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    compilations \
-          $lte_build_dir rb_tool \
-          rb_tool $dbin/rb_tool
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin	  
+	  
   fi
 
   if [ "$UE" = 1  ] ; then
@@ -538,21 +529,6 @@ function main() {
         $lte_build_dir $lte_exec \
         $lte_exec $dbin/$lte_exec.$REL
         
-    # mandatory shared lib
-    compilations \
-        $lte_build_dir $config_libconfig_shlib \
-        lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-    compilations \
-        $lte_build_dir coding \
-        libcoding.so $dbin/libcoding.so
-# optional libs (used when noS1 with kernel modules
-    compilations \
-          $lte_build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    compilations \
-          $lte_build_dir rb_tool \
-          rb_tool $dbin/rb_tool
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
     # ue_ip driver compilation
     compilations \
           $lte_build_dir ue_ip \
@@ -665,10 +641,25 @@ function main() {
 
   fi 
  
-  # build RF device and transport protocol libraries
+  # build RF device, transport protocol libraries and all
+  # shared libraries common to UE and eNB
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-
+# mandatory shared lib
+    compilations \
+	  $lte_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $lte_build_dir coding \
+          libcoding.so $dbin/libcoding.so
+# optional libs (used when noS1 with kernel modules 
+    compilations \
+          $lte_build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+    compilations \
+          $lte_build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
 	  rm -f liboai_device.so
@@ -737,7 +728,7 @@ function main() {
         echo_info "liboai_transpro.so is linked to ETHERNET transport"
       fi
 
-    if [ "$RFSIMULATOR" == "true" -o "$HW" == "OAI_SIMU" ] ; then
+    if [ "$HW" == "OAI_SIMU" ] ; then
         echo_info "Compiling rfsimulator"
         compilations \
             $lte_build_dir rfsimulator \
