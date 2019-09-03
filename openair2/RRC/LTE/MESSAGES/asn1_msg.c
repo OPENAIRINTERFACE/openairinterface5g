@@ -625,10 +625,9 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
 /*
  * Generate the configuration structure for CDRX feature
  */
-LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, 
-              int CC_id, 
-              RrcConfigurationReq *configuration, 
-              LTE_UE_EUTRA_Capability_t *UEcap)
+LTE_DRX_Config_t *do_DrxConfig(int CC_id, 
+                               RrcConfigurationReq *configuration, 
+                               LTE_UE_EUTRA_Capability_t *UEcap)
 //-----------------------------------------------------------------------------
 {
   LTE_DRX_Config_t *drxConfig = NULL;
@@ -666,58 +665,60 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id,
   if (drxConfig->present == LTE_DRX_Config_PR_release) {
     drxConfig->choice.release = (NULL_t) 0;
   } else {
-    drxConfig->choice.setup.onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
-    drxConfig->choice.setup.drx_InactivityTimer = configuration->radioresourceconfig[CC_id].drx_InactivityTimer;
-    drxConfig->choice.setup.drx_RetransmissionTimer = configuration->radioresourceconfig[CC_id].drx_RetransmissionTimer;
-    drxConfig->choice.setup.longDRX_CycleStartOffset.present = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset_present;
-    switch (drxConfig->choice.setup.longDRX_CycleStartOffset.present) {
+    struct LTE_DRX_Config__setup *choiceSetup = &drxConfig->choice.setup;
+    choiceSetup->onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
+    // drxConfig->choice.setup.onDurationTimer = configuration->radioresourceconfig[CC_id].drx_onDurationTimer;
+    choiceSetup->drx_InactivityTimer = configuration->radioresourceconfig[CC_id].drx_InactivityTimer;
+    choiceSetup->drx_RetransmissionTimer = configuration->radioresourceconfig[CC_id].drx_RetransmissionTimer;
+    choiceSetup->longDRX_CycleStartOffset.present = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset_present;
+    switch (choiceSetup->longDRX_CycleStartOffset.present) {
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf10 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf10 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf20 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf20 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf32 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf32 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf40 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf40 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf64 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf64 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf80 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf80 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf128 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf128 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf160 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf160 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf256 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf256 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf320 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf320 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf512 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf512 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf640 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf640 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf1024 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf1024 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf1280 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf1280 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf2048 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf2048 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560:
-        drxConfig->choice.setup.longDRX_CycleStartOffset.choice.sf2560 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
+        choiceSetup->longDRX_CycleStartOffset.choice.sf2560 = configuration->radioresourceconfig[CC_id].drx_longDrx_CycleStartOffset;
         break;
       default:
         break;
@@ -725,12 +726,12 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id,
 
     /* Short DRX cycle configuration */
     if (!ueSupportCdrxShortFlag || configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer == 0) {
-      drxConfig->choice.setup.shortDRX = NULL;
+      choiceSetup->shortDRX = NULL;
     } else {
-      drxConfig->choice.setup.shortDRX = MALLOC(sizeof(struct LTE_DRX_Config__setup__shortDRX));
-      memset(drxConfig->choice.setup.shortDRX, 0, sizeof(struct LTE_DRX_Config__setup__shortDRX));
-      drxConfig->choice.setup.shortDRX->shortDRX_Cycle = configuration->radioresourceconfig[CC_id].drx_shortDrx_Cycle;
-      drxConfig->choice.setup.shortDRX->drxShortCycleTimer = configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer;
+      choiceSetup->shortDRX = MALLOC(sizeof(struct LTE_DRX_Config__setup__shortDRX));
+      memset(choiceSetup->shortDRX, 0, sizeof(struct LTE_DRX_Config__setup__shortDRX));
+      choiceSetup->shortDRX->shortDRX_Cycle = configuration->radioresourceconfig[CC_id].drx_shortDrx_Cycle;
+      choiceSetup->shortDRX->drxShortCycleTimer = configuration->radioresourceconfig[CC_id].drx_shortDrx_ShortCycleTimer;
     }
   }
   
