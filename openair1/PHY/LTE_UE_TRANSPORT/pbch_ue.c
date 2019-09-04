@@ -29,6 +29,8 @@
 * \note
 * \warning
 */
+
+
 #include "PHY/defs_UE.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
@@ -630,3 +632,201 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
 
 }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void pbch_unscrambling_fembms(LTE_DL_FRAME_PARMS *frame_parms,
+                       int8_t* llr,
+                       uint32_t length,
+                       uint8_t frame_mod4)
+{
+  int i;
+  uint8_t reset;
+  uint32_t x1, x2, s=0;
+
+  reset = 1;
+  // x1 is set in first call to lte_gold_generic
+  x2 = frame_parms->Nid_cell+(1<<9); //this is c_init for FeMBMS in 36.211 Sec 6.6.1
+
+  //msg("pbch_unscrambling: Nid_cell = %d, x2 = %d, frame_mod4 %d length %d\n",frame_parms->Nid_cell,x2,frame_mod4,length);
+  for (i=0; i<length; i++) {
+    if (i%32==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //      printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    // take the quarter of the PBCH that corresponds to this frame
+    if ((i>=(frame_mod4*(length>>2))) && (i<((1+frame_mod4)*(length>>2)))) {
+
+      if (((s>>(i%32))&1)==0)
+        llr[i] = -llr[i];
+    }
+  }
+}
+
+uint16_t rx_pbch_fembms(LTE_UE_COMMON *lte_ue_common_vars,
+                 LTE_UE_PBCH *lte_ue_pbch_vars,
+                 LTE_DL_FRAME_PARMS *frame_parms,
+                 uint8_t eNB_id,
+                 MIMO_mode_t mimo_mode,
+                 uint32_t high_speed_flag,
+                 uint8_t frame_mod4)
+{
+
+  uint8_t log2_maxh;//,aatx,aarx;
+  int max_h=0;
+
+  int symbol,i;
+  uint32_t nsymb = (frame_parms->Ncp==0) ? 14:12;
+  uint16_t  pbch_E;
+  uint8_t pbch_a[8];
+  uint8_t RCC;
+
+  int8_t *pbch_e_rx;
+  uint8_t *decoded_output = lte_ue_pbch_vars->decoded_output;
+  uint16_t crc;
+
+
+  //  pbch_D    = 16+PBCH_A;
+
+  pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
+  pbch_e_rx = &lte_ue_pbch_vars->llr[frame_mod4*(pbch_E>>2)];
+#ifdef DEBUG_PBCH
+  LOG_D(PHY,"[PBCH] starting symbol loop (Ncp %d, frame_mod4 %d,mimo_mode %d\n",frame_parms->Ncp,frame_mod4,mimo_mode);
+#endif
+
+  // clear LLR buffer
+  memset(lte_ue_pbch_vars->llr,0,pbch_E);
+
+  for (symbol=(nsymb>>1); symbol<(nsymb>>1)+4; symbol++) {
+
+#ifdef DEBUG_PBCH
+    LOG_D(PHY,"[PBCH] starting extract\n");
+#endif
+    pbch_extract(lte_ue_common_vars->common_vars_rx_data_per_thread[0].rxdataF,
+                 lte_ue_common_vars->common_vars_rx_data_per_thread[0].dl_ch_estimates[eNB_id],
+                 lte_ue_pbch_vars->rxdataF_ext,
+                 lte_ue_pbch_vars->dl_ch_estimates_ext,
+                 symbol,
+                 high_speed_flag,
+                 frame_parms);
+#ifdef DEBUG_PBCH
+    LOG_D(PHY,"[PHY] PBCH Symbol %d\n",symbol);
+    LOG_D(PHY,"[PHY] PBCH starting channel_level\n");
+#endif
+
+    max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
+                               frame_parms,
+                               symbol);
+    log2_maxh = 3+(log2_approx(max_h)/2);
+
+#ifdef DEBUG_PBCH
+
+    LOG_D(PHY,"[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);
+#endif
+
+    pbch_channel_compensation(lte_ue_pbch_vars->rxdataF_ext,
+                              lte_ue_pbch_vars->dl_ch_estimates_ext,
+                              lte_ue_pbch_vars->rxdataF_comp,
+                              frame_parms,
+                              symbol,
+                              log2_maxh); // log2_maxh+I0_shift
+
+    if (frame_parms->nb_antennas_rx > 1)
+      pbch_detection_mrc(frame_parms,
+                         lte_ue_pbch_vars->rxdataF_comp,
+                         symbol);
+
+
+    if (mimo_mode == ALAMOUTI) {
+      pbch_alamouti(frame_parms,lte_ue_pbch_vars->rxdataF_comp,symbol);
+    } else if (mimo_mode != SISO) {
+      LOG_D(PHY,"[PBCH][RX] Unsupported MIMO mode\n");
+      return(-1);
+    }
+
+    if (symbol>(nsymb>>1)+1) {
+      pbch_quantize(pbch_e_rx,
+                    (short*)&(lte_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),
+                    144);
+
+      pbch_e_rx+=144;
+    } else {
+      pbch_quantize(pbch_e_rx,
+                    (short*)&(lte_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),
+                    96);
+
+      pbch_e_rx+=96;
+    }
+
+
+  }
+
+  pbch_e_rx = lte_ue_pbch_vars->llr;
+
+
+
+  //un-scrambling
+#ifdef DEBUG_PBCH
+  LOG_D(PHY,"[PBCH] doing unscrambling\n");
+#endif
+
+pbch_unscrambling_fembms(frame_parms,
+                    pbch_e_rx,
+                    pbch_E,
+                    frame_mod4);
+
+
+  //un-rate matching
+#ifdef DEBUG_PBCH
+  LOG_D(PHY,"[PBCH] doing un-rate-matching\n");
+#endif
+
+
+  memset(dummy_w_rx,0,3*3*(16+PBCH_A));
+  RCC = generate_dummy_w_cc(16+PBCH_A,
+                            dummy_w_rx);
+
+
+  lte_rate_matching_cc_rx(RCC,pbch_E,pbch_w_rx,dummy_w_rx,pbch_e_rx);
+
+  sub_block_deinterleaving_cc((unsigned int)(PBCH_A+16),
+                              &pbch_d_rx[96],
+                              &pbch_w_rx[0]);
+
+  memset(pbch_a,0,((16+PBCH_A)>>3));
+
+
+
+
+  phy_viterbi_lte_sse2(pbch_d_rx+96,pbch_a,16+PBCH_A);
+
+  // Fix byte endian of PBCH (bit 23 goes in first)
+  for (i=0; i<(PBCH_A>>3); i++)
+    decoded_output[(PBCH_A>>3)-i-1] = pbch_a[i];
+
+#ifdef DEBUG_PBCH
+
+  for (i=0; i<(PBCH_A>>3); i++)
+    LOG_I(PHY,"[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
+
+#endif //DEBUG_PBCH
+
+#ifdef DEBUG_PBCH
+  LOG_I(PHY,"PBCH CRC %x : %x\n",
+      crc16(pbch_a,PBCH_A),
+      ((uint16_t)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
+#endif
+
+  crc = (crc16(pbch_a,PBCH_A)>>16) ^
+        (((uint16_t)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
+
+   if (crc == 0x0000)
+    return(1);
+  else if (crc == 0xffff)
+    return(2);
+  else if (crc == 0x5555)
+    return(4);
+  else
+    return(-1);
+}
+#endif

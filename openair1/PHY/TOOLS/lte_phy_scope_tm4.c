@@ -812,9 +812,6 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     free(bit1);
     free(bit_pdcch);
     free(llr_pdcch);
-    for (arx=0;arx<nb_antennas_rx;arx++) {
-        free(chest_t_abs[arx]);
-    }
 
     //This is done to avoid plotting old data when TB0 is disabled, and TB1 is mapped onto CW0
     /*if (phy_vars_ue->transmission_mode[eNB_id]==3 && phy_vars_ue->transmission_mode[eNB_id]==4){

@@ -25,103 +25,42 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
+#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
-#include "common/ran_context.h"
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
-#include "PHY/types.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/defs_gNB.h"
+#include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
 #include "SCHED_NR/sched_nr.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
-//#include "PHY/MODULATION/modulation_common.h"
-//#include "common/config/config_load_configmodule.h"
-//#include "UTIL/LISTS/list.h"
-//#include "common/ran_context.h"
-
-//#define DEBUG_DLSCHSIM
+//#define DEBUG_NR_DLSCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode = 0;
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-	return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-	return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-	return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-	return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-	return (0);
-}
-
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
-	return (0);
-}
-int32_t get_uldl_offset(int eutra_bandP) {
-	return (0);
-}
-
-NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-	return (NULL);
-}
-
-void exit_function(const char *file, const char *function, const int line,
-		const char *s) {
-	const char *msg = s == NULL ? "no comment" : s;
-	printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
-	exit(-1);
-}
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-char quantize(double D, double x, unsigned char B) {
-	double qxd;
-	short maxlev;
-	qxd = floor(x / D);
-	maxlev = 1 << (B - 1); //(char)(pow(2,B-1));
-
-	//printf("x=%f,qxd=%f,maxlev=%d\n",x,qxd, maxlev);
-
-	if (qxd <= -maxlev)
-		qxd = -maxlev;
-	else if (qxd >= maxlev)
-		qxd = maxlev - 1;
-
-	return ((char) qxd);
-}
-
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	char c;
 	int i; //,j,l,aa;
 	double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
@@ -149,7 +88,7 @@ int main(int argc, char **argv) {
 	uint16_t N_RB_DL = 106, mu = 1;
 	//unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
-	int frame = 0, subframe = 0;
+	int frame = 0, slot = 0;
 	int frame_length_complex_samples;
 	//int frame_length_complex_samples_no_prefix;
 	NR_DL_FRAME_PARMS *frame_parms;
@@ -169,8 +108,8 @@ int main(int argc, char **argv) {
 
 	cpuf = get_cpu_freq_GHz();
 
-	if (load_configmodule(argc, argv) == 0) {
-		exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
+		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
 	}
 
 	//logInit();
@@ -224,7 +163,7 @@ int main(int argc, char **argv) {
 				break;
 
 			default:
-				msg("Unsupported channel model!\n");
+				printf("Unsupported channel model! Exiting.\n");
 				exit(-1);
 			}
 
@@ -244,13 +183,18 @@ int main(int argc, char **argv) {
 
 		case 's':
 			snr0 = atof(optarg);
-			msg("Setting SNR0 to %f\n", snr0);
+#ifdef DEBUG_NR_DLSCHSIM
+			printf("Setting SNR0 to %f\n", snr0);
+#endif
 			break;
 
 		case 'S':
 			snr1 = atof(optarg);
 			snr1set = 1;
-			msg("Setting SNR1 to %f\n", snr1);
+			printf("Setting SNR1 to %f\n", snr1);
+#ifdef DEBUG_NR_DLSCHSIM
+			printf("Setting SNR1 to %f\n", snr1);
+#endif
 			break;
 
 		case 'p':
@@ -271,7 +215,7 @@ int main(int argc, char **argv) {
 			n_tx = atoi(optarg);
 
 			if ((n_tx == 0) || (n_tx > 2)) {
-				msg("Unsupported number of tx antennas %d\n", n_tx);
+				printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
 				exit(-1);
 			}
 
@@ -281,7 +225,7 @@ int main(int argc, char **argv) {
 			n_rx = atoi(optarg);
 
 			if ((n_rx == 0) || (n_rx > 2)) {
-				msg("Unsupported number of rx antennas %d\n", n_rx);
+				printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
 				exit(-1);
 			}
 
@@ -303,7 +247,7 @@ int main(int argc, char **argv) {
 			input_fd = fopen(optarg, "r");
 
 			if (input_fd == NULL) {
-				printf("Problem with filename %s\n", optarg);
+				printf("Problem with filename %s. Exiting.\n", optarg);
 				exit(-1);
 			}
 
@@ -379,7 +323,7 @@ int main(int argc, char **argv) {
 				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
-		msg("Problem generating channel model. Exiting.\n");
+		printf("Problem generating channel model. Exiting.\n");
 		exit(-1);
 	}
 
@@ -518,7 +462,7 @@ int main(int argc, char **argv) {
 
 	//estimated_output = harq_process->b;
 
-#ifdef DEBUG_DLSCHSIM
+#ifdef DEBUG_NR_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
 
@@ -528,7 +472,7 @@ int main(int argc, char **argv) {
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
 	if (input_fd == NULL) {
-		nr_dlsch_encoding(test_input, subframe, dlsch, frame_parms);
+		nr_dlsch_encoding(test_input, frame, slot, dlsch, frame_parms);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -583,7 +527,7 @@ int main(int argc, char **argv) {
 #endif
 			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
-					subframe, harq_pid, is_crnti, llr8_flag);
+					slot,harq_pid, is_crnti, llr8_flag);
 
 			if (ret > dlsch0_ue->max_ldpc_iterations)
 				n_errors++;

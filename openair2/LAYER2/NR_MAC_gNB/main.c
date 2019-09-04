@@ -57,8 +57,8 @@ void nr_init_coreset(nfapi_nr_coreset_t *coreset) {
   coreset->dmrs_scrambling_id = 0;
 }
 
-void nr_init_search_space(nfapi_nr_search_space_t *search_space) {
-
+void nr_init_search_space(nfapi_nr_search_space_t *search_space)
+{
   search_space->search_space_id = 1;
   search_space->coreset_id = 1;
   search_space->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;

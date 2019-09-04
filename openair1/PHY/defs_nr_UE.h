@@ -53,7 +53,7 @@
 #else
   #ifdef OPENAIR2
     #if ENABLE_RAL
-      #include "collection/hashtable/hashtable.h"
+      #include "common/utils/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
       #include "UTIL/queue.h"
     #endif
@@ -278,6 +278,11 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
+  /// TX buffers for multiple layers
+  int32_t *txdataF_layers[NR_MAX_NB_LAYERS];
+  } NR_UE_PUSCH;
+
+typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
@@ -292,7 +297,7 @@ typedef struct {
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
+  /// - second index: sample [0..2*FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
   NR_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
@@ -817,6 +822,8 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
+  /// \brief PBCH additional bits
+  uint8_t xtra_byte;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -880,8 +887,10 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE should enable estimation and compensation of frequency offset
   int UE_fo_compensation;
-  /// \brief Indicator that UE is synchronized to an eNB
+  /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
+  /// \brief Indicates on which frame is synchronized in a two frame synchronization
+  int is_synchronized_on_frame;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -916,18 +925,22 @@ typedef struct {
   NR_UE_COMMON    common_vars;
 
   nr_ue_if_module_t *if_inst;
-  nfapi_nr_config_request_t  nrUE_config;
 
-  nr_downlink_indication_t dl_indication;
-  nr_uplink_indication_t ul_indication;
+  //nfapi_nr_config_request_t  nrUE_config; <-- don't use config type for gNB!!!
+  fapi_nr_config_request_t nrUE_config;
+
+  // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
+  
+  //nr_downlink_indication_t dl_indication;
+  //nr_uplink_indication_t ul_indication;
   /// UE FAPI DCI request
-  nr_dcireq_t dcireq;
+  //nr_dcireq_t dcireq;
 
   // pointers to the next 2 strcutres are also included in dl_indictation
   /// UE FAPI indication for DLSCH reception
-  fapi_nr_rx_indication_t rx_ind;
+  //fapi_nr_rx_indication_t rx_ind;
   /// UE FAPI indication for DCI reception
-  fapi_nr_dci_indication_t dci_ind;
+  //fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
   uint8_t current_thread_id[40];
@@ -941,6 +954,7 @@ typedef struct {
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
   NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
   NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -980,6 +994,9 @@ typedef struct {
 
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];
+
+  /// PUSCH DMRS sequence
+  uint32_t ****nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 
@@ -1038,6 +1055,7 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  uint8_t	   ssb_periodicity;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
@@ -1209,10 +1227,10 @@ typedef struct {
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4
  */
-struct nr_rxtx_thread_data {
+typedef struct nr_rxtx_thread_data_s {
+  UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
-  UE_nr_rxtx_proc_t *proc;
-};
+}  nr_rxtx_thread_data_t;
 
 /*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 

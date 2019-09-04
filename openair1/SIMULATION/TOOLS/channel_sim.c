@@ -40,26 +40,23 @@
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
-
 #include "UTIL/FIFO/types.h"
 
 #define RF
 
-
-
+//#define DEBUG_SIM 1
 
 
 void do_DL_sig(sim_t *sim,
-	       uint16_t subframe,
-	       uint32_t offset,
-	       uint32_t length,
-	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
-	       uint8_t UE_id,
-	       int CC_id)
+               uint16_t subframe,
+               uint32_t offset,
+               uint32_t length,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t UE_id,
+               int CC_id)
 {
-
   int32_t **txdata,**rxdata;
-
   uint32_t ru_id=0;
   double tx_pwr;
   double rx_pwr;
@@ -116,7 +113,8 @@ void do_DL_sig(sim_t *sim,
     
     //    sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
     sf_offset = (subframe*frame_parms->samples_per_tti);
-    LOG_D(OCM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
+    for (int aid=0;aid<RC.ru[ru_id]->nb_tx;aid++)
+      LOG_D(OCM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX%d for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,aid,subframe,sf_offset,length,txdata[0]+sf_offset); 
     int length_meas = frame_parms->ofdm_symbol_size;
     if (sf_offset+length <= frame_parms->samples_per_tti*10) {
       
@@ -165,8 +163,9 @@ void do_DL_sig(sim_t *sim,
 			      frame_parms->N_RB_DL*12);
     }
 #ifdef DEBUG_SIM
-    LOG_D(OCM,"[SIM][DL] subframe %d: txp (time) %d dB\n",
-	  subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],length_meas)));
+    for (int aid=0;aid<RC.ru[ru_id]->nb_tx;aid++)
+      LOG_D(OCM,"[SIM][DL] subframe %d: txp%d (time) %d dB\n",
+	    subframe,aid,dB_fixed(signal_energy(&txdata[aid][sf_offset],length_meas)));
     
     LOG_D(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",
 	  ru_id,CC_id,
@@ -298,13 +297,14 @@ void do_DL_sig(sim_t *sim,
 }
 
 
-
-
 void do_UL_sig(sim_t *sim,
-	       uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
-	       uint32_t frame,int ru_id,uint8_t CC_id)
+               uint16_t subframe,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *frame_parms,
+               uint32_t frame,
+               int ru_id,
+               uint8_t CC_id)
 {
-
   int32_t **txdata,**rxdata;
   uint8_t UE_id=0;
 
@@ -474,9 +474,4 @@ void do_UL_sig(sim_t *sim,
   UNUSED_VARIABLE(rx_pwr);
   UNUSED_VARIABLE(rx_pwr2);
 #endif
-    
 }
-
-
-
-

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/defs.h
+/*! \file PHY/defs_L1_NB_IoT.h
  \brief Top-level defines and structure definitions
  \author R. Knopp, F. Kaltenberger
  \date 2011
@@ -122,8 +122,6 @@ static inline void* malloc16_clear( size_t size )
 
 
 #include "PHY/impl_defs_top_NB_IoT.h"
-//#include "impl_defs_top.h"
-//#include "impl_defs_lte.h"
 #include "PHY/impl_defs_lte_NB_IoT.h"
 
 #include "PHY/TOOLS/time_meas.h"
@@ -141,7 +139,7 @@ static inline void* malloc16_clear( size_t size )
 #include <pthread.h>
 
 #include "targets/ARCH/COMMON/common_lib.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 
 #define NUM_DCI_MAX_NB_IoT 32
 
@@ -425,7 +423,7 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int RU_mask;
   /// mask for RUs serving nbiot (PRACH)
   int RU_mask_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
 #endif
@@ -569,6 +567,10 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   uint32_t                      lte_gold_uespec_table[2][20][2][21];
   /// mbsfn reference symbols
   uint32_t                      lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t                      lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
+#endif
   ///
   uint32_t                      X_u[64][839];
   ///
@@ -841,6 +843,10 @@ typedef struct {
   uint32_t                        lte_gold_uespec_table[2][20][2][21];
   //mbsfn reference symbols
   uint32_t                        lte_gold_mbsfn_table[10][3][42];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// mbsfn reference symbols
+  uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
+#endif
   ///
   uint32_t                        X_u[64][839];
   /// 

@@ -38,9 +38,7 @@ int lte_segmentation(unsigned char *input_buffer,
                      unsigned int *Cminus,
                      unsigned int *Kplus,
                      unsigned int *Kminus,
-                     unsigned int *F)
-{
-
+                     unsigned int *F) {
   unsigned int L,Bprime,Bprime_by_C,r,Kr,k,s,crc;
 
   if (B<=6144) {
@@ -56,19 +54,20 @@ int lte_segmentation(unsigned char *input_buffer,
 
     Bprime = B+((*C)*L);
 #ifdef DEBUG_SEGMENTATION
-    printf("Bprime %d\n",Bprime);
+    printf("Bprime %u\n",Bprime);
 #endif
   }
 
   if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
-      LOG_E(PHY,"lte_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
+    printf("%d\n",*(int*)0);
+    LOG_E(PHY,"lte_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }
 
   // Find K+
   Bprime_by_C  = Bprime/(*C);
 #ifdef DEBUG_SEGMENTATION
-  printf("Bprime_by_C %d\n",Bprime_by_C);
+  printf("Bprime_by_C %u\n",Bprime_by_C);
 #endif
   //  Bprime = Bprime_by_C>>3;
 
@@ -93,17 +92,16 @@ int lte_segmentation(unsigned char *input_buffer,
 
     *Kminus = (*Kplus - 32);
   } else if (Bprime_by_C <=6144 ) { // increase by 8 bytes til here
-
     *Kplus = (Bprime_by_C>>6)<<6;
 #ifdef DEBUG_SEGMENTATION
-    printf("Bprime_by_C_by_C %d , Kplus %d\n",Bprime_by_C,*Kplus);
+    printf("Bprime_by_C_by_C %u , Kplus %u\n",Bprime_by_C,*Kplus);
 #endif
 
     if (*Kplus < Bprime_by_C)
       *Kplus = *Kplus + 64;
 
 #ifdef DEBUG_SEGMENTATION
-    printf("Bprime_by_C_by_C %d , Kplus2 %d\n",Bprime_by_C,*Kplus);
+    printf("Bprime_by_C_by_C %u , Kplus2 %u\n",Bprime_by_C,*Kplus);
 #endif
     *Kminus = (*Kplus - 64);
   } else {
@@ -116,25 +114,22 @@ int lte_segmentation(unsigned char *input_buffer,
     *Kminus = 0;
     *Cminus = 0;
   } else {
-
     //    printf("More than one segment (%d), exiting \n",*C);
     //    exit(-1);
     *Cminus = ((*C)*(*Kplus) - (Bprime))/((*Kplus) - (*Kminus));
     *Cplus  = (*C) - (*Cminus);
   }
 
-
   AssertFatal(Bprime <= (*Cplus)*(*Kplus) + (*Cminus)*(*Kminus),
-	      "Bprime %d <  (*Cplus %d)*(*Kplus %d) + (*Cminus %d)*(*Kminus %d)\n",
-	      Bprime,*Cplus,*Kplus,*Cminus,*Kminus);
-
+              "Bprime %d <  (*Cplus %d)*(*Kplus %d) + (*Cminus %d)*(*Kminus %d)\n",
+              Bprime,*Cplus,*Kplus,*Cminus,*Kminus);
   *F = ((*Cplus)*(*Kplus) + (*Cminus)*(*Kminus) - (Bprime));
 #ifdef DEBUG_SEGMENTATION
-  printf("C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, Bprime_bytes %d, Bprime %d, F %d\n",*C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
+  printf("C %u, Cplus %u, Cminus %u, Kplus %u, Kminus %u, Bprime_bytes %u, Bprime %u, F %u\n",
+         *C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
 #endif
 
   if ((input_buffer) && (output_buffers)) {
-
     for (k=0; k<*F>>3; k++) {
       output_buffers[0][k] = 0;
     }
@@ -142,7 +137,6 @@ int lte_segmentation(unsigned char *input_buffer,
     s=0;
 
     for (r=0; r<*C; r++) {
-
       if (r<*Cminus)
         Kr = *Kminus;
       else
@@ -150,18 +144,18 @@ int lte_segmentation(unsigned char *input_buffer,
 
       while (k<((Kr - L)>>3)) {
         output_buffers[r][k] = input_buffer[s];
-	//	printf("encoding segment %d : byte %d (%d) => %d\n",r,k,Kr>>3,input_buffer[s]);
+        //  printf("encoding segment %d : byte %d (%d) => %d\n",r,k,Kr>>3,input_buffer[s]);
         k++;
         s++;
       }
 
       if (*C > 1) { // add CRC
         crc = crc24b(output_buffers[r],Kr-24)>>8;
-        output_buffers[r][(Kr-24)>>3] = ((uint8_t*)&crc)[2];
-        output_buffers[r][1+((Kr-24)>>3)] = ((uint8_t*)&crc)[1];
-        output_buffers[r][2+((Kr-24)>>3)] = ((uint8_t*)&crc)[0];
+        output_buffers[r][(Kr-24)>>3] = ((uint8_t *)&crc)[2];
+        output_buffers[r][1+((Kr-24)>>3)] = ((uint8_t *)&crc)[1];
+        output_buffers[r][2+((Kr-24)>>3)] = ((uint8_t *)&crc)[0];
 #ifdef DEBUG_SEGMENTATION
-        printf("Segment %d : CRC %x\n",r,crc);
+        printf("Segment %u : CRC %x\n",r,crc);
 #endif
       }
 
@@ -175,9 +169,7 @@ int lte_segmentation(unsigned char *input_buffer,
 
 
 #ifdef MAIN
-main()
-{
-
+main() {
   unsigned int Kplus,Kminus,C,Cplus,Cminus,F,Bbytes;
 
   for (Bbytes=5; Bbytes<2*768; Bbytes++) {

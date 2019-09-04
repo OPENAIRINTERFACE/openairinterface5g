@@ -58,10 +58,6 @@
 
 #include "T.h"
 
-//#if defined(Rel10) || defined(Rel14)
-#include "MeasResults.h"
-//#endif
-
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #include "OCG.h"
@@ -116,10 +112,9 @@ mui_t                               rrc_gNB_mui = 0;
 
 void openair_nr_rrc_on(const protocol_ctxt_t* const ctxt_pP){
   
-  int            CC_id;
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
     RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
     rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
@@ -259,7 +254,6 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
                              );
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
-  
 
   rrc_mac_config_req_gNB(ctxt_pP->module_id,
                          CC_id,
@@ -267,6 +261,7 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB,
                          configuration->nr_band[CC_id],
 			 configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id],
+			 configuration->ServingCellConfigCommon_ssb_periodicityServingCell[CC_id],
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
                          configuration->N_RB_DL[CC_id],
                          (NR_BCCH_BCH_Message_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].mib,

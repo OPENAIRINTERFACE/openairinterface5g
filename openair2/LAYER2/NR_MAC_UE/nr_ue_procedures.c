@@ -41,6 +41,21 @@
 #include <stdio.h>
 #include <math.h>
 
+#define ENABLE_MAC_PAYLOAD_DEBUG 1
+
+extern void mac_rlc_data_ind     (
+  const module_id_t         module_idP,
+  const rnti_t              rntiP,
+  const eNB_index_t         eNB_index,
+  const frame_t             frameP,
+  const eNB_flag_t          enb_flagP,
+  const MBMS_flag_t         MBMS_flagP,
+  const logical_chan_id_t   channel_idP,
+  char                     *buffer_pP,
+  const tb_size_t           tb_sizeP,
+  num_tb_t                  num_tbP,
+  crc_t                    *crcs_pP);
+
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
     //  this function now only support f <= 3GHz
@@ -587,6 +602,9 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_ss_n_c = n_c;
         
 	    // fill in the elements in config request inside P5 message
+	mac->phy_config.Mod_id = module_id;
+	mac->phy_config.CC_id = cc_id;
+
 	    mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
 	    mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation
@@ -2016,7 +2034,6 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
 }
 
 
-
 void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,
@@ -2319,7 +2336,6 @@ nr_ue_send_sdu(module_id_t module_idP,
     unsigned char rx_ces[MAX_NUM_CE], num_ce, num_sdu, i, *payload_ptr;
     unsigned char rx_lcids[NB_RB_MAX];
     unsigned short rx_lengths[NB_RB_MAX];
-    unsigned char *tx_sdu;
 
 
   //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
@@ -2377,10 +2393,11 @@ nr_ue_send_sdu(module_id_t module_idP,
 		      rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+		LOG_I(MAC, "Printing MAC PDU contents \n");
 		int j;
 		for (j = 0; j < rx_lengths[i]; j++)
-		    LOG_T(MAC, "%x.", (unsigned char) payload_ptr[j]);
-		LOG_T(MAC, "\n");
+			LOG_I(MAC, "%x.", (unsigned char) payload_ptr[j]);
+		LOG_I(MAC, "\n");
 #endif
 		mac_rlc_data_ind(module_idP,
 				 4660, //UE_mac_inst[module_idP].crnti //hardcode value corresponding to the one from the eNB

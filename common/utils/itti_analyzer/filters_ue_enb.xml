@@ -130,6 +130,8 @@
     <TASK_MAC_ENB enabled="1"/>
     <TASK_RLC_ENB enabled="1"/>
     <TASK_PDCP_ENB enabled="1"/>
+    <TASK_DATA_FORWARDING enabled="1"/>
+    <TASK_END_MARKER enabled="1"/>
     <TASK_RRC_ENB enabled="1"/>
     <TASK_RAL_ENB enabled="1"/>
     <TASK_S1AP enabled="1"/>
@@ -153,6 +155,8 @@
     <TASK_MAC_ENB enabled="1"/>
     <TASK_RLC_ENB enabled="1"/>
     <TASK_PDCP_ENB enabled="1"/>
+    <TASK_DATA_FORWARDING enabled="1"/>
+    <TASK_END_MARKER enabled="1"/>
     <TASK_RRC_ENB enabled="1"/>
     <TASK_RAL_ENB enabled="1"/>
     <TASK_S1AP enabled="1"/>

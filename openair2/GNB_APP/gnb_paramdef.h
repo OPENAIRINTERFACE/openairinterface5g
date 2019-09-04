@@ -57,12 +57,12 @@ extern int asn1_xer_print;
 #endif
 
 typedef enum {
-  RU     = 0,
-  L1     = 1,
-  L2     = 2,
-  L3     = 3,
-  S1     = 4,
-  lastel = 5
+	NRRU     = 0,
+	NRL1     = 1,
+	NRL2     = 2,
+	NRL3     = 3,
+	NRS1     = 4,
+	NRlastel = 5
 } NRRC_config_functions_t;
 
 #define CONFIG_STRING_ACTIVE_RUS                  "Active_RUs"
@@ -111,33 +111,38 @@ typedef enum {
 #define RU_GNB_LIST_IDX               14
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
-#define RU_NBIOTRRC_LIST_IDX          17
+#define RU_IS_SLAVE_IDX               17
+#define RU_NBIOTRRC_LIST_IDX          18
+#define RU_SDR_ADDRS                  19
+#define RU_SDR_CLK_SRC                20
+#define RU_SF_EXTENSION_IDX           21
+#define RU_END_OF_BURST_DELAY_IDX     22
 
 
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
-/*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
+/*   optname                                   helpstr   paramflags    XXXptr          defXXXval                 type           numelt     */
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
-#define RUPARAMS_DESC { \
-{CONFIG_STRING_RU_LOCAL_IF_NAME,            	 NULL,       0,       strptr:NULL,     defstrval:"lo",  	TYPE_STRING,	  0}, \
-{CONFIG_STRING_RU_LOCAL_ADDRESS,            	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",	TYPE_STRING,	  0}, \
-{CONFIG_STRING_RU_REMOTE_ADDRESS,           	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",	TYPE_STRING,	  0}, \
-{CONFIG_STRING_RU_LOCAL_PORTC,              	 NULL,       0,       uptr:NULL,       defuintval:50000,	TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_REMOTE_PORTC,             	 NULL,       0,       uptr:NULL,       defuintval:50000,	TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_LOCAL_PORTD,              	 NULL,       0,       uptr:NULL,       defuintval:50001,	TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_REMOTE_PORTD,             	 NULL,       0,       uptr:NULL,       defuintval:50001,	TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_TRANSPORT_PREFERENCE,     	 NULL,       0,       strptr:NULL,     defstrval:"udp_if5",	TYPE_STRING,	  0}, \
-{CONFIG_STRING_RU_LOCAL_RF,                 	 NULL,       0,       strptr:NULL,     defstrval:"yes", 	TYPE_STRING,	  0}, \
-{CONFIG_STRING_RU_NB_TX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_NB_RX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_MAX_RS_EPRE,              	 NULL,       0,       iptr:NULL,       defintval:-29,		TYPE_INT,	  0}, \
-{CONFIG_STRING_RU_MAX_RXGAIN,               	 NULL,       0,       iptr:NULL,       defintval:120,		TYPE_INT,	  0}, \
-{CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFBANDS, TYPE_INTARRAY,    1}, \
-{CONFIG_STRING_RU_GNB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,  TYPE_INTARRAY,    1}, \
-{CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_NBIOTRRC_LIST,               NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,  TYPE_INTARRAY,    1}, \
+#define GNBRUPARAMS_DESC { \
+{CONFIG_STRING_RU_LOCAL_IF_NAME,            	 NULL,       0,       strptr:NULL,     defstrval:"lo",  	      TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_LOCAL_ADDRESS,            	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",     TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_REMOTE_ADDRESS,           	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",	  TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_LOCAL_PORTC,              	 NULL,       0,       uptr:NULL,       defuintval:50000,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_REMOTE_PORTC,             	 NULL,       0,       uptr:NULL,       defuintval:50000,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_LOCAL_PORTD,              	 NULL,       0,       uptr:NULL,       defuintval:50001,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_REMOTE_PORTD,             	 NULL,       0,       uptr:NULL,       defuintval:50001,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_TRANSPORT_PREFERENCE,     	 NULL,       0,       strptr:NULL,     defstrval:"udp_if5",       TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_LOCAL_RF,                 	 NULL,       0,       strptr:NULL,     defstrval:"yes",           TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_NB_TX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,              TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_NB_RX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,              TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_MAX_RS_EPRE,              	 NULL,       0,       iptr:NULL,       defintval:-29,             TYPE_INT,         0}, \
+{CONFIG_STRING_RU_MAX_RXGAIN,               	 NULL,       0,       iptr:NULL,       defintval:120,             TYPE_INT,         0}, \
+{CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFNRBANDS, TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_GNB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,    TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,               TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,               TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,    TYPE_INTARRAY,    1}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -250,7 +255,7 @@ typedef enum {
 #define GNB_MOBILE_NETWORK_CODE_IDX     1
 #define GNB_MNC_DIGIT_LENGTH            2
 
-#define PLMNPARAMS_DESC {                                                                  \
+#define GNBPLMNPARAMS_DESC {                                                                  \
 /*   optname                              helpstr               paramflags XXXptr     def val          type    numelt */ \
   {GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE, "mobile country code",        0, uptr:NULL, defuintval:1000, TYPE_UINT, 0},    \
   {GNB_CONFIG_STRING_MOBILE_NETWORK_CODE, "mobile network code",        0, uptr:NULL, defuintval:1000, TYPE_UINT, 0},    \
@@ -913,7 +918,7 @@ typedef enum {
 /*                                            SRB1 configuration parameters                                                                                  */
 /*   optname                                          helpstr   paramflags    XXXptr                             defXXXval         type           numelt     */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define SRB1PARAMS_DESC {                                                                                                \
+#define GNBSRB1PARAMS_DESC {                                                                                                \
 {GNB_CONFIG_STRING_SRB1_TIMER_POLL_RETRANSMIT,         NULL,   0,            iptr:&srb1_timer_poll_retransmit,   defintval:80,     TYPE_UINT,      0},       \
 {GNB_CONFIG_STRING_SRB1_TIMER_REORDERING,              NULL,   0,            iptr:&srb1_timer_reordering,        defintval:35,     TYPE_UINT,      0},       \
 {GNB_CONFIG_STRING_SRB1_TIMER_STATUS_PROHIBIT,         NULL,   0,            iptr:&srb1_timer_status_prohibit,   defintval:0,      TYPE_UINT,      0},       \
@@ -940,7 +945,7 @@ typedef enum {
 /*                                            MME configuration parameters                                                             */
 /*   optname                                          helpstr   paramflags    XXXptr       defXXXval         type           numelt     */
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
-#define S1PARAMS_DESC {  \
+#define GNBS1PARAMS_DESC {  \
 {GNB_CONFIG_STRING_MME_IPV4_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
 {GNB_CONFIG_STRING_MME_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
 {GNB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE,              NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
@@ -967,7 +972,7 @@ typedef enum {
 /*                                            SRB1 configuration parameters                                                                                  */
 /*   optname                                          helpstr   paramflags    XXXptr                             defXXXval         type           numelt     */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define SCTPPARAMS_DESC {  \
+#define GNBSCTPPARAMS_DESC {  \
 {GNB_CONFIG_STRING_SCTP_INSTREAMS,                       NULL,   0,   uptr:NULL,   defintval:-1,    TYPE_UINT,   0},       \
 {GNB_CONFIG_STRING_SCTP_OUTSTREAMS,                      NULL,   0,   uptr:NULL,   defintval:-1,    TYPE_UINT,   0}        \
 }
@@ -996,7 +1001,7 @@ typedef enum {
 /*                                            S1 interface configuration parameters                                                                 */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define NETPARAMS_DESC {  \
+#define GNBNETPARAMS_DESC {  \
 {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1_MME,        NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
@@ -1010,7 +1015,7 @@ typedef enum {
 /*                                            GTPU  configuration parameters                                                                                                      */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval                                           type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define GTPUPARAMS_DESC { \
+#define GNBGTPUPARAMS_DESC { \
 {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,    0,            strptr:&gnb_interface_name_for_S1U,      defstrval:"lo",                TYPE_STRING,   0},        \
 {GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_S1U,                NULL,    0,            strptr:&gnb_ipv4_address_for_S1U,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
 {GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,    0,            uptr:&gnb_port_for_S1U,                  defintval:2152,                TYPE_UINT,     0}         \

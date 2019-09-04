@@ -461,6 +461,12 @@ static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_PUCCH_CONFIG_N_AN_CS_TAG, &(pNfapiMsg->pucch_config.n_an_cs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG, &(pNfapiMsg->pucch_config.n1_pucch_an), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_config_flag), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG, &(pNfapiMsg->fembms_config.non_mbsfn_subframeconfig), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+
 			pack_tlv(NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.bandwidth_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG, &(pNfapiMsg->srs_config.max_up_pts), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.srs_subframe_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&

@@ -36,7 +36,7 @@
 #include "otg_externs.h"
 
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 
 
 // char string for payload gen
@@ -305,10 +305,10 @@ unsigned char *packet_gen(
       otg_info->tx_num_pkt[src_instance][dst_instance][otg_info->traffic_type[src_instance][dst_instance]]+=1;
 
       if (size!=strlen(payload))
-        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %zu, seq_num %d packet: |%s|%s| \n",
+        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %u, strlen %zu, seq_num %u packet: |%s|%s| \n",
               src_instance, dst_instance, flag,   size, strlen(payload), seq_num, header, payload);
       else
-        LOG_D(OTG,"[%d][%d] 0x %x][m2m Aggre %d][Flow %d][Type %d/%s] TX INFO pkt at time %d Size= [payload %d] [Total %zu] with seq num %d, state=%d : |%s|%s| \n",
+        LOG_D(OTG,"[%d][%d] 0x %x][m2m Aggre %u][Flow %u][Type %u/%s] TX INFO pkt at time %d Size= [payload %u] [Total %zu] with seq num %u, state=%u : |%s|%s| \n",
               src_instance, dst_instance, flag,
               otg_info->m2m_aggregation[src_instance][dst_instance],
               otg_info->flow_id[src_instance][dst_instance],
@@ -316,7 +316,7 @@ unsigned char *packet_gen(
               map_int_to_str(otg_app_type_names,otg_info->traffic_type[src_instance][dst_instance]),
               ctime,  size, header_size+strlen(payload), seq_num,state, header, payload);
 
-      LOG_D(OTG, "[%d]MY_SEQ %d \n", otg_info->traffic_type[src_instance][dst_instance], otg_info->seq_num[src_instance][dst_instance][otg_info->traffic_type[src_instance][dst_instance]] );
+      LOG_D(OTG, "[%u]MY_SEQ %d \n", otg_info->traffic_type[src_instance][dst_instance], otg_info->seq_num[src_instance][dst_instance][otg_info->traffic_type[src_instance][dst_instance]] );
     } else {
       if ((g_otg->aggregation_level[src_instance][dst_instance][application]*otg_info->size_background[src_instance][dst_instance])<=PAYLOAD_MAX)
         otg_info->size_background[src_instance][dst_instance]=g_otg->aggregation_level[src_instance][dst_instance][application]*otg_info->size_background[src_instance][dst_instance];
@@ -335,7 +335,7 @@ unsigned char *packet_gen(
       otg_info->seq_num_background[src_instance][dst_instance]+=1;
 
       if (otg_info->size_background[src_instance][dst_instance]!=strlen(payload))
-        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %zu, seq num %d, packet |%s|%s| \n",
+        LOG_E(OTG,"[%d][%d] [0x %x] The expected packet size does not match the payload size : size %d, strlen %zu, seq num %u, packet |%s|%s| \n",
               src_instance,
               dst_instance,
               flag,
@@ -345,7 +345,7 @@ unsigned char *packet_gen(
               header,
               payload);
       else
-        LOG_D(OTG,"[%d][%d][0x %x][%d] TX INFO pkt at time %s size is %d with seq num %d, state=%d : |%s|%s| \n",
+        LOG_D(OTG,"[%d][%d][0x %x][%d] TX INFO pkt at time %s size is %d with seq num %u, state=%u : |%s|%s| \n",
               src_instance,
               dst_instance,
               flag,
@@ -367,7 +367,7 @@ unsigned char *packet_gen(
       otg_info->tx_total_bytes_ul+=buffer_size;
 
     if (otg_info->traffic_type[src_instance][dst_instance] > MAX_NUM_APPLICATION) {
-      LOG_W(OTG,"application type out of range %d for the pair of (src %d, dst %d) \n",
+      LOG_W(OTG,"application type out of range %u for the pair of (src %d, dst %d) \n",
             otg_info->traffic_type[src_instance][dst_instance], src_instance, dst_instance);
       otg_info->traffic_type[src_instance][dst_instance]=0;
     }
@@ -425,7 +425,7 @@ unsigned char *packet_gen_multicast(
           g_otg_multicast->idt_max[src_instance][dst_instance][app]));
       size = ceil(uniform_dist(g_otg_multicast->size_min[src_instance][dst_instance][app],
                                g_otg_multicast->size_max[src_instance][dst_instance][app]));
-      LOG_D(OTG, "ptime %d, ctime %d idt %d (min %d, max %d) size %d (min %d, max %d)\n",
+      LOG_D(OTG, "ptime %d, ctime %d idt %d (min %d, max %d) size %u (min %d, max %d)\n",
             otg_multicast_info->ptime[src_instance][dst_instance][application],
             ctime,
             otg_multicast_info->idt[src_instance][dst_instance][app],
@@ -459,10 +459,10 @@ unsigned char *packet_gen_multicast(
             otg_multicast_info->tx_num_bytes[src_instance][dst_instance][app]);
 
       if (size!=strlen(payload))
-        LOG_E(OTG,"[src %d][dst %d] The expected packet size does not match the payload size : size %d, strlen %zu \n",
+        LOG_E(OTG,"[src %d][dst %d] The expected packet size does not match the payload size : size %u, strlen %zu \n",
               src_instance, dst_instance, size, strlen(payload));
       else {
-        LOG_I(OTG,"[src %d][dst %d]TX INFO pkt at time %d Size= [payload %d] [Total %zu] with seq num %d: |%s|%s| \n",
+        LOG_I(OTG,"[src %d][dst %d]TX INFO pkt at time %d Size= [payload %u] [Total %zu] with seq num %d: |%s|%s| \n",
               src_instance,
               dst_instance,
               ctime,
@@ -557,7 +557,7 @@ int check_data_transmit(
   // for (application=0; application<g_otg->application_idx[src_instance][dst_instance]; application++){
   otg_info->gen_pkts=0;
 
-  LOG_T(OTG,"FLOW_INFO [src %d][dst %d] [IDX %d] [APPLICATION TYPE %d] MAX %d [M2M %d ]\n",
+  LOG_T(OTG,"FLOW_INFO [src %d][dst %d] [IDX %d] [APPLICATION TYPE %d] MAX %u [M2M %u ]\n",
         src_instance, dst_instance, app,
         g_otg->application_type[src_instance][dst_instance][app],
         g_otg->application_idx[src_instance][dst_instance],
@@ -605,7 +605,7 @@ int check_data_transmit(
 
       if (((state==PU_STATE)||(state==ED_STATE))|| (otg_info->idt[src_instance][dst_instance][app]==0)
           || (( (ctime-otg_info->ptime[src_instance][dst_instance][app]) >= otg_info->idt[src_instance][dst_instance][app] ) )) {
-        LOG_D(OTG,"[TX] OTG packet: Time To Transmit::OK (Source= %d, Destination= %d, Application %d, State= %d) , (IDT= %d ,ctime= %d, ptime= %d) \n",
+        LOG_D(OTG,"[TX] OTG packet: Time To Transmit::OK (Source= %d, Destination= %d, Application %d, State= %u) , (IDT= %d ,ctime= %d, ptime= %d) \n",
               src_instance,
               dst_instance ,
               app,
@@ -654,7 +654,7 @@ int check_data_transmit(
         if   (g_otg->m2m[src_instance][dst_instance][app]==M2M)
           otg_info->traffic_type[src_instance][dst_instance]=app;//g_otg->application_idx[src_instance][dst_instance];//M2M;
 
-        LOG_D(OTG,"[BACKGROUND=%d] Time To Transmit [SRC %d][DST %d][APPLI %d] \n", otg_info->traffic_type_background[src_instance][dst_instance], src_instance, dst_instance, app);
+        LOG_D(OTG,"[BACKGROUND=%u] Time To Transmit [SRC %d][DST %d][APPLI %d] \n", otg_info->traffic_type_background[src_instance][dst_instance], src_instance, dst_instance, app);
       }
 
     }
@@ -720,7 +720,7 @@ void header_size_gen(
     if ((g_otg->application_type[src_instance][dst_instance][application]==VOIP_G711)||(g_otg->application_type[src_instance][dst_instance][application]==VOIP_G729))
       size_header+=RTP_HEADER;
 
-    LOG_D(OTG,"Header size is %d [IP V=%d][PROTO=%d]\n",  size_header, g_otg->ip_v[src_instance][dst_instance][application],g_otg->trans_proto[src_instance][dst_instance][application]);
+    LOG_D(OTG,"Header size is %u [IP V=%d][PROTO=%d]\n",  size_header, g_otg->ip_v[src_instance][dst_instance][application],g_otg->trans_proto[src_instance][dst_instance][application]);
     otg_info->header_size_app[src_instance][dst_instance][application]=size_header;
   }
 }
@@ -889,7 +889,7 @@ unsigned char * serialize_buffer(
   otg_hdr_p->traffic_type=traffic_type;
   byte_tx_count += sizeof(otg_hdr_t);
 
-  LOG_I(OTG,"traffic type %d\n",otg_hdr_p->traffic_type);
+  LOG_I(OTG,"traffic type %u\n",otg_hdr_p->traffic_type);
   // copy the header first
   memcpy(&tx_buffer[byte_tx_count], header, strlen(header));
   byte_tx_count += strlen(header);
@@ -1953,7 +1953,7 @@ int header_size_gen_background(
     otg_info->header_size_background[src_instance][dst_instance]=size_header;
   }
 
-  LOG_D(OTG," [SRC %d][DST %d]  BACKGROUND TRAFFIC:: size header %d \n", src_instance, dst_instance, otg_info->header_size_background[src_instance][dst_instance]);
+  LOG_D(OTG," [SRC %d][DST %d]  BACKGROUND TRAFFIC:: size header %u \n", src_instance, dst_instance, otg_info->header_size_background[src_instance][dst_instance]);
   return otg_info->header_size_background[src_instance][dst_instance];
 }
 
@@ -1987,7 +1987,7 @@ void state_management(
 
       if (ctime>otg_info->start_holding_time_off[src_instance][dst_instance][application]) {
         otg_info->c_holding_time_off[src_instance][dst_instance][application]= ctime - otg_info->start_holding_time_off[src_instance][dst_instance][application];
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] STATE:: OFF Holding Time %d (%d, %d)\n", src_instance, dst_instance,application , g_otg->aggregation_level[src_instance][dst_instance][application],
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] STATE:: OFF Holding Time %u (%d, %u)\n", src_instance, dst_instance,application , g_otg->aggregation_level[src_instance][dst_instance][application],
               otg_info->c_holding_time_off[src_instance][dst_instance][application], ctime, otg_info->start_holding_time_off[src_instance][dst_instance][application]);
       }
 
@@ -1997,7 +1997,7 @@ void state_management(
                 +g_otg->prob_off_pe[src_instance][dst_instance][application])))
            && (otg_info->c_holding_time_off[src_instance][dst_instance][application]>=g_otg->holding_time_off_pu[src_instance][dst_instance][application])) {
         otg_info->state[src_instance][dst_instance][application]=PU_STATE;
-        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PU  %d  (ctime %d, start %d )\n", src_instance, dst_instance,application,
+        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: OFF-->PU  %u  (ctime %d, start %u )\n", src_instance, dst_instance,application,
               g_otg->aggregation_level[src_instance][dst_instance][application], otg_info->c_holding_time_off[src_instance][dst_instance][application], ctime,
               otg_info->start_holding_time_off[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
@@ -2007,7 +2007,7 @@ void state_management(
                    && (otg_info->state_transition_prob[src_instance][dst_instance][application]< 1-g_otg->prob_off_pe[src_instance][dst_instance][application]))
                   && (otg_info->c_holding_time_off[src_instance][dst_instance][application]>=g_otg->holding_time_off_ed[src_instance][dst_instance][application])) {
         otg_info->state[src_instance][dst_instance][application]=ED_STATE;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->ED \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: OFF-->ED \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       }
 
@@ -2015,13 +2015,13 @@ void state_management(
                 && (otg_info->state_transition_prob[src_instance][dst_instance][application]<=1))
                && (otg_info->c_holding_time_off[src_instance][dst_instance]>=g_otg->holding_time_off_pe[src_instance][dst_instance])) {
         otg_info->state[src_instance][dst_instance][application]=PE_STATE;
-        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: OFF-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: OFF-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
 
       } else {
         otg_info->c_holding_time_off[src_instance][dst_instance][application]= ctime - otg_info->start_holding_time_off[src_instance][dst_instance][application];
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] STATE:: OFF\n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] STATE:: OFF\n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
       }
 
       break;
@@ -2033,20 +2033,20 @@ void state_management(
         otg_info->state[src_instance][dst_instance][application]=OFF_STATE;
         otg_info->start_holding_time_off[src_instance][dst_instance][application]=ctime;
         otg_info->c_holding_time_off[src_instance][dst_instance][application]=0;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: PU-->OFF \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: PU-->OFF \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       } else if  ((otg_info->state_transition_prob[src_instance][dst_instance][application]<=1-g_otg->prob_pu_pe[src_instance][dst_instance][application])
                   && (otg_info->state_transition_prob[src_instance][dst_instance][application]>1-(g_otg->prob_pu_ed[src_instance][dst_instance][application]
                       +g_otg->prob_pu_pe[src_instance][dst_instance][application]))) {
         //otg_info->state[src_instance][dst_instance]=ON_STATE;
         otg_info->state[src_instance][dst_instance][application]=ED_STATE;
-        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: PU-->ED \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_I(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: PU-->ED \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       } else { /*if (otg_info->state_transition_prob[src_instance][dst_instance]>=g_otg->prob_pu_ed)*/
         //otg_info->state[src_instance][dst_instance]=ON_STATE;
         otg_info->state[src_instance][dst_instance][application]=PE_STATE;
         otg_info->start_holding_time_pe_off[src_instance][dst_instance][application]=ctime;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: PU-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: PU-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       }
 
@@ -2059,20 +2059,20 @@ void state_management(
         otg_info->state[src_instance][dst_instance][application]=OFF_STATE;
         otg_info->start_holding_time_off[src_instance][dst_instance][application]=ctime;
         otg_info->c_holding_time_off[src_instance][dst_instance][application]=0;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: ED-->OFF \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: ED-->OFF \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       } else if  ((otg_info->state_transition_prob[src_instance][dst_instance][application]>=1-(g_otg->prob_ed_pu[src_instance][dst_instance][application] +
                    g_otg->prob_ed_pe[src_instance][dst_instance][application] ))
                   && (otg_info->state_transition_prob[src_instance][dst_instance][application]<1-g_otg->prob_ed_pe[src_instance][dst_instance][application]))  {
         //otg_info->state[src_instance][dst_instance]=ON_STATE;
         otg_info->state[src_instance][dst_instance][application]=PE_STATE;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: ED-->PU \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: ED-->PU \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       } else { /*if ((otg_info->state_transition_prob[src_instance][dst_instance]>=1-g_otg->prob_ed_pe)&&(otg_info->state_transition_prob[src_instance][dst_instance]<=1)) */
         //otg_info->state[src_instance][dst_instance]=ON_STATE;
         otg_info->state[src_instance][dst_instance][application]=PE_STATE;
         otg_info->start_holding_time_pe_off[src_instance][dst_instance][application]=ctime;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: ED-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: ED-->PE \n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
       }
 
@@ -2082,7 +2082,7 @@ void state_management(
       if (g_otg->holding_time_pe_off[src_instance][dst_instance][application]<=otg_info->c_holding_time_pe_off[src_instance][dst_instance][application]) {
         //otg_info->state[src_instance][dst_instance]=OFF_STATE;
         otg_info->state[src_instance][dst_instance][application]=OFF_STATE;
-        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%d] NEW STATE:: PE->OFF\n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
+        LOG_D(OTG,"[%d][%d][Appli id %d][Agg Level=%u] NEW STATE:: PE->OFF\n", src_instance, dst_instance,application, g_otg->aggregation_level[src_instance][dst_instance][application]);
         otg_info->c_holding_time_pe_off[src_instance][dst_instance][application]=0;
         otg_info->state_transition_prob[src_instance][dst_instance][application]=uniform_dist(0,1);
         otg_info->start_holding_time_off[src_instance][dst_instance][application]=ctime;
@@ -2097,7 +2097,7 @@ void state_management(
       break;
 
     default:
-      LOG_W(OTG,"Unknown state(%d) \n", otg_info->state[src_instance][dst_instance][application]);
+      LOG_W(OTG,"Unknown state(%u) \n", otg_info->state[src_instance][dst_instance][application]);
       otg_info->state[src_instance][dst_instance][application]= OFF_STATE; // switch to default state
 
       break;
@@ -2145,13 +2145,13 @@ void voip_traffic(
       if (ctime>otg_info->start_voip_silence[src_instance][dst_instance][application])
         otg_info->c_holding_time_silence[src_instance][dst_instance][application]= ctime - otg_info->start_voip_silence[src_instance][dst_instance][application];
 
-      LOG_D(OTG,"[%d][%d][Appli id %d] VOIP STATE:: SILENCE %d (ctime=%d, start=%d)\n", src_instance, dst_instance,application,
+      LOG_D(OTG,"[%d][%d][Appli id %d] VOIP STATE:: SILENCE %u (ctime=%d, start=%u)\n", src_instance, dst_instance,application,
             otg_info->c_holding_time_silence[src_instance][dst_instance][application], ctime, otg_info->start_voip_silence[src_instance][dst_instance][application]);
     }
 
     if (otg_info->c_holding_time_silence[src_instance][dst_instance][application]>=otg_info->silence_time[src_instance][dst_instance][application]) {
       otg_info->voip_state[src_instance][dst_instance][application]=SIMPLE_TALK;
-      LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE :: SILENCE-->TALK  %d  (ctime=%d, start=%d )\n", src_instance, dst_instance,application ,
+      LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE :: SILENCE-->TALK  %u  (ctime=%d, start=%u )\n", src_instance, dst_instance,application ,
             otg_info->c_holding_time_silence[src_instance][dst_instance][application], ctime, otg_info->start_voip_silence[src_instance][dst_instance][application]);
       otg_info->start_voip_talk[src_instance][dst_instance][application]=ctime;
       otg_info->c_holding_time_talk[src_instance][dst_instance][application]=0;
@@ -2160,7 +2160,7 @@ void voip_traffic(
       if (ctime>otg_info->start_voip_silence[src_instance][dst_instance][application])
         otg_info->c_holding_time_silence[src_instance][dst_instance][application]= ctime - otg_info->start_voip_silence[src_instance][dst_instance][application];
 
-      LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE [timer:%d] \n", src_instance, dst_instance,application, otg_info->c_holding_time_silence[src_instance][dst_instance][application]);
+      LOG_I(OTG,"[%d][%d][Appli id %d] STATE:: SILENCE [timer:%u] \n", src_instance, dst_instance,application, otg_info->c_holding_time_silence[src_instance][dst_instance][application]);
     }
 
     break;
@@ -2168,7 +2168,7 @@ void voip_traffic(
   case SIMPLE_TALK:
     if (otg_info->c_holding_time_talk[src_instance][dst_instance][application]>=otg_info->simple_talk_time[src_instance][dst_instance][application]) {
       otg_info->voip_state[src_instance][dst_instance][application]=SILENCE;
-      LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE:: TALK-->SILENCE  %d  (ctime=%d, start=%d )\n", src_instance, dst_instance,application ,
+      LOG_I(OTG,"[%d][%d][Appli id %d] NEW VOIP STATE:: TALK-->SILENCE  %u  (ctime=%d, start=%u )\n", src_instance, dst_instance,application ,
             otg_info->c_holding_time_talk[src_instance][dst_instance][application], ctime, otg_info->start_voip_talk[src_instance][dst_instance][application]);
       otg_info->start_voip_silence[src_instance][dst_instance][application]=ctime;
       otg_info->c_holding_time_silence[src_instance][dst_instance][application]=0;
@@ -2177,15 +2177,15 @@ void voip_traffic(
       if (ctime>otg_info->start_voip_talk[src_instance][dst_instance][application])
         otg_info->c_holding_time_talk[src_instance][dst_instance][application]= ctime - otg_info->start_voip_talk[src_instance][dst_instance][application];
 
-      LOG_I(OTG,"[%d][%d][Appli id %d] VOIP STATE:: TALK [timer:%d]\n", src_instance, dst_instance,application, otg_info->c_holding_time_talk[src_instance][dst_instance][application]);
-      LOG_I(OTG, "test_talk [ctime %d] [start talk %d] [%d] \n",ctime, otg_info->start_voip_talk[src_instance][dst_instance][application],
+      LOG_I(OTG,"[%d][%d][Appli id %d] VOIP STATE:: TALK [timer:%u]\n", src_instance, dst_instance,application, otg_info->c_holding_time_talk[src_instance][dst_instance][application]);
+      LOG_I(OTG, "test_talk [ctime %d] [start talk %u] [%u] \n",ctime, otg_info->start_voip_talk[src_instance][dst_instance][application],
             otg_info->c_holding_time_talk[src_instance][dst_instance][application] );
     }
 
     break;
 
   default:
-    LOG_W(OTG,"Unknown VOIP state(%d) \n", otg_info->voip_state[src_instance][dst_instance][application]);
+    LOG_W(OTG,"Unknown VOIP state(%u) \n", otg_info->voip_state[src_instance][dst_instance][application]);
     otg_info->voip_state[src_instance][dst_instance][application]= SILENCE; // switch to default state
 
     break;

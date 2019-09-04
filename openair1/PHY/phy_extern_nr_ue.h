@@ -25,9 +25,9 @@
 #include "PHY/defs_nr_UE.h"
 //#include "common/ran_context.h"
 
-extern  char* namepointer_chMag ;
+extern char* namepointer_chMag ;
 extern char* namepointer_log2;
-extern  char fmageren_name2[512];
+extern char  fmageren_name2[512];
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
@@ -38,15 +38,7 @@ extern short conjugate[8],conjugate2[8];
 extern int number_of_cards;
 
 
-#ifndef OCP_FRAMEWORK
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
-extern NR_DL_FRAME_PARMS *lte_frame_parms_g;
-#else
-#define MAX_UE 10
-#define MAX_eNB 20
-
-extern PHY_VARS_NR_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
-#endif
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];
@@ -70,7 +62,7 @@ extern unsigned char NB_RU;
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 
@@ -102,8 +94,8 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
-extern char eNB_functions[6][20];
-extern char eNB_timing[2][20];
+extern char NB_functions[7][20];
+extern char NB_timing[2][20];
 extern char ru_if_types[MAX_RU_IF_TYPES][20];
 
 extern int16_t unscrambling_lut[65536*16];

@@ -193,7 +193,7 @@ int trx_lms_start(openair0_device *device){
         LMS_EnableChannel(lms_device,LMS_CH_RX,1,true);
         LMS_EnableChannel(lms_device,LMS_CH_TX,1,true);
     } */
-    LMS_VCTCXOWrite(lms_device,129);
+    LMS_VCTCXOWrite(lms_device, 129);
 
     if (LMS_SetSampleRate(lms_device,device->openair0_cfg->sample_rate,2)!=0)
     {
@@ -405,6 +405,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
   device->trx_stop_func = trx_lms_stop;
   device->trx_set_freq_func = trx_lms_set_freq;
   device->trx_set_gains_func = trx_lms_set_gains;
+  device->uhd_set_thread_priority = NULL;
 
   device->openair0_cfg = openair0_cfg;
 

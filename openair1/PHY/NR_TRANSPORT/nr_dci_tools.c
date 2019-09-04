@@ -71,7 +71,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
 
   tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % CEILIDIV(N_cce,L));
 
-  LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
+  LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
     cce = &dci_alloc->cce_list[cce_idx];
     cce->cce_idx = tmp + cce_idx;
@@ -120,14 +120,11 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   return ret;
 }*/
 
-void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
-                           int frame,
-                           int subframe,
-                           gNB_L1_rxtx_proc_t *proc,
-                           NR_gNB_DCI_ALLOC_t *dci_alloc,
-                           nfapi_nr_dl_config_dci_dl_pdu *pdcch_pdu,
-                           nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu)
-{
+void nr_fill_dci(PHY_VARS_gNB *gNB,
+                 int frame,
+                 int slot,
+                 NR_gNB_DCI_ALLOC_t *dci_alloc,
+                 nfapi_nr_dl_config_dci_dl_pdu *pdcch_pdu) {
 
   uint8_t n_shift;
 
@@ -139,14 +136,29 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 
 
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
-  NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
-  NR_DL_gNB_HARQ_t **harq = dlsch->harq_processes;
+  NR_gNB_DLSCH_t *dlsch; 
 
-  dlsch->harq_ids[subframe]   = pdu_rel15->harq_pid; //New addition
 
   uint16_t N_RB = params_rel15->n_RB_BWP;
   uint8_t fsize=0, pos=0, cand_idx=0;
 
+
+
+  int dlsch_id = find_nr_dlsch(params_rel15->rnti,gNB,SEARCH_EXIST_OR_FREE);
+  if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
+    LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",params_rel15->rnti,dlsch_id);
+    return;
+  }
+
+  dlsch = gNB->dlsch[dlsch_id][0];
+
+  dlsch->slot_tx[slot]             = 1;
+  dlsch->harq_ids[frame%2][slot]   = pdu_rel15->harq_pid;
+  AssertFatal(pdu_rel15->harq_pid < 8 && pdu_rel15->harq_pid >= 0,
+	      "illegal harq_pid %d\n",pdu_rel15->harq_pid);
+
+  dlsch->harq_mask                |= (1<<pdu_rel15->harq_pid);
+  dlsch->rnti                      = params_rel15->rnti;
 
   dci_alloc->L = 8;
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
@@ -402,7 +414,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	*dci_pdu  |= (((uint64_t)pdu_rel15->tpc>>(1-i))&1)<<(dci_alloc->size-pos++);
 
 
-      //      LOG_I(PHY, "DCI PDU: [0]->0x%08llx \t [1]->0x%08llx \t [2]->0x%08llx \t [3]->0x%08llx\n",
+      //      LOG_D(PHY, "DCI PDU: [0]->0x%08llx \t [1]->0x%08llx \t [2]->0x%08llx \t [3]->0x%08llx\n",
       //	    dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
 
@@ -497,10 +509,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
     break;
   }
 
-  LOG_I(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-  LOG_I(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-
-  /// DLSCH struct
-  memcpy((void*)&harq[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
+  LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
+  LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
 
 }

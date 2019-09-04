@@ -30,9 +30,10 @@
 * \warning
 */
 
-#include "PHY/defs_gNB.h"
+#ifndef __NR_DLSCH__H
+#define __NR_DLSCH__H
 
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+#include "PHY/defs_gNB.h"
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
@@ -52,14 +53,6 @@ void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 
 void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type);
 
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
-
-void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                nfapi_nr_config_request_t config);
-
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint16_t size,
                          uint8_t q,
@@ -67,35 +60,21 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out);
 
-void nr_modulation(uint32_t *in,
-                   uint16_t length,
-                   nr_mod_t modulation_type,
-                   int16_t *out);
+void nr_fill_dlsch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   unsigned char *sdu); 
 
-void nr_pdsch_codeword_modulation(uint32_t *in,
-                         uint8_t  Qm,
-                         uint32_t length,
-                         int16_t *out);
-
-void nr_pdsch_layer_mapping(int16_t **mod_symbs,
-                         uint8_t n_layers,
-                         uint16_t n_symbs,
-                         int16_t **tx_layers);
-
-uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
-                          NR_gNB_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
+                          NR_gNB_DCI_ALLOC_t *dci_alloc,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
-                          uint8_t subframe,
-                          NR_DL_FRAME_PARMS frame_parms,
-                          nfapi_nr_config_request_t config);
-
-/** \brief Computes available bits G.
-    @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm, uint8_t Nl);
-
-uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
+                          int frame,
+                          uint8_t slot,
+                          NR_DL_FRAME_PARMS *frame_parms,
+                          nfapi_nr_config_request_t *config);
 
 void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
@@ -103,10 +82,14 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
 void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
 
-int nr_dlsch_encoding(unsigned char *a,
-                     uint8_t subframe,
+int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+
+int nr_dlsch_encoding(unsigned char *a,int frame,
+                     uint8_t slot,
                      NR_gNB_DLSCH_t *dlsch,
                      NR_DL_FRAME_PARMS* frame_parms);
 
+
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);
 
+#endif

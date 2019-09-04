@@ -103,8 +103,9 @@ uint16_t nr_pbch_extract(int **rxdataF,
             j++;
           }
 
-          rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
-        }
+          //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+          rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
+	}
 
         rxF_ext+=9;
       } else { //symbol 2
@@ -125,11 +126,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
               j++;
             }
 
-            rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+            //rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
+            rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 1) : (rx_offset+1);
           }
 
           rxF_ext+=9;
-        } else rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
+        } else rx_offset = (rx_offset >= frame_parms->ofdm_symbol_size) ? (rx_offset - frame_parms->ofdm_symbol_size + 12) : (rx_offset+12);//rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
       }
     }
 
@@ -417,6 +419,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 uint32_t high_speed_flag) {
+
+  int Ns = proc->nr_tti_rx;
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
@@ -443,19 +447,21 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
-    symbol_offset=ue->symbol_offset;
+    symbol_offset=(ue->symbol_offset)%(frame_parms->symbols_per_slot);
   else
     symbol_offset=0;
 
+
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   for (symbol=1; symbol<4; symbol++) {
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF,
+
+    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF,
                     nr_ue_pbch_vars->dl_ch_estimates,
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
@@ -562,8 +568,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 
   uint32_t payload = 0;
-  uint8_t xtra_byte = 0;
-  xtra_byte = (out>>24)&0xff;
+  //uint8_t xtra_byte = 0;
+  nr_ue_pbch_vars->xtra_byte = (out>>24)&0xff;
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
     payload |= ((out>>i)&1)<<(NR_POLAR_PBCH_PAYLOAD_BITS-i-1);
@@ -571,18 +577,18 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  n_hf = ((xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+  n_hf = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
 
   ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
     for (int i=0; i<3; i++)
-      ssb_index += (((xtra_byte>>(7-i))&0x01)<<(3+i));
+      ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
   ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
 
 #ifdef DEBUG_PBCH
-  printf("xtra_byte %x payload %x\n", xtra_byte, payload);
+  printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
 
   for (int i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++) {
     //     printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
@@ -590,20 +596,25 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 #endif
 
-  ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
-  ue->dl_indication.proc=proc;
-  //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.pdu = &decoded_output[0];
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.additional_bits = xtra_byte;
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
-  ue->rx_ind.rx_indication_body[ue->rx_ind.number_pdus].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
-  //ue->rx_ind.number_pdus = 1;
-  ue->rx_ind.number_pdus++;
+  nr_downlink_indication_t dl_indication;
+  fapi_nr_rx_indication_t rx_ind;
+    
+  dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
+  dl_indication.dci_ind = NULL; 
+  dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
+  dl_indication.module_id=0;
+  dl_indication.cc_id=proc->CC_id;
+
+  rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+  rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0]; //not good as it is pointing to a memory that can change
+  rx_ind.rx_indication_body[0].mib_pdu.additional_bits = nr_ue_pbch_vars->xtra_byte;
+  rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
+  rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+  rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+  rx_ind.number_pdus = 1; //rx_ind.number_pdus++;
 
   if (ue->if_inst && ue->if_inst->dl_indication)
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    ue->if_inst->dl_indication(&dl_indication);
 
   return 0;
 }

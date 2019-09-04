@@ -397,7 +397,7 @@ typedef struct et_event_s {
   } u;
 } et_event_t;
 
-inline void et_free_pointer(void *p) {if (NULL != p) {free(p); p=NULL;}};
+inline void et_free_pointer(void *p) {if (NULL != p) {free(p);}};
 
 //-------------------------
 void et_free_packet(et_packet_t *packet);

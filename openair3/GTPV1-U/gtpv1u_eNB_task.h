@@ -45,6 +45,12 @@ void *gtpv1u_eNB_process_itti_msg(void*);
 void *gtpv1u_eNB_task(void *args);
 
 int
+gtpv1u_create_x2u_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_enb_create_x2u_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_enb_create_x2u_tunnel_resp_t * const create_tunnel_resp_pP);
+
+int
 gtpv1u_create_s1u_tunnel(
   const instance_t instanceP,
   const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
@@ -55,4 +61,9 @@ gtpv1u_update_s1u_tunnel(
     const instance_t                              instanceP,
     const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
     const rnti_t                                  prior_rnti);
+
+int gtpv1u_delete_x2u_tunnel(
+  const instance_t                             instanceP,
+  const gtpv1u_enb_delete_tunnel_req_t * const req_pP,
+  int                             enbflag);
 #endif /* GTPV1U_ENB_TASK_H_ */

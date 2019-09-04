@@ -46,12 +46,20 @@
 
 //#define DEBUG_DCI
 
+
 #include "../LTE_TRANSPORT/dci_tools_common_extern.h"
 #include "../LTE_TRANSPORT/transport_proto.h"
 #include "transport_proto_ue.h"
 #include "../LTE_TRANSPORT/transport_common_proto.h"
 #include "SCHED/sched_common.h"
- 
+
+/*
+#undef LOG_D
+#define LOG_D(A,B...) printf(B)
+#undef LOG_I
+#define LOG_I(A,B...) printf(B)
+*/
+
 extern uint16_t beta_cqi[16];
 extern uint16_t beta_ri[16];
 extern uint16_t beta_ack[16];
@@ -1274,7 +1282,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
         if((symbol_mod == 0) || symbol_mod == (4-frame_parms->Ncp))
         {
-	  if (frame_parms->nb_antennas_tx == 2) 
+	  if (frame_parms->nb_antenna_ports_eNB == 2)
 	    crs_re = 4;
 	  else
 	    crs_re = 2;
@@ -2163,8 +2171,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint8_t beamforming_mode,
                                       uint16_t tc_rnti)
 {
-
-    uint8_t harq_pid=0;
     uint8_t frame_type=frame_parms->frame_type;
     uint8_t tpmi=0;
     LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
@@ -2480,15 +2486,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case format1E_2A_M10PRB:
       if (!dlsch[0]) return -1;
 
-      harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
+      dci_info_extarcted.harq_pid  = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
 
-      if (harq_pid>=8) {
-        LOG_E(PHY,"Format 1E_2A_M10PRB: harq_pid=%d >= 8\n", harq_pid);
+      if (dci_info_extarcted.harq_pid>=8) {
+        LOG_E(PHY,"Format 1E_2A_M10PRB: harq_pid=%d >= 8\n", dci_info_extarcted.harq_pid);
         return(-1);
       }
 
-      dlsch[0]->current_harq_pid = harq_pid;
-      dlsch[0]->harq_ack[subframe].harq_id = harq_pid;
+      dlsch[0]->current_harq_pid = dci_info_extarcted.harq_pid;
+      dlsch[0]->harq_ack[subframe].harq_id = dci_info_extarcted.harq_pid;
 
       /*
         tbswap = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->tb_swap;
@@ -2503,7 +2509,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       */
       dlsch0 = dlsch[0];
 
-      dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+      dlsch0_harq = dlsch[0]->harq_processes[dci_info_extarcted.harq_pid];
       // Needs to be checked
       dlsch0_harq->codeword=0;
       conv_rballoc(((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
@@ -2619,7 +2625,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
         // is NAK or an ACK was not received
 
         dlsch0->harq_ack[subframe].ack              = 1;
-        dlsch0->harq_ack[subframe].harq_id          = harq_pid;
+        dlsch0->harq_ack[subframe].harq_id          = dci_info_extarcted.harq_pid;
         dlsch0->harq_ack[subframe].send_harq_status = 1;
         dlsch0->active = 0;
         return(0);
@@ -2675,7 +2681,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     {
       T(T_UE_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame%1024), T_INT(subframe),
         T_INT(dlsch[0]->rnti), T_INT(dci_format),
-        T_INT(harq_pid),
+        T_INT(dci_info_extarcted.harq_pid),
         T_INT(dlsch0_harq->mcs),
         T_INT(dlsch0_harq->TBS));
     }
@@ -3593,7 +3599,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if (cqi_req == 1) {
 
-      if( (AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
+      if( (LTE_AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (LTE_AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
       {
           ulsch->O_RI = 1;
       }
@@ -4222,7 +4228,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 /*
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
-                                       eNB_rxtx_proc_t *proc,
+                                       L1_rxtx_proc_t *proc,
                                        void *dci_pdu,
                                        uint16_t rnti,
                                        DCI_format_t dci_format,

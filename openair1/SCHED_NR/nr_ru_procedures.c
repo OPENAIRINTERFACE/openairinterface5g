@@ -41,6 +41,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -49,21 +50,18 @@
 #include "msc.h"
 
 #include <time.h>
-
-#include "targets/RT/USER/rt_wrapper.h"
-
 // RU OFDM Modulator gNodeB
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern int oai_exit;
 
-void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols) {
+void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
   unsigned int aa,slot_offset,slot_offsetF;
-  int slot = ru->proc.tti_tx;
+  int slot = tti_tx;
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
@@ -112,13 +110,13 @@ void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0), 0);
 }
 
-void nr_feptx_ofdm_2thread(RU_t *ru) {
+void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
-  int slot = ru->proc.tti_tx;
+  int slot = tti_tx;
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -151,7 +149,10 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
     }
     
     ++proc->instance_cnt_feptx;
-    
+    // slot to pass to worker thread
+    proc->slot_feptx = slot;
+    pthread_mutex_unlock( &proc->mutex_feptx );
+  
     
     if (pthread_cond_signal(&proc->cond_feptx) != 0) {
       printf("[RU] ERROR pthread_cond_signal for feptx thread\n");
@@ -159,11 +160,10 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
       return;
     }
     
-    pthread_mutex_unlock( &proc->mutex_feptx );
   }
 
   // call first half-slot in this thread
-  nr_feptx0(ru,0,fp->symbols_per_slot>>1);
+  nr_feptx0(ru,slot,0,fp->symbols_per_slot>>1);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"NR feptx thread");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
@@ -179,16 +179,17 @@ static void *nr_feptx_thread(void *param) {
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
 
-  thread_top_init("nr_feptx_thread",0,870000,1000000,1000000);
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"NR feptx thread")<0) break;
-    nr_feptx0(ru,ru->nr_frame_parms->symbols_per_slot>>1,ru->nr_frame_parms->symbols_per_slot>>1);
+    int slot=proc->slot_feptx;
     if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"NR feptx thread")<0) break;
 
+    nr_feptx0(ru,slot,ru->nr_frame_parms->symbols_per_slot>>1,ru->nr_frame_parms->symbols_per_slot>>1);
+
     if (pthread_cond_signal(&proc->cond_feptx) != 0) {
-      printf("[gNB] ERROR pthread_cond_signal for NR feptx thread exit\n");
+      LOG_E(PHY,"[gNB] ERROR pthread_cond_signal for NR feptx thread exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
     }
@@ -196,7 +197,7 @@ static void *nr_feptx_thread(void *param) {
   return(NULL);
 }
 
-void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
+void nr_init_feptx_thread(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
 
@@ -205,14 +206,14 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
   pthread_mutex_init( &proc->mutex_feptx, NULL);
   pthread_cond_init( &proc->cond_feptx, NULL);
 
-  pthread_create(&proc->pthread_feptx, attr_feptx, nr_feptx_thread, (void*)ru);
+  threadCreate(&proc->pthread_feptx, nr_feptx_thread, (void*)ru, "feptx", -1, OAI_PRIORITY_RT);
 
 
 }
 
 // is this supposed to generate a slot or a subframe???
 // seems to be hardcoded to numerology 1 (2 slots=1 subframe)
-void nr_feptx_ofdm(RU_t *ru) {
+void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
      
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
@@ -220,7 +221,7 @@ void nr_feptx_ofdm(RU_t *ru) {
   unsigned int aa=0;
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((cfg->subframe_config.dl_cyclic_prefix_type.value == 1) ? 12 : 14);
-  int slot = ru->proc.tti_tx;
+  int slot = tti_tx;
   int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
@@ -235,7 +236,7 @@ void nr_feptx_ofdm(RU_t *ru) {
       ((nr_slot_select(cfg,slot)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
-    nr_feptx0(ru,0,fp->symbols_per_slot);
+    nr_feptx0(ru,slot,0,fp->symbols_per_slot);
 
   }
 
@@ -243,7 +244,7 @@ void nr_feptx_ofdm(RU_t *ru) {
   stop_meas(&ru->ofdm_mod_stats);
 
   LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	ru->proc.frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_slot)),
+	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_slot)),
 	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
 }

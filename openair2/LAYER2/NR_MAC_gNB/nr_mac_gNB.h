@@ -42,25 +42,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "COMMON/platform_constants.h"
-
 #include "NR_BCCH-BCH-Message.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
+#include "NR_MeasConfig.h"
 
 #include "nfapi_nr_interface.h"
-
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
-#include "PHY/TOOLS/time_meas.h"
-
-#include "PHY/defs_gNB.h"
-
-#include "targets/ARCH/COMMON/common_lib.h"
-
+#include "COMMON/platform_constants.h"
+#include "common/ran_context.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "common/ran_context.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/TOOLS/time_meas.h"
+#include "targets/ARCH/COMMON/common_lib.h"
+
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -70,8 +68,8 @@ typedef struct {
     int nr_band;
     uint32_t dl_CarrierFreq;
     NR_BCCH_BCH_Message_t *mib;
-    TDD_Config_t *tdd_Config;
-    ARFCN_ValueEUTRA_t ul_CarrierFreq;
+    NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
+    NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
     long ul_Bandwidth;
     /// Outgoing MIB PDU for PHY
     MIB_PDU MIB_pdu;

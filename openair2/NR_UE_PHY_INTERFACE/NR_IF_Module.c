@@ -73,21 +73,19 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
 int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot){
 
 	LOG_I(MAC, "handle_dlsch at MAC layer \n");
-
-  //    return 0;
 	nr_ue_send_sdu(module_id, 0, frame, slot,
-								pduP,
-								pdu_len,
-								0);
-
+										pduP,
+										pdu_len,
+										0);
+  return 0;
+  /*
   return nr_ue_process_dlsch( module_id,
 			      cc_id,
 			      gNB_index,
 			      dci_ind,
 			      pduP,
 			      pdu_len);
-
-
+  */
 }
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
@@ -153,7 +151,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   if(dl_info->dci_ind != NULL){
     LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
     for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
-      LOG_I(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
+      LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
 
       ret_mask |= (handle_dci(
@@ -163,6 +161,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 			      dci, 
 			      (dl_info->dci_ind->dci_list+i)->rnti, 
 			      (dl_info->dci_ind->dci_list+i)->dci_format)) << FAPI_NR_DCI_IND;
+
+      AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
+      nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
 
 
       /*switch((dl_info->dci_ind->dci_list+i)->dci_type){
@@ -264,9 +265,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   //clean up nr_downlink_indication_t *dl_info
   dl_info->rx_ind = NULL;
   dl_info->dci_ind = NULL;
-
-  AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
-  nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
 
   return 0;
 }

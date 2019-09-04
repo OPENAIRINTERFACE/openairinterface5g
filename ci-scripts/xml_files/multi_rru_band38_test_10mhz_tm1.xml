@@ -1,0 +1,87 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-multi-rru-10</htmlTabRef>
+	<htmlTabName>Test-Multi-RRU-10MHz</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
+	<TestCaseRequestedList>
+ 030211 030212 030213
+ 030111 030112 030113
+ 000001
+ 030211 030212 030213
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030111">
+		<class>Initialize_eNB</class>
+		<desc>Initialize RCC (TDD/Band38/10MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band38.tm1.50PRB.multi.rru.conf --noS1</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030112">
+		<class>Initialize_eNB</class>
+		<desc>Initialize Master RRU (TDD/Band38/10MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.master.conf --noS1</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="030113">
+		<class>Initialize_eNB</class>
+		<desc>Initialize Slave RRU (TDD/Band38/10MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.slave.conf --noS1</Initialize_eNB_args>
+		<eNB_instance>2</eNB_instance>
+		<eNB_serverId>2</eNB_serverId>
+	</testCase>
+
+	<testCase id="030211">
+		<class>Terminate_eNB</class>
+		<desc>Terminate RCC</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030212">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Master RRU</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="030213">
+		<class>Terminate_eNB</class>
+		<desc>Terminate Slave RRU</desc>
+		<eNB_instance>2</eNB_instance>
+		<eNB_serverId>2</eNB_serverId>
+	</testCase>
+
+</testCaseList>

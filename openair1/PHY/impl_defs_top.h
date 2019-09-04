@@ -243,10 +243,12 @@
 //#define CHBCH_RSSI_MIN -75
 
 #ifdef BIT8_TX
-#define AMP 128
+#define AMP_SHIFT 7
 #else
-#define AMP 512//1024 //4096
+#define AMP_SHIFT 9
 #endif
+
+#define AMP ((1)<<AMP_SHIFT)
 
 #define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
 #define AMP_OVER_2 (AMP>>1)
@@ -297,8 +299,16 @@ typedef struct {
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 #define cmin(a,b)  ((a<b) ? (a) : (b))
+
+#ifdef __cplusplus
+#ifdef min
+#undef min
+#undef max
+#endif
+#else
 #define max(a,b) cmax(a,b)
 #define min(a,b) cmin(a,b)
+#endif
 
 #ifndef malloc16
 #  ifdef __AVX2__

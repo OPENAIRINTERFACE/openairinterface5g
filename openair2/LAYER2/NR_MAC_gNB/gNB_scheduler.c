@@ -442,7 +442,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
   if (slotP==1){
-  LOG_I(MAC, "About to call nr_schedule_uss_dlsch_phytest() because we are on slotP=1... \n \n \n");
   nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
   }
 

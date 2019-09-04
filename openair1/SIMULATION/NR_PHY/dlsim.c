@@ -19,116 +19,65 @@
  *      contact@openairinterface.org
  */
 
-#include <string.h>
-#include <math.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
+#include <unistd.h>
+#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
-#include "common/ran_context.h" 
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
-#include "PHY/types.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_defs.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_extern.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/defs_gNB.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/phy_vars_nr_ue.h"
+#include "PHY/types.h"
+#include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
-#include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
+#include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
-
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_UE/mac_defs.h"
-#include "LAYER2/NR_MAC_UE/mac_extern.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
-
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
-
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode=0;
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
 
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
-
-int32_t get_uldl_offset(int nr_bandP) {return(0);}
-
-NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
-
-int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
-int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
-
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
-
-void exit_function(const char* file, const char* function, const int line,const char *s) { 
-   const char * msg= s==NULL ? "no comment": s;
-   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
-   exit(-1); 
-}
-
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
-{return(0);}
+//Dummy Functions
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
 int rlc_module_init (void) {return(0);}
-void pdcp_layer_init(void) {}
-int rrc_init_nr_global_param(void){return(0);}
-
-void config_common(int Mod_idP, 
-                   int CC_idP,
-		   int Nid_cell,
-                   int nr_bandP,
-		   uint64_t ssb_pattern,
-                   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-		   );
-
+void pdcp_layer_init (void) {}
+int rrc_init_nr_global_param (void) {return(0);}
+void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
+                              const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
 
 // needed for some functions
-PHY_VARS_NR_UE ***PHY_vars_UE_g;
-short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 int main(int argc, char **argv)
 {
-
   char c;
-
   int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
@@ -144,7 +93,7 @@ int main(int argc, char **argv)
   //int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors=0;
+  int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   //int n_errors2, n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
@@ -164,9 +113,9 @@ int main(int argc, char **argv)
 
   //double pbch_sinr;
   //int pbch_tx_ant;
-  int N_RB_DL=273,mu=1;
+  int N_RB_DL=106,mu=1;
 
-  uint64_t ssb_pattern = 0x01;
+  uint16_t ssb_periodicity = 10;
 
   //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -177,7 +126,6 @@ int main(int argc, char **argv)
   int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
-  gNB_L1_rxtx_proc_t gNB_proc;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
@@ -193,8 +141,8 @@ int main(int argc, char **argv)
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);
@@ -246,7 +194,7 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model!\n");
         exit(-1);
       }
 
@@ -266,13 +214,13 @@ int main(int argc, char **argv)
 
     case 's':
       snr0 = atof(optarg);
-      msg("Setting SNR0 to %f\n",snr0);
+      printf("Setting SNR0 to %f\n",snr0);
       break;
 
     case 'S':
       snr1 = atof(optarg);
       snr1set=1;
-      msg("Setting SNR1 to %f\n",snr1);
+      printf("Setting SNR1 to %f\n",snr1);
       break;
 
       /*
@@ -299,7 +247,7 @@ int main(int argc, char **argv)
       if ((transmission_mode!=1) &&
           (transmission_mode!=2) &&
           (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+        printf("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
 
@@ -309,7 +257,7 @@ int main(int argc, char **argv)
       n_tx=atoi(optarg);
 
       if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
+        printf("Unsupported number of tx antennas %d\n",n_tx);
         exit(-1);
       }
 
@@ -319,7 +267,7 @@ int main(int argc, char **argv)
       n_rx=atoi(optarg);
 
       if ((n_rx==0) || (n_rx>2)) {
-        msg("Unsupported number of rx antennas %d\n",n_rx);
+        printf("Unsupported number of rx antennas %d\n",n_rx);
         exit(-1);
       }
 
@@ -423,7 +371,6 @@ int main(int argc, char **argv)
   phy_init_nr_gNB(gNB,0,0);
   mac_top_init_gNB();
 
-
   double fs,bw;
 
   if (mu == 1 && N_RB_DL == 217) { 
@@ -447,14 +394,14 @@ int main(int argc, char **argv)
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
- 				fs, 
-				bw, 
+ 				fs,
+				bw,
                                 0,
                                 0,
                                 0);
 
   if (gNB2UE==NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
@@ -520,7 +467,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
+  config_common(0,0,Nid_cell,78,SSB_positions,ssb_periodicity,(uint64_t)3640000000L,N_RB_DL);
   config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
 
   nr_l2_init_ue();
@@ -536,7 +483,15 @@ int main(int argc, char **argv)
   
 
   UE_mac->if_module = nr_ue_if_module_init(0);
+  
+  unsigned int available_bits;
+  unsigned char *estimated_output_bit;
+  unsigned char *test_input_bit;
+  unsigned int errors_bit    = 0;
+  uint32_t errors_scrambling = 0;
 
+  test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+  estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   
   // generate signal
   if (input_fd==NULL) {
@@ -554,9 +509,7 @@ int main(int argc, char **argv)
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
 
-    gNB_proc.frame_tx = frame;
-    gNB_proc.slot_tx  = slot;
-    phy_procedures_gNB_TX(gNB,&gNB_proc,0);
+    phy_procedures_gNB_TX(gNB,frame,slot,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
 
@@ -681,81 +634,177 @@ int main(int argc, char **argv)
   UE_mac->scheduled_response.frame = frame;
   UE_mac->scheduled_response.slot = slot;
 
-  for (SNR=snr0; SNR<snr1; SNR+=.2) {
+  UE_mac->phy_config.config_req.pbch_config.system_frame_number = frame;
+  UE_mac->phy_config.config_req.pbch_config.ssb_index = 0;
+  UE_mac->phy_config.config_req.pbch_config.half_frame_bit = 0;
+
+  nr_ue_phy_config_request(&UE_mac->phy_config);
+
+  for (SNR = snr0; SNR < snr1; SNR += .2) {
 
     n_errors = 0;
     //n_errors2 = 0;
     //n_alamouti = 0;
 
-    for (trial=0; trial<n_trials; trial++) {
+    for (trial = 0; trial < n_trials; trial++) {
 
-      // multipath channel
+      //multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = 10*log10((double)txlev)-SNR;
-      sigma2 = pow(10,sigma2_dB/10);
-      //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
+      sigma2_dB = 10 * log10((double)txlev) - SNR;
+      sigma2    = pow(10, sigma2_dB/10);
+      // printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
 
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	  
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
       }
 
-      if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
-	if (UE->frame_parms.nb_antennas_rx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
+      if (n_trials == 1) {
+
+        LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0], frame_length_complex_samples, 1, 1);
+        if (UE->frame_parms.nb_antennas_rx>1)
+          LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
+
       }
+
       if (UE->is_synchronized == 0) {
-	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, normal_txrx);
-	printf("nr_initial_sync1 returns %d\n",ret);
-	if (ret<0) n_errors++;
-      }
-      else {
-	UE->rx_offset=0;
 
-	UE_proc.frame_rx = frame;
-	UE_proc.nr_tti_rx= slot;
-	UE_proc.subframe_rx = slot;
-	
-	nr_ue_scheduled_response(&UE_mac->scheduled_response);
+        UE_nr_rxtx_proc_t proc = {0};
+        ret = nr_initial_sync(&proc, UE, normal_txrx, 1);
+        printf("nr_initial_sync1 returns %d\n", ret);
 
-	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
+        if (ret < 0) 
+          n_errors++;
 
-	phy_procedures_nrUE_RX(UE,
-			       &UE_proc,
-			       0,
-			       do_pdcch_flag,
-			       normal_txrx);
+      } else { // UE->is_synchronized != 0
 
-	if (n_trials==1) {
-	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
-	  if (UE->frame_parms.nb_antennas_rx>1)
-	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
-	}
-	
-	if (UE->dci_ind.number_of_dcis==0) n_errors++;
-      }
-    } //noise trials
+        UE->rx_offset       = 0;
+        UE_proc.frame_rx    = frame;
+        UE_proc.nr_tti_rx   = slot;
+        UE_proc.subframe_rx = slot;
 
-    printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
+        nr_ue_scheduled_response(&UE_mac->scheduled_response);
+
+        printf("Running phy procedures UE RX %d.%d\n", frame, slot);
+
+        phy_procedures_nrUE_RX(UE,
+                               &UE_proc,
+                               0,
+                               do_pdcch_flag,
+                               normal_txrx);
+
+        if (n_trials == 1) {
+
+          LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0], slot_length_complex_samples_no_prefix, 1, 1);
+          if (UE->frame_parms.nb_antennas_rx > 1)
+            LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1], slot_length_complex_samples_no_prefix, 1, 1);
+
+        }
+
+        if (UE_mac->dl_config_request.number_pdus == 0)
+          n_errors++;
+
+        //----------------------------------------------------------
+        //---------------------- count errors ----------------------
+        //----------------------------------------------------------
+        
+        NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
+
+        NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE->current_thread_id[UE_proc.nr_tti_rx]][0][0];
+        int harq_pid = dlsch0->current_harq_pid;
+        NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
+        
+        NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
+        int16_t *UE_llr = pdsch_vars[0]->llr[0];
+
+        nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = gNB_dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+        uint32_t TBS         = rel15.transport_block_size;
+        uint16_t length_dmrs = 1;
+        uint16_t nb_rb       = rel15.n_prb;
+        uint8_t  nb_re_dmrs  = rel15.nb_re_dmrs;
+        uint8_t  mod_order   = rel15.modulation_order;
+        uint8_t  nb_symb_sch = rel15.nb_symbols;
+        
+        available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15.nb_layers);
+        
+        printf("\n");
+        printf("available_bits = %d\n",available_bits);
+  
+        for (i = 0; i < available_bits; i++) {
+          
+          if(((gNB_dlsch->harq_processes[harq_pid]->f[i] == 0) && (UE_llr[i] <= 0)) || 
+             ((gNB_dlsch->harq_processes[harq_pid]->f[i] == 1) && (UE_llr[i] >= 0)))
+          {
+            if(errors_scrambling == 0) {
+              printf("\n");
+              printf("First bit in error in unscrambling = %d\n",i);
+            }
+            errors_scrambling++;
+          }
+  
+        }
+  
+        for (i = 0; i < TBS; i++) {
+  
+          estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
+          test_input_bit[i]       = (gNB_dlsch->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
+  
+          if (estimated_output_bit[i] != test_input_bit[i]) {
+            if(errors_bit == 0)
+              printf("First bit in error in decoding = %d\n",i);
+            errors_bit++;
+          }
+          
+        }
+  
+        ////////////////////////////////////////////////////////////
+  
+        if (errors_scrambling > 0) {
+          if (n_trials == 1)
+            printf("errors_scrambling = %d (trial %d)\n", errors_scrambling, trial);
+        }
+  
+        if (errors_bit > 0) {
+          n_false_positive++;
+          if (n_trials == 1)
+            printf("errors_bit = %d (trial %d)\n", errors_bit, trial);
+        }
+
+        printf("\n");
+
+      } // if (UE->is_synchronized == 0)
+
+    } // noise trials
+
+    printf("*****************************************\n");
+    printf("SNR %f, (false positive %f)\n", SNR,
+           (float) n_false_positive / (float) n_trials);
+    printf("*****************************************\n");
+    printf("\n");
+
+    if (errors_bit == 0) {
+      printf("PDSCH test OK\n");
+      printf("\n");
+    }
+
+    printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR, n_errors, n_trials);
+    printf("\n");
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
       printf("PDCCH test OK\n");
       break;
     }
       
-    if (n_trials==1)
+    if (n_trials == 1)
       break;
 
   } // NSR
 
-  for (i=0; i<2; i++) {
+  for (i = 0; i < 2; i++) {
     free(s_re[i]);
     free(s_im[i]);
     free(r_re[i]);
@@ -768,7 +817,9 @@ int main(int argc, char **argv)
   free(r_re);
   free(r_im);
   free(txdata);
-
+  free(test_input_bit);
+  free(estimated_output_bit);
+  
   if (output_fd)
     fclose(output_fd);
 

@@ -69,8 +69,7 @@ The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
 void multadd_real_vector_complex_scalar(int16_t *x,
                                         int16_t *alpha,
                                         int16_t *y,
-                                        uint32_t N
-                                       );
+                                        uint32_t N);
 
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
@@ -122,7 +121,7 @@ int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *y,
                          uint32_t N,
                          int output_shift,
-			 int madd);
+                         int madd);
 
 /*!
   Element-wise multiplication and accumulation of two complex vectors x1 and x2.
@@ -137,11 +136,11 @@ int mult_cpx_conj_vector(int16_t *x1,
 */
 
 int multadd_cpx_vector(int16_t *x1,
-                    int16_t *x2,
-                    int16_t *y,
-                    uint8_t zero_flag,
-                    uint32_t N,
-		       int output_shift);
+                       int16_t *x2,
+                       int16_t *y,
+                       uint8_t zero_flag,
+                       uint32_t N,
+                       int output_shift);
 
 int mult_cpx_vector(int16_t *x1,
                     int16_t  *x2,
@@ -188,14 +187,13 @@ void idft24576(int16_t *sigF,int16_t *sig,int scale);
 
 void dft1536(int16_t *sigF,int16_t *sig,int scale);
 
+void dft3072(int16_t *sigF,int16_t *sig,int scale);
+
 void dft6144(int16_t *sigF,int16_t *sig,int scale);
 
 void dft12288(int16_t *sigF,int16_t *sig,int scale);
 
 void dft18432(int16_t *sigF,int16_t *sig,int scale);
-
-
-void dft3072(int16_t *sigF,int16_t *sig,int scale);
 
 void dft24576(int16_t *sigF,int16_t *sig,int scale);
 
@@ -234,9 +232,9 @@ int32_t add_cpx_vector(int16_t *x,
                        uint32_t N);
 
 int32_t sub_cpx_vector16(int16_t *x,
-			  int16_t *y,
-			  int16_t *z,
-			  uint32_t N);
+                         int16_t *y,
+                         int16_t *z,
+                         uint32_t N);
 
 int32_t add_cpx_vector32(int16_t *x,
                          int16_t *y,
@@ -295,6 +293,13 @@ void mmxcopy(void *dest,void *src,int size);
 */
 int32_t signal_energy(int32_t *,uint32_t);
 
+/*!\fn int32_t signal_energy_fixed_p9(int *input, uint32_t length);
+\brief Computes the signal energy per subcarrier
+\ the input signal has a fixed point representation of AMP_SHIFT bits
+\ the ouput energy has a fixed point representation of AMP_SHIFT bits
+*/
+int32_t signal_energy_amp_shift(int32_t *input, uint32_t length);
+
 #ifdef LOCALIZATION
 /*!\fn int32_t signal_energy(int *,uint32_t);
 \brief Computes the signal energy per subcarrier
@@ -340,130 +345,26 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 int8_t dB_fixed(uint32_t x);
 
+uint8_t dB_fixed64(uint64_t x);
+
 int8_t dB_fixed2(uint32_t x,uint32_t y);
 
 int16_t dB_fixed_times10(uint32_t x);
 
-uint8_t dB_fixed64(uint64_t x);
-
-int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
-                                    uint32_t last_pilot, int32_t ignore_prefix);
+int32_t phy_phase_compensation_top(uint32_t pilot_type,
+                                   uint32_t initial_pilot,
+                                   uint32_t last_pilot,
+                                   int32_t ignore_prefix);
 
 int32_t dot_product(int16_t *x,
                     int16_t *y,
                     uint32_t N, //must be a multiple of 8
                     uint8_t output_shift);
 
-static inline int64_t dot_product64(int16_t *x,
-		      int16_t *y,
-		      uint32_t N, //must be a multiple of 8
-		      uint8_t output_shift)
-{
-
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *x128,*y128,mmtmp1,mmtmp2,mmtmp3,mmcumul,mmcumul_re,mmcumul_im;
-  __m128i minus_i = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
-  int64_t result;
-
-  x128 = (__m128i*) x;
-  y128 = (__m128i*) y;
-
-  mmcumul_re = _mm_setzero_si128();
-  mmcumul_im = _mm_setzero_si128();
-
-  __m128i*end=x128+(N>>2);
-  for (__m128i* inPtr=x128; inPtr < end ; inPtr++) {
-
-//    printf("n=%d, x128=%p, y128=%p\n",n,x128,y128);
-       // print_shorts("x",&x128[0]);
-       // print_shorts("y",&y128[0]);
-
-    // this computes Re(z) = Re(x)*Re(y) + Im(x)*Im(y)
-    mmtmp1 = _mm_madd_epi16(*inPtr,*y128);
-      //  print_ints("retmp",&mmtmp1);
-    // mmtmp1 contains real part of 4 consecutive outputs (32-bit)
-    // shift and accumulate results
-    mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
-    mmcumul_re = _mm_add_epi32(mmcumul_re,mmtmp1);
-        //print_ints("re",&mmcumul_re);
-
-
-    // this computes Im(z) = Re(x)*Im(y) - Re(y)*Im(x)
-    mmtmp2 = _mm_shufflelo_epi16(*y128,_MM_SHUFFLE(2,3,0,1));
-        //print_shorts("y",&mmtmp2);
-    mmtmp2 = _mm_shufflehi_epi16(mmtmp2,_MM_SHUFFLE(2,3,0,1));
-        //print_shorts("y",&mmtmp2);
-    mmtmp2 = _mm_sign_epi16(mmtmp2,minus_i);
-          //  print_shorts("y",&mmtmp2);
-
-    mmtmp3 = _mm_madd_epi16(*inPtr,mmtmp2);
-            //print_ints("imtmp",&mmtmp3);
-    // mmtmp3 contains imag part of 4 consecutive outputs (32-bit)
-    // shift and accumulate results
-    mmtmp3 = _mm_srai_epi32(mmtmp3,output_shift);
-    mmcumul_im = _mm_add_epi32(mmcumul_im,mmtmp3);
-        //print_ints("im",&mmcumul_im);
-    y128++;
-  }
-
-  // this gives Re Re Im Im
-  mmcumul = _mm_hadd_epi32(mmcumul_re,mmcumul_im);
-    //print_ints("cumul1",&mmcumul);
-  // this gives Re Im Re Im
-  mmcumul = _mm_hadd_epi32(mmcumul,mmcumul);
-    //print_ints("cumul2",&mmcumul);
-
-  //mmcumul = _mm_srai_epi32(mmcumul,output_shift);
-  // extract the lower half
-  result = _mm_extract_epi64(mmcumul,0);
-  //printf("result: (%d,%d)\n",((int32_t*)&result)[0],((int32_t*)&result)[1]); 
- 
-  return(result);
-
-#elif defined(__arm__)
-  int16x4_t *x_128=(int16x4_t*)x;
-  int16x4_t *y_128=(int16x4_t*)y;
-  int32x4_t tmp_re,tmp_im;
-  int32x4_t tmp_re1,tmp_im1;
-  int32x4_t re_cumul,im_cumul;
-  int32x2_t re_cumul2,im_cumul2;
-  int32x4_t shift = vdupq_n_s32(-output_shift); 
-  int32x2x2_t result2;
-  int16_t conjug[4]__attribute__((aligned(16))) = {-1,1,-1,1} ;
-
-  re_cumul = vdupq_n_s32(0);
-  im_cumul = vdupq_n_s32(0); 
-
-  for (n=0; n<(N>>2); n++) {
-
-    tmp_re  = vmull_s16(*x_128++, *y_128++);
-    //tmp_re = [Re(x[0])Re(y[0]) Im(x[0])Im(y[0]) Re(x[1])Re(y[1]) Im(x[1])Im(y[1])] 
-    tmp_re1 = vmull_s16(*x_128++, *y_128++);
-    //tmp_re1 = [Re(x1[1])Re(x2[1]) Im(x1[1])Im(x2[1]) Re(x1[1])Re(x2[2]) Im(x1[1])Im(x2[2])] 
-    tmp_re  = vcombine_s32(vpadd_s32(vget_low_s32(tmp_re),vget_high_s32(tmp_re)),
-                           vpadd_s32(vget_low_s32(tmp_re1),vget_high_s32(tmp_re1)));
-    //tmp_re = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2]) Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])] 
-
-    tmp_im  = vmull_s16(vrev32_s16(vmul_s16(*x_128++,*(int16x4_t*)conjug)),*y_128++);
-    //tmp_im = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
-    tmp_im1 = vmull_s16(vrev32_s16(vmul_s16(*x_128++,*(int16x4_t*)conjug)),*y_128++);
-    //tmp_im1 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
-    tmp_im  = vcombine_s32(vpadd_s32(vget_low_s32(tmp_im),vget_high_s32(tmp_im)),
-                           vpadd_s32(vget_low_s32(tmp_im1),vget_high_s32(tmp_im1)));
-    //tmp_im = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
-
-    re_cumul = vqaddq_s32(re_cumul,vqshlq_s32(tmp_re,shift));
-    im_cumul = vqaddq_s32(im_cumul,vqshlq_s32(tmp_im,shift));
-  }
-  
-  re_cumul2 = vpadd_s32(vget_low_s32(re_cumul),vget_high_s32(re_cumul));
-  im_cumul2 = vpadd_s32(vget_low_s32(im_cumul),vget_high_s32(im_cumul));
-  re_cumul2 = vpadd_s32(re_cumul2,re_cumul2);
-  im_cumul2 = vpadd_s32(im_cumul2,im_cumul2);
-  result2   = vzip_s32(re_cumul2,im_cumul2);
-  return(vget_lane_s32(result2.val[0],0));
-#endif
-}
+int64_t dot_product64(int16_t *x,
+                      int16_t *y,
+                      uint32_t N, //must be a multiple of 8
+                      uint8_t output_shift);
 
 void dft12(int16_t *x,int16_t *y);
 void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);

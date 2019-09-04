@@ -23,7 +23,6 @@
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 {
-
   unsigned int n, x1, x2;
   unsigned int Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
@@ -63,9 +62,10 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 
 }
 
-void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned short n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
+                   unsigned short n_idDMRS,
+                   unsigned short length_dmrs)
 {
-
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
   unsigned int nid;
@@ -106,9 +106,11 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned short n_idDMRS, unsigned short le
     }
 }
 
-void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
+                   unsigned short lbar,
+                   unsigned short *n_idDMRS,
+                   unsigned short length_dmrs)
 {
-
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
   int nscid;
@@ -157,6 +159,33 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDM
         }
 
       }
+    }
+  }
+}
+
+void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
+                        uint16_t *N_n_scid,
+                        uint8_t n_scid)
+{
+  uint32_t x1, x2, n;
+  uint8_t reset, slot, symb, q;
+  NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
+  uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
+
+  for (slot=0; slot<fp->slots_per_frame; slot++) {
+
+    for (symb=0; symb<fp->symbols_per_slot; symb++) {
+
+      reset = 1;
+      x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
+
+      for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
+        pusch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+
+      for (q = 1; q < NR_MAX_NB_CODEWORDS; q++)
+        memcpy(pusch_dmrs[slot][symb][q],pusch_dmrs[slot][symb][0],sizeof(uint32_t)*NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD);
     }
   }
 }

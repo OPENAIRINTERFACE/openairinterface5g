@@ -248,7 +248,7 @@ ue_ip_common_ip2wireless(
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
   ue_ip_priv_t                     *priv_p=netdev_priv(ue_ip_dev[instP]);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ipversion_t         *ipv_p             = NULL;
   unsigned int         hard_header_len   = 0;
   unsigned char       *src_addr          = 0;
@@ -304,7 +304,16 @@ ue_ip_common_ip2wireless(
     if (dst_addr) {
       printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, dst_addr[0],dst_addr[1],dst_addr[2],dst_addr[3]);
     }
-
+    // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator start
+#ifdef UESIM_EXPANSION
+    if ((src_addr[3] - 2)> instP) {
+        pdcph.inst = src_addr[3] - 2;
+        printk("[UE_IP_DRV] change INST from %d to %d\n",instP, pdcph.inst);
+        instP = src_addr[3] - 2;
+        priv_p=netdev_priv(ue_ip_dev[instP]);
+    }
+#endif
+    // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator end
     //get Ipv4 address and pass to PCDP header
     printk("[UE_IP_DRV] source Id: 0x%08x\n",pdcph.sourceL2Id );
     printk("[UE_IP_DRV] destinationL2Id Id: 0x%08x\n",pdcph.destinationL2Id );

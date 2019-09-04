@@ -116,12 +116,13 @@ extern "C" {
  * @{*/
 
 
-#define FLAG_NOCOLOR   0x0001  /*!< \brief use colors in log messages, depending on level */
-#define FLAG_THREAD    0x0008  /*!< \brief display thread name in log messages */
-#define FLAG_LEVEL     0x0010  /*!< \brief display log level in log messages */
-#define FLAG_FUNCT     0x0020
-#define FLAG_FILE_LINE 0x0040
-#define FLAG_TIME      0x0100
+#define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
+#define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
+#define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
+#define FLAG_FUNCT       0x0020
+#define FLAG_FILE_LINE   0x0040
+#define FLAG_TIME        0x0100
+#define FLAG_INITIALIZED 0x8000
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
 #define CLEAR_LOG_OPTION(O) g_log->flag = (g_log->flag & (~O))
@@ -147,6 +148,7 @@ extern "C" {
 #define DEBUG_CTRLSOCKET   (1<<10)
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
+#define DEBUG_RLC          (1<<13)
 #define UE_TIMING          (1<<20)
 
 
@@ -164,6 +166,7 @@ extern "C" {
     {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
+    {"RLC",         DEBUG_RLC},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -206,6 +209,7 @@ typedef enum {
   GTPU,
   SPGW,
   S1AP,
+  F1AP,
   SCTP,
   HW,
   OSA,
@@ -216,6 +220,8 @@ typedef enum {
   TMR,
   USIM,
   LOCALIZE,
+  PROTO_AGENT,
+  F1U,
   X2AP,
   GNB_APP,
   NR_RRC,
@@ -223,6 +229,8 @@ typedef enum {
   NR_PHY,
   LOADER,
   ASN,
+  NFAPI_VNF,
+  NFAPI_PNF,
   MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
@@ -289,7 +297,9 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
+int isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
 int  set_log(int component, int level);
 void set_glog(int level);
@@ -305,6 +315,19 @@ void logClean (void);
 int  is_newline( char *str, int size);
 
 int register_log_component(char *name, char *fext, int compidx);
+
+#define LOG_MEM_SIZE 100*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+void flush_mem_to_file(void);
+void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
+int logInit_log_mem(void);
+void close_log_mem(void);
+  
+typedef struct {
+  char* buf_p;
+  int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
 
 /* @}*/
 
@@ -351,6 +374,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
   }
 
 #define LOG_OPTIONS_IDX   2
+
+
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro
@@ -367,9 +392,9 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
 #    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0)
 #    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0)
+#    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
-#    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
 /* bitmask dependant macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
@@ -426,9 +451,12 @@ static __inline__ uint64_t rdtsc(void) {
 
 extern double cpuf;
 
-static inline uint64_t checkTCPU(int timeout, char *file, int line) {
-  static __thread uint64_t  lastCPUTime=0;
-  static __thread uint64_t  last=0;
+static inline uint64_t checkTCPU(int timeout,
+		                         char *file,
+								 int line)
+{
+  static uint64_t __thread lastCPUTime=0;
+  static uint64_t __thread last=0;
   uint64_t cur=rdtsc();
   struct timespec CPUt;
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
@@ -448,8 +476,11 @@ static inline uint64_t checkTCPU(int timeout, char *file, int line) {
   return cur;
 }
 
-static inline unsigned long long checkT(int timeout, char *file, int line) {
-  static __thread unsigned long long last=0;
+static inline unsigned long long checkT(int timeout,
+		                                char *file,
+										int line)
+{
+  static unsigned long long __thread last=0;
   unsigned long long cur=rdtsc();
   int microCycles=(int)(cpuf*1000);
   int duration=(int)((cur-last)/microCycles);
@@ -468,7 +499,10 @@ typedef struct m {
   uint64_t maxArray[11];
 } Meas;
 
-static inline void printMeas(char *txt, Meas *M, int period) {
+static inline void printMeas(char *txt,
+		                     Meas *M,
+							 int period)
+{
   if (M->iterations%period == 0 ) {
     char txt2[512];
     sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
@@ -478,21 +512,27 @@ static inline void printMeas(char *txt, Meas *M, int period) {
             M->iterations,
             M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
             M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-#if DISABLE_LOG_X
-    printf("%s",txt2);
+#if T_TRACER
+    LOG_W(PHY,"%s",txt2);
 #else
-    LOG_W(PHY, "%s",txt2);
+    printf("%s",txt2);
 #endif
   }
 }
 
-static inline int cmpint(const void *a, const void *b) {
+static inline int cmpint(const void *a,
+		                 const void *b)
+{
   uint64_t *aa=(uint64_t *)a;
   uint64_t *bb=(uint64_t *)b;
   return (int)(*aa-*bb);
 }
 
-static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
+static inline void updateTimes(uint64_t start,
+		                       Meas *M,
+							   int period,
+							   char *txt)
+{
   if (start!=0) {
     uint64_t end=rdtsc();
     long long diff=(end-start)/(cpuf*1000);
@@ -529,5 +569,3 @@ static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
 #endif
 
 #endif
-
-

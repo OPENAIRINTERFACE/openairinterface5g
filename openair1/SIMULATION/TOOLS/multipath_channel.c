@@ -28,6 +28,7 @@
 #include "sim.h"
 
 //#define DEBUG_CH
+
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
 {
 

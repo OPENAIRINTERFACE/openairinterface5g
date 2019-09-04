@@ -48,14 +48,12 @@
 #endif
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
-void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_nr.puch_GroupHopping,
-  //uint8_t PUCCH_GroupHopping,
-  PHY_VARS_NR_UE *ue,
-  //uint32_t n_id,
-  uint8_t n_hop,
-  int nr_tti_tx,
-  uint8_t *u,
-  uint8_t *v) {
+void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
+  				uint32_t n_id,
+  				uint8_t n_hop,
+  				int nr_tti_tx,
+  				uint8_t *u,
+  				uint8_t *v) {
   /*
    * Implements TS 38.211 subclause 6.3.2.2.1 Group and sequence hopping
    * The following variables are set by higher layers:
@@ -69,12 +67,12 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
    *                n_hop=1 for the second hop
    */
   // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
-  pucch_GroupHopping_t PUCCH_GroupHopping = ue->pucch_config_common_nr->pucch_GroupHopping; // from higher layers FIXME!!!
+  //pucch_GroupHopping_t PUCCH_GroupHopping = ue->pucch_config_common_nr->pucch_GroupHopping; // from higher layers FIXME!!!
   // n_id defined as per TS 38.211 subclause 6.3.2.2.1 (is given by the higher-layer parameter hoppingId)
   // it is hoppingId from PUCCH-ConfigCommon:
   // Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled
   // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
-  uint16_t n_id = ue->pucch_config_common_nr->hoppingId; // from higher layers FIXME!!!
+  //uint16_t n_id = ue->pucch_config_common_nr->hoppingId; // from higher layers FIXME!!!
 #ifdef DEBUG_NR_PUCCH_TX
   // initialization to be removed
   PUCCH_GroupHopping=neither;
@@ -84,8 +82,8 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
   uint8_t f_ss=0,f_gh=0;
   *u=0;
   *v=0;
-  uint32_t c_init = (1<<5)*floor(n_id/30)+(n_id%30); // we initialize c_init to calculate u,v
-  uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
+  uint32_t c_init = 0; 
+  uint32_t x1,s; // TS 38.211 Subclause 5.2.1
   int l = 32, minShift = ((2*nr_tti_tx+n_hop)<<3);
   int tmpShift =0;
 #ifdef DEBUG_NR_PUCCH_TX
@@ -97,6 +95,8 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
   }
 
   if (PUCCH_GroupHopping == enable) { // PUCCH_GroupHopping 'enabled'
+    c_init = floor(n_id/30); // we initialize c_init to calculate u,v according to 6.3.2.2.1 of 38.211
+    s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
     for (int m=0; m<8; m++) {
       while(minShift >= l) {
         s = lte_gold_generic(&x1, &c_init, 0);
@@ -118,6 +118,8 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
   }
 
   if (PUCCH_GroupHopping == disable) { // PUCCH_GroupHopping 'disabled'
+    c_init = (1<<5)*floor(n_id/30)+(n_id%30); // we initialize c_init to calculate u,v
+    s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
     f_ss = n_id%30;
     l = 32, minShift = (2*nr_tti_tx+n_hop);
 
@@ -137,7 +139,7 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
 #endif
 }
 
-double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
+double nr_cyclic_shift_hopping(uint32_t n_id,
                                uint8_t m0,
                                uint8_t mcs,
                                uint8_t lnormal,
@@ -153,7 +155,7 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
    */
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
-  uint32_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
+  uint32_t c_init = n_id; // we initialize c_init again to calculate n_cs
 #ifdef DEBUG_NR_PUCCH_TX
   // initialization to be remo.ved
   c_init=10;
@@ -193,7 +195,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int16_t amp,
                         int nr_tti_tx,
                         uint8_t m0,
-                        uint8_t mcs,
+			uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB) {
@@ -246,8 +248,8 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   for (int l=0; l<nrofSymbols; l++) {
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
     // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-    nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-    alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
+    nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
 #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
 #endif
@@ -364,7 +366,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
       d_im = -(int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15);
     }
   }
-
+//  printf("d_re=%d\td_im=%d\n",(int)d_re,(int)d_im);
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch1] sequence modulation: payload=%x \tde_re=%d \tde_im=%d\n",payload,d_re,d_im);
 #endif
@@ -435,8 +437,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
     printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with n_hop=%d, nr_tti_tx=%d\n",
            n_hop,nr_tti_tx);
 #endif
-    nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-    alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,lprime,nr_tti_tx);
+    nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,lprime,nr_tti_tx);
 
     for (int n=0; n<12; n++) {
       r_u_v_alpha_delta_re[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
@@ -449,11 +451,13 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                                      + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of DMRS base sequence shifted by alpha
       r_u_v_alpha_delta_dmrs_re[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_re[n]))>>15);
       r_u_v_alpha_delta_dmrs_im[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_im[n]))>>15);
+//      printf("symbol=%d\tr_u_v_re=%d\tr_u_v_im=%d\n",l,r_u_v_alpha_delta_re[n],r_u_v_alpha_delta_im[n]);
       // PUCCH sequence = DM-RS sequence multiplied by d(0)
       y_n_re[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
                                            - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15))); // Re part of y(n)
       y_n_im[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_im)>>15)
                                            + (((int32_t)(r_u_v_alpha_delta_im[n])*d_re)>>15))); // Im part of y(n)
+//       printf("symbol=%d\tr_u_v_dmrs_re=%d\tr_u_v_dmrs_im=%d\n",l,r_u_v_alpha_delta_dmrs_re[n],r_u_v_alpha_delta_dmrs_im[n]);
 #ifdef DEBUG_NR_PUCCH_TX
       printf("\t [nr_generate_pucch1] sequence generation \tu=%d \tv=%d \talpha=%lf \tr_u_v_alpha_delta[n=%d]=(%d,%d) \ty_n[n=%d]=(%d,%d)\n",
              u,v,alpha,n,r_u_v_alpha_delta_re[n],r_u_v_alpha_delta_im[n],n,y_n_re[n],y_n_im[n]);
@@ -518,10 +522,10 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
 
       for (int m=0; m < N_SF_mprime_PUCCH_DMRS_1; m++) {
         for (int n=0; n<12 ; n++) {
-          z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
-              - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
-          z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
-              + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
+          z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
+              - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
+          z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
+              + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
 #ifdef DEBUG_NR_PUCCH_TX
           printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
                  mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
@@ -529,7 +533,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                  table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
                  z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif
-        }
+//          printf("gNB entering l=%d\tdmrs_re=%d\tdmrs_im=%d\n",l,z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n],z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n]);
+	}
       }
     }
 
@@ -547,43 +552,41 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
              w_index, N_SF_mprime_PUCCH_1,N_SF_mprime_PUCCH_DMRS_1,N_SF_mprime0_PUCCH_1,N_SF_mprime0_PUCCH_DMRS_1);
 #endif
 
-      for (int m=0; m < N_SF_mprime_PUCCH_1; m++) {
-        for (mprime = 0; mprime<2; mprime++) { // mprime can get values {0,1}
-          for (int m=0; m < N_SF_mprime_PUCCH_1; m++) {
-            for (int n=0; n<12 ; n++) {
-              z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15)
-                  - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15));
-              z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15)
-                  + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15));
+      for (mprime = 0; mprime<2; mprime++) { // mprime can get values {0,1}
+        for (int m=0; m < N_SF_mprime_PUCCH_1; m++) {
+          for (int n=0; n<12 ; n++) {
+            z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15)
+                - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15));
+            z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15)
+                + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15));
 #ifdef DEBUG_NR_PUCCH_TX
-              printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
-                     mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
-                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
-                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
-                     z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+            printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+                   mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+                   table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
+                   table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
+                   z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif
-            }
           }
-
-          for (int m=0; m < N_SF_mprime_PUCCH_DMRS_1; m++) {
-            for (int n=0; n<12 ; n++) {
-              z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
-                  - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
-              z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
-                  + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
-#ifdef DEBUG_NR_PUCCH_TX
-              printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
-                     mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
-                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
-                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
-                     z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
-#endif
-            }
-          }
-
-          N_SF_mprime_PUCCH_1       =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (PUCCH)
-          N_SF_mprime_PUCCH_DMRS_1  = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (DM-RS)
         }
+
+        for (int m=0; m < N_SF_mprime_PUCCH_DMRS_1; m++) {
+          for (int n=0; n<12 ; n++) {
+            z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
+                - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
+            z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
+                + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
+#ifdef DEBUG_NR_PUCCH_TX
+            printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+                   mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+                   table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
+                   table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
+                   z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+#endif
+          }
+        }
+
+        N_SF_mprime_PUCCH_1       =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (PUCCH)
+        N_SF_mprime_PUCCH_DMRS_1  = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (DM-RS)
       }
     }
 
@@ -636,8 +639,9 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
+//      printf("gNb l=%d\ti=%d\treoffset=%d\tre=%d\tim=%d\n",l,i,re_offset,z_dmrs_re[i+n],z_dmrs_im[i+n]);
       }
-
+      
       re_offset++;
     }
 
@@ -753,8 +757,8 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
   printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with n_hop=%d, nr_tti_tx=%d\n",
          n_hop,nr_tti_tx);
 #endif
-  nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-  alpha = nr_cyclic_shift_hopping(ue,m0,mcs,lnormal,lprime,nr_tti_tx);
+  nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+  alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,lnormal,lprime,nr_tti_tx);
 
   for (int n=0; n<12; n++) {
     r_u_v_alpha_delta_re[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
@@ -1571,7 +1575,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   for (int l=0; l<nrofSymbols; l++) {
     if ((intraSlotFrequencyHopping == 1) && (l >= (int)floor(nrofSymbols/2))) n_hop = 1; // n_hop = 1 for second hop
 
-    nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
 
     // Next we proceed to calculate base sequence for DM-RS signal, according to TS 38.211 subclause 6.4.1.33
     if (nrofPRB >= 3) { // TS 38.211 subclause 5.2.2.1 (Base sequences of length 36 or larger) applies
@@ -1617,7 +1621,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
     }
 
     uint16_t j=0;
-    alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
+    alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
 
     for (int rb=0; rb<nrofPRB; rb++) {
       if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB

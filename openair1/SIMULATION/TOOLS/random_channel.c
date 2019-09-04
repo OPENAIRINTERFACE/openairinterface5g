@@ -1204,6 +1204,10 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   return(chan_desc);
 }
 
+void free_channel_desc_scm(channel_desc_t * ch) {
+	// Must be made cleanly, a lot of leaks...
+	free(ch);
+}
 
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
 

@@ -40,8 +40,8 @@
 #        include "rlc_um_structs.h"
 #        include "rlc_um_constants.h"
 #        include "platform_types.h"
-#        include "DL-UM-RLC.h"
-#        include "UL-UM-RLC.h"
+#        include "LTE_DL-UM-RLC.h"
+#        include "LTE_UL-UM-RLC.h"
 //-----------------------------------------------------------------------------
 
 typedef volatile struct {
@@ -97,11 +97,11 @@ void config_req_rlc_um_asn1 (
                                       const MBMS_flag_t        mbms_flagP,
                                       const mbms_session_id_t  mbms_session_idP,
                                       const mbms_service_id_t  mbms_service_idP,
-                                      const UL_UM_RLC_t       * const ul_rlc_pP,
-                                      const DL_UM_RLC_t       * const dl_rlc_pP,
+                                      const LTE_UL_UM_RLC_t  * const ul_rlc_pP,
+                                      const LTE_DL_UM_RLC_t  * const dl_rlc_pP,
                                       const rb_id_t            rb_idP,
                                       const logical_chan_id_t  chan_idP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                       ,const uint32_t          sourceL2Id
                                       ,const uint32_t          destinationL2Id
 #endif

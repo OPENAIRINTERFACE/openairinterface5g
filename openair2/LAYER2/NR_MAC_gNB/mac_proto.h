@@ -38,23 +38,24 @@ void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
                    int CC_idP,
-				   int Nid_cell,
+                   int Nid_cell,
                    int nr_bandP,
-				   uint64_t ssb_pattern,
+                   uint64_t ssb_pattern,
+                   uint16_t ssb_periodicity,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
-						   int cellid,
+                           int cellid,
                            int p_gNB,
                            int nr_bandP,
                            uint64_t ssb_pattern,
+                           uint16_t ssb_periodicity,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
-                           NR_ServingCellConfigCommon_t *servingcellconfigcommon
-                           );
+                           NR_ServingCellConfigCommon_t *servingcellconfigcommon);
 
 int  is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slotP);
 
@@ -63,13 +64,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, 
-                               frame_t frameP,
-                               sub_frame_t subframeP);
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
-
-
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
@@ -79,30 +76,29 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP);
 
-
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-				  nr_scs_e scs_common,
-				  nr_scs_e pdcch_scs,
-				  nr_frequency_range_e freq_range,
-				  uint8_t rmsi_pdcch_config,
-				  uint8_t ssb_idx,
-          uint8_t k_ssb,
-          uint16_t sfn_ssb,
-          uint8_t n_ssb,
-				  uint16_t nb_slots_per_frame,
-				  uint16_t N_RB);
+                                  nr_scs_e scs_common,
+                                  nr_scs_e pdcch_scs,
+                                  nr_frequency_range_e freq_range,
+                                  uint8_t rmsi_pdcch_config,
+                                  uint8_t ssb_idx,
+                                  uint8_t k_ssb,
+                                  uint16_t sfn_ssb,
+                                  uint8_t n_ssb,
+                                  uint16_t nb_slots_per_frame,
+                                  uint16_t N_RB);
 
 int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
-                                nfapi_nr_coreset_t coreset,
-                                uint16_t frame,
-                                uint16_t slot,
-                                nfapi_nr_config_request_t cfg);
+                          nfapi_nr_coreset_t coreset,
+                          uint16_t frame,
+                          uint16_t slot,
+                          nfapi_nr_config_request_t cfg);
 
 void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-                                            nfapi_nr_coreset_t* coreset,
-                                            nfapi_nr_search_space_t* search_space,
-                                            nfapi_nr_config_request_t cfg,
-                                            uint16_t N_RB);
+                                        nfapi_nr_coreset_t* coreset,
+                                        nfapi_nr_search_space_t* search_space,
+                                        nfapi_nr_config_request_t cfg,
+                                        uint16_t N_RB);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
@@ -114,20 +110,22 @@ int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
-void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
+void get_band(uint32_t downlink_frequency, uint8_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
+int32_t get_nr_uldl_offset(int nr_bandP);
+
 void config_nr_mib(int Mod_idP, 
-                int CC_idP,
-                int p_gNBP,
-                int subCarrierSpacingCommon, 
-                uint32_t ssb_SubcarrierOffset,
-                int dmrs_TypeA_Position,
-                uint32_t pdcch_ConfigSIB1,
-                int cellBarred,
-                int intraFreqReselection);
+                   int CC_idP,
+                   int p_gNBP,
+                   int subCarrierSpacingCommon,
+                   uint32_t ssb_SubcarrierOffset,
+                   int dmrs_TypeA_Position,
+                   uint32_t pdcch_ConfigSIB1,
+                   int cellBarred,
+                   int intraFreqReselection);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

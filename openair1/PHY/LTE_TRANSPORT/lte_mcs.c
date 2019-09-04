@@ -349,6 +349,43 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
   }
 }
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode)
+{
+  //int G_adj;
+
+  /*if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
+    G_adj= adjust_G(frame_parms,rb_alloc,mod_order,subframe);
+
+    //printf("get_G subframe %d mod_order %d, nb_rb %d: rb_alloc %x,%x,%x,%x, G_adj %d\n",subframe,mod_order,nb_rb,rb_alloc[3],rb_alloc[2],rb_alloc[1],rb_alloc[0], G_adj);
+    if (frame_parms->Ncp==NORMAL) { // normal prefix
+      // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
+      // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
+      // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
+      if (beamforming_mode==0 && frame_parms->nb_antenna_ports_eNB!=1) 
+        return((((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
+      else if(beamforming_mode==7)
+        return(((int)nb_rb * mod_order * ((7-num_pdcch_symbols)*12 + 3*10 + 4*9)) - G_adj);
+      else //SISO
+        return(((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+    } else {
+      // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
+      // PCDPDD PDDPDD - 10 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
+      // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
+      if (frame_parms->nb_antenna_ports_eNB!=1)
+        return((((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
+      else if(beamforming_mode==7)
+        return(((int)nb_rb * mod_order * ((5-num_pdcch_symbols)*12 + 3*8 + 4*9)) - G_adj);
+      else //SISO
+        return(((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*10)) - G_adj);
+    }
+  } else { // This is an MBSFN subframe
+    return((int)frame_parms->N_RB_DL * mod_order * 102);
+  }*/
+  return((int)frame_parms->N_RB_DL * mod_order * 120);
+}
+#endif
+
 // following function requires dlsch_tbs_full.h
 #include "PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 

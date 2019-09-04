@@ -151,11 +151,11 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
          }
        }
 
-      dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
+      dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
     }
 
     for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
-      dlsch->mod_symbs[q] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
+      dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH*sizeof(int32_t));
 
      dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(64*sizeof(int32_t*));
      for (aa=0; aa<64; aa++) {
@@ -163,9 +163,10 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
 
      }
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = 0;
-
+    for (i=0; i<20; i++) {
+      dlsch->harq_ids[0][i] = 0;
+      dlsch->harq_ids[1][i] = 0;
+    }
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));
@@ -248,9 +249,10 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
     dlsch->rnti = 0;
     dlsch->active = 0;
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
-
+    for (i=0; i<10; i++) {
+      dlsch->harq_ids[0][i] = Mdlharq;
+      dlsch->harq_ids[1][i] = Mdlharq;
+    }
     for (i=0; i<Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         //  dlsch->harq_processes[i]->Ndi    = 0;
@@ -267,7 +269,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int nr_dlsch_encoding(unsigned char *a,
+int nr_dlsch_encoding(unsigned char *a,int frame,
                      uint8_t slot,
                      NR_gNB_DLSCH_t *dlsch,
                      NR_DL_FRAME_PARMS* frame_parms)
@@ -275,7 +277,8 @@ int nr_dlsch_encoding(unsigned char *a,
 
   unsigned int G;
   unsigned int crc=1;
-  uint8_t harq_pid = dlsch->harq_ids[slot];
+  uint8_t harq_pid = dlsch->harq_ids[frame&2][slot];
+  AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
   uint8_t nb_symb_sch = rel15.nb_symbols;
@@ -332,7 +335,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     //    dlsch->harq_processes[harq_pid]->b = a;
-    
+   
+    AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
+
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,

@@ -32,13 +32,13 @@
 
 #include "nr_dci.h"
 #include "nr_dlsch.h"
+#include "nr_sch_dmrs.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
 
-
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
@@ -187,12 +187,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   cset_start_symb = pdcch_params.first_symbol;
   cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
-  LOG_I(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+  LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
   // DMRS length is per OFDM symbol
   uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
                          (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
   uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-  LOG_I(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
+  LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
 
   /// DMRS QPSK modulation
   /*There is a need to shift from which index the pregenerated DMRS sequence is used
@@ -202,7 +202,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
 
     dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
-    LOG_I(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
+    LOG_D(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
   }
 
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
@@ -217,9 +217,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
       }
 
-      nr_modulation(dmrs_seq, dmrs_length, MOD_QPSK, mod_dmrs[symb]);
+      nr_modulation(dmrs_seq, dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
     } else
-      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, MOD_QPSK, mod_dmrs[symb]);
+      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_PDCCH_DMRS
 
@@ -264,7 +264,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
   /// QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
-  nr_modulation(scrambled_output, encoded_length, MOD_QPSK, mod_dci);
+  nr_modulation(scrambled_output, encoded_length, DMRS_MOD_ORDER, mod_dci); //Qm = 2 as DMRS is QPSK modulated
 #ifdef DEBUG_DCI
 
   for (int i=0; i<encoded_length>>1; i++)

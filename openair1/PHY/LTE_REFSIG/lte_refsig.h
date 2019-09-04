@@ -57,6 +57,8 @@ void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_
 
 void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_table[10][3][42],uint16_t Nid_MBSFN);
 
+void lte_gold_mbsfn_khz_1dot25 (LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_1khz_1dot25_table[10][150],uint16_t Nid_MBSFN);
+
 
 /*! \brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1)
 @param phy_vars_eNB Pointer to eNB variables
@@ -143,6 +145,10 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
                     int *output,
                     int subframe,
                     unsigned char l);
+
+int lte_dl_mbsfn_khz_1dot25_rx(PHY_VARS_UE *ue,
+                    int *output,
+                    int subframe);
 
 
 

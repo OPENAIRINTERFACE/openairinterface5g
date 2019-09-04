@@ -15,6 +15,10 @@ typedef struct {
   int nr_tti_tx;
   /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
   int nr_tti_rx;
+  /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_tx;
+  /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_rx;
   //#endif
   /// subframe to act upon for transmission
   int subframe_tx;
@@ -32,8 +36,6 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_slot1_dl_processing;
   /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_slot1_dl_processing;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
   pthread_cond_t cond_slot1_dl_processing;
@@ -46,8 +48,6 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_dlsch_td;
   /// pthread attributes for fep_slot1 processing thread
-  // pthread_attr_t attr_slot0_dl_processing;
-  pthread_attr_t attr_dlsch_td;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
   pthread_cond_t cond_dlsch_td;
@@ -60,7 +60,7 @@ typedef struct {
   uint8_t decoder_thread_available;
   uint8_t decoder_main_available;
   uint8_t decoder_switch;
-  int counter_decoder;
+  int num_seg;
   uint8_t channel_level;
   int eNB_id;
   int harq_pid;

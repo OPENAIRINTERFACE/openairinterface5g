@@ -95,7 +95,7 @@
   @param *phy_vars_rn pointer to RN variables
 */
 void phy_procedures_UE_lte(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
-#if defined(Rel10) || defined(Rel14)
+#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief Top-level entry routine for relay node procedures actinf as UE. This proc will make us of the existing UE procs.
   @param last_slot Index of last slot (0-19)
   @param next_slot Index of next_slot (0-19)
@@ -112,7 +112,7 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
   @param mode calib/normal mode
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id, uint8_t thread_id);
 /*! \brief Scheduling for UE RX procedures in normal subframes.
   @param last_slot Index of last slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
