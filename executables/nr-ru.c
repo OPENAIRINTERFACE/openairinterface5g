@@ -1079,13 +1079,10 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   } else if (mu == NR_MU_1) {
     if(N_RB == 273) {
       if (fp->threequarter_fs) {
-        cfg->sample_rate=115.2e6;
-        cfg->samples_per_frame = 1152000;
-        cfg->tx_bw = 100e6;
-        cfg->rx_bw = 100e6;
+        AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
       } else {
-        cfg->sample_rate=153.6e6;
-        cfg->samples_per_frame = 1536000;
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
         cfg->tx_bw = 100e6;
         cfg->rx_bw = 100e6;
       }
