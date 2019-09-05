@@ -46,27 +46,16 @@
 //#include "COMMON/mac_rrc_primitives.h"
 
 #include "NR_SIB1.h"
-//#include "SystemInformation.h"
-//#include "RRCConnectionReconfiguration.h"
 #include "NR_RRCReconfigurationComplete.h"
 #include "NR_RRCReconfiguration.h"
-//#include "RRCConnectionReconfigurationComplete.h"
-//#include "RRCConnectionSetup.h"
-//#include "RRCConnectionSetupComplete.h"
-//#include "RRCConnectionRequest.h"
-//#include "RRCConnectionReestablishmentRequest.h"
-//#include "BCCH-DL-SCH-Message.h"
+#include "NR_RRCReestablishmentRequest.h"
 #include "NR_BCCH-BCH-Message.h"
-//#include "MCCH-Message.h"
-//#include "MBSFNAreaConfiguration-r9.h"
-//#include "SCellToAddMod-r10.h"
-//#include "AS-Config.h"
-//#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
-#include "NR_MeasResults.h"
+#include "NR_UE-MRDC-Capability.h"
 #include "NR_MeasResults.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
+#include "NR_EstablishmentCause.h"
 //-------------------
 
 #if defined(ENABLE_ITTI)
@@ -91,9 +80,9 @@
 typedef unsigned int uid_nr_t;
 #define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_NR_UE_MAX/8)/sizeof(unsigned int)) + 1)
 
-/*typedef struct nr_uid_linear_allocator_s {
+typedef struct nr_uid_linear_allocator_s {
   unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
-} nr_uid_allocator_t;*/
+} nr_uid_allocator_t;
     
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
@@ -157,7 +146,7 @@ typedef struct UE_RRC_INFO_NR_s {
   uint8_t                                             SIB1systemInfoValueTag;
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
-#if defined(Rel10) || defined(Rel14)
+#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t                                             MCCHStatus[8];             // MAX_MBSFN_AREA
 #endif
   uint8_t                                             SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
@@ -259,25 +248,27 @@ typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-#if defined(Rel10) || defined(Rel14)
-  SCellToAddMod_r10_t                sCell_config[2];
+#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  LTE_SCellToAddMod_r10_t            sCell_config[2];
 #endif
-  SRB_ToAddModList_t*                SRB_configList;
-  SRB_ToAddModList_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  DRB_ToAddModList_t*                DRB_configList;
-  DRB_ToAddModList_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  DRB_ToReleaseList_t*               DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_SRB_ToAddModList_t*             SRB_configList;
+  NR_SRB_ToAddModList_t*             SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToAddModList_t*             DRB_configList;
+  NR_DRB_ToAddModList_t*             DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToReleaseList_t*            DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
   SRB_INFO                           SI;
   SRB_INFO                           Srb0;
   SRB_INFO_TABLE_ENTRY               Srb1;
   SRB_INFO_TABLE_ENTRY               Srb2;
-  MeasConfig_t*                      measConfig;
+  NR_MeasConfig_t*                   measConfig;
   HANDOVER_INFO*                     handover_info;
-  MeasResults_t*                     measResults;
+  NR_MeasResults_t*                  measResults;
 
-  UE_EUTRA_Capability_t*             UE_Capability;
+  NR_UE_NR_Capability_t*             UE_Capability_nr;
+  NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;
+
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -288,8 +279,8 @@ typedef struct gNB_RRC_UE_s {
   int8_t  nh_ncc;
 #endif
   /* Used integrity/ciphering algorithms */
-  CipheringAlgorithm_r12_t                          ciphering_algorithm;
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+  NR_CipheringAlgorithm_t            ciphering_algorithm;
+  e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
   uint8_t                            Status;
   rnti_t                             rnti;
@@ -298,10 +289,10 @@ typedef struct gNB_RRC_UE_s {
 #if defined(ENABLE_ITTI)
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
-  EstablishmentCause_t               establishment_cause;
+  NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t             reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
@@ -385,7 +376,6 @@ typedef struct {
   int ssb_SubcarrierOffset;                  
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
-  int num_UEs;
   NR_RRCReconfiguration_t                   *reconfig[MAX_NR_RRC_UE_CONTEXTS];
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
@@ -402,10 +392,10 @@ typedef struct gNB_RRC_INST_s {
   int                                                 module_id;
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
-  uid_allocator_t                                     uid_allocator; // for rrc_ue_head
+  nr_uid_allocator_t                                     uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   
-  uint8_t                                             Nb_ue;
+  int                                                 Nb_ue;
 
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t

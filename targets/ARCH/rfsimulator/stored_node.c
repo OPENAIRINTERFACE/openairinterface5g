@@ -125,8 +125,15 @@ int main(int argc, char *argv[]) {
     fullwrite(serviceSock, &header, sizeof(header));
     int dataSize=sizeof(sample_t)*header.size*header.nbAnt;
 
-    if (dataSize>bufSize)
-      buff=realloc(buff,dataSize);
+    if (dataSize>bufSize) {
+      void * new_buff = realloc(buff, dataSize);
+      if (new_buff == NULL) {
+        free(buff);
+        AssertFatal(1, "Could not reallocate");
+      } else {
+        buff = new_buff;
+      }
+    }
 
     AssertFatal(read(fd,buff,dataSize) == dataSize, "");
     fullwrite(serviceSock, buff, dataSize);
@@ -139,4 +146,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

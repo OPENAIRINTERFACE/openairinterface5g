@@ -19,12 +19,22 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_defs.h
+ * \brief x2ap struct definitions for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdint.h>
 
 #include "queue.h"
 #include "tree.h"
 
 #include "sctp_eNB_defs.h"
+
+#include "x2ap_ids.h"
+#include "x2ap_timers.h"
 
 #ifndef X2AP_ENB_DEFS_H_
 #define X2AP_ENB_DEFS_H_
@@ -34,26 +44,25 @@
 typedef enum {
   /* Disconnected state: initial state for any association. */
   X2AP_ENB_STATE_DISCONNECTED = 0x0,
-  
+
   /* State waiting for x2 Setup response message if the target eNB accepts or
    * X2 Setup failure if rejects the eNB.
    */
   X2AP_ENB_STATE_WAITING     = 0x1,
-  
+
   /* The eNB is successfully connected to another eNB. */
   X2AP_ENB_STATE_CONNECTED   = 0x2,
-  
+
   /* X2AP is ready, and the eNB is successfully connected to another eNB. */
   X2AP_ENB_STATE_READY             = 0x3,
 
   X2AP_ENB_STATE_OVERLOAD          = 0x4,
 
   X2AP_ENB_STATE_RESETTING         = 0x5,
-  
+
   /* Max number of states available */
   X2AP_ENB_STATE_MAX,
 } x2ap_eNB_state_t;
-
 
 /* Served PLMN identity element */
 struct plmn_identity_s {
@@ -84,13 +93,13 @@ typedef struct x2ap_eNB_data_s {
 
   /* This is the optional name provided by the MME */
   char *eNB_name;
-  
-  /*  target eNB ID */ 
+
+  /*  target eNB ID */
   uint32_t eNB_id;
-  
+
   /* Current eNB load information (if any). */
   //x2ap_load_state_t overload_state;
-  
+
   /* Current eNB->eNB X2AP association state */
   x2ap_eNB_state_t state;
 
@@ -106,6 +115,10 @@ typedef struct x2ap_eNB_data_s {
 
   /* SCTP association id */
   int32_t  assoc_id;
+
+  /* Nid cells */
+  uint32_t                Nid_cell[MAX_NUM_CCs];
+  int                     num_cc;
 
   /* Only meaningfull in virtual mode */
   struct x2ap_eNB_instance_s *x2ap_eNB_instance;
@@ -160,6 +173,14 @@ typedef struct x2ap_eNB_instance_s {
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
+  uint32_t                subframeAssignment[MAX_NUM_CCs];
+  uint32_t                specialSubframe[MAX_NUM_CCs];
+
+//#ifdef Rel15
+  uint32_t				  tdd_nRARFCN[MAX_NUM_CCs];
+  int16_t                 nr_SCS[MAX_NUM_CCs];
+//#endif
+
   int                     num_cc;
 
   net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];
@@ -169,6 +190,9 @@ typedef struct x2ap_eNB_instance_s {
   uint16_t         sctp_out_streams;
   uint32_t         enb_port_for_X2C;
   int              multi_sd;
+
+  x2ap_id_manager  id_manager;
+  x2ap_timers_t    timers;
 } x2ap_eNB_instance_t;
 
 typedef struct {
@@ -192,4 +216,3 @@ RB_PROTOTYPE(x2ap_eNB_map, x2ap_eNB_data_s, entry, x2ap_eNB_compare_assoc_id);
 
 
 #endif /* X2AP_ENB_DEFS_H_ */
-

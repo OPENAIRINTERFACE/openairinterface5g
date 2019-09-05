@@ -27,36 +27,86 @@
  * \company Eurecom
  * \email: raymond.knopp@eurecom.fr
  */
-#define RRC_GNB_NSA_C
+#ifndef RRC_GNB_NSA_C
 #define RRC_GNB_NSA_C
 
+#include "nr_rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
+#include "NR_UE-NR-Capability.h"
 
-void rrc_parse_ue_capabilities() {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,BIT_STRING_t *ueCapabilityRAT_Container_nr,BIT_STRING_t *ueCapabilityRAT_Container_MRDC)  {
+
+  struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
+  int rnti = taus()&65535;
+
+  AssertFatal(ueCapabilityRAT_Container_nr!=NULL,"ueCapabilityRAT_Container_nr is NULL\n");
+  AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
+  // decode and store capabilities
+  ue_context_p = rrc_gNB_get_ue_context(rrc,
+					rnti);
+  
+  asn_dec_rval_t dec_rval = uper_decode(NULL,
+					&asn_DEF_NR_UE_NR_Capability,
+					(void **)&ue_context_p->ue_context.UE_Capability_nr,
+					ueCapabilityRAT_Container_nr->buf,
+					ueCapabilityRAT_Container_nr->size, 0, 0);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes)\n", dec_rval.consumed);
+      ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,
+                      ue_context_p->ue_context.UE_Capability_nr);
+      ue_context_p->ue_context.UE_Capability_nr = 0;
+      AssertFatal(1==0,"exiting\n");
+  }
+
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_NR_UE_MRDC_Capability,
+			 (void **)&ue_context_p->ue_context.UE_Capability_MRDC,
+			 ueCapabilityRAT_Container_MRDC->buf,
+			 ueCapabilityRAT_Container_MRDC->size, 0, 0);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      LOG_E(RRC, "Failed to decode UE MRDC capabilities (%zu bytes)\n", dec_rval.consumed);
+      ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability,
+                      ue_context_p->ue_context.UE_Capability_MRDC);
+      ue_context_p->ue_context.UE_Capability_MRDC = 0;
+      AssertFatal(1==0,"exiting\n");
+  }
+
+  // dump ue_capabilities
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_NR_UE_NR_Capability, ue_context_p->ue_context.UE_Capability_nr);
+  }  
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
+  }  
 
 }
 
-void rrc_add_nsa_user(NR_RRC_VARS *rrc) {
+void rrc_add_nsa_user(gNB_RRC_INST *rrc) {
 
 // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
 
-
+  rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
 
 // NR RRCReconfiguration
 
-  AssertFatal(rrc->reconfig[rrc->num_UEs]==NULL,
-	      "rrc->reconfig[%d] isn't null\n",rrc->num_UEs);
-  AssertFatal(rrc->num_UEs < MAX_NR_RRC_UE_CONTEXTS);
+  AssertFatal(carrier->reconfig[rrc->Nb_ue]==NULL,
+	      "carrier->reconfig[%d] isn't null\n",rrc->Nb_ue);
+  AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
 
-  rrc->reconfig[rrc->num_UEs] = calloc(1,sizeof(NR_RRCReconfiguration_t));
-  rrc->secondaryCellGroup[rrc->num_UEs] = calloc(1,sizeof(NR_CellGroupConfig_t));
-  memset((void*)rrc->reconfig[rrc->num_UEs],0,sizeof(NR_RRCReconfiguration_t));
-  rrc->reconfig[rrc->num_UEs].present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
+  carrier->reconfig[rrc->Nb_ue] = calloc(1,sizeof(NR_RRCReconfiguration_t));
+  carrier->secondaryCellGroup[rrc->Nb_ue] = calloc(1,sizeof(NR_CellGroupConfig_t));
+  memset((void*)carrier->reconfig[rrc->Nb_ue],0,sizeof(NR_RRCReconfiguration_t));
+  carrier->reconfig[rrc->Nb_ue]->rrc_TransactionIdentifier=0;
+  carrier->reconfig[rrc->Nb_ue]->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
-  rrc->reconfig[rrc->num_UEs].choice.rrcReconiguration = reconfig_ies;
-  fill_default_reconfig(rrc->scc,reconfig_ies);
+  carrier->reconfig[rrc->Nb_ue]->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
+  fill_default_reconfig(carrier->ServingCellConfigCommon,reconfig_ies);
 
-  rrc->num_UEs++;
+  rrc->Nb_ue++;
 }
 
 

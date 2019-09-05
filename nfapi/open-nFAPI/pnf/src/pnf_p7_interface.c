@@ -223,3 +223,15 @@ int nfapi_pnf_p7_vendor_extension(nfapi_pnf_p7_config_t* config, nfapi_p7_messag
 	return pnf_p7_pack_and_send_p7_message(_this, msg, 0);
 }
 
+int nfapi_pnf_ue_release_resp(nfapi_pnf_p7_config_t* config, nfapi_ue_release_response_t* resp)
+{
+	if (config == NULL || resp == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+		return -1;
+	}
+
+	pnf_p7_t* _this = (pnf_p7_t*)(config);
+
+	return pnf_p7_pack_and_send_p7_message(_this, &(resp->header), sizeof(nfapi_ue_release_response_t));
+}

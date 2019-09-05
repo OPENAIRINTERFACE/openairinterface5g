@@ -154,7 +154,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
                    PHY_VARS_eNB *phy_vars_enb,
                    int UE_id)
 {
-  int eNB_id = 0;
+
   int i,i2,arx,atx,ind,k;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->frame_parms;
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
@@ -178,7 +178,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  int frame = phy_vars_enb->proc.proc_rxtx[0].frame_tx;
+  int frame = phy_vars_enb->proc.L1_proc.frame_tx;
   uint32_t total_dlsch_bitrate = phy_vars_enb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
@@ -197,10 +197,10 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
 
-  rxsig_t = (int16_t**) phy_vars_enb->common_vars.rxdata[eNB_id];
+  rxsig_t = (int16_t**) phy_vars_enb->RU_list[0]->common.rxdata;
   //chest_t = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
-  chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates[eNB_id];
-  chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
+  chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates;
+  chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates;
   pusch_llr = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->llr;
   pusch_comp = (int32_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
   pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
@@ -209,7 +209,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
-    if (rxsig_t[0] != NULL) {
+    if (rxsig_t[0] != NULL ) {
       for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
         rxsig_t_dB[0][i] = 10*log10(1.0+(float) ((rxsig_t[0][2*i])*(rxsig_t[0][2*i])+(rxsig_t[0][2*i+1])*(rxsig_t[0][2*i+1])));
         time[i] = (float) i;

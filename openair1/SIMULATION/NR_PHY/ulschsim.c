@@ -25,14 +25,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
-
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -46,19 +41,20 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
 #include "SCHED_NR/sched_nr.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
-//#define DEBUG_ULSCHSIM
+//#define DEBUG_NR_ULSCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode = 0;
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return (0);
 }
@@ -101,27 +97,11 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-char quantize(double D, double x, unsigned char B) {
-  double qxd;
-  short maxlev;
-  qxd = floor(x / D);
-  maxlev = 1 << (B - 1); //(char)(pow(2,B-1));
-
-  //printf("x=%f,qxd=%f,maxlev=%d\n",x,qxd, maxlev);
-
-  if (qxd <= -maxlev)
-    qxd = -maxlev;
-  else if (qxd >= maxlev)
-    qxd = maxlev - 1;
-
-  return ((char) qxd);
-}
-
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
   char c;
   int i,sf;
-  double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
+  double SNR, snr0 = -2.0, snr1 = 2.0; //, SNR_lin;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
   FILE *output_fd = NULL;
@@ -137,9 +117,10 @@ int main(int argc, char **argv) {
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
+  //unsigned char pbch_phase = 0;
   int frame = 0, subframe = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  double sigma;
+  //double sigma;
   unsigned char qbits = 8;
   int ret;
   int loglvl = OAILOG_WARNING;
@@ -150,14 +131,15 @@ int main(int argc, char **argv) {
 
   cpuf = get_cpu_freq_GHz();
 
-  if (load_configmodule(argc, argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun("[NR_ULSCHSIM] Error, configuration module init failed\n");
   }
 
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
+  //while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
+  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:")) != -1) {
     switch (c) {
       /*case 'f':
          write_output_file = 1;
@@ -205,7 +187,7 @@ int main(int argc, char **argv) {
             break;
 
           default:
-            msg("Unsupported channel model!\n");
+            printf("Unsupported channel model! Exiting.\n");
             exit(-1);
         }
 
@@ -221,17 +203,24 @@ int main(int argc, char **argv) {
 
       case 'n':
         n_trials = atoi(optarg);
+#ifdef DEBUG_NR_ULSCHSIM
+        printf("n_trials (-n) = %d\n", n_trials);
+#endif
         break;
 
       case 's':
         snr0 = atof(optarg);
-        msg("Setting SNR0 to %f\n", snr0);
+#ifdef DEBUG_NR_ULSCHSIM
+        printf("Setting SNR0 to %f\n", snr0);
+#endif
         break;
 
       case 'S':
         snr1 = atof(optarg);
         snr1set = 1;
-        msg("Setting SNR1 to %f\n", snr1);
+#ifdef DEBUG_NR_ULSCHSIM
+        printf("Setting SNR1 to %f\n", snr1);
+#endif
         break;
 
       case 'p':
@@ -252,7 +241,7 @@ int main(int argc, char **argv) {
         n_tx = atoi(optarg);
 
         if ((n_tx == 0) || (n_tx > 2)) {
-          msg("Unsupported number of tx antennas %d\n", n_tx);
+          printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
           exit(-1);
         }
 
@@ -262,7 +251,7 @@ int main(int argc, char **argv) {
         n_rx = atoi(optarg);
 
         if ((n_rx == 0) || (n_rx > 2)) {
-          msg("Unsupported number of rx antennas %d\n", n_rx);
+          printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
           exit(-1);
         }
 
@@ -278,21 +267,32 @@ int main(int argc, char **argv) {
 
       case 'R':
         N_RB_DL = atoi(optarg);
-        N_RB_UL = N_RB_DL;
+#ifdef DEBUG_NR_ULSCHSIM
+        printf("N_RB_DL (-R) = %d\n", N_RB_DL);
+#endif
         break;
 
       case 'F':
         input_fd = fopen(optarg, "r");
 
         if (input_fd == NULL) {
-            printf("Problem with filename %s\n", optarg);
+            printf("Problem with filename %s. Exiting.\n", optarg);
             exit(-1);
         }
 
         break;
 
+      /*case 'P':
+        pbch_phase = atoi(optarg);
+        if (pbch_phase > 3)
+          printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
+        break;*/
+
       case 'm':
         Imcs = atoi(optarg);
+#ifdef DEBUG_NR_ULSCHSIM
+        printf("Imcs (-m) = %d\n", Imcs);
+#endif
         break;
 
       case 'l':
@@ -309,15 +309,16 @@ int main(int argc, char **argv) {
 
       default:
         case 'h':
-          printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
+          printf("%s -h(elp) -g channel_model -n n_frames -s snr0 -S snr1 -p(extended_prefix) -y TXant -z RXant -M -N cell_id -R -F input_filename -m -l -r\n", argv[0]);
+          //printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
           printf("-h This message\n");
-          printf("-p Use extended prefix mode\n");
-          //printf("-d Use TDD\n");
+          printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
           printf("-n Number of frames to simulate\n");
+          //printf("-d Use TDD\n");
           printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
           printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-          printf("-t Delay spread for multipath channel\n");
-          printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+          printf("-p Use extended prefix mode\n");
+          //printf("-t Delay spread for multipath channel\n");
           //printf("-x Transmission mode (1,2,6 for the moment)\n");
           printf("-y Number of TX antennas used in eNB\n");
           printf("-z Number of RX antennas used in UE\n");
@@ -326,11 +327,14 @@ int main(int argc, char **argv) {
           printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
           printf("-R N_RB_DL\n");
-          printf("-O oversampling factor (1,2,4,8,16)\n");
-          printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+          printf("-F Input filename (.txt format) for RX conformance testing\n");
+          printf("-m\n");
+          printf("-l\n");
+          printf("-r\n");
+          //printf("-O oversampling factor (1,2,4,8,16)\n");
+          //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
           //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
           //printf("-f Output filename (.txt format) for Pe/SNR results\n");
-          printf("-F Input filename (.txt format) for RX conformance testing\n");
           exit(-1);
           break;
     }
@@ -343,13 +347,17 @@ int main(int argc, char **argv) {
   if (snr1set == 0)
     snr1 = snr0 + 10;
 
-  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model,
+  gNB2UE = new_channel_desc_scm(n_tx,
+		                        n_rx,
+								channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
-                                0, 0, 0);
+                                0,
+								0,
+								0);
 
   if (gNB2UE == NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
@@ -378,7 +386,7 @@ int main(int argc, char **argv) {
 
   //phy_init_nr_top(frame_parms);
   if (init_nr_ue_signal(UE, 1, 0) != 0) {
-    printf("Error at UE NR initialisation\n");
+    printf("Error at UE NR initialisation.\n");
     exit(-1);
   }
 
@@ -388,7 +396,7 @@ int main(int argc, char **argv) {
         UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
 
         if (!UE->ulsch[sf][0][i]) {
-          printf("Can't get ue ulsch structures\n");
+          printf("Can't get ue ulsch structures.\n");
           exit(-1);
         }
 
@@ -478,7 +486,7 @@ int main(int argc, char **argv) {
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef DEBUG_ULSCHSIM
+#ifdef DEBUG_NR_ULSCHSIM
   for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
 
@@ -521,15 +529,10 @@ int main(int argc, char **argv) {
   
         //if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 
-        SNR_lin = pow(10, SNR / 10.0);
-        sigma = 1.0 / sqrt(2 * SNR_lin);
-#if 0
-        channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
-                                                   modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
-                                                   qbits);
-#else
+        //SNR_lin = pow(10, SNR / 10.0);
+        //sigma = 1.0 / sqrt(2 * SNR_lin);
         channel_output_fixed[i] = (short) quantize(0.01, modulated_input[i], qbits);
-#endif
+        //channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0, modulated_input[i] + sigma * gaussdouble(0.0, 1.0), qbits);
         //channel_output_fixed[i] = (char)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
         //printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);
 

@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_encoder.c
+ * \brief x2ap encoder procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -37,9 +44,9 @@ int x2ap_eNB_encode_pdu(X2AP_X2AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
   DevAssert(buffer != NULL);
   DevAssert(len != NULL);
 
-  if (asn1_xer_print) {
+  //if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)pdu);
-  }
+  //}
 
   encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, pdu, (void **)buffer);
 

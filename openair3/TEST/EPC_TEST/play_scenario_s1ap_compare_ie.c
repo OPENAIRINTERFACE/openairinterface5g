@@ -122,7 +122,7 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
               hex[2] = '\0';
               end_ptr = hex;
               uli = strtoul(hex, &end_ptr, 16);
-              AssertFatal((uli != ULONG_MAX) && (end_ptr != NULL) && (*end_ptr == '\0'), "Conversion of hexstring %s failed returned %ld errno %d", hex, uli, errno);
+              AssertFatal((uli != ULONG_MAX) && (end_ptr != NULL) && (*end_ptr == '\0'), "Conversion of hexstring %s failed returned %lu errno %d", hex, uli, errno);
               s1ap->binary_stream[pos++] = (unsigned char)uli;
             } while (pos2 < (2*5));
             // update ASN1

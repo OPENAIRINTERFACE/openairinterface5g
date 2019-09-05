@@ -41,9 +41,7 @@ unsigned int s0[MAX_NUM_COMPS], s1[MAX_NUM_COMPS], s2[MAX_NUM_COMPS], b[MAX_NUM_
 
 
 
-inline unsigned int taus(unsigned int comp)
-{
-
+inline unsigned int taus(unsigned int comp) {
   b[comp] = (((s0[comp] << 13) ^ s0[comp]) >> 19);
   s0[comp] = (((s0[comp] & 0xFFFFFFFE) << 12)^  b[comp]);
   b[comp] = (((s1[comp] << 2) ^ s1[comp]) >> 25);
@@ -54,42 +52,36 @@ inline unsigned int taus(unsigned int comp)
   return r[comp];
 }
 
-void set_taus_seed(unsigned int seed_type)
-{
-
+/*void set_taus_seed(unsigned int seed_type) {
   unsigned int i; // i index of component
 
   for (i=MIN_NUM_COMPS; i < MAX_NUM_COMPS  ; i ++)  {
-
     switch (seed_type) {
-    case 0: // use rand func
-      if (i == 0) srand(time(NULL));
+      case 0: // use rand func
+        if (i == 0) srand(time(NULL));
 
-      s0[i] = ((unsigned int)rand());
-      s1[i] = ((unsigned int)rand());
-      s2[i] = ((unsigned int)rand());
-      printf("Initial seeds use rand: s0[%d] = 0x%x, s1[%d] = 0x%x, s2[%d] = 0x%x\n", i, s0[i], i, s1[i], i, s2[i]);
-      break;
+        s0[i] = ((unsigned int)rand());
+        s1[i] = ((unsigned int)rand());
+        s2[i] = ((unsigned int)rand());
+        printf("Initial seeds use rand: s0[%u] = 0x%x, s1[%u] = 0x%x, s2[%u] = 0x%x\n", i, s0[i], i, s1[i], i, s2[i]);
+        break;
 
-    case 1: // use rand with seed
-      if (i == 0) srand(0x1e23d851);
+      case 1: // use rand with seed
+        if (i == 0) srand(0x1e23d851);
 
-      s0[i] = ((unsigned int)rand());
-      s1[i] = ((unsigned int)rand());
-      s2[i] = ((unsigned int)rand());
-      printf("Initial seeds use rand with seed : s0[%d] = 0x%x, s1[%d] = 0x%x, s2[%d] = 0x%x\n", i, s0[i], i, s1[i], i, s2[i]);
+        s0[i] = ((unsigned int)rand());
+        s1[i] = ((unsigned int)rand());
+        s2[i] = ((unsigned int)rand());
+        printf("Initial seeds use rand with seed : s0[%u] = 0x%x, s1[%u] = 0x%x, s2[%u] = 0x%x\n", i, s0[i], i, s1[i], i, s2[i]);
+        break;
 
-      break;
-
-    default:
-      break;
-
+      default:
+        break;
     }
   }
-}
+}*/
 
-int get_rand (unsigned int comp)
-{
+int get_rand (unsigned int comp) {
   if ((comp > MIN_NUM_COMPS) && (comp < MAX_NUM_COMPS))
     return r[comp];
   else {
@@ -98,9 +90,7 @@ int get_rand (unsigned int comp)
   }
 }
 
-unsigned int dtaus(unsigned int comp, unsigned int a, unsigned b)
-{
-
+unsigned int dtaus(unsigned int comp, unsigned int a, unsigned b) {
   return (int) (((double)taus(comp)/(double)0xffffffff)* (double)(b-a) + (double)a);
 }
 /*

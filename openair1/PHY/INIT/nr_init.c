@@ -25,35 +25,41 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "RadioResourceConfigCommonSIB.h"
+/*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "MBSFN-SubframeConfigList.h"*/
+#include "openair1/PHY/defs_RU.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "MBSFN-SubframeConfigList.h"
 #include "assertions.h"
 #include <math.h>
 
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
+/*
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
+
 extern int32_t get_nr_uldl_offset(int nr_bandP);
 extern openair0_config_t openair0_cfg[MAX_CARDS];
+*/
 
 int l1_north_init_gNB() {
-  int i,j;
 
   if (RC.nb_nr_L1_inst > 0 &&  RC.gNB != NULL) {
+
     AssertFatal(RC.nb_nr_L1_inst>0,"nb_nr_L1_inst=%d\n",RC.nb_nr_L1_inst);
     AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
     LOG_I(PHY,"%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
-    for (i=0; i<RC.nb_nr_L1_inst; i++) {
+    for (int i=0; i<RC.nb_nr_L1_inst; i++) {
       AssertFatal(RC.gNB[i]!=NULL,"RC.gNB[%d] is null\n",i);
+
       if ((RC.gNB[i]->if_inst =  NR_IF_Module_init(i))<0) return(-1);
       
-      LOG_I(PHY,"%s() RC.gNB[%d][%d] installing callbacks\n", __FUNCTION__, i,  j);
+      LOG_I(PHY,"%s() RC.gNB[%d] installing callbacks\n", __FUNCTION__, i);
       RC.gNB[i]->if_inst->NR_PHY_config_req = nr_phy_config_request;
       RC.gNB[i]->if_inst->NR_Schedule_response = nr_schedule_response;
     }
@@ -268,11 +274,12 @@ void phy_config_request(PHY_Config_t *phy_config) {
 }*/
 
 
-void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
+void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
+{
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  //NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
@@ -344,33 +351,37 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 /// this function is a temporary addition for NR configuration
 
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst) {
-
-  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
+                               int N_RB_DL,
+                               int N_RB_UL,
+                               int mu,
+                               int Nid_cell,
+                               uint64_t position_in_burst)
+{
+  NR_DL_FRAME_PARMS *fp                                   = &gNB->frame_parms;
+  nfapi_nr_config_request_t *gNB_config                   = &gNB->gNB_config;
   //overwrite for new NR parameters
-  gNB_config->nfapi_config.rf_bands.rf_band[0] = 78;
-  gNB_config->nfapi_config.nrarfcn.value = 620000;
-  gNB_config->subframe_config.numerology_index_mu.value = mu;
-  gNB_config->subframe_config.duplex_mode.value = TDD;
-  gNB_config->rf_config.dl_carrier_bandwidth.value = N_RB_DL;
-  gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
-  gNB_config->sch_config.half_frame_index.value = 0;
-  gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
-  gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.physical_cell_id.value=Nid_cell;
-  gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
+  gNB_config->nfapi_config.rf_bands.rf_band[0]            = 78;
+  gNB_config->nfapi_config.nrarfcn.value                  = 620000;
+  gNB_config->subframe_config.numerology_index_mu.value   = mu;
+  gNB_config->subframe_config.duplex_mode.value           = TDD;
+  gNB_config->rf_config.dl_carrier_bandwidth.value        = N_RB_DL;
+  gNB_config->rf_config.ul_carrier_bandwidth.value        = N_RB_UL;
+  gNB_config->sch_config.half_frame_index.value           = 0;
+  gNB_config->sch_config.ssb_subcarrier_offset.value      = 0;
+  gNB_config->sch_config.n_ssb_crb.value                  = (N_RB_DL-20);
+  gNB_config->sch_config.ssb_subcarrier_offset.value      = 0;
+  gNB_config->sch_config.physical_cell_id.value           = Nid_cell;
+  gNB_config->sch_config.ssb_scg_position_in_burst.value  = position_in_burst;
   gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
-  gNB->mac_enabled     = 1;
+  gNB->mac_enabled   = 1;
   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
-  fp->threequarter_fs                    = 0;
+  fp->threequarter_fs= 0;
   nr_init_frame_parms(gNB_config, fp);
-  gNB->configured                                   = 1;
+  gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
-
 }
 
 
@@ -388,7 +399,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20);
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
   gNB_config->sch_config.ssb_scg_position_in_burst.value= phy_config->cfg->sch_config.ssb_scg_position_in_burst.value;
-  gNB_config->sch_config.ssb_periodicity.value		= phy_config->cfg->sch_config.ssb_periodicity.value;
+  gNB_config->sch_config.ssb_periodicity.value		    = phy_config->cfg->sch_config.ssb_periodicity.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
     gNB_config->subframe_config.duplex_mode.value    = TDD;
@@ -401,7 +412,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
-  fp->threequarter_fs                    = openair0_cfg[0].threequarter_fs;
   LOG_I(PHY,"Configuring MIB for instance %d, : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u)\n",
         Mod_id,
         gNB_config->nfapi_config.rf_bands.rf_band[0],

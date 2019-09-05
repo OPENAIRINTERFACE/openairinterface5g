@@ -33,7 +33,7 @@
 //#include "TDD-Config.h"
 //#include "MBSFN-SubframeConfigList.h"
 //#include "MobilityControlInfo.h"
-//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+//#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 //#include "SCellToAddMod-r10.h"
 //#endif
 

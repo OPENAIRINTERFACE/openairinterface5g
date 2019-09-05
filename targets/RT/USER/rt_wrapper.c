@@ -125,7 +125,7 @@ void check_clock(void)
   if (clock_getres(clock_id, &res)) {
     printf("clock_getres failed");
   } else {
-    printf("reported resolution = %llu ns\n", (long long int) ((int) 1e9 * res.tv_sec) + (long long int) res.tv_nsec);
+    printf("reported resolution = %lld ns\n", (long long int) ((int) 1e9 * res.tv_sec) + (long long int) res.tv_nsec);
   }
 }
 

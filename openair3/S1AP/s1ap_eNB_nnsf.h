@@ -42,4 +42,8 @@ s1ap_eNB_nnsf_select_mme_by_gummei(s1ap_eNB_instance_t       *instance_p,
                                    rrc_establishment_cause_t  cause,
                                    s1ap_gummei_t                   gummei);
 
+struct s1ap_eNB_mme_data_s*
+s1ap_eNB_nnsf_select_mme_by_gummei_no_cause(s1ap_eNB_instance_t       *instance_p,
+                                   s1ap_gummei_t                   gummei);
+
 #endif /* S1AP_ENB_NNSF_H_ */

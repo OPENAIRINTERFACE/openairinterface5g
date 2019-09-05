@@ -18,6 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
 #include "PHY/defs_nr_UE.h"
 
 int16_t get_nr_PL(PHY_VARS_NR_UE *ue,uint8_t gNB_index)
@@ -34,4 +35,5 @@ int16_t get_nr_PL(PHY_VARS_NR_UE *ue,uint8_t gNB_index)
                     dB_fixed_times10(ue->measurements.rsrp[gNB_index])+
                     //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
                     (ue->frame_parms.ss_PBCH_BlockPower*10))/10));
+
 }

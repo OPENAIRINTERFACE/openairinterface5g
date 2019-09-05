@@ -46,21 +46,20 @@
 #include "grid.h"
 #include "steadystaterwp.h"
 #ifdef SUMO_IF
-#include "sumo.h"
-#endif 
+  #include "sumo.h"
+#endif
 #include "../OMV/structures.h"
 //#define STANDALONE
 
 float n_frames = 20.0;
 
-int omv_write (int pfd, node_list * ue_node_list, Data_Flow_Unit omv_data);
+int omv_write (int pfd, node_list *ue_node_list, Data_Flow_Unit omv_data);
 void omv_end (int pfd, Data_Flow_Unit omv_data);
 int omv_enabled;
 
 /*initialze global parameters*/
 void
-init_omg_global_params (void)
-{
+init_omg_global_params (void) {
   int mob_t, node_t, i;
   xloc_div = 10.0;
   yloc_div = 10.0;
@@ -86,92 +85,86 @@ init_omg_global_params (void)
 
 /*initiate mobility generator*/
 void
-init_mobility_generator (omg_global_param omg_param_list[])
-{
+init_mobility_generator (omg_global_param omg_param_list[]) {
   int node_t, mobility_t;
 
   for (node_t = eNB; node_t < MAX_NUM_NODE_TYPES; node_t++) {
-
     mobility_t = omg_param_list[node_t].mobility_type;
 
     switch (mobility_t) {
+      case STATIC:
+        start_static_generator (omg_param_list[node_t]);
+        break;
 
-    case STATIC:
-      start_static_generator (omg_param_list[node_t]);
-      break;
+      case RWP:
+        start_rwp_generator (omg_param_list[node_t]);
+        break;
 
-    case RWP:
-      start_rwp_generator (omg_param_list[node_t]);
-      break;
+      case RWALK:
+        start_rwalk_generator (omg_param_list[node_t]);
+        break;
 
-    case RWALK:
-      start_rwalk_generator (omg_param_list[node_t]);
-      break;
-
-    case TRACE:
-      start_trace_generator (omg_param_list[node_t]);
-      break;
+      case TRACE:
+        start_trace_generator (omg_param_list[node_t]);
+        break;
 #ifdef SUMO_IF
-    case SUMO:
-      start_sumo_generator (omg_param_list[node_t]);
-      break;
-#endif 
-    case STEADY_RWP:
-      start_steadystaterwp_generator (omg_param_list[node_t]);
-      break;
 
-    default:
-      LOG_W (OMG, "Unsupported generator\n");
+      case SUMO:
+        start_sumo_generator (omg_param_list[node_t]);
+        break;
+#endif
+
+      case STEADY_RWP:
+        start_steadystaterwp_generator (omg_param_list[node_t]);
+        break;
+
+      default:
+        LOG_W (OMG, "Unsupported generator\n");
     }
-
-
   }
-
 }
 
 /**************************************************************************************/
 /*stop sumo mobiity generator*/
 void
-stop_mobility_generator (omg_global_param * omg_param_list)
-{
+stop_mobility_generator (omg_global_param *omg_param_list) {
   int i;
 
   for (i = 0; i < MAX_NUM_NODE_TYPES; i++) {
     switch (omg_param_list[i].mobility_type) {
+      case STATIC:
+        break;
 
-    case STATIC:
-      break;
+      case RWP:
+        break;
 
-    case RWP:
-      break;
+      case RWALK:
+        break;
 
-    case RWALK:
-      break;
+      case TRACE:
+        clear_list ();
+        break;
 
-    case TRACE:
-      clear_list ();
-      break;
-
-    case STEADY_RWP:
-      break;
+      case STEADY_RWP:
+        break;
 #ifdef SUMO_IF
-    case SUMO:
-      stop_sumo_generator ();
-      //LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
-      break;
-#endif 
-    default:
-      LOG_W (OMG, "Unsupported generator\n");
+
+      case SUMO:
+        stop_sumo_generator ();
+        //LOG_D(OMG," --------OMG will interface with SUMO for mobility generation-------- \n");
+        break;
+#endif
+
+      default:
+        LOG_W (OMG, "Unsupported generator\n");
     }
   }
-
 }
 
 /*****************************************************************************/
 
 void
-update_nodes (double cur_time)
-{
+update_nodes (double cur_time) {
   //LOG_D(OMG, "UPDATE NODES" );
   int i = 0;
 
@@ -180,38 +173,38 @@ update_nodes (double cur_time)
       update_node_vector (i, cur_time);
     }
   }
-
 }
 
 
 void
-update_node_vector (int mobility_type, double cur_time)
-{
+update_node_vector (int mobility_type, double cur_time) {
   //set_time(cur_time);
   switch (mobility_type) {
-  case RWP:
-    update_rwp_nodes (cur_time);
-    break;
+    case RWP:
+      update_rwp_nodes (cur_time);
+      break;
 
-  case RWALK:
-    update_rwalk_nodes (cur_time);
-    break;
+    case RWALK:
+      update_rwalk_nodes (cur_time);
+      break;
 
-  case TRACE:
-    update_trace_nodes (cur_time);
-    break;
+    case TRACE:
+      update_trace_nodes (cur_time);
+      break;
 #ifdef SUMO_IF
-  case SUMO:
-    // printf("in SUMO case \n");
-    update_sumo_nodes (cur_time);
-    break;
-#endif 
-  case STEADY_RWP:
-    update_steadystaterwp_nodes (cur_time);
-    break;
 
-  default:
-    LOG_W (OMG, "STATIC or Unsupported generator\n");
+    case SUMO:
+      // printf("in SUMO case \n");
+      update_sumo_nodes (cur_time);
+      break;
+#endif
+
+    case STEADY_RWP:
+      update_steadystaterwp_nodes (cur_time);
+      break;
+
+    default:
+      LOG_W (OMG, "STATIC or Unsupported generator\n");
   }
 }
 
@@ -219,50 +212,45 @@ update_node_vector (int mobility_type, double cur_time)
 
 /*return updated node position for a given node type*/
 node_list *
-get_current_positions (int mobility_type, int node_type, double cur_time)
-{
-
-
+get_current_positions (int mobility_type, int node_type, double cur_time) {
   get_nodes_positions (mobility_type, cur_time);
   return node_vector[node_type];
-
 }
 
 /*update current position of nodes for specific mobility type*/
 void
-get_nodes_positions (int mobility_type, double cur_time)
-{
+get_nodes_positions (int mobility_type, double cur_time) {
   //printf("%d \n",mobility_type);
-
   switch (mobility_type) {
-  case STATIC:
-    break;
+    case STATIC:
+      break;
 
-  case RWP:
-    get_rwp_positions_updated (cur_time);
-    break;
+    case RWP:
+      get_rwp_positions_updated (cur_time);
+      break;
 
-  case RWALK:
-    get_rwalk_positions_updated (cur_time);
-    break;
+    case RWALK:
+      get_rwalk_positions_updated (cur_time);
+      break;
 
-  case TRACE:
-    get_trace_positions_updated (cur_time);
-    break;
+    case TRACE:
+      get_trace_positions_updated (cur_time);
+      break;
 #ifdef SUMO_IF
-  case SUMO:
-    LOG_I (OMG, "getting positions from SUMO\n");
-    get_sumo_positions_updated (cur_time);
-    break;
-#endif 
-  case STEADY_RWP:
-    get_steadystaterwp_positions_updated (cur_time);
-    break;
 
-  default:
-    LOG_E (OMG, " Unsupported generator \n");
+    case SUMO:
+      LOG_I (OMG, "getting positions from SUMO\n");
+      get_sumo_positions_updated (cur_time);
+      break;
+#endif
+
+    case STEADY_RWP:
+      get_steadystaterwp_positions_updated (cur_time);
+      break;
+
+    default:
+      LOG_E (OMG, " Unsupported generator \n");
   }
-
 }
 
 /***************************************************************/
@@ -270,10 +258,8 @@ get_nodes_positions (int mobility_type, double cur_time)
 // get the position for a specific node
 
 node_struct *
-get_node_position (int node_type, int nid)
-{
+get_node_position (int node_type, int nid) {
   node_list *tmp;
-
   tmp = node_vector[node_type];
 
   while (tmp != NULL) {
@@ -289,15 +275,12 @@ get_node_position (int node_type, int nid)
 
 /*set new mobility for a node*/
 void
-set_new_mob_type (int id, int node_t, int mob_t, double cur_time)
-{
-
+set_new_mob_type (int id, int node_t, int mob_t, double cur_time) {
   int prev_mob;
   node_list *tmp;
   //job_list *tmp2, *prev_job;
   pair_struct *pair;
   double pause_p;
-
   //find previous mobility type
   tmp = node_vector[node_t];
 
@@ -313,7 +296,6 @@ set_new_mob_type (int id, int node_t, int mob_t, double cur_time)
   //end
 
   if (tmp != NULL && prev_mob != mob_t) {
-
     //initialize node position
     if (mob_t == STATIC || mob_t == RWP || mob_t == RWALK || mob_t == STEADY_RWP) {
       tmp->node->x_pos =
@@ -341,61 +323,57 @@ set_new_mob_type (int id, int node_t, int mob_t, double cur_time)
     //end
 
     switch (mob_t) {
+      case STATIC:
+        break;
 
-    case STATIC:
+      case RWP:
+        pair = (pair_struct *) malloc (sizeof (struct pair_struct));
+        pair->b = tmp->node;
+        sleep_rwp_node (pair, cur_time);
+        job_vector[RWP] = addjob (pair, job_vector[RWP]);
+        break;
 
-      break;
+      case RWALK:
+        pair = (pair_struct *) malloc (sizeof (struct pair_struct));
+        pair->b = tmp->node;
+        sleep_rwalk_node (pair, cur_time);
+        job_vector[RWALK] = addjob (pair, job_vector[RWALK]);
+        break;
 
-    case RWP:
-      pair = (pair_struct *) malloc (sizeof (struct pair_struct));
-      pair->b = tmp->node;
-      sleep_rwp_node (pair, cur_time);
-      job_vector[RWP] = addjob (pair, job_vector[RWP]);
-      break;
+      case STEADY_RWP:
+        tmp->node->event_num = 0;
+        pair = (pair_struct *) malloc (sizeof (struct pair_struct));
+        pair->b = tmp->node;
+        pause_p = pause_probability (omg_param_list[node_t]);
 
-    case RWALK:
-      pair = (pair_struct *) malloc (sizeof (struct pair_struct));
-      pair->b = tmp->node;
-      sleep_rwalk_node (pair, cur_time);
-      job_vector[RWALK] = addjob (pair, job_vector[RWALK]);
-      break;
+        if (randomgen (0, 1) < pause_p)
+          sleep_steadystaterwp_node (pair, cur_time);
+        else
+          move_steadystaterwp_node (pair, cur_time);
 
-    case STEADY_RWP:
-      tmp->node->event_num = 0;
-      pair = (pair_struct *) malloc (sizeof (struct pair_struct));
-      pair->b = tmp->node;
-      pause_p = pause_probability (omg_param_list[node_t]);
-
-      if (randomgen (0, 1) < pause_p)
-        sleep_steadystaterwp_node (pair, cur_time);
-      else
-        move_steadystaterwp_node (pair, cur_time);
-
-      break;
+        break;
 #ifdef SUMO_IF
-    case SUMO:
-      LOG_E (OMG, "not possible to change mobility type to sumo \n");
-      break;
+
+      case SUMO:
+        LOG_E (OMG, "not possible to change mobility type to sumo \n");
+        break;
 #endif
-    case TRACE:
-      LOG_E (OMG, "not possible to change mobility type to trace \n");
-      break;
 
-    default:
-      LOG_E (OMG, " Unsupported generator \n");
+      case TRACE:
+        LOG_E (OMG, "not possible to change mobility type to trace \n");
+        break;
+
+      default:
+        LOG_E (OMG, " Unsupported generator \n");
     }
-
   }
-
-
 }
 
 #ifdef STANDALONE
 
 /************************** get options ************************************/
 void
-usage (void)
-{
+usage (void) {
   fprintf (stderr,
            "\n\t-X: assign maximum width of the simulation area for UE nodes(X_max)"
            "\n\t-x: assign minimum width of the simulation area for UE nodes(X_min)"
@@ -443,8 +421,7 @@ usage (void)
 
 
 int
-get_options (int argc, char *argv[])
-{
+get_options (int argc, char *argv[]) {
   int node_t;
   char tag;
 
@@ -452,345 +429,342 @@ get_options (int argc, char *argv[])
             getopt (argc, argv,
                     "U:u:E:e:R:r:A:a:B:b:C:c:D:d:f:g:hI:i:J:j:k:L:l:N:n:P:p:S:s:T:t:vW:w:X:x:Y:y:Z:z:"))
          != EOF) {
-
-
     switch (tag) {
+      case 'U':
+        if (atoi (optarg) < 0) {
+          usage ();
+          exit (1);
+        }
 
-    case 'U':
-      if (atoi (optarg) < 0) {
+        omg_param_list[UE].nodes = atoi (optarg);
+        LOG_D (OMG, "#Number of UE nodes : %d \n",
+               omg_param_list[UE].nodes);
+        break;
+
+      case 'E':
+        if (atoi (optarg) < 0) {
+          usage ();
+          exit (1);
+        }
+
+        omg_param_list[eNB].nodes = atoi (optarg);
+        LOG_D (OMG, "#Number of eNB nodes : %d \n",
+               omg_param_list[eNB].nodes);
+        break;
+
+      case 'R':
+        if (atoi (optarg) < 0) {
+          usage ();
+          exit (1);
+        }
+
+        omg_param_list[RELAY].nodes = atoi (optarg);
+        LOG_D (OMG, "#Number of relay nodes : %d \n",
+               omg_param_list[RELAY].nodes);
+        break;
+
+      case 'k':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Number of frames can not be negative \n");
+
+        n_frames = abs (atof (optarg));
+        LOG_D (OMG, "#Number of frames : %f \n", n_frames);
+        break;
+
+      case 'u':
+        if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
+          usage ();
+          exit (1);
+        }
+
+        omg_param_list[UE].mobility_type = atoi (optarg);
+        LOG_D (OMG, "#UE nodes mobility type: %d \n",
+               omg_param_list[UE].mobility_type);
+        break;
+
+      case 'e':
+        if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
+          usage ();
+          exit (1);
+        }
+
+        omg_param_list[eNB].mobility_type = atoi (optarg);
+        LOG_D (OMG, "#eNB nodes mobility type: %d \n",
+               omg_param_list[eNB].mobility_type);
+        break;
+
+      case 'r':
+        if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
+          usage ();
+          exit (1);
+        }
+
+        omg_param_list[RELAY].mobility_type = atoi (optarg);
+        LOG_D (OMG, "#relay nodes mobility type: %d \n",
+               omg_param_list[RELAY].mobility_type);
+        break;
+
+      case 's':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min sleep can not be negative \n");
+
+        omg_param_list[UE].min_sleep = fabs (atof (optarg));
+        LOG_D (OMG, "#UE min sleep is set to: %.2f \n",
+               omg_param_list[UE].min_sleep);
+        break;
+
+      case 'S':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#max_sleep can not be negative \n");
+
+        omg_param_list[UE].max_sleep = fabs (atof (optarg));
+        LOG_D (OMG, "#UE max_sleep is set to : %.2f \n",
+               omg_param_list[UE].max_sleep);
+        break;
+
+      case 'l':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min sleep can not be negative or zero \n");
+
+        if (atof (optarg) != 0)
+          omg_param_list[eNB].min_sleep = fabs (atof (optarg));
+
+        LOG_D (OMG, "#eNB min sleep is set to : %.2f \n",
+               omg_param_list[eNB].min_sleep);
+        break;
+
+      case 'L':
+        if (atof (optarg) <= 0)
+          LOG_E (OMG, "#max_sleep can not be negative or zero \n");
+
+        if (atof (optarg) != 0)
+          omg_param_list[eNB].max_sleep = fabs (atof (optarg));
+
+        LOG_D (OMG, "#eNB max_sleep is set to : %.2f \n",
+               omg_param_list[eNB].max_sleep);
+        break;
+
+      case 'p':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min sleep can not be negative \n");
+
+        omg_param_list[RELAY].min_sleep = fabs (atof (optarg));
+        LOG_D (OMG, "#relay min sleep is set to: %.2f \n",
+               omg_param_list[RELAY].min_sleep);
+        break;
+
+      case 'P':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#max_sleep can not be negative \n");
+
+        omg_param_list[RELAY].max_sleep = fabs (atof (optarg));
+        LOG_D (OMG, "#relay max_sleep is set to : %.2f \n",
+               omg_param_list[RELAY].max_sleep);
+        break;
+
+      case 'd':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min_speed  can not be negative \n");
+
+        if (atof (optarg) != 0)
+          omg_param_list[UE].min_speed = fabs (atof (optarg));
+
+        LOG_D (OMG, "#UE min_speed is set to: %.2f \n",
+               omg_param_list[UE].min_speed);
+        break;
+
+      case 'D':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#max_speed  can not be negative \n");
+
+        omg_param_list[UE].max_speed = fabs (atof (optarg));
+        LOG_D (OMG, "#UE max_speed is set to: %.2f \n",
+               omg_param_list[UE].max_speed);
+        break;
+
+      case 'i':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min_speed  can not be negative \n");
+
+        if (atof (optarg) != 0)
+          omg_param_list[eNB].min_speed = fabs (atof (optarg));
+
+        LOG_D (OMG, "#eNB min_speed is set to: %.2f \n",
+               omg_param_list[eNB].min_speed);
+        break;
+
+      case 'I':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#max_speed  can not be negative \n");
+
+        omg_param_list[eNB].max_speed = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB max_speed is set to : %.2f \n",
+               omg_param_list[eNB].max_speed);
+        break;
+
+      case 'a':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#min_speed  can not be negative \n");
+
+        if (atof (optarg) != 0)
+          omg_param_list[RELAY].min_speed = fabs (atof (optarg));
+
+        LOG_D (OMG, "#relay min_speed is set to : %.2f \n",
+               omg_param_list[RELAY].min_speed);
+        break;
+
+      case 'A':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#max_speed  can not be negative \n");
+
+        omg_param_list[RELAY].max_speed = fabs (atof (optarg));
+        LOG_D (OMG, "#relay max_speed is set to: %.2f \n",
+               omg_param_list[RELAY].max_speed);
+        break;
+
+      case 'v':
+        omv_enabled = 1;
+        break;
+
+      case 'X':
+        omg_param_list[UE].max_x = fabs (atof (optarg));
+        LOG_D (OMG, "#UE X_max : %.2f \n", omg_param_list[UE].max_x);
+        break;
+
+      case 'x':
+        omg_param_list[UE].min_x = fabs (atof (optarg));
+        LOG_D (OMG, "#UE X_min : %.2f \n", omg_param_list[UE].min_x);
+        break;
+
+      case 'C':
+        omg_param_list[eNB].max_x = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB X_max : %.2f \n", omg_param_list[eNB].max_x);
+        break;
+
+      case 'c':
+        omg_param_list[eNB].min_x = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB X_min : %.2f \n", omg_param_list[eNB].min_x);
+        break;
+
+      case 'B':
+        omg_param_list[RELAY].max_x = fabs (atof (optarg));
+        LOG_D (OMG, "#relay X_max : %.2f \n", omg_param_list[RELAY].max_x);
+        break;
+
+      case 'b':
+        omg_param_list[RELAY].min_x = fabs (atof (optarg));
+        LOG_D (OMG, "#relay X_min : %.2f \n", omg_param_list[RELAY].min_x);
+        break;
+
+      case 'Y':
+        omg_param_list[UE].max_y = fabs (atof (optarg));
+        LOG_D (OMG, "#UE Y_max : %.2f \n", omg_param_list[UE].max_y);
+        break;
+
+      case 'y':
+        omg_param_list[UE].min_y = fabs (atof (optarg));
+        LOG_D (OMG, "#UE Y_min : %.2f \n", omg_param_list[UE].min_y);
+        break;
+
+      case 'Z':
+        omg_param_list[eNB].max_y = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB Y_max : %.2f \n", omg_param_list[eNB].max_y);
+        break;
+
+      case 'z':
+        omg_param_list[eNB].min_y = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB Y_min : %.2f \n", omg_param_list[eNB].min_y);
+        break;
+
+      case 'W':
+        omg_param_list[RELAY].max_y = fabs (atof (optarg));
+        LOG_D (OMG, "#relay Y_max : %.2f \n", omg_param_list[RELAY].max_y);
+        break;
+
+      case 'w':
+        omg_param_list[RELAY].min_y = fabs (atof (optarg));
+        LOG_D (OMG, "#relay Y_min : %.2f \n", omg_param_list[RELAY].min_y);
+        break;
+
+      case 'J':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_max can not be negative \n");
+
+        omg_param_list[UE].max_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "UE Journey_time_max : %.2f \n",
+               omg_param_list[UE].max_journey_time);
+        break;
+
+      case 'j':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_min can not be negative \n");
+
+        omg_param_list[UE].min_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "#UE Journey_time_min : %.2f \n",
+               omg_param_list[UE].min_journey_time);
+        break;
+
+      case 'T':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_max can not be negative \n");
+
+        omg_param_list[eNB].max_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB Journey_time_max : %.2f \n",
+               omg_param_list[eNB].max_journey_time);
+        break;
+
+      case 't':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_min can not be negative \n");
+
+        omg_param_list[eNB].min_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "#eNB Journey_time_min : %.2f \n",
+               omg_param_list[eNB].min_journey_time);
+        break;
+
+      case 'N':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_max can not be negative \n");
+
+        omg_param_list[RELAY].max_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "#relay Journey_time_max : %.2f \n",
+               omg_param_list[RELAY].max_journey_time);
+        break;
+
+      case 'n':
+        if (atof (optarg) < 0)
+          LOG_E (OMG, "#Journey_time_min can not be negative \n");
+
+        omg_param_list[RELAY].min_journey_time = fabs (atof (optarg));
+        LOG_D (OMG, "#relay Journey_time_min : %.2f \n",
+               omg_param_list[RELAY].min_journey_time);
+        break;
+
+      case 'f':
+        for (node_t = eNB; node_t < MAX_NUM_NODE_TYPES; node_t++) {
+          omg_param_list[node_t].seed = atoi (optarg);
+          LOG_D (OMG, "#Seed is %d \n", omg_param_list[node_t].seed);
+        }
+
+        break;
+
+      case 'g':
+        if (atoi (optarg) < 1 || atoi (optarg) > 2) {
+          LOG_E (OMG, "#value given for graph should be 1 or 2 \n");
+          exit (-1);
+        }
+
+        grid = abs (atof (optarg));
+        LOG_D (OMG, "#graph value is %d \n", grid);
+        break;
+
+      case 'h':
+        usage ();
+        break;
+
+      default:
         usage ();
         exit (1);
-      }
-
-      omg_param_list[UE].nodes = atoi (optarg);
-      LOG_D (OMG, "#Number of UE nodes : %d \n",
-             omg_param_list[UE].nodes);
-      break;
-
-    case 'E':
-      if (atoi (optarg) < 0) {
-        usage ();
-        exit (1);
-      }
-
-      omg_param_list[eNB].nodes = atoi (optarg);
-      LOG_D (OMG, "#Number of eNB nodes : %d \n",
-             omg_param_list[eNB].nodes);
-      break;
-
-    case 'R':
-      if (atoi (optarg) < 0) {
-        usage ();
-        exit (1);
-      }
-
-      omg_param_list[RELAY].nodes = atoi (optarg);
-      LOG_D (OMG, "#Number of relay nodes : %d \n",
-             omg_param_list[RELAY].nodes);
-      break;
-
-    case 'k':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Number of frames can not be negative \n");
-
-      n_frames = abs (atof (optarg));
-      LOG_D (OMG, "#Number of frames : %f \n", n_frames);
-      break;
-
-    case 'u':
-      if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
-        usage ();
-        exit (1);
-      }
-
-      omg_param_list[UE].mobility_type = atoi (optarg);
-      LOG_D (OMG, "#UE nodes mobility type: %d \n",
-             omg_param_list[UE].mobility_type);
-      break;
-
-    case 'e':
-      if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
-        usage ();
-        exit (1);
-      }
-
-      omg_param_list[eNB].mobility_type = atoi (optarg);
-      LOG_D (OMG, "#eNB nodes mobility type: %d \n",
-             omg_param_list[eNB].mobility_type);
-      break;
-
-    case 'r':
-      if (atoi (optarg) < 0 || atoi (optarg) >= MAX_NUM_MOB_TYPES) {
-        usage ();
-        exit (1);
-      }
-
-      omg_param_list[RELAY].mobility_type = atoi (optarg);
-      LOG_D (OMG, "#relay nodes mobility type: %d \n",
-             omg_param_list[RELAY].mobility_type);
-      break;
-
-    case 's':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min sleep can not be negative \n");
-
-      omg_param_list[UE].min_sleep = fabs (atof (optarg));
-      LOG_D (OMG, "#UE min sleep is set to: %.2f \n",
-             omg_param_list[UE].min_sleep);
-      break;
-
-    case 'S':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#max_sleep can not be negative \n");
-
-      omg_param_list[UE].max_sleep = fabs (atof (optarg));
-      LOG_D (OMG, "#UE max_sleep is set to : %.2f \n",
-             omg_param_list[UE].max_sleep);
-      break;
-
-    case 'l':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min sleep can not be negative or zero \n");
-
-      if (atof (optarg) != 0)
-        omg_param_list[eNB].min_sleep = fabs (atof (optarg));
-
-      LOG_D (OMG, "#eNB min sleep is set to : %.2f \n",
-             omg_param_list[eNB].min_sleep);
-      break;
-
-    case 'L':
-      if (atof (optarg) <= 0)
-        LOG_E (OMG, "#max_sleep can not be negative or zero \n");
-
-      if (atof (optarg) != 0)
-        omg_param_list[eNB].max_sleep = fabs (atof (optarg));
-
-      LOG_D (OMG, "#eNB max_sleep is set to : %.2f \n",
-             omg_param_list[eNB].max_sleep);
-      break;
-
-    case 'p':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min sleep can not be negative \n");
-
-      omg_param_list[RELAY].min_sleep = fabs (atof (optarg));
-      LOG_D (OMG, "#relay min sleep is set to: %.2f \n",
-             omg_param_list[RELAY].min_sleep);
-      break;
-
-    case 'P':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#max_sleep can not be negative \n");
-
-      omg_param_list[RELAY].max_sleep = fabs (atof (optarg));
-      LOG_D (OMG, "#relay max_sleep is set to : %.2f \n",
-             omg_param_list[RELAY].max_sleep);
-      break;
-
-    case 'd':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min_speed  can not be negative \n");
-
-      if (atof (optarg) != 0)
-        omg_param_list[UE].min_speed = fabs (atof (optarg));
-
-      LOG_D (OMG, "#UE min_speed is set to: %.2f \n",
-             omg_param_list[UE].min_speed);
-      break;
-
-    case 'D':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#max_speed  can not be negative \n");
-
-      omg_param_list[UE].max_speed = fabs (atof (optarg));
-      LOG_D (OMG, "#UE max_speed is set to: %.2f \n",
-             omg_param_list[UE].max_speed);
-      break;
-
-    case 'i':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min_speed  can not be negative \n");
-
-      if (atof (optarg) != 0)
-        omg_param_list[eNB].min_speed = fabs (atof (optarg));
-
-      LOG_D (OMG, "#eNB min_speed is set to: %.2f \n",
-             omg_param_list[eNB].min_speed);
-      break;
-
-    case 'I':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#max_speed  can not be negative \n");
-
-      omg_param_list[eNB].max_speed = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB max_speed is set to : %.2f \n",
-             omg_param_list[eNB].max_speed);
-      break;
-
-    case 'a':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#min_speed  can not be negative \n");
-
-      if (atof (optarg) != 0)
-        omg_param_list[RELAY].min_speed = fabs (atof (optarg));
-
-      LOG_D (OMG, "#relay min_speed is set to : %.2f \n",
-             omg_param_list[RELAY].min_speed);
-      break;
-
-    case 'A':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#max_speed  can not be negative \n");
-
-      omg_param_list[RELAY].max_speed = fabs (atof (optarg));
-      LOG_D (OMG, "#relay max_speed is set to: %.2f \n",
-             omg_param_list[RELAY].max_speed);
-      break;
-
-    case 'v':
-      omv_enabled = 1;
-      break;
-
-    case 'X':
-      omg_param_list[UE].max_x = fabs (atof (optarg));
-      LOG_D (OMG, "#UE X_max : %.2f \n", omg_param_list[UE].max_x);
-      break;
-
-    case 'x':
-      omg_param_list[UE].min_x = fabs (atof (optarg));
-      LOG_D (OMG, "#UE X_min : %.2f \n", omg_param_list[UE].min_x);
-      break;
-
-    case 'C':
-      omg_param_list[eNB].max_x = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB X_max : %.2f \n", omg_param_list[eNB].max_x);
-      break;
-
-    case 'c':
-      omg_param_list[eNB].min_x = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB X_min : %.2f \n", omg_param_list[eNB].min_x);
-      break;
-
-    case 'B':
-      omg_param_list[RELAY].max_x = fabs (atof (optarg));
-      LOG_D (OMG, "#relay X_max : %.2f \n", omg_param_list[RELAY].max_x);
-      break;
-
-    case 'b':
-      omg_param_list[RELAY].min_x = fabs (atof (optarg));
-      LOG_D (OMG, "#relay X_min : %.2f \n", omg_param_list[RELAY].min_x);
-      break;
-
-    case 'Y':
-      omg_param_list[UE].max_y = fabs (atof (optarg));
-      LOG_D (OMG, "#UE Y_max : %.2f \n", omg_param_list[UE].max_y);
-      break;
-
-    case 'y':
-      omg_param_list[UE].min_y = fabs (atof (optarg));
-      LOG_D (OMG, "#UE Y_min : %.2f \n", omg_param_list[UE].min_y);
-      break;
-
-    case 'Z':
-      omg_param_list[eNB].max_y = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB Y_max : %.2f \n", omg_param_list[eNB].max_y);
-      break;
-
-    case 'z':
-      omg_param_list[eNB].min_y = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB Y_min : %.2f \n", omg_param_list[eNB].min_y);
-      break;
-
-    case 'W':
-      omg_param_list[RELAY].max_y = fabs (atof (optarg));
-      LOG_D (OMG, "#relay Y_max : %.2f \n", omg_param_list[RELAY].max_y);
-      break;
-
-    case 'w':
-      omg_param_list[RELAY].min_y = fabs (atof (optarg));
-      LOG_D (OMG, "#relay Y_min : %.2f \n", omg_param_list[RELAY].min_y);
-      break;
-
-    case 'J':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_max can not be negative \n");
-
-      omg_param_list[UE].max_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "UE Journey_time_max : %.2f \n",
-             omg_param_list[UE].max_journey_time);
-      break;
-
-    case 'j':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_min can not be negative \n");
-
-      omg_param_list[UE].min_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "#UE Journey_time_min : %.2f \n",
-             omg_param_list[UE].min_journey_time);
-      break;
-
-    case 'T':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_max can not be negative \n");
-
-      omg_param_list[eNB].max_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB Journey_time_max : %.2f \n",
-             omg_param_list[eNB].max_journey_time);
-      break;
-
-    case 't':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_min can not be negative \n");
-
-      omg_param_list[eNB].min_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "#eNB Journey_time_min : %.2f \n",
-             omg_param_list[eNB].min_journey_time);
-      break;
-
-    case 'N':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_max can not be negative \n");
-
-      omg_param_list[RELAY].max_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "#relay Journey_time_max : %.2f \n",
-             omg_param_list[RELAY].max_journey_time);
-      break;
-
-    case 'n':
-      if (atof (optarg) < 0)
-        LOG_E (OMG, "#Journey_time_min can not be negative \n");
-
-      omg_param_list[RELAY].min_journey_time = fabs (atof (optarg));
-      LOG_D (OMG, "#relay Journey_time_min : %.2f \n",
-             omg_param_list[RELAY].min_journey_time);
-      break;
-
-    case 'f':
-      for (node_t = eNB; node_t < MAX_NUM_NODE_TYPES; node_t++) {
-        omg_param_list[node_t].seed = atoi (optarg);
-        LOG_D (OMG, "#Seed is %d \n", omg_param_list[node_t].seed);
-      }
-
-      break;
-
-    case 'g':
-      if (atoi (optarg) < 1 || atoi (optarg) > 2) {
-        LOG_E (OMG, "#value given for graph should be 1 or 2 \n");
-        exit (-1);
-      }
-
-      grid = abs (atof (optarg));
-      LOG_D (OMG, "#graph value is %d \n", grid);
-      break;
-
-    case 'h':
-      usage ();
-      break;
-
-    default:
-      usage ();
-      exit (1);
     }
   }
 
@@ -800,8 +774,7 @@ get_options (int argc, char *argv[])
 /**************************** main **********************************/
 
 int
-main (int argc, char *argv[])
-{
+main (int argc, char *argv[]) {
   int i, node_type;
   double cur_time = 0.0;
   double ms = 0.0;
@@ -824,8 +797,6 @@ main (int argc, char *argv[])
 
   //default parameters
   for (node_type = eNB; node_type < MAX_NUM_NODE_TYPES; node_type++) {
-
-
     if (node_type == UE)
       omg_param_list[node_type].nodes = 5;
     else
@@ -857,21 +828,15 @@ main (int argc, char *argv[])
     omg_param_list[node_type].sumo_port = 8890;
   }
 
-
   init_omg_global_params ();  //initialize global paramaters
-
   get_options (argc, argv); // overwrite the default params if any input parameter
 
   for (node_type = eNB; node_type < MAX_NUM_NODE_TYPES; node_type++) {
     omg_param_list[node_type].max_vertices =
       max_vertices_ongrid (omg_param_list[node_type]);
-
     omg_param_list[node_type].max_block_num =
       max_connecteddomains_ongrid (omg_param_list[node_type]);
-
   }
-
-
 
   init_mobility_generator (omg_param_list); //initialize choosen mobility generator
 
@@ -884,30 +849,25 @@ main (int argc, char *argv[])
     LOG_I (EMU, "Stating the OMV path %s pfd[0] %d pfd[1] %d \n", full_name,
            pfd[0], pfd[1]);
 
-
-
-
-
     switch (fork ()) {
-    case -1:
-      perror ("fork failed \n");
-      break;
+      case -1:
+        perror ("fork failed \n");
+        break;
 
-    case 0:
-      if (close (pfd[1]) == -1)
-        perror ("close on write\n");
+      case 0:
+        if (close (pfd[1]) == -1)
+          perror ("close on write\n");
 
-      sprintf (fdstr, "%d", pfd[0]);
-      sprintf (num_enb, "%d", 1);
-      sprintf (num_ue, "%d", omg_param_list[UE].nodes);
-      sprintf (x_area, "%f", omg_param_list[UE].max_x);
-      sprintf (y_area, "%f", omg_param_list[UE].max_y);
-      sprintf (z_area, "%f", 200.0);
-      sprintf (frames, "%d", (int) n_frames);
-
-      execl (full_name, "OMV", fdstr, frames, num_enb, num_ue, x_area,
-             y_area, z_area, NULL);
-      perror ("error in execl the OMV");
+        sprintf (fdstr, "%d", pfd[0]);
+        sprintf (num_enb, "%d", 1);
+        sprintf (num_ue, "%d", omg_param_list[UE].nodes);
+        sprintf (x_area, "%f", omg_param_list[UE].max_x);
+        sprintf (y_area, "%f", omg_param_list[UE].max_y);
+        sprintf (z_area, "%f", 200.0);
+        sprintf (frames, "%d", (int) n_frames);
+        execl (full_name, "OMV", fdstr, frames, num_enb, num_ue, x_area,
+               y_area, z_area, NULL);
+        perror ("error in execl the OMV");
     }
 
     //parent
@@ -918,7 +878,6 @@ main (int argc, char *argv[])
   //******************************
 
   for (emu_info_time = 0.0; emu_info_time <= n_frames; emu_info_time += 0.1) {
-
     update_nodes (emu_info_time);
     time_s = round (emu_info_time * 1000.0);
 
@@ -929,7 +888,6 @@ main (int argc, char *argv[])
                                node_type, emu_info_time);
 
       if (current_positions != NULL)
-
         display_job_list (emu_info_time,
                           job_vector[omg_param_list
                                      [node_type].mobility_type]);
@@ -939,12 +897,9 @@ main (int argc, char *argv[])
          nodes_avgspeed(job_vector[omg_param_list [node_type].mobility_type])); */
     }
 
-
     //display current postion of nodes
     if (omv_enabled == 1)
       omv_write (pfd[1], node_vector[SUMO], omv_data);
-
-
   }
 
   /*LOG_I(OMG,"#-----event average-----\n");
@@ -953,22 +908,19 @@ main (int argc, char *argv[])
      if(events[i]!=0)
      LOG_D(OMG,"%d %d \n",i,event_sum[i]/events[i]);
      } */
-
   stop_mobility_generator (omg_param_list);
 
   if (omv_enabled == 1)
     omv_end (pfd[1], omv_data);
 
   //clear_mem();
-
   return 0;
 }
 
 
 /**********************************sumo****************************/
 int
-omv_write (int pfd, node_list * ue_node_list, Data_Flow_Unit omv_data)
-{
+omv_write (int pfd, node_list *ue_node_list, Data_Flow_Unit omv_data) {
   int i = 0, j;
   omv_data.end = 0;
   // enb
@@ -979,7 +931,7 @@ omv_write (int pfd, node_list * ue_node_list, Data_Flow_Unit omv_data)
   omv_data.geo[i].node_type = 0;  //eNB
   omv_data.geo[i].Neighbors = 0;
 
-  for (i = 1; i < omg_param_list[SUMO].nodes + 1; i++) {
+  for (i = 1; i < omg_param_list[SUMO-1].nodes + 1; i++) {
     if (ue_node_list != NULL) {
       omv_data.geo[i].x =
         (int) (ue_node_list->node->x_pos <
@@ -988,7 +940,7 @@ omv_write (int pfd, node_list * ue_node_list, Data_Flow_Unit omv_data)
         (int) (ue_node_list->node->y_pos <
                0.0) ? 0.0 : ue_node_list->node->y_pos;
       omv_data.geo[i].z = 1.0;
-      omv_data.geo[i].mobility_type = omg_param_list[SUMO].mobility_type;
+      omv_data.geo[i].mobility_type = omg_param_list[SUMO-1].mobility_type;
       omv_data.geo[i].node_type = 1;  //UE
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors = 0;
@@ -1004,8 +956,7 @@ omv_write (int pfd, node_list * ue_node_list, Data_Flow_Unit omv_data)
 }
 
 void
-omv_end (int pfd, Data_Flow_Unit omv_data)
-{
+omv_end (int pfd, Data_Flow_Unit omv_data) {
   omv_data.end = 1;
 
   if (write (pfd, &omv_data, sizeof (struct Data_Flow_Unit)) == -1)

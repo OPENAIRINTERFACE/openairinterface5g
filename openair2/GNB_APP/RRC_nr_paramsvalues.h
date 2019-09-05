@@ -21,14 +21,15 @@
 
 /*! \file openair2/GNB_APP/RRC_nr_paramsvalues.h
  * \brief macro definitions for RRC authorized and asn1 parameters values, to be used in paramdef_t/chechedparam_t structure initializations 
- * \author Francois TABURET, WEI-TAI CHEN
+ * \author Francois TABURET, WEI-TAI CHEN, Turker Yilmaz
  * \date 2018
  * \version 0.1
- * \company NOKIA BellLabs France, NTUST
- * \email: francois.taburet@nokia-bell-labs.com, kroempa@gmail.com
+ * \company NOKIA BellLabs France, NTUST, EURECOM
+ * \email: francois.taburet@nokia-bell-labs.com, kroempa@gmail.com, turker.yilmaz@eurecom.fr
  * \note
  * \warning
  */
+
 #ifndef __NR_RRC_PARAMSVALUES__H__
 #define __NR_RRC_PARAMSVALUES__H__
 
@@ -219,6 +220,7 @@
 #define GNB_CONFIG_ABSOLUTEFREQUENCYPOINTA_IDX 7
 #define GNB_CONFIG_DLCARRIERBANDWIDTH_IDX 10
 
+
 #define SSBPARAMS_DESC {{GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,NULL,0,iptr:&ssb_SubcarrierOffset,defintval:0,TYPE_INT,0}}
 
 #define SCCPARAMS_DESC(scc) { \
@@ -226,7 +228,7 @@
 {GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET,NULL,0,i64ptr:scc->n_TimingAdvanceOffset,defint64val:NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0,TYPE_INT64,0/*1*/},\
 {GNB_CONFIG_STRING_SSBPERIODICITYSERVINGCELL,NULL,0,i64ptr:scc->ssb_periodicityServingCell,defint64val:NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms20,TYPE_INT64,0/*2*/},\
 {GNB_CONFIG_STRING_DMRSTYPEAPOSITION,NULL,0,i64ptr:&scc->dmrs_TypeA_Position,defint64val:NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2,TYPE_INT64,0/*3*/},\
-{GNB_CONFIG_STRING_SUBCARRIERSPACING,NULL,0,i64ptr:scc->subcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0/*4*/},\
+{GNB_CONFIG_STRING_SUBCARRIERSPACING,NULL,0,i64ptr:scc->ssbSubcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0/*4*/},\
 {GNB_CONFIG_STRING_ABSOLUTEFREQUENCYSSB,NULL,0,i64ptr:scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,defint64val:660960,TYPE_INT64,0/*5*/},\
 {GNB_CONFIG_STRING_DLFREQUENCYBAND,NULL,0,i64ptr:scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],defint64val:78,TYPE_INT64,0/*6*/},\
 {GNB_CONFIG_STRING_DLABSOLUEFREQUENCYPOINTA,NULL,0,i64ptr:&scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,defint64val:660000,TYPE_INT64,0/*7*/},\
@@ -376,6 +378,7 @@
 {GNB_CONFIG_STRING_NROFUPLINKSYMBOLS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSymbols,defint64val:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_SSPBCHBLOCKPOWER,NULL,0,i64ptr:&scc->ss_PBCH_BlockPower,defint64val:20,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_MSG1SUBCARRIERSPACING,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing,defintval:-1,TYPE_INT64,0/*86*/}}
+
 
 
 

@@ -2172,7 +2172,7 @@ void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
   __m128i *dl_ch_mag128_0, *dl_ch_mag128_1, *dl_ch_mag128_2, *dl_ch_mag128_3;
   __m128i *dl_ch_mag128_0b, *dl_ch_mag128_1b,  *dl_ch_mag128_2b,  *dl_ch_mag128_3b;
   __m128i *rho128_0, *rho128_1, *rho128_2=NULL, *rho128_3=NULL;
-  __m128i *rho128_i0, *rho128_i1, *rho128_i2, *rho128_i3;
+  __m128i *rho128_i0, *rho128_i1, *rho128_i2=NULL, *rho128_i3=NULL;
   int length_mod4 = 0;
   int length2;
 
@@ -2397,7 +2397,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
     //if ((frame_parms->N_RB_DL&1) == 0){  // even number of RBs
 
-      for (rb=start_rb;rb<nb_rb_pdsch;rb++) {
+      for (rb = start_rb; rb < nb_rb_pdsch + start_rb; rb++) {
 
         // For second half of RBs skip DC carrier
         if (k>=frame_parms->ofdm_symbol_size) {

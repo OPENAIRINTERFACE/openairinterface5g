@@ -67,8 +67,13 @@ nr_bandentry_t nr_bandtable[] = {
   {86, 1710000, 1785000,     000,     000, 20, 342000}
 };
 
-void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type) {
+#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
+void get_band(uint32_t downlink_frequency,
+              uint8_t *current_band,
+              int32_t *current_offset,
+              lte_frame_type_t *current_type)
+{
     int ind;
     int64_t dl_freq_khz = downlink_frequency/1000;
     for ( ind=0;
@@ -96,9 +101,10 @@ void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *c
 
 }
 
-uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
+uint32_t to_nrarfcn(int nr_bandP,
+                    uint64_t dl_CarrierFreq,
+                    uint32_t bw)
 {
-
   uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
   int bw_kHz = bw / 1000;
 
@@ -112,8 +118,7 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
 	      nr_bandP, bw, (long long unsigned int)dl_CarrierFreq_by_1k,
 	      (long long unsigned int)nr_bandtable[i].dl_min);
-  AssertFatal(dl_CarrierFreq_by_1k <=
-        (nr_bandtable[i].dl_max - bw_kHz),
+  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz),
         "Band %d, dl_CarrierFreq %llu bw %u: DL carrier frequency %llu kHz > %llu\n",
 	      nr_bandP, (long long unsigned int)dl_CarrierFreq,bw, (long long unsigned int)dl_CarrierFreq_by_1k,
 	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
@@ -130,9 +135,9 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
 }
 
 
-uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
+uint64_t from_nrarfcn(int nr_bandP,
+                      uint32_t dl_nrarfcn)
 {
-
   int i;
   int deltaFglobal;
 
@@ -145,18 +150,17 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
  
   LOG_I(PHY,"Computing dl_frequency (pointA %d => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %d))\n",dl_nrarfcn,1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal),nr_bandtable[i].dl_min,i,nr_bandtable[i].N_OFFs_DL); 
   return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
-	  
 }
 
-uint64_t get_nr_uldl_offset(int nr_bandP)
-{
 
+int32_t get_nr_uldl_offset(int nr_bandP)
+{
   int i;
 
-  
-  AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
-  for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
+  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
 
-  return 1000*(nr_bandtable[i].dl_min -nr_bandtable[i].ul_min);
-	  
+  AssertFatal(i < NR_BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, NR_BANDTABLE_SIZE);
+
+  return (nr_bandtable[i].dl_min - nr_bandtable[i].ul_min);
 }
+

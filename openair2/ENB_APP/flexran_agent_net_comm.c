@@ -53,7 +53,7 @@ int flexran_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int si
   return -1;
 }
 
-int flexran_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority) {
+int flexran_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *priority) {
   /*Check if agent id is valid*/
   if (agent_id >= FLEXRAN_AGENT_MAX || agent_id < 0) {
     goto error;
@@ -66,7 +66,7 @@ int flexran_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *
     goto error;
   }
   
-  return channel->msg_recv(data, size, priority, channel->channel_info);
+  return channel->msg_recv(data, priority, channel->channel_info);
   
  error:
   LOG_E(FLEXRAN_AGENT, "No channel registered for agent with id %d\n", agent_id);
@@ -104,7 +104,7 @@ void flexran_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id) {
 
 int flexran_agent_create_channel(void *channel_info,
 				 int (*msg_send)(void *data, int size, int priority, void *channel_info),
-				 int (*msg_recv)(void **data, int *size, int *priority, void *channel_info),
+				 int (*msg_recv)(void **data, int *priority, void *channel_info),
 				 void (*release)(flexran_agent_channel_t *channel)) {
   
   int channel_id = ++flexran_agent_channel_id;

@@ -55,9 +55,7 @@ rrc_init_global_param(
 )
 //-----------------------------------------------------------------------------
 {
-
   rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
-
   DCCH_LCHAN_DESC.transport_block_size = 4;
   DCCH_LCHAN_DESC.max_transport_blocks = 16;
   DCCH_LCHAN_DESC.Delay_class = 1;
@@ -67,13 +65,11 @@ rrc_init_global_param(
   DTCH_UL_LCHAN_DESC.transport_block_size = 52;
   DTCH_UL_LCHAN_DESC.max_transport_blocks = 20;
   DTCH_UL_LCHAN_DESC.Delay_class = 1;
-
   Rlc_info_um.rlc_mode = RLC_MODE_UM;
   Rlc_info_um.rlc.rlc_um_info.timer_reordering = 5;
   Rlc_info_um.rlc.rlc_um_info.sn_field_length = 10;
   Rlc_info_um.rlc.rlc_um_info.is_mXch = 0;
   //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
-
   Rlc_info_am_config.rlc_mode = RLC_MODE_AM;
   Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 50;
   Rlc_info_am_config.rlc.rlc_am_info.poll_pdu = 8;
@@ -81,20 +77,18 @@ rrc_init_global_param(
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit = 15;
   Rlc_info_am_config.rlc.rlc_am_info.t_reordering = 50;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit = 10;
-
   return 0;
 }
 
 //-----------------------------------------------------------------------------
 void
 rrc_config_buffer(
-  SRB_INFO* Srb_info,
+  SRB_INFO *Srb_info,
   uint8_t Lchan_type,
   uint8_t Role
 )
 //-----------------------------------------------------------------------------
 {
-
   Srb_info->Rx_buffer.payload_size = 0;
   Srb_info->Tx_buffer.payload_size = 0;
 }
@@ -200,7 +194,7 @@ static band_freq bands[] = {
   { BAND_TYPE_FDD, 3, 1710000000UL, 1785000000UL, 1805000000UL, 1880000000UL },
   { BAND_TYPE_FDD, 4, 1710000000UL, 1755000000UL, 2110000000UL, 2155000000UL },
   { BAND_TYPE_FDD, 5, 824000000UL, 849000000UL, 869000000UL, 894000000UL },
-    /* to remove? */{ BAND_TYPE_FDD, 6, 830000000UL, 840000000UL, 875000000UL, 885000000UL },
+  /* to remove? */{ BAND_TYPE_FDD, 6, 830000000UL, 840000000UL, 875000000UL, 885000000UL },
   { BAND_TYPE_FDD, 7, 2500000000UL, 2570000000UL, 2620000000UL, 2690000000UL },
   { BAND_TYPE_FDD, 8, 880000000UL, 915000000UL, 925000000UL, 960000000UL },
   { BAND_TYPE_FDD, 9, 1749900000UL, 1784900000UL, 1844900000UL, 1879900000UL },
@@ -278,17 +272,17 @@ static earfcn earfcn_table[] = {
   { 42, 3400000000UL, 41590, 41590, 43589, 3400000000UL, 41590, 41590, 43589 },
   { 43, 3600000000UL, 43590, 43590, 45589, 3600000000UL, 43590, 43590, 45589 },
 };
-  
-int freq_to_arfcn10(int band, unsigned long freq)
-{ 
-  int N = sizeof(earfcn_table) / sizeof(earfcn_table[0]); 
+
+int freq_to_arfcn10(int band, unsigned long freq) {
+  int N = sizeof(earfcn_table) / sizeof(earfcn_table[0]);
   int i;
-  
-  for (i = 0; i < N; i++) if (bands[i].band == band) break; 
+
+  for (i = 0; i < N; i++) if (bands[i].band == band) break;
+
   if (i == N) return -1;
-  
+
   if (!(bands[i].dl_minfreq < freq && freq < bands[i].dl_maxfreq))
     return -1;
-  
+
   return (freq - earfcn_table[i].dl_flow) / 100000UL + earfcn_table[i].dl_off;
 }

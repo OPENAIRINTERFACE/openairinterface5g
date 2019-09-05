@@ -481,14 +481,14 @@ FD_phy_scope_nrue *create_phy_scope_nrue( void )
 }
 
 void phy_scope_nrUE(FD_phy_scope_nrue *form,
-                  PHY_VARS_NR_UE *phy_vars_ue,
-                  int eNB_id,
-                  int UE_id,
-                  uint8_t subframe)
+		            PHY_VARS_NR_UE *phy_vars_ue,
+					int eNB_id,
+					int UE_id,
+					uint8_t subframe)
 {
   int i,arx,atx,ind,k;
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
+  //int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
   int samples_per_frame = frame_parms->samples_per_frame;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_eNB;
@@ -513,8 +513,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   int num_re = 4500;
   int Qm = 2;
   int coded_bits_per_codeword = num_re*Qm;
-  int symbol, first_symbol,nb_re;
-  int nb_rb_pdsch =50;
+  int symbol, first_symbol=2,nb_re;
+  int nb_rb_pdsch=50,nb_symb_sch=9;
   float ymax=1;
   float **chest_t_abs;
   float Re,Im;
@@ -792,14 +792,19 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
     fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
   }
 
+  first_symbol = 2;
+  ind = 0;
   // PDSCH I/Q of MF Output
   if (pdsch_comp!=NULL) {
-    for (i=0; i<nb_rb_pdsch*12; i++) {
-      I[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i  ];
-      Q[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i+1];
+    for (symbol=0;symbol<nb_symb_sch;symbol++) {
+      for (i=0; i<nb_rb_pdsch*12; i++) {
+	I[ind] = pdsch_comp[2*((first_symbol+symbol)*frame_parms->N_RB_DL*12+i)  ];
+	Q[ind] = pdsch_comp[2*((first_symbol+symbol)*frame_parms->N_RB_DL*12+i)+1];
+	ind++;
+      }
     }
     
-    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_rb_pdsch*12,"","","");
+    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_symb_sch*nb_rb_pdsch*12,"","","");
   }
   /*
 
@@ -844,6 +849,7 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   */
 }
 
+
 typedef struct {
   FL_FORM    *stats_form;
   void       *vdata;
@@ -853,11 +859,25 @@ typedef struct {
   FL_OBJECT *stats_button;
 } FD_stats_form;
 
-void reset_stats_gNB(FL_OBJECT *button, long arg) {
-  PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0];
 
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-    for (int k=0; k<8; k++) { //harq_processes
+// current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
+// at eNB 0, an UL scope for every UE
+//FD_phy_scope_gnb             *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+static FD_phy_scope_gnb        *form_gnb[NUMBER_OF_UE_MAX];
+//FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
+//char                            title[255];
+unsigned char                   scope_enb_num_ue = 2;
+//static pthread_t                forms_thread; //xforms
+
+
+void reset_stats_gNB(FL_OBJECT *button,
+		             long arg)
+{
+  int i,k;
+  //PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
+
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    for (k=0; k<8; k++) { //harq_processes
       /*      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
         phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
         phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
@@ -873,22 +893,40 @@ void reset_stats_gNB(FL_OBJECT *button, long arg) {
   }
 }
 
-static FD_phy_scope_gnb *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-static void *scope_thread(void *arg) {
+
+static void *scope_thread_gNB(void *arg) {
+  int UE_id;
   int ue_cnt=0;
+# ifdef ENABLE_XFORMS_WRITE_STATS
+  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
+#endif
+
   while (!oai_exit) {
     ue_cnt=0;
     
-    for(int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        if ((ue_cnt<scope_enb_num_ue)) 
+    for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+        if ((ue_cnt<scope_enb_num_ue)) {
           //this function needs to be written
-          phy_scope_gNB(form_gnb[CC_id][ue_cnt], RC.gNB[0], UE_id);
-	ue_cnt++;
-      }
+          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], UE_id);
+          ue_cnt++;
+        }
     }
     sleep(1);
   }
+
+//  printf("%s",stats_buffer);
+/*#ifdef ENABLE_XFORMS_WRITE_STATS
+
+  if (eNB_stats) {
+    rewind (gNB_stats);
+    fwrite (stats_buffer, 1, len, gNB_stats);
+    fclose (gNB_stats);
+  }
+
+#endif
+  pthread_exit((void *)arg);
+}*/
+
   return NULL;
 }
 
@@ -912,7 +950,7 @@ FD_stats_form * create_form_stats_form( void ) {
 }
 
 void startScope(scopeParms_t * p) {
-  FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
+  FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   fl_initialize (p->argc, p->argv, NULL, 0, 0);
   form_stats_l2 = create_form_stats_form();
@@ -921,13 +959,11 @@ void startScope(scopeParms_t * p) {
   fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
 
   for(int UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-    for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
-      sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-      fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    } // CC_id
+    form_gnb[UE_id] = create_phy_scope_gnb();
+    sprintf (title, "LTE UL SCOPE eNB for UE %d",UE_id);
+    fl_show_form (form_gnb[UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   } // UE_id
 
   pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&forms_thread, scope_thread_gNB, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
 }

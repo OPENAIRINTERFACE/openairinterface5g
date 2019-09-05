@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  Copyleft: OpenAirInterface software alliance and it's licence 
+  Copyleft: OpenAirInterface software alliance and it's licence
 */
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
@@ -283,6 +283,8 @@ typedef struct {
   TASK_DEF(TASK_RLC_ENB,  TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RRC_ENB_NB_IoT,  TASK_PRIORITY_MED, 200, NULL, NULL) \
   TASK_DEF(TASK_PDCP_ENB, TASK_PRIORITY_MED, 200, NULL, NULL)   \
+  TASK_DEF(TASK_DATA_FORWARDING, TASK_PRIORITY_MED, 200, NULL, NULL)   \
+  TASK_DEF(TASK_END_MARKER, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
   TASK_DEF(TASK_RRC_GNB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
   TASK_DEF(TASK_RAL_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
@@ -302,6 +304,8 @@ typedef struct {
   TASK_DEF(TASK_MSC,      TASK_PRIORITY_MED,  200, NULL, NULL)\
   TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
   TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)\
+  TASK_DEF(TASK_CU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
+  TASK_DEF(TASK_DU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
   TASK_DEF(TASK_MAX,      TASK_PRIORITY_MED,  200, NULL, NULL)
 
 #define TASK_DEF(TaskID, pRIO, qUEUEsIZE, FuNc, ThreadFunc)          { pRIO, qUEUEsIZE, #TaskID, FuNc, ThreadFunc },
@@ -400,13 +404,6 @@ typedef struct __attribute__ ((__packed__)) MessageDef_s {
 #define TIMER_HAS_EXPIRED(mSGpTR)           (mSGpTR)->ittiMsg.timer_has_expired
 
 #define INSTANCE_DEFAULT    (UINT16_MAX - 1)
-
-/* already defined in common/utils/time_utils.h*/
-/*
-static inline int64_t clock_difftime_ns(struct timespec start, struct timespec end) {
-  return (int64_t)( end.tv_sec-start.tv_sec) * (int64_t)(1000*1000*1000) + end.tv_nsec-start.tv_nsec;
-}
-*/
 
 #ifdef __cplusplus
 extern "C" {

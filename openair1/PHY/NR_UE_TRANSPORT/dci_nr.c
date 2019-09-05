@@ -332,8 +332,10 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 #ifdef NR_PDCCH_DCI_DEBUG
   int nushiftmod3 = frame_parms->nushift % 3;
 #endif
-  uint8_t symbol_mod;
-  symbol_mod = (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol;
+
+#if defined(DEBUG_DCI_DECODING) || defined(NR_PDCCH_DCI_DEBUG)
+  uint8_t symbol_mod = (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol;
+#endif
   c_rb = n_BWP_start; // c_rb is the common resource block: RB within the BWP
 #ifdef DEBUG_DCI_DECODING
   LOG_I(PHY, "extract_rbs_single: symbol_mod %d\n",symbol_mod);

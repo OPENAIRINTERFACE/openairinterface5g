@@ -209,9 +209,9 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   mib->message.choice.mib->ssb_SubcarrierOffset = carrier->ssb_SubcarrierOffset;
   mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
   mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
-  AssertFatal(scc->subcarrierSpacing != NULL, "scc->subcarrierSpacing is null\n");
+  AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
 
-  switch (*scc->subcarrierSpacing) {
+  switch (*scc->ssbSubcarrierSpacing) {
   case NR_SubcarrierSpacing_kHz15:
     mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
     break;
@@ -229,11 +229,11 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
     break;
     
   case NR_SubcarrierSpacing_kHz240:
-    AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->subcarrierSpacing);
+    AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->ssbSubcarrierSpacing);
     break;
     
   default:
-      AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->subcarrierSpacing);
+      AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->ssbSubcarrierSpacing);
   }
 
   switch (scc->dmrs_TypeA_Position) {

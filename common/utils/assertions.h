@@ -22,9 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#ifdef CMAKER
 #include <platform_types.h>
-#endif
 
 #if defined(ENB_MODE)
 # define display_backtrace()
@@ -37,13 +35,11 @@
 
 void output_log_mem(void);
 #define _Assert_Exit_                           \
-{                                               \
     fprintf(stderr, "\nExiting execution\n");   \
     display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
     exit(EXIT_FAILURE);                         \
-}
 
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \

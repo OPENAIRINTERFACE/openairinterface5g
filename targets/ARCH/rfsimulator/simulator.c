@@ -85,7 +85,8 @@ typedef struct {
   either we regenerate the channel (call again random_channel(desc,0)), or we keep it over subframes
   legacy: we regenerate each sub frame in UL, and each frame only in DL
 */
-void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+void rxAddInput( struct complex16 *input_sig,
+                 struct complex16 *after_channel_sig,
                  int rxAnt,
                  channel_desc_t *channelDesc,
                  int nbSamples,
@@ -98,20 +99,20 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   const double pathLossLinear = pow(10,channelDesc->path_loss_dB/20.0);
   // Energy in one sample to calibrate input noise
   //Fixme: modified the N0W computation, not understand the origin value
-  const double KT=1.38e-23*290; //Boltzman*temperature
+  const double KT = 1.38e-23*290; //Boltzman*temperature
   // sampling rate is linked to acquisition band (the input pass band filter)
   const double noise_figure_watt = KT*channelDesc->sampling_rate;
   // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
   // the parameter "-s" is declared as SNR, but the input power is not well defined
   // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain= 132.24 - snr_dB;
+  const double rxGain = 132.24 - snr_dB;
   // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
   // fixme: the last constant is pure trial results to make decent noise
   const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;
   // Fixme: we don't fill the offset length samples at begining ?
   // anyway, in today code, channel_offset=0
   const int dd = abs(channelDesc->channel_offset);
-  const int nbTx=channelDesc->nb_tx;
+  const int nbTx = channelDesc->nb_tx;
 
   for (int i=0; i<((int)nbSamples-dd); i++) {
     struct complex16 *out_ptr=after_channel_sig+dd+i;
@@ -332,7 +333,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
 
     if (b->conn_sock >= 0 ) {
       if ( abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
-	LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
+        LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
       samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(b->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
@@ -354,7 +355,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   // Let's verify we don't have incoming data
-  // This is mandatory when the opposite side don't transmit
+  // This is mandatory when the opposite side doesn't transmit
   flushInput(t, 0);
   pthread_mutex_unlock(&Sockmutex);
   return nsamps;
@@ -505,23 +506,23 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       have_to_wait=false;
 
       for ( int sock=0; sock<FD_SETSIZE; sock++) {
-	buffer_t *b=&t->buf[sock];
+        buffer_t *b=&t->buf[sock];
         if ( b->circularBuf) {
           LOG_D(HW,"sock: %d, lastWroteTS: %lu, lastRecvTS: %lu, TS must be avail: %lu\n",
                 sock, b->lastWroteTS,
                 b->lastReceivedTS,
                 t->nextTimestamp+nsamps);
-	  if (  b->lastReceivedTS > b->lastWroteTS ) {
-	    // The caller momdem (NB, UE, ...) must send Tx in advance, so we fill TX if Rx is in advance
-	    // This occurs for example when UE is in sync mode: it doesn't transmit
-	    // with USRP, it seems ok: if "tx stream" is off, we may consider it actually cuts the Tx power
-	    struct complex16 v={0};
-	    void *samplesVoid[b->th.nbAnt];
-	    for ( int i=0; i <b->th.nbAnt; i++)
-	      samplesVoid[i]=(void*)&v;
-	    rfsimulator_write(device, b->lastReceivedTS, samplesVoid, 1, b->th.nbAnt, 0);
-	  }
-	}
+          if (  b->lastReceivedTS > b->lastWroteTS ) {
+	        // The caller momdem (NB, UE, ...) must send Tx in advance, so we fill TX if Rx is in advance
+	        // This occurs for example when UE is in sync mode: it doesn't transmit
+	        // with USRP, it seems ok: if "tx stream" is off, we may consider it actually cuts the Tx power
+	        struct complex16 v={0};
+	        void *samplesVoid[b->th.nbAnt];
+	        for ( int i=0; i <b->th.nbAnt; i++)
+	          samplesVoid[i]=(void*)&v;
+	        rfsimulator_write(device, b->lastReceivedTS, samplesVoid, 1, b->th.nbAnt, 0);
+          }
+        }
 
         if ( b->circularBuf )
           if ( t->nextTimestamp+nsamps > b->lastReceivedTS ) {
@@ -602,7 +603,7 @@ __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
   // --log_config.hw_log_level debug
-  // (for phy layer, replace "hw" by "phy"
+  // (for phy layer, replace "hw" by "phy")
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {

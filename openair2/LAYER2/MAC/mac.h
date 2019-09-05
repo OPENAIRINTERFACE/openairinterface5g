@@ -1,4 +1,4 @@
-/*
+ /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -44,29 +44,35 @@
 #include <string.h>
 
 #include "COMMON/platform_constants.h"
-#include "BCCH-BCH-Message.h"
-#include "RadioResourceConfigCommon.h"
-#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "MeasGapConfig.h"
-#include "SchedulingInfoList.h"
-#include "TDD-Config.h"
-#include "RACH-ConfigCommon.h"
-#include "MeasObjectToAddModList.h"
-#include "MobilityControlInfo.h"
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "MBSFN-AreaInfoList-r9.h"
-#include "MBSFN-SubframeConfigList.h"
-#include "PMCH-InfoList-r9.h"
+#include "LTE_BCCH-BCH-Message.h"
+#include "LTE_RadioResourceConfigCommon.h"
+#include "LTE_RadioResourceConfigCommonSIB.h"
+#include "LTE_RadioResourceConfigDedicated.h"
+#include "LTE_MeasGapConfig.h"
+#include "LTE_SchedulingInfoList.h"
+#include "LTE_TDD-Config.h"
+#include "LTE_RACH-ConfigCommon.h"
+#include "LTE_MeasObjectToAddModList.h"
+#include "LTE_MobilityControlInfo.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_MBSFN-AreaInfoList-r9.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_PMCH-InfoList-r9.h"
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#include "SCellToAddMod-r10.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#include "LTE_SCellToAddMod-r10.h"
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-#include "SystemInformationBlockType1-v1310-IEs.h"
-#include "SystemInformationBlockType18-r12.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#include "LTE_SystemInformationBlockType1-v1310-IEs.h"
+#include "LTE_SystemInformationBlockType18-r12.h"
 #endif
-#include "RadioResourceConfigCommonSIB.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#include "LTE_BCCH-BCH-Message-MBMS.h"
+#include "LTE_BCCH-DL-SCH-Message-MBMS.h"
+#include "LTE_SystemInformationBlockType1-MBMS-r14.h"
+#include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
+#include "LTE_RadioResourceConfigCommonSIB.h"
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
 
@@ -82,6 +88,7 @@
  * @{
  */
 
+#define MAX_MAC_INST 16
 #define BCCH_PAYLOAD_SIZE_MAX 128
 #define CCCH_PAYLOAD_SIZE_MAX 128
 #define PCCH_PAYLOAD_SIZE_MAX 128
@@ -91,7 +98,7 @@
 #define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80	// for TDD
@@ -162,7 +169,7 @@
 #define MAX_NUM_SLICES 10
 
 
-#define U_PLANE_INACTIVITY_VALUE 6000
+#define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
 /*
  * eNB part
@@ -380,7 +387,7 @@ typedef struct {
     uint8_t payload[PCCH_PAYLOAD_SIZE_MAX];
 } __attribute__ ((__packed__)) PCCH_PDU;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
     uint8_t payload[MCCH_PAYLOAD_SIZE_MAX];
@@ -415,6 +422,11 @@ typedef struct {
 #define BCCH_SIB1_BR 6		// SIB1_BR
 /*!\brief Values of BCCH SIB_BR logical channel (fake) */
 #define BCCH_SI_BR 7		// SI-BR
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/*!\brief Values of BCCH SIB1_BR logical channel (fake) */
+#define BCCH_SIB1_MBMS 60              // SIB1_MBMS //TODO better armonize index
+#define BCCH_SI_MBMS 61                // SIB_MBMS //TODO better armonize index
+#endif
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0			// srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -424,7 +436,8 @@ typedef struct {
 /*!\brief DTCH DRB1  logical channel */
 #define DTCH 3			// LCID
 /*!\brief MCCH logical channel */
-#define MCCH 4
+//#define MCCH 4
+#define MCCH 62
 /*!\brief MTCH logical channel */
 #define MTCH 1
 // DLSCH LCHAN ID
@@ -437,7 +450,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -552,6 +565,7 @@ typedef struct {
     uint16_t serving_num;
     UE_ULSCH_STATUS status;
 } eNB_ULSCH_INFO;
+
 /*! \brief temp struct for DLSCH sched */
 typedef struct {
     rnti_t rnti;
@@ -560,6 +574,7 @@ typedef struct {
     uint16_t serving_num;
     UE_DLSCH_STATUS status;
 } eNB_DLSCH_INFO;
+
 /*! \brief eNB overall statistics */
 typedef struct {
     /// num BCCH PDU per CC
@@ -634,6 +649,7 @@ typedef struct {
     int missed_deadlines;
 
 } eNB_STATS;
+
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
     /// CRNTI of UE
@@ -738,10 +754,10 @@ typedef struct {
     uint32_t rbs_used_retx_rx;
     ///  total rb used for a new uplink transmission
     uint32_t total_rbs_used_rx;
-    /// normalized rx power
-    int32_t normalized_rx_power;
-    /// target rx power
-    int32_t target_rx_power;
+    /// snr
+    int32_t snr;
+    /// target snr
+    int32_t target_snr;
 
     /// num rx pdu
     uint32_t num_pdu_rx[NB_RB_MAX];
@@ -777,6 +793,7 @@ typedef struct {
 
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
+
 typedef struct {
     /// C-RNTI of UE
     rnti_t rnti;
@@ -813,6 +830,9 @@ typedef struct {
 
     /// Number of Allocated RBs for UL after scheduling
     uint16_t first_rb_ul[8];	// num_max_harq
+
+    /// Is CQI requested for UL after scheduling 1st transmission
+    uint8_t cqi_req[8];         // num_max_harq
 
     /// Cyclic shift for DMRS after scheduling
     uint16_t cshift[8];		// num_max_harq
@@ -896,18 +916,15 @@ typedef struct {
     uint32_t pucch_tpc_tx_frame;
     uint32_t pucch_tpc_tx_subframe;
 
-#ifdef LOCALIZATION
-    eNB_UE_estimated_distances distance;
-#endif
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint16_t mpdcch_repetition_cnt;
     frame_t Msg2_frame;
 #endif
     sub_frame_t Msg2_subframe;
 
-    PhysicalConfigDedicated_t *physicalConfigDedicated;
+    LTE_PhysicalConfigDedicated_t *physicalConfigDedicated;
 
 } UE_TEMPLATE;
 
@@ -978,6 +995,7 @@ typedef struct {
     uint16_t feedback_cnt[NFAPI_CC_MAX];
     uint16_t timing_advance;
     uint16_t timing_advance_r9;
+    uint8_t tpc_accumulated[NFAPI_CC_MAX];
     uint8_t periodic_wideband_cqi[NFAPI_CC_MAX];
     uint8_t periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
     uint8_t periodic_wideband_pmi[NFAPI_CC_MAX];
@@ -996,66 +1014,128 @@ typedef struct {
     int32_t uplane_inactivity_timer;
     uint8_t crnti_reconfigurationcomplete_flag;
     uint8_t cqi_req_flag;
-} UE_sched_ctrl;
+
+    /* HARQ RRT Timers */
+    /// (UL) HARQ RTT timers, especially used for CDRX operations, one timer per cell per harq process (and per user)
+    uint8_t harq_rtt_timer[NFAPI_CC_MAX][8];
+    uint8_t ul_harq_rtt_timer[NFAPI_CC_MAX][8]; // Note: UL HARQ RTT timers are only for asynchronous HARQ processes
+    uint8_t ul_synchronous_harq_timer[NFAPI_CC_MAX][8];  // These timers are used for UL synchronous HARQ processes
+
+    /* C-DRX related timers */
+    /* Note: only valid for FDD and LTE UE when this comment is written (11-01-19)*/
+    /// is TRUE if the cqi mask feature is activated by RRC configuration
+    boolean_t cqi_mask_boolean;
+    /// is TRUE if the following drx parameters are configured for UE
+    boolean_t cdrx_configured;
+    /* 
+     * if TRUE, the eNB has configured the CDRX locally, but is waiting for the UE to acknowledge 
+     * the activation. This is needed, during the RRC configuration process, when the context is
+     * configured on the eNB side, but not yet on the UE side...
+     */
+    boolean_t cdrx_waiting_ack;
+    /*
+     * Is set when a ULSCH scheduling is done and run until the first corresponding transmission is done (4 subframes). 
+     * When set, SR cannot be set for the UE. This allows OAI to avoid concidering a SR as uncompleted if the UE sends
+     * a SR just after a periodic DCI0 ULSCH scheduling. Without CDRX there is no problem, but with CDRX this case would
+     * create a lost in timers synchronization.
+     */ 
+    uint8_t dci0_ongoing_timer;
+    /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
+    boolean_t in_active_time;
+    /// OnDurationTimer
+    uint16_t  on_duration_timer;
+    uint16_t  on_duration_timer_thres;
+    /// drx-InactivityTimer
+    uint16_t  drx_inactivity_timer;
+    uint16_t  drx_inactivity_timer_thres;
+    /// is TRUE if UE is currently in short DRX cycle
+    boolean_t in_short_drx_cycle;
+    /// drxShortCycleTimer int (1..16) (number of short DRX cycles duration before long DRX cycles)
+    uint8_t  drx_shortCycle_timer_value;
+    /// shortDRX-Cycle (duration of one short DRX cycle)
+    uint16_t   short_drx_cycle_duration;
+    /// DRX short cycle timer before switching to long DRX cycle = drx_shortCycle_timer_value * short_drx_cycle_duration
+    uint16_t  drx_shortCycle_timer;
+    uint16_t  drx_shortCycle_timer_thres;
+    /// is TRUE if UE is currently in long DRX cycle
+    boolean_t in_long_drx_cycle;
+    /// longDRX-CycleStartOffset (long DRX cycle timer)
+    uint16_t  drx_longCycle_timer;
+    uint16_t  drx_longCycle_timer_thres;
+    /// longDRX-CycleStartOffset (offset value)
+    uint16_t  drx_start_offset;
+    /// DRX retransmission timer, one per DL HARQ process
+    uint8_t   drx_retransmission_timer[8];
+    uint8_t   drx_retransmission_timer_thres[8];
+    /// DRX UL retransmission timer, one per UL HARQ process
+    /* Not implemented yet */
+    /* End of C-DRX related timers */
+} UE_sched_ctrl_t;
+
 /*! \brief eNB template for the Random access information */
 typedef struct {
-    /// Flag to indicate this process is active
-    RA_state state;
-    /// Subframe where preamble was received
-    uint8_t preamble_subframe;
-    /// Subframe where Msg2 is to be sent
-    uint8_t Msg2_subframe;
-    /// Frame where Msg2 is to be sent
-    frame_t Msg2_frame;
-    /// Subframe where Msg3 is to be sent
-    sub_frame_t Msg3_subframe;
-    /// Frame where Msg3 is to be sent
-    frame_t Msg3_frame;
-    /// Subframe where Msg4 is to be sent
-    sub_frame_t Msg4_subframe;
-    /// Frame where Msg4 is to be sent
-    frame_t Msg4_frame;
-    /// harq_pid used for Msg4 transmission
-    uint8_t harq_pid;
-    /// UE RNTI allocated during RAR
-    rnti_t rnti;
-    /// RA RNTI allocated from received PRACH
-    uint16_t RA_rnti;
-    /// Received preamble_index
-    uint8_t preamble_index;
-    /// Received UE Contention Resolution Identifier
-    uint8_t cont_res_id[6];
-    /// Timing offset indicated by PHY
-    int16_t timing_offset;
-    /// Timeout for RRC connection
-    int16_t RRC_timer;
-    /// Msg3 first RB
-    uint8_t msg3_first_rb;
-    /// Msg3 number of RB
-    uint8_t msg3_nb_rb;
-    /// Msg3 MCS
-    uint8_t msg3_mcs;
-    /// Msg3 TPC command
-    uint8_t msg3_TPC;
-    /// Msg3 ULdelay command
-    uint8_t msg3_ULdelay;
-    /// Msg3 cqireq command
-    uint8_t msg3_cqireq;
-    /// Round of Msg3 HARQ
-    uint8_t msg3_round;
-    /// TBS used for Msg4
-    int msg4_TBsize;
-    /// MCS used for Msg4
-    int msg4_mcs;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    uint8_t rach_resource_type;
-    uint8_t msg2_mpdcch_repetition_cnt;
-    uint8_t msg4_mpdcch_repetition_cnt;
-    uint8_t msg2_narrowband;
-    uint8_t msg34_narrowband;
+  /// Flag to indicate this process is active
+  RA_state state;
+  /// Subframe where preamble was received
+  uint8_t preamble_subframe;
+  /// Subframe where Msg2 is to be sent
+  uint8_t Msg2_subframe;
+  /// Frame where Msg2 is to be sent
+  frame_t Msg2_frame;
+  /// Subframe where Msg3 is to be sent
+  sub_frame_t Msg3_subframe;
+  /// Frame where Msg3 is to be sent
+  frame_t Msg3_frame;
+  /// Delay cnt for Msg4 transmission (waiting for RRC message piggyback)
+  int Msg4_delay_cnt;
+  /// Subframe where Msg4 is to be sent
+  sub_frame_t Msg4_subframe;
+  /// Frame where Msg4 is to be sent
+  frame_t Msg4_frame;
+  /// harq_pid used for Msg4 transmission
+  uint8_t harq_pid;
+  /// UE RNTI allocated during RAR
+  rnti_t rnti;
+  /// RA RNTI allocated from received PRACH
+  uint16_t RA_rnti;
+  /// Received preamble_index
+  uint8_t preamble_index;
+  /// Received UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
+  /// Timing offset indicated by PHY
+  int16_t timing_offset;
+  /// Timeout for RRC connection
+  int16_t RRC_timer;
+  /// Msg3 first RB
+  uint8_t msg3_first_rb;
+  /// Msg3 number of RB
+  uint8_t msg3_nb_rb;
+  /// Msg3 MCS
+  uint8_t msg3_mcs;
+  /// Msg3 TPC command
+  uint8_t msg3_TPC;
+  /// Msg3 ULdelay command
+  uint8_t msg3_ULdelay;
+  /// Msg3 cqireq command
+  uint8_t msg3_cqireq;
+  /// Round of Msg3 HARQ
+  uint8_t msg3_round;
+  /// TBS used for Msg4
+  int msg4_TBsize;
+  /// MCS used for Msg4
+  int msg4_mcs;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t rach_resource_type;
+  uint8_t msg2_mpdcch_repetition_cnt;
+  int     msg2_mpdcch_done;
+  uint8_t msg4_mpdcch_repetition_cnt;
+  int     msg4_mpdcch_done;
+  uint8_t msg2_narrowband;
+  uint8_t msg34_narrowband;
+  int     msg4_rrc_sdu_length;
 #endif
-    int32_t  crnti_rrc_mui;
-    int8_t   crnti_harq_pid;
+  int32_t  crnti_rrc_mui;
+  int8_t   crnti_harq_pid;
 } RA_t;
 
 
@@ -1069,44 +1149,40 @@ typedef struct {
 } SBMAP_CONF;
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
 typedef struct {
-    /// Dedicated information for UEs
-    struct PhysicalConfigDedicated
-	*physicalConfigDedicated[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// DLSCH pdu
-    DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
-    /// DCI template and MAC connection parameters for UEs
-    UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// DCI template and MAC connection for RA processes
-    int pCC_id[MAX_MOBILES_PER_ENB];
-    /// sorted downlink component carrier for the scheduler
-    int ordered_CCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// number of downlink active component carrier
-    int numactiveCCs[MAX_MOBILES_PER_ENB];
-    /// sorted uplink component carrier for the scheduler
-    int ordered_ULCCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// number of uplink active component carrier
-    int numactiveULCCs[MAX_MOBILES_PER_ENB];
-    /// number of downlink active component carrier
-    uint8_t dl_CC_bitmap[MAX_MOBILES_PER_ENB];
-    /// eNB to UE statistics
-    eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// scheduling control info
-    UE_sched_ctrl UE_sched_ctrl[MAX_MOBILES_PER_ENB];
-    int next[MAX_MOBILES_PER_ENB];
-    int head;
-    int next_ul[MAX_MOBILES_PER_ENB];
-    int head_ul;
-    int avail;
-    int num_UEs;
-    boolean_t active[MAX_MOBILES_PER_ENB];
 
-    /// Sorting criteria for the UE list in the MAC preprocessor
-    uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
-    uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
+  DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
+  /// DCI template and MAC connection parameters for UEs
+  UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// DCI template and MAC connection for RA processes
+  int pCC_id[MAX_MOBILES_PER_ENB];
+  /// sorted downlink component carrier for the scheduler
+  int ordered_CCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// number of downlink active component carrier
+  int numactiveCCs[MAX_MOBILES_PER_ENB];
+  /// sorted uplink component carrier for the scheduler
+  int ordered_ULCCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// number of uplink active component carrier
+  int numactiveULCCs[MAX_MOBILES_PER_ENB];
+  /// number of downlink active component carrier
+  uint8_t dl_CC_bitmap[MAX_MOBILES_PER_ENB];
+  /// eNB to UE statistics
+  eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// scheduling control info
+  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_ENB];
+  int next[MAX_MOBILES_PER_ENB];
+  int head;
+  int next_ul[MAX_MOBILES_PER_ENB];
+  int head_ul;
+  int avail;
+  int num_UEs;
+  boolean_t active[MAX_MOBILES_PER_ENB];
 
-    int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
-    int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
+  /// Sorting criteria for the UE list in the MAC preprocessor
+  uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+  uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
+  int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
+  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
 } UE_list_t;
 
 /*! \brief deleting control information*/
@@ -1115,11 +1191,11 @@ typedef struct {
     rnti_t rnti;
     ///remove UE context flag
     boolean_t removeContextFlg;
-} UE_free_ctrl;
+} UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {
     /// deleting control info
-    UE_free_ctrl UE_free_ctrl[NUMBER_OF_UE_MAX+1];
+    UE_free_ctrl_t UE_free_ctrl[NUMBER_OF_UE_MAX+1];
     int num_UEs;
     int head_freelist; ///the head position of the delete list
     int tail_freelist; ///the tail position of the delete list
@@ -1243,14 +1319,15 @@ typedef struct {
     int Ncp;
     int eutra_band;
     uint32_t dl_CarrierFreq;
-    BCCH_BCH_Message_t *mib;
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
+    LTE_BCCH_BCH_Message_t *mib;
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
+    LTE_SchedulingInfoList_MBMS_r14_t *schedulingInfoList_MBMS;
 #endif
-    TDD_Config_t *tdd_Config;
-    SchedulingInfoList_t *schedulingInfoList;
-    ARFCN_ValueEUTRA_t ul_CarrierFreq;
+    LTE_TDD_Config_t *tdd_Config;
+    LTE_SchedulingInfoList_t *schedulingInfoList;
+    LTE_ARFCN_ValueEUTRA_t ul_CarrierFreq;
     long ul_Bandwidth;
     /// Outgoing MIB PDU for PHY
     MIB_PDU MIB_pdu;
@@ -1273,10 +1350,13 @@ typedef struct {
     /// VRB map for common channels and retransmissions by PHICH
     uint8_t vrb_map_UL[100];
     /// MBSFN SubframeConfig
-    struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+    struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     /// MBMS Flag
     uint8_t MBMS_flag;
     /// Outgoing MCCH pdu for PHY
@@ -1290,22 +1370,27 @@ typedef struct {
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info
-    struct MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+    struct LTE_MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
     /// PMCH Config
-    struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+    struct LTE_PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
     /// MBMS session info list
-    struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
+    struct LTE_MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
     /// Outgoing MCH pdu for PHY
     MCH_PDU MCH_pdu;
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     /// Rel13 parameters from SIB1
-    SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
+    LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
     /// Counter for SIB1-BR scheduling
     int SIB1_BR_cnt;
     /// Outgoing BCCH-BR pdu for PHY
     BCCH_PDU BCCH_BR_pdu[20];
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    BCCH_PDU BCCH_MBMS_pdu;
+    uint8_t FeMBMS_flag;
+#endif
+
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
@@ -1353,6 +1438,8 @@ typedef struct eNB_MAC_INST_s {
   tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
   /// NFAPI DL PDU structure
   nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
+  /// NFAPI UE_release_req structure
+  nfapi_ue_release_request_t UE_release_req;
   /// UL handle
   uint32_t ul_handle;
   UE_list_t UE_list;
@@ -1373,6 +1460,9 @@ typedef struct eNB_MAC_INST_s {
   time_stats_t eNB_scheduler;
   /// processing time of eNB scheduler for SI
   time_stats_t schedule_si;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  time_stats_t schedule_si_mbms;
+#endif
   /// processing time of eNB scheduler for Random access
   time_stats_t schedule_ra;
   /// processing time of eNB ULSCH scheduler
@@ -1454,9 +1544,9 @@ typedef struct {
     /// default value is false
     uint16_t ttiBundling;
     /// default value is release
-    struct DRX_Config *drx_config;
+    struct LTE_DRX_Config *drx_config;
     /// default value is release
-    struct MAC_MainConfig__phr_Config *phr_config;
+    struct LTE_MAC_MainConfig__phr_Config *phr_config;
     ///timer before triggering a periodic PHR
     uint16_t periodicPHR_Timer;
     ///timer before triggering a prohibit PHR
@@ -1481,6 +1571,7 @@ typedef struct {
     int16_t bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 /*!\brief Top level UE MAC structure */
+
 typedef struct {
     uint16_t Node_id;
     /// RX frame counter
@@ -1498,30 +1589,30 @@ typedef struct {
     /// uplink active flag
     uint8_t ul_active;
     /// pointer to RRC PHY configuration
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
     /// pointer to RACH_ConfigDedicated (NULL when not active, i.e. upon HO completion or T304 expiry)
-    struct RACH_ConfigDedicated *rach_ConfigDedicated;
+    struct LTE_RACH_ConfigDedicated *rach_ConfigDedicated;
     /// pointer to RRC PHY configuration
-    struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    struct LTE_PhysicalConfigDedicated *physicalConfigDedicated;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// pointer to RRC PHY configuration SCEll
-  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
+  struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
   /// Preconfiguration for Sidelink
-  struct SL_Preconfiguration_r12 *SL_Preconfiguration;
+  struct LTE_SL_Preconfiguration_r12 *SL_Preconfiguration;
   /// RX Pool for Sidelink from SIB18
-  SL_CommRxPoolList_r12_t	 commRxPool_r12;
+  LTE_SL_CommRxPoolList_r12_t	 commRxPool_r12;
   /// TX Pool Normal for Sidelink from SIB18
-  struct SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
+  struct LTE_SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
   /// TX Pool Exceptional for Sidelink from SIB18
-  struct SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
+  struct LTE_SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
   /// Common Sync Config for Sidelink from SIB18
-  struct SL_SyncConfigList_r12	*commSyncConfig_r12;
+  struct LTE_SL_SyncConfigList_r12	*commSyncConfig_r12;
   /// Dedicated Sync TX control for Sidelink
-  struct SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
+  struct LTE_SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
   /// Dedicated Discovery TX control for Sidelink
-  struct SL_DiscConfig_r12	*sl_DiscConfig_r12;
+  struct LTE_SL_DiscConfig_r12	*sl_DiscConfig_r12;
   /// Dedicated TX config for Sidelink
-  struct SL_CommConfig_r12	*sl_CommConfig_r12;
+  struct LTE_SL_CommConfig_r12	*sl_CommConfig_r12;
   //SL sourceL2ID
   uint32_t sourceL2Id;
   //SL groupL2Id
@@ -1535,17 +1626,17 @@ typedef struct {
 
 #endif
     /// pointer to TDD Configuration (NULL for FDD)
-    TDD_Config_t *tdd_Config;
+    LTE_TDD_Config_t *tdd_Config;
     /// Number of adjacent cells to measure
     uint8_t n_adj_cells;
     /// Array of adjacent physical cell ids
     uint32_t adj_cell_id[6];
     /// Pointer to RRC MAC configuration
-    MAC_MainConfig_t *macConfig;
+    LTE_MAC_MainConfig_t *macConfig;
     /// Pointer to RRC Measurement gap configuration
-    MeasGapConfig_t *measGapConfig;
+    LTE_MeasGapConfig_t *measGapConfig;
     /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-    LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
+    LTE_LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
     /// Scheduling Information
     UE_SCHEDULING_INFO scheduling_info;
     /// Outgoing CCCH pdu for PHY
@@ -1554,7 +1645,7 @@ typedef struct {
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
     DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int sltx_active;
     SLSCH_t slsch;
     SLDCH_t sldch;
@@ -1610,16 +1701,19 @@ typedef struct {
     uint8_t periodBSRTimer_expires_flag;
 
     /// MBSFN_Subframe Configuration
-    struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
+    struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info
-    struct MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+    struct LTE_MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
     /// PMCH Config
-    struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+    struct LTE_PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
     /// MCCH status
     uint8_t mcch_status;
     /// MSI status
@@ -1627,7 +1721,7 @@ typedef struct {
     uint8_t msi_current_alloc;
     uint8_t msi_pmch;
 
-    struct MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+    struct LTE_MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
     uint8_t commonSF_AllocPeriod_r9;
     int common_num_sf_alloc;
 
@@ -1680,11 +1774,11 @@ typedef struct {
   volatile uint8_t flag;
   rnti_t rnti;
   mui_t  rrc_eNB_mui;
-}RRC_release_ctrl;
+}RRC_release_ctrl_t;
  
 typedef struct {
     uint16_t num_UEs;
-    RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
+    RRC_release_ctrl_t RRC_release_ctrl[NUMBER_OF_UE_MAX];
 } RRC_release_list_t;
 
 typedef  struct {

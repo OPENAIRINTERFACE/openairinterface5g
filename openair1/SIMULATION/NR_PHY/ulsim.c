@@ -25,54 +25,44 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
+#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
-#include "common/ran_context.h"
-
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
-
-#include "PHY/types.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/defs_gNB.h"
+#include "PHY/phy_vars_nr_ue.h"
+#include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
-#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
-#include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
-#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/TOOLS/tools_defs.h"
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/defs.h"
-#include "PHY/TOOLS/tools_defs.h"
-#include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
-#include "PHY/phy_vars.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
-
-//#include "PHY/MODULATION/modulation_common.h"
-//#include "common/config/config_load_configmodule.h"
-//#include "UTIL/LISTS/list.h"
-//#include "common/ran_context.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_ULSIM
+
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-
-
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode = 0;
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return (0);
 }
@@ -107,38 +97,16 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(-1);
 }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
-{
-  return 0;
-}
+// dummy functions
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
+                              const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
 
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-char quantize(double D, double x, unsigned char B) {
-  double qxd;
-  short maxlev;
-  qxd = floor(x / D);
-  maxlev = 1 << (B - 1); //(char)(pow(2,B-1));
-
-  //printf("x=%f,qxd=%f,maxlev=%d\n",x,qxd, maxlev);
-
-  if (qxd <= -maxlev)
-    qxd = -maxlev;
-  else if (qxd >= maxlev)
-    qxd = maxlev - 1;
-
-  return ((char) qxd);
-}
-
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
   char c;
   int i,sf;
   double SNR, snr0 = -2.0, snr1 = 2.0;
@@ -184,8 +152,8 @@ int main(int argc, char **argv) {
   UE_nr_rxtx_proc_t UE_proc;
 
 
-  if (load_configmodule(argc, argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
+    exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
 
   //logInit();
@@ -239,7 +207,7 @@ int main(int argc, char **argv) {
             break;
 
           default:
-            msg("Unsupported channel model!\n");
+            printf("Unsupported channel model!\n");
             exit(-1);
         }
 
@@ -259,13 +227,13 @@ int main(int argc, char **argv) {
 
       case 's':
         snr0 = atof(optarg);
-        msg("Setting SNR0 to %f\n", snr0);
+        printf("Setting SNR0 to %f\n", snr0);
         break;
 
       case 'S':
         snr1 = atof(optarg);
         snr1set = 1;
-        msg("Setting SNR1 to %f\n", snr1);
+        printf("Setting SNR1 to %f\n", snr1);
         break;
 
       case 'p':
@@ -286,7 +254,7 @@ int main(int argc, char **argv) {
         n_tx = atoi(optarg);
 
         if ((n_tx == 0) || (n_tx > 2)) {
-          msg("Unsupported number of tx antennas %d\n", n_tx);
+          printf("Unsupported number of tx antennas %d\n", n_tx);
           exit(-1);
         }
 
@@ -296,7 +264,7 @@ int main(int argc, char **argv) {
         n_rx = atoi(optarg);
 
         if ((n_rx == 0) || (n_rx > 2)) {
-          msg("Unsupported number of rx antennas %d\n", n_rx);
+          printf("Unsupported number of rx antennas %d\n", n_rx);
           exit(-1);
         }
 
@@ -383,7 +351,7 @@ int main(int argc, char **argv) {
                                 0, 0, 0);
 
   if (gNB2UE == NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
@@ -418,6 +386,10 @@ int main(int argc, char **argv) {
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
+  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
+  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
+  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
+  PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   //phy_init_nr_top(frame_parms);
@@ -445,7 +417,7 @@ int main(int argc, char **argv) {
   unsigned char harq_pid = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint8_t  nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+  uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
   uint8_t length_dmrs = 1;
   unsigned char mod_order;
 
@@ -498,11 +470,12 @@ int main(int argc, char **argv) {
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
+  ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
   //there are plenty of other parameters that we don't seem to be using for now. e.g.
   //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0; 
 
   // set FAPI parameters for UE, put them in the scheduled response and call 
-  //nr_ue_scheduled_response(&scheduled_response);
+  nr_ue_scheduled_response(&scheduled_response);
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;

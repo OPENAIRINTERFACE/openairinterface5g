@@ -180,7 +180,7 @@ echo "Checking build status"
 echo "############################################################"
 
 LOG_PATTERN=.Rel15.txt
-NB_PATTERN_FILES=4
+NB_PATTERN_FILES=7
 
 LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
 STATUS=0
@@ -198,12 +198,19 @@ do
     fi
 done
 
-if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
+if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]
+then
+    echo "Expecting $NB_PATTERN_FILES log files and found $NB_FOUND_FILES"
+    STATUS=-1
+fi
 
+echo "COMMAND: build_oai -I -w USRP --eNB" > $ARCHIVES_LOC/build_final_status.log
 if [ $STATUS -eq 0 ]
 then
+    echo "BUILD_OK" >> $ARCHIVES_LOC/build_final_status.log
     echo "STATUS seems OK"
 else
+    echo "BUILD_KO" >> $ARCHIVES_LOC/build_final_status.log
     echo "STATUS failed?"
 fi
 exit $STATUS

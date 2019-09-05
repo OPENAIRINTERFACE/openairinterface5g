@@ -32,7 +32,7 @@
 #include "common/utils/LOG/log.h"
 
 #include "rlc_um_control_primitives.h"
-#include "T-Reordering.h"
+#include "LTE_T-Reordering.h"
 #include "msc.h"
 
 //-----------------------------------------------------------------------------
@@ -78,10 +78,10 @@ void config_req_rlc_um (
   }
 }
 //-----------------------------------------------------------------------------
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 const uint32_t t_Reordering_tab[32] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
 #else
-const uint32_t t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+const uint32_t t_Reordering_tab[LTE_T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
 #endif
 
 void config_req_rlc_um_asn1 (
@@ -90,11 +90,11 @@ void config_req_rlc_um_asn1 (
   const MBMS_flag_t         mbms_flagP,
   const mbms_session_id_t   mbms_session_idP,
   const mbms_service_id_t   mbms_service_idP,
-  const UL_UM_RLC_t       * const ul_rlc_pP,
-  const DL_UM_RLC_t       * const dl_rlc_pP,
+  const LTE_UL_UM_RLC_t   * const ul_rlc_pP,
+  const LTE_DL_UM_RLC_t   * const dl_rlc_pP,
   const rb_id_t             rb_idP,
   const logical_chan_id_t   chan_idP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
  ,const uint32_t            sourceL2Id
  ,const uint32_t            destinationL2Id
 #endif
@@ -108,7 +108,7 @@ void config_req_rlc_um_asn1 (
   hash_key_t       key                 = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   hashtable_rc_t   h_rc;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbms_flagP) {
     //AssertFatal(dl_rlc_pP, "No RLC UM DL config");
@@ -137,7 +137,7 @@ void config_req_rlc_um_asn1 (
     }
     
     rlc_p = &rlc_union_p->rlc.um;
-  }
+  }else
   if ((sourceL2Id >0 ) && (destinationL2Id >0)){
      key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, sourceL2Id, destinationL2Id, srb_flagP);
   } else
@@ -173,11 +173,11 @@ void config_req_rlc_um_asn1 (
 
     if (ul_rlc_pP != NULL) {
       switch (ul_rlc_pP->sn_FieldLength) {
-      case SN_FieldLength_size5:
+      case LTE_SN_FieldLength_size5:
         ul_sn_FieldLength = 5;
         break;
 
-      case SN_FieldLength_size10:
+      case LTE_SN_FieldLength_size10:
         ul_sn_FieldLength = 10;
         break;
 
@@ -201,11 +201,11 @@ void config_req_rlc_um_asn1 (
 
     if (dl_rlc_pP != NULL) {
       switch (dl_rlc_pP->sn_FieldLength) {
-      case SN_FieldLength_size5:
+      case LTE_SN_FieldLength_size5:
         dl_sn_FieldLength = 5;
         break;
 
-      case SN_FieldLength_size10:
+      case LTE_SN_FieldLength_size10:
         dl_sn_FieldLength = 10;
         break;
 
@@ -226,7 +226,7 @@ void config_req_rlc_um_asn1 (
         return;
       }
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (dl_rlc_pP->t_Reordering<32) {
 #else
       if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {

@@ -130,9 +130,13 @@ static void paint(gui *_gui, widget *_this)
           this->common.y + FLIP(y),
           this->common.x + this->vrule_width + 5,
           this->common.y + FLIP(y));
+      /* do not print out of the widget (take care of top) */
+      y = FLIP(y)-this->label_height/2+this->label_baseline;
+      if (y - this->label_baseline < 0)
+        y = this->label_baseline;
       x_draw_string(g->x, g->xwin, DEFAULT_FONT, FOREGROUND_COLOR,
           this->common.x + this->vrule_width - vwidth - 2,
-          this->common.y + FLIP(y)-this->label_height/2+this->label_baseline,
+          this->common.y + y,
           v);
     }
     break;

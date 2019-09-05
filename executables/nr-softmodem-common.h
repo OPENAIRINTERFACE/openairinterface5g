@@ -58,7 +58,7 @@
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
-#define CONFIG_HLP_EXCCLK        "tells hardware to use an external clock reference\n"
+#define CONFIG_HLP_EXCCLK        "tells hardware to use a clock reference (0:internal(default), 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
@@ -82,6 +82,7 @@
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
+#define CONFIG_HLP_DISABLETIMECORR   "disable UE timing correction\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
@@ -89,24 +90,27 @@
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
-#define CONFIG_HLP_USRP_ARGS                "set the arguments to identify USRP (same syntax as in UHD)\n"
-#define CONFIG_HLP_USRP_CLK_SRC              "USRP clock source: 'internal' or 'external'\n"
+#define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
-#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
+#define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
+#define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 #define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for LOG utility                                                                                        */
-/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_LOGPARAMS_DESC {  \
-    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,    defintval:1,         TYPE_INT,    0},        \
-    {"g" ,           CONFIG_HLP_LOGL, 0,      uptr:&glog_level,     defintval:0,         TYPE_UINT,     0},        \
-    {"G" ,                           CONFIG_HLP_LOGV, 0,      uptr:&glog_verbosity,           defintval:0,         TYPE_UINT16,   0},        \
-    {"telnetsrv",        CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,    defintval:0,         TYPE_UINT,     0},        \
+/*--------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                             */
+/*   optname         helpstr          paramflags          XXXptr                     defXXXval            type           numelt   */
+/*--------------------------------------------------------------------------------------------------------------------------------*/
+#define START_MSC                softmodem_params.start_msc
+#define CMDLINE_LOGPARAMS_DESC_NR {  \
+    {"R" ,           CONFIG_HLP_FLOG, 0,                  uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},       \
+    {"g" ,           CONFIG_HLP_LOGL, 0,                  uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},       \
+    {"G" ,           CONFIG_HLP_LOGV, 0,                  uptr:&glog_verbosity,      defintval:0,         TYPE_UINT16,   0},       \
+    {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL,     uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},       \
+	{"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL,     uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},       \
   }
+
 #define CMDLINE_ONLINELOG_IDX     0
 #define CMDLINE_GLOGLEVEL_IDX     1
 #define CMDLINE_GLOGVERBO_IDX     2
@@ -114,13 +118,14 @@
 
 /***************************************************************************************************************************************/
 
+
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
 
-extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
-extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
+extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;
 extern uint8_t exit_missed_slots;
@@ -137,8 +142,8 @@ extern int transmission_mode;
 extern double cpuf;
 
 #if defined(ENABLE_ITTI)
-  extern volatile int             start_eNB;
-  extern volatile int             start_UE;
+  extern volatile int start_eNB;
+  extern volatile int start_UE;
 #endif
 
 #endif

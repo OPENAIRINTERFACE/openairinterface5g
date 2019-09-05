@@ -64,8 +64,10 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
 @param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,int Mod_id,int CC_id, gNB_RrcConfigurationReq *configuration);
-
+uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
+		           int Mod_id,
+				   int CC_id,
+				   gNB_RrcConfigurationReq *configuration);
 
 void  do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
@@ -84,10 +86,3 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 void  do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
-
-
-
-
-
-
-

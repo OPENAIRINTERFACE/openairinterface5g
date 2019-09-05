@@ -19,7 +19,7 @@ T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h
 
 check_vcd:
-	gcc -Wall -I. -I.. -I../itti -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
+	gcc -Wall -I. -I.. -I../itti -I../../../openair2/COMMON -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
 	./_check_vcd || (rm -f ./_check_vcd ./T_IDs.h ./T_messages.txt.h && false)
 	rm -f ./_check_vcd
 

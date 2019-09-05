@@ -50,7 +50,7 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   else                      return(N_RB-tmp2);
 }
 
-int PRBalloc_to_locationanbandwidth(int NPRB,int RBstart) {
+int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
   return(275*(NPRB-1)+RBstart);
 }
 
@@ -107,4 +107,21 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       return(0);
       break;
   }
+}
+
+int get_subband_size(int NPRB,int size) {
+  // implements table  5.2.1.4-2 from 36.214
+  //
+  //Bandwidth part (PRBs)	Subband size (PRBs)
+  // < 24	                   N/A
+  //24 – 72	                   4, 8
+  //73 – 144	                   8, 16
+  //145 – 275	                  16, 32
+
+  if (NPRB<24) return(1);
+  if (NPRB<72) return (size==0 ? 4 : 8);
+  if (NPRB<144) return (size==0 ? 8 : 16);
+  if (NPRB<275) return (size==0 ? 16 : 32);
+  AssertFatal(1==0,"Shouldn't get here, NPRB %d\n",NPRB);
+ 
 }

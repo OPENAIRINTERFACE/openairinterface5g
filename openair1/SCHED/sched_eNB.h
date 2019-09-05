@@ -92,13 +92,13 @@ enum openair_HARQ_TYPE {
   @param abstraction_flag Indicator of PHY abstraction
   @param do_meas Do inline timing measurement
 */
-void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,int do_meas);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,int do_meas);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
 */
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
@@ -110,7 +110,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *pr
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
@@ -121,13 +121,13 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB);
 /*! \brief Scheduling for eNB RX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
 */
-void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
+void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void prach_procedures(PHY_VARS_eNB *eNB,
 		      int br_flag);
 #else
@@ -186,7 +186,7 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
   @param UE_id ID of UE which may be issuing the SR
   @returns 1 if TXOp is active.
 */
-uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id);
+uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,uint8_t UE_id);
 
 int8_t find_ue_dlsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 int8_t find_ue_ulsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
@@ -219,6 +219,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
 
 void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
+void release_rnti_of_phy(module_id_t mod_id);
 /*@}*/
 
 

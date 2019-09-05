@@ -25,13 +25,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
-
-#include "SIMULATION/TOOLS/sim.h"
-#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -43,21 +39,20 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
-#include "SCHED_NR/sched_nr.h"
-
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
-
+#include "SCHED_NR/sched_nr.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/RF/rf.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 openair0_config_t openair0_cfg[MAX_CARDS];
-
 double cpuf;
-
-// dummy functions
 int nfapi_mode=0;
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
 
@@ -90,21 +85,21 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  //  int sync_pos, sync_pos_slot;
-  //  FILE *rx_frame_file;
+  //int sync_pos, sync_pos_slot;
+  //FILE *rx_frame_file;
   FILE *output_fd = NULL;
-  uint8_t write_output_file=0;
+  //uint8_t write_output_file=0;
   //int result;
   //int freq_offset;
-  //  int subframe_offset;
-  //  char fname[40], vname[40];
+  //int subframe_offset;
+  //char fname[40], vname[40];
   int trial,n_trials=100,n_errors=0,ack_nack_errors=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
   channel_desc_t *gNB2UE;
   int format=0;
-  uint8_t extended_prefix_flag=0;
+  //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
   uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
@@ -121,35 +116,34 @@ int main(int argc, char **argv)
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.01;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  unsigned char frame_type = 0;
+  //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv) == 0) {
-    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun("[NR_PUCCHSIM] Error, configuration module init failed\n");
   }
 
   randominit(0);
+  logInit();
+  set_glog(loglvl);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:P:b:T:n:o:s:S:t:x:y:z:N:F:GR:d:IL")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:P:b:T:n:o:s:S:x:y:z:N:F:GR:IL")) != -1) {
     switch (c) {
     case 'f':
-      write_output_file=1;
+      //write_output_file=1;
       output_fd = fopen(optarg,"w");
 
       if (output_fd==NULL) {
         printf("Error opening %s\n",optarg);
         exit(-1);
       }
-
       break;
 
-    case 'd':
-      frame_type = 1;
-      break;
+
 
     case 'g':
       switch((char)*optarg) {
@@ -182,10 +176,9 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model!\n");
         exit(-1);
       }
-
       break;
 
     case 'n':
@@ -194,31 +187,34 @@ int main(int argc, char **argv)
 
     case 'o':
       cfo = atof(optarg);
-      msg("Setting CFO to %f Hz\n",cfo);
+      printf("Setting CFO to %f Hz\n",cfo);
       break;
 
     case 's':
       snr0 = atof(optarg);
-      msg("Setting SNR0 to %f\n",snr0);
+      printf("Setting SNR0 to %f\n",snr0);
       break;
 
     case 'S':
       snr1 = atof(optarg);
       snr1set=1;
-      msg("Setting SNR1 to %f\n",snr1);
+      printf("Setting SNR1 to %f\n",snr1);
       break;
 
       /*
-      case 't':
+    case 't':
       Td= atof(optarg);
       break;
-      */
+
     case 'p':
       extended_prefix_flag=1;
       break;
 
-      /*
-      case 'r':
+    case 'd':
+      frame_type = 1;
+      break;
+
+    case 'r':
       ricean_factor = pow(10,-.1*atof(optarg));
       if (ricean_factor>1) {
         printf("Ricean factor must be between 0 and 1\n");
@@ -232,30 +228,27 @@ int main(int argc, char **argv)
       if ((transmission_mode!=1) &&
           (transmission_mode!=2) &&
           (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+        printf("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
-
       break;
 
     case 'y':
       n_tx=atoi(optarg);
 
       if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
+        printf("Unsupported number of tx antennas %d\n",n_tx);
         exit(-1);
       }
-
       break;
 
     case 'z':
       n_rx=atoi(optarg);
 
       if ((n_rx==0) || (n_rx>2)) {
-        msg("Unsupported number of rx antennas %d\n",n_rx);
+        printf("Unsupported number of rx antennas %d\n",n_rx);
         exit(-1);
       }
-
       break;
 
     case 'N':
@@ -273,7 +266,6 @@ int main(int argc, char **argv)
         printf("Problem with filename %s\n",optarg);
         exit(-1);
       }
-
       break;
 
     case 'L':
@@ -294,8 +286,7 @@ int main(int argc, char **argv)
       break;
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
-             argv[0]);
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
       printf("-h This message\n");
       printf("-p Use extended prefix mode\n");
       printf("-d Use TDD\n");
@@ -314,7 +305,7 @@ int main(int argc, char **argv)
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //    printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-i Enter number of ofdm symbols for pucch\n");
@@ -324,13 +315,9 @@ int main(int argc, char **argv)
       exit (-1);
       break;
     }
-  } 
-  logInit();
-  set_glog(loglvl);
-  T_stdout = 1;
+  }
 
-  if (snr1set==0)
-    snr1 = snr0+10;
+  if (snr1set==0) snr1 = snr0+10;
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
@@ -387,22 +374,15 @@ int main(int argc, char **argv)
 	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
   }
 
-  gNB2UE = new_channel_desc_scm(n_tx,
-                                n_rx,
-                                channel_model,
- 				fs, 
-				bw, 
-                                0,
-                                0,
-                                0);
+  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, 0, 0, 0);
 
   if (gNB2UE==NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -492,33 +472,33 @@ int main(int argc, char **argv)
       }
       for(i=0; i<frame_length_complex_samples; i++) {
         r_re[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)])/32767 + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-	r_im[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)+1])/32767+ sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-	r_re[aa][i]=r_re[0][i]/(sqrt(sigma2/2)+1);
-	r_im[aa][i]=r_im[0][i]/(sqrt(sigma2/2)+1);
-	if(r_re[aa][i]<-1) 
+        r_im[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)+1])/32767+ sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+        r_re[aa][i]=r_re[0][i]/(sqrt(sigma2/2)+1);
+        r_im[aa][i]=r_im[0][i]/(sqrt(sigma2/2)+1);
+        if(r_re[aa][i]<-1)
           r_re[aa][i]=-1; 
-	else if(r_re[aa][i]>1)
+        else if(r_re[aa][i]>1)
           r_re[aa][i]=1;
-	if(r_im[aa][i]<-1) 
+        if(r_im[aa][i]<-1)
           r_im[aa][i]=-1;
-	else if(r_im[aa][i]>1)
+        else if(r_im[aa][i]>1)
           r_im[aa][i]=1;	
-	((int16_t *)txdata[aa])[(i<<1)]  = (int16_t)round(r_re[aa][i]*32767);
-	((int16_t *)txdata[aa])[(i<<1)+1] =(int16_t)round(r_im[aa][i]*32767);	
+        ((int16_t *)txdata[aa])[(i<<1)]  = (int16_t)round(r_re[aa][i]*32767);
+        ((int16_t *)txdata[aa])[(i<<1)+1] =(int16_t)round(r_im[aa][i]*32767);
       }
       if(format==0){
         nr_decode_pucch0(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,nr_bit);
-	if(nr_bit==1)
-	  ack_nack_errors+=(((actual_payload^payload_received)&2)>>1);
-	else
-	  ack_nack_errors+=(((actual_payload^payload_received)&2)>>1) + (((actual_payload^payload_received)&4)>>2);	
+        if(nr_bit==1)
+          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1);
+        else
+          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1) + (((actual_payload^payload_received)&4)>>2);
       }
       else{
         nr_decode_pucch1(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
-	if(nr_bit==1)
-	  ack_nack_errors+=((actual_payload^payload_received)&1);
-	else
-	  ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);	
+        if(nr_bit==1)
+          ack_nack_errors+=((actual_payload^payload_received)&1);
+        else
+          ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
@@ -528,6 +508,7 @@ int main(int argc, char **argv)
       break;
     }
   }
+
   for (i=0; i<2; i++) {
     free(s_re[i]);
     free(s_im[i]);
@@ -535,22 +516,14 @@ int main(int argc, char **argv)
     free(r_im[i]);
     free(txdata[i]);
   }
-
   free(s_re);
   free(s_im);
   free(r_re);
   free(r_im);
   free(txdata);
 
-  if (output_fd)
-    fclose(output_fd);
-
-  if (input_fd)
-    fclose(input_fd);
+  if (output_fd) fclose(output_fd);
+  if (input_fd)  fclose(input_fd);
 
   return(n_errors);
-
 }
-
-
-
