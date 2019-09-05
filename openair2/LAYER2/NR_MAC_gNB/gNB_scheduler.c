@@ -76,7 +76,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 sub_frame_t slotP){
 
   nfapi_nr_dl_config_request_t    *DL_req = &gNB->DL_req[0];
-  nfapi_ul_config_request_t       *UL_req = &gNB->UL_req[0];
+  nfapi_nr_ul_tti_request_t          *UL_tti_req = &gNB->UL_tti_req[0];
   nfapi_hi_dci0_request_t   *     HI_DCI0_req = &gNB->HI_DCI0_req[0];
   nfapi_tx_request_t              *TX_req = &gNB->TX_req[0];
 
@@ -93,9 +93,10 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
 
 
-    UL_req[CC_idP].ul_config_request_body.number_of_pdus                      = 0;
-    UL_req[CC_idP].ul_config_request_body.rach_prach_frequency_resources      = 0; // ignored, handled by PHY for now
-    UL_req[CC_idP].ul_config_request_body.srs_present                         = 0; // ignored, handled by PHY for now
+    UL_tti_req[CC_idP].n_pdus                      = 0;
+    UL_tti_req[CC_idP].n_ulsch                     = 0;
+    UL_tti_req[CC_idP].n_ulcch                     = 0;
+    UL_tti_req[CC_idP].n_group                     = 0;
 
     TX_req[CC_idP].tx_request_body.number_of_pdus                 = 0;
 
@@ -261,6 +262,8 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   }
 }
 */
+
+/*
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
   int CC_id;
@@ -289,6 +292,7 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
      ul_req->ul_config_request_body.number_of_pdus*sizeof(nfapi_ul_config_request_pdu_t));
   }
 }
+*/
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, 
                                frame_t frameP,
@@ -400,7 +404,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               clean_gNB_dlsch(dlsch);
             }
           }
-    
+
+	  /*
           for(int j = 0; j < 10; j++){
             nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
             ul_req_tmp = &RC.nrmac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
@@ -418,7 +423,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             }
           }
           rrc_mac_remove_ue(module_idP,rnti);
-        }
+	  */
+	}
       } //END if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0)
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)

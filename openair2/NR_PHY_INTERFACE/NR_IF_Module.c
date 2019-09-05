@@ -325,9 +325,9 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
       sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
           (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
-        sched_info->UL_req      = &mac->UL_req[CC_id];
+        sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
       else
-        sched_info->UL_req      = NULL;
+        sched_info->UL_tti_req      = NULL;
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 

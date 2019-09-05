@@ -986,7 +986,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     first_symbol_flag = 1;
   }
 
-  if (symbol == 2){  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
+  if (symbol == rel15_ul->start_symbol){  // [hna] here it is assumed that first carries 6 DMRS REs (dmrs-type 1)
     nb_re_pusch = rel15_ul->number_rbs * 6;
     pilots = 1;
   } else {

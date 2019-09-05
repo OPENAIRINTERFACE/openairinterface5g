@@ -17,6 +17,12 @@
 #define NFAPI_NR_MAX_NB_CORESETS 12
 #define NFAPI_NR_MAX_NB_SEARCH_SPACES 40
 
+#define NFAPI_MAX_NUM_UL_UE_PER_GROUP 6
+#define NFAPI_MAX_NUM_UL_PDU 8
+#define NFAPI_MAX_NUM_GROUPS 8
+#define NFAPI_MAX_NUM_CB 8
+
+/*
 // Extension to the generic structures for single tlv values
 typedef struct {
 	nfapi_tl_t tl;
@@ -27,6 +33,7 @@ typedef struct {
 	nfapi_tl_t tl;
 	uint32_t value;
 } nfapi_uint32_tlv_t;
+*/
 
 // 2019.8
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.2
@@ -259,7 +266,7 @@ typedef struct {
 typedef struct {
 	uint8_t number_of_tlvs;
 	nfapi_nr_config_tlv_t tlv;
-} nfapi_nr_config_request_t;
+} nfapi_nr_config_request_scf_t;
 
 typedef enum {
   NFAPI_NR_CONFIG_MSG_OK = 0,
@@ -830,8 +837,7 @@ typedef struct
   uint8_t  new_data_indicator;
   uint32_t tb_size;
   uint16_t num_cb;
-  // fixme:
-  uint8_t  *cb_present_and_position;//uint8_t cb_present_and_position[ceil (num_cb / 8)]
+  uint8_t cb_present_and_position[(NFAPI_MAX_NUM_CB+7) / 8];
 
 } nfapi_nr_pusch_data_t;
   //for nfapi_nr_pusch_uci_t
@@ -875,9 +881,14 @@ typedef struct
 
 } nfapi_nr_dfts_ofdm_t;
 
+#define PUSCH_PDU_BITMAP_PUSCH_DATA 0x1
+#define PUSCH_PDU_BITMAP_PUSCH_UCI  0x2
+#define PUSCH_PDU_BITMAP_PUSCH_PTRS 0x4
+#define PUSCH_PDU_BITMAP_DFTS_OFDM  0x8
+
 typedef struct
 {
-  uint16_t pdu_bit_map;//
+  uint16_t pdu_bit_map;//Bitmap indicating presence of optional PDUs (see above)
   uint16_t rnti;
   uint32_t handle;//An opaque handling returned in the RxData.indication and/or UCI.indication message
   //BWP
@@ -892,6 +903,7 @@ typedef struct
   uint8_t  mcs_table;
   uint8_t  transform_precoding;
   uint16_t data_scrambling_id;
+  uint8_t  nrOfLayers;
   //DMRS
   uint8_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;
@@ -1002,19 +1014,25 @@ typedef struct
 } nfapi_nr_srs_pdu_t;
 
 //
-typedef struct
-{
-  nfapi_nr_prach_pdu_t* prach_pdu;
-  nfapi_nr_pusch_pdu_t* pusch_pdu;
-  nfapi_nr_pucch_pdu_t* pucch_pdu;
-  nfapi_nr_srs_pdu_t* srs_pdu;
-} nfapi_nr_ul_pdu_configuration_t;
+
+typedef enum {
+  NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE=0,
+  NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE,
+  NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE,
+  NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE,
+} nfapi_nr_ul_config_pdu_type_e;
 
 typedef struct
 {
   uint16_t pdu_type;//0: PRACH PDU, 1: PUSCH PDU, 2: PUCCH PDU, 3: SRS PDU
   uint16_t pdu_size;//Value: 0 -> 65535
-  nfapi_nr_ul_pdu_configuration_t* ul_pdu_configuration;
+  union
+  {
+    nfapi_nr_prach_pdu_t prach_pdu;
+    nfapi_nr_pusch_pdu_t pusch_pdu;
+    nfapi_nr_pucch_pdu_t pucch_pdu;
+    nfapi_nr_srs_pdu_t srs_pdu;
+  };
 
 } nfapi_nr_ul_tti_request_number_of_pdus_t;
 
@@ -1027,7 +1045,7 @@ typedef struct
 typedef struct
 {
   uint8_t  n_ue;//Number of UE in this group For SU-MIMO, one group includes one UE only. For MU-MIMO, one group includes up to 12 UEs. Value 1 -> 6
-  nfapi_nr_ul_tti_request_number_of_ue_t* ue_list;
+  nfapi_nr_ul_tti_request_number_of_ue_t ue_list[NFAPI_MAX_NUM_UL_UE_PER_GROUP];
 
 } nfapi_nr_ul_tti_request_number_of_groups_t;
 
@@ -1039,8 +1057,8 @@ typedef struct {
   uint8_t  n_ulsch;//Number of ULSCH PDUs that are included in this message.
   uint8_t  n_ulcch;//Number of ULCCH PDUs
   uint8_t n_group;//Number of UE Groups included in this message. Value 0 -> 8
-  nfapi_nr_ul_tti_request_number_of_pdus_t* pdus_list;
-  nfapi_nr_ul_tti_request_number_of_groups_t* groups_list;
+  nfapi_nr_ul_tti_request_number_of_pdus_t pdus_list[NFAPI_MAX_NUM_UL_PDU];
+  nfapi_nr_ul_tti_request_number_of_groups_t groups_list[NFAPI_MAX_NUM_GROUPS];
 
 } nfapi_nr_ul_tti_request_t;
 
