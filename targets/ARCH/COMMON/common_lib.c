@@ -111,8 +111,11 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   } else if (flag == RAU_LOCAL_RADIO_HEAD) {
     libname=OAI_RF_LIBNAME;
     shlib_fdesc[0].fname="device_init";
-  } else {
+  } else if (flag == RAU_REMOTE_RADIO_HEAD) {
     libname=OAI_TP_LIBNAME;
+    shlib_fdesc[0].fname="transport_init";
+  }else if (flag == RAU_REMOTE_THIRDPARTY_RADIO_HEAD) {
+    libname=OAI_THIRDPARTY_TP_LIBNAME;
     shlib_fdesc[0].fname="transport_init";
   }
 

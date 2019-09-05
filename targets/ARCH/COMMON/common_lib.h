@@ -40,6 +40,8 @@
 #define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
+/* name of shared library implementing a third-party transport */
+#define OAI_THIRDPARTY_TP_LIBNAME        "thirdparty_transpro"
 /* name of shared library implementing the basic/rf simulator */
 #define OAI_RFSIM_LIBNAME        "rfsimulator"
 /* name of shared library implementing the basic/rf simulator */
@@ -47,7 +49,7 @@
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
-
+#define RAU_REMOTE_THIRDPARTY_RADIO_HEAD 2
 #ifndef MAX_CARDS
   #define MAX_CARDS 8
 #endif
@@ -392,6 +394,10 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
+  /*! \brief Callback for Third-party RRU Initialization routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_init)(openair0_device *device);
 };
 
 /* type of device init function, implemented in shared lib */

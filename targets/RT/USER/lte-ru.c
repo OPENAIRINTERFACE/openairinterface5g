@@ -2949,7 +2949,13 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF5;
 	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
+	}
+	else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ori_if5") == 0) {
+	  RC.ru[j]->if_south                     = REMOTE_IF5;
+	  RC.ru[j]->function                     = NGFI_RAU_IF5;
+	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ORI_MODE;
+	}
+	else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF5;
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;

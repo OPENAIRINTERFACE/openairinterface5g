@@ -102,23 +102,15 @@ int eth_socket_init_raw(openair0_device *device) {
   eth->local_addrd_ll.sll_family   = AF_PACKET;
   eth->local_addrd_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
   /* hear traffic from specific protocol*/
-  if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
-     eth->local_addrd_ll.sll_protocol = htons(0xbffe);
-  } else{ 
-     eth->local_addrc_ll.sll_protocol = htons((short)device->eth_params->my_portc);
-     eth->local_addrd_ll.sll_protocol = htons((short)device->eth_params->my_portd);
-  }
+  eth->local_addrc_ll.sll_protocol = htons((short)device->eth_params->my_portc);
+  eth->local_addrd_ll.sll_protocol = htons((short)device->eth_params->my_portd);
+  
   eth->local_addrc_ll.sll_halen    = ETH_ALEN;
   eth->local_addrc_ll.sll_pkttype  = PACKET_OTHERHOST;
   eth->local_addrd_ll.sll_halen    = ETH_ALEN;
   eth->local_addrd_ll.sll_pkttype  = PACKET_OTHERHOST;
   eth->addr_len = sizeof(struct sockaddr_ll);
   
-  if ((eth->flags != ETH_RAW_IF5_MOBIPASS ) && 
-      (bind(eth->sockfdc,(struct sockaddr *)&eth->local_addrc_ll,eth->addr_len)<0)) {
-    perror("ETHERNET: Cannot bind to socket (control)");
-    exit(0);
-  }
   if (bind(eth->sockfdd,(struct sockaddr *)&eth->local_addrd_ll,eth->addr_len)<0) {
     perror("ETHERNET: Cannot bind to socket (user)");
     exit(0);
@@ -127,12 +119,9 @@ int eth_socket_init_raw(openair0_device *device) {
  /* Construct the Ethernet header */ 
  ether_aton_r(local_mac, (struct ether_addr *)(&(eth->ehd.ether_shost)));
  ether_aton_r(remote_mac, (struct ether_addr *)(&(eth->ehd.ether_dhost)));
- if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
-   eth->ehd.ether_type = htons(0xbffe);
- } else {
-   eth->ehc.ether_type = htons((short)device->eth_params->my_portc);
-   eth->ehd.ether_type = htons((short)device->eth_params->my_portd);
- } 
+ eth->ehc.ether_type = htons((short)device->eth_params->my_portc);
+ eth->ehd.ether_type = htons((short)device->eth_params->my_portd);
+  
  printf("[%s] binding to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),eth->ehd.ether_shost[0],eth->ehd.ether_shost[1],eth->ehd.ether_shost[2],eth->ehd.ether_shost[3],eth->ehd.ether_shost[4],eth->ehd.ether_shost[5]);
  
  return 0;
@@ -216,8 +205,6 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4p5_PULTICK) {
     packet_size = RAW_IF4p5_PULTICK_SIZE_BYTES;    
-  } else if (flags == IF5_MOBIPASS) {
-    packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
     packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
   }
@@ -429,53 +416,6 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   return(bytes_received);
 }
 
-
-int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
-  // Read nblocks info from packet itself
-  
-  int bytes_received=0;
-  eth_state_t *eth = (eth_state_t*)device->priv;
-  int ret;
-
-  ssize_t packet_size =  28; //MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t ;
-//   ssize_t packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
- 
-  bytes_received = recv(eth->sockfdd,
-                        buff[0],
-                        packet_size,
-                        MSG_PEEK);
-
-  if (bytes_received ==-1) {
-          eth->num_rx_errors++;
-          perror("[MOBIPASS]ETHERNET IF5 READ (header): ");
-          exit(-1);
-  }
-
-  IF5_mobipass_header_t *test_header = (IF5_mobipass_header_t*)((uint8_t *)buff[0] + MAC_HEADER_SIZE_BYTES);
-  *timestamp = test_header->time_stamp;
-  packet_size =  MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + 640*sizeof(int16_t);
-
-  while(bytes_received < packet_size) {
-    ret = recv(eth->sockfdd,
-	       buff[0],
-	       packet_size,
-	       0);
-    if (bytes_received ==-1) {
-      eth->num_rx_errors++;
-      perror("[MOBIPASS] ETHERNET IF5 READ (payload): ");
-      return(-1);
-    } else {
-      bytes_received+=ret;
-      eth->rx_actual_nsamps = bytes_received>>1;
-      eth->rx_count++;
-    }
-  }
- 
-  eth->rx_nsamps = nsamps;
-  return(bytes_received);
-
-
-}
 
 int eth_set_dev_conf_raw(openair0_device *device) {
 

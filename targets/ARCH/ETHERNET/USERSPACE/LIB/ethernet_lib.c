@@ -57,6 +57,10 @@ int trx_eth_start(openair0_device *device) {
 
     eth_state_t *eth = (eth_state_t*)device->priv;
 
+    if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
+      AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
+      device->thirdparty_init(device);
+    }
     /* initialize socket */
     if (eth->flags == ETH_RAW_MODE) {
         printf("Setting ETHERNET to ETH_RAW_IF5_MODE\n");
@@ -120,11 +124,6 @@ int trx_eth_start(openair0_device *device) {
 
 
 
-
-    } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
-        printf("Setting ETHERNET to RAW_IF5_MODE\n");
-        if (eth_socket_init_raw(device)!=0)   return -1;
-        if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
 
     } else {
         printf("Setting ETHERNET to UDP_IF5_MODE\n");
@@ -368,20 +367,11 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     eth_state_t *eth = (eth_state_t*)malloc(sizeof(eth_state_t));
     memset(eth, 0, sizeof(eth_state_t));
 
-    if (eth_params->transp_preference == 1) {
-        eth->flags = ETH_RAW_MODE;
-    } else if (eth_params->transp_preference == 0) {
-        eth->flags = ETH_UDP_MODE;
-    } else if (eth_params->transp_preference == 3) {
-        eth->flags = ETH_RAW_IF4p5_MODE;
-    } else if (eth_params->transp_preference == 2) {
-        eth->flags = ETH_UDP_IF4p5_MODE;
-    } else if (eth_params->transp_preference == 4) {
-        eth->flags = ETH_RAW_IF5_MOBIPASS;
-    } else {
-        printf("transport_init: Unknown transport preference %d - default to RAW", eth_params->transp_preference);
-        eth->flags = ETH_RAW_MODE;
-    }
+    eth->flags = eth_params->transp_preference;
+
+    // load third-party driver
+    if (eth->flags == ETH_UDP_IF5_ORI_MODE) load_lib(device,openair0_cfg,eth_params,RAU_REMOTE_THIRDPARTY_RADIO_HEAD);
+
 
     if (eth_params->if_compress == 0) {
         eth->compression = NO_COMPRESS;
@@ -406,7 +396,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     if (eth->flags == ETH_RAW_MODE) {
         device->trx_write_func   = trx_eth_write_raw;
         device->trx_read_func    = trx_eth_read_raw;
-    } else if (eth->flags == ETH_UDP_MODE) {
+    } else if (eth->flags == ETH_UDP_MODE || eth->flags == ETH_UDP_IF5_ORI_MODE) {
         device->trx_write_func   = trx_eth_write_udp;
         device->trx_read_func    = trx_eth_read_udp;
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;
@@ -419,9 +409,6 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
         device->trx_read_func    = trx_eth_read_udp_IF4p5;
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;
         device->trx_ctlrecv_func = trx_eth_ctlrecv_udp;
-    } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
-        device->trx_write_func   = trx_eth_write_raw_IF4p5;
-        device->trx_read_func    = trx_eth_read_raw_IF5_mobipass;
     } else {
         //device->trx_write_func   = trx_eth_write_udp_IF4p5;
         //device->trx_read_func    = trx_eth_read_udp_IF4p5;
