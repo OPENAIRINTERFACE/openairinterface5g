@@ -2173,6 +2173,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     if(UE_NAS_USE_TUN) {
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
       netlink_init_tun("ue",num_if);
+      //Add --nr-ip-over-lte option check for next line
+      nas_config(1, 1, 2, "ue");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);
@@ -2382,7 +2384,13 @@ void pdcp_layer_init(void)
 
   ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
 
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+  if (ENB_NAS_USE_TUN){
+	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+  }
+  else{
+	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
+  }
+
   rrc_pdcp_config_asn1_req(&ctxt,
                (LTE_SRB_ToAddModList_t *) NULL,
                DRB_configList,
