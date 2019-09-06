@@ -287,17 +287,32 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     
 
     uint8_t k_prime=0;
+    uint8_t is_dmrs;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
 
     for (l=start_symbol; l<start_symbol+harq_process_ul_ue->number_of_symbols; l++) {
 
       k = start_sc;
+      n = 0;
 
       for (i=0; i<harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB; i++) {
 
         sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
-        if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
+        is_dmrs = 0;
+
+        is_dmrs = is_dmrs_symbol(l,
+                                 k,
+                                 start_sc,
+                                 k_prime,
+                                 n,
+                                 delta,
+                                 harq_process_ul_ue->number_of_symbols,
+                                 &UE->dmrs_UplinkConfig,
+                                 mapping_type,
+                                 frame_parms->ofdm_symbol_size);
+
+        if (is_dmrs == 1) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;

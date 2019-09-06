@@ -537,6 +537,7 @@ typedef enum {
 typedef enum {
   pusch_dmrs_pos0 = 0,
   pusch_dmrs_pos1 = 1,
+  pusch_dmrs_pos2 = 2,
   pusch_dmrs_pos3 = 3,
 } pusch_dmrs_AdditionalPosition_t;
 typedef enum {
