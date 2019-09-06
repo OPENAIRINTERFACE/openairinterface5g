@@ -89,6 +89,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t                       CC_id        = Sched_INFO->CC_id;
   nfapi_nr_dl_config_request_t  *DL_req      = Sched_INFO->DL_req;
   nfapi_tx_request_t            *TX_req      = Sched_INFO->TX_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
@@ -99,6 +100,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id][CC_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
+  uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
  
@@ -153,6 +155,17 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         AssertFatal(sdu!=NULL,"sdu is null, pdu_index %d, tx_pdus %d\n",pdu_index,tx_pdus);
         handle_nr_nfapi_dlsch_pdu(gNB,frame,slot,&dl_config_pdu->dlsch_pdu, sdu);
         do_oai=1;
+      }
+    }
+  }
+  
+  for (i=0;i<number_ul_pdu;i++) {
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,UL_tti_req->pdus_list[i].pdu_type);
+    switch (UL_tti_req->pdus_list[i].pdu_type) {
+    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+      {
+        nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+	nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
       }
     }
   }

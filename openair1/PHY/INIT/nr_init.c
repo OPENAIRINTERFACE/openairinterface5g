@@ -507,31 +507,8 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
         exit(-1);
       }
 
-      LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d\n",i);
-      // [hna] added here for RT implementation
-      uint8_t harq_pid = 0;
-      nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &gNB->ulsch[i+1][j]->harq_processes[harq_pid]->ulsch_pdu;
-  
-      // --------- setting rel15_ul parameters ----------
-      rel15_ul->rnti                           = 0x1234;
-      rel15_ul->ulsch_pdu_rel15.start_rb       = 30;
-      rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
-      rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
-      rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
-      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6;
-      rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1;
-      rel15_ul->ulsch_pdu_rel15.Qm             = 2;
-      rel15_ul->ulsch_pdu_rel15.mcs            = 9;
-      rel15_ul->ulsch_pdu_rel15.rv             = 0;
-      rel15_ul->ulsch_pdu_rel15.n_layers       = 1;
-      ///////////////////////////////////////////////////
-
-      //////////////////////////////////////////////////////////////////////////
     }
 
-    // this is the transmission mode for the signalling channels
-    // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    //gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 
   gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
