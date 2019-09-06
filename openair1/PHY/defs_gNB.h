@@ -614,6 +614,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_IF_Module_t       *if_inst;
   NR_UL_IND_t          UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
+
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
   /// NFAPI RX ULSCH CRC information
@@ -629,7 +630,9 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t         Sched_INFO;
+  //Sched_Rsp_t         Sched_INFO;
+  nfapi_nr_ul_tti_request_t     UL_tti_req;
+  
   NR_gNB_PDCCH        pdcch_vars;
   NR_gNB_PBCH         pbch;
   // LTE_eNB_PHICH       phich_vars[2];

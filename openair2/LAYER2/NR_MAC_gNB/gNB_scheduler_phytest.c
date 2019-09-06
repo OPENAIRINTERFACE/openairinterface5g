@@ -183,7 +183,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
   //NR_COMMON_channels_t             *cc           = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t *dl_req;
-  nfapi_nr_pusch_pdu_t              *ul_req;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
   nfapi_tx_request_pdu_t            *TX_req;

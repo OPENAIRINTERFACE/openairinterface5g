@@ -316,28 +316,34 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    nfapi_nr_pusch_pdu_t *ulsch_pdu) {
 
  
-  int ulsch_id = find_nr_dlsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST);
+  int ulsch_id = find_nr_ulsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST);
   AssertFatal( (ulsch_id>=0) && (ulsch_id<NUMBER_OF_NR_ULSCH_MAX),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
+
   NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id][0];
-  NR_UL_gNB_HARQ_t **harq  = ulsch->harq_processes;
   int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
-  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &harq[harq_pid]->ulsch_pdu;
+  ulsch->rnti = ulsch_pdu->rnti;
+  //ulsch->rnti_type;
+  ulsch->harq_mask |= 1<<harq_pid;
+  ulsch->harq_process_id[slot] = harq_pid;
+
+  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
 
   LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
-
+ 
+  
   //FK this is still a bad hack. We need to replace the L1 FAPI structures with the new scf ones as well.
   rel15_ul->rnti                           = ulsch_pdu->rnti;
-      rel15_ul->ulsch_pdu_rel15.start_rb       = ulsch_pdu->rb_start;
-      rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
-      rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
-      rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
-      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6; //where should this come from?
-      rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1; //where should this come from?
-      rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
-      rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
-      rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
-      rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
+  rel15_ul->ulsch_pdu_rel15.start_rb       = ulsch_pdu->rb_start;
+  rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
+  rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
+  rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
+  rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6; //where should this come from?
+  rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1; //where should this come from?
+  rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
+  rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
+  rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
+  rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
 
 }
 

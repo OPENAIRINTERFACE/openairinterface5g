@@ -30,6 +30,7 @@
  * \warning
  */
 #include "fapi_nr_l1.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
@@ -158,7 +159,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       }
     }
   }
+
+  memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
+  /*
+  // this is done in phy_procedures_gNB_uespec_RX now
   for (i=0;i<number_ul_pdu;i++) {
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,UL_tti_req->pdus_list[i].pdu_type);
     switch (UL_tti_req->pdus_list[i].pdu_type) {
@@ -169,6 +174,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       }
     }
   }
+  */
   
   if (nfapi_mode && do_oai && !dont_send) {
     oai_nfapi_tx_req(Sched_INFO->TX_req);

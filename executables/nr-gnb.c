@@ -924,7 +924,8 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
       gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
       memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-      memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
+      memset((void *)&gNB->UL_tti_req,0,sizeof(nfapi_nr_ul_tti_request_t));
+      //memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");
       gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
       gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
@@ -932,6 +933,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;
+      
       gNB->prach_energy_counter = 0;
     }
   }
