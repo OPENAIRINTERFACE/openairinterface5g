@@ -398,6 +398,10 @@ struct openair0_device_t {
      \param device the hardware configuration to use
    */
   int (*thirdparty_init)(openair0_device *device);
+  /*! \brief Callback for Third-party RRU Cleanup routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_cleanup)(openair0_device *device);
 };
 
 /* type of device init function, implemented in shared lib */

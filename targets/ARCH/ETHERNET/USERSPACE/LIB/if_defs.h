@@ -33,8 +33,10 @@
 #include <netinet/ether.h>
 #include <stdint.h>
 
+#ifndef LITE_COMPILATION
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#endif
 
 // ETH transport preference modes
 #ifdef OCP_FRAMEWORK

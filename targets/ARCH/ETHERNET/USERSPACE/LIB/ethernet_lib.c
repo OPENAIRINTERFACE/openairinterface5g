@@ -58,8 +58,8 @@ int trx_eth_start(openair0_device *device) {
     eth_state_t *eth = (eth_state_t*)device->priv;
 
     if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
-      AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
-      device->thirdparty_init(device);
+       AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
+       AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
     }
     /* initialize socket */
     if (eth->flags == ETH_RAW_MODE) {
@@ -166,6 +166,11 @@ void trx_eth_end(openair0_device *device) {
 
 
 int trx_eth_stop(openair0_device *device) {
+    if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
+       AssertFatal(device->thirdparty_cleanup != NULL, "device->thirdparty_cleanup is null\n");
+       AssertFatal(device->thirdparty_cleanup(device) == 0, "third-party cleanup failed\n");
+    }
+
     return(0);
 }
 
