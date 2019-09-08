@@ -407,6 +407,7 @@ typedef enum {
 
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pusch_maxNumRepetitionCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pusch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_REPETITION_LEVEL_CE_MODE_A_R13			"pusch_repetitionLevelCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                    "pusch_HoppingOffset_v1310"
 
 

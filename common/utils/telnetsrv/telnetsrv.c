@@ -123,7 +123,7 @@ void client_printf(const char *message, ...) {
 
   if (telnetparams.new_socket > 0) {
     vsnprintf(telnetparams.msgbuff,sizeof(telnetparams.msgbuff)-1,message, va_args);
-    send(telnetparams.new_socket,telnetparams.msgbuff , strlen(telnetparams.msgbuff), MSG_NOSIGNAL);
+    send(telnetparams.new_socket,telnetparams.msgbuff, strlen(telnetparams.msgbuff), MSG_NOSIGNAL);
   } else {
     vprintf(message, va_args);
   }
@@ -475,7 +475,7 @@ int process_command(char *buf) {
   memset(cmdb,0,sizeof(cmdb));
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
-  j = sscanf(buf,"%9s %9s %9[^\t\n]",modulename,cmd,cmdb);
+  j = sscanf(buf,"%19s %19s %19[^\t\n]",modulename,cmd,cmdb);
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
@@ -543,7 +543,7 @@ void run_telnetsrv(void) {
   char buf[TELNET_MAX_MSGLENGTH];
   struct sockaddr cli_addr;
   unsigned int cli_len = sizeof(cli_addr);
-  int readc , filled;
+  int readc, filled;
   int status;
   int optval = 1;
   pthread_setname_np(pthread_self(), "telnet");
@@ -604,7 +604,7 @@ void run_telnetsrv(void) {
       }
 
       if (telnetparams.telnetdbg > 0)
-        printf("[TELNETSRV] Command received: readc %i filled %i \"%s\"\n", readc, filled ,buf);
+        printf("[TELNETSRV] Command received: readc %i filled %i \"%s\"\n", readc, filled,buf);
 
       if (buf[0] == '!') {
         if (buf[1] == '!') {

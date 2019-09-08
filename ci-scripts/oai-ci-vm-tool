@@ -140,10 +140,25 @@ function command_options_usage {
     echo ""
 }
 
+# function to set specific behavior depending on the TESTPLATFORM_OWNER variable
+# which may be set by a jenkins server for exemple
+function platform_set {
+	if [ "$TESTPLATFORM_OWNER" != "" ]
+	then
+	  echo "Running on $TESTPLATFORM_OWNER platform"
+	  if [ -x "/usr/local/bin/oai_${TESTPLATFORM_OWNER}_setenv.sh" ]
+	  then
+	    . /usr/local/bin/oai_${TESTPLATFORM_OWNER}_setenv.sh
+	  fi
+	fi
+}
+
 function setvar_usage {
 	declare -A HELP_VAR
 	HELP_VAR["VM_OSREL"]="OS release to use in virtual machines"
 	HELP_VAR["RUN_EXPERIMENTAL"]="Enforce execution of variants with EXPERIMENTAL variable set to \"true\"" 
+    HELP_VAR["OPTIONAL_APTCACHER"]="build and Run tests will fail if apt-cacher not installed and this variable not set to \"true\""
+    HELP_VAR["TESTPLATFORM_OWNER"]="Allow pipeline customization via execution of an externel scripts residing on the jenkins server" 
     echo "--setvar_<varname> <value> where varname is one of:"
 	for i in ${AUTHORIZED_VAR[@]}; do printf "%20s :     %s\n" "$i" "${HELP_VAR[$i]}" ;done
 }
@@ -315,6 +330,7 @@ function check_setvar {
     exit 1
 }	
 
+platform_set
 MY_DIR=$(dirname $(readlink -f $0))
 . $MY_DIR/createVM.sh
 . $MY_DIR/buildOnVM.sh
@@ -323,6 +339,7 @@ MY_DIR=$(dirname $(readlink -f $0))
 . $MY_DIR/runTestOnVM.sh
 . $MY_DIR/reportBuildLocally.sh
 . $MY_DIR/reportTestLocally.sh
+
 
 if [ $# -lt 1 ]
 then
@@ -440,7 +457,7 @@ RUN_OPTIONS="none"
 
 
 # list of variables that can be set via the --setvar option
-AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL")
+AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL OPTIONAL_APTCACHER TESTPLATFORM_OWNER")
 
 
 #variables to set which OS VM should use

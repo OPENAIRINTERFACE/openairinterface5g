@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  030201 030202
+ 050202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -41,6 +42,11 @@
 		<desc>Terminate Slave eNB</desc>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="050202">
+		<class>Terminate_FlexranCtrl</class>
+		<desc>Stopping Flexran Controller</desc>
 	</testCase>
 
 </testCaseList>

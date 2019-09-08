@@ -57,6 +57,9 @@ pipeline {
 
                     echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
                     def allParametersPresent = true
+                    if (env.TESTPLATFORM_OWNER) {
+                        echo "Platform is ${env.TESTPLATFORM_OWNER}"
+                    }
 
                     if (params.RedHatRemoteServer == null) {
                         allParametersPresent = false

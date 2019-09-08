@@ -921,6 +921,8 @@ typedef struct {
     uint8_t rach_resource_type;
     uint16_t mpdcch_repetition_cnt;
     frame_t Msg2_frame;
+    /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
+    uint8_t pusch_repetition_levels;
 #endif
     sub_frame_t Msg2_subframe;
 
@@ -1133,6 +1135,8 @@ typedef struct {
   uint8_t msg2_narrowband;
   uint8_t msg34_narrowband;
   int     msg4_rrc_sdu_length;
+  /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
+  uint8_t pusch_repetition_levels;
 #endif
   int32_t  crnti_rrc_mui;
   int8_t   crnti_harq_pid;
