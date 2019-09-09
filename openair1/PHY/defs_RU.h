@@ -183,6 +183,8 @@ typedef struct RU_feptx_t_s{
   int aa;//physical MAX nb_tx
   int half_slot;//first or second half of a slot
   int slot;//current slot
+  int nb_antenna_ports;//number of logical port
+  int index;
 }RU_feptx_t;
 
 typedef struct RU_proc_t_s {
@@ -400,9 +402,12 @@ typedef struct RU_proc_t_s {
   int ru_tx_ready;
   int emulate_rf_busy;
 
+  /// structure for precoding thread
   RU_prec_t prec[16];
   /// structure for feptx thread
   RU_feptx_t feptx[16];
+  /// mask for checking process finished
+  int feptx_mask;
 } RU_proc_t;
 
 typedef enum {

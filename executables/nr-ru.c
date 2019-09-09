@@ -1663,6 +1663,7 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_offset             = 0;
   proc->num_slaves               = 0;
   proc->frame_tx_unwrap          = 0;
+  proc->feptx_mask               = 0;
 
   for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 
