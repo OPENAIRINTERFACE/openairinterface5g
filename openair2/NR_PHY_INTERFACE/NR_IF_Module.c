@@ -169,7 +169,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
       UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
     }
   } else {
-    printf("UL_info->rx_ind.rx_indication_body.number_of_pdus %d UL_info->crc_ind.crc_indication_body.number_of_crcs %d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->crc_ind.crc_indication_body.number_of_crcs);
+    // printf("UL_info->rx_ind.rx_indication_body.number_of_pdus %d UL_info->crc_ind.crc_indication_body.number_of_crcs %d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->crc_ind.crc_indication_body.number_of_crcs);
     if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->crc_ind.crc_indication_body.number_of_crcs>0) {
       for (int i=0; i<UL_info->rx_ind.rx_indication_body.number_of_pdus; i++) {
         for (int j=0; j<UL_info->crc_ind.crc_indication_body.number_of_crcs; j++) {
@@ -205,7 +205,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
             }
-            printf("rx_indication_rel8.timing_advance %d\n", UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance);
+            //printf("rx_indication_rel8.timing_advance %d\n", UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance);
             break;
           } //if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
 

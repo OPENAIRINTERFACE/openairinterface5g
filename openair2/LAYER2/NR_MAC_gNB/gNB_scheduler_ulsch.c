@@ -177,7 +177,7 @@ nr_rx_sdu(const module_id_t gnb_mod_idP,
        */
       //UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
       UE_scheduling_control->ta_update = timing_advance;
-      printf("UE_scheduling_control->ta_update %u\n", UE_scheduling_control->ta_update);
+      // printf("UE_scheduling_control->ta_update %u\n", UE_scheduling_control->ta_update);
       // UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
       // UE_scheduling_control->ul_consecutive_errors = 0;
 

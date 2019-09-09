@@ -268,10 +268,10 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   // --------------------
 
   nfapi_rx_indication_pdu_t *pdu;
-
   int timing_advance_update;
   int sync_pos;
 
+  uint16_t mu = gNB->gNB_config.subframe_config.numerology_index_mu.value;
   // pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   // gNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| slot_rx;
@@ -285,19 +285,16 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   // pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   // pdu->rx_indication_rel8.length         = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->TBS>>3;
   // pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
-  // estimate timing advance for MAC
-  sync_pos                               = nr_est_timing_advance_pusch(gNB, UE_id);
-  timing_advance_update                  = sync_pos; // - gNB->frame_parms.nb_prefix_samples/4; //to check
 
+  pdu->data                              = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
+  sync_pos                               = nr_est_timing_advance_pusch(gNB, UE_id); // estimate timing advance for MAC
+  timing_advance_update                  = sync_pos * (1 << mu);                    // scale by the used scs numerology
+
+  // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (gNB->frame_parms.N_RB_DL) {
-    // case 6:   /* nothing to do */          break;
-    // case 15:  timing_advance_update /= 2;  break;
-    // case 25:  timing_advance_update /= 4;  break;
-    // case 50:  timing_advance_update /= 8;  break;
-    // case 75:  timing_advance_update /= 12; break;
     case 106: timing_advance_update /= 16; break;
     case 217: timing_advance_update /= 32; break;
+    case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
     default: abort();
   }
@@ -308,7 +305,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  printf("\x1B[33m" "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n" "\x1B[0m", sync_pos,timing_advance_update);
+  LOG_D(PHY, "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", sync_pos,timing_advance_update);
 
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
 

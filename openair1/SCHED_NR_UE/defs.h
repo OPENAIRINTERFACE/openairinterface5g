@@ -295,7 +295,7 @@ int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
   @param timing_advance TA command
   @param mu numerology index (0,1,2..)
 */
-void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t timing_advance, uint8_t mu);
+void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t timing_advance, uint8_t mu, uint16_t bwp_ul_NB_RB);
 void nr_process_timing_advance_rar(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint16_t timing_advance);
 
 unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);

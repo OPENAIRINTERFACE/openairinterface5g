@@ -2124,7 +2124,7 @@ void nr_ue_process_mac_pdu(
 
     NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
     uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
-
+    uint16_t bwp_ul_NB_RB = UE_mac_inst->initial_bwp_ul.N_RB;
     //  For both DL/UL-SCH
     //  Except:
     //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -2293,7 +2293,7 @@ void nr_ue_process_mac_pdu(
                 LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n", ta_command, tag_id, CC_id);
 
                 //if (nfapi_mode!=3){ // TODO check nfapi_mode
-                  nr_process_timing_advance(module_idP, CC_id, ta_command, scs);
+                  nr_process_timing_advance(module_idP, CC_id, ta_command, scs, bwp_ul_NB_RB);
                 //}
 
                 break;

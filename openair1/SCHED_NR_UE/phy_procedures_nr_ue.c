@@ -1545,14 +1545,23 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 #endif
 
 
-void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing_advance, uint8_t mu){
+void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing_advance, uint8_t mu, uint16_t bwp_ul_NB_RB){
 
   // 3GPP TS 38.213 p4.2
-
+  // scale by the scs numerology
   int factor_mu = 1 << mu;
+  uint16_t bw_scaling;
 
-  //PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * 1024 / factor_mu ;
+  // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
+  switch (bwp_ul_NB_RB) {
+    case 106: bw_scaling = 16; break;
+    case 217: bw_scaling = 32; break;
+    case 245: bw_scaling = 32; break;
+    case 273: bw_scaling = 32; break;
+    default: abort();
+  }
 
+  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * bw_scaling / factor_mu;
 
   LOG_D(PHY,"[UE %d] Got timing advance %u from MAC, new value is %u\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
