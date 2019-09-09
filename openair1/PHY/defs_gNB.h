@@ -465,6 +465,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
+  /// pthread structure for printing time meas
+  pthread_t L1_stats_thread;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
