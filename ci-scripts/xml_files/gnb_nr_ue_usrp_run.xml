@@ -25,14 +25,14 @@
         <htmlTabName>run OAI gNB and OAI NR UE USRP</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
 	<TestCaseRequestedList>
-090101 000001 090102 000002 090108 090109
+090101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 	
         <testCase id="090101">
-                <class>Initialize_OAI_eNB</class>
+                <class>Initialize_eNB</class>
                 <desc>Initialize gNB USRP</desc>
-		<Initialize_OAI_eNB_args>-O ../../../ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf</Initialize_OAI_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf</Initialize_eNB_args>
 		<air_interface>NR</air_interface>
         </testCase>
 

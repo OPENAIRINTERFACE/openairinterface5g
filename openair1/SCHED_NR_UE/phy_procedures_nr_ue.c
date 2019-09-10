@@ -337,7 +337,7 @@ void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
       for(j=0; j<2; j++) {
 	//DL HARQ
 	if(ue->dlsch[l][i][j]) {
-	  for(k=0; k<NUMBER_OF_HARQ_PID_MAX && ue->dlsch[l][i][j]->harq_processes[k]; k++) {
+	  for(k=0; k<NR_MAX_DLSCH_HARQ_PROCESSES && ue->dlsch[l][i][j]->harq_processes[k]; k++) {
 	    ue->dlsch[l][i][j]->harq_processes[k]->status = SCH_IDLE;
 	    for (s=0; s<10; s++) {
 	      // reset ACK/NACK bit to DTX for all nr_tti_rxs s = 0..9
@@ -352,7 +352,7 @@ void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 
       //UL HARQ
       if(ue->ulsch[i]) {
-	for(k=0; k<NUMBER_OF_HARQ_PID_MAX && ue->ulsch[i]->harq_processes[k]; k++) {
+	for(k=0; k<NR_MAX_ULSCH_HARQ_PROCESSES && ue->ulsch[i]->harq_processes[k]; k++) {
 	  ue->ulsch[i]->harq_processes[k]->status = SCH_IDLE;
 	  //Set NDIs for all UL HARQs to 0
 	  //  ue->ulsch[i]->harq_processes[k]->Ndi = 0;
@@ -3384,7 +3384,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 
     LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
 
-    for (m=s0;m<=s1;m++) {
+    for (m = s0; m < (s1 + s0); m++) {
 
       if (m==s0)
 	nr_pdsch_channel_estimation(ue,

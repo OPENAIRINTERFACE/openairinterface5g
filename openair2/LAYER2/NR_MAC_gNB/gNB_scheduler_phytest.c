@@ -33,7 +33,6 @@
 #include "mac_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
-
 extern RAN_CONTEXT_t RC;
 
 /*Scheduling of DLSCH with associated DCI in common search space
@@ -296,8 +295,15 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
-  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
 
+  // HOT FIX for all zero pdu problem
+  // ------------------------------------------------------------------------------------------------
+  for(int i = 0; i < dlsch_pdu_rel15->transport_block_size/8; i++) {
+    ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
+  }
+  // ------------------------------------------------------------------------------------------------
+
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
   TX_req->segments[0].segment_length = dlsch_pdu_rel15->transport_block_size+2;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;

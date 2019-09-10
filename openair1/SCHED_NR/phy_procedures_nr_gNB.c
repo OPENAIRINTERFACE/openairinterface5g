@@ -196,7 +196,11 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           &gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
-                          AMP, frame, slot, fp, cfg);
+                          AMP, frame, slot, fp, cfg,
+                          &gNB->dlsch_encoding_stats,
+                          &gNB->dlsch_scrambling_stats,
+                          &gNB->dlsch_modulation_stats);
+
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
     }

@@ -175,7 +175,6 @@ class SSHConnection():
 		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
-		self.Initialize_OAI_eNB_args = ''
 		self.clean_repository = True
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
@@ -762,13 +761,18 @@ class SSHConnection():
 		self.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('hostnamectl','\$', 5)
+		result = re.search('CentOS Linux 7', str(self.ssh.before))
+		if result is not None:
+			self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+		else:
+			self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
 		time.sleep(6)
 		doLoop = True
-		loopCounter = 10
+		loopCounter = 20
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
@@ -2557,7 +2561,8 @@ class SSHConnection():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		# in noS1 config, no need to check status from EPC
-		result = re.search('noS1', str(self.Initialize_eNB_args))
+		# in gNB also currently no need to check
+		result = re.search('noS1|band78', str(self.Initialize_eNB_args))
 		if result is None:
 			p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
