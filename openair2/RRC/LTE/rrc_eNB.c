@@ -3201,45 +3201,47 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
+  mac_MainConfig->drx_Config = NULL;
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX Configuration */
     // Need to check if UE is a BR UE
     rnti_t rnti = ue_context_pP->ue_id_rnti;
     module_id_t module_id = ctxt_pP->module_id;
     int UE_id = find_UE_id(module_id, rnti);
-    eNB_MAC_INST *mac = RC.mac[module_id];
-    UE_list_t *UE_list = &(mac->UE_list);
 
     if (UE_id != -1) {
+      eNB_MAC_INST *mac = RC.mac[module_id];
+      UE_list_t *UE_list = &(mac->UE_list);
+
       if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
         (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-      // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-      
-      LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
+        
+        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-      /* Process the IE drx_Config */
-      if (cc_id < MAX_NUM_CCs) {
-        mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-      } else {
-        LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-      }
-
-      /* Set timers and thresholds values in local MAC context of UE */
-      eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
-
-      LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-
+        /* Process the IE drx_Config */
+        if (cc_id < MAX_NUM_CCs) {
+          mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+          if (mac_MainConfig->drx_Config == NULL) {
+            LOG_E(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+          }
+        } else {
+          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
+        }
       } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        mac_MainConfig->drx_Config = NULL;
+        LOG_D(RRC, "CDRX not implemented for TDD and LTE-M\n");
       }
     } else { // UE_id invalid
       LOG_E(RRC, "Invalid UE_id found!\n");
-      mac_MainConfig->drx_Config = NULL;
     }
   } else { // No CDRX with the CU/DU split in this version
     LOG_E(RRC, "CU/DU split activated\n");
-    mac_MainConfig->drx_Config = NULL;
   }
+  if (mac_MainConfig->drx_Config != NULL) {
+    /* Set timers and thresholds values in local MAC context of UE */
+    eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
+    LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+  } 
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
@@ -6691,16 +6693,16 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                    (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
-                        0,
-                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                   ,
+                                   0,
+                                   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                                   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                                   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                                   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
-          );
-	 }
+                                   );
+	        }
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
@@ -6709,11 +6711,11 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
              */
             if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
               rrc_rlc_config_req(ctxt_pP,
-                                SRB_FLAG_NO,
-                                MBMS_FLAG_NO,
-                                CONFIG_ACTION_REMOVE,
-                                DRB2LCHAN[i],
-                                Rlc_info_um);
+                                 SRB_FLAG_NO,
+                                 MBMS_FLAG_NO,
+                                 CONFIG_ACTION_REMOVE,
+                                 DRB2LCHAN[i],
+                                 Rlc_info_um);
             }
           }
 
@@ -6765,13 +6767,13 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                    (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
-                        0,
-                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                   ,
+                                   0,
+                                   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                                   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                                   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                                   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                                    );
           }
