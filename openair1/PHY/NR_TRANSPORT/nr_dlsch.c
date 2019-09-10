@@ -74,7 +74,10 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           int     frame,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS *frame_parms,
-                          nfapi_nr_config_request_t *config) {
+                          nfapi_nr_config_request_t *config,
+                          time_stats_t *dlsch_encoding_stats,
+                          time_stats_t *dlsch_scrambling_stats,
+                          time_stats_t *dlsch_modulation_stats) {
 
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[dci_alloc->harq_pid];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
@@ -89,7 +92,9 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
+  start_meas(dlsch_encoding_stats);
   nr_dlsch_encoding(harq->pdu, frame, slot, dlsch, frame_parms);
+  stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
 for (int i=0; i<harq->B>>7; i++) {
@@ -107,6 +112,7 @@ printf("\n");
 #endif
 
   /// scrambling
+  start_meas(dlsch_scrambling_stats);
   for (int q=0; q<rel15->nb_codewords; q++)
     memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
@@ -120,6 +126,7 @@ printf("\n");
                          Nid,
                          n_RNTI,
                          scrambled_output[q]);
+  stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH scrambling:\n");
 for (int i=0; i<encoded_length>>8; i++) {
@@ -130,12 +137,13 @@ for (int i=0; i<encoded_length>>8; i++) {
 #endif
  
   /// Modulation
-
+  start_meas(dlsch_modulation_stats);
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_modulation(scrambled_output[q],
                          encoded_length,
                          Qm,
                          mod_symbs[q]);
+  stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_symbols);
 for (int i=0; i<nb_symbols>>3; i++) {
