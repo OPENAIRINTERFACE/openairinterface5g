@@ -177,7 +177,7 @@ function variant__v4__cppcheck {
     VM_MEMORY=4096
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -I openair3/NAS/COMMON/UTIL -j4"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -I openair3/NAS/COMMON/UTIL -j4"
 }
 
 function variant__v5__gnb_usrp {

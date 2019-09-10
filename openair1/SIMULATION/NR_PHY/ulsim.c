@@ -539,7 +539,7 @@ int main(int argc, char **argv)
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
-          printf("errors_bit = %d (trial %d)\n", errors_bit, trial);
+          printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
       }
       printf("\n");
     } // [hna] for (trial = 0; trial < n_trials; trial++)

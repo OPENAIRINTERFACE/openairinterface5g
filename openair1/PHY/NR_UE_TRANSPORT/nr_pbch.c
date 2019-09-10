@@ -93,7 +93,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
               (i!=(nushiftmod4+8))) {
             rxF_ext[j]=rxF[rx_offset];
 #ifdef DEBUG_PBCH
-            printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(9*rb) + j,
+            printf("rxF ext[%d] = (%d,%d) rxF [%u]= (%d,%d)\n",(9*rb) + j,
                    ((int16_t *)&rxF_ext[j])[0],
                    ((int16_t *)&rxF_ext[j])[1],
                    rx_offset,
@@ -116,7 +116,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
                 (i!=(nushiftmod4+8))) {
               rxF_ext[j]=rxF[rx_offset];
 #ifdef DEBUG_PBCH
-              printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(rb<4) ? (9*rb) + j : (9*(rb-12))+j,
+              printf("rxF ext[%d] = (%d,%d) rxF [%u]= (%d,%d)\n",(rb<4) ? (9*rb) + j : (9*(rb-12))+j,
                      ((int16_t *)&rxF_ext[j])[0],
                      ((int16_t *)&rxF_ext[j])[1],
                      rx_offset,

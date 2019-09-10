@@ -95,7 +95,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
             dlsch->harq_processes[i]->d[r] = NULL;
           }
 
-	}
+	    }
 	free16(dlsch->harq_processes[i],sizeof(NR_DL_gNB_HARQ_t));
 	dlsch->harq_processes[i] = NULL;
       }
@@ -103,7 +103,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 
     free16(dlsch,sizeof(NR_gNB_DLSCH_t));
     dlsch = NULL;
-    }
+  }
 
 }
 
@@ -269,10 +269,11 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int nr_dlsch_encoding(unsigned char *a,int frame,
-                     uint8_t slot,
-                     NR_gNB_DLSCH_t *dlsch,
-                     NR_DL_FRAME_PARMS* frame_parms)
+int nr_dlsch_encoding(unsigned char *a,
+                      int frame,
+                      uint8_t slot,
+                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_FRAME_PARMS* frame_parms)
 {
 
   unsigned int G;
@@ -418,7 +419,7 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 	          }
 	  }
 #ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+    printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
         r,
         G,
         Kr*3,

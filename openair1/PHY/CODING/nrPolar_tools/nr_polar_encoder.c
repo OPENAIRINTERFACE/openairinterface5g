@@ -268,7 +268,7 @@ static inline void polar_rate_matching(t_nrPolar_params *polarParams,void *in,vo
 #endif
     for (int i=0; i<polarParams->encoderLength; i++) {
 #ifdef DEBUG_POLAR_ENCODER
-      printf("%u<-%u : %llx.%llx =>",i,polarParams->rate_matching_pattern[i],((uint64_t *)out)[1],((uint64_t *)out)[0]);
+      printf("%d<-%u : %llx.%llx =>",i,polarParams->rate_matching_pattern[i],((uint64_t *)out)[1],((uint64_t *)out)[0]);
 #endif
       tmp0 = (*in128&(((uint128_t)1)<<polarParams->rate_matching_pattern[i]));
       if (tmp0!=0) {
