@@ -113,14 +113,47 @@ int nr_phy_init_RU(RU_t *ru) {
 	  for (j=0; j<ru->nb_tx; j++) {
 	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
 	    // setting identity matrix as first step for beam weights
-	    if (p==j) {
+	   // if (p==j) {
+           /*  if (j==0){
+              for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x00007fff;
+            }
+            else{
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-		ru->beam_weights[i][p][j][re] = 0x00007fff; 
-	    }
+		ru->beam_weights[i][p][j][re] = 0xb9cf6a1c;
+            }*/
+	  /*  }
 	    else {
 	      for (re=0; re<fp->ofdm_symbol_size; re++) 
 		ru->beam_weights[i][p][j][re] = 0x00000000; 
-	    }  
+	    }*/
+            
+	    if (j==1) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0xb9cf6a1c; 
+	    }
+            else {
+	     if (p==0) {
+              for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x00007fff;
+	     }
+	     if (p==1) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x6b3945e6; 
+	     }
+	     if (p==2) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0xb817730d; 
+	     }
+	     if (p==3) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0xc1bbedd4; 
+	     }
+	     if (p==4) {
+	      for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = 0x41bbedd4; 
+	     }
+            } 
 	  } // for j
 	} // for p
       }
