@@ -71,6 +71,8 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );
   if (packet_type == IF5_RRH_GW_DL) {    
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -101,28 +103,31 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
 
-      for (i=0; i < fp->nb_antennas_tx; i++)
+      for (i=0; i < ru->nb_tx; i++)
         txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
-        clock_gettime( CLOCK_MONOTONIC, &start_comp);
-        ru->ifdevice.trx_write_func(&ru->ifdevice,
-				    (proc_timestamp + packet_id*spp_eth),
-				    (void**)txp,
-				    spp_eth,
-				    fp->nb_antennas_tx,
-				    0);
-        clock_gettime( CLOCK_MONOTONIC, &end_comp);
-        LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
-        for (i=0; i < fp->nb_antennas_tx; i++)
-          txp[i] += spp_eth;
+        for (int aid=0; aid<ru->nb_tx;aid++) {
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
+          clock_gettime( CLOCK_MONOTONIC, &start_comp);
+          ru->ifdevice.trx_write_func2(&ru->ifdevice,
+	  			       (proc_timestamp + packet_id*spp_eth),
+				       (void*)txp[aid],
+				       spp_eth,
+				       aid,
+				       0);
+          clock_gettime( CLOCK_MONOTONIC, &end_comp);
+          LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
+          for (i=0; i < fp->nb_antennas_tx; i++)
+            txp[i] += spp_eth;
 
-      }
+        }
+     }
     }
   } else if (packet_type == IF5_RRH_GW_UL) {
     if (eth->compression == ALAW_COMPRESS) {
@@ -326,7 +331,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   uint16_t *data_block = NULL;
   uint16_t *j      = NULL;
 
-  openair0_timestamp timestamp[spsf / spp_eth];
+  openair0_timestamp timestamp[ru->nb_rx*spsf / spp_eth];
   memset(timestamp, 0, sizeof(timestamp));
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
 
@@ -334,6 +339,9 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
   
   if (packet_type == IF5_RRH_GW_DL) {
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -365,6 +373,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
       for (i=0; i < fp->nb_antennas_tx; i++)
         txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
@@ -390,6 +399,8 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
     
   } else if (packet_type == IF5_RRH_GW_UL) { 
     if (eth->compression == ALAW_COMPRESS) {
+     AssertFatal(1==0,"IF5 compression needs reworking\n");
+/*
       if (eth->flags == ETH_RAW_MODE) {
         data_block = (uint16_t*)(alaw_buffer + APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES);
       } else {
@@ -420,19 +431,28 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         LOG_D(HW,"[SF %d] Decomperss_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );
       }
+*/
     } else if (eth->compression == NO_COMPRESS) {
-      for (i=0; i < fp->nb_antennas_rx; i++)
+      int16_t temp_rx[spp_eth*2];
+      for (i=0; i < ru->nb_rx; i++)
         rxp[i] = (void*)&ru->common.rxdata[i][subframe*fp->samples_per_tti];
-    
-      for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
+      int aid; 
+      for (packet_id=0; packet_id < ru->nb_rx*spsf / spp_eth; packet_id++) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
         clock_gettime( CLOCK_MONOTONIC, &start_decomp);
-        ru->ifdevice.trx_read_func(&ru->ifdevice,
+        ru->ifdevice.trx_read_func2(&ru->ifdevice,
 				   &timestamp[packet_id],
-				   (void**)rxp,
+				   (void*)temp_rx,
 				   spp_eth,
-				   fp->nb_antennas_rx);
+				   &aid);
+
+        // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
+        // should detect out of order and act accordingly ....
+
+        memcpy(rxp[aid]+((timestamp[packet_id]-timestamp[0])<<2)),
+               (void*)temp_rx,
+               spp_eth);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );            

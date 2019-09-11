@@ -166,6 +166,8 @@ void trx_eth_end(openair0_device *device) {
 
 
 int trx_eth_stop(openair0_device *device) {
+    eth_state_t *eth = (eth_state_t*)device->priv;
+
     if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
        AssertFatal(device->thirdparty_cleanup != NULL, "device->thirdparty_cleanup is null\n");
        AssertFatal(device->thirdparty_cleanup(device) == 0, "third-party cleanup failed\n");
@@ -398,12 +400,17 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     device->trx_set_freq_func = trx_eth_set_freq;
     device->trx_set_gains_func = trx_eth_set_gains;
 
-    if (eth->flags == ETH_RAW_MODE) {
+    device->trx_read_func2 = NULL;
+    device->trx_read_func = NULL;
+    device->trx_write_func2 = NULL;
+    device->trx_write_func = NULL;
+
+    if  (eth->flags == ETH_RAW_MODE) {
         device->trx_write_func   = trx_eth_write_raw;
         device->trx_read_func    = trx_eth_read_raw;
     } else if (eth->flags == ETH_UDP_MODE || eth->flags == ETH_UDP_IF5_ORI_MODE) {
-        device->trx_write_func   = trx_eth_write_udp;
-        device->trx_read_func    = trx_eth_read_udp;
+        device->trx_write_func2   = trx_eth_write_udp;
+        device->trx_read_func2    = trx_eth_read_udp;
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;
         device->trx_ctlrecv_func = trx_eth_ctlrecv_udp;
     } else if (eth->flags == ETH_RAW_IF4p5_MODE) {

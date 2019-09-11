@@ -57,7 +57,7 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
+/*#include "msc.h" * mofied salvo 10-09-19*/ 
 
 
 #include "defs_common.h"

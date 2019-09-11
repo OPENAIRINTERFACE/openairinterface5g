@@ -264,36 +264,41 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   return (bytes_sent);  	  
 }
 
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags) {	
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int cc, int flags) {	
   
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int sendto_flag =0;
-  int i=0;
+  char temp0[APP_HEADER_SIZE_BYTES];
+
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
  
 
-  for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
-    void *buff2 = (void*)(buff[i]- APP_HEADER_SIZE_BYTES); 
+    void *buff2 = (void*)(buff- APP_HEADER_SIZE_BYTES); 
     
     /* we don't want to ovewrite with the header info the previous tx buffer data so we store it*/
-    int32_t temp0 = *(int32_t *)buff2;
-    openair0_timestamp  temp1 = *(openair0_timestamp *)(buff2 + sizeof(int32_t));
-    
+   
+    memcpy((void *)temp0,(void *)buff2,APP_HEADER_SIZE_BYTES);
+ 
     bytes_sent = 0;
     
     /* constract application header */
-    // eth->pck_header.seq_num = pck_seq_num;
-    //eth->pck_header.antenna_id = 1+(i<<1);
-    //eth->pck_header.timestamp = timestamp;
-    *(uint16_t *)buff2 = eth->pck_seq_num;
-    *(uint16_t *)(buff2 + sizeof(uint16_t)) = 1+(i<<1);
-    *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, eth->pck_seq_num);
+    // ECPRI Protocol revision + reserved bits (1 byte)
+    *(uint8_t *)buff2 = ECPRIREV;
+    // ECPRI Message type (1 byte)
+    *(uint8_t *)(buff2 + 1) = 0;
+    // ECPRI Payload Size (2 bytes)
+    AssertFatal(nsamps<16381,"nsamps > 16381\n");
+    *(uint16_t *)(buff2 + 2) = (nsamps<<2);
+    // ECPRI PC_ID (2 bytes)
+    *(uint16_t *)(buff2 + 4) = cc;
+    // OAI modified SEQ_ID (4 bytes)
+    *(uint64_t *)(buff2 + 6) = (uint64_t )timestamp;
+
     
     int sent_byte;
     if (eth->compression == ALAW_COMPRESS) {
@@ -311,7 +316,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 	     bytes_sent);
 #endif
       /* Send packet */
-      bytes_sent += sendto(eth->sockfdd,
+      bytes_sent = sendto(eth->sockfdd,
 			   buff2, 
                            sent_byte,
 			   sendto_flag,
@@ -340,16 +345,14 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     //}
                   
       /* tx buffer values restored */  
-      *(int32_t *)buff2 = temp0;
-      *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = temp1;
-  }
+  memcpy((void *)buff2,(void *)temp0,APP_HEADER_SIZE_BYTES);
  
   return (bytes_sent-APP_HEADER_SIZE_BYTES)>>2;
 }
       
 
 
-int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
+int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void *buff, int nsamps, int *cc) {
   
   int bytes_received=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
@@ -357,18 +360,16 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   int rcvfrom_flag =0;
   int block_cnt=0;
   int again_cnt=0;
-  int i=0;
+  char temp0[APP_HEADER_SIZE_BYTES];
 
-  eth->rx_nsamps=nsamps;
+  eth->rx_nsamps=256;
 
-  for (i=0;i<cc;i++) {
     /* buff[i] points to the position in rx buffer where the payload to be received will be placed
        buff2 points to the position in rx buffer where the packet header will be placed */
-    void *buff2 = (void*)(buff[i]- APP_HEADER_SIZE_BYTES);
+    void *buff2 = (void*)(buff- APP_HEADER_SIZE_BYTES);
     
     /* we don't want to ovewrite with the header info the previous rx buffer data so we store it*/
-    int32_t temp0 = *(int32_t *)buff2;
-    openair0_timestamp temp1 = *(openair0_timestamp *)(buff2 + sizeof(int32_t));
+    memcpy((void *)temp0,(void *)buff2,APP_HEADER_SIZE_BYTES);
     
     bytes_received=0;
     block_cnt=0;
@@ -429,19 +430,8 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 #endif  
 	   
 	   /* store the timestamp value from packet's header */
-	   *timestamp =  *(openair0_timestamp *)(buff2 + sizeof(int32_t));
-	   /* store the sequence number of the previous packet received */    
-	   if (eth->pck_seq_num_cur == 0) {
-	     eth->pck_seq_num_prev = *(uint16_t *)buff2;
-	   } else {
-	     eth->pck_seq_num_prev = eth->pck_seq_num_cur;
-	   }
-	   /* get the packet sequence number from packet's header */
-	   eth->pck_seq_num_cur = *(uint16_t *)buff2;
-	   if ( ( eth->pck_seq_num_cur != (eth->pck_seq_num_prev + 1) ) && !((eth->pck_seq_num_prev==MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame)) && (eth->pck_seq_num_cur==1 )) && !((eth->pck_seq_num_prev==1) && (eth->pck_seq_num_cur==1))) {	     
-	     //#if DEBUG
-	     printf("Out of order packet received: current_packet=%d previous_packet=%d timestamp=%"PRId64"\n",eth->pck_seq_num_cur,eth->pck_seq_num_prev,*timestamp);
-	     //#endif
+	   *timestamp =  *(openair0_timestamp *)(buff2 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
+           *cc        = *(uint16_t*)(buff2 + ECPRICOMMON_BYTES);
 	   }
 	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
 	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,eth->pck_seq_num_prev);
@@ -449,12 +439,9 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 						    eth->rx_count++;
       }	 
 	     
-      }
       /* tx buffer values restored */  
-      *(int32_t *)buff2 = temp0;
-      *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = temp1;
+  memcpy((void *)buff2,(void *)temp0,APP_HEADER_SIZE_BYTES);
 	  
-    }      
   return (bytes_received-APP_HEADER_SIZE_BYTES)>>2;
 }
 

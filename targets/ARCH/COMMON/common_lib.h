@@ -331,12 +331,22 @@ struct openair0_device_t {
   /*! \brief Called to send samples to the RF target
       @param device pointer to the device structure specific to the RF hardware target
       @param timestamp The timestamp at whicch the first sample MUST be sent
-      @param buff Buffer which holds the samples
+      @param buff Buffer which holds the samples (2 dimensional)
+      @param nsamps number of samples to be sent
+      @param number of antennas 
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+  */
+  int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
+
+  /*! \brief Called to send samples to the RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at whicch the first sample MUST be sent
+      @param buff Buffer which holds the samples (1 dimensional)
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
   */
-  int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int antenna_id, int flags);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -346,10 +356,24 @@ struct openair0_device_t {
    * \param[out] ptimestamp the time at which the first sample was received.
    * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
    * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
-   * \param antenna_id Index of antenna for which to receive samples
+   * \param num_antennas number of antennas from which to receive samples
    * \returns the number of sample read
    */
-  int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int antenna_id);
+
+  int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int num_antennas);
+
+  /*! \brief Receive samples from hardware, this version provides a single antenna at a time and returns.
+   * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+   * the first channel. *ptimestamp is the time at which the first sample
+   * was received.
+   * \param device the hardware to use
+   * \param[out] ptimestamp the time at which the first sample was received.
+   * \param[out] buff A pointers to a buffer for received samples. The buffer must be large enough to hold the number of samples \ref nsamps.
+   * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+   * \param antenna_id Index of antenna from which samples were received
+   * \returns the number of sample read
+   */
+  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, void *buff, int nsamps,int *antenna_id);
 
   /*! \brief print the device statistics
    * \param device the hardware to use
@@ -394,6 +418,12 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
+
+/*! \brief Pointer to generic RRU private information
+   */
+
+  void *thirdparty_priv;
+
   /*! \brief Callback for Third-party RRU Initialization routine
      \param device the hardware configuration to use
    */
