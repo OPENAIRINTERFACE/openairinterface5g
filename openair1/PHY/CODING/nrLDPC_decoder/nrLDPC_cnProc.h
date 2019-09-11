@@ -87,23 +87,29 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
             // Set of results pointer to correct BN address
             p_cnProcBufResBit = p_cnProcBufRes + (j*bitOffsetInGroup);
 
+            __m256i *pj0 = &p_cnProcBuf[lut_idxCnProcG3[j][0]];
+            __m256i *pj1 = &p_cnProcBuf[lut_idxCnProcG3[j][1]];
+
             // Loop over CNs
             for (i=0; i<M; i++)
             {
                 // Abs and sign of 32 CNs (first BN)
-                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
+	      //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
+	        ymm0 = pj0[i];
                 sgn  = _mm256_sign_epi8(*p_ones, ymm0);
                 min  = _mm256_abs_epi8(ymm0);
 
                 // 32 CNs of second BN
-                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
+		//  ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
+		ymm0 = pj1[i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
 
                 // Store result
                 min = _mm256_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
-                *p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
-                p_cnProcBufResBit++;
+                //*p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
+                //p_cnProcBufResBit++;
+		p_cnProcBufResBit[i]=_mm256_sign_epi8(min, sgn);
             }
         }
     }

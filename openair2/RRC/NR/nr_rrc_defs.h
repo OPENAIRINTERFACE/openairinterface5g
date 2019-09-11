@@ -377,9 +377,13 @@ typedef struct {
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
   NR_RRCReconfiguration_t                   *reconfig[MAX_NR_RRC_UE_CONTEXTS];
+  NR_RadioBearerConfig_t                    *rb_config[MAX_NR_RRC_UE_CONTEXTS];
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
+
+  int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       n_physical_antenna_ports;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------

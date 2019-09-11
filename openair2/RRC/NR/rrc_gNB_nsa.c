@@ -33,11 +33,24 @@
 #include "nr_rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
 #include "NR_UE-NR-Capability.h"
+#include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "NR_CG-Config.h"
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,BIT_STRING_t *ueCapabilityRAT_Container_nr,BIT_STRING_t *ueCapabilityRAT_Container_MRDC)  {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
   int rnti = taus()&65535;
+  OCTET_STRING_t *ueCapabilityRAT_Container_nr;
+  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC;
+
+  AssertFatal(UE_CapabilityRAT_ContainerList!=NULL,"UE_CapabilityRAT_ContainerList is null\n");
+  AssertFatal(UE_CapabilityRAT_ContainerList->list.size != 2, "UE_CapabilityRAT_ContainerList->list.size %d != 2\n",UE_CapabilityRAT_ContainerList->list.size);
+  if (UE_CapabilityRAT_ContainerList->list.array[0]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[0]->ue_CapabilityRAT_Container;
+  else if (UE_CapabilityRAT_ContainerList->list.array[0]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[0]->ue_CapabilityRAT_Container;
+
+  if (UE_CapabilityRAT_ContainerList->list.array[1]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[1]->ue_CapabilityRAT_Container;
+  else if (UE_CapabilityRAT_ContainerList->list.array[1]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[1]->ue_CapabilityRAT_Container;
+
 
   AssertFatal(ueCapabilityRAT_Container_nr!=NULL,"ueCapabilityRAT_Container_nr is NULL\n");
   AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
@@ -83,9 +96,10 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,BIT_STRING_t *ueCapabilityRAT_C
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }  
 
+  rrc_add_nsa_user(rrc,ue_context_p);
 }
 
-void rrc_add_nsa_user(gNB_RRC_INST *rrc) {
+void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p) {
 
 // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
 
@@ -104,7 +118,17 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc) {
   carrier->reconfig[rrc->Nb_ue]->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   carrier->reconfig[rrc->Nb_ue]->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  fill_default_reconfig(carrier->ServingCellConfigCommon,reconfig_ies);
+  fill_default_reconfig(carrier->ServingCellConfigCommon,
+			reconfig_ies,
+			carrier->secondaryCellGroup[rrc->Nb_ue],
+			carrier->n_physical_antenna_ports,
+			carrier->initial_csi_index[rrc->Nb_ue]);
+  carrier->rb_config[rrc->Nb_ue] = calloc(1,sizeof(NR_RadioBearerConfig_t));
+  fill_default_rbconfig(rrc,carrier->rb_config[rrc->Nb_ue]);
+  NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
+  memset((void*)CG_Config,0,sizeof(*CG_Config));
+  generate_CG_Config(rrc,CG_Config,carrier->reconfig[rrc->Nb_ue],carrier->rb_config[rrc->Nb_ue]);
+  // Send to X2 entity to transport to MeNB
 
   rrc->Nb_ue++;
 }

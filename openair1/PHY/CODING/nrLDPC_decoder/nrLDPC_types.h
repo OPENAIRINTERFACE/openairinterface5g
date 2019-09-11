@@ -48,6 +48,7 @@ typedef struct nrLDPC_lut {
     const uint32_t* llr2CnProcBuf; /**< LUT for input LLRs to CN processing buffer */
     const uint8_t*  numEdgesPerBn; /**< LUT with number of edges per BN */
     const uint32_t* cn2bnProcBuf; /**< LUT for transferring CN processing results to BN processing buffer */
+    const uint32_t* cn2bnProcBuf2; /**< LUT for transferring CN processing results to BN processing buffer */
     const uint16_t* llr2llrProcBuf; /**< LUT for transferring input LLRs to LLR processing buffer */
 } t_nrLDPC_lut;
 
