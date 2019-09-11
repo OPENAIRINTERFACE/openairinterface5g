@@ -199,9 +199,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
    * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
   if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG) {
     for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++)
-      gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
+      //gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
 
-    dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
+    dmrs_offset = 0;//(pdcch_params.rb_offset*3)&0x1f;
     LOG_D(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
   }
 
