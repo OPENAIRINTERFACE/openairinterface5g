@@ -395,7 +395,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb - n_BWP_start) % BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN)==0) {
         bitcnt_coreset_freq_dom ++;
 
-        while ((((coreset_freq_dom & 0x1FFFFFFFFFFF) >> (CORESET_FREQ_DOMAIN_BITMAP_SIZE - bitcnt_coreset_freq_dom)) & 0x1)== 0) { // 46 -> 45 is number of bits in coreset_freq_dom
+        while ((((coreset_freq_dom & 0x1FFFFFFFFFFF) >> (CORESET_FREQ_DOMAIN_BITMAP_SIZE - (n_BWP_start/BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN) - bitcnt_coreset_freq_dom)) & 0x1)== 0) { // 46 -> 45 is number of bits in coreset_freq_dom
           // next 6 RB are not part of the CORESET within the BWP as bit in coreset_freq_dom is set to 0
           bitcnt_coreset_freq_dom ++;
           //c_rb_tmp = c_rb_tmp + 6;
