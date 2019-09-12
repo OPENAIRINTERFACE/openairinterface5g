@@ -554,11 +554,17 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   int G = ulsch_harq->G;
   unsigned int E;
   decoder_if_t *tc;
+  static int32_t pusch_rep_buffer[3*(6144+64)];
+  int max_Ncb;
 
   if (llr8_flag == 0)
     tc = *decoder16;
   else
     tc = *decoder8;
+
+  if(ulsch_harq->repetition_number == 1){
+	  memset(pusch_rep_buffer,0,(sizeof(int32_t)*3*(6144+64))) ;  // reset the buffer every new repetitions
+  }
 
   for (r=0; r<ulsch_harq->C; r++) {
     //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
@@ -593,7 +599,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                    0,   //Uplink
                                    1,
                                    ulsch_harq->rvidx,
-                                   (ulsch_harq->round==0)?1:0,  // clear
+                                   (ulsch_harq->rvidx==0)?1:0,  // clear
                                    ulsch_harq->Qm,
                                    1,
                                    r,
@@ -603,6 +609,27 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     }
 
     stop_meas(&eNB->ulsch_rate_unmatching_stats);
+
+    max_Ncb = 3*ulsch_harq->RTC[r]*32 ;
+
+    if(ulsch_harq->total_number_of_repetitions > 1)
+    {
+    	if (ulsch_harq->rvidx==1)
+    	{ 					// Store the result of HARQ combining in the last emtc repetitions of sequence 0,2,3,1
+    		for (int nn=0;nn<max_Ncb;nn++)
+    		{
+    			pusch_rep_buffer[nn] += ulsch_harq->w[r][nn] ;
+    		}
+        }
+    	if (ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions)
+    	{
+    		for (int nn=0;nn<max_Ncb;nn++)
+    		{
+    			ulsch_harq->w[r][nn] =  pusch_rep_buffer[nn] ;
+      		}
+      	}
+      }
+
     r_offset += E;
     start_meas(&eNB->ulsch_deinterleaving_stats);
     sub_block_deinterleaving_turbo(4+Kr,

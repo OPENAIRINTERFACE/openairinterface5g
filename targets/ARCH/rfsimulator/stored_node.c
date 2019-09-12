@@ -5,6 +5,7 @@
 
 #include <common/utils/simple_executable.h>
 
+volatile int             oai_exit = 0;
 
 void fullwrite(int fd, void *_buf, int count) {
   char *buf = _buf;
@@ -123,7 +124,7 @@ int main(int argc, char *argv[]) {
     setblocking(serviceSock, blocking);
     AssertFatal(read(fd,&header,sizeof(header)), "");
     fullwrite(serviceSock, &header, sizeof(header));
-    int dataSize=sizeof(sample_t)*header.size*header.nbAnt;
+    int dataSize=sizeof(int32_t)*header.size*header.nbAnt;
 
     if (dataSize>bufSize) {
       void * new_buff = realloc(buff, dataSize);

@@ -68,6 +68,7 @@
 
 extern RAN_CONTEXT_t RC;
 
+extern const uint8_t pusch_repetition_Table8_2_36213[3][4];
 
 extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
 
@@ -98,6 +99,7 @@ void
 add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
          sub_frame_t subframeP) {
   eNB_MAC_INST *mac = RC.mac[module_idP];
+  eNB_RRC_INST *rrc = RC.rrc[module_idP];
   COMMON_channels_t *cc = &mac->common_channels[CC_id];
   uint8_t j;
   nfapi_ul_config_request_t *ul_req;
@@ -108,6 +110,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
   uint8_t sf_ahead_dl;
   uint8_t rvseq[4] = {0, 2, 3, 1};
+  uint8_t pusch_maxNumRepetitionCEmodeA_r13;
   ul_req = &mac->UL_req_tmp[CC_id][ra->Msg3_subframe];
   ul_req_body = &ul_req->ul_config_request_body;
   AssertFatal(ra->state != IDLE, "RA is not active for RA %X\n",
@@ -140,7 +143,13 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.size = get_TBS_UL (ra->msg3_mcs, ra->msg3_nb_rb);
     // Re13 fields
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.ue_type = ra->rach_resource_type > 2 ? 2 : 1;
-    ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions = 1;
+    if (ra->rach_resource_type > 0) {
+	pusch_maxNumRepetitionCEmodeA_r13= *(rrc->configuration.pusch_maxNumRepetitionCEmodeA_r13[CC_id]);
+	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions= pusch_repetition_Table8_2_36213[pusch_maxNumRepetitionCEmodeA_r13][ra->pusch_repetition_levels];
+    }
+    else{
+    	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions=1;
+    }
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number = 1;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.initial_transmission_sf_io = (ra->Msg3_frame * 10) + ra->Msg3_subframe;
     ul_req_body->number_of_pdus++;
@@ -238,6 +247,7 @@ void generate_Msg2(module_id_t module_idP,
 //------------------------------------------------------------------------------
 {
   eNB_MAC_INST *mac = RC.mac[module_idP];
+  eNB_RRC_INST *rrc = RC.rrc[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   uint8_t *vrb_map = NULL;
   int first_rb = 0;
@@ -250,6 +260,7 @@ void generate_Msg2(module_id_t module_idP,
   dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
   N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t PUSCH_Rep_Level;
   int             rmax = 0;
   int             rep = 0;
   int             reps = 0;
@@ -260,6 +271,13 @@ void generate_Msg2(module_id_t module_idP,
   LTE_PRACH_ParametersCE_r13_t *p[4] = { NULL, NULL, NULL, NULL };
   uint16_t        absSF = (10 * frameP) + subframeP;
   uint16_t        absSF_Msg2 = (10 * ra->Msg2_frame) + ra->Msg2_subframe;
+
+  if (ra->rach_resource_type > 0) {
+	PUSCH_Rep_Level= *(rrc->configuration.pusch_repetitionLevelCEmodeA_r13[CC_idP]);
+  }
+  else {
+  	PUSCH_Rep_Level= 0;
+  }
 
   if (absSF > absSF_Msg2) {
     return; // we're not ready yet
@@ -402,6 +420,8 @@ void generate_Msg2(module_id_t module_idP,
         ra->msg2_mpdcch_repetition_cnt++;
       }
 
+      ra->pusch_repetition_levels = PUSCH_Rep_Level;
+	  
       if((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) {
         /* Program PDSCH */
         LOG_D(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n",
@@ -1270,6 +1290,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
     UE_id = find_UE_id(module_idP, ra->rnti);
     DevAssert(UE_id != -1);
     mac->UE_list.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured = TRUE;
+    mac->UE_list.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].pusch_repetition_levels=ra->pusch_repetition_levels;
     cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
   }
 }

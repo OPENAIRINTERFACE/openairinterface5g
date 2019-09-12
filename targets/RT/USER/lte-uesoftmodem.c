@@ -318,7 +318,6 @@ static void get_options(void) {
   int CC_id;
   int tddflag = 0;
   char *loopfile = NULL;
-
   int dumpframe = 0;
   int timingadv = 0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
@@ -592,7 +591,7 @@ int main( int argc, char **argv ) {
   if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
- 
+
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   set_latency_target();
@@ -792,7 +791,7 @@ int main( int argc, char **argv ) {
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
   if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm(snr_dB,0);
+    init_ocm();
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 

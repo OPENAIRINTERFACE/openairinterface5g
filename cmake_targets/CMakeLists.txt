@@ -2085,7 +2085,7 @@ add_library(LFDS7
 
 # Simulation library
 ##########################
-add_library(SIMU
+set (SIMUSRC 
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/random_channel.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/rangen_double.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
@@ -2096,9 +2096,13 @@ ${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
 ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
 ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
 ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+${OPENAIR_DIR}/targets/ARCH/rfsimulator/apply_channelmod.c
+#${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
 )
 
+# Simulation library
+##########################
+add_library( SIMU SHARED ${SIMUSRC} )
 
 add_library(SIMU_ETH
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2404,7 +2408,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
   ${OPENAIR_TARGETS}/RT/USER/rfsim.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
