@@ -246,6 +246,8 @@ typedef struct {
   /// This is needed for PHICH generation which
   /// is done after a new scheduling
   uint8_t previous_n_DMRS;
+  /// number of DMRS resource elements in one RB
+  uint16_t nb_re_dmrs;
   //////////////////////////////////////////////////////////////
 
 
@@ -414,6 +416,8 @@ typedef struct {
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
+  // DMRS symbol index, to be updated every DMRS symbol within a slot.
+  uint8_t dmrs_symbol;
 } NR_gNB_PUSCH;
 
 
@@ -707,6 +711,8 @@ typedef struct PHY_VARS_gNB_s {
   // PUSCH Varaibles
   PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_UE_MAX];
 
+  PUSCH_Config_t pusch_config;
+
   // PUCCH variables
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_UE_MAX];
 
@@ -722,6 +728,11 @@ typedef struct PHY_VARS_gNB_s {
 
   // SRS Variables
   SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
+
+  dmrs_UplinkConfig_t dmrs_UplinkConfig;
+
+  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
+
   uint8_t ncs_cell[20][7];
 
   // Scheduling Request Config

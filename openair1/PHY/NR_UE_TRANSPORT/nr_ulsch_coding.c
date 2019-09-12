@@ -232,7 +232,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   nb_re_dmrs = ulsch->nb_re_dmrs;
-  length_dmrs = 1;
+  length_dmrs = ulsch->length_dmrs;
   Coderate = 0.0;
 
 ///////////

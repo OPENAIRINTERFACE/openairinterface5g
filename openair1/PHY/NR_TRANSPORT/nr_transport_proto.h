@@ -62,6 +62,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
+    @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
 
 */
 void nr_ulsch_extract_rbs_single(int **rxdataF,
@@ -73,7 +74,9 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  unsigned char symbol,
                                  unsigned short start_rb,
                                  unsigned short nb_rb_pusch,
-                                 NR_DL_FRAME_PARMS *frame_parms);
+                                 NR_DL_FRAME_PARMS *frame_parms,
+                                 uint8_t is_dmrs_symbol,
+                                 uint8_t dmrs_symbol);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
@@ -118,7 +121,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                 int **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
-                                uint8_t pilots,
+                                uint8_t is_dmrs_symbol,
                                 unsigned char mod_order,
                                 unsigned short nb_rb,
                                 unsigned char output_shift);

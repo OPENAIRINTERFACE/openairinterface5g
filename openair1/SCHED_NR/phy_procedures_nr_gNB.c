@@ -224,12 +224,31 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
   
   uint8_t ret;
+  uint8_t l, number_dmrs_symbols = 0;
+  uint8_t mapping_type;
   uint32_t G;
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
 
+  mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
+  gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs = 0;
+
+  for (l = 0; l < NR_SYMBOLS_PER_SLOT; l++)
+      number_dmrs_symbols += is_dmrs_symbol(l,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            nfapi_ulsch_pdu_rel15->number_symbols,
+                                            &gNB->dmrs_UplinkConfig,
+                                            mapping_type,
+                                            frame_parms->ofdm_symbol_size);
+
+  gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
                nfapi_ulsch_pdu_rel15->number_symbols,
-               nfapi_ulsch_pdu_rel15->nb_re_dmrs,
+               gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs,
                nfapi_ulsch_pdu_rel15->length_dmrs,
                nfapi_ulsch_pdu_rel15->Qm,
                nfapi_ulsch_pdu_rel15->n_layers);

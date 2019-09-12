@@ -111,7 +111,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  length_dmrs = 1; //to update from pusch config
+  length_dmrs = gNB->dmrs_UplinkConfig.pusch_maxLength;
 
   nr_gold_pusch(gNB, symbol, n_idDMRS, length_dmrs);
 
