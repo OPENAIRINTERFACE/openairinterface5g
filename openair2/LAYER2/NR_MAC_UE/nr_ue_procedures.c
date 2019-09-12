@@ -207,7 +207,7 @@ int8_t nr_ue_decode_mib(
 	uint32_t    ssb_length,
 	uint32_t 	ssb_index,
 	void 		*pduP,
-    uint16_t    cell_id ){
+        uint16_t    cell_id ){
 
     LOG_I(MAC,"[L2][MAC] decode mib\n");
 
@@ -264,7 +264,7 @@ int8_t nr_ue_decode_mib(
             scs_pdcch = scs_30kHz;
         }
 
-	    channel_bandwidth_t min_channel_bw = bw_40MHz;  //  deafult for testing
+	channel_bandwidth_t min_channel_bw = bw_10MHz;  //  deafult for testing
 	    
         uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
         frequency_range_t frequency_range = FR1;
