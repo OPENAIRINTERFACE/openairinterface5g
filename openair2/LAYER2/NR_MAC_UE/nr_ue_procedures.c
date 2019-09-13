@@ -2047,7 +2047,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
                     uint8_t CC_id,
                     frame_t frameP,
                     uint8_t ttiP,
-                    uint8_t * pdu, uint16_t pdu_len, uint8_t eNB_index){
+                    uint8_t * pdu, uint16_t pdu_len, uint8_t eNB_index, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
   printf("nr_ue_send_sdu frame %d\n", frameP);
 
@@ -2094,7 +2094,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
-  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, eNB_index);
+  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, eNB_index, ul_time_alignment);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 
@@ -2110,7 +2110,8 @@ void nr_ue_process_mac_pdu(
     uint8_t CC_id,
     uint8_t *pduP, 
     uint16_t mac_pdu_len,
-    uint8_t eNB_index){
+    uint8_t eNB_index,
+    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
     // This function is adapting code from the old
     // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
@@ -2123,8 +2124,9 @@ void nr_ue_process_mac_pdu(
     uint16_t mac_sdu_len;
 
     NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
-    uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
-    uint16_t bwp_ul_NB_RB = UE_mac_inst->initial_bwp_ul.N_RB;
+    //uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
+    //uint16_t bwp_ul_NB_RB = UE_mac_inst->initial_bwp_ul.N_RB;
+
     //  For both DL/UL-SCH
     //  Except:
     //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -2280,9 +2282,12 @@ void nr_ue_process_mac_pdu(
                 //  38.321 Ch6.1.3.4
                 mac_ce_len = 1;
 
-                uint8_t ta_command = ((NR_MAC_CE_TA *)pdu_ptr)[1].TA_COMMAND;
+                /*uint8_t ta_command = ((NR_MAC_CE_TA *)pdu_ptr)[1].TA_COMMAND;
+                uint8_t tag_id = ((NR_MAC_CE_TA *)pdu_ptr)[1].TAGID;*/
 
-                uint8_t tag_id = ((NR_MAC_CE_TA *)pdu_ptr)[1].TAGID;
+                ul_time_alignment->apply_ta = 1;
+                ul_time_alignment->ta_command = ((NR_MAC_CE_TA *)pdu_ptr)[1].TA_COMMAND;
+                ul_time_alignment->tag_id = ((NR_MAC_CE_TA *)pdu_ptr)[1].TAGID;
 
                 /*
                 #ifdef DEBUG_HEADER_PARSING
@@ -2290,11 +2295,8 @@ void nr_ue_process_mac_pdu(
                 #endif
                 */
 
-                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n", ta_command, tag_id, CC_id);
-
-                //if (nfapi_mode!=3){ // TODO check nfapi_mode
-                  nr_process_timing_advance(module_idP, CC_id, ta_command, scs, bwp_ul_NB_RB);
-                //}
+                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n",
+                  ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:

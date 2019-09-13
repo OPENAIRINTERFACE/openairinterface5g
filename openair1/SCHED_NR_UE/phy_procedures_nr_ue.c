@@ -1545,7 +1545,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 #endif
 
 
-void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing_advance, uint8_t mu, uint16_t bwp_ul_NB_RB){
+void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB){
 
   // 3GPP TS 38.213 p4.2
   // scale by the scs numerology
@@ -1561,9 +1561,9 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t timing
     default: abort();
   }
 
-  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (timing_advance - 31) * bw_scaling / factor_mu;
+  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (ta_command - 31) * bw_scaling / factor_mu;
 
-  LOG_D(PHY,"[UE %d] Got timing advance %u from MAC, new value is %u\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
+  LOG_D(PHY, "[UE %d] Got timing advance command %u from MAC, new value is %u\n", Mod_id, ta_command, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
 
 void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
@@ -3545,6 +3545,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
+  // params for UL time alignment procedure
+  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[eNB_id];
+  unsigned char *apply_ta = &ul_time_alignment->apply_ta;
+  uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
+  int ul_tx_timing_adjustment = 6; // temporary hardcoded
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -3850,7 +3855,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                       nr_tti_rx,
                       dlsch0->harq_processes[harq_pid]->b,
                       dlsch0->harq_processes[harq_pid]->TBS>>3,
-                      eNB_id);
+                      eNB_id,
+                      ul_time_alignment);
           break;
           case SI_PDSCH:
           /*ue_decode_si(ue->Mod_id,
@@ -3879,6 +3885,20 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           /*LOG_E(PHY,"Shouldn't have PMCH here\n");
           AssertFatal(1==0,"exiting");*/
           break;
+        }
+
+        /* Time alignment procedure set the TA to be applied 6 slots 
+        // after the reception of the command */
+        if (ul_time_alignment->apply_ta == 1){
+          ul_time_alignment->ta_slot = (nr_tti_rx + ul_tx_timing_adjustment) % slots_per_frame;
+          if (nr_tti_rx + ul_tx_timing_adjustment > slots_per_frame){
+            ul_time_alignment->ta_frame = (frame_rx + 1) % 1024;
+          } else {
+            ul_time_alignment->ta_frame = frame_rx;
+          }
+          // reset TA flag
+          ul_time_alignment->apply_ta = 0;
+          LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_tti_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
         }
       }
 

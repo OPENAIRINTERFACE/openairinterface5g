@@ -461,6 +461,15 @@ void UE_processing(void *arg) {
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   processSlotRX(UE, proc);
+  uint8_t gNB_id = 0;
+
+  // params for UL time alignment procedure
+  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
+  uint8_t numerology = UE->frame_parms.numerology_index;
+  uint16_t bwp_ul_NB_RB = UE->frame_parms.N_RB_UL;
+  int slot_tx = proc->nr_tti_tx;
+  int frame_tx = proc->frame_tx;
+
   //printf(">>> mac ended\n");
   // Prepare the future Tx data
 /*
@@ -473,6 +482,21 @@ void UE_processing(void *arg) {
 #endif
 */
 
+  /* UL time alignment
+  // If the current tx frame and slot match the TA configuration in ul_time_alignment
+  // then timing advance is processed and set to be applied in the next UL transmission */
+  if (UE->mac_enabled == 1) {
+
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot){
+      LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
+
+      //if (nfapi_mode!=3){
+      nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
+      ul_time_alignment->ta_frame = -1;
+      ul_time_alignment->ta_slot = -1;
+      //}
+    }
+  }
 
   if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
 
@@ -480,7 +504,7 @@ void UE_processing(void *arg) {
 
 
     if (UE->mode != loop_through_memory)
-      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
+      phy_procedures_nrUE_TX(UE,proc,gNB_id,thread_id);
 
   }
 

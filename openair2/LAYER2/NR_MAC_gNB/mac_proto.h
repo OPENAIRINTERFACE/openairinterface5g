@@ -79,6 +79,7 @@ int nr_generate_dlsch_pdu(unsigned char *sdus_payload,
                           unsigned char drx_cmd,
                           unsigned short timing_advance_cmd,
                           NR_TAG_Id_t tag_id,
+                          int ta_length,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding);
 

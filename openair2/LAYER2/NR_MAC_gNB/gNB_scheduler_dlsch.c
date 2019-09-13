@@ -53,6 +53,7 @@ int nr_generate_dlsch_pdu(unsigned char *sdus_payload,
                           unsigned char drx_cmd,
                           unsigned short timing_advance_cmd,
                           NR_TAG_Id_t tag_id,
+                          int ta_length,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding){
 
@@ -76,25 +77,30 @@ int nr_generate_dlsch_pdu(unsigned char *sdus_payload,
   }
 
   // Timing Advance subheader
-  if (timing_advance_cmd != 31) {
+  /* This was done only when timing_advance_cmd != 31
+  // now TA is always send when ta_timer resets regardless of its value
+  // this is done to avoid issues with the timeAlignmentTimer which is
+  // supposed to monitor if the UE received TA or not */
+  if (ta_length){
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TA_COMMAND;
     //last_size = 1;
     mac_pdu_ptr++;
 
-    // TA MAC CE (1 octet) 
+    // TA MAC CE (1 octet)
     AssertFatal(timing_advance_cmd < 64,"timing_advance_cmd %d > 63\n", timing_advance_cmd);
     ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
     ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
 
     LOG_D(MAC, "NR MAC CE timing advance command =%d (%d) TAG ID =%d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
     mac_ce_size = sizeof(NR_MAC_CE_TA);
-    
+
     // Copying  bytes for MAC CEs to the mac pdu pointer
     memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
     ce_ptr += mac_ce_size;
-    mac_pdu_ptr += (unsigned char) mac_ce_size;  
-   }
+    mac_pdu_ptr += (unsigned char) mac_ce_size;
+  }
+
 
   // Contention resolution fixed subheader and MAC CE
   if (ue_cont_res_id) {
@@ -199,35 +205,35 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   int UE_id = 0; // UE_list->head is -1 !
 
   UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-  ta_update = ue_sched_ctl->ta_update;
+  //ta_update = ue_sched_ctl->ta_update;
   
-  for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP] + 1; CC_id++) {
-    LOG_D(MAC, "doing nr_schedule_ue_spec for CC_id %d\n", CC_id);
+  for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP]; CC_id++) {
+    LOG_D(MAC, "doing nr_schedule_ue_spec for UE_id %d CC_id %d frame %d slot %d\n",
+      UE_id, CC_id, frameP, slotP);
     dl_req = &gNB->DL_req[CC_id].dl_config_request_body;
 
     //for (UE_id = UE_list->head; UE_id >= -1; UE_id = UE_list->next[UE_id]) {
 
-      /* 
+    // this was taken from the preprocessor
+    if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+
+      /*
       //process retransmission
       if (round != 8) {
-   
+
       } else {	// This is a potentially new SDU opportunity */
 
-        if (gNB->tag->timeAlignmentTimer != NULL) {
-          printf(" SHOULD NOT ENTER HERE \n");
-          if (gNB->tag->timeAlignmentTimer == 0) {
-            ta_update = ue_sched_ctl->ta_update;
-            /* if we send TA then set timer to not send it for a while */
-            if (ta_update != 31)
-              ue_sched_ctl->ta_timer = 20;
-            /* reset ta_update */
-            ue_sched_ctl->ta_update = 31; 
-          } else {
-            ta_update = 31;
-          }
-        }
+        if (ue_sched_ctl->ta_timer == 0) {
+          ta_update = ue_sched_ctl->ta_update;
+          /* if time is up, then set the timer to not send it for 20 NR_DOWNLINK_SLOT (20 frames)
+          // regardless of the TA value */
+          ue_sched_ctl->ta_timer = 2; //set to 20 when transmission will be in every slot
+          /* reset ta_update */
+          ue_sched_ctl->ta_update = 31;
+          ta_len = 2;
+        } // else ta_update = 31;
 
-        ta_len = (ta_update != 31) ? 2 : 0;
+        //ta_len = (ta_update != 31) ? 2 : 0;
 
         // retrieve TAG ID
         if(gNB->tag->tag_Id != NULL ){
@@ -307,6 +313,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
           	                            255,          // no drx
           	                            ta_update,    // timing advance
                                         tag_id,
+                                        ta_len,
           	                            NULL,         // contention res id
           	                            post_padding);
           // Padding: fill remainder of DLSCH with 0 
