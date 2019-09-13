@@ -186,7 +186,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
   nfapi_tx_request_pdu_t            *TX_req;
-  nfapi_nr_ul_tti_request_t         *UL_tti_req;
 
   nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
   uint16_t rnti = 0x1234;
@@ -311,8 +310,20 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
   nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+  }
+}
 
+void nr_schedule_uss_ulsch_phytest(module_id_t   module_idP,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP)
+{
+  gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
+  nfapi_nr_ul_tti_request_t         *UL_tti_req;
 
+  uint16_t rnti = 0x1234;
+
+  for (uint8_t CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    LOG_D(MAC, "Scheduling UE specific PUSCH for CC_id %d\n",CC_id);
   
   UL_tti_req = &nr_mac->UL_tti_req[CC_id];
   UL_tti_req->sfn = frameP;
