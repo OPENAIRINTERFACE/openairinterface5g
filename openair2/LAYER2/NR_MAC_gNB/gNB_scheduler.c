@@ -324,7 +324,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i]) {
+    if (0 /*UE_list->active[i]*/) {
 
       nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
 
@@ -440,13 +440,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frameP, slotP);
   }
 
-  // Phytest scheduling/ option not activated because of pending bug
+  // Phytest scheduling
  
-  /*if (slotP==2)
-    nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
+  if (slotP==2)
+    nr_schedule_uss_ulsch_phytest(module_idP, frameP, slotP);
 
   if (slotP==1)
-  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
   /*
   // Allocate CCEs for good after scheduling is done
