@@ -450,7 +450,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
         // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
         // should detect out of order and act accordingly ....
 
-        memcpy(rxp[aid]+((timestamp[packet_id]-timestamp[0])<<2)),
+        memcpy(rxp[aid]+((timestamp[packet_id]-timestamp[0])<<2),
                (void*)temp_rx,
                spp_eth);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
