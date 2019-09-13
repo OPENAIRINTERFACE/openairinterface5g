@@ -312,8 +312,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
       int spf = get_spf(cfg); 
 
       gNB_dlsch_ulsch_scheduler(module_id,
-          (UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
-          (UL_info->slot+sf_ahead)%spf);
+				UL_info->frame,
+				UL_info->slot,
+				(UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
+				(UL_info->slot+sf_ahead)%spf);
       
       ifi->CC_mask            = 0;
 

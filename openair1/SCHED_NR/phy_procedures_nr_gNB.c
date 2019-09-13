@@ -214,7 +214,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
   
-  //uint8_t ret;
+  uint8_t ret;
   uint32_t G;
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
 
@@ -239,8 +239,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
 
-  //ret = nr_ulsch_decoding(gNB,
-  nr_ulsch_decoding(gNB,
+  ret = nr_ulsch_decoding(gNB,
                     UE_id,
                     gNB->pusch_vars[UE_id]->llr,
                     frame_parms,
@@ -250,8 +249,10 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
                     harq_pid,
                     0);
         
-  // if (ret > ulsch_gNB->max_ldpc_iterations)
-  //   n_errors++;
+  if (ret > gNB->ulsch[UE_id][0]->max_ldpc_iterations)
+    LOG_I(PHY, "ULSCH in error\n");
+  else
+    LOG_I(PHY, "ULSCH received ok\n");
 
 }
 
@@ -343,21 +344,27 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 }
 
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, uint8_t symbol_start, uint8_t symbol_end) {
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
   int num_pusch_pdu = UL_tti_req->n_pdus;
+
+  LOG_I(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
   
   for (int i = 0; i < num_pusch_pdu; i++) {
 
     switch (UL_tti_req->pdus_list[i].pdu_type) {
     case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
       {
+	LOG_I(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
+
 	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      
 	
 	uint8_t UE_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
 	uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
+	uint8_t symbol_start = pusch_pdu->start_symbol_index;
+	uint8_t symbol_end = symbol_start + pusch_pdu->nr_of_symbols;
 	
 	for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	  nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);

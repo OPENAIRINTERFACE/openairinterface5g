@@ -64,7 +64,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+			       frame_t frame_txP, sub_frame_t slot_txP,
+			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 

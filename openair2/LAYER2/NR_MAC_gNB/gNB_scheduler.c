@@ -294,9 +294,12 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, 
-                               frame_t frameP,
-                               sub_frame_t slotP){
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+                               frame_t frame_rxP,
+                               sub_frame_t slot_rxP,
+                               frame_t frame_txP,
+                               sub_frame_t slot_txP){
+			       
   protocol_ctxt_t   ctxt;
 
   int               CC_id, i = -1;
@@ -308,8 +311,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
-  RC.nrmac[module_idP]->frame    = frameP;
-  RC.nrmac[module_idP]->slot     = slotP;
+  RC.nrmac[module_idP]->frame    = frame_rxP;
+  RC.nrmac[module_idP]->slot     = slot_rxP;
 
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -319,7 +322,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(cc[CC_id].vrb_map, 0, 100);
     memset(cc[CC_id].vrb_map_UL, 0, 100);
 
-    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frameP, slotP);
+    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
@@ -333,16 +336,16 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
       if (nr_is_dci_opportunity(search_space,
                                     coreset,
-                                    frameP,
-                                    slotP,
+                                    frame_txP,
+                                    slot_txP,
                                     *cfg))
-          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+          nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP);
 
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
       //int spf = get_spf(cfg);
   
-      if (((frameP&127) == 0) && (slotP == 0)) {
+      if (((frame_txP&127) == 0) && (slot_txP == 0)) {
         LOG_I(MAC,
         "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
         rnti,
@@ -354,107 +357,35 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
       }
       
-      RC.gNB[module_idP][CC_id]->pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)] = -63;
-      
-      if (i == UE_list->head)
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,RC.gNB[module_idP][CC_id]->
-                                                pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)]);
-      
-      // increment this, it is cleared when we receive an sdu
-      RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
-      RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-      
-      LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", 
-            i, 
-            rnti,
-            RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer,
-            RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
-      
-      //check_nr_ul_failure(module_idP, CC_id, i, frameP, subframeP);
-      
-      if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
-        RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
-      
-        if(RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
-          RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
-          RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
-        
-          for (int ue_id_l = 0; ue_id_l < MAX_MOBILES_PER_GNB; ue_id_l++) {
-            if (reestablish_rnti_map[ue_id_l][0] == rnti) {
-            // clear currentC-RNTI from map
-            reestablish_rnti_map[ue_id_l][0] = 0;
-            reestablish_rnti_map[ue_id_l][1] = 0;
-            break;
-            }
-          }
-      
-          // Note: This should not be done in the MAC!
-          for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            NR_gNB_ULSCH_t *ulsch = RC.gNB[module_idP][CC_id]->ulsch[ii][0];       
-            if((ulsch != NULL) && (ulsch->rnti == rnti)){
-              LOG_W(MAC, "TODO: clean_eNb_ulsch UE %x \n", rnti);
-              clean_gNB_ulsch(ulsch);
-            }
-          }
-
-          for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
-            if((dlsch != NULL) && (dlsch->rnti == rnti)){
-              LOG_W(MAC, "TODO: clean_eNb_dlsch UE %x \n", rnti);
-              clean_gNB_dlsch(dlsch);
-            }
-          }
-
-	  /*
-          for(int j = 0; j < 10; j++){
-            nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-            ul_req_tmp = &RC.nrmac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
-            if(ul_req_tmp){
-              int pdu_number = ul_req_tmp->number_of_pdus;
-              for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-                if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
-                  LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-                 if(pdu_index < pdu_number -1){
-                    memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-                  }
-                  ul_req_tmp->number_of_pdus--;
-                }
-              }
-            }
-          }
-          rrc_mac_remove_ue(module_idP,rnti);
-	  */
-	}
-      } //END if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0)
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
   pdcp_run(&ctxt);
 
   //rrc_rx_tx(&ctxt, CC_id);
 
   // This schedules MIB
-  if((slotP == 0) && (frameP & 7) == 0){
-    schedule_nr_mib(module_idP, frameP, slotP);
+  if((slot_txP == 0) && (frame_txP & 7) == 0){
+    schedule_nr_mib(module_idP, frame_txP, slot_txP);
   }
 
   // Phytest scheduling
  
-  if (slotP==2)
-    nr_schedule_uss_ulsch_phytest(module_idP, frameP, slotP);
+  if (slot_rxP==2)
+    nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
 
-  if (slotP==1)
-    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+  if (slot_txP==1)
+    nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP);
 
   /*
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
     allocate_CCEs(module_idP, CC_id, subframeP, 0);
+  */
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
-  */
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 }
