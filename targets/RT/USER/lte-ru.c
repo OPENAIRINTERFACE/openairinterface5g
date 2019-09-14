@@ -107,6 +107,8 @@ static int DEFENBS[] = {0};
 
 #include "pdcp.h"
 
+//#define MBMS_EXPERIMENTAL
+
 extern volatile int                    oai_exit;
 extern int emulate_rf;
 extern int numerology;
@@ -1801,6 +1803,7 @@ void *ru_thread( void *param ) {
 	// wakeup all eNB processes waiting for this RU
 	if (ru->num_eNB>0) wakeup_L1s(ru);
 
+#ifdef MBMS_EXPERIMENTAL
 	//Workaround ... this must be properly handled
 	if(ru->if_south!=LOCAL_RF &&  RC.eNB[0][0]!=NULL){
 		if(ru->frame_parms.num_MBSFN_config!=RC.eNB[0][0]->frame_parms.num_MBSFN_config){
@@ -1808,6 +1811,7 @@ void *ru_thread( void *param ) {
 			LOG_W(PHY,"RU MBSFN SF PARAMS Updated\n");
 		}
 	}
+#endif
 	
 #ifndef PHY_TX_THREAD
 	
