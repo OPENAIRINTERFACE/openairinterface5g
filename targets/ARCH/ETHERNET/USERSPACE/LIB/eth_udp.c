@@ -47,7 +47,7 @@
 #include "ethernet_lib.h"
 #include "common/ran_context.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 // These are for IF5 and must be put into the device structure if multiple RUs in the same RAU !!!!!!!!!!!!!!!!!
 uint16_t pck_seq_num = 1;
@@ -142,8 +142,8 @@ int eth_socket_init_udp(openair0_device *device) {
     perror("ETHERNET: Cannot set SO_REUSEADDR option on socket (control)");
     exit(0);
   }
-  if (setsockopt(eth->sockfdd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int))) {
-    perror("ETHERNET: Cannot set SO_REUSEADDR option on socket (user)");
+  if (setsockopt(eth->sockfdd, SOL_SOCKET, SO_NO_CHECK, &enable, sizeof(int))) {
+    perror("ETHERNET: Cannot set SO_NO_CHECK option on socket (user)");
     exit(0);
   }
   
@@ -404,7 +404,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 	  perror("ETHERNET READ: ");
 	  exit(-1);
 	  } else {
-	    printf("AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN AGAIN \n");
+            bytes_received=0;
 	    goto again;
 	  }	  
 	} else if (errno == EWOULDBLOCK) {

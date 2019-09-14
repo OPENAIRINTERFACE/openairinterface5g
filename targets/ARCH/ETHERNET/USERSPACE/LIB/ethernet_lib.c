@@ -60,6 +60,7 @@ int trx_eth_start(openair0_device *device) {
     if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
        AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
        AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
+       device->openair0_cfg->samples_per_packet = 256;
     }
     /* initialize socket */
     if (eth->flags == ETH_RAW_MODE) {
@@ -136,8 +137,7 @@ int trx_eth_start(openair0_device *device) {
           if(eth_get_dev_conf_udp(device)!=0)  return -1;
           }*/
 
-        /* adjust MTU wrt number of samples per packet */
-        if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
+        //if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
 
         if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
     }
