@@ -41,13 +41,6 @@
 #ifndef M2AP_COMMON_H_
 #define M2AP_COMMON_H_
 
-/*! \file m2ap_common.h
- * \brief m2ap procedures for both eNB and MCE
- * \author Javier Morgade  <javier.morgade@ieee.org>
- * \date 2019
- * \version 0.1
- */
-
 /** @defgroup _m2ap_impl_ M2AP Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{
