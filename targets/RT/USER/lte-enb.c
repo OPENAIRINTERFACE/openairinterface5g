@@ -1194,6 +1194,7 @@ void init_eNB_afterRU(void) {
 
       for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
         eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+
         AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
                     "RU %d : common.rxdataF is NULL\n",
                     eNB->RU_list[ru_id]->idx);

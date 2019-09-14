@@ -1596,24 +1596,22 @@ void *ru_thread( void *param ) {
   else if (ru->has_ctrl_prt == 0){
     // There is no control port: start everything here
     LOG_I(PHY, "RU %d has not ctrl port\n",ru->idx);
-    if (ru->if_south == LOCAL_RF){
-      fill_rf_config(ru,ru->rf_config_file);
-      init_frame_parms(&ru->frame_parms,1);
-      ru->frame_parms.nb_antennas_rx = ru->nb_rx;
-      phy_init_RU(ru);
+    if (ru->if_south == LOCAL_RF)       openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+
+    fill_rf_config(ru,ru->rf_config_file);
+    init_frame_parms(&ru->frame_parms,1);
+    ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+    phy_init_RU(ru);
       
       
-      openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-      
-      if (setup_RU_buffers(ru)!=0) {
-	printf("Exiting, cannot initialize RU Buffers\n");
+    if (setup_RU_buffers(ru)!=0) {
+        printf("Exiting, cannot initialize RU Buffers\n");
 	exit(-1);
-      }
-      AssertFatal((ret=pthread_mutex_lock(&RC.ru_mutex))==0,"mutex_lock returns %d\n",ret);
-      RC.ru_mask &= ~(1<<ru->idx);
-      pthread_cond_signal(&RC.ru_cond);
-      AssertFatal((ret=pthread_mutex_unlock(&RC.ru_mutex))==0,"mutex_unlock returns %d\n",ret);
     }
+    AssertFatal((ret=pthread_mutex_lock(&RC.ru_mutex))==0,"mutex_lock returns %d\n",ret);
+    RC.ru_mask &= ~(1<<ru->idx);
+    pthread_cond_signal(&RC.ru_cond);
+    AssertFatal((ret=pthread_mutex_unlock(&RC.ru_mutex))==0,"mutex_unlock returns %d\n",ret);
     AssertFatal((ret=pthread_mutex_lock(&RC.ru_mutex))==0,"mutex_lock returns %d\n",ret);
     RC.ru_mask &= ~(1<<ru->idx);
     pthread_cond_signal(&RC.ru_cond);
@@ -2202,8 +2200,17 @@ void init_RU_proc(RU_t *ru) {
   attr_prach_br  = &proc->attr_prach_br;
 #endif
 #endif
-  if (ru->function!=eNodeB_3GPP) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
-  
+  if (ru->has_ctrl_prt == 1) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
+  else {
+    if (ru->start_if) {
+      LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
+      AssertFatal(
+                  ru->start_if(ru,NULL)   == 0, "Could not start the IF device\n");
+
+      if (ru->if_south != LOCAL_RF) wait_eNBs();
+    }
+  }
+ 
 
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
 
@@ -2954,6 +2961,8 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF5;
 	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ORI_MODE;
+          RC.ru[j]->has_ctrl_prt                        = 0;
+
 	}
 	else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;
