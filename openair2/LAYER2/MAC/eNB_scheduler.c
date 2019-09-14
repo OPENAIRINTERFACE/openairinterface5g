@@ -931,6 +931,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
   pdcp_run(&ctxt);
+  pdcp_mbms_run(&ctxt);
   rrc_rx_tx(&ctxt, CC_id);
 
 #endif

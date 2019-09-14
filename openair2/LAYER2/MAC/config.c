@@ -53,6 +53,7 @@
 #include "LTE_MBSFN-AreaInfoList-r9.h"
 #include "LTE_MBSFN-AreaInfo-r9.h"
 #include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_MBSFN-SubframeConfig.h"
 #include "LTE_PMCH-InfoList-r9.h"
 
 
@@ -634,6 +635,123 @@ config_sib2(int Mod_idP,
 }
 
 void
+config_sib2_mbsfn_part( int Mod_idP,
+              int CC_idP,
+            struct LTE_MBSFN_SubframeConfigList  *mbsfn_SubframeConfigListP) {
+
+  //LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_idP][CC_idP]->frame_parms;
+  //int i;
+  //if(mbsfn_SubframeConfigListP != NULL) {
+  //  fp->num_MBSFN_config = mbsfn_SubframeConfigListP->list.count;
+
+  //  for(i = 0; i < mbsfn_SubframeConfigListP->list.count; i++) {
+  //    fp->MBSFN_config[i].radioframeAllocationPeriod = mbsfn_SubframeConfigListP->list.array[i]->radioframeAllocationPeriod;
+  //    fp->MBSFN_config[i].radioframeAllocationOffset = mbsfn_SubframeConfigListP->list.array[i]->radioframeAllocationOffset;
+
+  //    if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+  //      fp->MBSFN_config[i].fourFrames_flag = 0;
+  //      fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0];  // 6-bit subframe configuration
+  //      LOG_I (PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i, fp->MBSFN_config[i].mbsfn_SubframeConfig);
+  //    } else if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) {       // 24-bit subframe configuration
+  //      fp->MBSFN_config[i].fourFrames_flag = 1;
+  //      fp->MBSFN_config[i].mbsfn_SubframeConfig =
+  //        mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
+  //        (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+  //        (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
+
+  //      LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+  //            fp->MBSFN_config[i].mbsfn_SubframeConfig);
+  //    }
+  //  }
+
+  //} else
+  //  fp->num_MBSFN_config = 0;
+
+   PHY_Config_t phycfg;
+   phycfg.Mod_id = Mod_idP;
+   phycfg.CC_id  = CC_idP;
+   phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
+  int i;
+
+  if(mbsfn_SubframeConfigListP != NULL) {
+    phycfg.cfg->embms_mbsfn_config.num_mbsfn_config = mbsfn_SubframeConfigListP->list.count;
+
+    for(i = 0; i < mbsfn_SubframeConfigListP->list.count; i++) {
+       phycfg.cfg->embms_mbsfn_config.radioframe_allocation_period[i] = mbsfn_SubframeConfigListP->list.array[i]->radioframeAllocationPeriod;
+       phycfg.cfg->embms_mbsfn_config.radioframe_allocation_offset[i] = mbsfn_SubframeConfigListP->list.array[i]->radioframeAllocationOffset;
+
+      if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
+        phycfg.cfg->embms_mbsfn_config.fourframes_flag[i] = 0;
+        phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i] = mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0];  // 6-bit subframe configuration
+        LOG_I (MAC, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i, phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i]);
+      } else if (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) {       // 24-bit subframe configuration
+        phycfg.cfg->embms_mbsfn_config.fourframes_flag[i]  = 1;
+        phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i] =
+          mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
+          (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
+          (mbsfn_SubframeConfigListP->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
+
+        LOG_I(MAC, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+              phycfg.cfg->embms_mbsfn_config.mbsfn_subframeconfig[i]);
+      }
+    }
+    phycfg.cfg->num_tlv++;
+
+  } else{
+    phycfg.cfg->embms_mbsfn_config.num_mbsfn_config = 0;
+    phycfg.cfg->num_tlv++;
+  }
+
+  phycfg.cfg->embms_mbsfn_config.tl.tag = NFAPI_EMBMS_MBSFN_CONFIG_TAG;
+
+   if (RC.mac[Mod_idP]->if_inst->PHY_config_update_sib2_req) RC.mac[Mod_idP]->if_inst->PHY_config_update_sib2_req(&phycfg);
+}
+
+void
+config_sib13( int Mod_id,
+              int CC_id,
+              int mbsfn_Area_idx,
+             long mbsfn_AreaId_r9){
+
+  //nfapi_config_request_t *cfg = &RC.mac[Mod_id]->config[CC_id];
+
+  //work around until PHY_config_re "update" mechanisms get defined
+//  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
+//  LOG_I (MAC, "[eNB%d] Applying MBSFN_Area_id %ld for index %d\n", Mod_id, mbsfn_AreaId_r9, mbsfn_Area_idx);
+//
+//  AssertFatal(mbsfn_Area_idx == 0, "Fix me: only called when mbsfn_Area_idx == 0\n");
+//  if (mbsfn_Area_idx == 0) {
+//    fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
+//    LOG_I(MAC,"Fix me: only called when mbsfn_Area_idx == 0)\n");
+//  }
+//  lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
+//
+//#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+//  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
+//#endif
+//
+   PHY_Config_t phycfg;
+   phycfg.Mod_id = Mod_id;
+   phycfg.CC_id  = CC_id;
+   phycfg.cfg    = &RC.mac[Mod_id]->config[CC_id];
+
+   phycfg.cfg->embms_sib13_config.mbsfn_area_idx.value =  (uint8_t)mbsfn_Area_idx;
+   phycfg.cfg->embms_sib13_config.mbsfn_area_idx.tl.tag =  NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDX_TAG;
+   phycfg.cfg->num_tlv++;
+   phycfg.cfg->embms_sib13_config.mbsfn_area_id_r9.value = (uint32_t)mbsfn_AreaId_r9;
+   phycfg.cfg->embms_sib13_config.mbsfn_area_id_r9.tl.tag = NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDR9_TAG;
+   phycfg.cfg->num_tlv++;
+
+   if (RC.mac[Mod_id]->if_inst->PHY_config_update_sib13_req) RC.mac[Mod_id]->if_inst->PHY_config_update_sib13_req(&phycfg);
+
+//    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
+
+}
+
+
+
+
+void
 config_dedicated(int Mod_idP,
                  int CC_idP,
                  uint16_t rnti,
@@ -878,6 +996,8 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     RC.mac[Mod_idP]->common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
+    config_sib2_mbsfn_part(Mod_idP,0,mbsfn_SubframeConfigList);
+
   }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -925,6 +1045,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       LOG_I(MAC,"[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", Mod_idP,i,
             RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
       //      config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+	config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
     }
   }
 
@@ -954,6 +1075,10 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n", i,
             RC.mac[Mod_idP]->common_channels[0].
             mbms_SessionList[i]->list.count);
+       for(int ii=0; ii < RC.mac[Mod_idP]->common_channels[0].mbms_SessionList[i]->list.count;ii++){
+            LOG_I(MAC, "PMCH[%d] MBMS Session[%d] is: %lu\n", i,ii,
+               RC.mac[Mod_idP]->common_channels[0].mbms_SessionList[i]->list.array[ii]->logicalChannelIdentity_r9);
+       }
     }
   }
 

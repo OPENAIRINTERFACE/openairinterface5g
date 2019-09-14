@@ -855,6 +855,12 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 #ifdef DEBUG_eNB_SCHEDULER
   int k;
 #endif
+
+  if(is_pmch_subframe(frameP,subframeP,&RC.eNB[module_idP][0]->frame_parms)){
+       //LOG_E(MAC,"fairRR Frame[%d] SF:%d This SF should not be allocated\n",frameP,subframeP);
+       return;
+  }
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);

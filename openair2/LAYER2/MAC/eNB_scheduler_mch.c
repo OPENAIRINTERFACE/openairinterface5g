@@ -65,7 +65,7 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
 {
     // currently there is one-to-one mapping between sf allocation pattern and sync area
-    if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
+    if (mbsfn_sync_area > MAX_MBSFN_AREA) {
 	LOG_W(MAC,
 	      "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
 	      module_idP, CC_id, mbsfn_sync_area);
@@ -82,6 +82,18 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
     }
 }
 
+uint32_t bytes_in_buffer=0;
+uint8_t msi_active=0;
+uint8_t msi_pmch_stop=0;
+uint8_t msi_pmch_stop2=0;
+
+uint16_t mbms_rab_id = 2047;
+
+uint8_t msi_sfs=0;
+
+
+//MSI_ELEMENT * ptr =NULL;
+
 int
 schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      sub_frame_t subframeP)
@@ -90,6 +102,12 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     int mcch_flag = 0, mtch_flag = 0, msi_flag = 0;
     int mbsfn_period = 0;	// 1<<(RC.mac[module_idP]->mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
     int mcch_period = 0;	//32<<(RC.mac[module_idP]->mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+    if(RC.mac[module_idP]->common_channels[CC_id].
+              pmch_Config[0] == NULL )
+
+	return 0;
+
+
     int mch_scheduling_period =
 	8 << (RC.mac[module_idP]->common_channels[CC_id].
 	      pmch_Config[0]->mch_SchedulingPeriod_r9);
@@ -103,6 +121,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     mac_rlc_status_resp_t rlc_status;
     int num_mtch;
     int msi_length, i, k;
+    //uint8_t l =0;
     unsigned char sdu_lcids[11], num_sdus = 0, offset = 0;
     uint16_t sdu_lengths[11], sdu_length_total = 0;
     unsigned char mch_buffer[MAX_DLSCH_PAYLOAD_BYTES];	// check the max value, this is for dlsch only
@@ -480,6 +499,12 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     } else if (mtch_flag == 1) {	// only MTCH in this subframeP
 	cc->MCH_pdu.mcs = cc->pmch_Config[0]->dataMCS_r9;
     }
+
+
+     uint8_t num_sf_alloc=0;
+    for( int iii=0; iii < 6; iii++)
+       num_sf_alloc += ( 0x39 & (0x80>>iii)) == (0x80 >> iii);
+
     // 2nd: Create MSI, get MCCH from RRC and MTCHs from RLC
 
     // there is MSI (MCH Scheduling Info)
@@ -488,25 +513,80 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	uint16_t msi_control_element[29], *msi_ptr;
 
 	msi_ptr = &msi_control_element[0];
-	((MSI_ELEMENT *) msi_ptr)->lcid = MCCH_LCHANID;	//MCCH
+	//((MSI_ELEMENT *) msi_ptr)->lcid = MCCH_LCHANID;	//MCCH
 
-	if (mcch_flag == 1) {
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0;
-	} else {		// no mcch for this MSP
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// stop value is 2047
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xff;
-	}
+	//if (mcch_flag == 1) {
+	//    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;
+	//    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0;
+	//} else {		// no mcch for this MSP
+	//    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// stop value is 2047
+	//    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xff;
+	//}
 
-	msi_ptr += sizeof(MSI_ELEMENT);
+	//msi_ptr += sizeof(MSI_ELEMENT);
 
 	//Header for MTCHs
 	num_mtch = cc->mbms_SessionList[0]->list.count;
+
+    	TBS =
+	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
+	//l=0;
 
 	for (k = 0; k < num_mtch; k++) {	// loop for all session in this MCH (MCH[0]) at this moment
 	    ((MSI_ELEMENT *) msi_ptr)->lcid = cc->mbms_SessionList[0]->list.array[k]->logicalChannelIdentity_r9;	//mtch_lcid;
 	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;	// last subframeP of this mtch (only one mtch now)
 	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xB;
+	    //((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0x2; //100
+
+	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// last subframeP of this mtch (only one mtch now)
+	    //((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xB;
+	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; //100
+
+//	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x0;	// last subframeP of this mtch (only one mtch now)
+//	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0x2; //100
+	    
+	    //while((++l)*TBS<=bytes_in_buffer && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
+	    //	if(l>=6 && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
+	    //    	((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0; //we limite till 256 TOFIX
+	    //    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l; 
+	    //    }
+	    //}
+	    //ptr = (MSI_ELEMENT *) msi_ptr;
+ 	  
+	    if( msi_sfs != 0 )
+	    	msi_pmch_stop = msi_sfs-1;
+	    else 
+		msi_pmch_stop = msi_sfs;
+	    //msi_pmch_stop = bytes_in_buffer/TBS;
+	    //if(bytes_in_buffer%TBS)
+		//msi_pmch_stop++;
+
+	  //
+	    //msi_pmch_stop = 20;  
+	    if(msi_pmch_stop>=num_sf_alloc /*&& msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9*/)  {
+	        ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;	// last subframeP of this mtch (only one mtch now)
+	    	//((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = msi_pmch_stop;
+	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = (msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[0]->sf_AllocEnd_r9);
+		msi_pmch_stop = (msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[0]->sf_AllocEnd_r9);
+	    }else{
+	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// last subframeP of this mtch (only one mtch now)
+	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; //100
+		msi_pmch_stop=0;
+	    }
+//	    do{
+//	    	if(l>=0 && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
+//			((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0; //we limite till 256 TOFIX
+//			((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l; 
+//		}
+//	    }while((l++)*TBS<=bytes_in_buffer);
+//
+	//    if(((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB !=0x7 && ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB != 0xFF )
+	//	msi_active=1;
+	//    else
+	//	msi_active=1;
+	    	//((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l;
+	    //    l++;
+	   // }
 	    msi_ptr += sizeof(MSI_ELEMENT);
 	}
 
@@ -519,8 +599,11 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	}
 
 	LOG_D(MAC,
-	      "[eNB %d] CC_id %d Frame %d : MSI->MCH, length of MSI is %d bytes \n",
-	      module_idP, CC_id, frameP, msi_length);
+	      "[eNB %d] CC_id %d Frame %d : MSI->MCH, length of MSI is %d bytes TBS %d, bytes in buffer %d stop_sf_LSB %d msi_sfs %d cc->pmch_Config[0]->sf_AllocEnd_r9 %ld\n",
+	      module_idP, CC_id, frameP, msi_length,TBS, bytes_in_buffer,msi_pmch_stop,msi_sfs,cc->pmch_Config[0]->sf_AllocEnd_r9);
+	    
+	msi_sfs = 0;
+
 	//LOG_D(MAC,"Scheduler: MSI is transmitted in this subframeP \n" );
 
 	//   LOG_D(MAC,"Scheduler: MSI length is %d bytes\n",msi_length);
@@ -531,7 +614,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	sdu_lcids[num_sdus] = MCH_SCHDL_INFO;
 	sdu_lengths[num_sdus] = msi_length;
 	sdu_length_total += sdu_lengths[num_sdus];
-	LOG_I(MAC, "[eNB %d] CC_id %d Create %d bytes for MSI\n",
+	LOG_D(MAC, "[eNB %d] CC_id %d Create %d bytes for MSI\n",
 	      module_idP, CC_id, sdu_lengths[num_sdus]);
 	num_sdus++;
 	cc->msi_active = 1;
@@ -544,6 +627,8 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
 	mcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MCCH, 0xFFFC, 1, &cc->MCCH_pdu.payload[0], 
 					   i);	// this is the mbsfn sync area index
+
+        mcch_sdu_length+=1; //RLC ?
 
 	if (mcch_sdu_length > 0) {
 	    LOG_D(MAC,
@@ -558,7 +643,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		      module_idP, CC_id, frameP, subframeP,
 		      mcch_sdu_length, mcch_mcs);
 	    } else {
-		LOG_I(MAC,
+		LOG_D(MAC,
 		      "[eNB %d] CC_id %d Frame %d subframeP %d: Scheduling MCCH->MCH (FDD) for MCCH message %d bytes (mcs %d)\n",
 		      module_idP, CC_id, frameP, subframeP,
 		      mcch_sdu_length, mcch_mcs);
@@ -566,7 +651,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
 	    cc->mcch_active = 1;
 
-	    memcpy((char *) &mch_buffer[sdu_length_total],
+	    memcpy((char *) &mch_buffer[sdu_length_total]+1,
 		   &cc->MCCH_pdu.payload[0], mcch_sdu_length);
 	    sdu_lcids[num_sdus] = MCCH_LCHANID;
 	    sdu_lengths[num_sdus] = mcch_sdu_length;
@@ -584,7 +669,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     }
 
     TBS =
-	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
+	get_TBS_DL(cc->pmch_Config[0]->dataMCS_r9/*cc->MCH_pdu.mcs*/, to_prb(cc->mib->message.dl_Bandwidth));
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
@@ -592,7 +677,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 #endif
 
     // there is MTCHs, loop if there are more than 1
-    if (mtch_flag == 1) {
+    if (mtch_flag == 1 ) {
 	// Calculate TBS
 	/* if ((msi_flag==1) || (mcch_flag==1)) {
 	   TBS = mac_xface->get_TBS(mcch_mcs, mac_xface->frame_parms->N_RB_DL);
@@ -627,29 +712,37 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      TBS - header_len_mcch - header_len_msi - sdu_length_total -
 	      header_len_mtch);
 
+	mbms_rab_id = cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9;
+
 	rlc_status =
 	    mac_rlc_status_ind(module_idP, 0, frameP, subframeP,
 			       module_idP, ENB_FLAG_YES, MBMS_FLAG_YES,
-			       MTCH,
+				cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
+			       //MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
 #endif
                                     );
+	bytes_in_buffer = rlc_status.bytes_in_buffer;
+
+
+	msi_sfs = rlc_status.bytes_in_buffer/TBS+(rlc_status.bytes_in_buffer%TBS?1:0);
 
 	LOG_D(MAC,
-	      "e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d\n",
-	      MTCH, frameP, subframeP, rlc_status.bytes_in_buffer);
+	      "e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d TBS %d pmch_stop %d msi_sfs %d\n",
+	      MTCH, frameP, subframeP, rlc_status.bytes_in_buffer,TBS,msi_pmch_stop,msi_sfs);
 
-	if (rlc_status.bytes_in_buffer > 0) {
+	if (rlc_status.bytes_in_buffer > 0 /*&&  msi_pmch_stop > 0*/  /*msi_pmch_stop>=num_sf_alloc*/ ) {
+	    //if(rlc_status.bytes_in_buffer > 0){
 	    LOG_I(MAC,
 		  "[eNB %d][MBMS USER-PLANE], CC_id %d, Frame %d, MTCH->MCH, Requesting %d bytes from RLC (header len mtch %d)\n",
 		  module_idP, CC_id, frameP,
 		  TBS - header_len_mcch - header_len_msi -
 		  sdu_length_total - header_len_mtch, header_len_mtch);
 
-	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES, MTCH, 0,	//not used
+	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -657,22 +750,31 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
                                  0
 #endif
                                  );
-
-
+	
 	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
 	    LOG_I(MAC,
-		  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d\n",
-		  module_idP, CC_id, sdu_lengths[num_sdus], MTCH);
+		  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d msi_pmch_stop %d msi_sfs %d sdu_lengths[num_sdus] %d\n",
+		  module_idP, CC_id, sdu_lengths[num_sdus], MTCH,msi_pmch_stop,msi_sfs, sdu_lengths[num_sdus]);
 	    cc->mtch_active = 1;
-	    sdu_lcids[num_sdus] = MTCH;
+	    sdu_lcids[num_sdus] = cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9/*MTCH*/;
 	    sdu_length_total += sdu_lengths[num_sdus];
+
+	    if (msi_pmch_stop != 0)
+	    	msi_pmch_stop--;
+
 
 	    if (sdu_lengths[num_sdus] < 128) {
 		header_len_mtch = 2;
 	    }
 
 	    num_sdus++;
-	} else {
+	  //}
+	} 
+	else {
+	//    LOG_E(MAC,
+	//	  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d msi_pmch_stop %d msi_buffer %d msi_sfs %ld msi_buffer_act %ld  sdu_lengths[num_sdus] %d\n",
+	//	  module_idP, CC_id, sdu_lengths[num_sdus], MTCH,msi_pmch_stop,msi_sfs,msi_buffer_act, sdu_lengths[num_sdus]);
+
 	    header_len_mtch = 0;
 	}
     }
@@ -750,7 +852,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      " MCS for this sf is %d (mcch active %d, mtch active %d)\n",
 	      cc->MCH_pdu.mcs, cc->MCH_pdu.mcch_active,
 	      cc->MCH_pdu.mtch_active);
-	LOG_I(MAC,
+	LOG_D(MAC,
 	      "[eNB %d][MBMS USER-PLANE ] CC_id %d Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,padding %d,post_padding %d (mcs %d, TBS %d), header MTCH %d, header MCCH %d, header MSI %d\n",
 	      module_idP, CC_id, sdu_length_total, num_sdus,
 	      sdu_lengths[0], sdu_lcids[0], offset, padding, post_padding,
