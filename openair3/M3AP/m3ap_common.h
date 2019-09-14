@@ -38,14 +38,6 @@
 #ifndef M3AP_COMMON_H_
 #define M3AP_COMMON_H_
 
-/*! \file m3ap_common.h
- * \brief m3ap procedures for both MCE and MME
- * \author Javier Morgade  <javier.morgade@ieee.org>
- * \date 2019
- * \version 0.1
- */
-
-
 /** @defgroup _m3ap_impl_ M3AP Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{

@@ -20,7 +20,7 @@
  */
 
 /*! \file m3ap_common.c
- * \brief m3ap procedures for both MCE and MME
+ * \brief m3ap procedures for both eNB and MCE
  * \author Javier Morgade  <javier.morgade@ieee.org>
  * \date 2019
  * \version 0.1
