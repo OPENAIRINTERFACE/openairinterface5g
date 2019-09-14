@@ -1800,6 +1800,14 @@ void *ru_thread( void *param ) {
 #endif
 	// wakeup all eNB processes waiting for this RU
 	if (ru->num_eNB>0) wakeup_L1s(ru);
+
+	//Workaround ... this must be properly handled
+	if(ru->if_south!=LOCAL_RF &&  RC.eNB[0][0]!=NULL){
+		if(ru->frame_parms.num_MBSFN_config!=RC.eNB[0][0]->frame_parms.num_MBSFN_config){
+			ru->frame_parms = RC.eNB[0][0]->frame_parms;//->frame_parms;
+			LOG_W(PHY,"RU MBSFN SF PARAMS Updated\n");
+		}
+	}
 	
 #ifndef PHY_TX_THREAD
 	
