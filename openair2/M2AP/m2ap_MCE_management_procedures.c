@@ -116,9 +116,9 @@ void dump_mce_trees_m2(void)
 m2ap_MCE_instance_t *zz;
 STAILQ_FOREACH(zz, &m2ap_MCE_internal_data.m2ap_MCE_instances_head,
                m2ap_MCE_entries) {
-printf("here comes the tree (instance %d):\n---------------------------------------------\n", zz->instance);
+//printf("here comes the tree (instance %d):\n---------------------------------------------\n", zz->instance);
 dump_mce_tree_m2(zz->m2ap_mce_head.rbh_root);
-printf("---------------------------------------------\n");
+//printf("---------------------------------------------\n");
 }
 }
 
@@ -129,8 +129,8 @@ struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p,
   struct m2ap_MCE_data_s  temp;
   struct m2ap_MCE_data_s *found;
 
-printf("m2ap_get_MCE at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
-dump_mce_trees_m2();
+//printf("m2ap_get_MCE at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
+//dump_mce_trees_m2();
 
   memset(&temp, 0, sizeof(struct m2ap_MCE_data_s));
 

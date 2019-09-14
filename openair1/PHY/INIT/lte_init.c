@@ -357,7 +357,7 @@ void phy_config_update_sib13_request(PHY_Config_t *phy_config) {
   int             CC_id = phy_config->CC_id;
   nfapi_config_request_t *cfg = phy_config->cfg;
 
-  LOG_E(PHY,"configure sib3 Mod_id(%d), CC_id(%d) cfg %p\n",Mod_id,CC_id,cfg);
+  LOG_I(PHY,"configure sib3 Mod_id(%d), CC_id(%d) cfg %p\n",Mod_id,CC_id,cfg);
   LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
   LOG_I (PHY, "[eNB%d] Applying MBSFN_Area_id %d for index %d\n", Mod_id, (uint16_t)cfg->embms_sib13_config.mbsfn_area_id_r9.value, (uint8_t)cfg->embms_sib13_config.mbsfn_area_idx.value);
 

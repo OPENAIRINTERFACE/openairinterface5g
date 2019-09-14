@@ -129,8 +129,8 @@ struct m3ap_MCE_data_s *m3ap_get_MCE(m3ap_MCE_instance_t *instance_p,
   struct m3ap_MCE_data_s  temp;
   struct m3ap_MCE_data_s *found;
 
-printf("m3ap_get_MCE at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
-dump_trees_m3();
+//printf("m3ap_get_MCE at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
+//dump_trees_m3();
 
   memset(&temp, 0, sizeof(struct m3ap_MCE_data_s));
 

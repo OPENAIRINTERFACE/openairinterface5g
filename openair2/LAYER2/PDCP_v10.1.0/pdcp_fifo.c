@@ -272,8 +272,8 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
   //pdcp_t *pdcp_p = NULL;
   int len;
   rb_id_t rab_id = mbms_rab_id;//DEFAULT_RAB_ID;
-  //if(mbms_rab_id > 9 || mbms_rab_id < 4)
-       //h_rc = 2;
+  if(mbms_rab_id > 9 || mbms_rab_id < 4)
+       h_rc = 2;
 
   if(UE_NAS_USE_TUN)
        return 0;
