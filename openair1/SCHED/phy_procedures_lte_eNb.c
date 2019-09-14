@@ -123,7 +123,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   //  uint8_t sync_area=255;
 #endif
   int             subframe = proc->subframe_tx;
-  AssertFatal (1 == 0, "pmch not tested for the moment, exiting\n");
+  AssertFatal (1 == 1, "pmch not tested for the moment, exiting\n");
   // This is DL-Cell spec pilots in Control region
   generate_pilots_slot (eNB, eNB->common_vars.txdataF, AMP, subframe << 1, 1);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -136,6 +136,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     proc->frame_tx,
     subframe);
   */
+  mch_pduP= &RC.mac[eNB->Mod_id]->common_channels[eNB->CC_id].MCH_pdu;
   if ((mch_pduP->Pdu_size > 0) && (mch_pduP->sync_area == 0)) // TEST: only transmit mcch for sync area 0
     LOG_D(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (MCS %"PRIu8", TBS %d) \n",
           eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->mcs,
@@ -149,6 +150,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
   if (mch_pduP) {
     fill_eNB_dlsch_MCH (eNB, mch_pduP->mcs, 1, 0);
+    eNB->dlsch_MCH->harq_ids[proc->frame_tx%2][subframe] = 0;
     // Generate PMCH
     generate_mch (eNB, proc, (uint8_t *) mch_pduP->payload);
   } else {
