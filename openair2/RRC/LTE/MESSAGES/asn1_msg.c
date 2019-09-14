@@ -244,7 +244,7 @@ uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_
   //TODO additionalNonBMSFNSubframes-r14  INTEGER (0..3) ? 
 
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_LTE_BCCH_BCH_Message_MBMS, (void *)mib_fembms);
+    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_BCH_Message_MBMS, (void *)mib_fembms);
   //}
 
 
@@ -602,7 +602,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
 
 
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
+    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
   //}
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,
@@ -755,8 +755,8 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   LTE_PLMN_IdentityInfo_t PLMN_identity_info[num_plmn];
   LTE_MCC_MNC_Digit_t dummy_mcc[num_plmn][3], dummy_mnc[num_plmn][3];
   asn_enc_rval_t enc_rval;
-  LTE_SchedulingInfo_t schedulingInfo;
-  LTE_SIB_Type_t sib_type;
+  LTE_SchedulingInfo_t schedulingInfo,schedulingInfo2;
+  LTE_SIB_Type_t sib_type,sib_type2;
 
   uint8_t *buffer;
   LTE_BCCH_DL_SCH_Message_t *bcch_message;
@@ -785,6 +785,12 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   memset(PLMN_identity_info,0,num_plmn * sizeof(LTE_PLMN_IdentityInfo_t));
   memset(&schedulingInfo,0,sizeof(LTE_SchedulingInfo_t));
   memset(&sib_type,0,sizeof(LTE_SIB_Type_t));
+  if(configuration->eMBMS_M2_configured){
+       memset(&schedulingInfo2,0,sizeof(LTE_SchedulingInfo_t));
+       memset(&sib_type2,0,sizeof(LTE_SIB_Type_t));
+  }
+ 
+
 
   /* as per TS 36.311, up to 6 PLMN_identity_info are allowed in list -> add one by one */
   for (int i = 0; i < configuration->num_plmn; ++i) {
@@ -882,10 +888,18 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   7;
 #endif
   schedulingInfo.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
+  if(configuration->eMBMS_M2_configured){
+       schedulingInfo2.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
+  }
   // This is for SIB2/3
   sib_type=LTE_SIB_Type_sibType3;
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
   ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
+  if(configuration->eMBMS_M2_configured){
+         sib_type2=LTE_SIB_Type_sibType13_v920;
+         ASN_SEQUENCE_ADD(&schedulingInfo2.sib_MappingInfo.list,&sib_type2);
+         ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo2);
+  }
   //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 #if defined(ENABLE_ITTI)
 

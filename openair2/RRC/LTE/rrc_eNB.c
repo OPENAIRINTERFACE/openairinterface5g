@@ -86,6 +86,7 @@
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
+#include "rrc_eNB_M2AP.h"
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
@@ -9097,6 +9098,43 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case RRC_SUBFRAME_PROCESS:
       rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
       break;
+
+    case M2AP_SETUP_RESP:
+       rrc_eNB_process_M2AP_SETUP_RESP(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_SETUP_RESP(msg_p));
+      break;
+
+    case M2AP_MBMS_SCHEDULING_INFORMATION:
+       rrc_eNB_process_M2AP_MBMS_SCHEDULING_INFORMATION(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SCHEDULING_INFORMATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_START_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_START_REQ(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SESSION_START_REQ(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_STOP_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_STOP_REQ(&ctxt,&M2AP_MBMS_SESSION_STOP_REQ(msg_p));
+       break;
+
+    case M2AP_RESET:
+       rrc_eNB_process_M2AP_RESET(&ctxt,&M2AP_RESET(msg_p));
+       break;
+
+    case M2AP_ENB_CONFIGURATION_UPDATE_ACK:
+       rrc_eNB_process_M2AP_ENB_CONFIGURATION_UPDATE_ACK(&ctxt,&M2AP_ENB_CONFIGURATION_UPDATE_ACK(msg_p));
+       break;
+
+    case M2AP_ERROR_INDICATION:
+       rrc_eNB_process_M2AP_ERROR_INDICATION(&ctxt,&M2AP_ERROR_INDICATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SERVICE_COUNTING_REQ:
+       rrc_eNB_process_M2AP_MBMS_SERVICE_COUNTING_REQ(&ctxt,&M2AP_MBMS_SERVICE_COUNTING_REQ(msg_p));
+       break;
+
+    case M2AP_MCE_CONFIGURATION_UPDATE:
+       rrc_eNB_process_M2AP_MCE_CONFIGURATION_UPDATE(&ctxt,&M2AP_MCE_CONFIGURATION_UPDATE(msg_p));
+       break;
+
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);
