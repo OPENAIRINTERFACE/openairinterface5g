@@ -155,7 +155,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   //------------- config PUSCH DMRS parameters(to be updated from RRC)--------------//
   gNB->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos3;
+  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
   gNB->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
   //--------------------------------------------------------------------------------//
 

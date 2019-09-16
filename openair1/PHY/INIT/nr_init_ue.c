@@ -705,7 +705,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   //------------- config DMRS parameters--------------//
   ue->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos3;
+  ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
   ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));

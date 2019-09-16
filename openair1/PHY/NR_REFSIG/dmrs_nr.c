@@ -55,7 +55,27 @@ int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                    
 {1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
 };
 
-int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos) {
+
+// TS 38.211 Table 6.4.1.1.3-4: PUSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
+};
+
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
 
   uint8_t row, colomn;
   int32_t l_prime;
@@ -70,7 +90,10 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
   else
     row = duration_in_symbols - 3;
 
-  l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
+  if (pusch_maxLength == pusch_len1)
+    l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
+  else
+    l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
 
   AssertFatal(l_prime>0,"invalid l_prime < 0\n");
 
@@ -120,7 +143,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
 
 
   l0 = get_l0_ul(mapping_type, 2);
-  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos);
+  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos, dmrs_UplinkConfig->pusch_maxLength);
 
   if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%ofdm_symbol_size))
     is_dmrs_freq = 1;
