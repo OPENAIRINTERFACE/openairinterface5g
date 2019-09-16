@@ -358,7 +358,16 @@ boolean_t pdcp_data_req(
       LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n",
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
-      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(ngran_gNB)) { //RC.rrc[ctxt_pP->module_id]->node_type
+      // The check on nos1 is done only for the use case of LTE stack running over 5g-nr PHY. This should be changed
+      // before future merge of develop with develop-nr and instead of a check of IS_SOFTMODEM_NOS1, we should use a check
+      // with a new execution option capturing the nr-ip-over-LTE-stack use case.
+      ngran_node_t node_type;
+      if (IS_SOFTMODEM_NOS1)
+    	  node_type = ngran_gNB;
+      else
+    	  node_type = RC.rrc[ctxt_pP->module_id]->node_type;
+
+      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(node_type)) { //RC.rrc[ctxt_pP->module_id]->node_type
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
         ret=FALSE;
       } else {
@@ -2222,6 +2231,103 @@ void pdcp_module_cleanup (void)
 {
 }
 
+void nr_ip_over_LTE_DRB_preconfiguration(void){
+
+	  // Addition for the use-case of 4G stack on top of 5G-NR.
+	  // We need to configure pdcp and rlc instances without having an actual
+	  // UE RRC Connection. In order to be able to test the NR PHY with some injected traffic
+	  // on top of the LTE stack.
+	  protocol_ctxt_t ctxt;
+	  LTE_DRB_ToAddModList_t*                DRB_configList=NULL;
+	  DRB_configList = CALLOC(1, sizeof(LTE_DRB_ToAddModList_t));
+	  struct LTE_LogicalChannelConfig        *DRB_lchan_config                                 = NULL;
+	  struct LTE_RLC_Config                  *DRB_rlc_config                   = NULL;
+	  struct LTE_PDCP_Config                 *DRB_pdcp_config                  = NULL;
+	  struct LTE_PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
+
+	  struct LTE_DRB_ToAddMod                *DRB_config                       = NULL;
+	  struct LTE_LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters        = NULL;
+	  long  *logicalchannelgroup_drb;
+
+
+	  //Static preconfiguration of DRB
+	  DRB_config = CALLOC(1, sizeof(*DRB_config));
+
+	  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
+	  // allowed value 5..15, value : x+4
+	  *(DRB_config->eps_BearerIdentity) = 1; //ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation
+	  //   DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+	  // 1 + drb_identiy_index;
+	  DRB_config->drb_Identity = 1;
+	  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
+	  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
+
+	  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
+	  DRB_config->rlc_Config = DRB_rlc_config;
+
+	  DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
+	  DRB_config->pdcp_Config = DRB_pdcp_config;
+	  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
+	  *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
+	  DRB_pdcp_config->rlc_AM = NULL;
+	  DRB_pdcp_config->rlc_UM = NULL;
+
+	  DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
+	  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
+	  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
+	  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
+	  // PDCP
+	  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
+	  DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
+	  PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
+
+	  DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
+
+	  DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
+	  DRB_config->logicalChannelConfig = DRB_lchan_config;
+	  DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
+	  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
+
+	  DRB_ul_SpecificParameters->priority= 4;
+
+	  DRB_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
+	  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+	  DRB_ul_SpecificParameters->bucketSizeDuration =
+	  LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+
+	  logicalchannelgroup_drb = CALLOC(1, sizeof(long));
+	  *logicalchannelgroup_drb = 1;//(i+1) % 3;
+	  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
+
+	  ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
+
+	  if (ENB_NAS_USE_TUN){
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+	  }
+	  else{
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
+	  }
+
+	  rrc_pdcp_config_asn1_req(&ctxt,
+	               (LTE_SRB_ToAddModList_t *) NULL,
+	               DRB_configList,
+	               (LTE_DRB_ToReleaseList_t *) NULL,
+	               0xff, NULL, NULL, NULL
+	//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+	               , (LTE_PMCH_InfoList_r9_t *) NULL
+	//#endif
+	               ,NULL);
+
+	rrc_rlc_config_asn1_req(&ctxt,
+	               (LTE_SRB_ToAddModList_t*)NULL,
+	               DRB_configList,
+	               (LTE_DRB_ToReleaseList_t*)NULL
+	//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+	               ,(LTE_PMCH_InfoList_r9_t *)NULL
+	               , 0, 0
+	//#endif
+	         );
+}
 //-----------------------------------------------------------------------------
 void pdcp_layer_init(void)
 //-----------------------------------------------------------------------------
@@ -2300,117 +2406,6 @@ void pdcp_layer_init(void)
   memset(Pdcp_stats_rx_aiat, 0, sizeof(Pdcp_stats_rx_aiat));
   memset(Pdcp_stats_rx_iat, 0, sizeof(Pdcp_stats_rx_iat));
   memset(Pdcp_stats_rx_outoforder, 0, sizeof(Pdcp_stats_rx_outoforder));
-
-  // Addition for the use-case of 4G stack on top of 5G-NR.
-  // We need to configure pdcp and rlc instances without having an actual
-  // UE RRC Connection. Just to be able to test the NR PHY with some injected traffic
-  // on top of the LTE stack.
-  protocol_ctxt_t ctxt;
-  LTE_DRB_ToAddModList_t*                DRB_configList=NULL;
-  DRB_configList = CALLOC(1, sizeof(LTE_DRB_ToAddModList_t));
-  struct LTE_LogicalChannelConfig        *DRB_lchan_config                                 = NULL;
-  struct LTE_RLC_Config                  *DRB_rlc_config                   = NULL;
-  struct LTE_PDCP_Config                 *DRB_pdcp_config                  = NULL;
-  struct LTE_PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
-
-  struct LTE_DRB_ToAddMod                *DRB_config                       = NULL;
-  struct LTE_LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters        = NULL;
-  long  *logicalchannelgroup_drb;
-
-
-  //Static preconfiguration of DRB
-  DRB_config = CALLOC(1, sizeof(*DRB_config));
-
-  DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
-  // allowed value 5..15, value : x+4
-  *(DRB_config->eps_BearerIdentity) = 1; //ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation
-  //   DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
-  // 1 + drb_identiy_index;
-  DRB_config->drb_Identity = 1;
-  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
-  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
-
-  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
-  DRB_config->rlc_Config = DRB_rlc_config;
-
-  DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
-  DRB_config->pdcp_Config = DRB_pdcp_config;
-  DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
-  *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
-  DRB_pdcp_config->rlc_AM = NULL;
-  DRB_pdcp_config->rlc_UM = NULL;
-
-  DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
-  DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-  DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
-  // PDCP
-  PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
-  DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
-  PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
-
-  DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
-
-  DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
-  DRB_config->logicalChannelConfig = DRB_lchan_config;
-  DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
-  DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-
-  DRB_ul_SpecificParameters->priority= 4;
-
-  DRB_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
-  //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  DRB_ul_SpecificParameters->bucketSizeDuration =
-  LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-  logicalchannelgroup_drb = CALLOC(1, sizeof(long));
-  *logicalchannelgroup_drb = 1;//(i+1) % 3;
-  DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-
-
-  // Have to dins out how to fill the DRB_config and then feed it back to the list
-  /*
-    if (DRB_configList != NULL) {
-    LOG_D(RRC, "get DRB_config from (ue_context_pP->ue_context.DRB_configList)\n");
-    for (i = 0; (i < DRB_configList->list.count) && (i < 3); i++) {
-      DRB_config = DRB_configList->list.array[i];
-
-      // Add DRB to DRB configuration list, for RRCConnectionReconfigurationComplete
-      ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
-    }
-  }
-  */
-
-
-  ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
-
-  if (ENB_NAS_USE_TUN){
-	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
-  }
-  else{
-	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
-  }
-
-  rrc_pdcp_config_asn1_req(&ctxt,
-               (LTE_SRB_ToAddModList_t *) NULL,
-               DRB_configList,
-               (LTE_DRB_ToReleaseList_t *) NULL,
-               0xff, NULL, NULL, NULL
-//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-               , (LTE_PMCH_InfoList_r9_t *) NULL
-//#endif
-               ,NULL);
-
-rrc_rlc_config_asn1_req(&ctxt,
-               (LTE_SRB_ToAddModList_t*)NULL,
-               DRB_configList,
-               (LTE_SRB_ToAddModList_t*)NULL
-//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-               ,(LTE_PMCH_InfoList_r9_t *)NULL
-               , 0, 0
-//#endif
-         );
-
 }
 
 //-----------------------------------------------------------------------------

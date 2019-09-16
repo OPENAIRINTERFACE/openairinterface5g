@@ -33,7 +33,7 @@
 #include "mac_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/nr-softmodem.h"
 extern RAN_CONTEXT_t RC;
 
 /*Scheduling of DLSCH with associated DCI in common search space
@@ -457,7 +457,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     	memcpy(nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0],DLSCH_pdu.payload[0],TBS_bytes);
 
-    	LOG_I(MAC, "Printing payload bytes at the gNB side: \n");
+    	LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
     	  for(int i = 0; i < TBS_bytes; i++) { //dlsch_pdu_rel15->transport_block_size/8 6784/8
     	  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
     	  }
@@ -480,6 +480,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 		  TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);
 		  // HOT FIX for all zero pdu problem
 		  // ------------------------------------------------------------------------------------------------
+		  LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
 		  for(int i = 0; i < TBS_bytes; i++) {
 		  	  ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
 		  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);

@@ -40,6 +40,7 @@
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "common/ran_context.h"
+#include "executables/nr-softmodem.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -126,6 +127,9 @@ void mac_top_init_gNB(void)
 
   // These should be out of here later
   pdcp_layer_init();
+
+  if(IS_SOFTMODEM_NOS1)
+	  nr_ip_over_LTE_DRB_preconfiguration();
 
   rrc_init_nr_global_param();
 

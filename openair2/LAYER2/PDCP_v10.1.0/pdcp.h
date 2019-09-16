@@ -403,6 +403,7 @@ void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
 uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
 void pdcp_module_cleanup (void);
+void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);
 void pdcp_layer_cleanup  (void);
 #define PDCP2NW_DRIVER_FIFO 21
