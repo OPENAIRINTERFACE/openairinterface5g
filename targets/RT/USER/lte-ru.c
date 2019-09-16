@@ -107,7 +107,7 @@ static int DEFENBS[] = {0};
 
 #include "pdcp.h"
 
-//#define MBMS_EXPERIMENTAL
+#define MBMS_EXPERIMENTAL
 
 extern volatile int                    oai_exit;
 extern int emulate_rf;
@@ -1805,7 +1805,7 @@ void *ru_thread( void *param ) {
 
 #ifdef MBMS_EXPERIMENTAL
 	//Workaround ... this must be properly handled
-	if(ru->if_south!=LOCAL_RF &&  RC.eNB[0][0]!=NULL){
+	if(ru->if_south==LOCAL_RF && ru->function==eNodeB_3GPP && RC.eNB[0][0]!=NULL){
 		if(ru->frame_parms.num_MBSFN_config!=RC.eNB[0][0]->frame_parms.num_MBSFN_config){
 			ru->frame_parms = RC.eNB[0][0]->frame_parms;//->frame_parms;
 			LOG_W(PHY,"RU MBSFN SF PARAMS Updated\n");
