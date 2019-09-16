@@ -47,7 +47,7 @@
 #include "ethernet_lib.h"
 #include "common/ran_context.h"
 
-#define DEBUG 1
+//#define DEBUG 1
 
 // These are for IF5 and must be put into the device structure if multiple RUs in the same RAU !!!!!!!!!!!!!!!!!
 uint16_t pck_seq_num = 1;
@@ -431,6 +431,9 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 	   
 	   /* store the timestamp value from packet's header */
 	   *timestamp =  *(openair0_timestamp *)(buff2 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
+           // convert TS to samples, /3 for 30.72 Ms/s, /6 for 15.36 Ms/s, /12 for 7.68 Ms/s, etc.
+           *timestamp = *timestamp/3;
+           // handle 1.4,3,5,10,15 MHz cases
            *cc        = *(uint16_t*)(buff2 + ECPRICOMMON_BYTES);
 	   }
 	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
