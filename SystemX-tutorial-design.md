@@ -221,12 +221,25 @@ The functionality and parameters is the same, enhanced with FS6 mode.
 The environment variable “fs6” enables the fs6 mode and decided to be cu
 or du from the fs6 variable content.
 
+A example configuration file is: $OPENAIR_DIR/enb.fs6.example.conf
+The IP addresses in this file should be updated for each network.
+
 Example:
 
-`fs6=cu ./ocp-softmodem -O … (regular lte-softmodem paramters)
+`fs6=cu ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
 `
 
 Run the CU init of the split 6 eNB.
+
+`fs6=du ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
+`
+
+runs the functional split 6 DU
+
+`./lte-uesoftmodem -C 2685000000 -r 50 --rfsim --rfsimulator.serveraddr 192.168.1.1 -d
+`
+
+Runs the UE (to have the UE signal scope, compile it with make uescope)
 
 CU and DU IP address and port are configurable in the eNB configuration
 file (as X2, GTP, … interfaces).
