@@ -669,7 +669,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     }
 
     TBS =
-	get_TBS_DL(cc->pmch_Config[0]->dataMCS_r9/*cc->MCH_pdu.mcs*/, to_prb(cc->mib->message.dl_Bandwidth));
+	get_TBS_DL(/*cc->pmch_Config[0]->dataMCS_r9*/cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
