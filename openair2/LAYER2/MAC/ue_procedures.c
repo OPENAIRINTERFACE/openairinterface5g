@@ -1400,23 +1400,24 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
 
           for (j = 0; j < 6; j++)
             num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
+	    //num_sf_alloc=1;
         }
 
         for (l = 0; l < 28; l++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= num_sf_alloc) {
+          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
             if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
               if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
                 mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
                long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
                long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
                if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
-		          //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
+		       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
+
                        mtch_mcs = -1;
-		}
-                UE_mac_inst[module_idP].common_num_sf_alloc++;
-                UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period);
-
-
+	       }/*else
+		       LOG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
+               	UE_mac_inst[module_idP].common_num_sf_alloc++;
+           	UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period);
 	      }
               else
                 mtch_mcs = -1;

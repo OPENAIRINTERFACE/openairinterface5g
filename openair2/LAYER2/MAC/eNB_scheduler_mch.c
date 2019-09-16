@@ -504,6 +504,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
      uint8_t num_sf_alloc=0;
     for( int iii=0; iii < 6; iii++)
        num_sf_alloc += ( 0x39 & (0x80>>iii)) == (0x80 >> iii);
+    num_sf_alloc = 1;
 
     // 2nd: Create MSI, get MCCH from RRC and MTCHs from RLC
 
@@ -734,13 +735,13 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      "e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d TBS %d pmch_stop %d msi_sfs %d\n",
 	      MTCH, frameP, subframeP, rlc_status.bytes_in_buffer,TBS,msi_pmch_stop,msi_sfs);
 
-	if (rlc_status.bytes_in_buffer > 0 /*&&  msi_pmch_stop > 0*/  /*msi_pmch_stop>=num_sf_alloc*/ ) {
+	if (rlc_status.bytes_in_buffer > 0 ||  msi_pmch_stop > 0  /*msi_pmch_stop>=num_sf_alloc*/ ) {
 	    //if(rlc_status.bytes_in_buffer > 0){
 	    LOG_I(MAC,
-		  "[eNB %d][MBMS USER-PLANE], CC_id %d, Frame %d, MTCH->MCH, Requesting %d bytes from RLC (header len mtch %d)\n",
+		  "[eNB %d][MBMS USER-PLANE], CC_id %d, Frame %d, MTCH->MCH, Requesting %d bytes from RLC (header len mtch %d) rlc_status.bytes_in_buffer %d\n",
 		  module_idP, CC_id, frameP,
 		  TBS - header_len_mcch - header_len_msi -
-		  sdu_length_total - header_len_mtch, header_len_mtch);
+		  sdu_length_total - header_len_mtch, header_len_mtch, rlc_status.bytes_in_buffer);
 
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9, 0,	//not used
 						     (char *)
