@@ -703,11 +703,21 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeA;
   }
 
+  for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (NR_PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
+  }
+
   //------------- config DMRS parameters--------------//
   ue->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
   ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
   ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
+  ue->dmrs_DownlinkConfig.pdsch_maxLength = pdsch_len1;
+  //-------------------------------------------------//
+
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
