@@ -989,7 +989,8 @@ int main( int argc, char **argv )
     flexran_agent_start(i);
   }
 
-  init_pdcp();
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);

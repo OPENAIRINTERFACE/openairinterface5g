@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
+#include "executables/nr-softmodem.h"
 
 #include <stdio.h>
 
@@ -73,7 +74,8 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
 int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot){
 
 	LOG_I(MAC, "handle_dlsch at MAC layer \n");
-	nr_ue_send_sdu(module_id, 0, frame, slot,
+	if (IS_SOFTMODEM_NOS1)
+		nr_ue_send_sdu(module_id, 0, frame, slot,
 										pduP,
 										pdu_len,
 										0);

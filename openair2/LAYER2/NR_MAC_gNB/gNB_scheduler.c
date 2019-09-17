@@ -332,7 +332,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                     frameP,
                                     slotP,
                                     *cfg)){
-          LOG_I(MAC, "About to call nr_schedule_uss_dlsch_phytest() because there is a dci opportunity... \n \n \n");
           nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
           }
 

@@ -663,6 +663,10 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                 printf("%d : %d \n", i, harq_process->b[i]);
                 }*/
 #endif
+              /*LOG_I (PHY, "Printing 100 first payload bytes:");
+              for (int i = 0; i <100 ; i++){ //Kr_bytes
+            	  LOG_I(PHY, "[%d] : %x ", i, harq_process->b[i]);
+              }*/
 
   }
 

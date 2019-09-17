@@ -2183,7 +2183,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )?MAX_NUMBER_NETIF:1;
       netlink_init_tun("ue",num_if);
       //Add --nr-ip-over-lte option check for next line
-      nas_config(1, 1, 2, "ue");
+      if (IS_SOFTMODEM_NOS1)
+    	  nas_config(1, 1, 2, "ue");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);

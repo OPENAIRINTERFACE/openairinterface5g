@@ -3810,6 +3810,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
       rx_ind.rx_indication_body[0].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
       rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS>>3;
+      LOG_D(PHY, "PDU length in bits: %d, in bytes: %d \n", dlsch0->harq_processes[harq_pid]->TBS, rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length);
       rx_ind.number_pdus = 1;
 
       //ue->dl_indication.rx_ind = &dlsch1->harq_processes[harq_pid]->b; //no data, only dci for now

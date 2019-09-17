@@ -45,6 +45,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "executables/nr-softmodem.h"
 
 #include "T.h"
 
@@ -383,12 +384,14 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #endif
   }
 
-  //Hardcoded rnti value
-  protocol_ctxt_t ctxt;
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
+  if(IS_SOFTMODEM_NOS1){
+	  //Hardcoded rnti value
+	  protocol_ctxt_t ctxt;
+	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
                                    0x1234, proc->frame_rx,
                                    proc->nr_tti_rx, 0);
-  pdcp_run(&ctxt);
+	  pdcp_run(&ctxt);
+  }
   // no UL for now
   /*
   if (UE->mac_enabled==1) {
