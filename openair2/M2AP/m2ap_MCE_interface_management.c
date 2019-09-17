@@ -453,7 +453,7 @@ int MCE_send_MBMS_SCHEDULING_INFORMATION(instance_t instance, /*uint32_t assoc_i
       	pmch_configuration_item_ies->criticality = M2AP_Criticality_reject;
       	pmch_configuration_item_ies->value.present = M2AP_PMCH_Configuration_ItemIEs__value_PR_PMCH_Configuration_Item;
 
-      	M2AP_PMCH_Configuration_Item_t * pmch_configuration_item = (M2AP_PMCH_Configuration_Item_t*)calloc(1,sizeof(M2AP_PMCH_Configuration_Item_t));
+      	M2AP_PMCH_Configuration_Item_t * pmch_configuration_item;/* = (M2AP_PMCH_Configuration_Item_t*)calloc(1,sizeof(M2AP_PMCH_Configuration_Item_t));*/
       	pmch_configuration_item = &pmch_configuration_item_ies->value.choice.PMCH_Configuration_Item;
       	{
             pmch_configuration_item->pmch_Configuration.dataMCS = m2ap_mbms_scheduling_information->mbms_area_config_list[i].pmch_config_list[j].data_mcs;
@@ -515,7 +515,7 @@ int MCE_send_MBMS_SCHEDULING_INFORMATION(instance_t instance, /*uint32_t assoc_i
 	   mbsfn_subframe_configuration_item_ies->criticality = M2AP_Criticality_reject;
 	   mbsfn_subframe_configuration_item_ies->value.present = M2AP_MBSFN_Subframe_ConfigurationItem__value_PR_MBSFN_Subframe_Configuration;
 
-	   M2AP_MBSFN_Subframe_Configuration_t * mbsfn_subframe_configuration = (M2AP_MBSFN_Subframe_Configuration_t*)calloc(1,sizeof(M2AP_MBSFN_Subframe_Configuration_t));
+	   M2AP_MBSFN_Subframe_Configuration_t * mbsfn_subframe_configuration; /* = (M2AP_MBSFN_Subframe_Configuration_t*)calloc(1,sizeof(M2AP_MBSFN_Subframe_Configuration_t));*/
 	   mbsfn_subframe_configuration = &mbsfn_subframe_configuration_item_ies->value.choice.MBSFN_Subframe_Configuration;
 	   {
 		   mbsfn_subframe_configuration->radioframeAllocationPeriod = m2ap_mbms_scheduling_information->mbms_area_config_list[i].mbms_sf_config_list[j].radioframe_allocation_period;
@@ -705,7 +705,8 @@ int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
   MessageDef                         *message_p;
   M2AP_M2SetupRequest_t              *container;
   M2AP_M2SetupRequest_Ies_t           *ie;
-  int i = 0,j=0;
+  int i = 0/*,j=0*/;
+  int num_mbms_available=0;
 
   DevAssert(pdu != NULL);
 
@@ -727,9 +728,11 @@ int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
   M2AP_FIND_PROTOCOLIE_BY_ID(M2AP_M2SetupRequest_Ies_t, ie, container,
                              M2AP_ProtocolIE_ID_id_GlobalENB_ID, true);
   //asn_INTEGER2ulong(&ie->value.choice.GlobalENB_ID.eNB_ID, &M2AP_SETUP_REQ(message_p).GlobalENB_ID);
+  if(ie!=NULL){
   if(ie->value.choice.GlobalENB_ID.eNB_ID.present == M2AP_ENB_ID_PR_macro_eNB_ID){
   }else if(ie->value.choice.GlobalENB_ID.eNB_ID.present == M2AP_ENB_ID_PR_short_Macro_eNB_ID){
   }else if(ie->value.choice.GlobalENB_ID.eNB_ID.present == M2AP_ENB_ID_PR_long_Macro_eNB_ID){
+  }
   }
 
   LOG_D(M2AP, "M2AP_SETUP_REQ(message_p).GlobalENB_ID %lu \n", M2AP_SETUP_REQ(message_p).GlobalENB_ID);
@@ -751,29 +754,28 @@ int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
 
   M2AP_FIND_PROTOCOLIE_BY_ID(M2AP_M2SetupRequest_Ies_t, ie, container,
                               M2AP_ProtocolIE_ID_id_ENB_MBMS_Configuration_data_List, true);
-  M2AP_SETUP_REQ(message_p).num_mbms_available = ie->value.choice.ENB_MBMS_Configuration_data_List.list.count;
-  LOG_D(M2AP, "M2AP_SETUP_REQ(message_p).num_mbms_available %d \n",
-        M2AP_SETUP_REQ(message_p).num_mbms_available);
-  int num_mbms_available = M2AP_SETUP_REQ(message_p).num_mbms_available;
-  for (i=0; i<num_mbms_available; i++) {
-	 M2AP_ENB_MBMS_Configuration_data_Item_t *mbms_configuration_item_p;
-         mbms_configuration_item_p = &(((M2AP_ENB_MBMS_Configuration_data_ItemIEs_t *)ie->value.choice.ENB_MBMS_Configuration_data_List.list.array[i])->value.choice.ENB_MBMS_Configuration_data_Item);
-    /* eCGI */
-       //mbms_configuration_item_p->eCGI ... (M2AP_ECGI_t)
 
-    OCTET_STRING_TO_INT16(&(mbms_configuration_item_p->eCGI.pLMN_Identity),M2AP_SETUP_REQ(message_p).plmn_identity[i]);
-    //OCTET_STRING_TO_INT16(&(mbms_configuration_item_p->eCGI.eUTRANcellIdentifier),M2AP_SETUP_REQ(message_p).eutran_cell_identifier[i]);
-    /* mbsfnSynchronisationArea */
-       //mbms_configuration_item_p->mbsfnSynchronisationArea ... (M2AP_MBSFN_SynchronisationArea_ID_t)
+  if(ie!=NULL){
+	  M2AP_SETUP_REQ(message_p).num_mbms_available = ie->value.choice.ENB_MBMS_Configuration_data_List.list.count;
+	  LOG_D(M2AP, "M2AP_SETUP_REQ(message_p).num_mbms_available %d \n",
+		M2AP_SETUP_REQ(message_p).num_mbms_available);
+	  num_mbms_available = M2AP_SETUP_REQ(message_p).num_mbms_available;
+	  for (i=0; i<num_mbms_available; i++) {
+		 M2AP_ENB_MBMS_Configuration_data_Item_t *mbms_configuration_item_p;
+		 mbms_configuration_item_p = &(((M2AP_ENB_MBMS_Configuration_data_ItemIEs_t *)ie->value.choice.ENB_MBMS_Configuration_data_List.list.array[i])->value.choice.ENB_MBMS_Configuration_data_Item);
+	    /* eCGI */
+	       //mbms_configuration_item_p->eCGI ... (M2AP_ECGI_t)
 
-    M2AP_SETUP_REQ(message_p).mbsfn_synchronization_area[i]=mbms_configuration_item_p->mbsfnSynchronisationArea;
-    /* mbmsServiceAreaList */
-       //mbms_configuration_item_p->mbmsServiceAreaList ... (M2AP_MBMS_Service_Area_ID_List_t)
-   for(j=0;j<1;j++){
-   	//OCTET_STRING_TO_INT16(&(mbms_configuration_item_p->mbmsServiceAreaList.list.array[j]), M2AP_SETUP_REQ(message_p).service_area_id[i][j]);
-   }
+	    OCTET_STRING_TO_INT16(&(mbms_configuration_item_p->eCGI.pLMN_Identity),M2AP_SETUP_REQ(message_p).plmn_identity[i]);
+	    //OCTET_STRING_TO_INT16(&(mbms_configuration_item_p->eCGI.eUTRANcellIdentifier),M2AP_SETUP_REQ(message_p).eutran_cell_identifier[i]);
+	    /* mbsfnSynchronisationArea */
+	       //mbms_configuration_item_p->mbsfnSynchronisationArea ... (M2AP_MBSFN_SynchronisationArea_ID_t)
 
- }
+	    M2AP_SETUP_REQ(message_p).mbsfn_synchronization_area[i]=mbms_configuration_item_p->mbsfnSynchronisationArea;
+	    /* mbmsServiceAreaList */
+	       //mbms_configuration_item_p->mbmsServiceAreaList ... (M2AP_MBMS_Service_Area_ID_List_t)
+	  }
+  }
     
 //    /* tac */
 //    OCTET_STRING_TO_INT16(&(served_celles_item_p->served_Cell_Information.fiveGS_TAC), M2AP_SETUP_REQ(message_p).tac[i]);
