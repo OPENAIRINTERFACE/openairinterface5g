@@ -47,6 +47,7 @@
 #include "common/ran_context.h"
 
 #include "rrc_eNB_UE_context.h"
+#include "asn1_msg.h"
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -401,8 +402,38 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               for (i = 0; i< 8; i++){
                 DRB2LCHAN[i] = 0;
               }
-              if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig)
+              if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig) {
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
+                int UE_id = find_UE_id(ctxt.module_id, ctxt.rnti);
+                if (UE_id != -1) {
+                  eNB_RRC_INST *rrc_inst = RC.rrc[ctxt.module_id];
+                  uint8_t cc_id = ue_context_p->ue_context.primaryCC_id;
+                  eNB_MAC_INST *mac = RC.mac[ctxt.module_id];
+                  UE_list_t *UE_list = &(mac->UE_list);
+
+                  if (rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL && 
+                      UE_list->UE_template[cc_id][UE_id].rach_resource_type == 0) {
+                    if (cc_id < MAX_NUM_CCs) {
+                      LTE_UE_EUTRA_Capability_t *UEcap = ue_context_p->ue_context.UE_Capability;
+                      mac_MainConfig->drx_Config = do_DrxConfig(cc_id, 
+                                                                &rrc_inst->configuration,
+                                                                UEcap);
+                      if (mac_MainConfig->drx_Config == NULL) {
+                        LOG_E(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+                      } else {
+                        /* Set timers and thresholds values in local MAC context of UE */
+                        eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
+                        LOG_D(F1AP, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+                      }
+                    } else {
+                      LOG_E(F1AP, "Invalid CC_id for DRX configuration\n");  
+                    }
+                  }
+                } else { // UE_id invalid
+                  LOG_E(F1AP, "Invalid UE_id found!\n");
+                }
+              }
+
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;
               struct LTE_PhysicalConfigDedicated* physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
               rrc_rlc_config_asn1_req(
@@ -602,7 +633,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
 }
 
-int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, 
+                                    const f1ap_ul_rrc_message_t *msg) 
+{
   const rnti_t rnti = msg->rnti;
 
   F1AP_F1AP_PDU_t                pdu;
@@ -703,6 +736,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
+
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
@@ -715,9 +749,16 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
         }else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
           ue_context_p->ue_context.Status = RRC_CONNECTED;
-        }
+  
+          int UE_id_mac = find_UE_id(instance, rnti);
+          UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
+          if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+            UE_scheduling_control->cdrx_waiting_ack = FALSE;
+          }
 
+        }
         break;
+
       case LTE_UL_DCCH_MessageType__c1_PR_securityModeComplete:
         LOG_I(F1AP, "[MSG] RRC securityModeComplete \n");
         break;

@@ -3202,11 +3202,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
   mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX Configuration */
     // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
     int UE_id = find_UE_id(module_id, rnti);
 
     if (UE_id != -1) {
@@ -6490,7 +6490,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   LTE_DRB_ToReleaseList_t            *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   LTE_DRB_Identity_t                 *drb_id_p      = NULL;
-
+  
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
 
@@ -6498,7 +6498,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     /* CDRX: activated if ack was expected */
     int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
     if (UE_id_mac == -1){
-      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
+      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",
+            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), ue_context_pP->ue_context.rnti);
       return;
     }
     UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
