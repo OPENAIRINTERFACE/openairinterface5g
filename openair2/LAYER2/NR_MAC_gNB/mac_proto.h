@@ -34,6 +34,8 @@
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
 
+void set_cset_offset(uint16_t);
+
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,

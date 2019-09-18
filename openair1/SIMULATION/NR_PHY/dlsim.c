@@ -135,6 +135,7 @@ int main(int argc, char **argv)
   int run_initial_sync=0;
   int do_pdcch_flag=1;
 
+  uint16_t cset_offset = 0;
   int loglvl=OAILOG_WARNING;
 
   float target_error_rate = 0.01;
@@ -147,7 +148,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -312,6 +313,10 @@ int main(int argc, char **argv)
       loglvl = atoi(optarg);
       break;
 
+    case 'o':
+      cset_offset = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -337,6 +342,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
+      printf("-o CORESET offset\n");
       exit (-1);
       break;
     }
@@ -493,6 +499,8 @@ int main(int argc, char **argv)
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   
+  uint16_t rb_offset_count = cset_offset/6;
+  set_cset_offset(rb_offset_count);
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
@@ -598,8 +606,8 @@ int main(int argc, char **argv)
     mask = mask >> 1;
     mask = mask | 0x100000000000;
   }
-  uint16_t rb_offset_count = rb_offset/6;
-  mask = mask >> rb_offset_count;
+  uint16_t UE_rb_offset_count = rb_offset/6;
+  mask = mask >> UE_rb_offset_count;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.frequency_domain_resource = mask;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
