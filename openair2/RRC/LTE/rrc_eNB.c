@@ -3202,10 +3202,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
   mac_MainConfig->drx_Config = NULL;
+  /*
   rnti_t rnti = ue_context_pP->ue_id_rnti;
   module_id_t module_id = ctxt_pP->module_id;
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
+    // CDRX Configuration 
     // Need to check if UE is a BR UE
     int UE_id = find_UE_id(module_id, rnti);
 
@@ -3219,7 +3220,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
         
         LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-        /* Process the IE drx_Config */
+        // Process the IE drx_Config 
         if (cc_id < MAX_NUM_CCs) {
           mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
           if (mac_MainConfig->drx_Config == NULL) {
@@ -3238,11 +3239,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     LOG_E(RRC, "CU/DU split activated\n");
   }
   if (mac_MainConfig->drx_Config != NULL) {
-    /* Set timers and thresholds values in local MAC context of UE */
+    // Set timers and thresholds values in local MAC context of UE 
     eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
     LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-  } 
-
+  }
+*/
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
@@ -6493,9 +6494,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
-
+/*
   if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX: activated if ack was expected */
+    // CDRX: activated if ack was expected 
     int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
     if (UE_id_mac == -1){
       LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",
@@ -6510,7 +6511,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
       LOG_I(RRC, "CDRX configuration after first RRC Connection Reconfiguration Complete reception\n");
     }
   } // No CDRX with the CU/DU split in this version of the code
-
+*/
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
     T_INT(ctxt_pP->frame),
