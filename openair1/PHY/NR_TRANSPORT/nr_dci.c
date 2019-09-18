@@ -162,8 +162,6 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config) {
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
-  uint32_t dmrs_seq[NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD];
-  uint16_t dmrs_offset=0;
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -195,39 +193,13 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
 
   /// DMRS QPSK modulation
-  /*There is a need to shift from which index the pregenerated DMRS sequence is used
-   * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
-  /*if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG) {
-    for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++)
-      //gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
-
-    dmrs_offset = 0;//(pdcch_params.rb_offset*3)&0x1f;
-    LOG_D(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
-  }*/
-
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
-    if (dmrs_offset) {
-      // a non zero offset requires the DMRS sequence to be rearranged
-      memset(dmrs_seq,0, NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-
-      for (int i=0; i<dmrs_length; i++) {
-        dmrs_seq[(i>>5)] |= ((gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]>>((i+dmrs_offset)&0x1f))&1)<<(i&0x1f);
-#ifdef DEBUG_PDCCH_DMRS
-        //printf("out 0x%08x in 0x%08x \n", dmrs_seq[(i>>5)], gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]);
-#endif
-      }
-
-      nr_modulation(dmrs_seq, dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
-    } else
-      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
+   
+    nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_PDCCH_DMRS
 
     for (int i=0; i<dmrs_length>>1; i++)
-      if (dmrs_offset)
-        printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i, dmrs_seq[i>>5],
-               mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
-      else
         printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
                gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
 
