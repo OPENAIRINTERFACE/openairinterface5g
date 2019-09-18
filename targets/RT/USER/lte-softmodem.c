@@ -496,6 +496,8 @@ void init_pdcp(void) {
     if (IS_SOFTMODEM_NOS1)
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
 
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
+
     pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {

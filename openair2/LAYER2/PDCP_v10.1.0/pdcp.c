@@ -1344,9 +1344,10 @@ pdcp_mbms_run (
 //
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
   //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
-  if (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
+  //if (EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
+
     pdcp_fifo_read_input_mbms_sdus_fromtun(ctxt_pP);
-  }
+  //}
 
   // PDCP -> NAS/IP traffic: RX
 //  if (ctxt_pP->enb_flag) {
@@ -2300,14 +2301,25 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);
       nas_config(1, 1, 1, "enb");
-      netlink_init_mbms_tun("enm",1);
-      nas_config_mbms(1, 2, 1, "enm"); 
+      if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
+      	netlink_init_mbms_tun("enm",1);
+      	nas_config_mbms(1, 2, 1, "enm"); 
+      	LOG_I(PDCP, "ENB pdcp will use mbms tun interface\n");
+      }
       LOG_I(PDCP, "ENB pdcp will use tun interface\n");
     } else {
       LOG_I(PDCP, "pdcp will use kernel modules\n");
       netlink_init();
     }
-  }
+  }else{
+         if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
+             LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
+            netlink_init_mbms_tun("enm",1);
+             nas_config_mbms_s1(1, 2, 1, "enm"); 
+         }else
+             LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
+   }
+
   return pdcp_params.optmask ;
 }
 

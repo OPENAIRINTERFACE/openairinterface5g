@@ -62,6 +62,7 @@ typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_fl
 /* UEs beyond that will be multiplexed on the same tun   */
 #define MAX_NUMBER_NETIF           16
 
+#define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
 #define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)
 #define LINK_ENB_PDCP_TO_GTPV1U_BIT     (1<< 14)
