@@ -183,6 +183,7 @@ typedef struct RU_feptx_t_s{
   int aa;//physical MAX nb_tx
   int half_slot;//first or second half of a slot
   int slot;//current slot
+  int symbol;//current symbol
   int nb_antenna_ports;//number of logical port
   int index;
 }RU_feptx_t;
