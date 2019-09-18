@@ -3796,6 +3796,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_tti_rx);
 
       LOG_I(PHY, "harq_pid: %d, TBS expected dlsch0: %d, TBS expected dlsch1: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS, dlsch1->harq_processes[harq_pid]->TBS);
+      
+      if(ret<dlsch0->max_ldpc_iterations+1){
       // fill dl_indication message
       dl_indication.module_id = ue->Mod_id;
       dl_indication.cc_id = ue->CC_id;
@@ -3818,6 +3820,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       //  send to mac
       if (ue->if_inst && ue->if_inst->dl_indication)
       ue->if_inst->dl_indication(&dl_indication);
+      }
     }
 
 

@@ -2395,7 +2395,7 @@ nr_ue_send_sdu(module_id_t module_idP,
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 		LOG_I(MAC, "Printing MAC PDU contents \n");
 		int j;
-		for (j = 0; j < rx_lengths[i]; j++)
+		for (j = 0; j < 10; j++) //rx_lengths[i]
 			LOG_I(MAC, "%x.", (unsigned char) payload_ptr[j]);
 		LOG_I(MAC, "\n");
 #endif

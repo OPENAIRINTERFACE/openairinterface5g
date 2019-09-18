@@ -666,7 +666,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                 }*/
 #endif
            if (frame%100 == 0){
-              LOG_I (PHY, "Printing 100 first payload bytes:");
+              LOG_I (PHY, "Printing 100 first payload bytes at frame: %d ", frame);
               for (int i = 0; i <10 ; i++){ //Kr_bytes
             	  LOG_I(PHY, "[%d] : %x ", i, harq_process->b[i]);
               }

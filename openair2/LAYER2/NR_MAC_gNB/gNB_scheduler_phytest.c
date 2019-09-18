@@ -370,7 +370,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                              );
 
     	    if (rlc_status.bytes_in_buffer > 0) {
-    	      LOG_I(MAC,
+    	      LOG_D(MAC,
     		    "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
     		    module_idP, frameP,
                       TBS - ta_len - header_length_total - sdu_length_total - 3,
@@ -388,7 +388,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 
 
-    	      LOG_I(MAC,
+    	      LOG_D(MAC,
     		    "[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
     		    module_idP, sdu_lengths[num_sdus], lcid);
 
@@ -437,7 +437,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     	        		ta_update,    // timing advance
     	        		NULL,    // contention res id
     	        		padding, post_padding);
-    	LOG_I(MAC, "Offset bits: %d \n", offset);
+    	LOG_D(MAC, "Offset bits: %d \n", offset);
 
     	// Probably there should be other actions done before that
     	// cycle through SDUs and place in dlsch_buffer
@@ -457,8 +457,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     	memcpy(nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0],DLSCH_pdu.payload[0],TBS_bytes);
 
-    	LOG_I(MAC, "Printing first 100 payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
-    	  for(int i = 0; i < 100; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
+    	LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
+    	  for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
     	  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
     	  }
 
@@ -481,12 +481,12 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 		  // HOT FIX for all zero pdu problem
 		  // ------------------------------------------------------------------------------------------------
 		  
-		  for(int i = 0; i < 100; i++) { //TBS_bytes
+		  for(int i = 0; i < TBS_bytes; i++) { //
 		  	  ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
 		  	  //LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
 		    }
                   if (frameP%100 == 0){
-		      LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
+		      LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
   		      for(int i = 0; i < 10; i++) {
 			  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
   		      }
