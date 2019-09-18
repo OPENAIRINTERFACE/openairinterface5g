@@ -1081,7 +1081,10 @@
       <class>execution</class>
       <desc>nr_dlsim Test cases. (Test1: 106 PRB),
                                  (Test2: 217 PRB),
-                                 (Test3: 273 PRB)</desc>
+                                 (Test3: 273 PRB),
+                                 (Test4: 106 PRB 12 PRB Offset),
+                                 (Test5: 217 PRB 24 PRB Offset),
+                                 (Test6: 273 PRB 48 PRB Offset),</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1090,8 +1093,11 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
       <main_exec_args>-n100 -R106
 		              -n100 -R217
-		              -n100 -R273</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3</tags>
+		              -n100 -R273
+                  -n100 -R106 -o12
+                  -n100 -R217 -o24
+                  -n100 -R273 -o48</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6</tags>
       <search_expr_true>PDCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
