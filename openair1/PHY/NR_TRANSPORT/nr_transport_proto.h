@@ -326,6 +326,10 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
+int nr_generate_csi_rs(uint32_t **gold_csi_rs,
+                       int32_t *txdataF,
+                       NR_DL_FRAME_PARMS frame_parms,
+                       nfapi_nr_config_request_t config);
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
