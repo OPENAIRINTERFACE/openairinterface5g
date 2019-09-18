@@ -524,6 +524,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
         printf("\x1B[34m" "Segment %d CRC OK\n",r);
+        //Temporary hack
+        no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
       }
       else {
@@ -572,7 +574,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_ldpc_iterations))) {// a Code segment is in error so break;
-      LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
+      LOG_I(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
       err_flag = 1;
     }
   }
@@ -586,10 +588,10 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   frame_rx_prev = frame_rx_prev%1024;
 
   if (err_flag == 1) {
-#if UE_DEBUG_TRACE
+//#if UE_DEBUG_TRACE
     LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, nr_tti_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
-#endif
+//#endif
     harq_process->harq_ack.ack = 0;
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
@@ -610,10 +612,10 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     return((1 + dlsch->max_ldpc_iterations));
   } else {
-#if UE_DEBUG_TRACE
+//#if UE_DEBUG_TRACE
       LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for nr_tti_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
            phy_vars_ue->Mod_id,nr_tti_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
-#endif
+//#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
@@ -663,10 +665,12 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                 printf("%d : %d \n", i, harq_process->b[i]);
                 }*/
 #endif
-              /*LOG_I (PHY, "Printing 100 first payload bytes:");
-              for (int i = 0; i <100 ; i++){ //Kr_bytes
+           if (frame%100 == 0){
+              LOG_I (PHY, "Printing 100 first payload bytes:");
+              for (int i = 0; i <10 ; i++){ //Kr_bytes
             	  LOG_I(PHY, "[%d] : %x ", i, harq_process->b[i]);
-              }*/
+              }
+          }
 
   }
 

@@ -233,7 +233,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	          pdu_rel15->pucch_resource_indicator = 7;
 	          pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
 
-	          LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+	          LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	                      pdu_rel15->frequency_domain_assignment,
 	                      pdu_rel15->time_domain_assignment,
 	                      pdu_rel15->vrb_to_prb_mapping,
@@ -246,8 +246,8 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	          params_rel15->rnti_type = NFAPI_NR_RNTI_C;
 	          params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
 
-	          //params_rel15->aggregation_level = 1;
-	          LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
+	          //params_rel15->aggregation_level = 1; 
+	          LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
 	                      coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
 	                      ss params : first symb %d, ss type %d\n",
 	                      params_rel15->rnti,
@@ -263,7 +263,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	        nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
 		    // Hardcode it for now
 		    TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
-		    LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+		    LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	        dlsch_pdu_rel15->start_prb,
 	        dlsch_pdu_rel15->n_prb,
 	        dlsch_pdu_rel15->start_symbol,
@@ -457,8 +457,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     	memcpy(nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0],DLSCH_pdu.payload[0],TBS_bytes);
 
-    	LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
-    	  for(int i = 0; i < TBS_bytes; i++) { //dlsch_pdu_rel15->transport_block_size/8 6784/8
+    	LOG_I(MAC, "Printing first 100 payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
+    	  for(int i = 0; i < 100; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
     	  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
     	  }
 
@@ -480,11 +480,18 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 		  TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);
 		  // HOT FIX for all zero pdu problem
 		  // ------------------------------------------------------------------------------------------------
-		  LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
-		  for(int i = 0; i < TBS_bytes; i++) {
+		  
+		  for(int i = 0; i < 100; i++) { //TBS_bytes
 		  	  ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
-		  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+		  	  //LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
 		    }
+                  if (frameP%100 == 0){
+		      LOG_I(MAC, "Printing payload bytes at the gNB side, Frame: %d, slot: %d : \n", frameP, slotP);
+  		      for(int i = 0; i < 10; i++) {
+			  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+  		      }
+		  }
+                             
 		  //TX_req->segments[0].segment_length = 8;
 		  TX_req->segments[0].segment_length = TBS_bytes +2;
 		  TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
