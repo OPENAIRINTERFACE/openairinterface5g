@@ -250,27 +250,17 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     cset_start_sc -= frame_parms.ofdm_symbol_size;
 
   /*Reorder REG list for a freq first mapping*/
-  uint8_t symb_idx[NR_MAX_CSET_DURATION] = {0,0,0};
   uint8_t nb_regs = dci_alloc.L*NR_NB_REG_PER_CCE;
-  uint8_t regs_per_symb = nb_regs/cset_nsymb;
 
   for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++) {
     cce = dci_alloc.cce_list[cce_idx];
 
     for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
       reg = cce.reg_list[reg_idx];
-      reg_mapping_list[reg.symb_idx*regs_per_symb + symb_idx[reg.symb_idx]++] = reg;
+      reg_mapping_list[reg_idx+cce_idx*NR_NB_REG_PER_CCE] = reg;
     }
   }
 
-#ifdef DEBUG_DCI
-  printf("\n Ordered REG list:\n");
-
-  for (int i=0; i<nb_regs; i++)
-    printf("%d\t",reg_mapping_list[i].reg_idx );
-
-  printf("\n");
-#endif
 
   if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS) {
     /*in this case the DMRS are mapped on all the coreset*/
