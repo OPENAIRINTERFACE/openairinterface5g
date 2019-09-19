@@ -32,6 +32,7 @@
 #define __NR_LDPC_TYPES__H__
 
 #include "PHY/TOOLS/time_meas.h"
+#include "nrLDPC_defs.h"
 
 // ==============================================================================
 // TYPES
@@ -49,6 +50,7 @@ typedef struct nrLDPC_lut {
     const uint8_t*  numEdgesPerBn; /**< LUT with number of edges per BN */
     const uint32_t* cn2bnProcBuf; /**< LUT for transferring CN processing results to BN processing buffer */
     const uint16_t* llr2llrProcBuf; /**< LUT for transferring input LLRs to LLR processing buffer */
+    const uint16_t** circShift[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
 } t_nrLDPC_lut;
 
 /**

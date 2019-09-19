@@ -2199,6 +2199,16 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
         }
         else if (Z == 320)
         {
+            p_lut->circShift[0] = (const uint16_t**) circShift_BG1_Z320_CNG3;
+            p_lut->circShift[1] = (const uint16_t**) circShift_BG1_Z320_CNG4;
+            p_lut->circShift[2] = (const uint16_t**) circShift_BG1_Z320_CNG5;
+            p_lut->circShift[3] = (const uint16_t**) circShift_BG1_Z320_CNG6;
+            p_lut->circShift[4] = (const uint16_t**) circShift_BG1_Z320_CNG7;
+            p_lut->circShift[5] = (const uint16_t**) circShift_BG1_Z320_CNG8;
+            p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z320_CNG9;
+            p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z320_CNG10;
+            p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z320_CNG19;
+            
             if (R == 13)
             {
                 p_lut->llr2CnProcBuf  = lut_llr2CnProcBuf_BG1_Z320_R13;
@@ -2241,6 +2251,16 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
         }
         else if (Z == 384)
         {
+            p_lut->circShift[0] = (const uint16_t**) circShift_BG1_Z384_CNG3;
+            p_lut->circShift[1] = (const uint16_t**) circShift_BG1_Z384_CNG4;
+            p_lut->circShift[2] = (const uint16_t**) circShift_BG1_Z384_CNG5;
+            p_lut->circShift[3] = (const uint16_t**) circShift_BG1_Z384_CNG6;
+            p_lut->circShift[4] = (const uint16_t**) circShift_BG1_Z384_CNG7;
+            p_lut->circShift[5] = (const uint16_t**) circShift_BG1_Z384_CNG8;
+            p_lut->circShift[6] = (const uint16_t**) circShift_BG1_Z384_CNG9;
+            p_lut->circShift[7] = (const uint16_t**) circShift_BG1_Z384_CNG10;
+            p_lut->circShift[8] = (const uint16_t**) circShift_BG1_Z384_CNG19;
+            
             if (R == 13)
             {
                 p_lut->llr2CnProcBuf  = lut_llr2CnProcBuf_BG1_Z384_R13;
