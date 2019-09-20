@@ -138,7 +138,8 @@ rrc_gNB_allocate_new_UE_context(
     new_p->ue_context.modify_e_rab[i].xid = -1;
   }
 
-  return new_p;
+  LOG_I(NR_RRC,"Returning new UE context at %p\n",new_p);
+  return(new_p);
 }
 
 
