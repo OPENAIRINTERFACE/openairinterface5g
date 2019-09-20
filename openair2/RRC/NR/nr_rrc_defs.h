@@ -269,6 +269,10 @@ typedef struct gNB_RRC_UE_s {
   NR_UE_NR_Capability_t*             UE_Capability_nr;
   NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;
 
+  NR_CellGroupConfig_t               *secondaryCellGroup;
+  NR_RRCReconfiguration_t            *reconfig;
+  NR_RadioBearerConfig_t             *rb_config;
+
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -376,8 +380,6 @@ typedef struct {
   int ssb_SubcarrierOffset;                  
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
-  NR_RRCReconfiguration_t                   *reconfig[MAX_NR_RRC_UE_CONTEXTS];
-  NR_RadioBearerConfig_t                    *rb_config[MAX_NR_RRC_UE_CONTEXTS];
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;

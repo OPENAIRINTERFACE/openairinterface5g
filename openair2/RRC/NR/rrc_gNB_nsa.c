@@ -55,8 +55,8 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerLi
   AssertFatal(ueCapabilityRAT_Container_nr!=NULL,"ueCapabilityRAT_Container_nr is NULL\n");
   AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
   // decode and store capabilities
-  ue_context_p = rrc_gNB_get_ue_context(rrc,
-					rnti);
+  ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+  ue_context_p->ue_id_rnti = rnti;
   
   asn_dec_rval_t dec_rval = uper_decode(NULL,
 					&asn_DEF_NR_UE_NR_Capability,
@@ -107,27 +107,28 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
 // NR RRCReconfiguration
 
-  AssertFatal(carrier->reconfig[rrc->Nb_ue]==NULL,
-	      "carrier->reconfig[%d] isn't null\n",rrc->Nb_ue);
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
 
-  carrier->reconfig[rrc->Nb_ue] = calloc(1,sizeof(NR_RRCReconfiguration_t));
-  carrier->secondaryCellGroup[rrc->Nb_ue] = calloc(1,sizeof(NR_CellGroupConfig_t));
-  memset((void*)carrier->reconfig[rrc->Nb_ue],0,sizeof(NR_RRCReconfiguration_t));
-  carrier->reconfig[rrc->Nb_ue]->rrc_TransactionIdentifier=0;
-  carrier->reconfig[rrc->Nb_ue]->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
+  ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
+  ue_context_p->ue_context.secondaryCellGroup = calloc(1,sizeof(NR_CellGroupConfig_t));
+  memset((void*)ue_context_p->ue_context.reconfig,0,sizeof(NR_RRCReconfiguration_t));
+  ue_context_p->ue_context.reconfig->rrc_TransactionIdentifier=0;
+  ue_context_p->ue_context.reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
-  carrier->reconfig[rrc->Nb_ue]->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
+  ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
   fill_default_reconfig(carrier->ServingCellConfigCommon,
 			reconfig_ies,
-			carrier->secondaryCellGroup[rrc->Nb_ue],
+			ue_context_p->ue_context.secondaryCellGroup,
 			carrier->n_physical_antenna_ports,
-			carrier->initial_csi_index[rrc->Nb_ue]);
-  carrier->rb_config[rrc->Nb_ue] = calloc(1,sizeof(NR_RadioBearerConfig_t));
-  fill_default_rbconfig(rrc,carrier->rb_config[rrc->Nb_ue]);
+			&carrier->initial_csi_index[rrc->Nb_ue]);
+
+  ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
+
+  fill_default_rbconfig(ue_context_p->ue_context.rb_config);
+
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));
-  generate_CG_Config(rrc,CG_Config,carrier->reconfig[rrc->Nb_ue],carrier->rb_config[rrc->Nb_ue]);
+  generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
   // Send to X2 entity to transport to MeNB
 
   rrc->Nb_ue++;

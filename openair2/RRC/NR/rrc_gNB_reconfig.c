@@ -2007,5 +2007,45 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
 
+  rbconfig->srb_ToAddModList = NULL;
+  rbconfig->srb3_ToRelease = NULL;
+  rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
+  NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
+  drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
+  drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity=5;
+  drb_ToAddMod->drb_Identity = 4;
+  drb_ToAddMod->reestablishPDCP = NULL;
+  drb_ToAddMod->recoverPDCP = NULL;
+  drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
+  drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
+  drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
+  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_ms30;
+  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
+  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
+  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+  drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+
+  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;	
+  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;	
+  drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
+  drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
+
+  drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
+  *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+  drb_ToAddMod->pdcp_Config->ext1 = NULL;
+
+  rbconfig->drb_ToReleaseList = NULL;
+
+  rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
+  rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
+  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea2;
+  rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
+  rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
+  *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+}
 #endif

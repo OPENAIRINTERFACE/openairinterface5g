@@ -39,8 +39,7 @@
 
 
 //------------------------------------------------------------------------------
-void
-uid_linear_allocator_init(
+void nr_uid_linear_allocator_init(
   nr_uid_allocator_t *const uid_pP
 )
 //------------------------------------------------------------------------------
@@ -49,10 +48,7 @@ uid_linear_allocator_init(
 }
 
 //------------------------------------------------------------------------------
-uid_nr_t
-uid_linear_allocator_new(
-  gNB_RRC_INST *const rrc_instance_pP
-)
+uid_nr_t nr_uid_linear_allocator_new(gNB_RRC_INST *const rrc_instance_pP)
 //------------------------------------------------------------------------------
 {
   unsigned int i;
@@ -135,7 +131,7 @@ rrc_gNB_allocate_new_UE_context(
   }
 
   memset(new_p, 0, sizeof(struct rrc_gNB_ue_context_s));
-  new_p->local_uid = uid_linear_allocator_new(rrc_instance_pP);
+  new_p->local_uid = nr_uid_linear_allocator_new(rrc_instance_pP);
 
   for(int i = 0; i < NB_RB_MAX; i++) {
     new_p->ue_context.e_rab[i].xid = -1;
@@ -172,6 +168,23 @@ rrc_gNB_get_ue_context(
   }
 }
 
+rrc_gNB_free_mem_UE_context(
+  const protocol_ctxt_t               *const ctxt_pP,
+  struct rrc_gNB_ue_context_s         *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  int i;
+  LOG_T(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        ue_context_pP);
+
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[0]);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[1]);
+
+  // empty the internal fields of the UE context here
+}
 
 //------------------------------------------------------------------------------
 void rrc_gNB_remove_ue_context(
