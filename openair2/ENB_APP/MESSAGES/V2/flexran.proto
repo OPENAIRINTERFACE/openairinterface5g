@@ -77,10 +77,19 @@ enum flex_bs_capability {
     RRC   = 7;
 }
 
+enum flex_bs_split {
+  F1    = 0;
+  nFAPI = 1;
+  IF4   = 2;
+  IF4p5 = 3;
+  IF5   = 4;
+}
+
 message flex_hello {
     optional flex_header header = 1;
     optional uint64 bs_id = 2;        // Unique id to distinguish the eNB
     repeated flex_bs_capability capabilities = 3;
+    repeated flex_bs_split splits = 4;
 }
 
 message flex_echo_request {

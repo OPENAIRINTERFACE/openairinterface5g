@@ -3570,3 +3570,31 @@ uint16_t flexran_get_capabilities_mask(mid_t mod_id) {
 
   return mask;
 }
+
+size_t flexran_get_splits(mid_t mod_id, Protocol__FlexBsSplit **splits) {
+  size_t n_splits = 0;
+  *splits = NULL;
+  if (rrc_is_present(mod_id) && !NODE_IS_MONOLITHIC(RC.rrc[mod_id]->node_type))
+    n_splits++;
+  if (NFAPI_MODE != NFAPI_MONOLITHIC)
+    n_splits++;
+  if (RC.ru && RC.ru[mod_id] && RC.ru[mod_id]->if_south != LOCAL_RF)
+    n_splits++;
+  if (n_splits == 0)
+    return 0;
+
+  AssertFatal(n_splits < 3, "illegal number of splits (%lu)\n", n_splits);
+  *splits = calloc(n_splits, sizeof(Protocol__FlexBsSplit));
+  AssertFatal(*splits, "could not allocate Protocol__FlexBsSplit array\n");
+  int n = 0;
+  if (rrc_is_present(mod_id) && !NODE_IS_MONOLITHIC(RC.rrc[mod_id]->node_type))
+    (*splits)[n++] = PROTOCOL__FLEX_BS_SPLIT__F1;
+  if (NFAPI_MODE != NFAPI_MONOLITHIC)
+    (*splits)[n++] = PROTOCOL__FLEX_BS_SPLIT__nFAPI;
+  if (RC.ru && RC.ru[mod_id] && RC.ru[mod_id]->if_south == REMOTE_IF4p5)
+    (*splits)[n++] = PROTOCOL__FLEX_BS_SPLIT__IF4p5;
+  if (RC.ru && RC.ru[mod_id] && RC.ru[mod_id]->if_south == REMOTE_IF5)
+    (*splits)[n++] = PROTOCOL__FLEX_BS_SPLIT__IF5;
+  DevAssert(n == n_splits);
+  return n_splits;
+}

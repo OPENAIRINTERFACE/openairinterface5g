@@ -128,6 +128,7 @@ int flexran_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessa
   hello_msg->bs_id  = flexran_get_bs_id(mod_id);
   hello_msg->has_bs_id = 1;
   hello_msg->n_capabilities = flexran_get_capabilities(mod_id, &hello_msg->capabilities);
+  hello_msg->n_splits = flexran_get_splits(mod_id, &hello_msg->splits);
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
   if(*msg == NULL)
@@ -161,6 +162,7 @@ int flexran_agent_destroy_hello(Protocol__FlexranMessage *msg) {
 
   free(msg->hello_msg->header);
   free(msg->hello_msg->capabilities);
+  free(msg->hello_msg->splits);
   free(msg->hello_msg);
   free(msg);
   return 0;

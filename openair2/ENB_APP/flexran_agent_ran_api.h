@@ -44,6 +44,7 @@
 #include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "PHY/phy_extern.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 /****************************
  * get generic info from RAN
@@ -815,3 +816,8 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
 /* get the capabilities supported by the underlying network function as a bit
  * mask. */
 uint16_t flexran_get_capabilities_mask(mid_t mod_id);
+
+/* get the splits used by the underlying network function,
+ * return the number and stores list of this length in splits. If there are
+ * zero capabilities, splits will be NULL */
+size_t flexran_get_splits(mid_t mod_id, Protocol__FlexBsSplit **splits);
