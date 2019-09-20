@@ -566,12 +566,16 @@ typedef struct RU_t_s{
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
   void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru);
 
+  /// Timing data copy statistics (TX)
+  time_stats_t txdataF_copy_stats;
   /// Timing statistics (TX)
-  time_stats_t total_precoding_stats;
+  time_stats_t precoding_stats;
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
   time_stats_t ofdm_mod_stats;
+  /// Timing statistics (TX)
+  time_stats_t ofdm_total_stats;
   /// Timing wait statistics
   time_stats_t ofdm_demod_wait_stats;
   /// Timing wakeup statistics

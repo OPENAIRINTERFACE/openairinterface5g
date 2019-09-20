@@ -125,12 +125,12 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int nb_antenna_ports = 8;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
-  start_meas(&ru->ofdm_mod_stats);
+  start_meas(&ru->ofdm_total_stats);
 
   for(j=0; j<fp->symbols_per_slot; ++j){
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
-    start_meas(&ru->total_precoding_stats);
+    start_meas(&ru->txdataF_copy_stats);
     if (ru->num_gNB == 1){
       gNB = ru->gNB_list[0];
       cfg = &gNB->gNB_config;
@@ -143,7 +143,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
       }
     }//num_gNB == 1
     //printf("~~~~~~~~~~~memery copy index: nb_antenna_ports = %d, samples_per_slot_wCP = %d\n", nb_antenna_ports, fp->samples_per_slot_wCP);
-    stop_meas(&ru->total_precoding_stats);
+    stop_meas(&ru->txdataF_copy_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
 
 
@@ -205,7 +205,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   //write_output
 
-  stop_meas(&ru->ofdm_mod_stats);
+  stop_meas(&ru->ofdm_total_stats);
 
 }
 
@@ -235,6 +235,7 @@ static void *nr_feptx_thread(void *param) {
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
     bw  = ru->beam_weights[0];
+    start_meas(&ru->precoding_stats);
     nr_beam_precoding(ru->common.txdataF,
                         ru->common.txdataF_BF,
                         fp,
@@ -243,9 +244,11 @@ static void *nr_feptx_thread(void *param) {
                         l+start,
                         aa,
                         nb_antenna_ports);
+    stop_meas(&ru->precoding_stats);
 
-
+    start_meas(&ru->ofdm_mod_stats);
     nr_feptx0(ru,slot,start,1,aa);
+    stop_meas(&ru->ofdm_mod_stats);
 
     if (release_thread(&feptx->mutex_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
 
@@ -363,7 +366,7 @@ void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx) {
 
   gNB = gNB_list[0];
 
-  start_meas(&ru->total_precoding_stats);
+  start_meas(&ru->precoding_stats);
   for(i=0; i<nb_antenna_ports; ++i)
     memcpy((void*)ru->common.txdataF[i],
            (void*)gNB->common_vars.txdataF[i],
@@ -400,7 +403,7 @@ void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx) {
     if(i == 16) break;
   }
 
-  stop_meas(&ru->total_precoding_stats);
+  stop_meas(&ru->precoding_stats);
 }
 
 void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
@@ -412,7 +415,7 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
   int32_t ***bw;
   int i=0;
 
-  start_meas(&ru->total_precoding_stats);
+  start_meas(&ru->precoding_stats);
   if (ru->num_gNB == 1){
     gNB = gNB_list[0];
     cfg = &gNB->gNB_config;
@@ -455,7 +458,7 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
       }// for (l=0;l<fp->symbols_per_slot;l++)
     }// if (ru->nb_tx == 1)
   }// if (ru->num_gNB == 1)
-  stop_meas(&ru->total_precoding_stats);
+  stop_meas(&ru->precoding_stats);
 }
 
 void nr_init_feptx_prec_thread(RU_t *ru){

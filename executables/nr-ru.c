@@ -1214,12 +1214,16 @@ static void *ru_stats_thread(void *param) {
 
     if (opp_enabled == 1) {
       if (ru->feptx_prec) {
-        print_meas(&ru->total_precoding_stats,"feptx_prec",NULL,NULL);
+        print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
       }
 
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
 
-      if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
+      if (ru->feptx_ofdm){
+        print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
+        print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
+        print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
+      }
 
       if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
 
