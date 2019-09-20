@@ -140,10 +140,11 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     }
 
     f_reg = (f_bundle_j*reg_bundle_size_L)+(reg%reg_bundle_size_L);
-    //index_z   = 9*reg;
-    index_z   = 9*(uint16_t)floor(reg/coreset_time_dur) + (9*coreset_nbr_rb)*(reg%coreset_time_dur);
+    f_reg++; // to prevent compiler warning
+    index_z   = 9*reg;
+    index_llr   = 9*(uint16_t)floor(reg/coreset_time_dur) + (9*coreset_nbr_rb)*(reg%coreset_time_dur); // might not work for noninterleaved mapping
     //index_llr = 9*(((uint16_t)floor(f_reg/reg_bundle_size_L)+(f_reg)%coreset_time_dur))*(coreset_nbr_rb);
-    index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
+    //index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
 
     for (int i=0; i<9; i++) {
       z[index_z + i] = llr[index_llr + i];
