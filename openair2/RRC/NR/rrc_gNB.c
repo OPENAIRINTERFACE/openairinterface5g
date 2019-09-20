@@ -232,7 +232,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
     LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);    
     rrc_add_nsa_user(rrc,ue_context_p);
-  }
+  } 
 
 }
 

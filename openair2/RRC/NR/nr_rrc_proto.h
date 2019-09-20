@@ -62,6 +62,8 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      rrc_gNB_ue_context_t   *const ue_context_pP
      );
 
+struct rrc_gNB_ue_context_s *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP);
+
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList);
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p);

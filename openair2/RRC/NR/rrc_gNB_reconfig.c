@@ -555,7 +555,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToReleaseList = NULL;
 
-
+ bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
 
   bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
   bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(struct NR_PDSCH_Config));
@@ -888,7 +888,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
  srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
  srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
- srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,*srs_resset0->resourceType.choice.aperiodic->slotOffset);
+ srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
  *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
  srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
  srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
@@ -2038,6 +2038,8 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
   *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
   drb_ToAddMod->pdcp_Config->ext1 = NULL;
+  
+  ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
 
   rbconfig->drb_ToReleaseList = NULL;
 
