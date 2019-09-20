@@ -51,6 +51,8 @@ typedef struct nrLDPC_lut {
     const uint32_t* cn2bnProcBuf; /**< LUT for transferring CN processing results to BN processing buffer */
     const uint16_t* llr2llrProcBuf; /**< LUT for transferring input LLRs to LLR processing buffer */
     const uint16_t** circShift[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
+    const uint32_t** startAddrBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
+    const uint8_t**  bnPosBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
 } t_nrLDPC_lut;
 
 /**
