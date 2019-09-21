@@ -99,7 +99,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       (const char *)buffer,
 		       (enc_rval.encoded+7)>>3); 
 
-  LOG_I(RRC,"Dumping NR_RRCReconfiguration message (%d bytes)\n",(enc_rval.encoded+7)>>3);
+  LOG_I(RRC,"Dumping NR_RRCReconfiguration message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
   for (int i=0;i<(enc_rval.encoded+7)>>3;i++) {
     printf("%2x ",((uint8_t *)buffer)[i]);
   }
@@ -111,7 +111,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
   OCTET_STRING_fromBuf(cg_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config,
 		       (const char *)buffer,
 		       (enc_rval.encoded+7)>>3);  
-  LOG_I(RRC,"Dumping scg_RB_Config message (%d bytes)\n",(enc_rval.encoded+7)>>3);
+  LOG_I(RRC,"Dumping scg_RB_Config message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
   for (int i=0;i<(enc_rval.encoded+7)>>3;i++) {
     printf("%2x ",((uint8_t*)buffer)[i]);
   }

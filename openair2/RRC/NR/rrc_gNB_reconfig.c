@@ -45,14 +45,12 @@
 #define true 1
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-				       NR_RRCReconfiguration_IEs_t *reconfig,
 				       NR_CellGroupConfig_t *secondaryCellGroup,
 				       int scg_id,
 				       int servCellIndex,
 				       int n_physical_antenna_ports,
 				       int initial_csi_index) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
-  AssertFatal(reconfig!=NULL,"reconfig is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
@@ -127,6 +125,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   secondaryCellGroup->mac_CellGroupConfig->skipUplinkTxDynamic=false;
   secondaryCellGroup->mac_CellGroupConfig->ext1 = NULL;
+
 
   secondaryCellGroup->physicalCellGroupConfig = calloc(1,sizeof(struct NR_PhysicalCellGroupConfig));
 
@@ -398,12 +397,18 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 	&servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters,
 	sizeof(bwp->bwp_Common->genericParameters));
  bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
+
+ bwp->bwp_Common->pdcch_ConfigCommon=NULL;
+ /*
  bwp->bwp_Common->pdcch_ConfigCommon=calloc(1,sizeof(NR_SetupRelease_PDCCH_ConfigCommon_t));
  bwp->bwp_Common->pdcch_ConfigCommon->present = NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup = calloc(1,sizeof(NR_PDCCH_ConfigCommon_t));
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
+
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=NULL;
+ 
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=calloc(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
 
  NR_SearchSpace_t *ss=calloc(1,sizeof(NR_SearchSpace_t));
@@ -432,12 +437,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format0_0_AndFormat1_0));
 
  ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,ss);
+ 
+
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->pagingSearchSpace=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=calloc(1,sizeof(NR_SearchSpaceId_t));
  *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=1;
-
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ext1=NULL;
+*/
  bwp->bwp_Common->pdsch_ConfigCommon=calloc(1,sizeof(NR_SetupRelease_PDSCH_ConfigCommon_t));
  bwp->bwp_Common->pdsch_ConfigCommon->present = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
  bwp->bwp_Common->pdsch_ConfigCommon->choice.setup = calloc(1,sizeof(NR_PDSCH_ConfigCommon_t));
@@ -1115,6 +1123,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
+
+ return;
 
  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(NR_CSI_MeasConfig_t));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
@@ -1998,7 +2008,13 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   // radioBearerConfig
   reconfig->radioBearerConfig=NULL;
   // secondaryCellGroup
-  fill_default_secondaryCellGroup(servingcellconfigcommon,reconfig,secondaryCellGroup,0,0,n_physical_antenna_ports,initial_csi_index);
+  fill_default_secondaryCellGroup(servingcellconfigcommon,secondaryCellGroup,0,0,n_physical_antenna_ports,initial_csi_index);
+  char scg_buffer[1024];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, (void *)secondaryCellGroup, scg_buffer, 1024);
+  reconfig->secondaryCellGroup = calloc(1,sizeof(OCTET_STRING_t));
+  OCTET_STRING_fromBuf(reconfig->secondaryCellGroup,
+		       (const char*)scg_buffer,
+		       (enc_rval.encoded+7)>>3);
   // measConfig
   reconfig->measConfig=NULL;
   // lateNonCriticalExtension
