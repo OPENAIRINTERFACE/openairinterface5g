@@ -266,7 +266,7 @@
 {GNB_CONFIG_STRING_INITIALDLBWPK0_8,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[8]->k0,defint64val:-1,TYPE_INT64,0/*39*/},\
 {GNB_CONFIG_STRING_INITIALDLBWPMAPPINGTYPE_8,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[8]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA,TYPE_INT64,0/*40*/}, \
 {GNB_CONFIG_STRING_INITIALDLBWPSTARTSYMBOLANDLENGTH_8,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[8]->startSymbolAndLength,defint64val:54,TYPE_INT64,0/*41*/},\
-{GNB_CONFIG_STRING_INITIALDLBWPK0_9,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->k0,defint64val:-1,TYPE_INT64,0/*42*/}, \
+{GNB_CONFIG_STRING_INITIALDLBWPK0_9,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[9]->k0,defint64val:-1,TYPE_INT64,0/*42*/}, \
 {GNB_CONFIG_STRING_INITIALDLBWPMAPPINGTYPE_9,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[9]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA,TYPE_INT64,0/*43*/},\
 {GNB_CONFIG_STRING_INITIALDLBWPSTARTSYMBOLANDLENGTH_9,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[9]->startSymbolAndLength,defint64val:54,TYPE_INT64,0/*44*/},\
 {GNB_CONFIG_STRING_INITIALDLBWPK0_10,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[10]->k0,defint64val:-1,TYPE_INT64,0/*45*/},\
@@ -299,7 +299,7 @@
 {GNB_CONFIG_STRING_PRACHMSG1FDM,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM,defint64val:NR_RACH_ConfigGeneric__msg1_FDM_one,TYPE_INT64,0/*72*/},\
 {GNB_CONFIG_STRING_PRACHMSG1FREQUENCYSTART,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart,defint64val:0,TYPE_INT64,0/*73*/},\
 {GNB_CONFIG_STRING_ZEROCORRELATIONZONECONFIG,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,defint64val:13,TYPE_INT64,0/*74*/},\
-{GNB_CONFIG_STRING_PREAMBLERECEIVEDTARGETPOWER,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower,defint64val:-118,TYPE_INT64,0/*75*/},\
+{GNB_CONFIG_STRING_PREAMBLERECEIVEDTARGETPOWER,NULL,0,iptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower,defintval:-118,TYPE_INT32,0/*75*/},\
 {GNB_CONFIG_STRING_PREAMBLETRANSMAX,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleTransMax,defint64val:NR_RACH_ConfigGeneric__preambleTransMax_n10,TYPE_INT64,0/*76*/},\
 {GNB_CONFIG_STRING_POWERRAMPINGSTEP,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.powerRampingStep,defint64val:NR_RACH_ConfigGeneric__powerRampingStep_dB2,TYPE_INT64,0/*77*/},\
 {GNB_CONFIG_STRING_RARESPONSEWINDOW,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow,defint64val:NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20,TYPE_INT64,0/*78*/},\
@@ -371,7 +371,7 @@
 {GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,defint64val:6,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSLOTS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,defint64val:2,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSYMBOLS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols,defint64val:4,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity,defint64val:-1,TYPE_INT64,0},\
+{GNB_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY2,NULL,0,iptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity,defintval:-1,TYPE_INT,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSLOTS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots,defint64val:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSymbols,defint64val:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSLOTS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSlots,defint64val:-1,TYPE_INT64,0},\

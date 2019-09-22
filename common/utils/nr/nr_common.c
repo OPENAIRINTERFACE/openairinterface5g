@@ -51,7 +51,10 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
 }
 
 int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
-  return(275*(NPRB-1)+RBstart);
+  if (NPRB < 138)
+     return(275*(NPRB-1)+RBstart);
+  else
+     return(275*(276-NPRB) + (274-RBstart));
 }
 
 /// Target code rate tables indexed by Imcs
