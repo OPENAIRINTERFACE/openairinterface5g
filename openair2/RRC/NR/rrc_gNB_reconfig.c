@@ -1895,30 +1895,35 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.buf=malloc(csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.size);
  for (int i=0;i<csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.size;i++) 
    csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.buf[i]=0xff;
+ csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.buf[csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.size-1]&=~((1<<csirep0->reportFreqConfiguration->csi_ReportingBand->choice.subbands18.bits_unused)-1);
+
  csirep0->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
  csirep0->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
  csirep0->codebookConfig=calloc(1,sizeof(*csirep0->codebookConfig));
  csirep0->codebookConfig->codebookType.present = NR_CodebookConfig__codebookType_PR_type1;
  csirep0->codebookConfig->codebookType.choice.type1 = calloc(1,sizeof(*csirep0->codebookConfig->codebookType.choice.type1));
+ csirep0->codebookConfig->codebookType.choice.type1->subType.present = NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel; 
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel=calloc(1,sizeof(*csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel));
+ csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present=NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two;
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two=
    calloc(1,sizeof(*csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two));
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.size=1;
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.bits_unused=2;
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf=malloc(1);
- csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf[0]=0x3f;
+ csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf[0]=0xfc;
  //'111111'B
 
 
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.size=1; 
- csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.bits_unused=6;
+ csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.bits_unused=0;
  csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf=malloc(1); 
- csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0]=3; //'00000011'B
+ csirep0->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0]=0xc0; //'00000011'B
 
  csirep0->codebookConfig->codebookType.choice.type1->codebookMode=1;
  csirep0->dummy = NULL;
  csirep0->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
- csirep0->groupBasedBeamReporting.choice.disabled=NULL;
+ csirep0->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep0->groupBasedBeamReporting.choice.disabled));
+ csirep0->groupBasedBeamReporting.choice.disabled->nrofReportedRS = NULL;
  csirep0->cqi_Table = calloc(1,sizeof(*csirep0->cqi_Table));
  *csirep0->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
  csirep0->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
@@ -1952,20 +1957,22 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
  csirep1->codebookConfig->codebookType.present = NR_CodebookConfig__codebookType_PR_type1;
  csirep1->codebookConfig->codebookType.choice.type1 = calloc(1,sizeof(*csirep1->codebookConfig->codebookType.choice.type1));
+ csirep1->codebookConfig->codebookType.choice.type1->subType.present=NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel;
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel=calloc(1,sizeof(*csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel));
+ csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present=NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two;
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two=
    calloc(1,sizeof(*csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two));
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.size=1;
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.bits_unused=2;
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf=malloc(1);
- csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf[0]=0x3f;
+ csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.two->twoTX_CodebookSubsetRestriction.buf[0]=0xfc;
  //'111111'B
 
 
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.size=1; 
- csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.bits_unused=6;
+ csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.bits_unused=0;
  csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf=malloc(1); 
- csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0]=3; //'00000011'B
+ csirep1->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0]=0xc0; //'00000011'B
 
  csirep1->codebookConfig->codebookType.choice.type1->codebookMode=1;
  csirep1->dummy = NULL;
@@ -2068,5 +2075,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
   rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
   *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+
+  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
 #endif

@@ -101,7 +101,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 
   LOG_I(RRC,"Dumping NR_RRCReconfiguration message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
   for (int i=0;i<(enc_rval.encoded+7)>>3;i++) {
-    printf("%2x ",((uint8_t *)buffer)[i]);
+    printf("%02x",((uint8_t *)buffer)[i]);
   }
   printf("\n");
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig, NULL, (void *)rbconfig, buffer, 1024);
@@ -113,7 +113,7 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       (enc_rval.encoded+7)>>3);  
   LOG_I(RRC,"Dumping scg_RB_Config message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
   for (int i=0;i<(enc_rval.encoded+7)>>3;i++) {
-    printf("%2x ",((uint8_t*)buffer)[i]);
+    printf("%02x",((uint8_t*)buffer)[i]);
   }
   printf("\n");
 
