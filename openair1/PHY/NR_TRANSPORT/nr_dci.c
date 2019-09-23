@@ -265,7 +265,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS) {
     /*in this case the DMRS are mapped on all the coreset*/
     for (l=cset_start_symb; l<cset_start_symb+ cset_nsymb; l++) {
-      dmrs_idx = 0;
+      dmrs_idx = pdcch_params.rb_offset*3;
       k = cset_start_sc + 1;
 
       while (dmrs_idx<3*pdcch_params.n_rb) {
@@ -295,7 +295,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       k -= frame_parms.ofdm_symbol_size;
 
     l = cset_start_symb + reg.symb_idx;
-    dmrs_idx = (reg.reg_idx/cset_nsymb)*3;
+    dmrs_idx = ((reg.reg_idx/cset_nsymb)+pdcch_params.rb_offset)*3;
     k_prime = 0;
 
     for (int m=0; m<NR_NB_SC_PER_RB; m++) {
