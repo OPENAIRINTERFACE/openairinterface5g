@@ -736,7 +736,25 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
+        LOG_I(F1AP, "[MSG] RRC UL rrcConnectionReconfigurationComplete\n");
 
+        int UE_id_mac = find_UE_id(instance, rnti);
+        
+        if (UE_id_mac == -1) {
+          LOG_E(MAC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
+          break;
+        }
+        
+        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
+        
+        if (UE_scheduling_control == NULL) {
+          LOG_E(MAC, "Can't get UE scheduling control structure of UE rnti %x\n", rnti);
+          break;
+        } else if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+          UE_scheduling_control->cdrx_waiting_ack = FALSE;
+          // UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration is sent (under test)
+          LOG_I(MAC, "CDRX configuration after first RRC Connection Reconfiguration Complete reception\n");
+        }
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
@@ -744,18 +762,13 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcConnectionSetupComplete \n");
-       if(!ue_context_p){
+        
+        if(!ue_context_p){
           LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
-        }else {
+
+        } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
           ue_context_p->ue_context.Status = RRC_CONNECTED;
-  
-          int UE_id_mac = find_UE_id(instance, rnti);
-          UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
-          if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
-            UE_scheduling_control->cdrx_waiting_ack = FALSE;
-          }
-
         }
         break;
 
