@@ -37,7 +37,7 @@
 #include "mdci.h"
 #include "uci_common.h"
 #ifndef STANDALONE_COMPILE
-#include "UTIL/LISTS/list.h"
+  #include "UTIL/LISTS/list.h"
 #endif
 
 
@@ -126,13 +126,11 @@ typedef struct {
   /// codeword this transport block is mapped to
   uint8_t codeword;
 #ifdef PHY_TX_THREAD
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
-#endif
 #endif
 } LTE_DL_eNB_HARQ_t;
 
@@ -185,13 +183,11 @@ typedef struct {
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
 #ifndef PHY_TX_THREAD
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
-#endif
 #endif
 } LTE_eNB_DLSCH_t;
 
@@ -344,7 +340,7 @@ typedef struct {
   uint16_t    n_pucch_1[4][2];
   /// two antenna n1_pucch 1_0 for SR
   uint16_t    n_pucch_1_0_sr[2];
-   /// two antenna n2_pucch
+  /// two antenna n2_pucch
   uint16_t    n_pucch_2[2];
   /// two antenna n3_pucch
   uint16_t    n_pucch_3[2];
@@ -352,7 +348,6 @@ typedef struct {
   uint8_t     tdd_bundling;
   /// Received Energy
   uint32_t stat;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;
   /// Indicates the symbols that are left empty due to eMTC retuning.
@@ -369,7 +364,6 @@ typedef struct {
   uint8_t cdm_Index;
   // Indicates if the resource blocks allocated for this grant overlap with the SRS configuration.
   uint8_t Nsrs;
-#endif
 } LTE_eNB_UCI;
 
 typedef struct {
@@ -447,10 +441,8 @@ typedef struct {
 } LTE_eNB_UE_stats;
 
 typedef struct {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// UE type (normal, CEModeA, CEModeB)
   uint8_t ue_type;
-#endif
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Pointers to 8 HARQ processes for the ULSCH

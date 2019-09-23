@@ -477,7 +477,6 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char *buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",ue->dlsch_received[0],ue->dlsch_errors[0],ue->dlsch_fer[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",ue->dlsch_SI_received[0],ue->dlsch_SI_errors[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",ue->dlsch_ra_received[0],ue->dlsch_ra_errors[0]);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       int i=0;
 
       //len += sprintf(&buffer[len], "[UE PROC] MCH  Total %d\n", ue->dlsch_mch_received[0]);
@@ -488,7 +487,6 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char *buffer, int length
                        i, ue->dlsch_mtch_received[i][0],ue->dlsch_mtch_errors[i][0],ue->dlsch_mtch_trials[i][0]);
       }
 
-#endif
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Bitrate %dkbps\n",(ue->bitrate[0]/1000));
       len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(ue->total_received_bits[0]/1000));
       len += sprintf(&buffer[len], "[UE PROC] IA receiver %d\n",ue->use_ia_receiver);
