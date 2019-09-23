@@ -104,6 +104,10 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
     printf("%02x",((uint8_t *)buffer)[i]);
   }
   printf("\n");
+  FILE *fd = fopen("reconfig.raw","w");
+  fwrite((void*)buffer,1,(size_t)((enc_rval.encoded+7)>>3),fd);
+  fclose(fd);
+
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig, NULL, (void *)rbconfig, buffer, 1024);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
@@ -116,6 +120,9 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
     printf("%02x",((uint8_t*)buffer)[i]);
   }
   printf("\n");
+  fd = fopen("rbconfig.raw","w");
+  fwrite((void*)buffer,1,(size_t)((enc_rval.encoded+7)>>3),fd);
+  fclose(fd);
 
   return(0);
 }

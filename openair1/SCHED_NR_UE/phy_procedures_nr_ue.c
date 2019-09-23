@@ -2598,14 +2598,14 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
   if (l==2) {
     // UE measurements on symbol 0
       LOG_D(PHY,"Calling measurements nr_tti_rx %d, rxdata %p\n",nr_tti_rx,ue->common_vars.rxdata);
-
+      /*
       nr_ue_measurements(ue,
 			  0,
 			  0,
 			  0,
 			  0,
 			  nr_tti_rx);
-			  
+      */		  
 			  //(nr_tti_rx*frame_parms->samples_per_tti+ue->rx_offset)%(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
 
 #if T_TRACER
