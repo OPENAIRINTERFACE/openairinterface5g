@@ -82,11 +82,15 @@ static inline void *nrLDPC_inv_circ_memcpy(int8_t *str1, const int8_t *str2, uin
 */
 static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z, uint8_t BG)
 {
-    const uint16_t* lut_llr2llrProcBuf = p_lut->llr2llrProcBuf;
     uint32_t i;
     const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
     uint32_t colG1 = NR_LDPC_START_COL_PARITY_BG1*Z;
 
+    const uint16_t* lut_llr2llrProcBufAddr = p_lut->llr2llrProcBufAddr;
+    const uint8_t*  lut_llr2llrProcBufNumBn = p_lut->llr2llrProcBufNumBn;
+    const uint8_t*  lut_llr2llrProcBufNumEl = p_lut->llr2llrProcBufNumEl;
+
+    uint16_t numLlr = 0;
     int8_t* llrProcBuf = p_procBuf->llrProcBuf;
 
     if (BG == 2)
@@ -101,9 +105,11 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrL
     }
 
     // First 2 columns might be set to zero directly if it's true they always belong to the groups with highest number of connected CNs...
-    for (i=0; i<colG1; i++)
+    for (i=0; i<(*lut_llr2llrProcBufNumEl); i++)
     {
-        llrProcBuf[lut_llr2llrProcBuf[i]] = llr[i];
+        numLlr = lut_llr2llrProcBufNumBn[i]*Z;
+        memcpy(&llrProcBuf[lut_llr2llrProcBufAddr[i]], llr, numLlr);
+        llr+=numLlr;
     }
 }
 
@@ -317,7 +323,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
     const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
+    //const uint8_t (*lut_bnPosBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
     const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
     const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
     const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
@@ -326,7 +332,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
     const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
     const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
-    
+
     int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
     int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
 
@@ -665,7 +671,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint32_t (*lut_startAddrBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint32_t(*)[lut_numCnInCnGroups[7]]) p_lut->startAddrBnProcBuf[7];
     const uint32_t (*lut_startAddrBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint32_t(*)[lut_numCnInCnGroups[8]]) p_lut->startAddrBnProcBuf[8];
 
-    const uint8_t (*lut_bnPosBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
+//    const uint8_t (*lut_bnPosBnProcBuf_CNG3) [lut_numCnInCnGroups[0]] = (uint8_t(*)[lut_numCnInCnGroups[0]]) p_lut->bnPosBnProcBuf[0];
     const uint8_t (*lut_bnPosBnProcBuf_CNG4) [lut_numCnInCnGroups[1]] = (uint8_t(*)[lut_numCnInCnGroups[1]]) p_lut->bnPosBnProcBuf[1];
     const uint8_t (*lut_bnPosBnProcBuf_CNG5) [lut_numCnInCnGroups[2]] = (uint8_t(*)[lut_numCnInCnGroups[2]]) p_lut->bnPosBnProcBuf[2];
     const uint8_t (*lut_bnPosBnProcBuf_CNG6) [lut_numCnInCnGroups[3]] = (uint8_t(*)[lut_numCnInCnGroups[3]]) p_lut->bnPosBnProcBuf[3];
@@ -674,7 +680,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     const uint8_t (*lut_bnPosBnProcBuf_CNG9) [lut_numCnInCnGroups[6]] = (uint8_t(*)[lut_numCnInCnGroups[6]]) p_lut->bnPosBnProcBuf[6];
     const uint8_t (*lut_bnPosBnProcBuf_CNG10)[lut_numCnInCnGroups[7]] = (uint8_t(*)[lut_numCnInCnGroups[7]]) p_lut->bnPosBnProcBuf[7];
     const uint8_t (*lut_bnPosBnProcBuf_CNG19)[lut_numCnInCnGroups[8]] = (uint8_t(*)[lut_numCnInCnGroups[8]]) p_lut->bnPosBnProcBuf[8];
-    
+
     int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
 
