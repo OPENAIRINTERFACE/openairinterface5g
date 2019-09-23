@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "nr_ul_estimation.h"
+#include "PHY/sse_intrin.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
@@ -35,18 +36,19 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned short p,
                                 unsigned char symbol,
                                 unsigned short bwp_start_subcarrier,
-                                unsigned short nb_rb_pusch)
+                                unsigned short nb_rb_pusch,
+                                dmrs_UplinkConfig_t *dmrs_UplinkConfig)
 {
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
   unsigned short k;
-  unsigned int pilot_cnt;
-  int16_t ch[2],*pil,*rxF,*ul_ch;
+  unsigned int pilot_cnt,re_cnt;
+  int16_t ch[2],ch_r[2],ch_l[2],*pil,*rxF,*ul_ch;
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
   int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
   unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
-  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(32)));
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
+  __m128i *ul_ch_128;
 
 #ifdef DEBUG_CH
   FILE *debug_ch_est;
@@ -115,17 +117,17 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   nr_gold_pusch(gNB, symbol, n_idDMRS, length_dmrs);
 
-  nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch[gNB_offset][Ns][0], &pilot[0], 1000, 0, nb_rb_pusch);
+  nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch[gNB_offset][Ns][0], &pilot[0], 1000, 0, nb_rb_pusch, dmrs_UplinkConfig->pusch_dmrs_type);
 
   //------------------------------------------------//
 
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
-    pil   = (int16_t *)&pilot[0];
-    rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
-    ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+      pil   = (int16_t *)&pilot[0];
+      rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
+      ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
 
-    memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
+      memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PUSCH
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], gNB->frame_parms.N_RB_UL);
@@ -134,6 +136,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     printf("ul_ch addr %p nushift %d\n",ul_ch,nushift);
 #endif
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
+
+
+    if (dmrs_UplinkConfig->pusch_dmrs_type == pusch_dmrs_type1){
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -144,6 +149,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
       printf("data 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[2],rxF[3],&rxF[2],ch[0],ch[1],pil[0],pil[1]);
 #endif
+
       multadd_real_vector_complex_scalar(fl,
                                          ch,
                                          ul_ch,
@@ -192,28 +198,33 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-#ifdef DEBUG_CH
-    fprintf(debug_ch_est, "pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-	//printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-#endif
-        multadd_real_vector_complex_scalar(fm,
+
+  #ifdef DEBUG_PUSCH
+        printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+  #endif
+        multadd_real_vector_complex_scalar(fml,
                                            ch,
                                            ul_ch,
                                            8);
-
         pil+=2;
         re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
-      
+        //printf("ul_ch addr %p\n",ul_ch);
+
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-#ifdef DEBUG_PUSCH
-	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-#endif
+
+  #ifdef DEBUG_PUSCH
+        printf("pilot 2 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+  #endif
         multadd_real_vector_complex_scalar(fmm,
                                            ch,
                                            ul_ch,
                                            8);
+
+        //for (int i= 0; i<16; i++)
+        //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
+
         pil+=2;
         re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
@@ -328,65 +339,153 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       printf("%d\n",idxP);
     }
 #endif    
+    
+    } else { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
+
+      // Treat first DMRS specially (left edge)
+
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ul_ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ul_ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        pil+=2;
+        ul_ch+=2;
+        re_offset = (re_offset + 1)%gNB->frame_parms.ofdm_symbol_size;
+        ch_offset++;
+
+        for (re_cnt = 1; re_cnt < (nb_rb_pusch*NR_NB_SC_PER_RB) - 5; re_cnt+=6){
+
+          rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+          ch_l[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+          ch_l[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+          ul_ch[0] = ch_l[0];
+          ul_ch[1] = ch_l[1];
+
+          pil+=2;
+          ul_ch+=2;
+          ch_offset++;
+
+          multadd_real_four_symbols_vector_complex_scalar(filt8_ml2,
+                                                          ch_l,
+                                                          ul_ch);
+
+          re_offset = (re_offset+5)%gNB->frame_parms.ofdm_symbol_size;
+
+          rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+          ch_r[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+          ch_r[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+
+          multadd_real_four_symbols_vector_complex_scalar(filt8_mr2,
+                                                          ch_r,
+                                                          ul_ch);
+
+          //for (int re_idx = 0; re_idx < 8; re_idx+=2)
+            //printf("ul_ch = %d + j*%d\n", ul_ch[re_idx], ul_ch[re_idx+1]);
+
+          ul_ch+=8;
+          ch_offset+=4;
+
+          ul_ch[0] = ch_r[0];
+          ul_ch[1] = ch_r[1];
+
+          pil+=2;
+          ul_ch+=2;
+          ch_offset++;
+          re_offset = (re_offset + 1)%gNB->frame_parms.ofdm_symbol_size;
+
+        }
+
+        // Treat last pilot specially (right edge)
+
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
+
+        ch_l[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch_l[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
+        ul_ch[0] = ch_l[0];
+        ul_ch[1] = ch_l[1];
+
+        ul_ch+=2;
+        ch_offset++;
+
+        multadd_real_four_symbols_vector_complex_scalar(filt8_rr1,
+                                                        ch_l,
+                                                        ul_ch);
+
+        multadd_real_four_symbols_vector_complex_scalar(filt8_rr2,
+                                                        ch_r,
+                                                        ul_ch);
+
+        ul_ch_128 = (__m128i *)&ul_ch_estimates[aarx][ch_offset];
+
+        ul_ch_128[0] = _mm_slli_epi16 (ul_ch_128[0], 2);
+  }
+
+
+
     // Convert to time domain
-    memset(temp_in_ifft_0, 0, gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t));
-    memcpy(temp_in_ifft_0, &ul_ch_estimates[aarx][symbol_offset], nb_rb_pusch * NR_NB_SC_PER_RB * sizeof(int32_t));
 
-    switch (gNB->frame_parms.ofdm_symbol_size) {
-      case 128:
-        idft128((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+      switch (gNB->frame_parms.ofdm_symbol_size) {
+        case 128:
+          idft128((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 256:
-        idft256((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 256:
+          idft256((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 512:
-        idft512((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 512:
+          idft512((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 1024:
-        idft1024((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 1024:
+          idft1024((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 1536:
-        idft1536((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 1536:
+          idft1536((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 2048:
-        idft2048((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 2048:
+          idft2048((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 4096:
-        idft4096((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 4096:
+          idft4096((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      case 8192:
-        idft8192((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
+        case 8192:
+          idft8192((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
 
-      default:
-        idft512((int16_t*) temp_in_ifft_0,
-               (int16_t*) ul_ch_estimates_time[aarx],
-               1);
-        break;
-    }
+        default:
+          idft512((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+                 (int16_t*) ul_ch_estimates_time[aarx],
+                 1);
+          break;
+      }
+
   }
 
 #ifdef DEBUG_CH

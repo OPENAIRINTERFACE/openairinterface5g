@@ -400,7 +400,6 @@ int main(int argc, char **argv)
   rel15_ul->mcs            = Imcs;
   rel15_ul->rv             = rvidx;
   rel15_ul->n_layers       = Nl;
-  rel15_ul->nb_re_dmrs     = nb_re_dmrs;
   rel15_ul->length_dmrs    = length_dmrs;
   rel15_ul->R              = code_rate;
   ///////////////////////////////////////////////////

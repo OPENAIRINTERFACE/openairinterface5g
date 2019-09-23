@@ -150,8 +150,8 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
-  uint16_t nb_symb_sch = 12;
-  int start_symbol = NR_SYMBOLS_PER_SLOT - nb_symb_sch;
+  uint16_t nb_symb_sch = 14;
+  int start_symbol = 0;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -453,13 +453,14 @@ int main(int argc, char **argv)
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
 
+
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
-  
+
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
   uint32_t errors_decoding   = 0;
@@ -471,7 +472,33 @@ int main(int argc, char **argv)
 
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
-  
+
+  unsigned int TBS;
+  uint16_t number_dmrs_symbols = 0;
+  unsigned int available_bits;
+  uint8_t nb_re_dmrs;
+  uint8_t length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+  unsigned char mod_order;
+  uint16_t code_rate;
+
+  for (i = 0; i < NR_SYMBOLS_PER_SLOT; i++)
+      number_dmrs_symbols += is_dmrs_symbol(i,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            nb_symb_sch,
+                                            &UE->dmrs_UplinkConfig,
+                                            UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
+                                            frame_parms->ofdm_symbol_size);
+
+  mod_order      = nr_get_Qm_ul(Imcs, 0);
+  nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
+  code_rate      = nr_get_code_rate_ul(Imcs, 0);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
+
   printf("\n");
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -493,7 +520,6 @@ int main(int argc, char **argv)
       rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
       rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
       rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = nb_re_dmrs;
       rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
       rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
       rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;

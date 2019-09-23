@@ -91,13 +91,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                int gNB_id) {
 
   uint32_t available_bits;
-  uint8_t mod_order, cwd_index, num_of_codewords;
+  uint8_t mod_order, cwd_index, num_of_codewords, l;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   uint32_t ***pusch_dmrs;
   int16_t **tx_layers;
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
-  int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
+  int8_t Wf[2], Wt[2], l_prime[2], delta;
   uint16_t n_dmrs, code_rate, number_dmrs_symbols;
   uint8_t dmrs_type;
   uint8_t mapping_type;
@@ -134,8 +134,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                             &UE->dmrs_UplinkConfig,
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
-
-    printf("number_dmrs_symbols = %u\n", number_dmrs_symbols);
 
     ulsch_ue->length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
     ulsch_ue->rnti        = n_rnti;
@@ -229,8 +227,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs);
   int16_t mod_dmrs[n_dmrs<<1];
   dmrs_type = UE->dmrs_UplinkConfig.pusch_dmrs_type;
-
-  l0 = get_l0_ul(mapping_type, 2);
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -252,7 +248,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
 
   l_prime[0] = 0; // single symbol ap 0
-  uint8_t dmrs_symbol = l0+l_prime[0], l; // Assuming dmrs-AdditionalPosition = 0
 
 #ifdef NR_SC_FDMA
   uint32_t nb_re_pusch, nb_re_dmrs_per_rb;
@@ -260,8 +255,19 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   for (l = start_symbol; l < start_symbol + harq_process_ul_ue->number_of_symbols; l++) {
 
-    if(l == dmrs_symbol)
-      nb_re_dmrs_per_rb = ulsch_ue->nb_re_dmrs; // [hna] ulsch_ue->nb_re_dmrs = 6 in this configuration
+    is_dmrs = is_dmrs_symbol(l,
+                             0,
+                             0,
+                             0,
+                             0,
+                             0,
+                             harq_process_ul_ue->number_of_symbols,
+                             &UE->dmrs_UplinkConfig,
+                             mapping_type,
+                             frame_parms->ofdm_symbol_size);
+
+    if (is_dmrs == 1)
+      nb_re_dmrs_per_rb = ulsch_ue->nb_re_dmrs;
     else
       nb_re_dmrs_per_rb = 0;
     
@@ -327,8 +333,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                  frame_parms->ofdm_symbol_size);
 
         if (is_dmrs == 1) {
-
-          printf("DMRS l = %u\n", l);
 
           nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 

@@ -75,15 +75,18 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  unsigned short start_rb,
                                  unsigned short nb_rb_pusch,
                                  NR_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t is_dmrs_symbol,
-                                 uint8_t dmrs_symbol);
+                                 uint8_t dmrs_symbol,
+                                 uint16_t number_symbols,
+                                 uint8_t mapping_type,
+                                 dmrs_UplinkConfig_t *dmrs_UplinkConfig);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
                             NR_gNB_ULSCH_t **ulsch_gNB,
                             uint8_t symbol,
                             uint8_t start_symbol,
-                            uint16_t nb_rb);
+                            uint16_t nb_rb,
+                            pusch_dmrs_type_t pusch_dmrs_type);
 
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal

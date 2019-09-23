@@ -231,21 +231,25 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  unsigned short start_rb,
                                  unsigned short nb_rb_pusch,
                                  NR_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t is_dmrs_symbol,
-                                 uint8_t dmrs_symbol)
+                                 uint8_t dmrs_symbol,
+                                 uint16_t number_symbols,
+                                 uint8_t mapping_type,
+                                 dmrs_UplinkConfig_t *dmrs_UplinkConfig)
 {
   unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx;
   uint32_t rxF_ext_index = 0;
   uint32_t ul_ch0_ext_index = 0;
   uint32_t ul_ch0_index = 0;
+  uint8_t is_dmrs_symbol_flag, k_prime;
+  uint16_t n=0;
 
   int16_t *rxF,*rxF_ext;
   int *ul_ch0,*ul_ch0_ext;
 
 #ifdef DEBUG_RB_EXT
 
-  printf("--------------------symbol = %d, is_dmrs_symbol = %u-----------------------\n", symbol, is_dmrs_symbol);
+  printf("--------------------symbol = %d-----------------------\n", symbol);
   printf("--------------------ch_ext_index = %d-----------------------\n", symbol*NR_NB_SC_PER_RB * nb_rb_pusch);
 
 #endif
@@ -253,6 +257,7 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
   start_re = (frame_parms->first_carrier_offset + (start_rb * NR_NB_SC_PER_RB))%frame_parms->ofdm_symbol_size;
   
   nb_re_pusch = NR_NB_SC_PER_RB * nb_rb_pusch;
+  is_dmrs_symbol_flag = 0;
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     
@@ -263,26 +268,44 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
 
     ul_ch0_ext = &ul_ch_estimates_ext[aarx][symbol*nb_re_pusch];
 
+    n = 0;
+    k_prime = 0;
+
     for (re = 0; re < nb_re_pusch; re++) {
 
-      if ( (is_dmrs_symbol && ((re&1) != 0))    ||    (is_dmrs_symbol == 0) ) { // [hna] (re&1) != frame_parms->nushift) assuming only dmrs type 1 and mapping type A
-                                                                                // frame_parms->nushift should be initialized with 0
+      is_dmrs_symbol_flag =  is_dmrs_symbol(symbol,
+                                            (start_re + re)%frame_parms->ofdm_symbol_size,
+                                            start_re,
+                                            k_prime,
+                                            n,
+                                            0,
+                                            number_symbols,
+                                            dmrs_UplinkConfig,
+                                            mapping_type,
+                                            frame_parms->ofdm_symbol_size);
+  #ifdef DEBUG_RB_EXT
+      printf("re = %d, is_dmrs_symbol_flag = %d, symbol = %d\n", re, is_dmrs_symbol_flag, symbol);
+  #endif
+
+      if ( is_dmrs_symbol_flag == 0 ) {
+
         rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
         rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
         ul_ch0_ext[ul_ch0_ext_index] = ul_ch0[ul_ch0_index];
 
-        ul_ch0_ext_index++;
-        rxF_ext_index = rxF_ext_index + 2;
-      }
-
-      ul_ch0_index++;
-
   #ifdef DEBUG_RB_EXT
         printf("rxF_ext[%d] = %d\n", rxF_ext_index, rxF_ext[rxF_ext_index]);
         printf("rxF_ext[%d] = %d\n", rxF_ext_index+1, rxF_ext[rxF_ext_index+1]);
-        printf("ul_ch0_ext[%d] = %d\n", 2*rxF_ext_index, ((int16_t *)ul_ch0_ext)[2*rxF_ext_index]);
-        printf("ul_ch0_ext[%d] = %d\n", 2*rxF_ext_index + 1, ((int16_t *)ul_ch0_ext)[2*rxF_ext_index + 1]);
   #endif
+
+        ul_ch0_ext_index++;
+        rxF_ext_index +=2;
+      } else {
+        k_prime++;
+        k_prime&=1;
+        n+=(k_prime)?0:1;
+      }
+      ul_ch0_index++;
     }
   }
 }
@@ -292,7 +315,8 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
                             NR_gNB_ULSCH_t **ulsch_gNB,
                             uint8_t symbol,
                             uint8_t is_dmrs_symbol,
-                            unsigned short nb_rb)
+                            unsigned short nb_rb,
+                            pusch_dmrs_type_t pusch_dmrs_type)
 {
 
 #if defined(__x86_64__)||defined(__i386__)
@@ -316,7 +340,10 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
       ul_ch128 = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*nb_rb*NR_NB_SC_PER_RB];
 
       if (is_dmrs_symbol==1){
-        nb_rb = nb_rb>>1;
+        if (pusch_dmrs_type == pusch_dmrs_type1)
+          nb_rb = nb_rb>>1;
+        else
+          nb_rb = (2*nb_rb)/3;
       }
 
 
@@ -367,7 +394,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
       ul_ch128=(__m128i *)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];
 
-      for (rb = 0; rb < nb_rb; rb++) {
+      for (rb = 0; rb < len/12; rb++) {
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));
@@ -997,18 +1024,18 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     bwp_start_subcarrier = (rel15_ul->start_rb*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
 
     dmrs_symbol_flag = is_dmrs_symbol(symbol,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    rel15_ul->number_symbols,
-                                    &gNB->dmrs_UplinkConfig,
-                                    mapping_type,
-                                    frame_parms->ofdm_symbol_size);
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      rel15_ul->number_symbols,
+                                      &gNB->dmrs_UplinkConfig,
+                                      mapping_type,
+                                      frame_parms->ofdm_symbol_size);
 
     if (dmrs_symbol_flag == 1){
-      nb_re_pusch = rel15_ul->number_rbs * 6;
+      nb_re_pusch = rel15_ul->number_rbs * ((gNB->dmrs_UplinkConfig.pusch_dmrs_type==pusch_dmrs_type1)?6:8);
       gNB->pusch_vars[UE_id]->dmrs_symbol = symbol;
     } else {
         nb_re_pusch = rel15_ul->number_rbs * NR_NB_SC_PER_RB;
@@ -1026,7 +1053,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   0, // p
                                   symbol,
                                   bwp_start_subcarrier,
-                                  rel15_ul->number_rbs);
+                                  rel15_ul->number_rbs,
+                                  &gNB->dmrs_UplinkConfig);
 
     //----------------------------------------------------------
     //--------------------- RBs extraction ---------------------
@@ -1042,15 +1070,18 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul->start_rb,
                                 rel15_ul->number_rbs,
                                 frame_parms,
-                                dmrs_symbol_flag,
-                                gNB->pusch_vars[UE_id]->dmrs_symbol);
+                                gNB->pusch_vars[UE_id]->dmrs_symbol,
+                                rel15_ul->number_symbols,
+                                mapping_type,
+                                &gNB->dmrs_UplinkConfig);
 
     nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                            frame_parms,
                            gNB->ulsch[UE_id],
                            symbol,
                            dmrs_symbol_flag,
-                           rel15_ul->number_rbs);
+                           rel15_ul->number_rbs,
+                           gNB->dmrs_UplinkConfig.pusch_dmrs_type);
 
     if (first_symbol_flag==1) {
 
