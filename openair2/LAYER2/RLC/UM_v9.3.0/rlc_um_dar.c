@@ -723,10 +723,10 @@ void rlc_um_check_timer_dar_time_out(
   signed int     in_window;
   rlc_usn_t      old_vr_ur;
 
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_CHECK_TIMER_DAR_TIME_OUT,VCD_FUNCTION_IN);
 
   if ((rlc_pP->t_reordering.running)) {
+    //LOG_I(RLC, "[rlc_um_check_timer_dar_time_out] 2 \n");
     if (
       // CASE 1:          start              time out
       //        +-----------+------------------+----------+
@@ -787,6 +787,7 @@ void rlc_um_check_timer_dar_time_out(
         LOG_D(RLC, " %d", rlc_pP->vr_ur);
         LOG_D(RLC, "\n");
 #endif
+        LOG_I(RLC, "[rlc_um_check_timer_dar_time_out] 3 \n");
         rlc_um_try_reassembly(ctxt_pP, rlc_pP ,old_vr_ur, rlc_pP->vr_ur);
 
         in_window = rlc_um_in_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur,  rlc_pP->vr_uh,  rlc_pP->vr_uh);
@@ -1039,6 +1040,7 @@ rlc_um_receive_process_dar (
   } else {
     free_mem_block(pdu_mem_pP, __func__);
     pdu_mem_pP = NULL;
+    //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 1 \n");
     return;
   }
 
@@ -1065,6 +1067,7 @@ rlc_um_receive_process_dar (
     rlc_pP->stat_rx_data_pdu_out_of_window   += 1;
     rlc_pP->stat_rx_data_bytes_out_of_window += tb_sizeP;
     free_mem_block(pdu_mem_pP, __func__);
+    //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 2 \n");
     pdu_mem_pP = NULL;
     RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_RECEIVE_PROCESS_DAR, VCD_FUNCTION_OUT);
@@ -1083,6 +1086,7 @@ rlc_um_receive_process_dar (
       //discard the PDU
       rlc_pP->stat_rx_data_pdus_duplicate  += 1;
       rlc_pP->stat_rx_data_bytes_duplicate += tb_sizeP;
+      //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 3 \n");
       free_mem_block(pdu_mem_pP, __func__);
       pdu_mem_pP = NULL;
       RLC_UM_MUTEX_UNLOCK(&rlc_pP->lock_dar_buffer);
@@ -1115,6 +1119,7 @@ rlc_um_receive_process_dar (
   //      -if VR(UR) falls outside of the reordering window:
   //          -set VR(UR) to (VR(UH) – UM_Window_Size);
   if (rlc_um_in_reordering_window(ctxt_pP, rlc_pP, sn) < 0) {
+    LOG_I(RLC, "[rlc_um_receive_process_dar] Before calling rlc_um_try_reassembly() 1 \n");
 #if TRACE_RLC_UM_DAR
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -1130,12 +1135,13 @@ rlc_um_receive_process_dar (
       if (in_window < 0) {
         in_window = in_window + rlc_pP->rx_sn_modulo;
       }
-
+      LOG_I(RLC, "[rlc_um_receive_process_dar] Before calling rlc_um_try_reassembly() 2 \n");
       rlc_um_try_reassembly(ctxt_pP, rlc_pP, rlc_pP->vr_ur, in_window);
     }
 
 
     if (rlc_um_in_reordering_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur) < 0) {
+     //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 4 \n");
 #if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -1154,13 +1160,18 @@ rlc_um_receive_process_dar (
   //          SDUs to upper layer in ascending order of the RLC SN if not
   //          delivered before;
   if ((sn == rlc_pP->vr_ur) && rlc_um_get_pdu_from_dar_buffer(ctxt_pP, rlc_pP, rlc_pP->vr_ur)) {
+    LOG_I(RLC, "[rlc_um_receive_process_dar] Before calling rlc_um_try_reassembly() 3 \n");
     //sn_tmp = rlc_pP->vr_ur;
     do {
       rlc_pP->vr_ur = (rlc_pP->vr_ur+1) % rlc_pP->rx_sn_modulo;
     } while (rlc_um_get_pdu_from_dar_buffer(ctxt_pP, rlc_pP, rlc_pP->vr_ur) && (rlc_pP->vr_ur != rlc_pP->vr_uh));
-
+    LOG_I(RLC, "[rlc_um_receive_process_dar] Before calling rlc_um_try_reassembly() 4 \n");
     rlc_um_try_reassembly(ctxt_pP, rlc_pP, sn, rlc_pP->vr_ur);
   }
+  else if (sn != rlc_pP->vr_ur)
+   LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 5, sn: %d, rlc_pP->vr_ur: %d \n",sn, rlc_pP->vr_ur);
+  else if(!rlc_um_get_pdu_from_dar_buffer(ctxt_pP, rlc_pP, rlc_pP->vr_ur))
+   //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 6 \n");   
 
   // -if t-Reordering is running:
   //      -if VR(UX) <= VR(UR); or

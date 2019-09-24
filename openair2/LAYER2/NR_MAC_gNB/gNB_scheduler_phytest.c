@@ -285,6 +285,11 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 }
 
 
+
+
+
+
+
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP)
@@ -430,7 +435,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     		post_padding = 1;
     	}
 
-    	offset = generate_dlsch_header((unsigned char *) DLSCH_pdu.payload[0],
+    	offset = generate_dlsch_header((unsigned char *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0], //DLSCH_pdu.payload[0],
     	        		num_sdus,    //num_sdus
     	        		sdu_lengths,    //
     	        		sdu_lcids, 255,    // no drx
@@ -442,20 +447,17 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     	// Probably there should be other actions done before that
     	// cycle through SDUs and place in dlsch_buffer
 
-    	// Since we do not have an active UE_list for now we replace with a single DLSCH_pdu
     	//memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
-    	memcpy(&DLSCH_pdu.payload[0][offset], dlsch_buffer, sdu_length_total);
+        memcpy(&nr_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
+          
 
     	// fill remainder of DLSCH with 0
     	for (int j = 0; j < (TBS - sdu_length_total - offset); j++) {
-    		// Since we do not have an active UE_list for now we replace with a single DLSCH_pdu
     		//UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = 0;
-    		DLSCH_pdu.payload[0][offset + sdu_length_total + j] = 0;
+                nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0][offset + sdu_length_total + j] = 0;
     	}
 
-    	TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);
-
-    	memcpy(nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0],DLSCH_pdu.payload[0],TBS_bytes);
+    	TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);        
 
     	LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
     	  for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
@@ -504,3 +506,5 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 	  }
   } //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
 }
+
+

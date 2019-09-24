@@ -228,7 +228,7 @@ int8_t nr_ue_decode_mib(
 	void 		*pduP,
     uint16_t    cell_id ){
 
-    LOG_I(MAC,"[L2][MAC] decode mib\n");
+    LOG_D(MAC,"[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -2387,15 +2387,15 @@ nr_ue_send_sdu(module_id_t module_idP,
 #endif
 	    if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
 
-		LOG_I(MAC,
+		LOG_D(MAC,
 		      "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
 		      module_idP, frameP, rx_lcids[i], eNB_index,
 		      rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-		LOG_I(MAC, "Printing MAC PDU contents \n");
+		LOG_I(MAC, "Printing MAC PDU contents at slot: %d \n", subframeP);
 		int j;
-		for (j = 0; j < 10; j++) //rx_lengths[i]
+		for (j = 0; j < 20; j++) //rx_lengths[i]
 			LOG_I(MAC, "%x.", (unsigned char) payload_ptr[j]);
 		LOG_I(MAC, "\n");
 #endif

@@ -528,6 +528,8 @@ pdcp_data_ind(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
   LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
               "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
+
+
 #if T_TRACER
 
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
@@ -1050,6 +1052,11 @@ pdcp_data_ind(
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)],
              &sdu_buffer_pP->data[payload_offset],
              sdu_buffer_sizeP - payload_offset);
+      
+      LOG_I(PDCP, "Printing PDCP SDU before adding it to the list: \n");
+      for (int i=0; i<30; i++){
+    	  LOG_I(PDCP, "%x", sdu_buffer_pP->data[i]);
+      }
       list_add_tail_eurecom (new_sdu_p, sdu_list_p);
     }
 

@@ -4336,7 +4336,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)
     {
-      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
       for (int i=1; i<4; i++) {
 

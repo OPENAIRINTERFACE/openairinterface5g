@@ -135,6 +135,10 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     }  //  PDCP_USE_NETLINK
 
     AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+    LOG_I(PDCP, "Printing PDCP SDU before removing it from the list: \n");
+      for (int i=0; i<30; i++){
+    	  LOG_I(PDCP, "%x", sdu_p->data[i]);
+      }
     list_remove_head (&pdcp_sdu_list);
     free_mem_block (sdu_p, __func__);
     pdcp_nb_sdu_sent ++;
