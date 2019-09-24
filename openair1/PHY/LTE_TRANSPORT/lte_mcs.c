@@ -107,7 +107,8 @@ unsigned char I_TBS2I_MCS(unsigned char I_TBS)
   return I_MCS;
 }
 
-uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb)
+uint32_t get_TBS_DL(uint8_t mcs,
+                    uint16_t nb_rb)
 {
 
   uint32_t TBS;
@@ -121,7 +122,8 @@ uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb)
   }
 }
 
-uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb)
+uint32_t get_TBS_UL(uint8_t mcs,
+                    uint16_t nb_rb)
 {
 
   uint32_t TBS = 0;
@@ -136,7 +138,11 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb)
 }
 
 
-int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol)
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,
+              uint32_t *rb_alloc,
+              uint8_t mod_order,
+              uint8_t subframe,
+              uint8_t symbol)
 {
 
   int rb,re_pbch_sss=0;
@@ -228,7 +234,10 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
   return(re_pbch_sss);
 }
 
-int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe)
+int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,
+             uint32_t *rb_alloc,
+             uint8_t mod_order,
+             uint8_t subframe)
 {
 
   int rb,re_pbch_sss=0;
@@ -315,7 +324,15 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_orde
   return(0);
 }
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode)
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,
+          uint16_t nb_rb,
+          uint32_t *rb_alloc,
+          uint8_t mod_order,
+          uint8_t Nl,
+          uint8_t num_pdcch_symbols,
+          int frame,
+          uint8_t subframe,
+          uint8_t beamforming_mode)
 {
   int G_adj;
 
@@ -426,10 +443,8 @@ unsigned char SE2I_TBS(float SE,
 }
 
 //added for ALU icic purpose
-
 uint8_t Get_SB_size(uint8_t n_rb_dl)
 {
-
   if(n_rb_dl<27)
     return 4;
   else if(n_rb_dl<64)
@@ -437,6 +452,4 @@ uint8_t Get_SB_size(uint8_t n_rb_dl)
   else
     return 8;
 }
-
-
 //end ALU's algo

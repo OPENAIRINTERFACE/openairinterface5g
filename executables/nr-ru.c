@@ -1228,12 +1228,12 @@ static void *ru_stats_thread(void *param) {
 }
 
 static void *ru_thread_tx( void *param ) {
-  RU_t *ru              = (RU_t *)param;
-  RU_proc_t *proc       = &ru->proc;
-  PHY_VARS_gNB *gNB;
-  gNB_L1_proc_t *gNB_proc;
+  RU_t               *ru      = (RU_t *)param;
+  RU_proc_t          *proc    = &ru->proc;
+  NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
+  PHY_VARS_gNB       *gNB;
+  gNB_L1_proc_t      *gNB_proc;
   gNB_L1_rxtx_proc_t *L1_proc;
-  NR_DL_FRAME_PARMS *fp      = ru->nr_frame_parms;
   char               filename[40];
   int                print_frame = 8;
   int                i = 0;
@@ -1257,12 +1257,14 @@ static void *ru_thread_tx( void *param ) {
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
 
-    AssertFatal((ret=pthread_mutex_lock(&proc->mutex_gNBs))==0,"mutex_lock return %d\n",ret);
+    ret = pthread_mutex_lock(&proc->mutex_gNBs);
+    AssertFatal(ret == 0,"mutex_lock return %d\n",ret);
     int frame_tx=proc->frame_tx;
     int tti_tx  =proc->tti_tx;
     uint64_t timestamp_tx = proc->timestamp_tx;
 
-    AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_gNBs))==0,"mutex_lock returns %d\n",ret);
+    ret = pthread_mutex_unlock(&proc->mutex_gNBs);
+    AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
 
     if (oai_exit) break;
 
@@ -1313,7 +1315,8 @@ static void *ru_thread_tx( void *param ) {
       gNB       = ru->gNB_list[i];
       gNB_proc  = &gNB->proc;
       L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &gNB_proc->L1_proc_tx : &gNB_proc->L1_proc;
-      AssertFatal((ret=pthread_mutex_lock(&gNB_proc->mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
+      ret = pthread_mutex_lock(&gNB_proc->mutex_RU_tx);
+      AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
 
       for (int j=0; j<gNB->num_RU; j++) {
         if (ru == gNB->RU_list[j]) {
@@ -1326,12 +1329,15 @@ static void *ru_thread_tx( void *param ) {
       }
 
       if (gNB_proc->RU_mask_tx != (1<<gNB->num_RU)-1) {  // not all RUs have provided their information so return
-        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
+        ret = pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
+        AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
       } else { // all RUs TX are finished so send the ready signal to gNB processing
         gNB_proc->RU_mask_tx = 0;
-        AssertFatal((ret=pthread_mutex_unlock(&gNB_proc->mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
+        ret = pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
+        AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
 
-        AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex_RUs_tx))==0,"mutex_lock returns %d\n",ret);
+        ret = pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
+        AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
         // the thread can now be woken up
         if (L1_proc->instance_cnt_RUs==-1) {
            AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
@@ -1339,8 +1345,8 @@ static void *ru_thread_tx( void *param ) {
         } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         L1_proc->instance_cnt_RUs = 0;
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
-        AssertFatal((ret=pthread_mutex_unlock(&L1_proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
-
+        ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
+        AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
       }
     }
   }
@@ -1353,11 +1359,11 @@ static void *ru_thread( void *param ) {
   static int ru_thread_status;
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
-  NR_DL_FRAME_PARMS *fp      = ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
   int                ret;
-  int                slot = fp->slots_per_frame-1;
-  int                frame    =1023;
-  char               filename[40],threadname[40];
+  int                slot     = fp->slots_per_frame-1;
+  int                frame    = 1023;
+  char               filename[40], threadname[40];
   int                print_frame = 8;
   int                i = 0;
   // set default return value
@@ -1645,7 +1651,7 @@ void init_RU_proc(RU_t *ru) {
   memset((void *)proc,0,sizeof(RU_proc_t));
   proc->ru = ru;
   proc->instance_cnt_prach       = -1;
-  proc->instance_cnt_synch       = -1;     ;
+  proc->instance_cnt_synch       = -1;
   proc->instance_cnt_FH          = -1;
   proc->instance_cnt_FH1         = -1;
   proc->instance_cnt_gNBs        = -1;
@@ -1858,8 +1864,8 @@ void configure_ru(int idx,
 
   if (capabilities->FH_fmt < MAX_FH_FMTs) LOG_I(PHY, "RU FH options %s\n",rru_format_options[capabilities->FH_fmt]);
 
-  AssertFatal((ret=check_capabilities(ru,capabilities)) == 0,
-              "Cannot configure RRU %d, check_capabilities returned %d\n", idx,ret);
+  ret = check_capabilities(ru,capabilities);
+  AssertFatal(ret == 0, "Cannot configure RRU %d, check_capabilities returned %d\n", idx, ret);
   // take antenna capabilities of RRU
   ru->nb_tx                      = capabilities->nb_tx[0];
   ru->nb_rx                      = capabilities->nb_rx[0];

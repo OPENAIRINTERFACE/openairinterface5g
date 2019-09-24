@@ -445,7 +445,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
     pointer_shift_values=(short *) pointer_shift_values_BG2;
   }
   else {
-	  AssertFatal(0,"BG %d is not supported yet\n",BG);
+    AssertFatal(0,"BG %d is not supported yet\n",BG);
   }
   
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
