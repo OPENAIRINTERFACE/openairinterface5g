@@ -3720,10 +3720,10 @@ class SSHConnection():
 		self.command('rm -f hss.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip hss.log.zip hss*.log', '\$', 60)
-			self.command('rm hss*.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm hss*.log', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 				self.command('zip hss.log.zip logs/hss*.*', '\$', 60)
-				self.command('rm logs/hss*.*', '\$', 5)
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm logs/hss*.*', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/hss_sim0609/hss.log .', '\$', 60)
 			self.command('zip hss.log.zip hss.log', '\$', 60)
@@ -3737,7 +3737,7 @@ class SSHConnection():
 		self.command('rm -f mme.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip mme.log.zip mme*.log', '\$', 60)
-			self.command('rm mme*.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm mme*.log', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/ltebox/var/log/*Log.0 .', '\$', 5)
 			self.command('zip mme.log.zip mmeLog.0 s1apcLog.0 s1apsLog.0 s11cLog.0 libLog.0 s1apCodecLog.0', '\$', 60)
@@ -3751,7 +3751,7 @@ class SSHConnection():
 		self.command('rm -f spgw.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip spgw.log.zip spgw*.log', '\$', 60)
-			self.command('rm spgw*.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm spgw*.log', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
