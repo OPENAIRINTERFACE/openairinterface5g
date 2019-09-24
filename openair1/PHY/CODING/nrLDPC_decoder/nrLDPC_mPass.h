@@ -165,6 +165,26 @@ static inline void nrLDPC_llr2CnProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLD
         cnProcBuf[*p_lutEntry++] = llr[i];
     }
 
+    // Test
+    // =====================================================================
+    // CN group with 3 BNs
+    //const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
+    /*
+    const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
+    const uint16_t (*lut_circShift_CNG3) [lut_numCnInCnGroups_BG1_R13[0]] = (uint16_t(*)[lut_numCnInCnGroups_BG1_R13[0]]) p_lut->circShift[0];
+    int8_t* p_cnProcBuf;
+    uint32_t bitOffsetInGroup;
+    bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX;
+
+    const uint8_t lut_CNG3[3] = {0, 1, 26};
+    for (j=0; j<2; j++)
+    {
+        p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
+
+        nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[lut_CNG3[j]*Z], Z, lut_circShift_CNG3[j][0]);
+    }
+    */
+
 }
 
 /**
@@ -870,16 +890,37 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
    \param llrOut Pointer to output LLRs
    \param numLLR Number of LLR values
 */
-static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_nrLDPC_procBuf* p_procBuf, uint16_t numLLR)
+static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_nrLDPC_procBuf* p_procBuf, uint16_t numLLR,uint16_t Z, uint8_t BG)
 {
-    const uint16_t* lut_llr2llrProcBuf = p_lut->llr2llrProcBuf;
     uint32_t i;
+    const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
+    uint32_t colG1 = NR_LDPC_START_COL_PARITY_BG1*Z;
 
+    const uint16_t* lut_llr2llrProcBufAddr = p_lut->llr2llrProcBufAddr;
+    const uint8_t*  lut_llr2llrProcBufNumBn = p_lut->llr2llrProcBufNumBn;
+    const uint8_t*  lut_llr2llrProcBufNumEl = p_lut->llr2llrProcBufNumEl;
+
+    uint16_t numLlr = 0;
     int8_t* llrRes = p_procBuf->llrRes;
+    int8_t* p_llrOut = &llrOut[0];
 
-    for (i=0; i<numLLR; i++)
+    if (BG == 2)
     {
-        llrOut[i] = llrRes[lut_llr2llrProcBuf[i]];
+        colG1 = NR_LDPC_START_COL_PARITY_BG2*Z;
+    }
+
+    // Copy LLRs connected to 1 CN
+    if (numBn2CnG1 > 0)
+    {
+        memcpy(&llrOut[colG1], llrRes, numBn2CnG1*Z);
+    }
+
+    // First 2 columns might be set to zero directly if it's true they always belong to the groups with highest number of connected CNs...
+    for (i=0; i<(*lut_llr2llrProcBufNumEl); i++)
+    {
+        numLlr = lut_llr2llrProcBufNumBn[i]*Z;
+        memcpy(p_llrOut, &llrRes[lut_llr2llrProcBufAddr[i]], numLlr);
+        p_llrOut+=numLlr;
     }
 }
 
