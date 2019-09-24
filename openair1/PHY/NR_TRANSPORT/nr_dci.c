@@ -191,6 +191,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                          (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
   uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
   LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
+  dmrs_length += pdcch_params.rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
 
   /// DMRS QPSK modulation
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
