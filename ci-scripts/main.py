@@ -182,6 +182,7 @@ class SSHConnection():
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
 		self.expectedNbOfConnectedUEs = 0
+		self.startTime = 0
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -1026,7 +1027,7 @@ class SSHConnection():
 			if result is None:
 				self.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
-				result = re.search('inet addr 1|inet 1', str(self.ssh.before))
+				result = re.search('inet addr:1|inet 1', str(self.ssh.before))
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
@@ -1041,6 +1042,11 @@ class SSHConnection():
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+			if (self.ADBIPAddress != 'none'):
+				self.UEDevices = []
+				self.UEDevices.append('OAI-UE')
+				self.UEDevicesStatus = []
+				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
 		else:
 			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
@@ -1768,9 +1774,12 @@ class SSHConnection():
 				sys.exit('Insufficient Parameter')
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			self.command('ifconfig oaitun_ue1', '\$', 4)
-			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
+			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
 			if result is not None:
-				UE_IPAddress = result.group('ueipaddress')
+				if result.group('ueipaddress') is not None:
+					UE_IPAddress = result.group('ueipaddress')
+				else:
+					UE_IPAddress = result.group('ueipaddress2')
 				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
 				self.UEIPAddresses.append(UE_IPAddress)
 			else:
@@ -3951,6 +3960,7 @@ class SSHConnection():
 				self.htmlFile.write('  <div id="build-tab" class="tab-pane fade">\n')
 			self.htmlFile.write('  <table class="table" border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th>Relative Time (ms)</th>\n')
 			self.htmlFile.write('        <th>Test Id</th>\n')
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
@@ -3974,7 +3984,7 @@ class SSHConnection():
 	def CreateHtmlTabFooter(self, passStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=2>Final Tab Status</th>\n')
+			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=3>Final Tab Status</th>\n')
 			if passStatus:
 				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')
 			else:
@@ -4047,7 +4057,9 @@ class SSHConnection():
 
 	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			currentTime = int(round(time.time() * 1000)) - self.startTime
 			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
 			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
 			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
@@ -4115,8 +4127,10 @@ class SSHConnection():
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			currentTime = int(round(time.time() * 1000)) - self.startTime
 			addOrangeBK = False
 			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
 			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
 			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
@@ -4644,6 +4658,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	cnt = 0
 	SSH.prematureExit = True
+	SSH.startTime = int(round(time.time() * 1000))
 	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
