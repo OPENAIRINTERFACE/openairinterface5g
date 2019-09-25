@@ -596,618 +596,643 @@ static const uint16_t llr2llrProcBufAddr_BG1_R89[4] = {9984,9600,1536,384};
 static const uint8_t llr2llrProcBufNumBn_BG1_R89[4] = {1,1,21,3};
 static const uint8_t llr2llrProcBufNumEl_BG1_R89 = 4;
 
+// LUT for llr2cnProcBuf
+// LUTs are not rate dependent, however the number of CN in a CNG varies with rate
+// CNG3
+// BG1
+static const uint8_t posBnInCnProcBuf_BG1_CNG3[3][1] = {{0},{1},{26}};
+// CNG4
+static const uint8_t posBnInCnProcBuf_BG1_CNG4[4][5] = {{1, 1, 0, 0, 1},{6, 13, 8, 4, 6},{8, 23, 17, 24, 10},{49, 59, 62, 64, 67}};
+// CNG5
+static const uint8_t posBnInCnProcBuf_BG1_CNG5[5][18] = {{0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0},{12, 2, 6, 2, 4, 14, 10, 7, 12, 2, 7, 6, 14, 9, 3, 3, 16, 7},{13, 10, 7, 4, 19, 18, 13, 22, 14, 11, 15, 12, 15, 10, 7, 9, 18, 9},{17, 18, 14, 15, 21, 25, 24, 25, 24, 21, 17, 22, 18, 12, 19, 18, 25, 22},{44, 45, 47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 61, 63, 65, 66}};
+// CNG6
+static const uint8_t posBnInCnProcBuf_BG1_CNG6[6][8] = {{0, 1, 0, 1, 0, 0, 1, 0},{3, 3, 14, 12, 1, 3, 5, 3},{7, 11, 16, 13, 7, 9, 16, 4},{20, 20, 17, 18, 8, 11, 20, 11},{23, 22, 21, 19, 10, 22, 21, 22},{35, 38, 39, 40, 41, 42, 43, 46}};
+// CNG7
+static const uint8_t posBnInCnProcBuf_BG1_CNG7[7][5] = {{0, 1, 0, 0, 0},{1, 2, 1, 12, 1},{4, 4, 10, 15, 10},{7, 7, 11, 16, 13},{8, 8, 13, 17, 18},{14, 14, 18, 21, 25},{29, 32, 34, 36, 37}};
+// CNG8
+static const uint8_t posBnInCnProcBuf_BG1_CNG8[8][2] = {{0, 0},{1, 1},{3, 12},{12, 16},{16, 21},{21, 22},{22, 23},{27, 33}};
+// CNG9
+static const uint8_t posBnInCnProcBuf_BG1_CNG9[9][2] = {{0, 0},{6, 1},{10, 10},{11, 11},{13, 13},{17, 17},{18, 18},{20, 20},{28, 31}};
+// CNG10
+static const uint8_t posBnInCnProcBuf_BG1_CNG10[10][1] = {{0},{1},{3},{12},{16},{19},{21},{22},{24},{30}};
+// CNG19
+static const uint8_t posBnInCnProcBuf_BG1_CNG19[19][4] = {{0, 0, 0, 0},{1, 2, 1, 1},{2, 3, 2, 3},{3, 4, 4, 4},{5, 5, 5, 6},{6, 7, 6, 7},{9, 8, 7, 8},{10, 9, 8, 10},{11, 11, 9, 11},{12, 12, 10, 12},{13, 14, 13, 13},{15, 15, 14, 14},{16, 16, 15, 16},{18, 17, 17, 17},{19, 19, 18, 18},{20, 21, 19, 20},{21, 22, 20, 21},{22, 23, 24, 22},{23, 24, 25, 25}};
+
+
+
+
 
 // BG1
 // Z = 2
-#include "lut_llr2CnProcBuf_BG1_Z2_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z2_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z2_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z2_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z2_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z2_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z2_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z2_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z2_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z2_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z2_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z2_R89.h"
 // Z = 3
-#include "lut_llr2CnProcBuf_BG1_Z3_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z3_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z3_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z3_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z3_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z3_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z3_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z3_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z3_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z3_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z3_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z3_R89.h"
 // Z = 4
-#include "lut_llr2CnProcBuf_BG1_Z4_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z4_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z4_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z4_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z4_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z4_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z4_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z4_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z4_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z4_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z4_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z4_R89.h"
 // Z = 5
-#include "lut_llr2CnProcBuf_BG1_Z5_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z5_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z5_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z5_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z5_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z5_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z5_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z5_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z5_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z5_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z5_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z5_R89.h"
 // Z = 6
-#include "lut_llr2CnProcBuf_BG1_Z6_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z6_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z6_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z6_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z6_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z6_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z6_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z6_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z6_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z6_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z6_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z6_R89.h"
 // Z = 7
-#include "lut_llr2CnProcBuf_BG1_Z7_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z7_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z7_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z7_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z7_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z7_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z7_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z7_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z7_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z7_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z7_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z7_R89.h"
 // Z = 8
-#include "lut_llr2CnProcBuf_BG1_Z8_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z8_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z8_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z8_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z8_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z8_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z8_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z8_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z8_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z8_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z8_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z8_R89.h"
 // Z = 9
-#include "lut_llr2CnProcBuf_BG1_Z9_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z9_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z9_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z9_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z9_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z9_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z9_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z9_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z9_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z9_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z9_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z9_R89.h"
 // Z = 10
-#include "lut_llr2CnProcBuf_BG1_Z10_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z10_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z10_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z10_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z10_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z10_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z10_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z10_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z10_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z10_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z10_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z10_R89.h"
 // Z = 11
-#include "lut_llr2CnProcBuf_BG1_Z11_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z11_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z11_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z11_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z11_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z11_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z11_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z11_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z11_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z11_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z11_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z11_R89.h"
 // Z = 12
-#include "lut_llr2CnProcBuf_BG1_Z12_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z12_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z12_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z12_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z12_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z12_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z12_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z12_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z12_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z12_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z12_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z12_R89.h"
 // Z = 13
-#include "lut_llr2CnProcBuf_BG1_Z13_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z13_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z13_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z13_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z13_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z13_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z13_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z13_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z13_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z13_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z13_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z13_R89.h"
 // Z = 14
-#include "lut_llr2CnProcBuf_BG1_Z14_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z14_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z14_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z14_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z14_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z14_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z14_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z14_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z14_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z14_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z14_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z14_R89.h"
 // Z = 15
-#include "lut_llr2CnProcBuf_BG1_Z15_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z15_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z15_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z15_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z15_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z15_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z15_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z15_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z15_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z15_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z15_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z15_R89.h"
 // Z = 16
-#include "lut_llr2CnProcBuf_BG1_Z16_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z16_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z16_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z16_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z16_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z16_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z16_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z16_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z16_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z16_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z16_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z16_R89.h"
 // Z = 18
-#include "lut_llr2CnProcBuf_BG1_Z18_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z18_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z18_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z18_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z18_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z18_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z18_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z18_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z18_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z18_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z18_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z18_R89.h"
 // Z = 20
-#include "lut_llr2CnProcBuf_BG1_Z20_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z20_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z20_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z20_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z20_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z20_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z20_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z20_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z20_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z20_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z20_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z20_R89.h"
 // Z = 22
-#include "lut_llr2CnProcBuf_BG1_Z22_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z22_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z22_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z22_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z22_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z22_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z22_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z22_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z22_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z22_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z22_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z22_R89.h"
 // Z = 24
-#include "lut_llr2CnProcBuf_BG1_Z24_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z24_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z24_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z24_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z24_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z24_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z24_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z24_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z24_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z24_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z24_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z24_R89.h"
 // Z = 26
-#include "lut_llr2CnProcBuf_BG1_Z26_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z26_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z26_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z26_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z26_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z26_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z26_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z26_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z26_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z26_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z26_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z26_R89.h"
 // Z = 28
-#include "lut_llr2CnProcBuf_BG1_Z28_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z28_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z28_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z28_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z28_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z28_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z28_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z28_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z28_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z28_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z28_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z28_R89.h"
 // Z = 30
-#include "lut_llr2CnProcBuf_BG1_Z30_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z30_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z30_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z30_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z30_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z30_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z30_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z30_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z30_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z30_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z30_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z30_R89.h"
 // Z = 32
-#include "lut_llr2CnProcBuf_BG1_Z32_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z32_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z32_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z32_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z32_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z32_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z32_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z32_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z32_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z32_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z32_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z32_R89.h"
 // Z = 36
-#include "lut_llr2CnProcBuf_BG1_Z36_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z36_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z36_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z36_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z36_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z36_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z36_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z36_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z36_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z36_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z36_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z36_R89.h"
 // Z = 40
-#include "lut_llr2CnProcBuf_BG1_Z40_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z40_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z40_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z40_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z40_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z40_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z40_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z40_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z40_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z40_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z40_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z40_R89.h"
 // Z = 44
-#include "lut_llr2CnProcBuf_BG1_Z44_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z44_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z44_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z44_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z44_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z44_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z44_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z44_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z44_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z44_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z44_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z44_R89.h"
 // Z = 48
-#include "lut_llr2CnProcBuf_BG1_Z48_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z48_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z48_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z48_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z48_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z48_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z48_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z48_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z48_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z48_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z48_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z48_R89.h"
 // Z = 52
-#include "lut_llr2CnProcBuf_BG1_Z52_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z52_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z52_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z52_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z52_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z52_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z52_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z52_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z52_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z52_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z52_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z52_R89.h"
 // Z = 56
-#include "lut_llr2CnProcBuf_BG1_Z56_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z56_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z56_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z56_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z56_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z56_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z56_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z56_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z56_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z56_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z56_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z56_R89.h"
 // Z = 60
-#include "lut_llr2CnProcBuf_BG1_Z60_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z60_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z60_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z60_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z60_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z60_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z60_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z60_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z60_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z60_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z60_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z60_R89.h"
 // Z = 64
-#include "lut_llr2CnProcBuf_BG1_Z64_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z64_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z64_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z64_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z64_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z64_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z64_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z64_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z64_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z64_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z64_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z64_R89.h"
 // Z = 72
-#include "lut_llr2CnProcBuf_BG1_Z72_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z72_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z72_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z72_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z72_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z72_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z72_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z72_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z72_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z72_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z72_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z72_R89.h"
 // Z = 80
-#include "lut_llr2CnProcBuf_BG1_Z80_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z80_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z80_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z80_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z80_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z80_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z80_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z80_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z80_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z80_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z80_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z80_R89.h"
 // Z = 88
-#include "lut_llr2CnProcBuf_BG1_Z88_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z88_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z88_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z88_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z88_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z88_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z88_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z88_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z88_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z88_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z88_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z88_R89.h"
 // Z = 96
-#include "lut_llr2CnProcBuf_BG1_Z96_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z96_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z96_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z96_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z96_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z96_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z96_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z96_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z96_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z96_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z96_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z96_R89.h"
 // Z = 104
-#include "lut_llr2CnProcBuf_BG1_Z104_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z104_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z104_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z104_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z104_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z104_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z104_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z104_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z104_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z104_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z104_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z104_R89.h"
 // Z = 112
-#include "lut_llr2CnProcBuf_BG1_Z112_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z112_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z112_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z112_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z112_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z112_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z112_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z112_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z112_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z112_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z112_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z112_R89.h"
 // Z = 120
-#include "lut_llr2CnProcBuf_BG1_Z120_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z120_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z120_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z120_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z120_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z120_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z120_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z120_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z120_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z120_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z120_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z120_R89.h"
 // Z = 128
-#include "lut_llr2CnProcBuf_BG1_Z128_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z128_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z128_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z128_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z128_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z128_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z128_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z128_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z128_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z128_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z128_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z128_R89.h"
 // Z = 144
-#include "lut_llr2CnProcBuf_BG1_Z144_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z144_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z144_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z144_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z144_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z144_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z144_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z144_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z144_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z144_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z144_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z144_R89.h"
 // Z = 160
-#include "lut_llr2CnProcBuf_BG1_Z160_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z160_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z160_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z160_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z160_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z160_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z160_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z160_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z160_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z160_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z160_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z160_R89.h"
 // Z = 176
-#include "lut_llr2CnProcBuf_BG1_Z176_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z176_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z176_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z176_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z176_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z176_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z176_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z176_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z176_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z176_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z176_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z176_R89.h"
 // Z = 192
-#include "lut_llr2CnProcBuf_BG1_Z192_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z192_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z192_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z192_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z192_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z192_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z192_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z192_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z192_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z192_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z192_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z192_R89.h"
 // Z = 208
-#include "lut_llr2CnProcBuf_BG1_Z208_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z208_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z208_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z208_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z208_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z208_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z208_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z208_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z208_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z208_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z208_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z208_R89.h"
 // Z = 224
-#include "lut_llr2CnProcBuf_BG1_Z224_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z224_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z224_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z224_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z224_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z224_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z224_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z224_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z224_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z224_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z224_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z224_R89.h"
 // Z = 240
-#include "lut_llr2CnProcBuf_BG1_Z240_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z240_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z240_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z240_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z240_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z240_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z240_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z240_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z240_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z240_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z240_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z240_R89.h"
 // Z = 256
-#include "lut_llr2CnProcBuf_BG1_Z256_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z256_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z256_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z256_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z256_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z256_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z256_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z256_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z256_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z256_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z256_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z256_R89.h"
 // Z = 288
-#include "lut_llr2CnProcBuf_BG1_Z288_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z288_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z288_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z288_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z288_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z288_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z288_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z288_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z288_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z288_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z288_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z288_R89.h"
 // Z = 320
-#include "lut_llr2CnProcBuf_BG1_Z320_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z320_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z320_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z320_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z320_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z320_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z320_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z320_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z320_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z320_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z320_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z320_R89.h"
 // Z = 352
-#include "lut_llr2CnProcBuf_BG1_Z352_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z352_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z352_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z352_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z352_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z352_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z352_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z352_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z352_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z352_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z352_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z352_R89.h"
 // Z = 384
-#include "lut_llr2CnProcBuf_BG1_Z384_R13.h"
+//#include "lut_llr2CnProcBuf_BG1_Z384_R13.h"
 //#include "lut_cn2bnProcBuf_BG1_Z384_R13.h"
 //#include "lut_llr2llrProcBuf_BG1_Z384_R13.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z384_R23.h"
+//#include "lut_llr2CnProcBuf_BG1_Z384_R23.h"
 //#include "lut_cn2bnProcBuf_BG1_Z384_R23.h"
 //#include "lut_llr2llrProcBuf_BG1_Z384_R23.h"
 
-#include "lut_llr2CnProcBuf_BG1_Z384_R89.h"
+//#include "lut_llr2CnProcBuf_BG1_Z384_R89.h"
 //#include "lut_cn2bnProcBuf_BG1_Z384_R89.h"
 //#include "lut_llr2llrProcBuf_BG1_Z384_R89.h"
 

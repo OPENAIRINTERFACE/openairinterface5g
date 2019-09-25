@@ -116,7 +116,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #ifdef NR_LDPC_PROFILER_DETAIL
     start_meas(&p_profiler->llr2CnProcBuf);
 #endif
-    nrLDPC_llr2CnProcBuf(p_lut, p_llr, p_procBuf, numLLR, Z, BG);
+    nrLDPC_llr2CnProcBuf(p_lut, p_llr, p_procBuf, Z);
 #ifdef NR_LDPC_PROFILER_DETAIL
     stop_meas(&p_profiler->llr2CnProcBuf);
 #endif
