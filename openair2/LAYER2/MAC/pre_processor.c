@@ -1799,12 +1799,15 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       total_allocated_rbs[CC_id] += nb_allocated_rbs[CC_id][UE_id];
-      LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d\n",
+      LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d, nb_rb_ul %d, %d ,%d\n",
             nb_allocated_rbs[CC_id][UE_id],
             UE_id,
             rntiTable[UE_id],
             CC_id,
-            harq_pid);
+            harq_pid,
+	    UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid],
+	    UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_idx],
+	    average_rbs_per_user[CC_id]);
     }
   }
 

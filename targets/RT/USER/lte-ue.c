@@ -1644,6 +1644,7 @@ void *UE_thread(void *arg) {
 
             pthread_mutex_unlock(&proc->mutex_rxtx);
           }
+	  usleep(3000);
         }
 
         LOG_D(PHY,"Process Subframe %d thread Idx %d \n", sub_frame, UE->current_thread_id[sub_frame]);

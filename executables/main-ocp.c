@@ -676,7 +676,7 @@ void rx_rf(RU_t *ru) {
     proc->first_rx = false;
   } else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_E(HW,"impossible shift in RFSIM, rx: %ld, previous rx distance: %ld\n", proc->timestamp_rx, proc->timestamp_rx - old_ts);
+      LOG_E(HW,"impossible shift in rx stream, rx: %ld, previous rx distance: %ld, should be %d\n", proc->timestamp_rx, proc->timestamp_rx - old_ts, fp->samples_per_tti);
       //ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       //proc->timestamp_rx = ts-ru->ts_offset;
     }
