@@ -35,6 +35,7 @@
 #include "NR_UE-NR-Capability.h"
 #include "NR_CG-ConfigInfo.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo) {
@@ -45,28 +46,21 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo) {
 	NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
 	if (cg_ConfigInfo->ue_CapabilityInfo) {
 	  // Decode UE-CapabilityRAT-ContainerList
-	  NR_UE_CapabilityRAT_ContainerList_t **UE_CapabilityRAT_ContainerList=NULL;
+          LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList=NULL;
 	  asn_dec_rval_t dec_rval = uper_decode(NULL,
-						&asn_DEF_NR_UE_NR_Capability,
-						(void**)UE_CapabilityRAT_ContainerList,
+					        &asn_DEF_LTE_UE_CapabilityRAT_ContainerList,
+						(void**)&UE_CapabilityRAT_ContainerList,
 						cg_ConfigInfo->ue_CapabilityInfo->buf,
 						cg_ConfigInfo->ue_CapabilityInfo->size, 0, 0);
           if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-             LOG_E(RRC, "[InterNode] Failed to decode NR_UE_NR_Capability (%zu bits)\n",
-                   dec_rval.consumed );
-             return(-1);
-          }
-	  rrc_parse_ue_capabilities(rrc,*UE_CapabilityRAT_ContainerList);
+	    AssertFatal(1==0,"[InterNode] Failed to decode NR_UE_CapabilityRAT_ContainerList (%zu bits), size of OCTET_STRING %d\n",
+			dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
+	  }
+	  rrc_parse_ue_capabilities(rrc,UE_CapabilityRAT_ContainerList);
 	}
-	if (cg_ConfigInfo->candidateCellInfoListMN) {
-	  LOG_E(RRC,"Can't handle candidateCellInfoListMN yet\n");
-	  return(-1);
-	}
+	if (cg_ConfigInfo->candidateCellInfoListMN) AssertFatal(1==0,"Can't handle candidateCellInfoListMN yet\n");
       }
-      else {
-	LOG_E(RRC,"c1 extension is not cg_ConfigInfo, returning\n");
-	return(-1); 
-      }
+      else AssertFatal(1==0,"c1 extension is not cg_ConfigInfo, returning\n");
     }
     else {
       LOG_E(RRC,"c1 extension not found, returning\n");

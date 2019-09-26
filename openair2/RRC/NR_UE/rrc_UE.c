@@ -325,7 +325,7 @@ int8_t openair_rrc_top_init_ue_nr(void){
 	  // read in files for RRCReconfiguration and RBconfig
 	  FILE *fd;
 	  fd = fopen("reconfig.raw","r");
-          char *buffer[1024];
+          char buffer[1024];
 	  int msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
