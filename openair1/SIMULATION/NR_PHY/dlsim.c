@@ -610,6 +610,8 @@ int main(int argc, char **argv)
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
+  uint8_t gnb_start_symbol = Sched_INFO.DL_req->dl_config_request_body.dl_config_pdu_list[1].dlsch_pdu.dlsch_pdu_rel15.start_symbol;
+  dl_config->dl_config_list[0].dlsch_config_pdu.dlsch_config_rel15.start_symbol = gnb_start_symbol;
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;

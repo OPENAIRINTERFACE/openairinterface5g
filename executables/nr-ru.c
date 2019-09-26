@@ -1075,30 +1075,39 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
       cfg->rx_bw = 1.5e6;
     } else AssertFatal(1==0,"Unknown N_RB %d\n",N_RB);
   } else if (mu == NR_MU_1) {
-    if(N_RB == 217) {
+    if(N_RB == 273) {
       if (fp->threequarter_fs) {
-        cfg->sample_rate=92.16e6;
-        cfg->samples_per_frame = 921600;
-        cfg->tx_bw = 40e6;
-        cfg->rx_bw = 40e6;
+        AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
       } else {
         cfg->sample_rate=122.88e6;
         cfg->samples_per_frame = 1228800;
-        cfg->tx_bw = 40e6;
-        cfg->rx_bw = 40e6;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      }
+    } else if(N_RB == 217) {
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=92.16e6;
+        cfg->samples_per_frame = 921600;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
+      } else {
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
       }
     } else if(N_RB == 106) {
       if (fp->threequarter_fs) {
 	cfg->sample_rate=46.08e6;
 	cfg->samples_per_frame = 460800;
-	cfg->tx_bw = 20e6;
-	cfg->rx_bw = 20e6;
+	cfg->tx_bw = 40e6;
+	cfg->rx_bw = 40e6;
       }
       else {
 	cfg->sample_rate=61.44e6;
 	cfg->samples_per_frame = 614400;
-	cfg->tx_bw = 20e6;
-	cfg->rx_bw = 20e6;
+	cfg->tx_bw = 40e6;
+	cfg->rx_bw = 40e6;
       }
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
@@ -1693,7 +1702,7 @@ void init_RU_proc(RU_t *ru) {
     threadCreate( &proc->pthread_prach, ru_thread_prach, (void *)ru,"RACH", -1, OAI_PRIORITY_RT );
   }
 
-  if (get_nprocs()>=2) {
+  if (get_thread_worker_conf() == WORKER_ENABLE) {
     if (ru->feprx) nr_init_feprx_thread(ru);
 
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
@@ -1987,8 +1996,8 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
         ru->fh_south_out          = tx_rf;                    // send output to RF
         ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-        ru->feprx                 = (get_nprocs()<=2) ? nr_fep_full : nr_fep_full_2thread;                 // RX DFTs
-        ru->feptx_ofdm            = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
+        ru->feprx                 = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;                 // RX DFTs
+        ru->feptx_ofdm            = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;               // this is fep with idft only (no precoding in RRU)
         ru->feptx_prec            = NULL;
         ru->nr_start_if           = nr_start_if;              // need to start the if interface for if4p5
         ru->ifdevice.host_type    = RRU_HOST;
@@ -2009,8 +2018,8 @@ void set_function_spec_param(RU_t *ru) {
         malloc_IF4p5_buffer(ru);
       } else if (ru->function == gNodeB_3GPP) {
         ru->do_prach             = 0;                       // no prach processing in RU
-        ru->feprx                = (get_nprocs()<=2) ? nr_fep_full : nr_fep_full_2thread;                // RX DFTs
-        ru->feptx_ofdm           = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;              // this is fep with idft and precoding
+        ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;                // RX DFTs
+        ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;              // this is fep with idft and precoding
         ru->feptx_prec           = NULL;              // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
@@ -2039,13 +2048,13 @@ void set_function_spec_param(RU_t *ru) {
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
-      ru->feprx                  = (get_nprocs()<=2) ? nr_fep_full : nr_fep_full_2thread;     // this is frequency-shift + DFTs
-      ru->feptx_prec             = feptx_prec;          // need to do transmit Precoding + IDFTs
-      ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread; // need to do transmit Precoding + IDFTs
-      ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
-      ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
-      ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
-      ru->start_rf               = NULL;                // no local RF
+      ru->feprx                  = nr_fep_full;                   // this is frequency-shift + DFTs
+      ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
+      ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;                 // need to do transmit Precoding + IDFTs
+      ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
+      ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
+      ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
+      ru->start_rf               = NULL;                 // no local RF
       ru->stop_rf                = NULL;
       ru->nr_start_if            = nr_start_if;         // need to start if interface for IF5
       ru->ifdevice.host_type     = RAU_HOST;
