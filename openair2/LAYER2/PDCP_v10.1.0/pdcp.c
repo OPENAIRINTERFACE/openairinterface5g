@@ -1053,10 +1053,12 @@ pdcp_data_ind(
              &sdu_buffer_pP->data[payload_offset],
              sdu_buffer_sizeP - payload_offset);
       
-      LOG_I(PDCP, "Printing PDCP SDU before adding it to the list: \n");
-      for (int i=0; i<30; i++){
+      #if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
+      	LOG_I(PDCP, "Printing first bytes of PDCP SDU before adding it to the list: \n");
+      	for (int i=0; i<30; i++){
     	  LOG_I(PDCP, "%x", sdu_buffer_pP->data[i]);
-      }
+      	}
+      #endif
       list_add_tail_eurecom (new_sdu_p, sdu_list_p);
     }
 

@@ -44,6 +44,7 @@
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 //#define DEBUG_DLSCH_DECODING
+//#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
 #define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
 
@@ -593,7 +594,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_ldpc_iterations))) {// a Code segment is in error so break;
-      LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
+      LOG_I(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
       err_flag = 1;
     }
   }
@@ -687,12 +688,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                 printf("%d : %d \n", i, harq_process->b[i]);
                 }*/
 #endif
+
+#if defined(ENABLE_PHY_PAYLOAD_DEBUG)
            if (frame%100 == 0){
-              LOG_I (PHY, "Printing 100 first payload bytes at frame: %d ", frame);
+              LOG_I (PHY, "Printing 10 first payload bytes at frame: %d ", frame);
               for (int i = 0; i <10 ; i++){ //Kr_bytes
             	  LOG_I(PHY, "[%d] : %x ", i, harq_process->b[i]);
               }
           }
+#endif
 
   }
 

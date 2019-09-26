@@ -217,17 +217,17 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
   
   if(phy_config != NULL){
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
-      LOG_D(MAC,"[L1][IF module][PHY CONFIG]\n");
-      LOG_D(MAC,"subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
-      LOG_D(MAC,"ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
-      LOG_D(MAC,"dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
-      LOG_D(MAC,"pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
-      LOG_D(MAC,"cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
-      LOG_D(MAC,"intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
-      LOG_D(MAC,"system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
-      LOG_D(MAC,"ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
-      LOG_D(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
-      LOG_D(MAC,"-------------------------------\n");
+      LOG_I(MAC,"[L1][IF module][PHY CONFIG]\n");
+      LOG_I(MAC,"subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
+      LOG_I(MAC,"ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
+      LOG_I(MAC,"dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
+      LOG_I(MAC,"pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
+      LOG_I(MAC,"cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
+      LOG_I(MAC,"intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
+      LOG_I(MAC,"system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
+      LOG_I(MAC,"ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
+      LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
+      LOG_I(MAC,"-------------------------------\n");
 
       memcpy(&nrUE_config.pbch_config,&phy_config->config_req.pbch_config,sizeof(fapi_nr_pbch_config_t));
       

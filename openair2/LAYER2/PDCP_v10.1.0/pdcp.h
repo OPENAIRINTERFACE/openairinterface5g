@@ -93,6 +93,8 @@ extern int             pdcp_instance_cnt;
 #define PROTOCOL_PDCP_CTXT_ARGS(CTXT_Pp, pDCP_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
   (pDCP_Pp->is_srb) ? "SRB" : "DRB",\
   pDCP_Pp->rb_id
+//#define ENABLE_PDCP_PAYLOAD_DEBUG 1
+
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 

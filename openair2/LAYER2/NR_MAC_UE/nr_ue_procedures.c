@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define ENABLE_MAC_PAYLOAD_DEBUG 1
+//#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 extern void mac_rlc_data_ind     (
   const module_id_t         module_idP,
@@ -228,7 +228,7 @@ int8_t nr_ue_decode_mib(
 	void 		*pduP,
     uint16_t    cell_id ){
 
-    LOG_D(MAC,"[L2][MAC] decode mib\n");
+    LOG_I(MAC,"[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 

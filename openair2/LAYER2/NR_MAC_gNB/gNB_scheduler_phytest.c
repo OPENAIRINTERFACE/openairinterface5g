@@ -35,6 +35,7 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"
 extern RAN_CONTEXT_t RC;
+//#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 /*Scheduling of DLSCH with associated DCI in common search space
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
@@ -459,10 +460,12 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     	TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);        
 
-    	LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
-    	  for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
-    	  	  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-    	  }
+        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+    		LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
+    	  	for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
+    	  	  	LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+    	  	}
+        #endif
 
     	  //TX_req->segments[0].segment_length = 8;
     	  TX_req->segments[0].segment_length = TBS_bytes +2;
@@ -487,12 +490,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 		  	  ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
 		  	  //LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
 		    }
-                  if (frameP%100 == 0){
-		      LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
-  		      for(int i = 0; i < 10; i++) {
-			  LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-  		      }
-		  }
+                  #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                  	if (frameP%100 == 0){
+		      		LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
+  		      		for(int i = 0; i < 10; i++) {
+			  		LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+  		      		}
+		  	}
+		 #endif
                              
 		  //TX_req->segments[0].segment_length = 8;
 		  TX_req->segments[0].segment_length = TBS_bytes +2;
