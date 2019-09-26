@@ -31,7 +31,7 @@
 #ifndef __NR_LDPC_INIT__H__
 #define __NR_LDPC_INIT__H__
 
-#include "./nrLDPC_lut/nrLDPC_lut.h"
+#include "nrLDPC_lut.h"
 #include "nrLDPC_defs.h"
 
 /**
