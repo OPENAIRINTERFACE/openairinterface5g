@@ -220,6 +220,10 @@ ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
     uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
+    if (dmrs_type == NFAPI_NR_DMRS_TYPE1) // another if condition to be included to check pdsch config type (reference of k)
+      dmrs_idx = rel15->start_prb*6;
+    else
+      dmrs_idx = rel15->start_prb*4;
 
     for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++) {
       k = start_sc;
