@@ -614,7 +614,7 @@ class SSHConnection():
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log logs/hss*.*', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log logs/hss*.* ping*.log iperf*.log', '\$', 5)
 			self.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
 			self.command('chmod 755 ./my-hss.sh', '\$', 5)
 			self.command('sudo daemon --unsafe --name=hss_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/hss.log ./my-hss.sh', '\$', 5)
@@ -2342,17 +2342,33 @@ class SSHConnection():
 			ipnumbers[3] = '1'
 		EPC_Iperf_UE_IPAddress = ipnumbers[0] + '.' + ipnumbers[1] + '.' + ipnumbers[2] + '.' + ipnumbers[3]
 
-		# Launch iperf server on EPC side
-		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-		self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+		# Launch iperf server on EPC side (true for ltebox and old open-air-cn0
+		# But for OAI-Rel14-CUPS, we launch from python executor and we are using its IP address as iperf client address
+		launchFromEpc = True
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			launchFromEpc = False
+			cmd = 'hostname -I'
+			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+			if ret.stdout is not None:
+				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
 		port = 5001 + idx
-		if udpIperf:
-			self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		if launchFromEpc:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			if udpIperf:
+				self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			else:
+				self.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			self.close()
 		else:
-			self.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			if udpIperf:
+				cmd = 'nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			else:
+				cmd = 'nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			logging.debug(cmd + '\n')
+			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 		time.sleep(0.5)
-		self.close()
 
 		# Launch iperf client on UE
 		if (device_id == 'OAI-UE'):
@@ -2388,15 +2404,23 @@ class SSHConnection():
 		self.close()
 
 		# Kill iperf server on EPC side
-		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
-		self.close()
+		if launchFromEpc:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
+			self.close()
+		else:
+			cmd = 'killall --signal SIGKILL iperf'
+			logging.debug(cmd + '\n')
+			subprocess.run(cmd, shell=True)
+			time.sleep(1)
+			self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1):
-			time.sleep(1)
-			if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-				os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+			if launchFromEpc:
+				time.sleep(1)
+				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
+				self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
 		if (device_id == 'OAI-UE'):
@@ -2466,9 +2490,14 @@ class SSHConnection():
 			time.sleep(0.5)
 			self.close()
 
-			# Launch the IPERF client on the EPC side for DL
-			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			# Launch the IPERF client on the EPC side for DL (true for ltebox and old open-air-cn
+			# But for OAI-Rel14-CUPS, we launch from python executor
+			launchFromEpc = True
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				launchFromEpc = False
+			if launchFromEpc:
+				self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
@@ -2478,16 +2507,31 @@ class SSHConnection():
 				modified_options = str(self.iperf_args)
 			time.sleep(0.5)
 
-			self.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			if launchFromEpc:
+				self.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			else:
+				if (os.path.isfile('iperf_' + self.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_' + self.testCase_id + '_' + device_id + '.log')
 			if (useIperf3):
 				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
 				clientStatus = 0
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
-				iperf_status = self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				if launchFromEpc:
+					iperf_status = self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				else:
+					cmd = 'iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 > iperf_' + self.testCase_id + '_' + device_id + '.log'
+					message = cmd + '\n'
+					logging.debug(cmd)
+					ret = subprocess.run(cmd, shell=True)
+					iperf_status = ret.returncode
+					self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
+					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+					self.command('cat ' + self.EPCSourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				if iperf_status < 0:
-					self.close()
+					if launchFromEpc:
+						self.close()
 					message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
@@ -2521,7 +2565,8 @@ class SSHConnection():
 			# in case of OAI UE: 
 			if (device_id == 'OAI-UE'):
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-					pass
+					if not launchFromEpc:
+						self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 				else:
 					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 					self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')

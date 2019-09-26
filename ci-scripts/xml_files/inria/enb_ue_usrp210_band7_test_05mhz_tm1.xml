@@ -27,7 +27,7 @@
 	<repeatCount>4</repeatCount>
 	<TestCaseRequestedList>
  030201 090109
- 030102 000001 090102 000002 040503 000002 090109 000001 030201
+ 030102 000001 090102 000002 040503 000002 040603 040604 040643 040644 000002 090109 000001 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -70,6 +70,34 @@
 		<desc>ping (5MHz - 20 sec)</desc>
 		<ping_args>-I 192.168.248.159 -c 20</ping_args>
        		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040603">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040604">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/12Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 12M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040643">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040644">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/2Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 2M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
 </testCaseList>
