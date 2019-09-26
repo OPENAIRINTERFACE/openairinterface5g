@@ -175,7 +175,7 @@ for (int l=0; l<rel15->nb_layers; l++)
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
 
   /// DMRS QPSK modulation
-  uint16_t n_dmrs = (rel15->n_prb*rel15->nb_re_dmrs)<<1;
+  uint16_t n_dmrs = ((rel15->n_prb+rel15->start_prb)*rel15->nb_re_dmrs)<<1;
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config->pdsch_config.dmrs_type.value;
   uint8_t mapping_type = config->pdsch_config.mapping_type.value;
@@ -220,6 +220,10 @@ ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
     uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
+    if (dmrs_type == NFAPI_NR_DMRS_TYPE1) // another if condition to be included to check pdsch config type (reference of k)
+      dmrs_idx = rel15->start_prb*6;
+    else
+      dmrs_idx = rel15->start_prb*4;
 
     for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++) {
       k = start_sc;
