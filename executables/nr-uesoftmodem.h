@@ -79,6 +79,7 @@
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                     defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,              defintval:1,                    TYPE_UINT8,     0},                     \
     {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                         defintval:0,                    TYPE_INT,       0},                     \
+    {"V" ,                      CONFIG_HLP_VCD,         PARAMFLAG_BOOL,         iptr:&vcdflag,                         defintval:0,                    TYPE_INT,       0},                     \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                      defintval:0,                    TYPE_INT,       0},                     \
     {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                      defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,      defstrval:NULL,                 TYPE_STRING,    0},                     \

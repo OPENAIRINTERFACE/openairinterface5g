@@ -30,6 +30,7 @@
 * \warning
 */
 
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
@@ -307,6 +308,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   LOG_I(PHY,"DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
+
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
@@ -323,6 +326,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
 #endif
   }
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
 
   p_decParams->Z = harq_process->Z;
   //printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
@@ -406,10 +411,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #if UE_TIMING_TRACE
     start_meas(dlsch_deinterleaving_stats);
 #endif
+
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_IN);
+
     nr_deinterleaving_ldpc(E,
                            harq_process->Qm,
                            harq_process->w[r], // [hna] w is e
                            dlsch_llr+r_offset);
+
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_OUT);
 
     //for (int i =0; i<16; i++)
     //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
@@ -434,6 +444,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
           harq_process->round);
 #endif
 
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
+
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
                                  p_decParams->BG,
@@ -444,12 +456,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                                  harq_process->rvidx,
                                  (harq_process->round==0)?1:0,
                                  E)==-1) {
+    vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
       LOG_E(PHY,"dlsch_decoding.c: Problem in rate_matching\n");
       return(dlsch->max_ldpc_iterations + 1);
     } else {
+
+      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -515,11 +530,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
       }
 
+      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
+
       no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                            (int8_t*)&pl[0],
                            llrProcBuf,
                            p_nrLDPC_procBuf[r],
                            p_procTime);
+
+      vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
@@ -644,6 +663,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   printf("F %d, Fbytes %d\n",harq_process->F,harq_process->F>>3);
   printf("C %d\n",harq_process->C);
   */
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_IN);
+
   for (r=0; r<harq_process->C; r++) {
 
     memcpy(harq_process->b+offset,
@@ -673,6 +695,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
           }
 
   }
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_OUT);
 
   dlsch->last_iteration_cnt = ret;
 

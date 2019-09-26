@@ -682,6 +682,27 @@ static void* gNB_thread_prach( void* param ) {
 extern void init_td_thread(PHY_VARS_gNB *);
 extern void init_te_thread(PHY_VARS_gNB *);
 
+static void* process_stats_thread(void* param) {
+
+  PHY_VARS_gNB *gNB  = (PHY_VARS_gNB*)param;
+
+  reset_meas(&gNB->dlsch_encoding_stats);
+  reset_meas(&gNB->dlsch_scrambling_stats);
+  reset_meas(&gNB->dlsch_modulation_stats);
+
+  wait_sync("process_stats_thread");
+
+  while(!oai_exit)
+  {
+    sleep(1);
+    print_meas(&gNB->dlsch_encoding_stats, "pdsch_encoding", NULL, NULL);
+    print_meas(&gNB->dlsch_scrambling_stats, "pdsch_scrambling", NULL, NULL);
+    print_meas(&gNB->dlsch_modulation_stats, "pdsch_modulation", NULL, NULL);
+  }
+  return(NULL);
+}
+
+
 void init_gNB_proc(int inst) {
   int i=0;
   int CC_id;
@@ -729,6 +750,7 @@ void init_gNB_proc(int inst) {
       threadCreate( &L1_proc_tx->pthread, gNB_L1_thread_tx, gNB,"L1_proc_tx", -1, OAI_PRIORITY_RT);
     }
 
+    if(opp_enabled == 1) threadCreate(&proc->L1_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
     //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
     char name[16];
 

@@ -271,17 +271,17 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
 
-  start_meas(tinput);
+  if(tinput != NULL) start_meas(tinput);
   for (i=0; i<block_length; i++) {
       c[i] = (test_input[i/8]&(1<<(i&7)))>>(i&7);
       //printf("c(%d,%d)=%d\n",j,i,temp);
     }
 
-  stop_meas(tinput);
+  if(tinput != NULL) stop_meas(tinput);
 
   if ((BG==1 && Zc>176) || (BG==2 && Zc>64)) { 
     // extend matrix
-    start_meas(tprep);
+    if(tprep != NULL) start_meas(tprep);
     for (i1=0; i1 < ncols; i1++)
       {
 	memcpy(&c_extension[2*i1*Zc], &c[i1*Zc], Zc*sizeof(unsigned char));
@@ -296,11 +296,11 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 	printf("\n");
       */
     }
-    stop_meas(tprep);
+    if(tprep != NULL) stop_meas(tprep);
     //parity check part
-    start_meas(tparity);
+    if(tparity != NULL) start_meas(tparity);
     encode_parity_check_part_optim(c_extension, d, BG, Zc, Kb);
-    stop_meas(tparity);
+    if(tparity != NULL) stop_meas(tparity);
   }
   else {
     if (encode_parity_check_part_orig(c, d, BG, Zc, Kb, block_length)!=0) {
@@ -308,12 +308,12 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
       return(-1);
     }
   }
-  start_meas(toutput);
+  if(toutput != NULL) start_meas(toutput);
   // information part and puncture columns
   memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
   memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char));
 
-  stop_meas(toutput);
+  if(toutput != NULL) stop_meas(toutput);
   return 0;
 }
 
@@ -408,7 +408,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
 
-  start_meas(tinput);
+  if(tinput != NULL) start_meas(tinput);
 #if 0
   for (i=0; i<block_length; i++) {
     for (j=0; j<n_segments; j++) {
@@ -441,11 +441,11 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 #endif
 #endif
 
-  stop_meas(tinput);
+  if(tinput != NULL) stop_meas(tinput);
 
   if ((BG==1 && Zc>176) || (BG==2 && Zc>64)) { 
     // extend matrix
-    start_meas(tprep);
+    if(tprep != NULL) start_meas(tprep);
     for (i1=0; i1 < ncols; i1++)
       {
 	memcpy(&c_extension[2*i1*Zc], &c[i1*Zc], Zc*sizeof(unsigned char));
@@ -460,11 +460,11 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 	printf("\n");
       */
     }
-    stop_meas(tprep);
+    if(tprep != NULL) stop_meas(tprep);
     //parity check part
-    start_meas(tparity);
+    if(tparity != NULL) start_meas(tparity);
     encode_parity_check_part_optim(c_extension, d, BG, Zc, Kb);
-    stop_meas(tparity);
+    if(tparity != NULL) stop_meas(tparity);
   }
   else {
     if (encode_parity_check_part_orig(c, d, BG, Zc, Kb, block_length)!=0) {
@@ -472,7 +472,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
       return(-1);
     }
   }
-  start_meas(toutput);
+  if(toutput != NULL) start_meas(toutput);
   // information part and puncture columns
   /*
   memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
@@ -513,7 +513,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
     AssertFatal(1==0,"Need AVX2 for now\n");
 #endif
 
-  stop_meas(toutput);
+  if(toutput != NULL) stop_meas(toutput);
   return 0;
 }
 
@@ -613,7 +613,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
 
-  start_meas(tinput);
+  if(tinput != NULL) start_meas(tinput);
 #if 0
   for (i=0; i<block_length; i++) {
 	//for (j=0; j<n_segments; j++) {
@@ -649,11 +649,11 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
 #endif
 #endif
 
-  stop_meas(tinput);
+  if(tinput != NULL) stop_meas(tinput);
 
   if ((BG==1 && Zc>176) || (BG==2 && Zc>64)) {
     // extend matrix
-    start_meas(tprep);
+    if(tprep != NULL) start_meas(tprep);
     for (i1=0; i1 < ncols; i1++)
       {
 	memcpy(&c_extension[2*i1*Zc], &c[i1*Zc], Zc*sizeof(unsigned char));
@@ -668,11 +668,11 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
 	printf("\n");
       */
     }
-    stop_meas(tprep);
+    if(tprep != NULL) stop_meas(tprep);
     //parity check part
-    start_meas(tparity);
+    if(tparity != NULL) start_meas(tparity);
     encode_parity_check_part_optim(c_extension, d, BG, Zc, Kb);
-    stop_meas(tparity);
+    if(tparity != NULL) stop_meas(tparity);
   }
   else {
     if (encode_parity_check_part_orig(c, d, BG, Zc, Kb, block_length)!=0) {
@@ -680,7 +680,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
       return(-1);
     }
   }
-  start_meas(toutput);
+  if(toutput != NULL) start_meas(toutput);
   // information part and puncture columns
   /*
   memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
@@ -726,7 +726,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
     AssertFatal(1==0,"Need AVX2 for now\n");
 #endif
 
-  stop_meas(toutput);
+  if(toutput != NULL) stop_meas(toutput);
   return 0;
 }
 
