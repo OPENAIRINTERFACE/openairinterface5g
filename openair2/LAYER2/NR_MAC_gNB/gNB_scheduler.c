@@ -300,6 +300,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   rnti_t            rnti;
 
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -332,7 +333,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                     frameP,
                                     slotP,
                                     *cfg))
-          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP, dlsch_config);
 
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
@@ -440,7 +441,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
   if (slotP==1)
-  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP, dlsch_config);
 
   /*
   // Allocate CCEs for good after scheduling is done

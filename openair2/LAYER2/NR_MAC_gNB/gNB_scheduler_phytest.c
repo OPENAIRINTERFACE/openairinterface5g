@@ -176,7 +176,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   slotP)
+                                   sub_frame_t   slotP,
+                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config)
 {
   uint8_t  CC_id;
 
@@ -227,6 +228,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     dlsch_pdu_rel15->mcs_idx = 9;
     dlsch_pdu_rel15->ndi = 1;
     dlsch_pdu_rel15->redundancy_version = 0;
+
+    if (dlsch_config != NULL) {
+      dlsch_pdu_rel15->start_prb = dlsch_config->start_prb;
+      dlsch_pdu_rel15->n_prb = dlsch_config->n_prb;
+      dlsch_pdu_rel15->start_symbol = dlsch_config->start_symbol;
+      dlsch_pdu_rel15->nb_symbols = dlsch_config->nb_symbols;
+      dlsch_pdu_rel15->mcs_idx = dlsch_config->mcs_idx;
+    }
 
     nr_configure_dci_from_pdcch_config(params_rel15,
                                        coreset,
