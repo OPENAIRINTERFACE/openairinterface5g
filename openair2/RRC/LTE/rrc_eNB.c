@@ -3204,7 +3204,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->drx_Config = NULL;
   rnti_t rnti = ue_context_pP->ue_id_rnti;
   module_id_t module_id = ctxt_pP->module_id;
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+
+  if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX Configuration */
     // Need to check if UE is a BR UE
     int UE_id = find_UE_id(module_id, rnti);
@@ -3222,26 +3223,25 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
         /* Process the IE drx_Config */
         if (cc_id < MAX_NUM_CCs) {
           mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+
           if (mac_MainConfig->drx_Config == NULL) {
-            LOG_E(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+            LOG_E(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+          } else {
+            /* Set timers and thresholds values in local MAC context of UE */
+            eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
+            LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
           }
         } else {
           LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
         }
       } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        LOG_D(RRC, "CDRX not implemented for TDD and LTE-M\n");
+        LOG_I(RRC, "CDRX not implemented for TDD and LTE-M\n");
       }
     } else { // UE_id invalid
       LOG_E(RRC, "Invalid UE_id found!\n");
     }
-  } else { // No CDRX with the CU/DU split in this version
-    LOG_E(RRC, "CU/DU split activated\n");
   }
-  if (mac_MainConfig->drx_Config != NULL) {
-    /* Set timers and thresholds values in local MAC context of UE */
-    eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
-    LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-  } 
+  /* End of CDRX configuration */
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
@@ -6493,6 +6493,24 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
+
+  if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    /* CDRX: (under test) activated when RRC Connection Reconfiguration was sent */
+    int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+    if (UE_id_mac == -1) {
+      LOG_E(rrc, "Can't find UE_id(MAC) of UE rnti %x\n", ue_context_pP->ue_context.rnti);
+      return;
+    }
+    
+    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    
+    if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+      UE_scheduling_control->cdrx_waiting_ack = FALSE;
+      // UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration is sent (under test)
+      LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+    }
+    /* End of CDRX processing */
+  }
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
