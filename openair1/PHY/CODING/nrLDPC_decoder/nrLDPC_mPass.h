@@ -84,19 +84,15 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrL
 {
     uint32_t i;
     const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
-    uint32_t colG1 = NR_LDPC_START_COL_PARITY_BG1*Z;
+    uint32_t startColParity = (BG ==1 ) ? (NR_LDPC_START_COL_PARITY_BG1) : (NR_LDPC_START_COL_PARITY_BG2);
 
-    const uint16_t* lut_llr2llrProcBufAddr = p_lut->llr2llrProcBufAddr;
-    const uint8_t*  lut_llr2llrProcBufNumBn = p_lut->llr2llrProcBufNumBn;
-    const uint8_t*  lut_llr2llrProcBufNumEl = p_lut->llr2llrProcBufNumEl;
+    uint32_t colG1 = startColParity*Z;
 
-    uint16_t numLlr = 0;
+    const uint16_t* lut_llr2llrProcBufAddr  = p_lut->llr2llrProcBufAddr;
+    const uint8_t*  lut_llr2llrProcBufBnPos = p_lut->llr2llrProcBufBnPos;
+
+    uint32_t idxBn;
     int8_t* llrProcBuf = p_procBuf->llrProcBuf;
-
-    if (BG == 2)
-    {
-        colG1 = NR_LDPC_START_COL_PARITY_BG2*Z;
-    }
 
     // Copy LLRs connected to 1 CN
     if (numBn2CnG1 > 0)
@@ -105,11 +101,11 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrL
     }
 
     // First 2 columns might be set to zero directly if it's true they always belong to the groups with highest number of connected CNs...
-    for (i=0; i<(*lut_llr2llrProcBufNumEl); i++)
+    for (i=0; i<startColParity; i++)
     {
-        numLlr = lut_llr2llrProcBufNumBn[i]*Z;
-        memcpy(&llrProcBuf[lut_llr2llrProcBufAddr[i]], llr, numLlr);
-        llr+=numLlr;
+        idxBn = lut_llr2llrProcBufAddr[i] + lut_llr2llrProcBufBnPos[i]*Z;
+        memcpy(&llrProcBuf[idxBn], llr, Z);
+        llr += Z;
     }
 }
 
@@ -835,7 +831,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0; j<2; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-        
+
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG3[j][i] + lut_bnPosBnProcBuf_CNG3[j][i]*Z;
@@ -927,7 +923,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
             p_cnProcBuf += Z;
         }
-    }    
+    }
 }
 
 /**
@@ -1141,20 +1137,16 @@ static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_n
 {
     uint32_t i;
     const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
-    uint32_t colG1 = NR_LDPC_START_COL_PARITY_BG1*Z;
+    uint32_t startColParity = (BG ==1 ) ? (NR_LDPC_START_COL_PARITY_BG1) : (NR_LDPC_START_COL_PARITY_BG2);
+
+    uint32_t colG1 = startColParity*Z;
 
     const uint16_t* lut_llr2llrProcBufAddr = p_lut->llr2llrProcBufAddr;
-    const uint8_t*  lut_llr2llrProcBufNumBn = p_lut->llr2llrProcBufNumBn;
-    const uint8_t*  lut_llr2llrProcBufNumEl = p_lut->llr2llrProcBufNumEl;
+    const uint8_t*  lut_llr2llrProcBufBnPos = p_lut->llr2llrProcBufBnPos;
 
-    uint16_t numLlr = 0;
     int8_t* llrRes = p_procBuf->llrRes;
     int8_t* p_llrOut = &llrOut[0];
-
-    if (BG == 2)
-    {
-        colG1 = NR_LDPC_START_COL_PARITY_BG2*Z;
-    }
+    uint32_t idxBn;
 
     // Copy LLRs connected to 1 CN
     if (numBn2CnG1 > 0)
@@ -1162,13 +1154,14 @@ static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_n
         memcpy(&llrOut[colG1], llrRes, numBn2CnG1*Z);
     }
 
-    // First 2 columns might be set to zero directly if it's true they always belong to the groups with highest number of connected CNs...
-    for (i=0; i<(*lut_llr2llrProcBufNumEl); i++)
+
+    for (i=0; i<startColParity; i++)
     {
-        numLlr = lut_llr2llrProcBufNumBn[i]*Z;
-        memcpy(p_llrOut, &llrRes[lut_llr2llrProcBufAddr[i]], numLlr);
-        p_llrOut+=numLlr;
+        idxBn = lut_llr2llrProcBufAddr[i] + lut_llr2llrProcBufBnPos[i]*Z;
+        memcpy(p_llrOut, &llrRes[idxBn], Z);
+        p_llrOut += Z;
     }
+
 }
 
 #endif

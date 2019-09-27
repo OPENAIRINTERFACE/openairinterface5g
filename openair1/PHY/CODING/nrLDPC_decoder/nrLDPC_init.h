@@ -86,15 +86,13 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = NULL;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG2_R15;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG2_R15;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG2_R15;
-
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG2_R15;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG2_R15;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG2_R15;
             p_lut->startAddrBnGroups = lut_startAddrBnGroups_BG2_R15;
             p_lut->startAddrBnGroupsLlr = lut_startAddrBnGroupsLlr_BG2_R15;
-            p_lut->numEdgesPerBn = lut_numEdgesPerBn_BG2_R15;
+
             numLLR = NR_LDPC_NCOL_BG2_R15*Z;
         }
         else if (R == 13)
@@ -120,14 +118,13 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = NULL;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG2_R13;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG2_R13;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG2_R13;
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG2_R13;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG2_R13;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG2_R13;
             p_lut->startAddrBnGroups = lut_startAddrBnGroups_BG2_R13;
             p_lut->startAddrBnGroupsLlr = lut_startAddrBnGroupsLlr_BG2_R13;
-            p_lut->numEdgesPerBn = lut_numEdgesPerBn_BG2_R13;
+
             numLLR = NR_LDPC_NCOL_BG2_R13*Z;
         }
         else if (R == 23)
@@ -153,14 +150,13 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = NULL;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG2_R23;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG2_R23;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG2_R23;
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG2_R23;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG2_R23;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG2_R23;
             p_lut->startAddrBnGroups = lut_startAddrBnGroups_BG2_R23;
             p_lut->startAddrBnGroupsLlr = lut_startAddrBnGroupsLlr_BG2_R23;
-            p_lut->numEdgesPerBn = lut_numEdgesPerBn_BG2_R23;
+
             numLLR = NR_LDPC_NCOL_BG2_R23*Z;
         }
 
@@ -883,8 +879,7 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = (const uint8_t**) bnPosBnProcBuf_BG1_R13_CNG19;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG1_R13;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG1_R13;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG1_R13;
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG1_R13;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG1_R13;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG1_R13;
@@ -916,8 +911,7 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = (const uint8_t**) bnPosBnProcBuf_BG1_R23_CNG19;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG1_R23;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG1_R23;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG1_R23;
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG1_R23;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG1_R23;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG1_R23;
@@ -949,8 +943,7 @@ static inline uint32_t nrLDPC_init(t_nrLDPC_dec_params* p_decParams, t_nrLDPC_lu
             p_lut->bnPosBnProcBuf[8] = (const uint8_t**) bnPosBnProcBuf_BG1_R89_CNG19;
 
             p_lut->llr2llrProcBufAddr  = llr2llrProcBufAddr_BG1_R89;
-            p_lut->llr2llrProcBufNumBn = llr2llrProcBufNumBn_BG1_R89;
-            p_lut->llr2llrProcBufNumEl = &llr2llrProcBufNumEl_BG1_R89;
+            p_lut->llr2llrProcBufBnPos = llr2llrProcBufBnPos_BG1_R89;
 
             p_lut->numCnInCnGroups = lut_numCnInCnGroups_BG1_R89;
             p_lut->numBnInBnGroups = lut_numBnInBnGroups_BG1_R89;

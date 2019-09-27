@@ -951,31 +951,25 @@ static const uint8_t bnPosBnProcBuf_BG2_R23_CNG10[10][2] = {{0, 0},{0, 0},{1, 1}
 // LUT for llr2llrProcBuf
 // BG1
 // R13
-static const uint16_t llr2llrProcBufAddr_BG1_R13[24] = {25728,25344,17664,22272,20352,16128,19200,23424,19584,18048,23808,20736,24192,22656,21120,18432,21504,24960,18816,19968,23040,24576,16512,17280};
-static const uint8_t llr2llrProcBufNumBn_BG1_R13[24] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,2,1};
-static const uint8_t llr2llrProcBufNumEl_BG1_R13 = 24;
+static const uint16_t llr2llrProcBufAddr_BG1_R13[26] = {25728,25344,17664,22272,20352,16128,19200,23424,19200,17664,23424,20736,23424,22272,20736,17664,20736,20736,24960,17664,19200,22272,23424,16512,16896,16896};
+static const uint8_t llr2llrProcBufBnPos_BG1_R13[26] = {0,0,0,0,0,0,0,0,1,1,1,0,2,1,1,2,2,3,0,3,2,2,3,0,0,1};
 // R23
-static const uint16_t llr2llrProcBufAddr_BG1_R23[19] = {13056,12672,5760,6912,3840,6144,7680,4224,9600,8448,4608,11136,8832,11520,6528,9216,11904,4992,3456};
-static const uint8_t llr2llrProcBufNumBn_BG1_R23[19] = {1,1,1,2,1,1,2,1,4,1,1,1,1,1,1,1,2,2,1};
-static const uint8_t llr2llrProcBufNumEl_BG1_R23 = 19;
+static const uint16_t llr2llrProcBufAddr_BG1_R23[26] = {13056,12672,5760,6912,6912,3840,5760,6912,6912,3840,9600,9600,9600,9600,6912,3840,9600,6912,9600,5760,6912,9600,9600,3840,3840,3456};
+static const uint8_t llr2llrProcBufBnPos_BG1_R23[26] = {0,0,0,0,1,0,1,2,3,1,0,1,2,3,4,2,4,5,5,2,6,6,7,3,4,0};
 // R89
-static const uint16_t llr2llrProcBufAddr_BG1_R89[4] = {9984,9600,1536,384};
-static const uint8_t llr2llrProcBufNumBn_BG1_R89[4] = {1,1,21,3};
-static const uint8_t llr2llrProcBufNumEl_BG1_R89 = 4;
+static const uint16_t llr2llrProcBufAddr_BG1_R89[26] = {9984,9600,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,1536,384,384,384};
+static const uint8_t llr2llrProcBufBnPos_BG1_R89[26] = {0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,0,1,2};
 
 // BG2
 // R15
-static const uint16_t llr2llrProcBufAddr_BG2_R15[13] = {19200,19584,17280,14592,18432,15744,18048,15360,16128,16512,18816,16896,17664};
-static const uint8_t llr2llrProcBufNumBn_BG2_R15[13] = {1,1,1,2,1,1,1,1,1,1,1,1,1};
-static const uint8_t llr2llrProcBufNumEl_BG2_R15 = 13;
+static const uint16_t llr2llrProcBufAddr_BG2_R15[14] = {19200,19584,17280,14592,14592,18432,15744,18048,15360,16128,16512,18816,16512,17664};
+static const uint8_t llr2llrProcBufBnPos_BG2_R15[14] = {0,0,0,0,1,0,0,0,0,0,0,0,1,0};
 // R13
-static const uint16_t llr2llrProcBufAddr_BG2_R13[10] = {11520,11904,6912,7296,8448,10752,9216,11136,8064,10368};
-static const uint8_t llr2llrProcBufNumBn_BG2_R13[10] = {1,1,1,2,2,1,3,1,1,1};
-static const uint8_t llr2llrProcBufNumEl_BG2_R13 = 10;
+static const uint16_t llr2llrProcBufAddr_BG2_R13[14] = {11520,11904,6912,7296,7296,8448,8448,10752,8448,8448,8448,11136,8064,10368};
+static const uint8_t llr2llrProcBufBnPos_BG2_R13[14] = {0,0,0,0,1,0,1,0,2,3,4,0,0,0};
 // R23
-static const uint16_t llr2llrProcBufAddr_BG2_R23[12] = {6144,5376,1152,2304,4224,3072,4608,3456,4992,3840,5760,1536};
-static const uint8_t llr2llrProcBufNumBn_BG2_R23[12] = {1,1,1,2,1,1,1,1,1,1,1,2};
-static const uint8_t llr2llrProcBufNumEl_BG2_R23 = 12;
+static const uint16_t llr2llrProcBufAddr_BG2_R23[14] = {6144,5376,1152,2304,2304,4224,2304,4224,2304,4224,2304,5376,1152,1152};
+static const uint8_t llr2llrProcBufBnPos_BG2_R23[14] = {0,0,0,0,1,0,2,1,3,2,4,1,1,2};
 
 // LUT for llr2cnProcBuf
 // LUTs are not rate dependent, however the number of CN in a CNG varies with rate

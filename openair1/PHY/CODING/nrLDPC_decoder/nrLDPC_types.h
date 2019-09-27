@@ -46,16 +46,11 @@ typedef struct nrLDPC_lut {
     const uint8_t*  numBnInBnGroups; /**< Number of CNs in every BN group */
     const uint32_t* startAddrBnGroups; /**< Start addresses for BN groups in BN processing buffer  */
     const uint16_t* startAddrBnGroupsLlr; /**< Start addresses for BN groups in LLR processing buffer  */
-    const uint32_t* llr2CnProcBuf; /**< LUT for input LLRs to CN processing buffer */
-    const uint8_t*  numEdgesPerBn; /**< LUT with number of edges per BN */
-    const uint32_t* cn2bnProcBuf; /**< LUT for transferring CN processing results to BN processing buffer */
-    const uint16_t* llr2llrProcBuf; /**< LUT for transferring input LLRs to LLR processing buffer */
     const uint16_t** circShift[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
     const uint32_t** startAddrBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
     const uint8_t**  bnPosBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Z's */
     const uint16_t* llr2llrProcBufAddr; /**< LUT for transferring input LLRs to LLR processing buffer */
-    const uint8_t*  llr2llrProcBufNumBn; /**< LUT for transferring input LLRs to LLR processing buffer */
-    const uint8_t*  llr2llrProcBufNumEl; /**< LUT for transferring input LLRs to LLR processing buffer */
+    const uint8_t*  llr2llrProcBufBnPos; /**< LUT for transferring input LLRs to LLR processing buffer */
     const uint8_t** posBnInCnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for llr2cnProcBuf */
 } t_nrLDPC_lut;
 

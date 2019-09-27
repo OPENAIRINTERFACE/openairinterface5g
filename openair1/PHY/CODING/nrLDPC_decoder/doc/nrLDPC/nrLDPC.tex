@@ -542,9 +542,9 @@ In this section, the performance in terms of BLER and decoding latency of the cu
 \subsection{BLER Performance}
 \label{sec:bler-performance}
 
-In all simulations, we assume AWGN, QPSK modulation and 8-bit input LLRs. The results are averaged over at least $10\,000$ channel realizations.
+In all simulations, we assume AWGN, QPSK modulation and 8-bit input LLRs, i.e. $-127$ until $+127$. The results are averaged over at least $10\,000$ channel realizations.
 
-The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the current LDPC decoder implementation to the reference implementation developed by Kien. This reference implementation is called \textit{LDPC Ref} and uses the min-sum algorithm with 2 layers and 16 bit for processing. Out current optimized decoder implementation is referred to as \textit{LDPC Opt}. Moreover, reference results provided by Huawei are also shown.
+The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the current LDPC decoder implementation to the reference implementation developed by Kien. This reference implementation is called \textit{LDPC Ref} and uses the min-sum algorithm with 2 layers and 16 bit for processing. Our current optimized decoder implementation is referred to as \textit{LDPC Opt}. Moreover, reference results provided by Huawei are also shown.
 
 \begin{figure}[ht]
   \centering
@@ -566,9 +566,10 @@ The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the curren
       % Kien's 2-layer 16bit code
       \addplot[red, solid, mark=o] plot coordinates { (-2.750000,0.915500) (-2.500000,0.576000) (-2.250000,0.165000) (-2.000000,0.017100) (-1.750000,0.000600) (-1.500000,0.000000) (-1.250000,0.000000) (-1.000000,0.000000)};
 
-      % LDPC opt with 16bit BN processing
-      \addplot[blue, solid, mark=square] plot coordinates { (-2.750000,0.998600) (-2.500000,0.953600) (-2.250000,0.718800) (-2.000000,0.299300) (-1.750000,0.053700) (-1.500000,0.005100) (-1.250000,0.000500) (-1.000000,0.000100)};
-
+      
+      % 10 iterations
+      %\addplot[blue, solid, mark=square] plot coordinates { (-2.750000,0.998600) (-2.500000,0.953600) (-2.250000,0.718800) (-2.000000,0.299300) (-1.750000,0.053700) (-1.500000,0.005100) (-1.250000,0.000500) (-1.000000,0.000100)};
+      \addplot[blue, solid, mark=square] plot coordinates { (-2.750000,0.997200) (-2.500000,0.955000) (-2.250000,0.710900) (-2.000000,0.270400) (-1.750000,0.042400) (-1.500000,0.002200) (-1.250000,0.000000) (-1.000000,0.000000)};
       % Matlab
       \addplot[green, solid, mark=triangle] plot coordinates {(-2.750000,0.318200) (-2.500000,0.135900) (-2.250000,0.102000) (-2.000000,0.092300) (-1.750000,0.079200) (-1.500000,0.063100) (-1.250000,0.041400) (-1.000000,0.029600) (-0.750000,0.017500) (-0.500000,0.011800) (-0.250000,0.006100) (0.000000,0.004100) (0.250000,0.002800) (0.500000,0.000800) (0.750000,0.000300) (1.000000,0.000400) };
 
@@ -577,13 +578,30 @@ The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the curren
 
       % 20 iterations
       \addplot[red, solid, mark=o] plot coordinates { (-2.750000,0.330300) (-2.500000,0.067800) (-2.250000,0.006000) (-2.000000,0.000100) (-1.750000,0.000000) (-1.500000,0.000000) (-1.250000,0.000000) (-1.000000,0.000000)};
+      %\addplot[blue, solid, mark=square] plot coordinates  {(-2.750000,0.341300) (-2.500000,0.065100) (-2.250000,0.004100) (-2.000000,0.000200) (-1.750000,0.000100) (-1.500000,0.000000) (-1.250000,0.000000) (-1.000000,0.000000)};
+      \addplot[blue, dashed, mark=square] plot coordinates  {(-2.750000,0.337900) (-2.500000,0.058300) (-2.250000,0.004000) (-2.000000,0.000200) (-1.750000,0.000000) (-1.500000,0.000000) };
+                                                            % LDPC base
+                                                            %(-2.750000,0.369000) (-2.500000,0.068200) (-2.250000,0.002900) (-2.000000,0.000200) (-1.750000,0.000000) (-1.500000,0.000000)
+                                                            % New LDPC with llr2cn of old implementation
+                                                            % (-2.750000,0.716900) (-2.500000,0.300500) (-2.250000,0.045300) (-2.000000,0.003300) (-1.750000,0.000000) (-1.500000,0.000000)
+                                                            % saturation in both bnproc and bnprocpc
+                                                            % (-2.750000,0.668900) (-2.500000,0.248800) (-2.250000,0.039100) (-2.000000,0.002100) (-1.750000,0.000100) (-1.500000,0.000000) };
+                                                            % saturation with parity check
+                                                            % (-2.750000,0.672100) (-2.500000,0.245100) (-2.250000,0.037100) (-2.000000,0.001900) (-1.750000,0.000000) (-1.500000,0.000000) };
+                                                            %(-2.750000,0.343100) (-2.500000,0.064300) (-2.250000,0.003400) (-2.000000,0.000100) (-1.750000,0.000000) (-1.500000,0.000100) };
+                                                            %(-2.750000,0.334400) (-2.500000,0.059400) (-2.250000,0.003400) (-2.000000,0.000000) (-1.750000,0.000100) (-1.500000,0.000000) };
 
-      \addplot[blue, solid, mark=square] plot coordinates {(-2.750000,0.341300) (-2.500000,0.065100) (-2.250000,0.004100) (-2.000000,0.000200) (-1.750000,0.000100) (-1.500000,0.000000) (-1.250000,0.000000) (-1.000000,0.000000)};
 
       % 5 iterations
-\addplot[red, solid, mark=o] plot coordinates {(-1.250000,0.781300) (-1.000000,0.421000) (-0.750000,0.140400) (-0.500000,0.028900) (-0.250000,0.003300) (0.000000,0.000300) (0.250000,0.000000) (0.500000,0.000000)};
-\addplot[blue, solid, mark=square] plot coordinates {(-0.250000,0.705000) (0.000000,0.406200) (0.250000,0.181300) (0.500000,0.061600) (0.750000,0.015900) (1.000000,0.004900) (1.250000,0.000900) (1.500000,0.000200)};
-\addplot[green, solid, mark=triangle] plot coordinates {(-1.000000,0.778900) (-0.500000,0.226400) (0.000000,0.027400) (0.500000,0.002600) (1.000000,0.000300) };
+      \addplot[red, solid, mark=o] plot coordinates {(-1.250000,0.781300) (-1.000000,0.421000) (-0.750000,0.140400) (-0.500000,0.028900) (-0.250000,0.003300) (0.000000,0.000300) (0.250000,0.000000) (0.500000,0.000000)};
+      %\addplot[blue, solid, mark=square] plot coordinates {(-0.250000,0.705000) (0.000000,0.406200) (0.250000,0.181300) (0.500000,0.061600) (0.750000,0.015900) (1.000000,0.004900) (1.250000,0.000900) (1.500000,0.000200)};
+      \addplot[blue, solid, mark=square] plot coordinates {(-1.000000,0.700400) (-0.750000,0.370600) (-0.500000,0.136000) (-0.250000,0.039000) (0.000000,0.008500) (0.250000,0.002400) (0.500000,0.000700) (0.750000,0.000000) (1.000000,0.000000) };
+
+
+      \addplot[green, solid, mark=triangle] plot coordinates {(-1.000000,0.778900) (-0.500000,0.226400) (0.000000,0.027400) (0.500000,0.002600) (1.000000,0.000300) };
+
+      % Parity check 50 iterations
+      \addplot[blue, solid, mark=square] plot coordinates {(-2.750000,0.214600) (-2.500000,0.029200) (-2.250000,0.001500) (-2.000000,0.000100) (-1.750000,0.000000) (-1.500000,0.000000) };
 
 % 30 iterations
 % \addplot[blue, dashed, mark=square] plot coordinates {(-3.000000,0.623800) (-2.750000,0.224100) (-2.500000,0.031600) (-2.250000,0.001100) (-2.000000,0.000000)};
@@ -707,17 +725,27 @@ The results in Table \ref{tab:lat-bg2-r15} show the impact of the number of iter
     \toprule
     \textbf{Function} & \textbf{Time [$\mu s$] (5 it)} & \textbf{Time [$\mu s$] (10 it)} & \textbf{Time [$\mu s$] (20 it)}\\
     \midrule
-    \texttt{llr2llrProcBuf} & 1.1   & 1.1   & 1.1   \\
-    \texttt{llr2CnProcBuf}  & 12.4  & 12.0  & 12.0  \\
-    \texttt{cnProc}         & 11.7  & 22.1  & 43.5  \\
-    \texttt{bnProcPc}       & 6.6   & 12.1  & 23.8  \\
-    \texttt{bnProc}         & 4.2   & 8.1   & 16.2  \\
-    \texttt{cn2bnProcBuf}   & 61.3  & 118.3 & 234.9 \\
-    \texttt{bn2cnProcBuf}   & 38.1  & 82.5  & 172.3 \\
-    \texttt{llrRes2llrOut}  & 3.5   & 3.4   & 3.4   \\
-    \texttt{llr2bit}        & 0.2   & 0.1   & 0.1   \\
+    % \texttt{llr2llrProcBuf} & 1.1   & 1.1   & 1.1   \\
+    % \texttt{llr2CnProcBuf}  & 12.4  & 12.0  & 12.0  \\
+    % \texttt{cnProc}         & 11.7  & 22.1  & 43.5  \\
+    % \texttt{bnProcPc}       & 6.6   & 12.1  & 23.8  \\
+    % \texttt{bnProc}         & 4.2   & 8.1   & 16.2  \\
+    % \texttt{cn2bnProcBuf}   & 61.3  & 118.3 & 234.9 \\
+    % \texttt{bn2cnProcBuf}   & 38.1  & 82.5  & 172.3 \\
+    % \texttt{llrRes2llrOut}  & 3.5   & 3.4   & 3.4   \\
+    % \texttt{llr2bit}        & 0.2   & 0.1   & 0.1   \\
+    \texttt{llr2llrProcBuf} & 0.5  & 0.5  & 0.5  \\
+    \texttt{llr2CnProcBuf}  & 5.0  & 4.8  & 4.9  \\
+    \texttt{cnProc}         & 12.4 & 23.0 & 42.7 \\
+    \texttt{bnProcPc}       & 8.4  & 14.8 & 27.0 \\
+    \texttt{bnProc}         & 5.5  & 10.1 & 19.0 \\
+    \texttt{cn2bnProcBuf}   & 14.9 & 24.4 & 44.0 \\
+    \texttt{bn2cnProcBuf}   & 10.5 & 17.8 & 31.8 \\
+    \texttt{llrRes2llrOut}  & 0.3  & 0.3  & 0.3  \\
+    \texttt{llr2bit}        & 0.2  & 0.2  & 0.2  \\
     \midrule
-    \textbf{Total}          & \textbf{139.4} & \textbf{260.3} & \textbf{508.4} \\
+    % \textbf{Total}          & \textbf{139.4} & \textbf{260.3} & \textbf{508.4} \\
+    \textbf{Total}          & \textbf{58.5} & \textbf{97.1} & \textbf{172.6} \\
     \bottomrule
   \end{tabular}
   \caption{BG2, Z=128, R=1/5, B=1280, LDPC Opt}
@@ -732,17 +760,27 @@ Table \ref{tab:lat-bg2-i5} shows the impact of the code rate on the latency for 
     \toprule
     \textbf{Function} & \textbf{Time [$\mu s$] (R=1/5)} & \textbf{Time [$\mu s$] (R=1/3)} & \textbf{Time [$\mu s$] (R=2/3)}\\
     \midrule
-    \texttt{llr2llrProcBuf} & 3.2   & 2.9   & 2.6   \\
-    \texttt{llr2CnProcBuf}  & 36.5  & 25.4  & 14.8  \\
-    \texttt{cnProc}         & 33.6  & 25.2  & 13.3  \\
-    \texttt{bnProcPc}       & 17.6  & 10.2  & 4.5   \\
-    \texttt{bnProc}         & 8.5   & 5.4   & 2.5   \\
-    \texttt{cn2bnProcBuf}   & 175.3 & 110.6 & 50.7  \\
-    \texttt{bn2cnProcBuf}   & 106.6 & 71.2  & 36.1  \\
-    \texttt{llrRes2llrOut}  & 10.2  & 6.3   & 3.3   \\
-    \texttt{llr2bit}        & 0.4   & 0.2   & 0.1   \\
+    % \texttt{llr2llrProcBuf} & 3.2   & 2.9   & 2.6   \\
+    % \texttt{llr2CnProcBuf}  & 36.5  & 25.4  & 14.8  \\
+    % \texttt{cnProc}         & 33.6  & 25.2  & 13.3  \\
+    % \texttt{bnProcPc}       & 17.6  & 10.2  & 4.5   \\
+    % \texttt{bnProc}         & 8.5   & 5.4   & 2.5   \\
+    % \texttt{cn2bnProcBuf}   & 175.3 & 110.6 & 50.7  \\
+    % \texttt{bn2cnProcBuf}   & 106.6 & 71.2  & 36.1  \\
+    % \texttt{llrRes2llrOut}  & 10.2  & 6.3   & 3.3   \\
+    % \texttt{llr2bit}        & 0.4   & 0.2   & 0.1   \\
+    \texttt{llr2llrProcBuf} & 1.5  & 0.9  & 0.5  \\
+    \texttt{llr2CnProcBuf}  & 6.0  & 4.1  & 2.2  \\
+    \texttt{cnProc}         & 32.2 & 23.7 & 14.4 \\
+    \texttt{bnProcPc}       & 21.2 & 12.1 & 5.5  \\
+    \texttt{bnProc}         & 9.8  & 5.9  & 2.9  \\
+    \texttt{cn2bnProcBuf}   & 23.3 & 13.9 & 6.8  \\
+    \texttt{bn2cnProcBuf}   & 14.8 & 9.7  & 5.0  \\
+    \texttt{llrRes2llrOut}  & 0.6  & 0.4  & 0.3  \\
+    \texttt{llr2bit}        & 0.7  & 0.4  & 0.2  \\
     \midrule
-    \textbf{Total}          & \textbf{392.4} & \textbf{258.0} & \textbf{128.2} \\
+    % \textbf{Total}          & \textbf{392.4} & \textbf{258.0} & \textbf{128.2} \\
+    \textbf{Total}          & \textbf{111.0} & \textbf{71.8} & \textbf{38.5} \\
     \bottomrule
   \end{tabular}
   \caption{BG2, Z=384, B=3840, LDPC Opt, 5 iterations}
@@ -757,17 +795,27 @@ Table \ref{tab:lat-bg1-i5} shows the results for BG1, larges block size and diff
     \toprule
     \textbf{Function} &  \textbf{Time [$\mu s$] (R=1/3)} & \textbf{Time [$\mu s$] (R=2/3)} & \textbf{Time [$\mu s$] (R=8/9)}\\
     \midrule
-    \texttt{llr2llrProcBuf}  & 5.5   & 4.9   & 4.6  \\
-    \texttt{llr2CnProcBuf}   & 60.6  & 34.1  & 24.4 \\
-    \texttt{cnProc}          & 102.0 & 74.1  & 56.0 \\
-    \texttt{bnProcPc}        & 26.0  & 11.0  & 6.4  \\
-    \texttt{bnProc}          & 15.7  & 7.4   & 4.5  \\
-    \texttt{cn2bnProcBuf}    & 291.0 & 140.8 & 83.1 \\
-    \texttt{bn2cnProcBuf}    & 193.6 & 100.5 & 63.0 \\
-    \texttt{llrRes2llrOut}   & 13.3  & 6.9   & 5.2  \\
-    \texttt{llr2bit}         & 0.4   & 0.2   & 0.2  \\
+    % \texttt{llr2llrProcBuf}  & 5.5   & 4.9   & 4.6  \\
+    % \texttt{llr2CnProcBuf}   & 60.6  & 34.1  & 24.4 \\
+    % \texttt{cnProc}          & 102.0 & 74.1  & 56.0 \\
+    % \texttt{bnProcPc}        & 26.0  & 11.0  & 6.4  \\
+    % \texttt{bnProc}          & 15.7  & 7.4   & 4.5  \\
+    % \texttt{cn2bnProcBuf}    & 291.0 & 140.8 & 83.1 \\
+    % \texttt{bn2cnProcBuf}    & 193.6 & 100.5 & 63.0 \\
+    % \texttt{llrRes2llrOut}   & 13.3  & 6.9   & 5.2  \\
+    % \texttt{llr2bit}         & 0.4   & 0.2   & 0.2  \\
+    \texttt{llr2llrProcBuf}  & 2.1  & 1.2  & 0.9  \\
+    \texttt{llr2CnProcBuf}   & 10.6 & 5.4  & 2.9  \\
+    \texttt{cnProc}          & 89.8 & 66.3 & 50.0 \\
+    \texttt{bnProcPc}        & 28.1 & 12.4 & 7.1 \\
+    \texttt{bnProc}          & 17.1 & 8.1  & 4.8 \\
+    \texttt{cn2bnProcBuf}    & 38.7 & 17.1 & 9.3 \\
+    \texttt{bn2cnProcBuf}    & 25.6 & 12.7 & 7.2 \\
+    \texttt{llrRes2llrOut}   & 0.8  & 0.4  & 0.3 \\
+    \texttt{llr2bit}         & 0.9  & 0.4  & 0.3 \\
     \midrule
-    \textbf{Total}           & \textbf{708.9} & \textbf{380.6} & \textbf{248.1}\\
+    % \textbf{Total}           & \textbf{708.9} & \textbf{380.6} & \textbf{248.1}\\
+    \textbf{Total}           & \textbf{214.6} & \textbf{124.6} & \textbf{83.6}\\
     \bottomrule
   \end{tabular}
   \caption{BG1, Z=384, B=8448, LDPC Opt, 5 iterations}

@@ -38,7 +38,7 @@
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
 
-#define NR_LDPC_ENABLE_PARITY_CHECK
+//#define NR_LDPC_ENABLE_PARITY_CHECK
 //#define NR_LDPC_PROFILER_DETAIL
 
 #ifdef NR_LDPC_DEBUG_MODE
@@ -96,6 +96,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     {
         // Use LLR processing buffer as temporary output buffer
         p_llrOut = p_procBuf->llrProcBuf;
+        // Clear llrProcBuf
+        memset(p_llrOut,0, NR_LDPC_MAX_NUM_LLR*sizeof(int8_t));
     }
 
 
@@ -232,7 +234,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
     while ( (i < (numMaxIter-1)) && (pcRes != 0) )
     {
-        //mexPrintf("Start Main Loop: i=%d, numMaxIter=%d, pcRes = %d\n",i,numMaxIter,pcRes);
         // Increase iteration counter
         i++;
 
@@ -334,12 +335,10 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             pcRes = nrLDPC_cnProcPc_BG2(p_lut, p_procBuf, Z);
         }
-        //mexPrintf("End Main Loop: Iter: i=%d, pcRes=%d\n",i,pcRes);
 #ifdef NR_LDPC_PROFILER_DETAIL
         stop_meas(&p_profiler->cnProcPc);
 #endif
 #endif
-
     }
 
     // Last iteration
@@ -347,7 +346,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     {
         // Increase iteration counter
         i++;
-        //mexPrintf("Start Last Iter: i=%d, numMaxIter=%d, pcRes = %d\n",i,numMaxIter,pcRes);
 
         // CN processing
 #ifdef NR_LDPC_PROFILER_DETAIL
@@ -458,11 +456,13 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
     // If maximum number of iterations reached an PC still fails increase number of iterations
     // Thus, i > numMaxIter indicates that PC has failed
-     //mexPrintf("End: Iter: i=%d, pcRes=%d\n",i,pcRes);
+
+#ifdef NR_LDPC_ENABLE_PARITY_CHECK
     if (pcRes != 0)
     {
         i++;
     }
+#endif
 
     // Assign results from processing buffer to output
 #ifdef NR_LDPC_PROFILER_DETAIL
