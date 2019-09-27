@@ -114,6 +114,12 @@ int main(int argc, char **argv)
   //double pbch_sinr;
   //int pbch_tx_ant;
   int N_RB_DL=106,mu=1;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config;
+  dlsch_config.start_prb = 0;
+  dlsch_config.n_prb = 50;
+  dlsch_config.start_symbol = 2;
+  dlsch_config.nb_symbols = 9;
+  dlsch_config.mcs_idx = 9;
 
   uint16_t ssb_periodicity = 10;
 
@@ -148,7 +154,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:a:b:c:j:e:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -315,6 +321,26 @@ int main(int argc, char **argv)
 
     case 'o':
       cset_offset = atoi(optarg);
+      break;
+
+    case 'a':
+      dlsch_config.start_prb = atoi(optarg);
+      break;
+
+    case 'b':
+      dlsch_config.n_prb = atoi(optarg);
+      break;
+
+    case 'c':
+      dlsch_config.start_symbol = atoi(optarg);
+      break;
+
+    case 'j':
+      dlsch_config.nb_symbols = atoi(optarg);
+      break;
+
+    case 'e':
+      dlsch_config.mcs_idx = atoi(optarg);
       break;
 
     default:
@@ -506,7 +532,7 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_uss_dlsch_phytest(0,frame,slot);
+    nr_schedule_uss_dlsch_phytest(0,frame,slot,&dlsch_config);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;

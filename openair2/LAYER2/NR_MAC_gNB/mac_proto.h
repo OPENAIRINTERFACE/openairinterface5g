@@ -76,7 +76,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   slotP);
+                                   sub_frame_t   slotP,
+                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                   nr_scs_e scs_common,
