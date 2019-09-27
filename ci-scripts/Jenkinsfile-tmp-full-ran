@@ -54,6 +54,10 @@ def eNB_CommitID
 def eNB_AllowMergeRequestProcess = false
 def eNB_TargetBranch
 
+def doEpcLogCollection = true
+
+
+
 pipeline {
     agent {
         label pythonExecutor
@@ -61,7 +65,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock(extra: [[resource: ciSmartPhoneResource]], resource: ciSmartPhoneResource)
+        lock(extra: [[resource: oaiUEResource]], resource: ciSmartPhoneResource)
     }
 
     stages {
@@ -139,6 +143,11 @@ pipeline {
 
                     if (params.EPC_IPAddress == null) {
                         allParametersPresent = false
+                    } else {
+                        if (params.EPC_IPAddress == "none") {
+                            doEpcLogCollection = false
+                            echo "No EPC collections (ping/iperf/hss/mme/spgw)"
+                        }
                     }
                     if (params.EPC_Type == null) {
                         allParametersPresent = false
@@ -167,8 +176,8 @@ pipeline {
                             sh "git checkout -f ${eNB_CommitID}"
                         }
                     } else {
-                        echo "Some parameters are missing"
-                        sh "./ci-scripts/fail.sh"
+                        currentBuild.result = 'ABORTED'
+                        error('Stopping early because some parameters are missing')
                     }
                 }
             }
@@ -299,6 +308,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Ping)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -317,6 +329,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Iperf)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -335,6 +350,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (SPGW)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -353,6 +371,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (MME)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -371,6 +392,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (HSS)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
