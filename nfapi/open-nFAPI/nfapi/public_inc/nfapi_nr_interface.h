@@ -694,6 +694,7 @@ typedef struct {
     nr_pusch_freq_hopping_t pusch_freq_hopping;
     uint8_t mcs;
     uint8_t Qm;
+    uint16_t R;
     uint8_t ndi;
     uint8_t rv;
     int8_t accumulated_delta_PUSCH;

@@ -372,7 +372,7 @@ int main(int argc, char **argv)
   uint8_t nb_re_dmrs = 6;
   uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
-  uint16_t N_RE_prime;
+  uint16_t N_RE_prime,code_rate;
   unsigned char mod_order;
   uint8_t Nl = 1;
   uint8_t rvidx = 0;
@@ -383,9 +383,10 @@ int main(int argc, char **argv)
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
-  mod_order = nr_get_Qm(Imcs, 1);
+  mod_order = nr_get_Qm_ul(Imcs, 1);
+  code_rate = nr_get_code_rate_ul(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
   printf("\n");
   printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
 

@@ -2464,9 +2464,9 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 
 
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
-		                    UE_nr_rxtx_proc_t *proc,
-							uint8_t gNB_id,
-							uint8_t thread_id)
+		            UE_nr_rxtx_proc_t *proc,
+			    uint8_t gNB_id,
+			    uint8_t thread_id)
 {
   //NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   NR_UE_ULSCH_t *ulsch_ue;
@@ -2497,10 +2497,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   ulsch_ue = ue->ulsch[thread_id][gNB_id][0]; // cwd_index = 0
   harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
-  TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
-
 //-----------------------------------------------------//
   // to be removed later when MAC is ready
+
+  uint8_t Qm = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
+  uint16_t R = nr_get_code_rate_ul(harq_process_ul_ue->mcs, 1);
+  TBS = nr_compute_tbs( Qm, R, harq_process_ul_ue->nb_rb, ulsch_ue->Nsymb_pusch, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+
 
   for (i = 0; i < TBS / 8; i++)
     harq_process_ul_ue->a[i] = (unsigned char) rand();

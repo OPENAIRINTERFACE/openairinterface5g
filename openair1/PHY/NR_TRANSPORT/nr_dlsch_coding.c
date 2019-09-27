@@ -289,9 +289,11 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
   //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG=1;
   uint32_t E;
-  uint8_t Ilbrm = 0;
+  uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
   uint8_t nb_re_dmrs = rel15.nb_re_dmrs;
+  uint16_t R=rel15.coding_rate;
+  uint16_t Qm=rel15.modulation_order;
   uint16_t length_dmrs = 1;
   float Coderate = 0.0;
 
@@ -309,9 +311,8 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  
 
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
+  Tbslbrm = nr_compute_tbs(Qm,R,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -340,7 +341,10 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
-    Coderate = (float) A /(float) G;
+    if (R<1000)
+      Coderate = (float) R /(float) 1024;
+    else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
+      Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
 		BG = 2;
@@ -410,13 +414,14 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
-	  	  if (dlsch->harq_processes[harq_pid]->F>0) {
-	          for (int k=(Kr-F-2*(*pz)); k<Kr-2*(*pz); k++) {
-	        	  dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
-	        	  //if (k<(Kr-F+8))
-	            //printf("r %d filler bits [%d] = %d \n", r,k, dlsch->harq_processes[harq_pid]->d[r][k]);
-	          }
-	  }
+    if (dlsch->harq_processes[harq_pid]->F>0) {
+      for (int k=(Kr-F-2*(*pz)); k<Kr-2*(*pz); k++) {
+        dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
+	//if (k<(Kr-F+8))
+	//printf("r %d filler bits [%d] = %d \n", r,k, dlsch->harq_processes[harq_pid]->d[r][k]);
+      }
+    }
+
 #ifdef DEBUG_DLSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
         r,

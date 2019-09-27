@@ -457,12 +457,13 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *F,
                      uint8_t BG);
 
-uint32_t nr_compute_tbs(uint8_t mcs,
-						uint16_t nb_rb,
-						uint16_t nb_symb_sch,
-						uint8_t nb_re_dmrs,
-						uint16_t length_dmrs,
-						uint8_t Nl);
+uint32_t nr_compute_tbs(uint16_t Qm,
+			uint16_t R,
+			uint16_t nb_rb,
+			uint16_t nb_symb_sch,
+			uint8_t nb_re_dmrs,
+			uint16_t length_dmrs,
+			uint8_t Nl);
 
 void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
 

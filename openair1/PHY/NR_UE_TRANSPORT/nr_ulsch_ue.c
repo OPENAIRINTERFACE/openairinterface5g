@@ -53,6 +53,8 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
   int N_PRB_oh, N_RE_prime, cwd_idx, length_dmrs, Nid_cell;
   int nb_rb, Nsymb_pusch, first_rb, nb_codewords,mcs,rvidx;
   uint16_t n_rnti;
+  unsigned char mod_order;
+  uint16_t code_rate;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
@@ -89,6 +91,9 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
 
     if (harq_process_ul_ue) {
 
+      mod_order      = nr_get_Qm_ul(mcs, 1);
+      code_rate      = nr_get_code_rate_ul(mcs, 1);
+
       harq_process_ul_ue->mcs                = mcs;
       harq_process_ul_ue->Nl                 = nb_codewords;
       harq_process_ul_ue->nb_rb              = nb_rb;
@@ -96,7 +101,8 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
       harq_process_ul_ue->number_of_symbols  = Nsymb_pusch;
       harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
       harq_process_ul_ue->rvidx              = rvidx;
-      harq_process_ul_ue->TBS                = nr_compute_tbs(harq_process_ul_ue->mcs,
+      harq_process_ul_ue->TBS                = nr_compute_tbs(mod_order,
+                                                              code_rate,
                                                               nb_rb,
                                                               Nsymb_pusch,
                                                               ulsch_ue->nb_re_dmrs,
@@ -166,7 +172,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-  uint16_t n_dmrs;
+  uint16_t n_dmrs,code_rate;
   uint8_t dmrs_type;
   uint8_t mapping_type;
   int ap, start_symbol, i;
@@ -195,7 +201,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
 
-    mod_order      = nr_get_Qm(harq_process_ul_ue->mcs, 1);
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
 
     available_bits = nr_get_G(harq_process_ul_ue->nb_rb,
                               ulsch_ue->Nsymb_pusch,

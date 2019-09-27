@@ -32,31 +32,44 @@
 
 #include "nr_transport_common_proto.h"
 
-/// Target code rate tables indexed by Imcs
-uint16_t nr_target_code_rate_table1[29] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679, 340, 378, 434, 490, 553, \
-                                            616, 658, 438, 466, 517, 567, 616, 666, 719, 772, 822, 873, 910, 948};
-  // Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
-uint16_t nr_target_code_rate_table2[28] = {120, 193, 308, 449, 602, 378, 434, 490, 553, 616, 658, 466, 517, 567, \
-                                            616, 666, 719, 772, 822, 873, 1365, 711, 754, 797, 841, 885, 1833, 948};
-uint16_t nr_target_code_rate_table3[29] = {30, 40, 50, 64, 78, 99, 120, 157, 193, 251, 308, 379, 449, 526, 602, 340, \
-                                            378, 434, 490, 553, 616, 438, 466, 517, 567, 616, 666, 719, 772};
+//Table 5.1.3.1-1 of 38.214
+uint16_t Table_51311[29][2] = {{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},{4,340},{4,378},{4,434},{4,490},{4,553},{4,616},
+		{4,658},{6,438},{6,466},{6,517},{6,567},{6,616},{6,666},{6,719},{6,772},{6,822},{6,873}, {6,910}, {6,948}};
+
+//Table 5.1.3.1-2 of 38.214
+// Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
+uint16_t Table_51312[28][2] = {{2,120},{2,193},{2,308},{2,449},{2,602},{4,378},{4,434},{4,490},{4,553},{4,616},{4,658},{6,466},{6,517},{6,567},{6,616},{6,666},
+		{6,719},{6,772},{6,822},{6,873},{8,1365},{8,711},{8,754},{8,797},{8,841},{8,885},{8,1833},{8,948}};
+
+//Table 5.1.3.1-3 of 38.214
+uint16_t Table_51313[29][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{4,340},
+		{4,378},{4,434},{4,490},{4,553},{4,616},{6,438},{6,466},{6,517},{6,567},{6,616},{6,666}, {6,719}, {6,772}};
+
+//Table 6.1.4.1-1 of 38.214 TODO fix for tp-pi2BPSK
+uint16_t Table_61411[28][2] = {{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},{4,340},{4,378},{4,434},{4,490},{4,553},{4,616},
+		{4,658},{6,466},{6,517},{6,567},{6,616},{6,666},{6,719},{6,772},{6,822},{6,873}, {6,910}, {6,948}};
+
+//Table 6.1.4.1-2 of 38.214 TODO fix for tp-pi2BPSK
+uint16_t Table_61412[28][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},
+		{4,378},{4,434},{4,490},{4,553},{4,616},{4,658},{4,699},{4,772},{6,567},{6,616},{6,666}, {6,772}};
+
 uint16_t nr_tbs_table[93] = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 208, 224, 240, 256, 272, 288, 304, 320, \
                               336, 352, 368, 384, 408, 432, 456, 480, 504, 528, 552, 576, 608, 640, 672, 704, 736, 768, 808, 848, 888, 928, 984, 1032, 1064, 1128, 1160, 1192, 1224, 1256, \
                               1288, 1320, 1352, 1416, 1480, 1544, 1608, 1672, 1736, 1800, 1864, 1928, 2024, 2088, 2152, 2216, 2280, 2408, 2472, 2536, 2600, 2664, 2728, 2792, 2856, 2976, \
                               3104, 3240, 3368, 3496, 3624, 3752, 3824};
 
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx) {
+uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 1:
-      return (((Imcs<10)||(Imcs==29))?2:((Imcs<17)||(Imcs==30))?4:((Imcs<29)||(Imcs==31))?6:-1);
+      return (Table_51311[Imcs][0]);
     break;
 
     case 2:
-      return (((Imcs<5)||(Imcs==28))?2:((Imcs<11)||(Imcs==29))?4:((Imcs<20)||(Imcs==30))?6:((Imcs<28)||(Imcs==31))?8:-1);
+      return (Table_51312[Imcs][0]);
     break;
 
     case 3:
-      return (((Imcs<15)||(Imcs==29))?2:((Imcs<21)||(Imcs==30))?4:((Imcs<29)||(Imcs==31))?6:-1);
+      return (Table_51313[Imcs][0]);
     break;
 
     default:
@@ -64,22 +77,52 @@ uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx) {
   }
 }
 
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
+uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 1:
-      return (nr_target_code_rate_table1[Imcs]);
+      return (Table_51311[Imcs][1]);
     break;
 
     case 2:
-      return (nr_target_code_rate_table2[Imcs]);
+      return (Table_51312[Imcs][1]);
     break;
 
     case 3:
-      return (nr_target_code_rate_table3[Imcs]);
+      return (Table_51313[Imcs][1]);
     break;
 
     default:
       AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
+  }
+}
+
+uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
+  switch(table_idx) {
+    case 1:
+      return (Table_61411[Imcs][0]);
+    break;
+
+    case 2:
+      return (Table_61412[Imcs][0]);
+    break;
+
+    default:
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,2])\n", table_idx);
+  }
+}
+
+uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
+  switch(table_idx) {
+    case 1:
+      return (Table_61411[Imcs][1]);
+    break;
+
+    case 2:
+      return (Table_61412[Imcs][1]);
+    break;
+
+    default:
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,2])\n", table_idx);
   }
 }
 
@@ -131,8 +174,10 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   scale = ((table_idx==2)&&((Imcs==20)||(Imcs==26)))?11:10;
   
   N_RE = min(156, N_RE_prime)*dlsch_rel15->n_prb;
-  R = nr_get_code_rate(Imcs, table_idx);
-  Qm = nr_get_Qm(Imcs, table_idx);
+
+  R = nr_get_code_rate_dl(Imcs, table_idx);
+  Qm = nr_get_Qm_dl(Imcs, table_idx);
+
   Ninfo = (N_RE*R*Qm*dlsch_rel15->nb_layers)>>scale;
 
   if (Ninfo <= 3824) {

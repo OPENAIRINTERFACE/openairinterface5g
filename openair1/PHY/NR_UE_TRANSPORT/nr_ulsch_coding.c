@@ -203,7 +203,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 
-  uint16_t Kr,r,r_offset;
+  uint16_t Kr,r,r_offset,R;
   uint8_t BG;
   uint32_t E;
   uint8_t Ilbrm; 
@@ -225,7 +225,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
-  mod_order = nr_get_Qm(harq_process->mcs,1);
+  mod_order = nr_get_Qm_ul(harq_process->mcs,1);
+  R = nr_get_code_rate_ul(harq_process->mcs,1);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -255,7 +256,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
   
 
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+  Tbslbrm = nr_compute_tbs(mod_order,R,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
@@ -290,15 +291,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
-    nr_segmentation(harq_process->b,
-        harq_process->c,
-        harq_process->B,
-        &harq_process->C,
-        &harq_process->K,
-        pz,
-        &harq_process->F);
-
-    F = harq_process->F;
     Coderate = (float) A /(float) G;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
@@ -307,6 +299,17 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     else{
       BG = 1;
     }
+
+    nr_segmentation(harq_process->b,
+        harq_process->c,
+        harq_process->B,
+        &harq_process->C,
+        &harq_process->K,
+        pz,
+        &harq_process->F,
+        BG);
+
+    F = harq_process->F;
 
     Kr = harq_process->K;
 #ifdef DEBUG_DLSCH_CODING

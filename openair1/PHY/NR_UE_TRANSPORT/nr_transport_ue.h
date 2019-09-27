@@ -273,6 +273,8 @@ typedef struct {
   uint8_t mcs;
   /// Qm (modulation order) for this DLSCH
   uint8_t Qm;
+  /// target code rate R x 1024
+  uint16_t R;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH

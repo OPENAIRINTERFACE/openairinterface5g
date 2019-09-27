@@ -238,7 +238,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   //__m128i l;
   //int16_t inv_d [68*384];
   uint8_t kc;
-  uint8_t Ilbrm = 0;
+  uint8_t Ilbrm = 1;
   uint32_t Tbslbrm; //= 950984;
   uint16_t nb_rb; //= 30;
   double Coderate; //= 0.0;
@@ -298,7 +298,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   harq_process->trials[harq_process->round]++;
 
-  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
 
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
@@ -309,28 +309,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   LOG_I(PHY,"DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
-
-  if (harq_process->round == 0) {
-    // This is a new packet, so compute quantities regarding segmentation
-    harq_process->B = A+24;
-    nr_segmentation(NULL,
-                    NULL,
-                    harq_process->B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z, // [hna] Z is Zc
-                    &harq_process->F);
-
-#ifdef DEBUG_DLSCH_DECODING
-    if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
-#endif
-  }
-
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
-
-  p_decParams->Z = harq_process->Z;
-  //printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
 
   Coderate = (float) A /(float) G;
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
@@ -364,6 +342,30 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       kc = 27;
     }
   }
+
+
+  if (harq_process->round == 0) {
+    // This is a new packet, so compute quantities regarding segmentation
+    harq_process->B = A+24;
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z, // [hna] Z is Zc
+                    &harq_process->F,
+                    p_decParams->BG);
+
+#ifdef DEBUG_DLSCH_DECODING
+    if (!frame%100)
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
+#endif
+  }
+
+  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
+
+  p_decParams->Z = harq_process->Z;
+  //printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
 
   //printf("coderate %f kc %d \n", Coderate, kc);
 
@@ -401,7 +403,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+  Tbslbrm = harq_process->TBS;
 
   for (r=0; r<harq_process->C; r++) {
 
@@ -737,7 +739,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   int16_t inv_d [68*384];
   //int16_t *p_invd =&inv_d;
   uint8_t kb, kc;
-  uint8_t Ilbrm = 0;
+  uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
@@ -795,7 +797,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   nb_rb = harq_process->nb_rb;
   harq_process->trials[harq_process->round]++;
 
-  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
 
   A = harq_process->TBS;
 
@@ -814,21 +816,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
   //  printf("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
-
-  if (harq_process->round == 0) {
-      // This is a new packet, so compute quantities regarding segmentation
-      harq_process->B = A+24;
-      nr_segmentation(NULL,
-                      NULL,
-                      harq_process->B,
-                      &harq_process->C,
-                      &harq_process->K,
-                      &harq_process->Z,
-                      &harq_process->F);
-
-      p_decParams->Z = harq_process->Z;
-
-    }
 
   Coderate = (float) A /(float) G;
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
@@ -862,6 +849,22 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       kc = 27;
     }
   }
+
+  if (harq_process->round == 0) {
+      // This is a new packet, so compute quantities regarding segmentation
+      harq_process->B = A+24;
+      nr_segmentation(NULL,
+                      NULL,
+                      harq_process->B,
+                      &harq_process->C,
+                      &harq_process->K,
+                      &harq_process->Z,
+                      &harq_process->F,
+                      p_decParams->BG);
+
+      p_decParams->Z = harq_process->Z;
+
+    }
 
   //printf("coderate %f kc %d \n", Coderate, kc);
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
@@ -941,7 +944,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     Kr_bytes = Kr>>3;
     K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-    Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+    Tbslbrm = harq_process->TBS;
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1286,7 +1289,7 @@ void *nr_dlsch_decoding_process(void *arg)
     int16_t inv_d [68*384];
     int16_t *p_invd =&inv_d;
     uint8_t kb, kc;
-    uint8_t Ilbrm = 0;
+    uint8_t Ilbrm = 1;
     uint32_t Tbslbrm = 950984;
     uint16_t nb_rb = 30; //to update
     double Coderate = 0.0;
@@ -1355,7 +1358,7 @@ void *nr_dlsch_decoding_process(void *arg)
 
   harq_process->trials[harq_process->round]++;
 
-  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
 
   A = harq_process->TBS; //2072 for QPSK 1/3
 
@@ -1366,22 +1369,6 @@ void *nr_dlsch_decoding_process(void *arg)
   G = harq_process->G;
 
   LOG_I(PHY,"DLSCH Decoding process, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
-
-    
-  if (harq_process->round == 0) {
-    // This is a new packet, so compute quantities regarding segmentation
-    harq_process->B = A+24;
-
-    nr_segmentation(NULL,
-                          NULL,
-                          harq_process->B,
-                          &harq_process->C,
-                          &harq_process->K,
-            &harq_process->Z,
-                          &harq_process->F);
-      p_decParams->Z = harq_process->Z;
-
-    }
 
   Coderate = (float) A /(float) G;
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
@@ -1414,7 +1401,26 @@ void *nr_dlsch_decoding_process(void *arg)
       p_decParams->R = 89;
       kc = 27;
     }
-  }
+  }    
+
+  if (harq_process->round == 0) {
+    // This is a new packet, so compute quantities regarding segmentation
+    harq_process->B = A+24;
+
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z,
+                    &harq_process->F,
+                    p_decParams->BG);
+
+    p_decParams->Z = harq_process->Z;
+
+    }
+
+  
 
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
@@ -1474,7 +1480,7 @@ void *nr_dlsch_decoding_process(void *arg)
   Kr_bytes = Kr>>3;
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+  Tbslbrm = harq_process->TBS;
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 

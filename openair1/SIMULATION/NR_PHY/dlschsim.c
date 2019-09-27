@@ -427,6 +427,7 @@ int main(int argc, char **argv)
 	uint8_t nb_re_dmrs = 6;
 	uint16_t length_dmrs = 1;
 	unsigned char mod_order;
+        uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
@@ -434,9 +435,10 @@ int main(int argc, char **argv)
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
-	mod_order = nr_get_Qm(Imcs, 1);
+	mod_order = nr_get_Qm_dl(Imcs, 1);
+        rate = nr_get_code_rate_dl(Imcs, 1);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-	TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
 	printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;
