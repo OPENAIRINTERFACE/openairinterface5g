@@ -340,15 +340,6 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
-    nr_segmentation(dlsch->harq_processes[harq_pid]->b,
-		    dlsch->harq_processes[harq_pid]->c,
-		    dlsch->harq_processes[harq_pid]->B,
-		    &dlsch->harq_processes[harq_pid]->C,
-		    &dlsch->harq_processes[harq_pid]->K,
-		    pz, // [hna] pz is Zc
-		    &dlsch->harq_processes[harq_pid]->F);
-
-    F = dlsch->harq_processes[harq_pid]->F;
     Coderate = (float) A /(float) G;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
@@ -357,6 +348,17 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 	else{
 		BG = 1;
 	}
+
+    nr_segmentation(dlsch->harq_processes[harq_pid]->b,
+		    dlsch->harq_processes[harq_pid]->c,
+		    dlsch->harq_processes[harq_pid]->B,
+		    &dlsch->harq_processes[harq_pid]->C,
+		    &dlsch->harq_processes[harq_pid]->K,
+		    pz, // [hna] pz is Zc
+		    &dlsch->harq_processes[harq_pid]->F,
+                    BG);
+
+    F = dlsch->harq_processes[harq_pid]->F;
 
     Kr = dlsch->harq_processes[harq_pid]->K;
 #ifdef DEBUG_DLSCH_CODING

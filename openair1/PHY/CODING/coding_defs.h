@@ -454,7 +454,8 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *C,
                      unsigned int *K,
                      unsigned int *Zout,
-                     unsigned int *F);
+                     unsigned int *F,
+                     uint8_t BG);
 
 uint32_t nr_compute_tbs(uint8_t mcs,
 						uint16_t nb_rb,

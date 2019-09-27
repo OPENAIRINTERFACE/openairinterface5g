@@ -350,29 +350,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
 
-  if (harq_process->round == 0) {
-
-    // This is a new packet, so compute quantities regarding segmentation
-    harq_process->B = A+24;
-
-    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
-    nr_segmentation(NULL,
-                    NULL,
-                    harq_process->B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z, // [hna] Z is Zc
-                    &harq_process->F);
-
-    p_decParams->Z = harq_process->Z;
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch decoding nr segmentation Z %d\n", p_decParams->Z);
-    if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
-#endif
-  }
-
   Coderate = (float) A /(float) G;
 
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
@@ -405,9 +382,29 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     }
   }
 
-  //printf("coderate %f kc %d \n", Coderate, kc);
+  if (harq_process->round == 0) {
 
+    // This is a new packet, so compute quantities regarding segmentation
+    harq_process->B = A+24;
 
+    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z, // [hna] Z is Zc
+                    &harq_process->F,
+                    p_decParams->BG);
+
+    p_decParams->Z = harq_process->Z;
+
+#ifdef DEBUG_ULSCH_DECODING
+    printf("ulsch decoding nr segmentation Z %d\n", p_decParams->Z);
+    if (!frame%100)
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
+#endif
+  }
 
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
