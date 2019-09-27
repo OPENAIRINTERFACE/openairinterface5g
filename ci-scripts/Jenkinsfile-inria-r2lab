@@ -176,6 +176,8 @@ pipeline {
 
                         // Putting the adaptation parameters for the OAI UE
                         sh "ssh -t inria_oaici@faraday.inria.fr 'scp /home/inria_oaici/for-ci/adapt_usim_parameters_${r2labUE0}.sed ${fituser}@${r2labUE0}:/tmp/adapt_usim_parameters.sed'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'scp /home/inria_oaici/for-ci/phones_list.txt ${fituser}@${r2labEPC0}:/tmp'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S cp /tmp/phones_list.txt /etc/ci\"'"
 
                         // Out of rload, the sub-network-interfaces are not up
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:m11 172.16.1.102 up\"'"

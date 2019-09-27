@@ -21,33 +21,27 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>epc-start-oai-ue</htmlTabRef>
-	<htmlTabName>EPC-Start-OAI-UE</htmlTabName>
-	<htmlTabIcon>log-in</htmlTabIcon>
+	<htmlTabRef>epc-stop</htmlTabRef>
+	<htmlTabName>EPC-Stop</htmlTabName>
+	<htmlTabIcon>log-out</htmlTabIcon>
 	<TestCaseRequestedList>
- 050101 000001 060101 000001 070101
+ 050201 060201 070201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-    <testCase id="000001">
-        <class>IdleSleep</class>
-        <desc>Sleep</desc>
-        <idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
-    </testCase>
-
-	<testCase id="050101">
-		<class>Initialize_HSS</class>
-		<desc>Initialize HSS</desc>
+	<testCase id="050201">
+		<class>Terminate_HSS</class>
+		<desc>Terminate HSS</desc>
 	</testCase>
 
-	<testCase id="060101">
-		<class>Initialize_MME</class>
-		<desc>Initialize MME</desc>
+	<testCase id="060201">
+		<class>Terminate_MME</class>
+		<desc>Terminate MME</desc>
 	</testCase>
 
-	<testCase id="070101">
-		<class>Initialize_SPGW</class>
-		<desc>Initialize SPGW</desc>
+	<testCase id="070201">
+		<class>Terminate_SPGW</class>
+		<desc>Terminate SPGW</desc>
 	</testCase>
 
 </testCaseList>

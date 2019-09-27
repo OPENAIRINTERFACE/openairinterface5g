@@ -614,10 +614,10 @@ class SSHConnection():
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log logs/hss*.* ping*.log iperf*.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
 			self.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
 			self.command('chmod 755 ./my-hss.sh', '\$', 5)
-			self.command('sudo daemon --unsafe --name=hss_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/hss.log ./my-hss.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=hss_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/hss_' + self.testCase_id + '.log ./my-hss.sh', '\$', 5)
 		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC HSS')
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
@@ -644,10 +644,10 @@ class SSHConnection():
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 MME')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f mme.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f mme_' + self.testCase_id + '.log', '\$', 5)
 			self.command('echo "./run_mme --config-file /usr/local/etc/oai/mme.conf --set-virt-if" > ./my-mme.sh', '\$', 5)
 			self.command('chmod 755 ./my-mme.sh', '\$', 5)
-			self.command('sudo daemon --unsafe --name=mme_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/mme.log ./my-mme.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=mme_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/mme_' + self.testCase_id + '.log ./my-mme.sh', '\$', 5)
 		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('source oaienv', '\$', 5)
@@ -675,14 +675,14 @@ class SSHConnection():
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f spgwc.log spgwu.log', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f spgwc_' + self.testCase_id + '.log spgwu_' + self.testCase_id + '.log', '\$', 5)
 			self.command('echo "spgwc -c /usr/local/etc/oai/spgw_c.conf" > ./my-spgwc.sh', '\$', 5)
 			self.command('chmod 755 ./my-spgwc.sh', '\$', 5)
-			self.command('sudo daemon --unsafe --name=spgwc_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwc.log ./my-spgwc.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=spgwc_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwc_' + self.testCase_id + '.log ./my-spgwc.sh', '\$', 5)
 			time.sleep(5)
 			self.command('echo "spgwu -c /usr/local/etc/oai/spgw_u.conf" > ./my-spgwu.sh', '\$', 5)
 			self.command('chmod 755 ./my-spgwu.sh', '\$', 5)
-			self.command('sudo daemon --unsafe --name=spgwu_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwu.log ./my-spgwu.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=spgwu_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwu_' + self.testCase_id + '.log ./my-spgwu.sh', '\$', 5)
 		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('source oaienv', '\$', 5)
@@ -1308,9 +1308,9 @@ class SSHConnection():
 			count = max_count
 			while count > 0:
 				if self.ADBCentralized:
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry" | grep mDataConnectionState', '\$', 15)
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry" | grep -m 1 mDataConnectionState', '\$', 15)
 				else:
-					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep mDataConnectionState', '\$', 60)
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep -m 1 mDataConnectionState', '\$', 60)
 				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
