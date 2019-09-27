@@ -453,9 +453,9 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 #endif
 
 	nr_interleaving_ldpc(E,
-						mod_order,
-						dlsch->harq_processes[harq_pid]->e+r_offset,
-						dlsch->harq_processes[harq_pid]->f+r_offset);
+			     mod_order,
+			     dlsch->harq_processes[harq_pid]->e+r_offset,
+			     dlsch->harq_processes[harq_pid]->f+r_offset);
 
 
 #ifdef DEBUG_DLSCH_CODING
