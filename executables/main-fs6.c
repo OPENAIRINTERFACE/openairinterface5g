@@ -21,6 +21,12 @@
 #define FS6_BUF_SIZE 100*1000
 static UDPsock_t sockFS6;
 
+int sum(uint8_t * b, int s) {
+  int sum=0;
+  for (int i=0; i < s; i++)
+    sum+=b[i];
+  return sum;
+}
 
 void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
@@ -647,7 +653,8 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
         memcpy(eNB->pusch_vars[hULUE(bufPtr)->UE_id]->ulsch_power,
                hULUE(bufPtr)->ulsch_power,
                sizeof(int)*2);
-        LOG_W(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
+        LOG_I(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n", 
+              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
@@ -715,6 +722,7 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
         dlsch_harq->Nl=hDLUE(bufPtr)->Nl;
         dlsch_harq->pdsch_start=hDLUE(bufPtr)->pdsch_start;
 #ifdef PHY_TX_THREAD
+	dlsch_harq->CEmode = hDLUE(bufPtr)->CEmode;
         dlsch_harq->i0=hDLUE(bufPtr)->i0;
         dlsch_harq->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
 #else
@@ -723,6 +731,8 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
 #endif
         memcpy(dlsch_harq->e,
                hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
+	LOG_D(PHY,"received %d bits, in harq id: %di fsf: %d.%d, sum %d\n", 
+              hDLUE(bufPtr)->dataLen, hDLUE(bufPtr)->harq_pid, frame, subframe, sum(dlsch_harq->e, hDLUE(bufPtr)->dataLen));
       } else if (type == fs6UlConfig) {
         int nbUE=(((commonUDP_t *)bufPtr)->contentBytes - sizeof(fs6_dl_t)) / sizeof( fs6_dl_ulsched_t ) ;
 
@@ -759,7 +769,8 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
           ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
           ulsch_harq->TBS=hTxULUE(bufPtr)->TBS;
           ulsch_harq->Nsymb_pusch=hTxULUE(bufPtr)->Nsymb_pusch;
-          LOG_W(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
+          LOG_I(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n", 
+                ulsch->rnti, frame, subframe);
         }
       } else if ( type == fs6ULConfigCCH ) {
         fs6_dl_uespec_ulcch_element_t *tmp=(fs6_dl_uespec_ulcch_element_t *)(hTxULcch(bufPtr)+1);
@@ -979,6 +990,7 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
   hDLUE(newUDPheader)->Nl=harqData->Nl;
   hDLUE(newUDPheader)->pdsch_start=harqData->pdsch_start;
 #ifdef PHY_TX_THREAD
+  hDLUE(newUDPheader)->CEmode=harqData->CEmode;
   hDLUE(newUDPheader)->i0=harqData->i0;
   hDLUE(newUDPheader)->sib1_br_flag=harqData->sib1_br_flag;
 #else
@@ -987,8 +999,11 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
 #endif
   hDLUE(newUDPheader)->dataLen=UEdataLen;
   memcpy(hDLUE(newUDPheader)+1, harqData->e, UEdataLen);
+  LOG_D(PHY,"sending %d bits, in harq id: %di fsf: %d.%d, sum %d\n",
+        UEdataLen , harq_pid, frame, subframe, sum(harqData->e, UEdataLen));
+
   //for (int i=0; i < UEdataLen; i++)
-  //LOG_D(PHY,"buffer e:%hhx\n", ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
+  //LOG_D(PHY,"buffer ei[%d]:%hhx\n", i, ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
 }
 
 void appendFs6DLUEcch(uint8_t *bufferZone, PHY_VARS_eNB *eNB, int frame, int subframe) {

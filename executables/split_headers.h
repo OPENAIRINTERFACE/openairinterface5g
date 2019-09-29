@@ -109,6 +109,7 @@ typedef struct {
   uint16_t rnti;
   int16_t sqrt_rho_a;
   int16_t sqrt_rho_b;
+  CEmode_t CEmode:8;
   uint16_t nb_rb;
   uint8_t Qm;
   int8_t Nl;

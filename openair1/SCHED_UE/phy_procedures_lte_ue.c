@@ -166,13 +166,16 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
   int gain_dB;
   double gain_lin;
 
-  if (power_dBm<=power_max_dBm)
+  if ( (power_dBm<=power_max_dBm) && ! IS_SOFTMODEM_RFSIM)
     gain_dB = power_dBm - power_max_dBm;
   else
     gain_dB = 0;
 
   gain_lin = pow(10,.1*gain_dB);
   AssertFatal((nb_rb >0) && (nb_rb <= N_RB_UL),"Illegal nb_rb/N_RB_UL combination (%d/%d)\n",nb_rb,N_RB_UL);
+  LOG_D(PHY," tx gain: %d = %d * sqrt ( pow(10, 0.1*max(0,%d-%d)) * %d/%d ) (gain lin=%f (dB=%d))\n", 
+		  (int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)),
+		  AMP, power_dBm, power_max_dBm,  N_RB_UL, nb_rb, gain_lin, gain_dB); 
   return((int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)));
 }
 
@@ -1099,7 +1102,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
 
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-  if (!(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+  if (!IS_SOFTMODEM_BASICSIM) {
     ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
                    ue->hw_timing_advance-
                    ue->timing_advance-
@@ -1130,7 +1133,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    int *Buff = (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ? &ue->common_vars.txdata[aa][ulsch_start] :dummy_tx_buffer;
+    int *Buff = IS_SOFTMODEM_BASICSIM ? &ue->common_vars.txdata[aa][ulsch_start] :dummy_tx_buffer;
 
     if (frame_parms->Ncp == 1) {
       PHY_ofdm_mod(&ue->common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
@@ -1151,7 +1154,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
                         &ue->frame_parms);
     }
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM ) {
       apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],0);
       apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],1);
     } else {
@@ -1159,7 +1162,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
       apply_7_5_kHz(ue,dummy_tx_buffer,1);
     }
 
-    if (!(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+    if (!(IS_SOFTMODEM_BASICSIM ) ) {
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
 
       for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++) {
@@ -1259,7 +1262,7 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
           ue->prach_resources[eNB_id]->ra_RNTI);
     ue->tx_total_RE[subframe_tx] = 96;
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM ) {
       ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
                                     ue->tx_power_max_dBm,
                                     ue->frame_parms.N_RB_UL,
@@ -1630,7 +1633,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 
       ue->tx_total_RE[subframe_tx] = nb_rb*12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM ) {
         tx_amp = AMP;
       } else {
         tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
@@ -1704,7 +1707,7 @@ void ue_srs_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8
       Po_SRS = ue->tx_power_max_dBm;
     }
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM) {
       tx_amp = AMP;
     } else {
       if (ue->mac_enabled==1) {
@@ -1942,7 +1945,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM ) {
         tx_amp = AMP;
       } else {
         tx_amp = get_tx_amp(Po_PUCCH,
@@ -2023,7 +2026,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM ) {
         tx_amp = AMP;
       } else {
         tx_amp =  get_tx_amp(Po_PUCCH,
@@ -2269,7 +2272,7 @@ void ue_measurement_procedures(
     // AGC
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain (ue,dB_fixed(ue->measurements.rssi),0);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
@@ -3325,6 +3328,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                          pdsch==PDSCH?1:0,
                          dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
 
+    LOG_D(PHY,"dlsch turbo decode in %d iter\n", ret);
     if (LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->dlsch_decoding_stats[ue->current_thread_id[subframe_rx]]);
       LOG_I(PHY, " --> Unscrambling for CW0 %5.3f\n",

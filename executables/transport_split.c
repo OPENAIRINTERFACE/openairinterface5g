@@ -116,9 +116,11 @@ int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t
       rcved++;
       bufferZone+=ret;
     }
+    LOG_D(HW,"Received: blocks: %d/%d, size %d, TS: %lu\n",
+	  rcved, bufOrigin->nbBlocks, ret, bufOrigin->timestamp);
+
   } while ( rcved == 0 || rcved < bufOrigin->nbBlocks );
 
-  LOG_D(HW,"Received: nb_blocks: %d, TS: %lu\n",rcved, bufOrigin->timestamp);
   return rcved;
 }
 
@@ -136,8 +138,10 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
   do {
     if (blockId > 0 ) {
       commonUDP_t *currentHeader=(commonUDP_t *)bufferZone;
-      *currentHeader=*UDPheader;
+      currentHeader->timestamp=UDPheader->timestamp;
+      currentHeader->nbBlocks=UDPheader->nbBlocks;
       currentHeader->blockID=blockId;
+      currentHeader->contentType=UDPheader->contentType;
       memcpy(commonUDPdata((void *)currentHeader), commonUDPdata(bufferZone), secondHeaderSize);
     }
 
@@ -151,11 +155,12 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
       LOG_W(HW,"Wrote socket doesn't return size %d (val: %d, errno:%d, %s)\n",
             sz, ret, errno, strerror(errno));
 
+    LOG_D(HW,"Sent: TS: %lu, blocks %d/%d, block size : %d \n",
+	  UDPheader->timestamp, UDPheader->nbBlocks-nbBlocks, UDPheader->nbBlocks, sz);
+
     bufferZone+=sz;
     nbBlocks--;
   } while (nbBlocks);
 
-  LOG_D(HW,"Sent: TS: %lu, nb blocks %d, size of first block: %lu \n",
-        UDPheader->timestamp, UDPheader->nbBlocks, alignedSize((void *)UDPheader));
-  return 0;
+    return 0;
 }
