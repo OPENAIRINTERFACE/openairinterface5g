@@ -66,6 +66,23 @@ int nfapi_mode = 0;
 // dummy functions
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
+void mac_rlc_data_ind     (
+  const module_id_t         module_idP,
+  const rnti_t              rntiP,
+  const eNB_index_t         eNB_index,
+  const frame_t             frameP,
+  const eNB_flag_t          enb_flagP,
+  const MBMS_flag_t         MBMS_flagP,
+  const logical_chan_id_t   channel_idP,
+  char                     *buffer_pP,
+  const tb_size_t           tb_sizeP,
+  num_tb_t                  num_tbP,
+  crc_t                    *crcs_pP)
+{}
+uint64_t get_softmodem_optmask(void) {return 0;}
+int rlc_module_init (void) {return(0);}
+void pdcp_layer_init (void) {}
+void nr_ip_over_LTE_DRB_preconfiguration(void){}
 
 // needed for some functions
 uint16_t n_rnti = 0x1234;
