@@ -133,8 +133,7 @@
 \item Bug fixes:
   \begin{itemize}
   \item Fixed bug in function \texttt{llr2CnProcBuf}
-  \item Introduced saturation to $-127$ in \texttt{bnProc}
-  \item Corrected input LLR dynamic range in simulation
+  \item Corrected input LLR dynamic range in BLER simulations
   \end{itemize}
 \item Results:
   \begin{itemize}
@@ -321,7 +320,7 @@ The implementation on a general purpose processor (GPP) has to take advantage of
 
     \draw (bnProcPc)       edge[connector] (bnProc);
     \draw (bnProc)         edge[connector] (bn2cnProcBuf);
-    \draw (bn2cnProcBuf)   edge[connector] (cnProc);
+    \draw (bn2cnProcBuf)   edge[connector] node[above left] {\texttt{cnProcPc}} (cnProc);
     \draw (cnProc)         edge[connector] (cn2bnProcBuf);
     \draw (cn2bnProcBuf)   edge[connector] (bnProcPc);
 
@@ -344,7 +343,7 @@ The implementation on a general purpose processor (GPP) has to take advantage of
   \caption{LDPC Decoder processing flow.}
 \end{figure}
 
-The functions involved are described in more detail in table \ref{tab:sum_func}.
+The functions involved are described in more detail in Table \ref{tab:sum_func}.
 
 \begin{table}[ht]
   \centering
@@ -554,7 +553,7 @@ In this section, the performance in terms of BLER and decoding latency of the cu
 \subsection{BLER Performance}
 \label{sec:bler-performance}
 
-In all simulations, we assume AWGN, QPSK modulation and 8-bit input LLRs, i.e. $-127$ until $+127$. The results are averaged over at least $10\,000$ channel realizations.
+In all simulations, we assume AWGN, QPSK modulation and 8-bit input LLRs, i.e. $-127$ until $+127$. The DLSCH coding procedure in 38.212 is used to encode/decode the TB and an error is declared if the TB CRC check failed. Results are averaged over at least $10\,000$ channel realizations. 
 
 The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the current LDPC decoder implementation to the reference implementation developed by Kien. This reference implementation is called \textit{LDPC Ref} and uses the min-sum algorithm with 2 layers and 16 bit for processing. Our current optimized decoder implementation is referred to as \textit{LDPC Opt}. Moreover, reference results provided by Huawei are also shown.
 
@@ -850,7 +849,7 @@ It is often unnecessary to carry out the maximum number of iterations. After eac
 \section{Conclusion}
 \label{sec:conclusion}
 
-The results in the previous sections show that the current optimized LDPC implementation full-fills the requirements in terms of decoding latency for low to medium number of iterations at the expanse of a significant loss in BLER performance. To improve BLER performance, it is recommended to implement a layered algorithm and a min-sum algorithm with normalization. Further improvements upon the current implementation are detailed in the next section.
+The results in the previous sections show that the current optimized LDPC implementation full-fills the requirements in terms of decoding latency for low to medium number of iterations at the expense of a loss in BLER performance. To improve BLER performance, it is recommended to implement a layered algorithm and a min-sum algorithm with normalization. Further improvements upon the current implementation are detailed in the next section.
 
 \newpage
 \section{Future Work}
@@ -889,11 +888,15 @@ The following improvements will reduce the decoding latency:
 
 \begin{itemize}
 \item Adapt to AVX512
+\item Optimization of CN processing
 \item Implement 2/3-layers for faster convergence
 \end{itemize}
 
 \paragraph{AVX512:}
 The computations in the CN and BN processing can be further accelerated by using AVX512 instructions. This improvement will speed-up the CN and BN processing by a approximately a factor of 2.
+
+\paragraph{Optimization of CN Processing:}
+It can be investigated if CN processing can be improved by computing two minima regardless of the number of BNs. Susequently, the (absolute) value fed back to the BN is one of those minima.
 
 \paragraph{Layered processing:}
 The LDPC code in NR always punctures the first 2 columns of the base graph. Hence, the decoder inserts LLRs with value 0 at their place and needs to retrieve those bits during the decoding process. Instead of computing all the parity equations and then passing the results to the BN processing, it is beneficial to first compute parity equations where at most one punctured BN is connected to that CN. If two punctured BNs are connected than according to \eqref{eq:40}, the result will be again 0. Thus in a first sub-iteration those parity equation are computed and the results are send to BN processing which calculates the results using only those rows in the PCM. In the second sub-iteration the remaining check equation are used.

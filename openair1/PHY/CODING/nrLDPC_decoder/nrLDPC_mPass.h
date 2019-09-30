@@ -77,6 +77,20 @@ static inline void *nrLDPC_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_
 
 /**
    \brief Copies the input LLRs to their corresponding place in the LLR processing buffer.
+   Example: BG2
+             | 0| 0| LLRs -->                                    |
+   BN Groups |22|23|10| 5| 5|14| 7|13| 6| 8| 9|16| 9|12|1|1|...|1|
+              ^---------------------------------------/----     /
+                            _________________________/    |    /
+                           /  ____________________________|___/
+                          /  /                            \
+   LLR Proc Buffer (BNG) | 1| 5| 6| 7| 8| 9|10|12|13|14|16|22|23|
+   Number BN in BNG(R15) |38| 2| 1| 1| 1| 2| 1| 1| 1| 1| 1| 1| 1|
+   Idx:                  0  ^                             ^  ^
+          38*384=14592 _____|   ...                       |  |
+          50*384=19200 -----------------------------------   |
+          51*384=19584 --------------------------------------
+
    \param p_lut Pointer to decoder LUTs
    \param llr Pointer to input LLRs
    \param p_procBuf Pointer the processing buffers
@@ -308,6 +322,21 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 
 /**
    \brief Copies the input LLRs to their corresponding place in the CN processing buffer for BG2.
+   Example: BG2
+             | 0| 0| LLRs -->                                    |
+   BN Groups |22|23|10| 5| 5|14| 7|13| 6| 8| 9|16| 9|12|1|1|...|1|
+
+
+   CN Processing Buffer (CNGs) | 3| 4| 5| 6| 8|10|
+   Number of CN per CNG (R15)  | 6|20| 9| 3| 2| 2|
+                               0  ^     ^\  \
+            3*6*384=6912 _________|     ||   \_____________
+            (3*6+4*20+5*9)*384=54912____||                 \
+                                     Bit | 1| 2| 3| 4| 5| 6|
+                                 3*Z CNs>|  |<
+                                            ^
+                         54912 + 3*384______|
+
    \param p_lut Pointer to decoder LUTs
    \param llr Pointer to input LLRs
    \param p_procBuf Pointer to the processing buffers

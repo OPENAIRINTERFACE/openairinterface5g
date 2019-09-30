@@ -38,7 +38,7 @@
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
 
-//#define NR_LDPC_ENABLE_PARITY_CHECK
+#define NR_LDPC_ENABLE_PARITY_CHECK
 //#define NR_LDPC_PROFILER_DETAIL
 
 #ifdef NR_LDPC_DEBUG_MODE
