@@ -722,11 +722,13 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
   // generate pilot
-  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][0], &pilot[0],1000,0,nb_rb_pdsch);
+  uint16_t rb_offset = (bwp_start_subcarrier - ue->frame_parms.first_carrier_offset) / 12;
+  int config_type = 0; // needs to be updated from higher layer
+  nr_pdsch_dmrs_rx(ue,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][0], &pilot[0],1000,0,nb_rb_pdsch+rb_offset);
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
-    pil   = (int16_t *)&pilot[0];
+    pil   = (int16_t *)&pilot[rb_offset*((config_type==0) ? 6:4)];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
