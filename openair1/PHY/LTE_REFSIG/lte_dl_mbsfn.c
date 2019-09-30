@@ -131,67 +131,53 @@ int lte_dl_mbsfn_rx(PHY_VARS_UE *ue,
   return(0);
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int lte_dl_mbsfn_khz_1dot25(PHY_VARS_eNB *eNB, int32_t *output,
-                 short amp,
-                 int subframe) 
-{
-
+                            short amp,
+                            int subframe) {
   unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0,a;
   int32_t qpsk[4];
-
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
   ((short *)&qpsk[0])[1] = a;
-
   ((short *)&qpsk[1])[0] = -a;
   ((short *)&qpsk[1])[1] = a;
   ((short *)&qpsk[2])[0] = a;
   ((short *)&qpsk[2])[1] = -a;
-
   ((short *)&qpsk[3])[0] = -a;
   ((short *)&qpsk[3])[1] = -a;
-
-
   mprime = 3*(110 - eNB->frame_parms.N_RB_DL);
 
-  for (m=0; m<eNB->frame_parms.N_RB_DL*24; m++) // m = 0:24*N_RB_DL-1
-  {
-      if ((subframe&0x1)==0) // n_sf mod 2 == 0: even 
-        k = 6*m;
-      else
-        k = 6*m + 3;
+  for (m=0; m<eNB->frame_parms.N_RB_DL*24; m++) { // m = 0:24*N_RB_DL-1
+    if ((subframe&0x1)==0) // n_sf mod 2 == 0: even
+      k = 6*m;
+    else
+      k = 6*m + 3;
 
+    k+=eNB->frame_parms.first_carrier_offset_khz_1dot25;
+    mprime_dword     = mprime>>4;
+    mprime_qpsk_symb = mprime&0xf;
 
-      k+=eNB->frame_parms.first_carrier_offset_khz_1dot25;
+    if (k >= eNB->frame_parms.ofdm_symbol_size_khz_1dot25) {
+      k++;  // skip DC carrier
+      k-=eNB->frame_parms.ofdm_symbol_size_khz_1dot25;
+    }
 
-      mprime_dword     = mprime>>4;
-      mprime_qpsk_symb = mprime&0xf;
-
-      if (k >= eNB->frame_parms.ofdm_symbol_size_khz_1dot25) {
-        k++;  // skip DC carrier
-        k-=eNB->frame_parms.ofdm_symbol_size_khz_1dot25;
-      }
-      output[k] = qpsk[(eNB->lte_gold_mbsfn_khz_1dot25_table[subframe][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-      mprime++;
-   }
+    output[k] = qpsk[(eNB->lte_gold_mbsfn_khz_1dot25_table[subframe][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    mprime++;
+  }
 
   return(0);
 }
 
 
 int lte_dl_mbsfn_khz_1dot25_rx(PHY_VARS_UE *ue,
-                    int *output,
-                    int subframe) 
-{
-
+                               int *output,
+                               int subframe) {
   unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
   unsigned int qpsk[4];
-
   // This includes complex conjugate for channel estimation
-
   ((short *)&qpsk[0])[0] = ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[0])[1] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[1])[0] = -ONE_OVER_SQRT2_Q15;
@@ -200,23 +186,18 @@ int lte_dl_mbsfn_khz_1dot25_rx(PHY_VARS_UE *ue,
   ((short *)&qpsk[2])[1] = ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
-
   mprime = 3*(110 - ue->frame_parms.N_RB_DL);
 
-  for (m=0; m<ue->frame_parms.N_RB_DL*24; m++) // m = 0:24*N_RB_DL-1
-  { mprime_dword     = mprime>>4;
+  for (m=0; m<ue->frame_parms.N_RB_DL*24; m++) { // m = 0:24*N_RB_DL-1
+    mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
-
     // this is r_mprime from 3GPP 36-211 6.10.1.2
     output[k] = qpsk[(ue->lte_gold_mbsfn_khz_1dot25_table[subframe][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-
     mprime++;
     k++;
-
   }
 
   return(0);
 }
 
-#endif // MAKE Rel14
 

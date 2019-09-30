@@ -95,14 +95,12 @@
   @param *phy_vars_rn pointer to RN variables
 */
 void phy_procedures_UE_lte(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
-#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief Top-level entry routine for relay node procedures actinf as UE. This proc will make us of the existing UE procs.
   @param last_slot Index of last slot (0-19)
   @param next_slot Index of next_slot (0-19)
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, relaying_type_t r_type);
-#endif
 
 /*! \brief Scheduling for UE TX procedures in normal subframes.
   @param phy_vars_ue Pointer to UE variables on which to act
@@ -128,7 +126,7 @@ int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_pr
 
 
 #ifdef UE_SLOT_PARALLELISATION
-void *UE_thread_slot1_dl_processing(void *arg);
+  void *UE_thread_slot1_dl_processing(void *arg);
 #endif
 
 /*! \brief Scheduling for UE TX procedures in TDD S-subframes.
@@ -174,10 +172,10 @@ nr_subframe_t nr_get_subframe_direction(uint8_t Mod_id, uint8_t CC_id,uint8_t su
   @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
 */
 void nr_get_Msg3_alloc(NR_DL_FRAME_PARMS *frame_parms,
-                    uint8_t current_subframe,
-                    uint32_t current_frame,
-                    uint32_t *frame,
-                    uint8_t *subframe);
+                       uint8_t current_subframe,
+                       uint32_t current_frame,
+                       uint32_t *frame,
+                       uint8_t *subframe);
 
 /*! \brief Function to compute timing of Msg3 retransmission on UL-SCH (first UE transmission in RA procedure).
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -187,10 +185,10 @@ void nr_get_Msg3_alloc(NR_DL_FRAME_PARMS *frame_parms,
   @param subframe subframe index where Msg3 is to be transmitted (n, n+1 or n+2)
 */
 void nr_get_Msg3_alloc_ret(NR_DL_FRAME_PARMS *frame_parms,
-                        uint8_t current_subframe,
-                        uint32_t current_frame,
-                        uint32_t *frame,
-                        uint8_t *subframe);
+                           uint8_t current_subframe,
+                           uint32_t current_frame,
+                           uint32_t *frame,
+                           uint8_t *subframe);
 
 /*! \brief Get ULSCH harq_pid for Msg3 from RAR subframe.  This returns n+k mod 10 (k>6) and corresponds to the rule in Section 6.1.1 from 36.213
    @param frame_parms Pointer to DL Frame Parameters
@@ -238,12 +236,12 @@ uint8_t nr_get_ack(NR_DL_FRAME_PARMS *frame_parms,nr_harq_status_t *harq_ack,uin
   @returns status indicator for PUCCH/PUSCH transmission
 */
 uint8_t nr_reset_ack(NR_DL_FRAME_PARMS *frame_parms,
-                nr_harq_status_t *harq_ack,
-                unsigned char subframe_tx,
-                unsigned char subframe_rx,
-                unsigned char *o_ACK,
-                uint8_t *pN_bundled,
-                uint8_t cw_idx);
+                     nr_harq_status_t *harq_ack,
+                     unsigned char subframe_tx,
+                     unsigned char subframe_rx,
+                     unsigned char *o_ACK,
+                     uint8_t *pN_bundled,
+                     uint8_t cw_idx);
 
 /*! \brief Compute UL ACK subframe from DL subframe. This is used to retrieve corresponding DLSCH HARQ pid at eNB upon reception of ACK/NAK information on PUCCH/PUSCH.  Derived from Table 10.1-1 in 36.213 (p. 69 in version 8.6)
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -311,11 +309,11 @@ TDD, this routine computes the complex procedure described in Section 10.1 of 36
 @returns n1_pucch
 */
 uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
-		      UE_nr_rxtx_proc_t *proc,
-                      nr_harq_status_t *harq_ack,
-                      uint8_t eNB_id,
-                      uint8_t *b,
-                      uint8_t SR);
+                         UE_nr_rxtx_proc_t *proc,
+                         nr_harq_status_t *harq_ack,
+                         uint8_t eNB_id,
+                         uint8_t *b,
+                         uint8_t SR);
 
 #endif
 /*! \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.

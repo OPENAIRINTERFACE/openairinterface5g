@@ -174,11 +174,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                mib->message.choice.mib->subCarrierSpacingCommon,
                mib->message.choice.mib->ssb_SubcarrierOffset,
                mib->message.choice.mib->dmrs_TypeA_Position,
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero * 16 + mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero,
-#else
-               mib->message.choice.mib->pdcch_ConfigSIB1,
-#endif
                mib->message.choice.mib->cellBarred,
                mib->message.choice.mib->intraFreqReselection
                );
