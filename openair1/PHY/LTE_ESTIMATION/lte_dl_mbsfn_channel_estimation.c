@@ -20,7 +20,7 @@
  */
 
 /*! \file config_ue.c
- * \brief This includes FeMBMS UE Channel Estimation Procedures for FeMBMS 1.25KHz Carrier Spacing 
+ * \brief This includes FeMBMS UE Channel Estimation Procedures for FeMBMS 1.25KHz Carrier Spacing
  * \author Javier Morgade
  * \date 2019
  * \version 0.1
@@ -42,23 +42,16 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
                                     module_id_t eNB_id,
                                     uint8_t eNB_offset,
                                     int subframe,
-                                    unsigned char l)
-{
-
-
-
+                                    unsigned char l) {
   int pilot[600] __attribute__((aligned(16)));
   unsigned char aarx,aa;
   unsigned int rb;
   short *pil,*rxF,*ch,*ch0,*ch1,*ch11,*chp,*ch_prev;
   int ch_offset,symbol_offset;
-
   //  unsigned int n;
   //  int i;
-
   int **dl_ch_estimates=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
-
   ch_offset     = (l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
 
@@ -71,12 +64,9 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
                       l>>2);
     } // if symbol==2, return 0 else if symbol = 6, return 1, else if symbol=10 return 2
 
-
-
     pil   = (short *)&pilot[0];
     rxF   = (short *)&rxdataF[aarx][((symbol_offset+ue->frame_parms.first_carrier_offset))];
     ch = (short *)&dl_ch_estimates[aarx][ch_offset];
-
     //    if (eNb_id==0)
     memset(ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 
@@ -84,7 +74,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
     if ((ue->frame_parms.N_RB_DL==6)  ||
         (ue->frame_parms.N_RB_DL==50) ||
         (ue->frame_parms.N_RB_DL==100)) {
-
       // Interpolation  and extrapolation;
       if (l==6) {
         // ________________________First half of RBs____________________
@@ -94,7 +83,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
 
       for (rb=0; rb<ue->frame_parms.N_RB_DL; rb++) {
         // ------------------------1st pilot------------------------
-
         if (rb==(ue->frame_parms.N_RB_DL>>1)) {
           rxF = (short *)&rxdataF[aarx][symbol_offset+1];
 
@@ -179,7 +167,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
         rxF+=24;
       }
     }
-
     //*********************************************************************
     else if (ue->frame_parms.N_RB_DL==25) {
       //printf("Channel estimation\n");
@@ -191,7 +178,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
 
         for (rb=0; rb<12; rb++) {
           // ------------------------1st pilot------------------------
-
           ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
           ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
           ch[2] = ch[0]>>1;
@@ -269,7 +255,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
         ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
         ch[2] = ch[0]>>1;
         ch[3] = ch[1]>>1;
-
         chp[22] += ch[2];
         chp[23] += ch[3];
         /*  printf("rb %d: pil0 (%d,%d) x (%d,%d) = (%d,%d)\n",
@@ -297,11 +282,8 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
         /*  printf("rb %d: pil2 (%d,%d) x (%d,%d) = (%d,%d)\n",
           rb,pil[4],pil[5],rxF[8],rxF[9],ch[8],ch[9]);*/
         // printf("Second half\n");
-
         // ________________________Second half of RB____________________
-
         rxF   = (short *)&rxdataF[aarx][((symbol_offset+2))];
-
         // 4th pilot
         ch[12] = (short)(((int)pil[6]*rxF[0] - (int)pil[7]*rxF[1])>>15);
         ch[13] = (short)(((int)pil[6]*rxF[1] + (int)pil[7]*rxF[0])>>15);
@@ -483,7 +465,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
           ch[7] += ch[11];
           /*    printf("rb %d: pil2 (%d,%d) x (%d,%d) = (%d,%d)\n",
             rb,pil[4],pil[5],rxF[8],rxF[9],ch[8],ch[9]);*/
-
           // ------------------------4th pilot------------------------
           ch[12] = (short)(((int)pil[6]*rxF[12] - (int)pil[7]*rxF[13])>>15);
           ch[13] = (short)(((int)pil[6]*rxF[13] + (int)pil[7]*rxF[12])>>15);
@@ -518,7 +499,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
 
         // ------------------------middle PRB--------------------------
         // ------------------------1st pilot---------------------------
-
         ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
         ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
         ch[2] = ch[0]>>1;
@@ -546,7 +526,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
         /*        printf("rb %d: pil2 (%d,%d) x (%d,%d) = (%d,%d)\n",
             rb,pil[4],pil[5],rxF[8],rxF[9],ch[8],ch[9]);*/
         // printf("Second half\n");
-
         // ------------------------Second half of RBs---------------------//
         rxF   = (short *)&rxdataF[aarx][((symbol_offset+1))];
         // ---------------------------------------------------------------//
@@ -590,7 +569,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
           ch[3] = ch[1]>>1;
           ch[-2] += ch[2];
           ch[-1] += ch[3];
-
           /*    printf("rb %d: pil0 (%d,%d) x (%d,%d) = (%d,%d)\n",
             13+rb,pil[0],pil[1],rxF[0],rxF[1],ch[0],ch[1]);*/
           // ------------------------2nd pilot------------------------
@@ -708,14 +686,11 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
       ch_prev = (short *)&dl_ch_estimates[aarx][2*(ue->frame_parms.ofdm_symbol_size)];
       ch0 = (short *)&dl_ch_estimates[aarx][0*(ue->frame_parms.ofdm_symbol_size)];
       memcpy(ch0,ch_prev,4*ue->frame_parms.ofdm_symbol_size);
-
       ch1 = (short *)&dl_ch_estimates[aarx][1*(ue->frame_parms.ofdm_symbol_size)];
       memcpy(ch1,ch_prev,4*ue->frame_parms.ofdm_symbol_size);
-
       // 3/4 ch2 + 1/4 ch6 => ch3
       multadd_complex_vector_real_scalar(ch_prev,24576,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
       multadd_complex_vector_real_scalar(ch,8192,ch_prev+(2*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
-
       // 1/2 ch2 + 1/2 ch6 => ch4
       multadd_complex_vector_real_scalar(ch_prev,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),1,ue->frame_parms.ofdm_symbol_size);
       multadd_complex_vector_real_scalar(ch,16384,ch_prev+(4*(ue->frame_parms.ofdm_symbol_size)),0,ue->frame_parms.ofdm_symbol_size);
@@ -748,33 +723,38 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
   for (aa=0; aa<ue->frame_parms.nb_antennas_rx*ue->frame_parms.nb_antennas_tx; aa++) {
     if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa]) {
       switch (ue->frame_parms.N_RB_DL) {
-      case 6:
-	idft128((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
-		1);
-	break;
-      case 25:
-	idft512((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
-		1);
-	break;
-      case 50:
-	idft1024((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
-		1);
-	break;
-      case 75:
-	idft1536((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
-		 (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
-		 1);
-	break;
-      case 100:
-	idft2048((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
-		(int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
-		1);
-	break;
-      default:
-	break;
+        case 6:
+          idft128((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
+                  (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
+                  1);
+          break;
+
+        case 25:
+          idft512((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
+                  (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
+                  1);
+          break;
+
+        case 50:
+          idft1024((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
+                   (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
+                   1);
+          break;
+
+        case 75:
+          idft1536((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
+                   (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
+                   1);
+          break;
+
+        case 100:
+          idft2048((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_offset][aa][8],
+                   (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_offset][aa],
+                   1);
+          break;
+
+        default:
+          break;
       }
     }
   }
@@ -783,15 +763,11 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
 }
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
-                                    module_id_t eNB_id,
-                                    uint8_t eNB_offset,
-                                    int subframe)
-{
-
-
-
+    module_id_t eNB_id,
+    uint8_t eNB_offset,
+    int subframe) {
   int pilot_khz_1dot25[600] __attribute__((aligned(16)));
   unsigned char aarx/*,aa*/;
   //unsigned int rb;
@@ -799,163 +775,138 @@ int lte_dl_mbsfn_khz_1dot25_channel_estimation(PHY_VARS_UE *ue,
   short *pil,*rxF,*dl_ch/*,*ch0,*ch1,*ch11,*chp,*ch_prev*/;
   int ch_offset,symbol_offset;
   int pilot_cnt;
-
   int16_t *f,*f2,*fl,*f2l2,*fr,*f2r2/*,*f2_dc,*f_dc*/;
-
   unsigned int k;
-
   //  unsigned int n;
   //  int i;
-
   int **dl_ch_estimates=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[0];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
-
   ch_offset     = 0;//(l*(ue->frame_parms.ofdm_symbol_size));
   symbol_offset = 0;//ch_offset;//phy_vars_ue->lte_frame_parms.ofdm_symbol_size*l;
-
   AssertFatal( ue->frame_parms.N_RB_DL==25,"OFDM symbol size %d not yet supported for FeMBMS\n",ue->frame_parms.N_RB_DL);
 
-  if( (subframe&0x1) == 0){
-        f=filt24_0_khz_1dot25;
-        f2=filt24_2_khz_1dot25;
-        fl=filt24_0_khz_1dot25;
-        f2l2=filt24_2_khz_1dot25;
-        fr=filt24_0r2_khz_1dot25;
-        f2r2=filt24_2r_khz_1dot25;
-        //f_dc=filt24_0_dcr_khz_1dot25;
-        //f2_dc=filt24_2_dcl_khz_1dot25;
-   }else{
-    	f=filt24_0_khz_1dot25;
-        f2=filt24_2_khz_1dot25;
-        fl=filt24_0_khz_1dot25;
-        f2l2=filt24_2_khz_1dot25;
-        fr=filt24_0r2_khz_1dot25;
-        f2r2=filt24_2r_khz_1dot25;
-        //f_dc=filt24_0_dcr_khz_1dot25;
-        //f2_dc=filt24_2_dcl_khz_1dot25;
-   }
+  if( (subframe&0x1) == 0) {
+    f=filt24_0_khz_1dot25;
+    f2=filt24_2_khz_1dot25;
+    fl=filt24_0_khz_1dot25;
+    f2l2=filt24_2_khz_1dot25;
+    fr=filt24_0r2_khz_1dot25;
+    f2r2=filt24_2r_khz_1dot25;
+    //f_dc=filt24_0_dcr_khz_1dot25;
+    //f2_dc=filt24_2_dcl_khz_1dot25;
+  } else {
+    f=filt24_0_khz_1dot25;
+    f2=filt24_2_khz_1dot25;
+    fl=filt24_0_khz_1dot25;
+    f2l2=filt24_2_khz_1dot25;
+    fr=filt24_0r2_khz_1dot25;
+    f2r2=filt24_2r_khz_1dot25;
+    //f_dc=filt24_0_dcr_khz_1dot25;
+    //f2_dc=filt24_2_dcl_khz_1dot25;
+  }
 
-
- for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+  for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
     // generate pilot
-      lte_dl_mbsfn_khz_1dot25_rx(ue,
-                      &pilot_khz_1dot25[0],
-                      subframe);
-
-
+    lte_dl_mbsfn_khz_1dot25_rx(ue,
+                               &pilot_khz_1dot25[0],
+                               subframe);
     pil   = (short *)&pilot_khz_1dot25[0];
     rxF   = (short *)&rxdataF[aarx][((ue->frame_parms.first_carrier_offset_khz_1dot25))];
     dl_ch = (short *)&dl_ch_estimates[aarx][ch_offset];
-
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size_khz_1dot25));
 
-    if( (subframe&0x1) == 0){
-        rxF+=0;
-        k=0;
-    }else{
-        rxF+=6;//2*3;
-        k=3;
+    if( (subframe&0x1) == 0) {
+      rxF+=0;
+      k=0;
+    } else {
+      rxF+=6;//2*3;
+      k=3;
     }
 
-    if(ue->frame_parms.N_RB_DL==25){ 
-       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+    if(ue->frame_parms.N_RB_DL==25) {
+      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      multadd_real_vector_complex_scalar(fl,
+                                         ch,
+                                         dl_ch,
+                                         24);
+      pil+=2;    // Re Im
+      rxF+=12;
+      dl_ch+=8;
+      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      multadd_real_vector_complex_scalar(f2l2,
+                                         ch,
+                                         dl_ch,
+                                         24);
+      pil+=2;    // Re Im
+      rxF+=12;
+      dl_ch+=16;
 
-       multadd_real_vector_complex_scalar(fl,
-                                ch,
-                                dl_ch,
-                                24);
-       pil+=2;    // Re Im
-       rxF+=12;
-       dl_ch+=8;
+      for(pilot_cnt=2; pilot_cnt<299; pilot_cnt+=2) {
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+        multadd_real_vector_complex_scalar(f,
+                                           ch,
+                                           dl_ch,
+                                           24);
+        pil+=2;    // Re Im
+        rxF+=12;
+        dl_ch+=8;
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+        multadd_real_vector_complex_scalar(f2,
+                                           ch,
+                                           dl_ch,
+                                           24);
+        pil+=2;
+        rxF+=12;
+        dl_ch+=16;
+      }
 
-       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      rxF   = (int16_t *)&rxdataF[aarx][((symbol_offset+1+k))]; //Skip DC offset
 
-       multadd_real_vector_complex_scalar(f2l2,
-                                ch,
-                                dl_ch,
-                                24);
-       pil+=2;    // Re Im
-       rxF+=12;
-       dl_ch+=16;
+      for(pilot_cnt=0; pilot_cnt<297; pilot_cnt+=2) {
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+        multadd_real_vector_complex_scalar(f,
+                                           ch,
+                                           dl_ch,
+                                           24);
+        pil+=2;
+        rxF+=12;
+        dl_ch+=8;
+        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+        multadd_real_vector_complex_scalar(f2,
+                                           ch,
+                                           dl_ch,
+                                           24);
+        pil+=2;
+        rxF+=12;
+        dl_ch+=16;
+      }
 
-       for(pilot_cnt=2;pilot_cnt<299;pilot_cnt+=2){
-
-               ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-               ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-               multadd_real_vector_complex_scalar(f,
-                                  ch,
-                                  dl_ch,
-                                  24);
-               pil+=2;    // Re Im
-               rxF+=12;
-               dl_ch+=8;
-
-               ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-               ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-               multadd_real_vector_complex_scalar(f2,
-                                  ch,
-                                  dl_ch,
-                                  24);
-               pil+=2;
-               rxF+=12;
-               dl_ch+=16;
-
-       }
-
-       rxF   = (int16_t *)&rxdataF[aarx][((symbol_offset+1+k))]; //Skip DC offset
-
-       for(pilot_cnt=0; pilot_cnt<297; pilot_cnt+=2){
-
-               ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-               ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-                
-               multadd_real_vector_complex_scalar(f,
-                                  ch,
-                                  dl_ch,
-                                  24);
-               pil+=2;
-               rxF+=12;
-               dl_ch+=8;
-
-               ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-               ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-       
-               multadd_real_vector_complex_scalar(f2,
-                                  ch,
-                                  dl_ch,
-                                  24);
-               pil+=2;
-               rxF+=12;
-               dl_ch+=16;
-       }
-
-       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-       multadd_real_vector_complex_scalar(fr,
-                                 ch,
-                                 dl_ch,
-                                  24);
-       pil+=2;    // Re Im
-       rxF+=12;
-       dl_ch+=8;
-
-       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-       multadd_real_vector_complex_scalar(f2r2,
-                                  ch,
-                                  dl_ch,
-                                  24);
+      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      multadd_real_vector_complex_scalar(fr,
+                                         ch,
+                                         dl_ch,
+                                         24);
+      pil+=2;    // Re Im
+      rxF+=12;
+      dl_ch+=8;
+      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      multadd_real_vector_complex_scalar(f2r2,
+                                         ch,
+                                         dl_ch,
+                                         24);
     }
   }
 
   return(0);
 }
-#endif
+
 
 

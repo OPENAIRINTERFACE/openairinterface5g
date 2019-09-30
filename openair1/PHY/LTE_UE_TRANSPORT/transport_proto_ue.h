@@ -73,10 +73,10 @@ int rx_pmch(PHY_VARS_UE *phy_vars_ue,
             unsigned char symbol);
 
 int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
-            unsigned char eNB_id,
-            uint8_t subframe/*, 
+                       unsigned char eNB_id,
+                       uint8_t subframe/*,
             unsigned char symbol*/
-            ,int mcs);
+                       ,int mcs);
 
 /** \brief Dump OCTAVE/MATLAB files for PMCH debugging
     @param phy_vars_ue Pointer to UE variables
@@ -860,13 +860,13 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
                                    unsigned char output_shift);
 
 void dlsch_dual_stream_correlationTM34(LTE_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift0,
-                                   unsigned char output_shift1);
+                                       unsigned char symbol,
+                                       unsigned short nb_rb,
+                                       int **dl_ch_estimates_ext,
+                                       int **dl_ch_estimates_ext_i,
+                                       int **dl_ch_rho_ext,
+                                       unsigned char output_shift0,
+                                       unsigned char output_shift1);
 //This function is used to compute multiplications in Hhermitian * H matrix
 void conjch0_mult_ch1(int *ch0,
                       int *ch1,
@@ -875,18 +875,18 @@ void conjch0_mult_ch1(int *ch0,
                       unsigned char output_shift0);
 
 void construct_HhH_elements(int *ch0conj_ch0,
-                         int *ch1conj_ch1,
-                         int *ch2conj_ch2,
-                         int *ch3conj_ch3,
-                         int *ch0conj_ch1,
-                         int *ch1conj_ch0,
-                         int *ch2conj_ch3,
-                         int *ch3conj_ch2,
-                         int32_t *after_mf_00,
-                         int32_t *after_mf_01,
-                         int32_t *after_mf_10,
-                         int32_t *after_mf_11,
-                         unsigned short nb_rb);
+                            int *ch1conj_ch1,
+                            int *ch2conj_ch2,
+                            int *ch3conj_ch3,
+                            int *ch0conj_ch1,
+                            int *ch1conj_ch0,
+                            int *ch2conj_ch3,
+                            int *ch3conj_ch2,
+                            int32_t *after_mf_00,
+                            int32_t *after_mf_01,
+                            int32_t *after_mf_10,
+                            int32_t *after_mf_11,
+                            unsigned short nb_rb);
 
 void squared_matrix_element(int32_t *Hh_h_00,
                             int32_t *Hh_h_00_sq,
@@ -937,19 +937,19 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
 
 void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
-                                    LTE_UE_PDSCH *lte_ue_pdsch_vars,
-                                    PHY_MEASUREMENTS *phy_measurements,
-                                    int eNB_id,
-                                    unsigned char symbol,
-                                    unsigned char mod_order0,
-                                    unsigned char mod_order1,
-                                    int harq_pid,
-                                    int round,
-                                    MIMO_mode_t mimo_mode,
-                                    unsigned short nb_rb,
-                                    unsigned short mmse_flag,
-                                    unsigned char output_shift0,
-                                    unsigned char output_shift1);
+                                     LTE_UE_PDSCH *lte_ue_pdsch_vars,
+                                     PHY_MEASUREMENTS *phy_measurements,
+                                     int eNB_id,
+                                     unsigned char symbol,
+                                     unsigned char mod_order0,
+                                     unsigned char mod_order1,
+                                     int harq_pid,
+                                     int round,
+                                     MIMO_mode_t mimo_mode,
+                                     unsigned short nb_rb,
+                                     unsigned short mmse_flag,
+                                     unsigned char output_shift0,
+                                     unsigned char output_shift1);
 
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
@@ -999,10 +999,10 @@ void dlsch_channel_level_TM56(int32_t **dl_ch_estimates_ext,
                               uint16_t nb_rb);
 
 void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
-                         LTE_DL_FRAME_PARMS *frame_parms,
-                         int32_t *avg,
-                         uint8_t pilots_flag,
-                         uint16_t nb_rb);
+                             LTE_DL_FRAME_PARMS *frame_parms,
+                             int32_t *avg,
+                             uint8_t pilots_flag,
+                             uint16_t nb_rb);
 
 void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
@@ -1090,7 +1090,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
                     int32_t pss_ext[4][72],
                     int32_t sss_ext[4][72],
-                                        uint8_t subframe);
+                    uint8_t subframe);
 
 /*! \brief Extract only PSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1098,8 +1098,8 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72],
-                    uint8_t subframe);
+                     int32_t pss_ext[4][72],
+                     uint8_t subframe);
 
 /*! \brief Extract only SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1107,8 +1107,8 @@ int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
   @returns 0 on success
 */
 int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
-                    int32_t sss_ext[4][72],
-                    uint8_t subframe);
+                     int32_t sss_ext[4][72],
+                     uint8_t subframe);
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
@@ -1131,18 +1131,18 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
                  uint32_t high_speed_flag,
                  uint8_t frame_mod4);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+
 /*! \brief receiver for the PBCH FeMBMS
   \returns number of tx antennas or -1 if error
 */
 uint16_t rx_pbch_fembms(LTE_UE_COMMON *lte_ue_common_vars,
-                 LTE_UE_PBCH *lte_ue_pbch_vars,
-                 LTE_DL_FRAME_PARMS *frame_parms,
-                 uint8_t eNB_id,
-                 MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t frame_mod4);
-#endif
+                        LTE_UE_PBCH *lte_ue_pbch_vars,
+                        LTE_DL_FRAME_PARMS *frame_parms,
+                        uint8_t eNB_id,
+                        MIMO_mode_t mimo_mode,
+                        uint32_t high_speed_flag,
+                        uint8_t frame_mod4);
+
 
 
 uint16_t rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
@@ -1157,7 +1157,7 @@ uint16_t rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
   \param length Length of the sequence
   \param frame_mod4 Frame number modulo 4*/
 void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
-                       int8_t* llr,
+                       int8_t *llr,
                        uint32_t length,
                        uint8_t frame_mod4);
 
@@ -1231,11 +1231,11 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
                                 uint8_t subframe);
 
 uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
-                                DCI_ALLOC_t *dci_alloc,
-                                uint8_t DCIFormat,
-                                uint8_t agregationLevel,
-                                int16_t eNB_id,
-                                uint8_t subframe);
+                                      DCI_ALLOC_t *dci_alloc,
+                                      uint8_t DCIFormat,
+                                      uint8_t agregationLevel,
+                                      int16_t eNB_id,
+                                      uint8_t subframe);
 
 uint16_t dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
                                      uint8_t num_ue_spec_dci,
@@ -1307,7 +1307,7 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
 
 
 #ifndef modOrder
-#define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
+  #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 #endif
 
 /** \fn uint8_t I_TBS2I_MCS(uint8_t I_TBS);
@@ -1335,10 +1335,10 @@ uint8_t SE2I_TBS(float SE,
     @param txdataF pointer to the frequency domain TX signal
     @returns 0 on success*/
 int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
-		 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		 int *txdataF,
-		 int16_t amp,
-		 uint32_t subframe);
+                 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+                 int *txdataF,
+                 int16_t amp,
+                 uint32_t subframe);
 
 
 /*!
@@ -1359,9 +1359,9 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
 int generate_drs_pusch(PHY_VARS_UE *ue,
-		       UE_rxtx_proc_t *proc,
-		       LTE_DL_FRAME_PARMS *frame_parms,
-		       int32_t **txdataF,
+                       UE_rxtx_proc_t *proc,
+                       LTE_DL_FRAME_PARMS *frame_parms,
+                       int32_t **txdataF,
                        uint8_t eNB_id,
                        short amp,
                        unsigned int subframe,
@@ -1383,11 +1383,11 @@ void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
   @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
 int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-void init_mpdcch(PHY_VARS_eNB *eNB);
-#endif
 
-int32_t compareints (const void * a, const void * b);
+void init_mpdcch(PHY_VARS_eNB *eNB);
+
+
+int32_t compareints (const void *a, const void *b);
 
 
 void ulsch_modulation(int32_t **txdataF,
@@ -1433,18 +1433,18 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t use_srs);
 
 int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
-                                          UE_rxtx_proc_t *proc,
-                                          uint8_t eNB_id);
+    UE_rxtx_proc_t *proc,
+    uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id,
-                                                 uint8_t subframe);
+                         uint8_t subframe);
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, UE_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, UE_rxtx_proc_t *proc, char *buffer, int length, runmode_t mode, int input_level_dBm);
 
 
 
@@ -1581,7 +1581,7 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **w
 
 void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         uint8_t subframe,
-                        int8_t* llr,
+                        int8_t *llr,
                         uint32_t length);
 
 
@@ -1590,7 +1590,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         int mbsfn_flag,
                         LTE_UE_DLSCH_t *dlsch,
                         int G,
-                        int16_t* llr,
+                        int16_t *llr,
                         uint8_t q,
                         uint8_t Ns);
 
@@ -1621,16 +1621,16 @@ void generate_pucch2x(int32_t **txdataF,
                       uint16_t rnti);
 
 void generate_pucch3x(int32_t **txdataF,
-                    LTE_DL_FRAME_PARMS *frame_parms,
-                    uint8_t ncs_cell[20][7],
-                    PUCCH_FMT_t fmt,
-                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                    uint16_t n3_pucch,
-                    uint8_t shortened_format,
-                    uint8_t *payload,
-                    int16_t amp,
-                    uint8_t subframe,
-                    uint16_t rnti);
+                      LTE_DL_FRAME_PARMS *frame_parms,
+                      uint8_t ncs_cell[20][7],
+                      PUCCH_FMT_t fmt,
+                      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                      uint16_t n3_pucch,
+                      uint8_t shortened_format,
+                      uint8_t *payload,
+                      int16_t amp,
+                      uint8_t subframe,
+                      uint16_t rnti);
 
 void init_ulsch_power_LUT(void);
 
@@ -1688,11 +1688,11 @@ uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
   @param Xu DFT output
 */
 void compute_prach_seq(uint16_t rootSequenceIndex,
-		       uint8_t prach_ConfigIndex,
-		       uint8_t zeroCorrelationZoneConfig,
-		       uint8_t highSpeedFlag,
-		       lte_frame_type_t frame_type,
-		       uint32_t X_u[64][839]);
+                       uint8_t prach_ConfigIndex,
+                       uint8_t zeroCorrelationZoneConfig,
+                       uint8_t highSpeedFlag,
+                       lte_frame_type_t frame_type,
+                       uint32_t X_u[64][839]);
 
 
 void init_prach_tables(int N_ZC);
@@ -1741,9 +1741,9 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 */
 
 uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
-			     uint8_t prach_ConfigIndex,
-			     uint8_t n_ra_prboffset,
-			     uint8_t tdd_mapindex, uint16_t Nf);
+                             uint8_t prach_ConfigIndex,
+                             uint8_t n_ra_prboffset,
+                             uint8_t tdd_mapindex, uint16_t Nf);
 
 /**@}*/
 #endif

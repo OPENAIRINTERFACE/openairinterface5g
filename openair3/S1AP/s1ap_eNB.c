@@ -492,39 +492,6 @@ static int s1ap_eNB_generate_s1_setup_request(
   ie->value.choice.PagingDRX = instance_p->default_drx;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
-  if (0) {
-    ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_CSG_IdList;
-    ie->criticality = S1AP_Criticality_reject;
-    ie->value.present = S1AP_S1SetupRequestIEs__value_PR_CSG_IdList;
-    // ie->value.choice.CSG_IdList = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* optional */
-#if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0))
-
-  if (0) {
-    ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_UE_RetentionInformation;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_S1SetupRequestIEs__value_PR_UE_RetentionInformation;
-    // ie->value.choice.UE_RetentionInformation = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* optional */
-  if (0) {
-    ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_NB_IoT_DefaultPagingDRX;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_S1SetupRequestIEs__value_PR_NB_IoT_DefaultPagingDRX;
-    // ie->value.choice.NB_IoT_DefaultPagingDRX = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(14, 0, 0)) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
     S1AP_ERROR("Failed to encode S1 setup request\n");
