@@ -20,10 +20,10 @@
  */
 
 /*!\file nrLDPC_lut.h
- * \brief Header file loading all look-up tables
+ * \brief Header file defining all look-up tables
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
- * \date 27-03-2018
- * \version 1.0
+ * \date 30-09-2019
+ * \version 2.0
  * \note
  * \warning
  */

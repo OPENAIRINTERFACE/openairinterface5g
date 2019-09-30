@@ -47,7 +47,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
     int8_t* llrRes       = p_procBuf->llrRes;
     int8_t* llrProcBuf   = p_procBuf->llrProcBuf;
-
+        
     __m128i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
     __m128i* p_llrProcBuf;
@@ -99,8 +99,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
         // Pack results back to epi8
         ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-        // Limit to minLLR -127
-        //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
         // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
         // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
         *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -154,8 +152,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -210,8 +206,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -266,8 +260,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -322,15 +314,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
-            //mexPrintf("ymm0: ");
-            //nrLDPC_debug_print256i_epi8(&ymm0);
-            ////ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
-            //mexPrintf("\n");
-            //mexPrintf("ymmX: ");
-            //nrLDPC_debug_print256i_epi8(&ymm0);
-            //mexPrintf("\n");
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -385,8 +368,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -441,8 +422,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -497,8 +476,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -553,8 +530,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -609,8 +584,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -665,8 +638,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -721,8 +692,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -777,8 +746,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -833,8 +800,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -889,8 +854,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -945,8 +908,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1001,8 +962,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1057,8 +1016,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1113,8 +1070,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1169,8 +1124,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1225,8 +1178,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1281,8 +1232,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1337,8 +1286,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1393,8 +1340,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1449,8 +1394,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1505,8 +1448,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1561,8 +1502,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1617,8 +1556,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1673,8 +1610,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1729,8 +1664,6 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Pack results back to epi8
             ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            // Limit to minLLR -127
-            //ymm0 = _mm256_max_epi8(ymm0, *p_minLLR);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
             *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
@@ -1760,7 +1693,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
     int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
     int8_t* llrRes       = p_procBuf->llrRes;
-
+    
     __m256i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
     __m256i* p_llrRes;
@@ -1774,8 +1707,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
     // Offset to each bit within a group in terms of 32 Byte
     uint32_t cnOffsetInGroup;
     uint8_t idxBnGroup = 0;
-
-    const __m256i* p_minLLR = (__m256i*) minLLR256_epi8;
 
     // =====================================================================
     // Process group with 1 CN
@@ -1809,8 +1740,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
+
                 p_res++;
                 p_llrRes++;
             }
@@ -1845,8 +1775,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
+
                 p_res++;
                 p_llrRes++;
             }
@@ -1881,8 +1810,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
+
                 p_res++;
                 p_llrRes++;
             }
@@ -1917,17 +1845,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
-                /*
-                mexPrintf("res: ");
-                nrLDPC_debug_print256i_epi8(p_res);
-                mexPrintf(" llrRes: ");
-                nrLDPC_debug_print256i_epi8(p_llrRes);
-                mexPrintf(" bnProcBuf: ");
-                nrLDPC_debug_print256i_epi8(&p_bnProcBuf[k*cnOffsetInGroup + i]);
-                mexPrintf("\n");
-                */
+
                 p_res++;
                 p_llrRes++;
             }
@@ -1962,8 +1880,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -1999,8 +1915,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2036,8 +1950,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2073,8 +1985,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2110,8 +2020,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2147,8 +2055,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2184,8 +2090,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2221,8 +2125,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2258,8 +2160,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2295,8 +2195,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2332,8 +2230,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2369,8 +2265,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2406,8 +2300,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2443,8 +2335,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2480,8 +2370,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2517,8 +2405,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2554,8 +2440,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2591,8 +2475,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2628,8 +2510,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2665,8 +2545,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2702,8 +2580,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2739,8 +2615,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2776,8 +2650,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2813,8 +2685,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;
@@ -2850,8 +2720,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
             for (i=0; i<M; i++)
             {
                 *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
-                // Limit to minLLR -127
-                *p_res = _mm256_max_epi8(*p_res, *p_minLLR);
 
                 p_res++;
                 p_llrRes++;

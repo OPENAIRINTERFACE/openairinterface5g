@@ -22,8 +22,8 @@
 /*!\file nrLDPC_mPass.h
  * \brief Defines the functions for message passing
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
- * \date 27-03-2018
- * \version 1.0
+ * \date 30-09-2019
+ * \version 2.0
  * \note
  * \warning
  */
@@ -36,35 +36,37 @@
 
 /**
    \brief Circular memcpy
-   (src) str2 = |xxxxxxxxxxxxxxxxxxxx\--------|
-                                      \
-   (dst) str1 =               |--------xxxxxxxxxxxxxxxxxxxxx|
+                |<- rem->|<- circular shift ->|
+   (src) str2 = |--------xxxxxxxxxxxxxxxxxxxxx|
+                         \_______________
+                                         \
+   (dst) str1 =     |xxxxxxxxxxxxxxxxxxxxx---------|
    \param str1 Pointer to the start of the destination buffer
    \param str2 Pointer to the source buffer
    \param Z Lifting size
-   \param cshift Cyclic shift
+   \param cshift Circular shift
 */
-static inline void *nrLDPC_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_t Z, uint16_t cshift)
+static inline void *nrLDPC_inv_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_t Z, uint16_t cshift)
 {
     uint16_t rem = Z - cshift;
     memcpy(str1+cshift, str2    , rem);
     memcpy(str1       , str2+rem, cshift);
 
-    //mexPrintf("memcpy(%p,%p,%d) | memcpy(%p,%p,%d) | rem = %d, cshift = %d\n", str1+cshift, str2, rem, str1,str2+rem,cshift,rem,cshift);
     return(str1);
 }
 
 /**
-   \brief Circular memcpy
+   \brief Inverse circular memcpy
+                |<- circular shift ->|<- rem->|
    (src) str2 = |xxxxxxxxxxxxxxxxxxxx\--------|
                                       \
    (dst) str1 =               |--------xxxxxxxxxxxxxxxxxxxxx|
    \param str1 Pointer to the start of the destination buffer
    \param str2 Pointer to the source buffer
    \param Z Lifting size
-   \param cshift Cyclic shift
+   \param cshift Circular shift
 */
-static inline void *nrLDPC_inv_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_t Z, uint16_t cshift)
+static inline void *nrLDPC_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_t Z, uint16_t cshift)
 {
     uint16_t rem = Z - cshift;
     memcpy(str1     , str2+cshift, rem);
@@ -77,6 +79,7 @@ static inline void *nrLDPC_inv_circ_memcpy(int8_t *str1, const int8_t *str2, uin
    \brief Copies the input LLRs to their corresponding place in the LLR processing buffer.
    \param p_lut Pointer to decoder LUTs
    \param llr Pointer to input LLRs
+   \param p_procBuf Pointer the processing buffers
    \param Z Lifting size
    \param BG Base graph
 */
@@ -110,12 +113,11 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrL
 }
 
 /**
-   \brief Copies the input LLRs to their corresponding place in the CN processing buffer.
+   \brief Copies the input LLRs to their corresponding place in the CN processing buffer for BG1.
    \param p_lut Pointer to decoder LUTs
    \param llr Pointer to input LLRs
-   \param numLLR Number of LLR values
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
-   \param BG Base graph
 */
 static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
@@ -161,7 +163,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 
         idxBn = lut_posBnInCnProcBuf_CNG3[j][0]*Z;
 
-        nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG3[j][0]);
+        nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG3[j][0]);
     }
 
     // =====================================================================
@@ -177,7 +179,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         {
             idxBn = lut_posBnInCnProcBuf_CNG4[j][i]*Z;
 
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG4[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG4[j][i]);
 
             p_cnProcBuf += Z;
         }
@@ -195,7 +197,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG5[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG5[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -212,7 +214,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG6[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG6[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -229,7 +231,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG7[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG7[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG7[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -246,7 +248,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG8[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG8[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -263,7 +265,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[6]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG9[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG9[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG9[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -280,7 +282,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[7]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG10[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG10[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -297,7 +299,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[8]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG19[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG19[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG19[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -305,8 +307,10 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 }
 
 /**
-   \brief Copies the values in the CN processing results buffer to their corresponding place in the BN processing buffer for BG2.
+   \brief Copies the input LLRs to their corresponding place in the CN processing buffer for BG2.
    \param p_lut Pointer to decoder LUTs
+   \param llr Pointer to input LLRs
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
@@ -348,7 +352,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG3[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG3[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG3[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -365,7 +369,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG4[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG4[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG4[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -382,7 +386,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG5[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG5[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -399,7 +403,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG6[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG6[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -416,7 +420,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG8[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG8[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -433,7 +437,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_posBnInCnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG10[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &llr[idxBn], Z, lut_circShift_CNG10[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -442,6 +446,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG2(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 /**
    \brief Copies the values in the CN processing results buffer to their corresponding place in the BN processing buffer for BG2.
    \param p_lut Pointer to decoder LUTs
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
@@ -491,7 +496,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG3[j][i] + lut_bnPosBnProcBuf_CNG3[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG3[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG3[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -508,7 +513,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG4[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG4[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -525,7 +530,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG5[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG5[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -542,7 +547,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG6[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG6[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -559,7 +564,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG8[j][i] + lut_bnPosBnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG8[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG8[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -576,7 +581,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG10[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG10[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -585,6 +590,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 /**
    \brief Copies the values in the CN processing results buffer to their corresponding place in the BN processing buffer for BG1.
    \param p_lut Pointer to decoder LUTs
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
@@ -639,7 +645,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     {
         p_cnProcBufRes = &cnProcBufRes[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
 
-        nrLDPC_circ_memcpy(&bnProcBuf[lut_startAddrBnProcBuf_CNG3[j][0]],p_cnProcBufRes,Z,lut_circShift_CNG3[j][0]);
+        nrLDPC_inv_circ_memcpy(&bnProcBuf[lut_startAddrBnProcBuf_CNG3[j][0]],p_cnProcBufRes,Z,lut_circShift_CNG3[j][0]);
     }
 
     // =====================================================================
@@ -654,7 +660,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG4[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG4[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -671,7 +677,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG5[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG5[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -688,7 +694,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG6[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG6[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -705,7 +711,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG7[j][i] + lut_bnPosBnProcBuf_CNG7[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG7[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG7[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -722,7 +728,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG8[j][i] + lut_bnPosBnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG8[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG8[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -739,7 +745,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[6]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG9[j][i] + lut_bnPosBnProcBuf_CNG9[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG9[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG9[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -756,7 +762,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[7]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG10[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG10[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -773,7 +779,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[8]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG19[j][i] + lut_bnPosBnProcBuf_CNG19[j][i]*Z;
-            nrLDPC_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG19[j][i]);
+            nrLDPC_inv_circ_memcpy(&bnProcBuf[idxBn],p_cnProcBufRes,Z,lut_circShift_CNG19[j][i]);
             p_cnProcBufRes += Z;
         }
     }
@@ -783,6 +789,7 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 /**
    \brief Copies the values in the BN processing results buffer to their corresponding place in the CN processing buffer for BG2.
    \param p_lut Pointer to decoder LUTs
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
@@ -835,7 +842,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[0]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG3[j][i] + lut_bnPosBnProcBuf_CNG3[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG3[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG3[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -852,7 +859,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG4[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG4[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -869,7 +876,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG5[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG5[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -886,7 +893,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG6[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG6[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -903,7 +910,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG8[j][i] + lut_bnPosBnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG8[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG8[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -920,7 +927,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -929,6 +936,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 /**
    \brief Copies the values in the BN processing results buffer to their corresponding place in the CN processing buffer for BG1.
    \param p_lut Pointer to decoder LUTs
+   \param p_procBuf Pointer to the processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
@@ -986,7 +994,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
 
-        nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[lut_startAddrBnProcBuf_CNG3[j][0]], Z, lut_circShift_CNG3[j][0]);
+        nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[lut_startAddrBnProcBuf_CNG3[j][0]], Z, lut_circShift_CNG3[j][0]);
     }
 
     // =====================================================================
@@ -1001,7 +1009,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG4[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG4[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1018,7 +1026,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG5[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG5[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1035,7 +1043,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG6[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG6[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1052,7 +1060,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG7[j][i] + lut_bnPosBnProcBuf_CNG7[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG7[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG7[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1069,7 +1077,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[5]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG8[j][i] + lut_bnPosBnProcBuf_CNG8[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG8[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG8[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1086,7 +1094,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[6]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG9[j][i] + lut_bnPosBnProcBuf_CNG9[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG9[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG9[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1103,7 +1111,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[7]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1120,7 +1128,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (i=0; i<lut_numCnInCnGroups[8]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG19[j][i] + lut_bnPosBnProcBuf_CNG19[j][i]*Z;
-            nrLDPC_inv_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG19[j][i]);
+            nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG19[j][i]);
             p_cnProcBuf += Z;
         }
     }
@@ -1131,9 +1139,11 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
    \brief Copies the values in the LLR results buffer to their corresponding place in the output LLR vector.
    \param p_lut Pointer to decoder LUTs
    \param llrOut Pointer to output LLRs
-   \param numLLR Number of LLR values
+   \param p_procBuf Pointer to the processing buffers
+   \param Z Lifting size
+   \param BG Base graph
 */
-static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_nrLDPC_procBuf* p_procBuf, uint16_t numLLR,uint16_t Z, uint8_t BG)
+static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z, uint8_t BG)
 {
     uint32_t i;
     const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
@@ -1153,7 +1163,6 @@ static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_n
     {
         memcpy(&llrOut[colG1], llrRes, numBn2CnG1*Z);
     }
-
 
     for (i=0; i<startColParity; i++)
     {

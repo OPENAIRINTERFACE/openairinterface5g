@@ -22,8 +22,8 @@
 /*!\file nrLDPC_decoder.c
  * \brief Defines the LDPC decoder
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
- * \date 27-03-2018
- * \version 1.0
+ * \date 30-09-2019
+ * \version 2.0
  * \note
  * \warning
  */
@@ -222,7 +222,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #endif
 
 #ifdef NR_LDPC_DEBUG_MODE
-    nrLDPC_debug_initBuffer2File(nrLDPC_buffers_CN_PROC);
     nrLDPC_debug_writeBuffer2File(nrLDPC_buffers_CN_PROC, p_procBuf);
 #endif
 
@@ -451,7 +450,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         stop_meas(&p_profiler->cnProcPc);
 #endif
 #endif
-        //mexPrintf("End Last Iter: i=%d, numMaxIter=%d, pcRes = %d\n",i,numMaxIter,pcRes);
     }
 
     // If maximum number of iterations reached an PC still fails increase number of iterations
@@ -468,7 +466,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #ifdef NR_LDPC_PROFILER_DETAIL
     start_meas(&p_profiler->llrRes2llrOut);
 #endif
-    nrLDPC_llrRes2llrOut(p_lut, p_llrOut, p_procBuf, numLLR, Z, BG);
+    nrLDPC_llrRes2llrOut(p_lut, p_llrOut, p_procBuf, Z, BG);
 #ifdef NR_LDPC_PROFILER_DETAIL
     stop_meas(&p_profiler->llrRes2llrOut);
 #endif

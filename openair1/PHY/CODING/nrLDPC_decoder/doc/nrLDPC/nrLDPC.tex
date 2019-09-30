@@ -118,6 +118,34 @@
     \end{tabular}
 }
 
+\paragraph{Version 1.0:}
+\begin{itemize}
+\item Initial version
+\end{itemize}
+
+\paragraph{Version 2.0:}
+\begin{itemize}
+\item Enhancements in message passing:
+  \begin{itemize}
+  \item LUTs replaced by smaller BG-specific parameters
+  \item Inefficient load/store replaced by circular memcpy
+  \end{itemize}
+\item Bug fixes:
+  \begin{itemize}
+  \item Fixed bug in function \texttt{llr2CnProcBuf}
+  \item Introduced saturation to $-127$ in \texttt{bnProc}
+  \item Corrected input LLR dynamic range in simulation
+  \end{itemize}
+\item Results:
+  \begin{itemize}
+  \item Size of LUTs reduced significantly (60MB to 200KB)
+  \item Siginifcantly enhances execution time (factor 3.5)
+  \item Improved BLER performance
+  \end{itemize}
+\end{itemize}
+
+
+\newpage
 \tableofcontents
 
 \newpage
@@ -327,6 +355,7 @@ The functions involved are described in more detail in table \ref{tab:sum_func}.
     \texttt{llr2llrProcBuf} & Copies input LLRs to LLR processing buffer \\
     \texttt{llr2CnProcBuf}  & Copies input LLRs to CN  processing buffer \\
     \texttt{cnProc}         & Performs CN signal processing \\
+    \texttt{cnProcPc}       & Performs parity check \\
     \texttt{cn2bnProcBuf}   & Copies the CN results to the BN processing buffer \\
     \texttt{bnProcPc}       & Performs BN processing for parity check and/or hard-decision \\
     \texttt{bnProc}         & Utilizes the results of \texttt{bnProcPc} to compute LLRs for CN processing \\
@@ -514,24 +543,7 @@ The sum of the LLRs is carried out in 16 bit for accuracy and is then saturated 
 \subsection{Mapping to the Processing Buffers}
 \label{sec:mapp-cn-proc}
 
-For efficient processing with the AVX instructions, the data is required to be aligned in a certain manner. That is the reason why processing buffers have been introduced. The drawback is that the results of the processing need to copied every time to the processing buffer of the next task. However, the speed up in computation with AVX more than makes up for the time wasted in copying data. The copying is implemented using look-up tables (LUTs) which are described in table \ref{tab:sum_lut}.
-
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{ll}
-    \toprule
-    \textbf{LUT} & \textbf{Description} \\
-    \midrule
-    \texttt{lut\_llr2llrProcBuf\_BGX\_ZX\_RX} & Indices for function \texttt{llr2llrProcBuf} \\
-    \texttt{lut\_llr2CnProcBuf\_BGX\_ZX\_RX}  & Indices for function \texttt{llr2CnProcBuf} \\
-    \texttt{lut\_cn2bnProcBuf\_BGX\_ZX\_RX}   & Indices for functions \texttt{cn2bnProcBuf} and \texttt{bn2cnProcBuf} \\
-    \bottomrule
-  \end{tabular}
-  \caption{Summary of the LUTs.}
-  \label{tab:sum_lut}
-\end{table}
-
-These LUTs are depending on the BG, the lifting size and the code rate. Assuming 5 rates for BG2 and 7 rates for BG1, the total number of LUTs is 617.
+For efficient processing with the AVX instructions, the data is required to be aligned in a certain manner. That is the reason why processing buffers have been introduced. The drawback is that the results of the processing need to copied every time to the processing buffer of the next task. However, the speed up in computation with AVX more than makes up for the time wasted in copying data. The copying is implemented as a circular memcpy because every edge in the BG is a circular shift of a $Z\times Z$ identity matrix. Hence, a circular mempcy consists of two regular memcpys each copying a part of the $Z$ values depending on the circular shift in the BG definition. The circular shifts are stored in \texttt{nrLDPC\_lut.h} in arrays \texttt{circShift\_BGX\_ZX\_CNGX}. In the specification there are only 8 sets of cirular shifts defined. However, the applied circular shift depends on $Z$, i.e. modulo $Z$. To avoid inefficient modulo operations in loops, we store the the circular shift values for every $Z$. Moreover, for convinience the arrays are already arranged depending on the CN group (CNG).
 
 \newpage
 \section{Performance Results}
@@ -595,7 +607,10 @@ The first set of simulations in Figure \ref{fig:bler-bg2-15} compares the curren
       % 5 iterations
       \addplot[red, solid, mark=o] plot coordinates {(-1.250000,0.781300) (-1.000000,0.421000) (-0.750000,0.140400) (-0.500000,0.028900) (-0.250000,0.003300) (0.000000,0.000300) (0.250000,0.000000) (0.500000,0.000000)};
       %\addplot[blue, solid, mark=square] plot coordinates {(-0.250000,0.705000) (0.000000,0.406200) (0.250000,0.181300) (0.500000,0.061600) (0.750000,0.015900) (1.000000,0.004900) (1.250000,0.000900) (1.500000,0.000200)};
-      \addplot[blue, solid, mark=square] plot coordinates {(-1.000000,0.700400) (-0.750000,0.370600) (-0.500000,0.136000) (-0.250000,0.039000) (0.000000,0.008500) (0.250000,0.002400) (0.500000,0.000700) (0.750000,0.000000) (1.000000,0.000000) };
+      %\addplot[blue, solid, mark=square] plot coordinates {(-1.000000,0.700400) (-0.750000,0.370600) (-0.500000,0.136000) (-0.250000,0.039000) (0.000000,0.008500) (0.250000,0.002400) (0.500000,0.000700) (0.750000,0.000000) (1.000000,0.000000) };
+      % with saturation
+      \addplot[blue, solid, mark=square] plot coordinates {(-1.000000,0.693730) (-0.750000,0.370190) (-0.500000,0.137260) (-0.250000,0.038850) (0.000000,0.009740) (0.250000,0.002510) (0.500000,0.000730) (0.750000,0.000180) };
+      %\addplot[blue, dotted, mark=square] plot coordinates {(-1.000000,0.695700) (-0.750000,0.374750) (-0.500000,0.136140) (-0.250000,0.038240) (0.000000,0.010350) (0.250000,0.002490) (0.500000,0.000610) (0.750000,0.000190) (1.000000,0.000050) };
 
 
       \addplot[green, solid, mark=triangle] plot coordinates {(-1.000000,0.778900) (-0.500000,0.226400) (0.000000,0.027400) (0.500000,0.002600) (1.000000,0.000300) };
@@ -646,7 +661,7 @@ Concerning the LDPC decoder provided by MATLAB, the performance appears to be ra
     \pgfplotsset{every axis/.append style={mark options=solid, mark size=2.5pt}}
 
     \begin{semilogyaxis}[title={}, xlabel={$\SNR$ [dB]}, ylabel={BLER},
-      grid={both}, xmin=3, xmax=5.5, xtick={3,3.5,...,5.5}, ymin=0,
+      grid={both}, xmin=3, xmax=6.5, xtick={3,3.5,...,6.5}, ymin=0,
       ymax=1,ytickten={-5,-4,-3,-2,-1,0},legend columns=1]
 
       % Kien's 2-layer 16bit code
@@ -656,11 +671,14 @@ Concerning the LDPC decoder provided by MATLAB, the performance appears to be ra
       \addplot[black, solid] plot coordinates { (3.28392,0.01) (3.73319,0.0001) };
 
       % LDPC opt with 16bit BN processing
-      \addplot[blue, solid, mark=square] plot coordinates {(4.000000,0.487500) (4.250000,0.163400) (4.500000,0.029800) (4.750000,0.002700) (5.000000,0.000100)};
+      %\addplot[blue, solid, mark=square] plot coordinates {(4.000000,0.487500) (4.250000,0.163400) (4.500000,0.029800) (4.750000,0.002700) (5.000000,0.000100)};
+      \addplot[blue, solid, mark=square] plot coordinates {(5.000000,0.439600) (5.250000,0.185800) (5.500000,0.062100) (5.750000,0.015000) (6.000000,0.003900)};
+
 
       %\addplot[blue, dashed, mark=triangle] plot coordinates {(4.000000,0.487500) (4.250000,0.163700) (4.500000,0.030000) (4.750000,0.002900) (5.000000,0.000100)};
 
-      \addplot[blue, dashed, mark=square] plot coordinates {(3.000000,0.911600) (3.250000,0.614100) (3.500000,0.230100) (3.750000,0.036900) (4.000000,0.001100) (4.250000,0.000000) (4.500000,0.000000)};
+      %\addplot[blue, dashed, mark=square] plot coordinates {(3.000000,0.911600) (3.250000,0.614100) (3.500000,0.230100) (3.750000,0.036900) (4.000000,0.001100) (4.250000,0.000000) (4.500000,0.000000)};
+      \addplot[blue, dashed, mark=square] plot coordinates {(3.000000,0.900400) (3.250000,0.600000) (3.500000,0.216400) (3.750000,0.036000) (4.000000,0.002600) (4.250000,0.000000) };      
 
 
       \legend{ {Huawei 2017-06-15}\\
@@ -686,18 +704,19 @@ Figure \ref{fig:bler-bg1-r89} shows the performance of BG1 with largest block si
     \pgfplotsset{every axis/.append style={mark options=solid, mark size=2.5pt}}
 
     \begin{semilogyaxis}[title={}, xlabel={$\SNR$ [dB]}, ylabel={BLER},
-      grid={both}, xmin=6, xmax=11, xtick={6,6.5,...,11}, ymin=0,
+      grid={both}, xmin=6, xmax=9, xtick={6,6.5,...,9}, ymin=0,
       ymax=1,ytickten={-5,-4,-3,-2,-1,0},legend columns=1]
 
       % Huawei
       \addplot[black, solid] plot coordinates { (6.118717,0.01) (6.291449,0.0001) };
 
       % LDPC opt 5 iter
-      \addplot[blue, solid, mark=square] plot coordinates {(8.500000,0.350000) (8.750000,0.155100) (9.000000,0.062400) (9.250000,0.023000) (9.500000,0.008700) (9.750000,0.003500) (10.000000,0.000900) (10.250000,0.000300) };
+      %\addplot[blue, solid, mark=square] plot coordinates {(8.500000,0.350000) (8.750000,0.155100) (9.000000,0.062400) (9.250000,0.023000) (9.500000,0.008700) (9.750000,0.003500) (10.000000,0.000900) (10.250000,0.000300) };
+      \addplot[blue, solid, mark=square] plot coordinates {(7.500000,0.858900) (7.750000,0.449500) (8.000000,0.129700) (8.250000,0.025500) (8.500000,0.002300) (8.750000,0.000300) (9.000000,0.000000) };
 
       % LDPC opt 50 iter
-      \addplot[blue, dashed, mark=square] plot coordinates {(6.000000,0.705333) (6.100000,0.353367) (6.200000,0.102100) (6.300000,0.015133) (6.400000,0.000967) (6.500000,0.000000)};
-
+      %\addplot[blue, dashed, mark=square] plot coordinates {(6.000000,0.705333) (6.100000,0.353367) (6.200000,0.102100) (6.300000,0.015133) (6.400000,0.000967) (6.500000,0.000000)};
+      \addplot[blue, dashed, mark=square] plot coordinates {(6.000000,0.970000) (6.100000,0.830800) (6.200000,0.527300) (6.300000,0.216900) (6.400000,0.045500) (6.500000,0.005600) (6.600000,0.000300) (6.700000,0.000000) (6.800000,0.000000) };
 
       \legend{ {Huawei}\\
                {LDPC Opt 5 iter}\\
@@ -709,7 +728,7 @@ Figure \ref{fig:bler-bg1-r89} shows the performance of BG1 with largest block si
   \label{fig:bler-bg1-r89}
 \end{figure}
 
-From \ref{fig:bler-bg1-r89} it can be observed that the performance gap is only about 0.2 dB if 50 iterations are used. However, for 5 iterations there is still a significant performance loss of about 3.4 dB at BLER $10^{-2}$.
+From \ref{fig:bler-bg1-r89} it can be observed that the performance gap is only about 0.3 dB if 50 iterations are used. However, for 5 iterations there is still a significant performance loss of about 2.3 dB at BLER $10^{-2}$.
 
 \newpage
 \subsection{Decoding Latency}
@@ -824,8 +843,8 @@ Table \ref{tab:lat-bg1-i5} shows the results for BG1, larges block size and diff
 
 From the above results it can be observed that the data transfer between CNs and BNs takes up a significant amount of the run time. However, the performance gain due to AVX instructions in both CN and BN processing is significantly larger than the penalty incurred by the data transfers.
 
-\section{Parity Check and early stopping Criteria}
-It is often unnecessary to carry out the maximum number of iterations. After each iteration a parity check \eqref{eq:29} can be computed and if a valid code word is found the decoder can stop. This functionality has been implemented and the additional overhead is reasonable. The PC is carried out in the CN processing buffer and the calculation complexity itself is negligible. However, for the processing it is necessary to move the BN results to the CN buffer which takes time, the overall overhead is at most $10\%$ compared to an algorithm without early stopping criteria with the same number of iterations. The PC has to be activated via the define \texttt{NR\_LDPC\_ENABLE\_PARITY\_CHECK}.
+\section{Parity Check and Early Stopping Criteria}
+It is often unnecessary to carry out the maximum number of iterations. After each iteration a parity check (PC) \eqref{eq:29} can be computed and if a valid code word is found the decoder can stop. This functionality has been implemented and the additional overhead is reasonable. The PC is carried out in the CN processing buffer and the calculation complexity itself is negligible. However, for the processing it is necessary to move the BN results to the CN buffer which takes time, the overall overhead is at most $10\%$ compared to an algorithm without early stopping criteria with the same number of iterations. The PC has to be activated via the define \texttt{NR\_LDPC\_ENABLE\_PARITY\_CHECK}.
 
 
 \section{Conclusion}
