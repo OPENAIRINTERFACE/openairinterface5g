@@ -81,14 +81,12 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
   }
 }
 
-uint32_t bytes_in_buffer=0;
-uint8_t msi_active=0;
-uint8_t msi_pmch_stop=0;
-uint8_t msi_pmch_stop2=0;
-
+static uint32_t bytes_in_buffer=0;
+static uint8_t msi_pmch_stop=0;
+//static uint8_t msi_active=0;
+//static uint8_t msi_pmch_stop2=0;
 uint16_t mbms_rab_id = 2047;
-
-uint8_t msi_sfs=0;
+static uint8_t msi_sfs=0;
 
 
 //MSI_ELEMENT * ptr =NULL;
@@ -534,60 +532,30 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	//l=0;
 
 	for (k = 0; k < num_mtch; k++) {	// loop for all session in this MCH (MCH[0]) at this moment
+
 	    ((MSI_ELEMENT *) msi_ptr)->lcid = cc->mbms_SessionList[0]->list.array[k]->logicalChannelIdentity_r9;	//mtch_lcid;
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;	// last subframeP of this mtch (only one mtch now)
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xB;
-	    //((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0x2; //100
 
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// last subframeP of this mtch (only one mtch now)
-	    //((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xB;
-	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; //100
-
-//	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x0;	// last subframeP of this mtch (only one mtch now)
-//	    ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0x2; //100
-	    
-	    //while((++l)*TBS<=bytes_in_buffer && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
-	    //	if(l>=6 && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
-	    //    	((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0; //we limite till 256 TOFIX
-	    //    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l; 
-	    //    }
-	    //}
-	    //ptr = (MSI_ELEMENT *) msi_ptr;
- 	  
 	    if( msi_sfs != 0 )
 	    	msi_pmch_stop = msi_sfs-1;
 	    else 
 		msi_pmch_stop = msi_sfs;
-	    //msi_pmch_stop = bytes_in_buffer/TBS;
-	    //if(bytes_in_buffer%TBS)
-		//msi_pmch_stop++;
 
-	  //
-	    //msi_pmch_stop = 20;  
+	    if( msi_pmch_stop > cc->pmch_Config[0]->sf_AllocEnd_r9)
+		   LOG_W(MAC,"e-MBMS Buffer Overflow\n"); 
+
 	    if(msi_pmch_stop>=num_sf_alloc /*&& msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9*/)  {
-	        ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;	// last subframeP of this mtch (only one mtch now)
+	        ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0;	// last subframeP of this mtch (only one mtch now) & stop_sf limited to 256
 	    	//((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = msi_pmch_stop;
 	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = (msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[0]->sf_AllocEnd_r9);
 		msi_pmch_stop = (msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[0]->sf_AllocEnd_r9);
 	    }else{
 	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0x7;	// last subframeP of this mtch (only one mtch now)
-	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; //100
+	    	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; 
 		msi_pmch_stop=0;
 	    }
-//	    do{
-//	    	if(l>=0 && l<=cc->pmch_Config[0]->sf_AllocEnd_r9){
-//			((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = 0; //we limite till 256 TOFIX
-//			((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l; 
-//		}
-//	    }while((l++)*TBS<=bytes_in_buffer);
-//
-	//    if(((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB !=0x7 && ((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB != 0xFF )
-	//	msi_active=1;
-	//    else
-	//	msi_active=1;
-	    	//((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = l;
-	    //    l++;
-	   // }
+
+	   
+	   
 	    msi_ptr += sizeof(MSI_ELEMENT);
 	}
 

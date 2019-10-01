@@ -265,16 +265,16 @@ void mch_channel_level(int **dl_ch_estimates_ext,
 
     for (i=0; i<(nre>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      avg128 = _mm_add_epi32(avg128,_mm_srai_epi32(_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),log2_approx(nre>>2)-1));
 #elif defined(__arm__)
 
 #endif
     }
 
-    avg[aarx] = (((int*)&avg128)[0] +
+    avg[aarx] = (((((int*)&avg128)[0] +
                  ((int*)&avg128)[1] +
                  ((int*)&avg128)[2] +
-                 ((int*)&avg128)[3])/nre;
+                 ((int*)&avg128)[3])/(nre>>factor2(nre)))*(1<<(log2_approx(nre>>2)-1-factor2(nre))));
 
     //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
   }
