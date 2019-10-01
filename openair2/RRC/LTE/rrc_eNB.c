@@ -1,4 +1,3 @@
-#define RRC_DEFAULT_RAB_IS_AM 1
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
