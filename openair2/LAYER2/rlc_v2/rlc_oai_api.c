@@ -334,7 +334,7 @@ rb_found:
 
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    /* what to do in case of failure? for the moment: nothing */
   }
 }
 
