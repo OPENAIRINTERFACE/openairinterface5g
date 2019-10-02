@@ -666,9 +666,9 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
              &eNB->ulsch_tc_intl1_stats,
              &eNB->ulsch_tc_intl2_stats);
       LOG_D(PHY, "Cu should decode in %d iter\n",iter);
-      if ( iter == 5 ) { 
+      if ( 1) { //iter == 5 ) { 
 	      for (int i=0; i < Kr; i++ )
-		      printf("%hx:", ulsch_harq->d[r][96+i]);
+		      printf("%hhx:", ulsch_harq->d[r][96+i]);
 	      printf("\n");
       }
 */

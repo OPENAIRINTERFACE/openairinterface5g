@@ -55,7 +55,7 @@ typedef struct {
   uint8_t pbch_pdu[4];
   int num_pdcch_symbols;
   int num_dci;
-  DCI_ALLOC_t dci_alloc[32];
+  DCI_ALLOC_t dci_alloc[8];
   int num_mdci;
   int amp;
   LTE_eNB_PHICH phich_vars;
@@ -133,9 +133,9 @@ typedef struct {
 typedef struct {
   enum pckType type:8;
   short UE_id;
-  short harq_id;
-  short segment;
-  short segLen;
+  uint8_t harq_id;
+  uint8_t segment;
+  int segLen;
   int ulsch_power[2];
 } fs6_ul_uespec_t;
 

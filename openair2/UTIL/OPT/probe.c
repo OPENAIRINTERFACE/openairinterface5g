@@ -396,11 +396,15 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
   MAC_Context_Info_t pdu_context;
   int radioType=FDD_RADIO;
 
-  if (RC.eNB[0][0]!=NULL)
+  if (RC.eNB && RC.eNB[0][0]!=NULL)
     radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
 
-  if (PHY_vars_UE_g[0][0] != NULL)
+  else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
     radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+   else {
+	   LOG_E(OPT,"not a eNB neither a UE!!! \n");
+	   return;
+   }
 
   switch (opt_type) {
     case OPT_WIRESHARK :

@@ -3328,7 +3328,6 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                          pdsch==PDSCH?1:0,
                          dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
 
-    LOG_D(PHY,"dlsch turbo decode in %d iter\n", ret);
     if (LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->dlsch_decoding_stats[ue->current_thread_id[subframe_rx]]);
       LOG_I(PHY, " --> Unscrambling for CW0 %5.3f\n",
