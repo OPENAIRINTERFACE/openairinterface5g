@@ -86,6 +86,15 @@ void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
 int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		  sub_frame_t subframe);
 
+/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
+		  sub_frame_t subframe);
+
+
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
 @param Mod_id Instance ID of eNB
 @param mbsfn_sync_area index of mbsfn sync area
@@ -1216,6 +1225,17 @@ void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 void program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
 			  frame_t frameP, sub_frame_t subframeP,
 			  uint8_t cce_idx);
+
+void
+fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
+                  uint16_t length,
+                  uint16_t pdu_index,
+                  uint16_t rnti,
+                  uint8_t resource_allocation_type,
+                  uint16_t resource_block_coding,
+                  uint8_t modulation,
+                  uint16_t transmission_power,
+                  uint8_t mbsfn_area_id);
 
 void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 			     nfapi_dl_config_request_body_t * dl_req,

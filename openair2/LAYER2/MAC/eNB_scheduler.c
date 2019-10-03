@@ -940,7 +940,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag > 0) {
       start_meas(&RC.mac[module_idP]->schedule_mch);
-      mbsfn_status[CC_id] = schedule_MBMS(module_idP, CC_id, frameP, subframeP);
+      int(*schedule_mch)(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframe) = NULL;
+      schedule_mch = schedule_MBMS_NFAPI;
+      if(schedule_mch){
+      	mbsfn_status[CC_id] = schedule_mch(module_idP, CC_id, frameP, subframeP);
+      }
       stop_meas(&RC.mac[module_idP]->schedule_mch);
     }
   }

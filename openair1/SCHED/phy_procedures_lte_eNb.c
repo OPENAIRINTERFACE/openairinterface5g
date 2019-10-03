@@ -47,6 +47,8 @@
 
 #include "intertask_interface.h"
 
+#define MBMS_NFAPI_SCHEDULER
+
 nfapi_ue_release_request_body_t release_rntis;
 
 int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint16_t UE_id,uint8_t harq_pid, uint8_t bw_factor) {
@@ -117,6 +119,16 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
   return(subframe_select(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe));
 }
 
+#ifdef MBMS_NFAPI_SCHEDULER
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
+  int subframe = proc->subframe_tx;
+  // This is DL-Cell spec pilots in Control region
+  generate_pilots_slot (eNB, eNB->common_vars.txdataF, AMP, subframe << 1, 1);
+  if(eNB->dlsch_MCH->active==1)
+  	generate_mch (eNB, proc,NULL/*, eNB->dlsch_MCH->harq_processes[0]->pdu*/);
+  eNB->dlsch_MCH->active = 0;
+}
+#else
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   MCH_PDU *mch_pduP=NULL;
@@ -151,14 +163,16 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   if (mch_pduP) {
     fill_eNB_dlsch_MCH (eNB, mch_pduP->mcs, 1, 0);
     eNB->dlsch_MCH->harq_ids[proc->frame_tx%2][subframe] = 0;
+    eNB->dlsch_MCH->harq_processes[0]->pdu=(uint8_t *) mch_pduP->payload;
     // Generate PMCH
-    generate_mch (eNB, proc, (uint8_t *) mch_pduP->payload);
+    generate_mch (eNB, proc, NULL/*(uint8_t *) mch_pduP->payload*/);
   } else {
     LOG_D (PHY, "[eNB/RN] Frame %d subframe %d: MCH not generated \n", proc->frame_tx, subframe);
   }
 
 #endif
 }
+#endif
 
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
