@@ -729,6 +729,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
     pil   = (int16_t *)&pilot[rb_offset*((config_type==0) ? 6:4)];
+    k     = k&(ue->frame_parms.ofdm_symbol_size-1);
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
@@ -758,8 +759,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          dl_ch,
                                          8);
       pil+=2;
-      //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-      re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+      re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+      //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       //for (int i= 0; i<8; i++)
       //printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
@@ -774,8 +775,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          dl_ch,
                                          8);
       pil+=2;
-      //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-      re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+      re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+      //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       //printf("dl_ch addr %p\n",dl_ch);
       
@@ -793,8 +794,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       //printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
       
       pil+=2;
-      //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-      re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+      re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+      //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       dl_ch+=8;
 
@@ -814,8 +815,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                            8);
 
         pil+=2;
-        //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-        re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+        re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+        //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -828,8 +829,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                            dl_ch,
                                            8);
         pil+=2;
-        //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-        re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+        re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+        //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
         dl_ch+=8;
 
@@ -850,8 +851,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       //printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
 
       pil+=2;
-      //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-      re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+      re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+      //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
              
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -866,8 +867,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          8);
                                          
       pil+=2;
-      //re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
-      re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
+      re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
+      //re_offset = (re_offset >= ue->frame_parms.ofdm_symbol_size) ? (re_offset - ue->frame_parms.ofdm_symbol_size + 2) : (re_offset+2);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       dl_ch+=8;
       
