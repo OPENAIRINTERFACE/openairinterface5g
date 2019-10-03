@@ -74,7 +74,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
                           uint8_t rvidx,
                           uint32_t E)
 {
-  uint32_t Ncb,k0,j,k,Nref,N,ind;
+  uint32_t Ncb,ind,k,Nref,N;
 
   if (C==0) {
     printf("nr_rate_matching: invalid parameters (C %d\n",C);
@@ -91,25 +91,18 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
       Ncb = min(N, Nref);
   }
 
-  k0 = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
+  ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
 
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc: E %d, k0 %d, Ncb %d, rvidx %d\n", E, ind, Ncb, rvidx);
 #endif
 
   k=0;
-  j=0;
 
-  while(k<E) {
-    ind=(k0+j)%Ncb;
-    if (w[ind] != NR_NULL) e[k++]=w[ind];
-    j++;
-  }  
-
-  /*for (; (ind<Ncb)&&(k<E); ind++) {
+  for (; (ind<Ncb)&&(k<E); ind++) {
 
 #ifdef RM_DEBUG
-    printf("RM_TX k%d Ind: %d (%d)\t",k,ind,w[ind]);
+    printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
     if (w[ind] != NR_NULL) e[k++]=w[ind];
@@ -119,12 +112,12 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
     for (ind=0; (ind<Ncb)&&(k<E); ind++) {
 
 #ifdef RM_DEBUG
-      printf("RM_TX k%d Ind: %d (%d)\t",k,ind,w[ind]);
+      printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
       if (w[ind] != NR_NULL) e[k++]=w[ind];
     }
-  }*/
+  }
 
 
   return 0;
@@ -213,3 +206,4 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
 
   return 0;
 }
+

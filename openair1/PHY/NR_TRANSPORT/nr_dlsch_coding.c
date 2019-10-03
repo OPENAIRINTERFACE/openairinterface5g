@@ -326,32 +326,47 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
       printf("%02x.",a[i]);
     printf("\n");
     */
-    // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(a,A)>>8;
-    a[A>>3] = ((uint8_t*)&crc)[2];
-    a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-    a[2+(A>>3)] = ((uint8_t*)&crc)[0];
-    //printf("CRC %x (A %d)\n",crc,A);
-    //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
 
-    dlsch->harq_processes[harq_pid]->B = A+24;
-    //    dlsch->harq_processes[harq_pid]->b = a;
+    if (A > 3824) {
+      // Add 24-bit crc (polynomial A) to payload
+      crc = crc24a(a,A)>>8;
+      a[A>>3] = ((uint8_t*)&crc)[2];
+      a[1+(A>>3)] = ((uint8_t*)&crc)[1];
+      a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
+  
+      dlsch->harq_processes[harq_pid]->B = A+24;
+      //    dlsch->harq_processes[harq_pid]->b = a;
    
-    AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
 
-    memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
+      memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);  // why is this +4 if the CRC is only 3 bytes?
+    }
+    else {
+      // Add 16-bit crc (polynomial A) to payload
+      crc = crc16(a,A)>>16;
+      a[A>>3] = ((uint8_t*)&crc)[1];
+      a[1+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
+  
+      dlsch->harq_processes[harq_pid]->B = A+16;
+      //    dlsch->harq_processes[harq_pid]->b = a;
+   
+      AssertFatal((A/8)+3 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_DLSCH_PAYLOAD_BYTES);
 
+      memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
+    }
     if (R<1000)
       Coderate = (float) R /(float) 1024;
     else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
       Coderate = (float) R /(float) 2048;
 
-    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
 		BG = 2;
-	}
-	else{
+    else
 		BG = 1;
-	}
 
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,
 		    dlsch->harq_processes[harq_pid]->c,
