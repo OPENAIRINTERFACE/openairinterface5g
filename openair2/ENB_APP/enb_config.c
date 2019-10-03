@@ -2126,6 +2126,11 @@ int RCconfig_S1(
               S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
             } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
               S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
+              // Temporary option to be able to parse an eNB configuration file which is treated as gNB from
+              // the X2AP layer and test the setup of an ENDC X2AP connection. To be removed when we are ready to
+              // parse an actual gNB configuration file wrt. the X2AP parameters instead.
+            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
+              S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
             } else {
               AssertFatal(0,
                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
@@ -2355,7 +2360,12 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
               X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
             } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
               X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
-            } else {
+              // Temporary option to be able to parse an eNB configuration file which is treated as gNB from
+              // the X2AP layer and test the setup of an ENDC X2AP connection. To be removed when we are ready to
+              // parse an actual gNB configuration file wrt. the X2AP parameters instead.
+            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
+                S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
+            }else {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                            RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));

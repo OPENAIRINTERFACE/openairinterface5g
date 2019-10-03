@@ -81,7 +81,8 @@
 #ifndef OCP_FRAMEWORK
 typedef enum cell_type_e {
   CELL_MACRO_ENB,
-  CELL_HOME_ENB
+  CELL_HOME_ENB,
+  CELL_MACRO_GNB
 } cell_type_t;
 
 typedef enum paging_drx_e {

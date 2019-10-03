@@ -101,7 +101,6 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t *x2ap_enb_data_p;
   DevAssert(sctp_new_association_resp != NULL);
-  printf("x2ap_eNB_handle_sctp_association_resp at 1\n");
   dump_trees();
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
@@ -129,7 +128,6 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   x2ap_enb_data_p = x2ap_get_eNB(instance_p, -1,
                                  sctp_new_association_resp->ulp_cnx_id);
   DevAssert(x2ap_enb_data_p != NULL);
-  printf("x2ap_eNB_handle_sctp_association_resp at 2\n");
   dump_trees();
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
@@ -142,17 +140,17 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     return;
   }
 
-  printf("x2ap_eNB_handle_sctp_association_resp at 3\n");
   dump_trees();
   /* Update parameters */
   x2ap_enb_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
   x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;
   x2ap_enb_data_p->out_streams = sctp_new_association_resp->out_streams;
-  printf("x2ap_eNB_handle_sctp_association_resp at 4\n");
   dump_trees();
   /* Prepare new x2 Setup Request */
-  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
-  //x2ap_eNB_generate_ENDC_x2_setup_request(instance_p, x2ap_enb_data_p);
+  if(instance_p->cell_type == CELL_MACRO_GNB)
+	  x2ap_gNB_generate_ENDC_x2_setup_request(instance_p, x2ap_enb_data_p);
+  else
+	  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
 }
 
 static
