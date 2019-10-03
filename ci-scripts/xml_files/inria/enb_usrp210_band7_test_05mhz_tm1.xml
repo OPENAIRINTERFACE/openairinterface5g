@@ -19,17 +19,23 @@
  For more information about the OpenAirInterface (OAI) Software Alliance:
       contact@openairinterface.org
 
+ 030102 000002 040301 000002 040504 040605 040606 040645 040646 000001 040401 000002 030201
 -->
 <testCaseList>
 	<htmlTabRef>test-05-tm1</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
- 030201
+ 030201 040101
  030102 000002 040301 000002 040504 000001 040401 000002 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
@@ -71,28 +77,28 @@
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
-	<testCase id="040603">
+	<testCase id="040605">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
-	<testCase id="040604">
+	<testCase id="040606">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/12Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 12M -t 30 -i 1 -fm</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
-	<testCase id="040643">
+	<testCase id="040645">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
-	<testCase id="040644">
+	<testCase id="040646">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - UL/2Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 2M -t 30 -i 1 -fm -R</iperf_args>

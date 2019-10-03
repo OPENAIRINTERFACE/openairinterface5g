@@ -145,6 +145,7 @@ class SSHConnection():
 		self.UEDevicesRemoteUser = []
 		self.UEDevicesOffCmd = []
 		self.UEDevicesOnCmd = []
+		self.UEDevicesRebootCmd = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -613,6 +614,14 @@ class SSHConnection():
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			self.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep --colour=never "s11"', '\$', 5)
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_\:]+)done', str(self.ssh.before))
+			if result is not None:
+				eth_interface = result.group('eth_interface')
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' and lo \u001B[0m')
+				EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
+				self.command('echo $USER; nohup sudo tshark -i ' + eth_interface + ' -i lo -w ' + self.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
 			self.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
@@ -873,8 +882,21 @@ class SSHConnection():
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if not self.ADBCentralized:
+				# Reboot UE
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesRebootCmd[idx], '\$', 60)
+				# Wait
+				time.sleep(60)
+				# Put in LTE-Mode only
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode1 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode2 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode3 11"\'', '\$', 60)
 				# enable data service
 				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
+				# we need to do radio on/off cycle to make sure of above changes
+				# airplane mode off // radio on
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
+				time.sleep(10)
 				# airplane mode on // radio off
 				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 				self.close()
@@ -1615,6 +1637,7 @@ class SSHConnection():
 						self.UEDevicesRemoteUser.append(comma_split[2])
 						self.UEDevicesOffCmd.append(comma_split[3])
 						self.UEDevicesOnCmd.append(comma_split[4])
+						self.UEDevicesRebootCmd.append(comma_split[5])
 					phone_list_file.close()
 
 		if terminate_ue_flag == False:
@@ -3461,6 +3484,11 @@ class SSHConnection():
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL spgwc spgwu || true', '\$', 5)
 			self.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-spgw*.sh', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep tshark | grep -v grep', '\$', 5)
+			result = re.search('-w ', str(self.ssh.before))
+			if result is not None:
+				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT tshark || true', '\$', 5)
+				self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 ' + self.EPCSourceCodePath + '/scripts/*.pcap', '\$', 5)
 		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_spgw spgw || true', '\$', 5)
 			time.sleep(2)
@@ -3776,8 +3804,8 @@ class SSHConnection():
 			self.command('zip hss.log.zip hss*.log', '\$', 60)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm hss*.log', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				self.command('zip hss.log.zip logs/hss*.*', '\$', 60)
-				self.command('echo ' + self.EPCPassword + ' | sudo -S rm logs/hss*.*', '\$', 5)
+				self.command('zip hss.log.zip logs/hss*.* *.pcap', '\$', 60)
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f logs/hss*.* *.pcap', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/hss_sim0609/hss.log .', '\$', 60)
 			self.command('zip hss.log.zip hss.log', '\$', 60)

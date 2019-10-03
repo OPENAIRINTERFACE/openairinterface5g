@@ -26,6 +26,7 @@
 	<htmlTabIcon>log-out</htmlTabIcon>
 	<TestCaseRequestedList>
  050201 060201 070201
+ 040101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -42,6 +43,11 @@
 	<testCase id="070201">
 		<class>Terminate_SPGW</class>
 		<desc>Terminate SPGW</desc>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
 	</testCase>
 
 </testCaseList>

@@ -25,7 +25,7 @@
 	<htmlTabName>Build eNB0</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
- 010101 040101
+ 010101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -34,25 +34,5 @@
 		<desc>Build eNB (USRP)</desc>
 		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
-
-	<testCase id="050101">
-		<class>Initialize_HSS</class>
-		<desc>Initialize HSS</desc>
-	</testCase>
-
-	<testCase id="060101">
-		<class>Initialize_MME</class>
-		<desc>Initialize MME</desc>
-	</testCase>
-
-	<testCase id="070101">
-		<class>Initialize_SPGW</class>
-		<desc>Initialize SPGW</desc>
-	</testCase>
-
-    <testCase id="040101">
-        <class>Initialize_UE</class>
-        <desc>Initialize UE</desc>
-    </testCase>
 
 </testCaseList>
