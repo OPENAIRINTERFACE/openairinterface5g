@@ -1,6 +1,7 @@
 #ifndef NR_UESOFTMODEM_H
 #define NR_UESOFTMODEM_H
 #include <executables/nr-softmodem-common.h>
+#include <executables/softmodem-common.h>
 #include "PHY/defs_nr_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include <openair2/LAYER2/NR_MAC_gNB/mac_proto.h>

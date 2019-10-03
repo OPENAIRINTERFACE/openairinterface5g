@@ -55,6 +55,7 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };

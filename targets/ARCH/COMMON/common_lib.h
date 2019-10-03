@@ -445,8 +445,6 @@ typedef struct {
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
-#define sample_t struct complex16 // 2*16 bits complex number
-
 #ifdef __cplusplus
 extern "C"
 {

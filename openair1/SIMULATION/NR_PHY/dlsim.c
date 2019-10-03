@@ -62,6 +62,7 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 double cpuf;
 int nfapi_mode=0;
+uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}

@@ -162,7 +162,7 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-typedef struct {
+/*typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
   char           rf_config_file[1024];
@@ -176,14 +176,14 @@ typedef struct {
   unsigned int   start_msc;
   uint32_t       clock_source;
   int            hw_timing_advance;
-} softmodem_params_t;
+} softmodem_params_t;*/
 static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
+//static THREAD_STRUCT thread_struct;
 
-void set_parallel_conf(char *parallel_conf) {
+/*void set_parallel_conf(char *parallel_conf) {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
@@ -201,7 +201,7 @@ PARALLEL_CONF_t get_thread_parallel_conf(void) {
 }
 WORKER_CONF_t get_thread_worker_conf(void) {
   return thread_struct.worker_conf;
-}
+}*/
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;

@@ -23,13 +23,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
 #define MAX_NUM_DLSCH_SEGMENTS 16
+#define MAX_BLOCK_LENGTH 8448
 
 #ifndef malloc16
 #  ifdef __AVX2__
@@ -41,7 +42,6 @@
 
 #define NR_LDPC_PROFILER_DETAIL
 #define NR_LDPC_ENABLE_PARITY_CHECK
-
 
 // 4-bit quantizer
 char quantize4bit(double D,double x)
@@ -76,31 +76,15 @@ char quantize8bit(double D,double x)
   return((char)qxd);
 }
 
-char quantize(double D,double x,unsigned char B)
-{
-  double qxd;
-  short maxlev;
-  qxd = floor(x/D);
-
-  maxlev = 1<<(B-1);//(char)(pow(2,B-1));
-
-  //printf("x=%f,qxd=%f,maxlev=%d\n",x,qxd, maxlev);
-
-  if (qxd <= -maxlev)
-    qxd = -maxlev;
-  else if (qxd >= maxlev)
-    qxd = maxlev-1;
-
-  return((char)qxd);
-}
-
 typedef struct {
-double n_iter_mean;
-double n_iter_std;
-int n_iter_max;
+  double n_iter_mean;
+  double n_iter_std;
+  int n_iter_max;
 } n_iter_stats_t;
 
-#define MAX_BLOCK_LENGTH 8448
+RAN_CONTEXT_t RC;
+PHY_VARS_UE ***PHY_vars_UE_g;
+uint16_t NB_UE_INST = 1;
 
 short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
 
@@ -662,8 +646,7 @@ int main(int argc, char *argv[])
 
   fprintf(fd,"SNR BLER BER UNCODED_BER ENCODER_MEAN ENCODER_STD ENCODER_MAX DECODER_TIME_MEAN DECODER_TIME_STD DECODER_TIME_MAX DECODER_ITER_MEAN DECODER_ITER_STD DECODER_ITER_MAX\n");
 
-  for (SNR=SNR0;SNR<SNR0+20.0;SNR+=SNR_step)
-  {
+  for (SNR=SNR0;SNR<SNR0+20.0;SNR+=SNR_step) {
 	  //reset_meas(&time_optim);
 	  //reset_meas(&time_decoder);
 	  //n_iter_stats_t dec_iter = {0, 0, 0};
@@ -719,23 +702,11 @@ int main(int argc, char *argv[])
     		dec_iter->n_iter_max
     		);
 
-    if (decoded_errors[i] == 0)
-    	break;
+    if (decoded_errors[i] == 0) break;
+
     i=i+1;
-
-
   }
   fclose(fd);
 
   return(0);
 }
-
-
-
-
-
-
-
-
-
-

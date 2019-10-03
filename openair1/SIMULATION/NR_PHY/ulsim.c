@@ -62,6 +62,7 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // dummy functions
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
