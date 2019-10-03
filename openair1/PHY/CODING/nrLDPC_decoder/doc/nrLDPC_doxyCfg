@@ -771,7 +771,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../nrLDPC_defs.h ../nrLDPC_types.h ../nrLDPC_init.h ../nrLDPC_cnProc.h ../nrLDPC_bnProc.h ../nrLDPC_mPass.h ../nrLDPC_decoder.h ../nrLDPC_decoder.c ../nrLDPC_lut/nrLDPC_lut.h
+INPUT                  = ../nrLDPC_defs.h ../nrLDPC_types.h ../nrLDPC_init.h ../nrLDPC_cnProc.h ../nrLDPC_bnProc.h ../nrLDPC_mPass.h ../nrLDPC_decoder.h ../nrLDPC_decoder.c ../nrLDPC_lut.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
