@@ -34,7 +34,7 @@
 
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+  #define _GNU_SOURCE
 #endif
 
 #include <execinfo.h>
@@ -90,7 +90,7 @@ typedef struct {
 
 typedef struct {
   uint8_t     num_dci;
-  uint8_t     num_pdcch_symbols; 
+  uint8_t     num_pdcch_symbols;
   DCI_ALLOC_t dci_alloc[32];
 } LTE_eNB_PDCCH;
 
@@ -115,7 +115,7 @@ typedef struct {
   uint8_t     num_dci;
   /// MPDCCH DCI allocations from MAC
   mDCI_ALLOC_t mdci_alloc[32];
-  // MAX SIZE of an EPDCCH set is 16EREGs * 9REs/EREG * 8 PRB pairs = 2304 bits 
+  // MAX SIZE of an EPDCCH set is 16EREGs * 9REs/EREG * 8 PRB pairs = 2304 bits
   uint8_t e[2304];
 } LTE_eNB_MPDCCH;
 
@@ -195,12 +195,10 @@ typedef struct {
   int32_t **prach_ifft[4];
 
   /// repetition number
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator of first frame in a group of PRACH repetitions
   int first_frame[4];
   /// current repetition for each CE level
   int repetition_number[4];
-#endif
 } LTE_eNB_PRACH;
 
 /// Context data structure for RX/TX portion of subframe processing
@@ -282,30 +280,24 @@ typedef struct L1_proc_t_s {
   int subframe_rx;
   /// subframe to act upon for PRACH
   int subframe_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
-#endif
   /// frame to act upon for reception
   int frame_rx;
   /// frame to act upon for transmission
   int frame_tx;
   /// frame to act upon for PRACH
   int frame_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for PRACH BL/CE UEs
   int frame_prach_br;
-#endif
   /// \internal This variable is protected by \ref mutex_td.
   int instance_cnt_td;
   /// \internal This variable is protected by \ref mutex_te.
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach for BL/CE UEs.
   int instance_cnt_prach_br;
-#endif
   // instance count for over-the-air eNB synchronization
   int instance_cnt_synch;
 
@@ -326,10 +318,8 @@ typedef struct L1_proc_t_s {
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for prach processing thread BL/CE UEs
   pthread_attr_t attr_prach_br;
-#endif
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for parallel turbo-decoder thread
@@ -340,10 +330,8 @@ typedef struct L1_proc_t_s {
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach_br;
-#endif
   /// scheduling parameters for asynch_rxtx thread
   struct sched_param sched_param_asynch_rxtx;
   /// pthread structure for parallel turbo-decoder thread
@@ -352,21 +340,16 @@ typedef struct L1_proc_t_s {
   pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for PRACH thread BL/CE UEs
   pthread_t pthread_prach_br;
-#endif
   /// condition variable for parallel turbo-decoder thread
   pthread_cond_t cond_td;
   /// condition variable for parallel turbo-encoder thread
   pthread_cond_t cond_te;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for PRACH processing thread BL/CE UEs;
   pthread_cond_t cond_prach_br;
-#endif
-
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
   /// mutex for parallel turbo-decoder thread
@@ -375,10 +358,8 @@ typedef struct L1_proc_t_s {
   pthread_mutex_t mutex_te;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for PRACH thread for BL/CE UEs
   pthread_mutex_t mutex_prach_br;
-#endif
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
@@ -399,10 +380,8 @@ typedef struct L1_proc_t_s {
   time_stats_t ru_arrival_time;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
-#endif
   /// parameters for turbo-decoding worker thread
   td_params tdp;
   /// parameters for turbo-encoding worker thread
@@ -508,18 +487,14 @@ typedef struct PHY_VARS_eNB_s {
   nfapi_cqi_indication_raw_pdu_t cqi_raw_pdu_list[NFAPI_CQI_IND_MAX_PDU];
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// NFAPI PRACH information BL/CE UEs
   nfapi_preamble_pdu_t preamble_list_br[MAX_NUM_RX_PRACH_PREAMBLES];
-#endif
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
   LTE_eNB_PHICH        phich_vars[2];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_EPDCCH       epdcch_vars[2];
   LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_PRACH        prach_vars_br;
-#endif
   LTE_eNB_COMMON       common_vars;
   LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_VARS_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
@@ -545,10 +520,8 @@ typedef struct PHY_VARS_eNB_s {
 
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_table[10][3][42];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150];
-#endif
 
   // PRACH energy detection parameters
   /// Detection threshold for LTE PRACH
@@ -567,9 +540,7 @@ typedef struct PHY_VARS_eNB_s {
   int              pucch1ab_DTX_threshold_emtc[4];
 
   uint32_t X_u[64][839];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t X_u_br[4][64][839];
-#endif
   uint8_t pbch_configured;
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
