@@ -105,6 +105,8 @@ char title[255];
 static pthread_t                forms_thread; //xforms
 
 #include <executables/nr-uesoftmodem.h>
+#include "executables/softmodem-common.h"
+#include "executables/thread-common.h"
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;

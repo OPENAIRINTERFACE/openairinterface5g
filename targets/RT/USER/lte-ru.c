@@ -104,9 +104,9 @@ extern volatile int oai_exit;
 extern int emulate_rf;
 extern int numerology;
 extern clock_source_t clock_source;
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern void phy_init_RU(RU_t *);
 
 void stop_RU(int nb_ru);

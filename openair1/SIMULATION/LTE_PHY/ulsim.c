@@ -96,7 +96,8 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
-THREAD_STRUCT thread_struct;
+#include "executables/thread-common.h"
+//THREAD_STRUCT thread_struct;
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,

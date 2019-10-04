@@ -84,11 +84,11 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
-
-THREAD_STRUCT thread_struct;
+#include "executables/thread-common.h"
+//THREAD_STRUCT thread_struct;
 //static THREAD_STRUCT thread_struct;
 
-void set_parallel_conf_dlsim(char *parallel_conf) {
+/*void set_parallel_conf_dlsim(char *parallel_conf) {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
@@ -101,7 +101,7 @@ void set_worker_conf_dlsim(char *worker_conf) {
 
   printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
 }
-/*PARALLEL_CONF_t get_thread_parallel_conf(void) {
+PARALLEL_CONF_t get_thread_parallel_conf(void) {
 	return thread_struct.parallel_conf;
 }
 WORKER_CONF_t get_thread_worker_conf(void) {
@@ -641,7 +641,7 @@ int main(int argc, char **argv) {
   memset((void *)&TX_req,0,sizeof(TX_req));
   DL_req.dl_config_request_body.dl_config_pdu_list = dl_config_pdu_list;
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
-  set_parallel_conf_dlsim("PARALLEL_SINGLE_THREAD");
+  set_parallel_conf("PARALLEL_SINGLE_THREAD");
   cpuf = cpu_freq_GHz;
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
@@ -891,7 +891,7 @@ int main(int argc, char **argv) {
         break;
 
       case 'Q':
-        set_parallel_conf_dlsim(optarg);
+        set_parallel_conf(optarg);
         break;
 
       default:
@@ -912,7 +912,7 @@ int main(int argc, char **argv) {
   if (help)
     exit(0);
   if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
-    set_worker_conf_dlsim("WORKER_ENABLE");
+    set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
 

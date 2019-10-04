@@ -57,7 +57,8 @@
          uint64_t runtime,
          uint64_t deadline,
          uint64_t period);*/
-extern WORKER_CONF_t get_thread_worker_conf(void);
+//extern WORKER_CONF_t get_thread_worker_conf(void);
+#include "executables/thread-common.h"
 extern volatile int oai_exit;
 
 

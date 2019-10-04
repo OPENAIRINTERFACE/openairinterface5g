@@ -99,10 +99,10 @@
 
 
 #if defined(ENABLE_ITTI)
-  extern volatile int             start_gNB;
-  extern volatile int             start_UE;
+  extern volatile int start_gNB;
+  extern volatile int start_UE;
 #endif
-extern volatile int                    oai_exit;
+extern volatile int oai_exit;
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
@@ -110,7 +110,7 @@ extern int transmission_mode;
 
 uint16_t sl_ahead=4;
 uint16_t sf_ahead=4;
-//pthread_t                       main_gNB_thread;
+//pthread_t main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
 time_stats_t softmodem_stats_hw; //  hw acquisition
@@ -133,13 +133,14 @@ extern double cpuf;
 void init_gNB(int,int);
 void stop_gNB(int nb_inst);
 
-int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot_tx,uint64_t timestamp_tx);
-int wakeup_tx(PHY_VARS_gNB *gNB,int frame_rx,int slot_rx,int frame_tx,int slot_tx,uint64_t timestamp_tx);
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+int wakeup_txfh(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int frame_tx, int slot_tx, uint64_t timestamp_tx);
+int wakeup_tx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, uint64_t timestamp_tx);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 
-void wakeup_prach_gNB(PHY_VARS_gNB *gNB,RU_t *ru,int frame,int subframe);
+void wakeup_prach_gNB(PHY_VARS_gNB *gNB, RU_t *ru, int frame, int subframe);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
@@ -149,7 +150,7 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 
-static inline int rxtx(PHY_VARS_gNB *gNB,int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
+static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************

@@ -34,6 +34,7 @@
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include "executables/thread-common.h"
 #include <dlfcn.h>
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;

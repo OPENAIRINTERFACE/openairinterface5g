@@ -114,27 +114,22 @@ static int DEFENBS[] = {0};
 #include "T.h"
 #include "nfapi_interface.h"
 
-extern volatile int                    oai_exit;
+extern volatile int oai_exit;
 
 
 extern void  nr_phy_free_RU(RU_t *);
 extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 void init_NR_RU(char *);
 void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
-void configure_ru(int idx,
-                  void *arg);
-
-void configure_rru(int idx,
-                   void *arg);
-
+void configure_ru(int idx, void *arg);
+void configure_rru(int idx, void *arg);
 int attach_rru(RU_t *ru);
-
 int connect_rau(RU_t *ru);
 
 extern uint16_t sl_ahead;

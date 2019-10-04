@@ -118,9 +118,9 @@ extern int oaisim_flag;
 
 //uint16_t sf_ahead=4;
 extern uint16_t sf_ahead;
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 //pthread_t                       main_eNB_thread;
 

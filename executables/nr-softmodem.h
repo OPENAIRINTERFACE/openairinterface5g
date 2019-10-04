@@ -2,7 +2,6 @@
 #define NR_SOFTMODEM_H
 
 #include <executables/nr-softmodem-common.h>
-#include <executables/softmodem-common.h>
 
 #include "flexran_agent.h"
 #include "PHY/defs_gNB.h"

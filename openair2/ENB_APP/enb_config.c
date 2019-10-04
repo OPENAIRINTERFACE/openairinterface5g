@@ -55,11 +55,11 @@
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
 #include "proto_agent.h"
-
-extern void set_parallel_conf(char *parallel_conf);
+#include "executables/thread-common.h"
+/*extern void set_parallel_conf(char *parallel_conf);
 extern void set_worker_conf(char *worker_conf);
-//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-//extern WORKER_CONF_t   get_thread_worker_conf(void);
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);*/
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
 extern char *parallel_config;
