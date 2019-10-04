@@ -614,14 +614,10 @@ class SSHConnection():
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			self.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep --colour=never "s11"', '\$', 5)
-			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_\:]+)done', str(self.ssh.before))
-			if result is not None:
-				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' and lo \u001B[0m')
-				EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
-				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
-				self.command('echo $USER; nohup sudo tshark -i ' + eth_interface + ' -i lo -w ' + self.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
+			EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
+			self.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + self.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
 			self.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
@@ -2500,16 +2496,21 @@ class SSHConnection():
 			else:
 				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-				if (useIperf3):
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
+				if self.ADBCentralized:
+					if (useIperf3):
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
+					else:
+						self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+						result = re.search('-u', str(self.iperf_args))
+						if result is None:
+							self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+							udpIperf = False
+						else:
+							self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 				else:
 					self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-					result = re.search('-u', str(self.iperf_args))
-					if result is None:
-						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
-						udpIperf = False
-					else:
-						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+					self.command('echo $USER; nohup ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &\' > /dev/null 2>&1', self.ADBUserName, 60)
+
 			time.sleep(0.5)
 			self.close()
 
@@ -2568,11 +2569,17 @@ class SSHConnection():
 				self.command('killall iperf', '\$', 5)
 			else:
 				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+				if self.ADBCentralized:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps" | grep --color=never iperf | grep -v grep\'', '\$', 60)
 				result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
 				if result is not None:
 					pid_iperf = result.group('pid')
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+					if self.ADBCentralized:
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+					else:
+						self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"\'', '\$', 60)
 			self.close()
 			# if the client report is absent, try to analyze the server log file
 			if (clientStatus == -1):
