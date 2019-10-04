@@ -287,13 +287,8 @@ int8_t nr_ue_decode_mib(
 	    
         uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
         frequency_range_t frequency_range = FR1;
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
         uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
         uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
-#else
-        uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1 >> 4) & 0xf;
-        uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1 & 0xf);
-#endif
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
@@ -609,11 +604,7 @@ int8_t nr_ue_decode_mib(
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
 	    mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation
 	    mac->phy_config.config_req.pbch_config.dmrs_type_a_position = mac->mib->dmrs_TypeA_Position;
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
 	    mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero) * 16 + (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
-#else
-	    mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = mac->mib->pdcch_ConfigSIB1;
-#endif
 	    mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
 	    mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
 	    mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;

@@ -44,15 +44,12 @@
 
 #include "lte_refsig.h"
 
-void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_table[10][3][42],uint16_t Nid_mbsfn)
-{
-
+void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_table[10][3][42],uint16_t Nid_mbsfn) {
   unsigned char sfn,l;
   unsigned int n,x1,x2;//,x1tmp,x2tmp;
 
   for (sfn=0; sfn<10; sfn++) {
     for (l=0; l<3; l++) {
-
       if (l==0)
         x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + 2 + (7*(1+(sfn<<1)))))<<9); //cinit
       else
@@ -61,26 +58,21 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
       //      printf("cinit (sfn %d, l %d) => %d\n",sfn,l,x2);
-
       // Initializing the Sequence
-
       x1 = 1+ (1<<31);
       x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
       // skip first 50 double words (1600 bits)
       //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
 
       for (n=1; n<50; n++) {
-
         x1 = (x1>>1) ^ (x1>>4);
         x1 = x1 ^ (x1<<31) ^ (x1<<28);
         x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
         x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
         //  printf("x1 : %x, x2 : %x\n",x1,x2);
-
       }
 
       for (n=0; n<42; n++) {
-
         x1 = (x1>>1) ^ (x1>>4);
         x1 = x1 ^ (x1<<31) ^ (x1<<28);
         x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
@@ -88,15 +80,11 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
         lte_gold_mbsfn_table[sfn][l][n] = x1^x2;
         //  printf("n=%d : c %x\n",n,x1^x2);
       }
-
     }
-
   }
 }
 
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_khz_1dot25_table[10][150],uint16_t Nid_mbsfn){
+void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_khz_1dot25_table[10][150],uint16_t Nid_mbsfn) {
   unsigned char sfn;
   unsigned int n,x1,x2;//,x1tmp,x2tmp;
 
@@ -104,12 +92,14 @@ void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold
     x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + (7*(1+sfn))))<<9); //cinit
     x1 = 1+ (1<<31);
     x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
+
     for (n=1; n<50; n++) {
       x1 = (x1>>1) ^ (x1>>4);
       x1 = x1 ^ (x1<<31) ^ (x1<<28);
       x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
       x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
     }
+
     for (n=0; n<150; n++) {
       x1 = (x1>>1) ^ (x1>>4);
       x1 = x1 ^ (x1<<31) ^ (x1<<28);
@@ -119,16 +109,12 @@ void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold
     }
   }
 }
-#endif
 
 
 
 #ifdef LTE_GOLD_MAIN
-main()
-{
-
+main() {
   lte_gold_mbsfn(423,0);
-
 }
 #endif
 

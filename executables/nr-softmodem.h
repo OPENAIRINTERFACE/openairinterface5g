@@ -35,8 +35,6 @@
     {"K" ,                    CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE, strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",    TYPE_STRING, 0},        \
     {"m" ,                    CONFIG_HLP_DLMCS,       0,                uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"t" ,                    CONFIG_HLP_ULMCS,       0,                uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
-    {"W" ,                    CONFIG_HLP_L2MONW,      0,                strptr:(char **)&in_ip,             defstrval:"127.0.0.1",         TYPE_STRING, sizeof(in_ip)},  \
-    {"P" ,                    CONFIG_HLP_L2MONP,      0,                strptr:(char **)&in_path,           defstrval:"/tmp/oai_opt.pcap", TYPE_STRING, sizeof(in_path)},\
     {"q" ,                    CONFIG_HLP_STMON,       PARAMFLAG_BOOL,   iptr:&opp_enabled,                  defintval:0,                   TYPE_INT,    0},        \
     {"S" ,                    CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,           defintval:1,                   TYPE_UINT8,  0},        \
     {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL,   iptr:&tddflag,                      defintval:0,                   TYPE_INT,    0},        \
