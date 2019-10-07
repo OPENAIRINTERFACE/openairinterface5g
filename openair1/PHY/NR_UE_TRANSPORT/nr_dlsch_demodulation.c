@@ -2380,9 +2380,13 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned char j=0;
 
-  k = frame_parms->first_carrier_offset + 12*start_rb; 
+  AssertFatal(frame_parms->nushift ==0 || frame_parms->nushift == 1,
+	      "nushift %d is illegal\n",frame_parms->nushift);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+
+    k = frame_parms->first_carrier_offset + 12*start_rb; 
+    if (k>frame_parms->ofdm_symbol_size) k=k-frame_parms->ofdm_symbol_size;
 
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];
@@ -2394,65 +2398,39 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
     rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
     
-    //printf("extract single addr %p pilots %d symbol %d, l %d RB_DL %d nushift %d k %d\n", rxF, pilots, symbol, l, frame_parms->N_RB_DL,frame_parms->nushift,k);
-
-    //if ((frame_parms->N_RB_DL&1) == 0){  // even number of RBs
-
-      for (rb = start_rb; rb < nb_rb_pdsch + start_rb; rb++) {
-
-        // For second half of RBs skip DC carrier
-        if (k>=frame_parms->ofdm_symbol_size) {
-          rxF       = &rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
-          k=k-(frame_parms->ofdm_symbol_size);
-        }
-
-        //*pmi_ext = (pmi>>((rb>>2)<<1))&3;
-        //memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-
-          /*
-            printf("rb %d\n",rb);
-            for (i=0;i<12;i++)
-            printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-            printf("\n");
-          */
-        if (pilots==0) {
-            for (i=0; i<12; i++) {
-              rxF_ext[i]=rxF[i];
-              dl_ch0_ext[i]=dl_ch0[i];
-              /*printf("rb %ld %p: (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
-                ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);
-              printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
-                ((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
-                printf("re count %d\n",rb*12+i);*/
-            }
-
-            dl_ch0_ext+=12;
-            rxF_ext+=12;
-        } else {
-            j=0;
-
-            for (i=0; i<12; i++) {
-              if ((i&1)!=frame_parms->nushift){
-                rxF_ext[j]=rxF[i];
-                     //printf("extract rb %d, re %d => rxF (%d,%d) rxF ext (%d,%d) addr %p\n",rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]),*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]),rxF_ext);
-                dl_ch0_ext[j]=dl_ch0[i];
-					//printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
-                //((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
-                j++;
-              }
-            }
-
-            dl_ch0_ext+=6;
-            rxF_ext+=6;
-        }
-
-        dl_ch0+=12;
-        rxF+=12;
-        k+=12;
+    for (rb = 0; rb < nb_rb_pdsch; rb++) {
+      if (pilots==0) {
+	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
+	memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
+	dl_ch0_ext+=12;
+	rxF_ext+=12;
+      } else {
+	j=0;
+		
+	for (i = (1-frame_parms->nushift);
+	     i<12; 
+	     i+=2) {
+	  rxF_ext[j]=rxF[i];
+	  dl_ch0_ext[j]=dl_ch0[i];
+	  j++;
+	}
+	
+	
+	dl_ch0_ext+=6;
+	rxF_ext+=6;
       }
+      
+      dl_ch0+=12;
+      rxF+=12;
+      k+=12;
+      if (k>=frame_parms->ofdm_symbol_size) {
+        k=k-(frame_parms->ofdm_symbol_size);
+	rxF       = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
+      }
+    }
   }
-
-
+  
+  
   return(nb_rb_pdsch/frame_parms->nb_antennas_rx);
 }
 
