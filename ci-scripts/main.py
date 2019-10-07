@@ -541,36 +541,38 @@ class SSHConnection():
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
-		self.command('ls *.txt', '\$', 5)
-		result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
-		if result is not None:
-			mismatch = False
-			self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
-			result = re.search(self.ranCommitID, str(self.ssh.before))
-			if result is None:
-				mismatch = True
-			self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
-			if (self.ranAllowMerge):
-				result = re.search('YES', str(self.ssh.before))
+		if self.clean_repository:
+			self.command('ls *.txt', '\$', 5)
+			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			if result is not None:
+				mismatch = False
+				self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				result = re.search(self.ranCommitID, str(self.ssh.before))
 				if result is None:
 					mismatch = True
-				self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
-				if self.ranTargetBranch == '':
-					result = re.search('develop', str(self.ssh.before))
+				self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				if (self.ranAllowMerge):
+					result = re.search('YES', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+					self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					if self.ranTargetBranch == '':
+						result = re.search('develop', str(self.ssh.before))
+					else:
+						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					if result is None:
+						mismatch = True
 				else:
-					result = re.search(self.ranTargetBranch, str(self.ssh.before))
-				if result is None:
-					mismatch = True
-			else:
-				result = re.search('NO', str(self.ssh.before))
-				if result is None:
-					mismatch = True
-			if not mismatch:
-				self.close()
-				self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
-				return
+					result = re.search('NO', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				if not mismatch:
+					self.close()
+					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					return
 
-		self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+			self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
 			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
