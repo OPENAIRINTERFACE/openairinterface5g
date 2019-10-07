@@ -388,10 +388,10 @@ static void dump_ul(UL_IND_t *u) {
 
   A("XXXX     crc_ind  %d\n", u->crc_ind.crc_indication_body.number_of_crcs);
   A("XXXX     sr_ind   %d\n", u->sr_ind.sr_indication_body.number_of_srs);
-  A("XXXX     cqi_ind  %d\n", u->cqi_ind.number_of_cqis);
+  A("XXXX     cqi_ind  %d\n", u->cqi_ind.cqi_indication_body.number_of_cqis);
 
-  for (i = 0; i < u->cqi_ind.number_of_cqis; i++) {
-    nfapi_cqi_indication_pdu_t *v = &u->cqi_ind.cqi_pdu_list[i];
+  for (i = 0; i < u->cqi_ind.cqi_indication_body.number_of_cqis; i++) {
+    nfapi_cqi_indication_pdu_t *v = &u->cqi_ind.cqi_indication_body.cqi_pdu_list[i];
     A("XXXX         cqi ind %d\n", i);
     A("XXXX cqi         ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
       v->ul_cqi_information.channel);

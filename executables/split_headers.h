@@ -174,6 +174,8 @@ typedef struct {
   uint8_t segment;
   int segLen;
   int ulsch_power[2];
+  uint8_t o_ACK[4];
+  uint8_t O_ACK;
   int ta;
   uint8_t o[MAX_CQI_BYTES];
   uint8_t cqi_crc_status;

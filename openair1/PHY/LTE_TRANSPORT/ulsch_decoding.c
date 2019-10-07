@@ -672,7 +672,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 	      printf("\n");
       }
 */
-      return 0;
+      continue;
     }
 
     #endif

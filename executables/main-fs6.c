@@ -19,7 +19,7 @@
 #include <openair1/PHY/CODING/coding_extern.h>
 #include <emmintrin.h>
 
-#define FS6_BUF_SIZE 100*1000
+#define FS6_BUF_SIZE 1000*1000
 static UDPsock_t sockFS6;
 
 int sum(uint8_t *b, int s) {
@@ -296,6 +296,9 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
          eNB->pusch_vars[UE_id]->ulsch_power,
          sizeof(int)*2);
   hULUE(newUDPheader)->cqi_crc_status=eNB->ulsch[UE_id]->harq_processes[harq_pid]->cqi_crc_status;
+  hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
+  memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
+	 sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
   hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
@@ -379,7 +382,7 @@ void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
 }
 
 void phy_procedures_eNB_uespec_RX_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
-  //RX processing for ue-specific resources (i
+  //RX processing for ue-specific resources
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int       subframe = proc->subframe_rx;
   const int       frame = proc->frame_rx;
@@ -785,10 +788,13 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
                hULUE(bufPtr)->ulsch_power,
                sizeof(int)*2);
         ulsch_harq->cqi_crc_status=hULUE(bufPtr)->cqi_crc_status;
+	//ulsch_harq->O_ACK= hULUE(bufPtr)->O_ACK;
+	memcpy(ulsch_harq->o_ACK, hULUE(bufPtr)->o_ACK,
+	       sizeof(ulsch_harq->o_ACK));
         memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
         ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
-        LOG_I(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d, cqi_crc_status %d \n",
-              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status);
+        LOG_D(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
+              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment , hULUE(bufPtr)->segLen);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
@@ -938,8 +944,8 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
           cpyVal(delta_TF);
           cpyVal(repetition_number );
           cpyVal(total_number_of_repetitions);
-          LOG_I(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n",
-                ulsch->rnti, frame, subframe);
+          LOG_D(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d, O_ACK: %d\n",
+                ulsch->rnti, frame, subframe, ulsch_harq->O_ACK);
         }
       } else if ( type == fs6ULConfigCCH ) {
         fs6_dl_uespec_ulcch_element_t *tmp=(fs6_dl_uespec_ulcch_element_t *)(hTxULcch(bufPtr)+1);
