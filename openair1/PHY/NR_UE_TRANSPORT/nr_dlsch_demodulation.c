@@ -2386,7 +2386,6 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     k = frame_parms->first_carrier_offset + 12*start_rb; 
-    if (k>frame_parms->ofdm_symbol_size) k=k-frame_parms->ofdm_symbol_size;
 
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];
@@ -2399,6 +2398,10 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
     
     for (rb = 0; rb < nb_rb_pdsch; rb++) {
+      if (k>frame_parms->ofdm_symbol_size) {
+        k = k-frame_parms->ofdm_symbol_size;
+        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
+        }
       if (pilots==0) {
 	memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
 	memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
