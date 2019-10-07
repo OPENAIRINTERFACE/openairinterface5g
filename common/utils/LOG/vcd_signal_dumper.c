@@ -622,6 +622,10 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
+#if defined(ENABLE_ITTI)
+int signal_mask(void);
+#endif
+
 void *vcd_dumper_thread_rt(void *args)
 {
   vcd_queue_user_data_t *data;
