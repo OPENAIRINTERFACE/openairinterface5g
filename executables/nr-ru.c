@@ -731,8 +731,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
-  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
   int sf_extension = 0;
+  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
     int siglen=fp->samples_per_slot,flags=1;
     /*

@@ -31,11 +31,12 @@
 */
 
 #include "sched_nr.h"
+#include "PHY/INIT/phy_init.h"
 
 nr_subframe_t nr_slot_select(nfapi_nr_config_request_t *cfg,
 		                     unsigned char slot)
 {
-  if (cfg->subframe_config.duplex_mode.value == FDD || slot == NR_DOWNLINK_SLOT)
+  if (cfg->subframe_config.duplex_mode.value == FDD || slot == NR_DOWNLINK_SLOT || nr_is_ssb_slot(cfg, slot) == 1)
     return(SF_DL);
   else if (slot == NR_UPLINK_SLOT)
     return (SF_UL);
