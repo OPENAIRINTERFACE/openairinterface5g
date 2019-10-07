@@ -4990,7 +4990,12 @@ cqi_indication(module_id_t mod_idP,
           UE_id,
           ul_cqi_information->channel,
           ul_cqi_information->ul_cqi);
-
+/*
+    int sum=0;
+    for (int i=0; i <rel9->length; i++)
+	    sum+=pdu[i];
+    LOG_D(MAC, "pdu for channel: %d, checksum: %d\n", ul_cqi_information->channel, sum); 
+*/
     if (ul_cqi_information->channel == 0) { // PUCCH
       // extract pucch csi information before changing RI information
       extract_pucch_csi(mod_idP,

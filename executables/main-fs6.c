@@ -214,7 +214,8 @@ void prach_eNB_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   }
 }
 
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
+                   uint16_t rnti,
                    int32_t stat) {
   static int current_fsf=-1;
   int fsf=frame*16+subframe;
@@ -254,6 +255,11 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, in
   tmp->frame=frame;
   tmp->subframe=subframe;
 
+  if (uci != NULL)
+    memcpy(&tmp->uci, uci, sizeof(*uci));
+  else
+    tmp->uci.ue_id=0xFFFF;
+
   if (harq_ack != NULL)
     memcpy(tmp->harq_ack, harq_ack, 4);
 
@@ -289,7 +295,11 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   memcpy(hULUE(newUDPheader)->ulsch_power,
          eNB->pusch_vars[UE_id]->ulsch_power,
          sizeof(int)*2);
+  hULUE(newUDPheader)->cqi_crc_status=eNB->ulsch[UE_id]->harq_processes[harq_pid]->cqi_crc_status;
+  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
   hULUE(newUDPheader)->segment=segmentID;
+  memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
+         sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));
   memcpy(hULUE(newUDPheader)+1, data, dataLen);
   hULUE(newUDPheader)->segLen=dataLen;
 }
@@ -433,7 +443,7 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
     tc = *decoder8;
 
   // This is a new packet, so compute quantities regarding segmentation
-  //Fixme: very dirty: all the variables produced by let_segmentation are only used localy
+  // Fixme: very dirty: all the variables produced by let_segmentation are only used localy
   // Furthermore, variables as 1 letter and global is "time consuming" for everybody !!!
   ulsch_harq->B = ulsch_harq->TBS+24;
   lte_segmentation(NULL,
@@ -511,14 +521,98 @@ int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
   return(ret);
 }
 
-void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
+void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe, ul_propagation_t *ul_propa) {
+  nfapi_rx_indication_pdu_t *pdu;
+  int             timing_advance_update;
+  uint32_t        harq_pid;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
+  if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
+  else
+#endif
+  {
+    harq_pid = subframe2harq_pid (&eNB->frame_parms,
+                                  frame, subframe);
+  }
+
+  pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  eNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| subframe;
+  eNB->UL_INFO.rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
+  pdu                                    = &eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
+  //  pdu->rx_ue_information.handle          = eNB->ulsch[UE_id]->handle;
+  pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
+  pdu->rx_ue_information.rnti            = eNB->ulsch[UE_id]->rnti;
+  pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
+  pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
+  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
+  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
+  // estimate timing advance for MAC
+  timing_advance_update                  = ul_propa[UE_id].ta;
+
+  //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
+  //  if (timing_advance_update < -10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
+  switch (eNB->frame_parms.N_RB_DL) {
+    case 6:                      /* nothing to do */
+      break;
+
+    case 15:
+      timing_advance_update /= 2;
+      break;
+
+    case 25:
+      timing_advance_update /= 4;
+      break;
+
+    case 50:
+      timing_advance_update /= 8;
+      break;
+
+    case 75:
+      timing_advance_update /= 12;
+      break;
+
+    case 100:
+      timing_advance_update /= 16;
+      break;
+
+    default:
+      abort ();
+  }
+
+  // put timing advance command in 0..63 range
+  timing_advance_update += 31;
+
+  if (timing_advance_update < 0)
+    timing_advance_update = 0;
+
+  if (timing_advance_update > 63)
+    timing_advance_update = 63;
+
+  pdu->rx_indication_rel8.timing_advance = timing_advance_update;
+  // estimate UL_CQI for MAC (from antenna port 0 only)
+  int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 10 * eNB->measurements.n0_subband_power_dB[0][0];
+
+  if (SNRtimes10 < -640)
+    pdu->rx_indication_rel8.ul_cqi = 0;
+  else if (SNRtimes10 > 635)
+    pdu->rx_indication_rel8.ul_cqi = 255;
+  else
+    pdu->rx_indication_rel8.ul_cqi = (640 + SNRtimes10) / 5;
+
+  LOG_D(PHY,"[PUSCH %d] Frame %d Subframe %d Filling RX_indication with SNR %d (%d), timing_advance %d (update %d)\n",
+        harq_pid,frame,subframe,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
+        timing_advance_update);
+  eNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
+  eNB->UL_INFO.rx_ind.sfn_sf = frame<<4 | subframe;
+  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+}
+
+void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, ul_propagation_t *ul_propa) {
   //LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   const int subframe = eNB->proc.subframe_rx;
   const int frame    = eNB->proc.frame_rx;
   uint32_t harq_pid;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
-
-  // TBD: read UL data
 
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
@@ -598,7 +692,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
         T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
           T_INT(harq_pid));
         fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
-        fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
+        fill_rx_indication_from_split(bufferZone, eNB,i,frame,subframe, ul_propa);  // indicate SDU to MAC
         LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
               eNB->Mod_id,harq_pid,
               frame,subframe, i,
@@ -631,7 +725,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
       }                         // ulsch in error
       else {
         fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
-        fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
+        fill_rx_indication_from_split(bufferZone, eNB,i,frame,subframe, ul_propa);  // indicate SDU to MAC
         ulsch_harq->status = SCH_IDLE;
         ulsch->harq_mask &= ~(1 << harq_pid);
         T (T_ENB_PHY_ULSCH_UE_ACK, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (ulsch->rnti), T_INT (harq_pid));
@@ -674,7 +768,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++)
 }
 
-void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
+void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagation_t *ul_propa) {
   void *bufPtr=bufferZone;
 
   for (int i=0; i < nbBlocks; i++) { //nbBlocks is the actual received blocks
@@ -690,8 +784,11 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
         memcpy(eNB->pusch_vars[hULUE(bufPtr)->UE_id]->ulsch_power,
                hULUE(bufPtr)->ulsch_power,
                sizeof(int)*2);
-        LOG_I(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d\n",
-              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx);
+        ulsch_harq->cqi_crc_status=hULUE(bufPtr)->cqi_crc_status;
+        memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
+        ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
+        LOG_I(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d, cqi_crc_status %d \n",
+              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
@@ -700,6 +797,9 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
           LOG_D(PHY,"FS6 cu, block: %d/%d: received ul harq/sr: %d, rnti: %d, ueid: %d\n",
                 i, j, type, tmp->rnti, tmp->UEid);
           eNB->measurements.n0_subband_power_dB[0][0]=tmp->n0_subband_power_dB;
+
+          if (tmp->uci.ue_id != 0xFFFF)
+            memcpy(&eNB->uci_vars[tmp->UEid],&tmp->uci, sizeof(tmp->uci));
 
           if ( tmp->type == fs6ULindicationHarq )
             fill_uci_harq_indication (tmp->UEid, eNB, &eNB->uci_vars[tmp->UEid],
@@ -722,7 +822,8 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB) {
 
 void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB) {
   // The configuration arrived in Dl, so we can extract the UL data
-  recvFs6Ul(bufferZone, nbBlocks, eNB);
+  ul_propagation_t ul_propa[NUMBER_OF_UE_MAX];
+  recvFs6Ul(bufferZone, nbBlocks, eNB, ul_propa);
 
   // dirty memory allocation in OAI...
   for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
@@ -730,7 +831,7 @@ void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PH
          eNB->uci_vars[i].subframe == eNB->proc.subframe_rx )
       eNB->uci_vars[i].active=0;
 
-  pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB);
+  pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB, ul_propa);
 }
 
 void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, int subframe) {
@@ -772,6 +873,7 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
               hDLUE(bufPtr)->dataLen, hDLUE(bufPtr)->harq_pid, frame, subframe, sum(dlsch_harq->e, hDLUE(bufPtr)->dataLen));
       } else if (type == fs6UlConfig) {
         int nbUE=(((commonUDP_t *)bufPtr)->contentBytes - sizeof(fs6_dl_t)) / sizeof( fs6_dl_ulsched_t ) ;
+#define cpyVal(a) memcpy(&ulsch_harq->a,&hTxULUE(bufPtr)->a, sizeof(ulsch_harq->a))
 
         for ( int i=0; i < nbUE; i++ ) {
           int curUE=hTxULUE(bufPtr)->UE_id;
@@ -806,6 +908,36 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
           ulsch_harq->srs_active=hTxULUE(bufPtr)->srs_active;
           ulsch_harq->TBS=hTxULUE(bufPtr)->TBS;
           ulsch_harq->Nsymb_pusch=hTxULUE(bufPtr)->Nsymb_pusch;
+          cpyVal(dci_alloc);
+          cpyVal(rar_alloc);
+          cpyVal(status);
+          cpyVal(Msg3_flag);
+          cpyVal(phich_active);
+          cpyVal(phich_ACK);
+          cpyVal(previous_first_rb);
+          cpyVal(B);
+          cpyVal(G);
+          //cpyVal(o);
+          cpyVal(uci_format);
+          cpyVal(Or2);
+          cpyVal(o_RI);
+          cpyVal(o_ACK);
+          cpyVal(O_ACK);
+          //cpyVal(q);
+          cpyVal(o_RCC);
+          cpyVal(q_ACK);
+          cpyVal(q_RI);
+          cpyVal(RTC);
+          cpyVal(ndi);
+          cpyVal(round);
+          cpyVal(rvidx);
+          cpyVal(Nl);
+          cpyVal(n_DMRS);
+          cpyVal(previous_n_DMRS);
+          cpyVal(n_DMRS2);
+          cpyVal(delta_TF);
+          cpyVal(repetition_number );
+          cpyVal(total_number_of_repetitions);
           LOG_I(PHY,"Received request to perform ulsch for: rnti:%d, fsf: %d/%d\n",
                 ulsch->rnti, frame, subframe);
         }
@@ -930,6 +1062,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
 
 #define cpyToDu(a) hTxULUE(newUDPheader)->a=ulsch->a
 #define cpyToDuHarq(a) hTxULUE(newUDPheader)->a=ulsch_harq->a
+#define memcpyToDuHarq(a) memcpy(&hTxULUE(newUDPheader)->a,&ulsch_harq->a, sizeof(ulsch_harq->a));
 
 void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE_eNB_ULSCH_t *ulsch, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
@@ -986,6 +1119,36 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   cpyToDuHarq(srs_active);
   cpyToDuHarq(TBS);
   cpyToDuHarq(Nsymb_pusch);
+  memcpyToDuHarq(dci_alloc);
+  memcpyToDuHarq(rar_alloc);
+  memcpyToDuHarq(status);
+  memcpyToDuHarq(Msg3_flag);
+  memcpyToDuHarq(phich_active);
+  memcpyToDuHarq(phich_ACK);
+  memcpyToDuHarq(previous_first_rb);
+  memcpyToDuHarq(B);
+  memcpyToDuHarq(G);
+  //memcpyToDuHarq(o);
+  memcpyToDuHarq(uci_format);
+  memcpyToDuHarq(Or2);
+  memcpyToDuHarq(o_RI);
+  memcpyToDuHarq(o_ACK);
+  memcpyToDuHarq(O_ACK);
+  //memcpyToDuHarq(q);
+  memcpyToDuHarq(o_RCC);
+  memcpyToDuHarq(q_ACK);
+  memcpyToDuHarq(q_RI);
+  memcpyToDuHarq(RTC);
+  memcpyToDuHarq(ndi);
+  memcpyToDuHarq(round);
+  memcpyToDuHarq(rvidx);
+  memcpyToDuHarq(Nl);
+  memcpyToDuHarq(n_DMRS);
+  memcpyToDuHarq(previous_n_DMRS);
+  memcpyToDuHarq(n_DMRS2);
+  memcpyToDuHarq(delta_TF);
+  memcpyToDuHarq(repetition_number );
+  memcpyToDuHarq(total_number_of_repetitions);
   LOG_W(PHY,"Added request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
 }
 void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {

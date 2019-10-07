@@ -76,6 +76,39 @@ typedef struct {
   uint16_t UE_id;
   int8_t harq_pid;
   UE_type_t ue_type;
+
+  uint8_t dci_alloc;
+  uint8_t rar_alloc;
+  SCH_status_t status;
+  uint8_t Msg3_flag;
+  uint8_t subframe;
+  uint32_t frame;
+  uint8_t handled;
+  uint8_t phich_active;
+  uint8_t phich_ACK;
+  uint16_t previous_first_rb;
+  uint32_t B;
+  uint32_t G;
+  UCI_format_t uci_format;
+  uint8_t Or2;
+  uint8_t o_RI[2];
+  uint8_t o_ACK[4];
+  uint8_t O_ACK;
+  uint8_t o_RCC;
+  int16_t q_ACK[MAX_ACK_PAYLOAD];
+  int16_t q_RI[MAX_RI_PAYLOAD];
+  uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
+  uint8_t ndi;
+  uint8_t round;
+  uint8_t rvidx;
+  uint8_t Nl;
+  uint8_t n_DMRS;
+  uint8_t previous_n_DMRS;
+  uint8_t n_DMRS2;
+  int32_t delta_TF;
+  uint32_t repetition_number ;
+  uint32_t total_number_of_repetitions;
+
   uint16_t harq_mask;
   uint16_t nb_rb;
   uint8_t Qm;
@@ -131,12 +164,19 @@ typedef struct {
 } fs6_dl_uespec_ulcch_t;
 
 typedef struct {
+  int ta;
+}  ul_propagation_t;
+
+typedef struct {
   enum pckType type:8;
   short UE_id;
   uint8_t harq_id;
   uint8_t segment;
   int segLen;
   int ulsch_power[2];
+  int ta;
+  uint8_t o[MAX_CQI_BYTES];
+  uint8_t cqi_crc_status;
 } fs6_ul_uespec_t;
 
 typedef struct {
@@ -144,6 +184,7 @@ typedef struct {
   int UEid;
   int frame;
   int subframe;
+  LTE_eNB_UCI uci;
   uint8_t harq_ack[4];
   uint8_t tdd_mapping_mode;
   uint16_t tdd_multiplexing_mask;
@@ -185,7 +226,8 @@ static inline void *commonUDPdata(uint8_t *ptr) {
 }
 
 void setAllfromTS(uint64_t TS);
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,  uint16_t rnti,  int32_t stat);
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
+                   uint16_t rnti,  int32_t stat);
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen);
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);

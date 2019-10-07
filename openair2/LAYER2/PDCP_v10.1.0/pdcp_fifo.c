@@ -127,14 +127,16 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     } else if (UE_NAS_USE_TUN) {
       ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
     } else if (ENB_NAS_USE_TUN) {
-      ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+      if ((ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite )) != sizeToWrite) {
+	      printf("ret: %d\n",ret);
+      }
     } else if (PDCP_USE_NETLINK) {
       memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
 
-    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+    if(ret < 0) LOG_E(PDCP,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (ret (instead of: %d) : %d, errno: %d %s)\n", ret, sizeToWrite, errno, strerror(errno));
     list_remove_head (&pdcp_sdu_list);
     free_mem_block (sdu_p, __func__);
     pdcp_nb_sdu_sent ++;

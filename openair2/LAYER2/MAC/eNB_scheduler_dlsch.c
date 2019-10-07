@@ -1506,7 +1506,7 @@ schedule_ue_spec(module_id_t module_idP,
                 tpc = 1;  //0
               }
 
-              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d\n",
+              LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d (normal case)\n",
                     module_idP,
                     frameP,
                     subframeP,

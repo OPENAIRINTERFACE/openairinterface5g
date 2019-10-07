@@ -593,7 +593,7 @@ void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,uint32_t stat) {
   #ifdef FS6
   if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
-    sendFs6Ulharq(fs6ULindicationSr, UEid, eNB, frame, subframe, NULL,0,0, rnti, stat);
+    sendFs6Ulharq(fs6ULindicationSr, UEid, eNB, NULL, frame, subframe, NULL,0,0, rnti, stat);
     return;
   }
   #endif
@@ -609,6 +609,7 @@ void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int 
   pdu->rx_ue_information.tl.tag                       = NFAPI_RX_UE_INFORMATION_TAG;
   pdu->rx_ue_information.rnti                         = rnti;
   int SNRtimes10 = dB_fixed_times10(stat) - 10 * eNB->measurements.n0_subband_power_dB[0][0];
+  LOG_D(PHY,"stat %d subbandpower %d, SNRtimes10 %d\n", stat, eNB->measurements.n0_subband_power_dB[0][0], SNRtimes10);
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
@@ -1769,7 +1770,7 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
 void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
   #ifdef FS6
   if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
-    sendFs6Ulharq(fs6ULindicationHarq, UEid, eNB, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask, 0, 0);
+    sendFs6Ulharq(fs6ULindicationHarq, UEid, eNB, uci, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask, 0, 0);
     return;
   }
   #endif
