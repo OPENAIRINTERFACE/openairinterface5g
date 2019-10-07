@@ -849,10 +849,7 @@ static void *ru_thread_prach( void *param ) {
 
     /*if (ru->gNB_list[0]){
       prach_procedures(
-        ru->gNB_list[0]
-    #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-        ,0
-    #endif
+        ru->gNB_list[0],0
         );
     }
     else {
@@ -862,10 +859,7 @@ static void *ru_thread_prach( void *param ) {
                 NULL,
                 NULL,
                 proc->frame_prach,
-                0
-    #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-          ,0
-    #endif
+                0,0
           );
     }
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 ); */

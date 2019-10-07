@@ -1141,6 +1141,7 @@ extern "C" {
       }
 
       s->usrp = uhd::usrp::multi_usrp::make(args);
+      device->priv = s;
 
       if (args.find("clock_source")==std::string::npos) {
 	LOG_I(HW, "Using clock_source == '%d'\n", openair0_cfg[0].clock_source);
@@ -1166,7 +1167,7 @@ extern "C" {
 
       if (s->usrp->get_clock_source(0) == "gpsdo") {
 	s->use_gps = 1;
-        if (sync_to_gps(device)) {
+        if (sync_to_gps(device)==EXIT_SUCCESS) {
           LOG_I(HW,"USRP synced with GPS!\n");
 	}
 	else {

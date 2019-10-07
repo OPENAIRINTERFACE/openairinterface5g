@@ -44,7 +44,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build gNB-USRP", "Build nr-UE-USRP", "Build eNB-USRP", "Build basic-sim", "Build phy-sim", "Build eNB-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13", "Test-Mono-FDD-Band13-X2-HO"])
+        gitlabBuilds(builds: ["Build gNB-USRP", "Build nr-UE-USRP", "Build eNB-USRP", "Build basic-sim", "Build phy-sim", "Build eNB-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13", "Test-Mono-FDD-Band13-X2-HO", "Test-TDD-Band78-gNB-NR-UE"])
         ansiColor('xterm')
     }
 
@@ -609,6 +609,25 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
+                    steps {
+                        script {
+                            triggerSlaveJob ('gNB-nrUE-MONO-TDD-Band78-N300', 'Test-TDD-Band78-gNB-NR-UE')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('gNB-nrUE-MONO-TDD-Band78-N300')
                             }
                         }
                         failure {

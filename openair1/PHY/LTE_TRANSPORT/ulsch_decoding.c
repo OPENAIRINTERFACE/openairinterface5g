@@ -357,7 +357,6 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
 void *td_thread(void *param) {
   PHY_VARS_eNB *eNB = ((td_params *)param)->eNB;
   L1_proc_t *proc  = &eNB->proc;
-
   pthread_setname_np( pthread_self(),"td processing");
   LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
   //wait_sync("td_thread");
@@ -763,18 +762,14 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LOG_D(PHY,"ue_type %d\n",ulsch->ue_type);
+
   if (ulsch->ue_type>0)     harq_pid = 0;
-  else
-#endif
-    {
-      harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
-    }
+  else {
+    harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
-
   // x1 is set in lte_gold_generic
   x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   ulsch_harq = ulsch->harq_processes[harq_pid];

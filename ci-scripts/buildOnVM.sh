@@ -103,6 +103,7 @@ function build_on_vm {
     echo "############################################################"
     echo "[ -f 01proxy ] && sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
     echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
+    echo "git config --global https.postBuffer 123289600" >> $VM_CMDS
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         if [ $DAEMON -eq 0 ]

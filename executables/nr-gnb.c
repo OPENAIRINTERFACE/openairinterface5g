@@ -664,11 +664,7 @@ static void* gNB_thread_prach( void* param ) {
    if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
 
    LOG_D(PHY,"Running gNB prach procedures\n");
-   prach_procedures(gNB
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      ,0
-#endif
-      );
+   prach_procedures(gNB ,0);
 
    if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
  }
