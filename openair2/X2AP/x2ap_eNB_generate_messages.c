@@ -1314,7 +1314,7 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
             ASN_SEQUENCE_ADD(&servedCellMember->servedNRCellInfo.broadcastPLMNs.list, plmn);
           }
 
-  	if (instance_p->frame_type[i] == FDD) { // Panos: Remember to change that to TDD
+  	if (instance_p->frame_type[i] == TDD) {
             X2AP_FreqBandNrItem_t *freq_band;
             servedCellMember->servedNRCellInfo.nrModeInfo.present = X2AP_ServedNRCell_Information__nrModeInfo_PR_tdd;
             servedCellMember->servedNRCellInfo.nrModeInfo.choice.tdd.nRFreqInfo.nRARFCN = 0; //instance_p->tdd_nRARFCN[i];

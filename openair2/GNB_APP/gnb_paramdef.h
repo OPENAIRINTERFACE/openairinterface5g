@@ -997,6 +997,10 @@ typedef enum {
 #define GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_S1U         "GNB_IPV4_ADDRESS_FOR_S1U"
 #define GNB_CONFIG_STRING_GNB_PORT_FOR_S1U              "GNB_PORT_FOR_S1U"
 
+/* X2 interface configuration parameters names */
+#define GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C	        "GNB_IPV4_ADDRESS_FOR_X2C"
+#define GNB_CONFIG_STRING_ENB_PORT_FOR_X2C				"GNB_PORT_FOR_X2C"
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            S1 interface configuration parameters                                                                 */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
@@ -1006,7 +1010,9 @@ typedef enum {
 {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
+{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0}      \
 }   
 
 

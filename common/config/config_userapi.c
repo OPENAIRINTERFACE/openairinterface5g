@@ -213,7 +213,6 @@ int config_get(paramdef_t *params, int numparams, char *prefix) {
   }
 
   configmodule_interface_t *cfgif = config_get_if();
-
   if (cfgif != NULL) {
     ret = config_get_if()->get(params, numparams, prefix);
 
