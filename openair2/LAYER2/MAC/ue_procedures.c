@@ -400,11 +400,9 @@ ue_send_sdu(module_id_t module_idP,
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
-
   //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
-
-    trace_pdu(DIRECTION_DOWNLINK, sdu, sdu_len, module_idP, WS_C_RNTI,
-              UE_mac_inst[module_idP].crnti, frameP, subframeP, 0, 0);
+  trace_pdu(DIRECTION_DOWNLINK, sdu, sdu_len, module_idP, WS_C_RNTI,
+            UE_mac_inst[module_idP].crnti, frameP, subframeP, 0, 0);
   payload_ptr =
     parse_header(sdu, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths,
                  sdu_len);
@@ -591,34 +589,31 @@ ue_send_sdu(module_id_t module_idP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void
 ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frameP,
-            uint8_t eNB_index, void *pdu, uint16_t len)
-{
+                  uint8_t eNB_index, void *pdu, uint16_t len) {
 #if UE_TIMING_TRACE
-    start_meas(&UE_mac_inst[module_idP].rx_si);
+  start_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
-
-    LOG_D(MAC, "[UE %d] Frame %d Sending SI MBMS to RRC (LCID Id %d,len %d)\n",
-         module_idP, frameP, BCCH, len);
-
-    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,  // unknown subframe
-                    SI_RNTI,
-                    BCCH_SI_MBMS, (uint8_t *) pdu, len, eNB_index,
-                    0);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+  (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
+  LOG_D(MAC, "[UE %d] Frame %d Sending SI MBMS to RRC (LCID Id %d,len %d)\n",
+        module_idP, frameP, BCCH, len);
+  mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,  // unknown subframe
+                      SI_RNTI,
+                      BCCH_SI_MBMS, (uint8_t *) pdu, len, eNB_index,
+                      0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+  (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
-    stop_meas(&UE_mac_inst[module_idP].rx_si);
+  stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
-       trace_pdu(DIRECTION_UPLINK,
-                 (uint8_t *) pdu,
-                 len,
-                 module_idP,
-                 WS_SI_RNTI,
-                 0xffff,
-                 UE_mac_inst[module_idP].rxFrame,
-                 UE_mac_inst[module_idP].rxSubframe, 0, 0);
+  trace_pdu(DIRECTION_UPLINK,
+            (uint8_t *) pdu,
+            len,
+            module_idP,
+            WS_SI_RNTI,
+            0xffff,
+            UE_mac_inst[module_idP].rxFrame,
+            UE_mac_inst[module_idP].rxSubframe, 0, 0);
 }
 #endif
 
@@ -641,15 +636,14 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
-
-    trace_pdu(DIRECTION_UPLINK,
-              (uint8_t *) pdu,
-              len,
-              module_idP,
-              WS_SI_RNTI,
-              0xffff,
-              UE_mac_inst[module_idP].rxFrame,
-              UE_mac_inst[module_idP].rxSubframe, 0, 0);
+  trace_pdu(DIRECTION_UPLINK,
+            (uint8_t *) pdu,
+            len,
+            module_idP,
+            WS_SI_RNTI,
+            0xffff,
+            UE_mac_inst[module_idP].rxFrame,
+            UE_mac_inst[module_idP].rxSubframe, 0, 0);
 }
 
 void
@@ -672,15 +666,14 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].rx_p);
 #endif
-
-    trace_pdu(DIRECTION_UPLINK,
-              (uint8_t *) pdu,
-              len,
-              module_idP,
-              WS_SI_RNTI,
-              P_RNTI,
-              UE_mac_inst[module_idP].rxFrame,
-              UE_mac_inst[module_idP].rxSubframe, 0, 0);
+  trace_pdu(DIRECTION_UPLINK,
+            (uint8_t *) pdu,
+            len,
+            module_idP,
+            WS_SI_RNTI,
+            P_RNTI,
+            UE_mac_inst[module_idP].rxFrame,
+            UE_mac_inst[module_idP].rxSubframe, 0, 0);
 }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -2440,11 +2433,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
 #endif
-
-    trace_pdu(DIRECTION_UPLINK, ulsch_buffer, buflen, module_idP, WS_C_RNTI,
-              UE_mac_inst[module_idP].crnti,
-              UE_mac_inst[module_idP].txFrame,
-              UE_mac_inst[module_idP].txSubframe, 0, 0);
+  trace_pdu(DIRECTION_UPLINK, ulsch_buffer, buflen, module_idP, WS_C_RNTI,
+            UE_mac_inst[module_idP].crnti,
+            UE_mac_inst[module_idP].txFrame,
+            UE_mac_inst[module_idP].txSubframe, 0, 0);
 }
 
 

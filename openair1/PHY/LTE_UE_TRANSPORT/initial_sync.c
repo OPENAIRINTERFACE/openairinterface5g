@@ -50,7 +50,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   char phich_resource[6];
-
   LOG_D(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
         ue->rx_offset);
 
@@ -95,7 +94,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
                         0);
   }
 
-
   LOG_D(PHY,"[UE %d] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
         ue->Mod_id,
         ue->measurements.rx_rssi_dBm[0] - ((ue->frame_parms.nb_antennas_rx==2) ? 3 : 0),
@@ -106,7 +104,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
         ue->measurements.rx_power_avg_dB[0],
         ue->measurements.rx_power_avg[0],
         ue->rx_total_gain_dB);
-
   LOG_D(PHY,"[UE %d] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
         ue->Mod_id,
         ue->measurements.n0_power_tot_dBm,
@@ -116,57 +113,60 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
         ue->measurements.n0_power[1],
         ue->measurements.n0_power_avg_dB,
         ue->measurements.n0_power_avg);
-
   pbch_decoded = 0;
 
   for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    if (ue->FeMBMS_active != 2){	
+
+    if (ue->FeMBMS_active != 2) {
 #endif
-    	pbch_tx_ant = rx_pbch(&ue->common_vars,
-                          ue->pbch_vars[0],
-                          frame_parms,
-                          0,
-                          SISO,
-                          ue->high_speed_flag,
-                          frame_mod4);
+      pbch_tx_ant = rx_pbch(&ue->common_vars,
+                            ue->pbch_vars[0],
+                            frame_parms,
+                            0,
+                            SISO,
+                            ue->high_speed_flag,
+                            frame_mod4);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-	}else{
-    	pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
-                          ue->pbch_vars[0],
-                          frame_parms,
-                          0,
-                          SISO,
-                          ue->high_speed_flag,
-                          frame_mod4);
-	}
+    } else {
+      pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
+                                   ue->pbch_vars[0],
+                                   frame_parms,
+                                   0,
+                                   SISO,
+                                   ue->high_speed_flag,
+                                   frame_mod4);
+    }
+
 #endif
 
-    	if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
-      		pbch_decoded = 1;
-      	break;
+    if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
+      pbch_decoded = 1;
+      break;
     }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    if (ue->FeMBMS_active != 2){
+
+    if (ue->FeMBMS_active != 2) {
 #endif
-    	pbch_tx_ant = rx_pbch(&ue->common_vars,
-                          ue->pbch_vars[0],
-                          frame_parms,
-                          0,
-                          ALAMOUTI,
-                          ue->high_speed_flag,
-                          frame_mod4);
+      pbch_tx_ant = rx_pbch(&ue->common_vars,
+                            ue->pbch_vars[0],
+                            frame_parms,
+                            0,
+                            ALAMOUTI,
+                            ue->high_speed_flag,
+                            frame_mod4);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    }else{
-	    pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
-                          ue->pbch_vars[0],
-                          frame_parms,
-                          0,
-                          ALAMOUTI,
-                          ue->high_speed_flag,
-                          frame_mod4);
+    } else {
+      pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
+                                   ue->pbch_vars[0],
+                                   frame_parms,
+                                   0,
+                                   ALAMOUTI,
+                                   ue->high_speed_flag,
+                                   frame_mod4);
     }
+
 #endif
 
     if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
@@ -218,73 +218,72 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
     }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  if(ue->FeMBMS_active != 2) {
+
+    if(ue->FeMBMS_active != 2) {
 #endif
-    // now check for PHICH parameters
-    frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((ue->pbch_vars[0]->decoded_output[2]>>4)&1);
-    dummy = (ue->pbch_vars[0]->decoded_output[2]>>2)&3;
+      // now check for PHICH parameters
+      frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((ue->pbch_vars[0]->decoded_output[2]>>4)&1);
+      dummy = (ue->pbch_vars[0]->decoded_output[2]>>2)&3;
 
-    switch (dummy) {
-      case 0:
-        frame_parms->phich_config_common.phich_resource = oneSixth;
-        sprintf(phich_resource,"1/6");
-        break;
+      switch (dummy) {
+        case 0:
+          frame_parms->phich_config_common.phich_resource = oneSixth;
+          sprintf(phich_resource,"1/6");
+          break;
 
-      case 1:
-        frame_parms->phich_config_common.phich_resource = half;
-        sprintf(phich_resource,"1/2");
-        break;
+        case 1:
+          frame_parms->phich_config_common.phich_resource = half;
+          sprintf(phich_resource,"1/2");
+          break;
 
-      case 2:
-        frame_parms->phich_config_common.phich_resource = one;
-        sprintf(phich_resource,"1");
-        break;
+        case 2:
+          frame_parms->phich_config_common.phich_resource = one;
+          sprintf(phich_resource,"1");
+          break;
 
-      case 3:
-        frame_parms->phich_config_common.phich_resource = two;
-        sprintf(phich_resource,"2");
-        break;
+        case 3:
+          frame_parms->phich_config_common.phich_resource = two;
+          sprintf(phich_resource,"2");
+          break;
 
-      default:
-        LOG_E(PHY,"[UE%d] Initial sync: Unknown PHICH_DURATION\n",ue->Mod_id);
-        return -1;
-        break;
-    }
+        default:
+          LOG_E(PHY,"[UE%d] Initial sync: Unknown PHICH_DURATION\n",ue->Mod_id);
+          return -1;
+          break;
+      }
 
-    for(int i=0; i<RX_NB_TH; i++) {
-      ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-      ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-      ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
-    }
+      for(int i=0; i<RX_NB_TH; i++) {
+        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
+        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
+        ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
+      }
 
-
-    LOG_D(PHY,"[UE%d] Initial sync: pbch decoded sucessfully p %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
-          ue->Mod_id,
-          frame_parms->nb_antenna_ports_eNB,
-          pbch_tx_ant,
-          ue->proc.proc_rxtx[0].frame_rx,
-          frame_parms->N_RB_DL,
-          frame_parms->phich_config_common.phich_duration,
-          phich_resource);  //frame_parms->phich_config_common.phich_resource);
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
- }else{
-	for(int i=0; i<RX_NB_TH;i++)
-        { 
-          ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&31)<<1) + (ue->pbch_vars[0]->decoded_output[1]>>7))<<4;
-          ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
-	}
-	LOG_D(PHY,"[UE%d] Initial sync: FeMBMS pbch decoded sucessfully p %d, tx_ant %d, frame %d, N_RB_DL %d, AdditionalNonMBSFN_SF %d, frame_mod4 %d\n",
+      LOG_D(PHY,"[UE%d] Initial sync: pbch decoded sucessfully p %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
             ue->Mod_id,
             frame_parms->nb_antenna_ports_eNB,
             pbch_tx_ant,
             ue->proc.proc_rxtx[0].frame_rx,
             frame_parms->N_RB_DL,
-                0,
-                frame_mod4
-        );
-	
- }
+            frame_parms->phich_config_common.phich_duration,
+            phich_resource);  //frame_parms->phich_config_common.phich_resource);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    } else {
+      for(int i=0; i<RX_NB_TH; i++) {
+        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&31)<<1) + (ue->pbch_vars[0]->decoded_output[1]>>7))<<4;
+        ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
+      }
+
+      LOG_D(PHY,"[UE%d] Initial sync: FeMBMS pbch decoded sucessfully p %d, tx_ant %d, frame %d, N_RB_DL %d, AdditionalNonMBSFN_SF %d, frame_mod4 %d\n",
+            ue->Mod_id,
+            frame_parms->nb_antenna_ports_eNB,
+            pbch_tx_ant,
+            ue->proc.proc_rxtx[0].frame_rx,
+            frame_parms->N_RB_DL,
+            0,
+            frame_mod4
+           );
+    }
+
 #endif
     return(0);
   } else {
@@ -310,7 +309,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   frame_parms->frame_type=FDD;
   frame_parms->nb_antenna_ports_eNB = 2;
   init_frame_parms(frame_parms,1);
-
   /*
   LOG_M("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
@@ -325,9 +323,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   else
     sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
 
-
   LOG_D(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",ue->Mod_id,sync_pos,ue->common_vars.eNb_id);
-
   // SSS detection
   // PSS is hypothesized in last symbol of first slot in Frame
   sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
@@ -350,22 +346,23 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
     lte_gold(frame_parms,ue->lte_gold_table[0],frame_parms->Nid_cell);
     ret = pbch_detection(ue,mode);
     //   LOG_M("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-
     LOG_D(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
           frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
-
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      if (ret==-1){
-	 ue->FeMBMS_active = 2;
-	 ret = pbch_detection(ue,mode);
-	 if (ret==-1){
-		ue->FeMBMS_active = 0;
-		frame_parms->FeMBMS_active = 0;
-	 }
-	 else frame_parms->FeMBMS_active = 1;
+
+    if (ret==-1) {
+      ue->FeMBMS_active = 2;
+      ret = pbch_detection(ue,mode);
+
+      if (ret==-1) {
+        ue->FeMBMS_active = 0;
+        frame_parms->FeMBMS_active = 0;
+      } else frame_parms->FeMBMS_active = 1;
+
       LOG_D(PHY,"FeMBMS Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-          frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
-      }
+            frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
+    }
+
 #endif
   } else {
     LOG_D(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
@@ -406,23 +403,22 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       //     LOG_M("rxdata3.m","rxd3",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
       LOG_D(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
             frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
-	
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      if (ret==-1){
-	 ue->FeMBMS_active = 2;
-	 ret = pbch_detection(ue,mode);
-	 if (ret==-1){
-		ue->FeMBMS_active = 0;
-		frame_parms->FeMBMS_active = 0;
-	 }
-	 else frame_parms->FeMBMS_active = 1;
-      LOG_I(PHY,"FeMBMS CAS Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-            frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
 
+      if (ret==-1) {
+        ue->FeMBMS_active = 2;
+        ret = pbch_detection(ue,mode);
+
+        if (ret==-1) {
+          ue->FeMBMS_active = 0;
+          frame_parms->FeMBMS_active = 0;
+        } else frame_parms->FeMBMS_active = 1;
+
+        LOG_I(PHY,"FeMBMS CAS Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
+              frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
       }
+
 #endif
-
-
     } else {
       LOG_D(PHY,"FDD Extended prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
     }
@@ -460,9 +456,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       lte_gold(frame_parms,ue->lte_gold_table[0],frame_parms->Nid_cell);
       ret = pbch_detection(ue,mode);
       //      LOG_M("rxdata4.m","rxd4",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-
       LOG_D(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-
             frame_parms->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp,ret);
 
       if (ret==-1) {
@@ -496,9 +490,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
         lte_gold(frame_parms,ue->lte_gold_table[0],frame_parms->Nid_cell);
         ret = pbch_detection(ue,mode);
         //  LOG_M("rxdata5.m","rxd5",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-
         LOG_D(PHY,"TDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-
               frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
       }
     }
@@ -525,7 +517,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);
       ue->pbch_vars[0]->pdu_errors_conseq=0;
-
     }
 
     LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
@@ -562,7 +553,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
           metric_tdd_ecp,Nid_cell_tdd_ecp);*/
     LOG_D(PHY,"[UE%d] Initial sync : Estimated Nid_cell %d, Frame_type %d\n",ue->Mod_id,
           frame_parms->Nid_cell,frame_parms->frame_type);
-
     ue->UE_mode[0] = NOT_SYNCHED;
     ue->pbch_vars[0]->pdu_errors_last=ue->pbch_vars[0]->pdu_errors;
     ue->pbch_vars[0]->pdu_errors++;
@@ -587,7 +577,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
     // we might add a low-pass filter here later
     ue->measurements.rx_power_avg[0] = rx_power/frame_parms->nb_antennas_rx;
     ue->measurements.rx_power_avg_dB[0] = dB_fixed(ue->measurements.rx_power_avg[0]);
-
     LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 
     if (IS_SOFTMODEM_BASICSIM )
@@ -595,7 +584,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   } else {
     if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
-
   }
 
   return ret;

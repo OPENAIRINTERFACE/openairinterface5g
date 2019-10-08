@@ -255,12 +255,11 @@ Msg1_transmitted(module_id_t module_idP, uint8_t CC_id,
               "Transmission on secondary CCs is not supported yet\n");
   // start contention resolution timer
   UE_mac_inst[module_idP].RA_attempt_number++;
-
   trace_pdu(DIRECTION_UPLINK, NULL, 0, module_idP, WS_NO_RNTI,
-              UE_mac_inst[module_idP].RA_prach_resources.
-              ra_PreambleIndex, UE_mac_inst[module_idP].txFrame,
-              UE_mac_inst[module_idP].txSubframe, 0,
-              UE_mac_inst[module_idP].RA_attempt_number);
+            UE_mac_inst[module_idP].RA_prach_resources.
+            ra_PreambleIndex, UE_mac_inst[module_idP].txFrame,
+            UE_mac_inst[module_idP].txSubframe, 0,
+            UE_mac_inst[module_idP].RA_attempt_number);
 }
 
 
@@ -275,12 +274,11 @@ Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
         module_idP, frameP);
   UE_mac_inst[module_idP].RA_contention_resolution_cnt = 0;
   UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 1;
-
- trace_pdu(DIRECTION_UPLINK, &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
-              UE_mac_inst[module_idP].RA_Msg3_size, module_idP, WS_C_RNTI,
-              UE_mac_inst[module_idP].crnti,
-              UE_mac_inst[module_idP].txFrame,
-              UE_mac_inst[module_idP].txSubframe, 0, 0);
+  trace_pdu(DIRECTION_UPLINK, &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
+            UE_mac_inst[module_idP].RA_Msg3_size, module_idP, WS_C_RNTI,
+            UE_mac_inst[module_idP].crnti,
+            UE_mac_inst[module_idP].txFrame,
+            UE_mac_inst[module_idP].txSubframe, 0, 0);
 }
 
 

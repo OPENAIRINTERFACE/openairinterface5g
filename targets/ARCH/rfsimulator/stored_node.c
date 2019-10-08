@@ -7,18 +7,21 @@
 
 volatile int             oai_exit = 0;
 
-int fullread(int fd, void *_buf, int count)
-{
+int fullread(int fd, void *_buf, int count) {
   char *buf = _buf;
   int ret = 0;
   int l;
+
   while (count) {
     l = read(fd, buf, count);
+
     if (l <= 0) return -1;
+
     count -= l;
     buf += l;
     ret += l;
   }
+
   return ret;
 }
 
@@ -79,7 +82,6 @@ sin_addr:
 
   while(!connected) {
     //LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", IP, port);
-
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
       //LOG_I(HW,"rfsimulator: connection established\n");
       connected=true;
@@ -144,7 +146,8 @@ int main(int argc, char *argv[]) {
     uint64_t wroteTS=header.timestamp;
 
     if (dataSize>bufSize) {
-      void * new_buff = realloc(buff, dataSize);
+      void *new_buff = realloc(buff, dataSize);
+
       if (new_buff == NULL) {
         free(buff);
         AssertFatal(1, "Could not reallocate");
@@ -157,15 +160,17 @@ int main(int argc, char *argv[]) {
     fullwrite(serviceSock, buff, dataSize);
     // Purge incoming samples
     setblocking(serviceSock, blocking);
+
     while(readTS < wroteTS) {
-	    if ( fullread(serviceSock, &header,sizeof(header)) != sizeof(header) ||
-			    fullread(serviceSock, buff, sizeof(int32_t)*header.size*header.nbAnt) !=
-                    sizeof(int32_t)*header.size*header.nbAnt
-		    ) {
-		    printf("error: %s\n", strerror(errno));
-			    exit(1);
-	    }
-	    readTS=header.timestamp;
+      if ( fullread(serviceSock, &header,sizeof(header)) != sizeof(header) ||
+           fullread(serviceSock, buff, sizeof(int32_t)*header.size*header.nbAnt) !=
+           sizeof(int32_t)*header.size*header.nbAnt
+         ) {
+        printf("error: %s\n", strerror(errno));
+        exit(1);
+      }
+
+      readTS=header.timestamp;
     }
   }
 

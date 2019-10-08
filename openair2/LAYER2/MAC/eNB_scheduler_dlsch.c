@@ -565,7 +565,6 @@ schedule_ue_spec(module_id_t module_idP,
     dl_Bandwidth = cc[CC_id].mib->message.dl_Bandwidth;
     N_RB_DL[CC_id] = to_prb(dl_Bandwidth);
     min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
-
     // get number of PRBs less those used by common channels
     total_nb_available_rb[CC_id] = N_RB_DL[CC_id];
 
@@ -622,7 +621,6 @@ schedule_ue_spec(module_id_t module_idP,
       LOG_D(MAC, "doing schedule_ue_spec for CC_id %d UE %d\n",
             CC_id,
             UE_id);
-
       continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP, UE_id);
       ue_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
@@ -776,7 +774,8 @@ schedule_ue_spec(module_id_t module_idP,
 
           if (ue_sched_ctrl->cdrx_configured) {
             ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-            /* 
+
+            /*
              * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
              */
             if (harq_pid == 0) {
@@ -1011,9 +1010,10 @@ schedule_ue_spec(module_id_t module_idP,
                                              );
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
-              while(pthread_mutex_trylock(&rrc_release_freelist)){
+              while(pthread_mutex_trylock(&rrc_release_freelist)) {
                 /* spin... */
               }
+
               uint16_t release_total = 0;
 
               for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
@@ -1060,9 +1060,9 @@ schedule_ue_spec(module_id_t module_idP,
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
               }
+
               pthread_mutex_unlock(&rrc_release_freelist);
             }
-
 
             for (ra_ii = 0, ra = &eNB->common_channels[CC_id].ra[0]; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
               if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
@@ -1254,7 +1254,6 @@ schedule_ue_spec(module_id_t module_idP,
               header_length_total += header_length_last;
               num_sdus++;
               ue_sched_ctrl->uplane_inactivity_timer = 0;
-
               // reset RRC inactivity timer after uplane activity
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
 
@@ -1422,18 +1421,17 @@ schedule_ue_spec(module_id_t module_idP,
             dlsch_pdu->payload[0][offset + sdu_length_total + j] = 0;
           }
 
-            trace_pdu(DIRECTION_DOWNLINK,
-                      (uint8_t *) dlsch_pdu->payload[0],
-                      TBS,
-                      module_idP,
-                      WS_C_RNTI,
-                      UE_RNTI(module_idP,
-                              UE_id),
-                      eNB->frame,
-                      eNB->subframe,
-                      0,
-                      0);
-
+          trace_pdu(DIRECTION_DOWNLINK,
+                    (uint8_t *) dlsch_pdu->payload[0],
+                    TBS,
+                    module_idP,
+                    WS_C_RNTI,
+                    UE_RNTI(module_idP,
+                            UE_id),
+                    eNB->frame,
+                    eNB->subframe,
+                    0,
+                    0);
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
             T_INT(module_idP),
             T_INT(CC_id),
@@ -1569,17 +1567,17 @@ schedule_ue_spec(module_id_t module_idP,
             dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
             eNB->DL_req[CC_id].sfn_sf = frameP << 4 | subframeP;
             eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-
             /* CDRX */
             ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
 
             if (ue_sched_ctrl->cdrx_configured) {
               ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
               ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-              /* 
+              /*
                * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
                */
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
+
               if (harq_pid == 0) {
                 VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
               }
@@ -2337,16 +2335,15 @@ schedule_ue_spec_br(module_id_t module_idP,
           }
 
           trace_pdu(DIRECTION_DOWNLINK,
-                      (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                      TBS,
-                      module_idP,
-                      3,
-                      UE_RNTI(module_idP,UE_id),
-                      mac->frame,
-                      mac->subframe,
-                      0,
-                      0);
-
+                    (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                    TBS,
+                    module_idP,
+                    3,
+                    UE_RNTI(module_idP,UE_id),
+                    mac->frame,
+                    mac->subframe,
+                    0,
+                    0);
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
             T_INT(module_idP),
             T_INT(CC_id),
@@ -2539,17 +2536,16 @@ schedule_ue_spec_br(module_id_t module_idP,
         T_INT (subframeP),
         T_INT (0 /* harq_pid always 0? */ ),
         T_BUFFER (&mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TX_req->pdu_length));
-
-        trace_pdu(1,
-                  (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0],
-                  TX_req->pdu_length,
-                  UE_id,
-                  3,
-                  rnti,
-                  frameP,
-                  subframeP,
-                  0,
-                  0);
+      trace_pdu(1,
+                (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0],
+                TX_req->pdu_length,
+                UE_id,
+                3,
+                rnti,
+                frameP,
+                subframeP,
+                0,
+                0);
     } // end else if ((subframeP == 7) && (round_DL < 8))
   } // end loop on UE_id
 }
@@ -3064,8 +3060,8 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(n_rb_dl, first_rb, 4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
@@ -3155,17 +3151,16 @@ schedule_PCH(module_id_t module_idP,
           continue;
         }
 
-          trace_pdu(DIRECTION_DOWNLINK,
-                    &eNB->common_channels[CC_id].PCCH_pdu.payload[0],
-                    pcch_sdu_length,
-                    0xffff,
-                    PCCH,
-                    P_RNTI,
-                    eNB->frame,
-                    eNB->subframe,
-                    0,
-                    0);
-
+        trace_pdu(DIRECTION_DOWNLINK,
+                  &eNB->common_channels[CC_id].PCCH_pdu.payload[0],
+                  pcch_sdu_length,
+                  0xffff,
+                  PCCH,
+                  P_RNTI,
+                  eNB->frame,
+                  eNB->subframe,
+                  0,
+                  0);
         eNB->eNB_stats[CC_id].total_num_pcch_pdu++;
         eNB->eNB_stats[CC_id].pcch_buffer = pcch_sdu_length;
         eNB->eNB_stats[CC_id].total_pcch_buffer += pcch_sdu_length;

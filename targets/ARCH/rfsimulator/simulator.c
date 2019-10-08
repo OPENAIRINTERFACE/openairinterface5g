@@ -430,8 +430,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
               b->circularBuf[(index*nbAnt+a)%CirSize].i=0;
             }
           }
+
           if ( abs(b->th.timestamp-b->lastReceivedTS) > 50 )
-          LOG_W(HW,"gap of: %ld in reception\n", b->th.timestamp-b->lastReceivedTS );
+            LOG_W(HW,"gap of: %ld in reception\n", b->th.timestamp-b->lastReceivedTS );
         }
 
         b->lastReceivedTS=b->th.timestamp;
