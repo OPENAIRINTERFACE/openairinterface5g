@@ -432,6 +432,12 @@ struct openair0_device_t {
      \param device the hardware configuration to use
    */
   int (*thirdparty_cleanup)(openair0_device *device);
+
+  /*! \brief Callback for Third-party start streaming routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_startstreaming)(openair0_device *device);
+
 };
 
 /* type of device init function, implemented in shared lib */

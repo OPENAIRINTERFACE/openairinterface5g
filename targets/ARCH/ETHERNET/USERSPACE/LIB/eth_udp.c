@@ -297,7 +297,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     // ECPRI PC_ID (2 bytes)
     *(uint16_t *)(buff2 + 4) = cc;
     // OAI modified SEQ_ID (4 bytes)
-    *(uint64_t *)(buff2 + 6) = (uint64_t )timestamp;
+    *(uint64_t *)(buff2 + 6) = ((uint64_t )timestamp)*3;
 
     
     int sent_byte;
@@ -436,8 +436,8 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
            // handle 1.4,3,5,10,15 MHz cases
            *cc        = *(uint16_t*)(buff2 + ECPRICOMMON_BYTES);
 	   }
-	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
-	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,eth->pck_seq_num_prev);
+	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
+	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,eth->pck_seq_num_prev);
 						    eth->rx_actual_nsamps=bytes_received>>2;
 						    eth->rx_count++;
       }	 

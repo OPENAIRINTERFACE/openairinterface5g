@@ -178,10 +178,12 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
 
+  //LOG_I(PHY,"%d.%d (TS %llu) => %d.%d\n",*frame,*subframe,(unsigned long long)proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
-      exit_fun("Exiting");
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d), resynching\n",proc->subframe_rx,*subframe);
+      *frame=proc->frame_rx;
+      *subframe=proc->subframe_rx;
     }
 
     if (proc->frame_rx != *frame) {
@@ -1650,7 +1652,7 @@ void *ru_thread( void *param ) {
       // Start RF device if any
       if (ru->start_rf) {
 	if (ru->start_rf(ru) != 0)
-	  LOG_E(HW,"Could not start the RF device\n");
+	  AssertFatal(1==0,"Could not start the RF device\n");
 	else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
       }
       else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
@@ -1814,7 +1816,6 @@ void *ru_thread( void *param ) {
 	    
 	    if ((ru->fh_north_out) && (ru->state!=RU_CHECK_SYNC)) ru->fh_north_out(ru);
 	  }
-	  
 	  proc->emulate_rf_busy = 0;
 	}
 	
@@ -2070,6 +2071,10 @@ static void *rf_tx( void *param ) {
 #endif
 
 
+int start_streaming(RU_t *ru) {
+  LOG_I(PHY,"Starting streaming on third-party RRU\n");
+  return(ru->ifdevice.thirdparty_startstreaming(&ru->ifdevice));
+}
 
 int start_if(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB) {
   return(ru->ifdevice.trx_start_func(&ru->ifdevice));
@@ -2082,6 +2087,10 @@ int start_rf(RU_t *ru) {
 int stop_rf(RU_t *ru) {
   ru->rfdevice.trx_end_func(&ru->rfdevice);
   return 0;
+}
+
+int start_steraming(RU_t *ru) {
+  return(ru->ifdevice.thirdparty_startstreaming);
 }
 
 extern void fep_full(RU_t *ru);
@@ -2547,8 +2556,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     }
-    
-    ru->start_rf               = NULL;                 // no local RF
+    ru->start_rf               = ru->eth_params.transp_preference == ETH_UDP_IF5_ORI_MODE ? start_streaming : NULL;                 // no local RF
     ru->stop_rf                = NULL;
     ru->start_if               = start_if;             // need to start if interface for IF5
     ru->ifdevice.host_type     = RAU_HOST;

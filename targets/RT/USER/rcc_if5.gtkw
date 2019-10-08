@@ -1,41 +1,67 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Sun Jul 31 13:30:42 2016
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Tue Sep 24 06:59:08 2019
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Sun Jul 31 13:21:59 2016"
-[dumpfile_size] 18273240
-[savefile] "/home/fourmi/openairinterface5g/targets/RT/USER/rcc_if5.gtkw"
-[timestart] 24070893000
-[size] 1301 716
-[pos] 309 0
-*-19.793451 29026062100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[sst_width] 284
-[signals_width] 262
+[dumpfile_mtime] "Mon Sep 23 20:04:56 2019"
+[dumpfile_size] 1625759
+[savefile] "/home/orange/aw2s/openairinterface5g/targets/RT/USER/rcc_if5.gtkw"
+[timestart] 12600104000
+[size] 1215 1000
+[pos] 0 22
+*-19.506693 12600920638 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 386
+[signals_width] 344
 [sst_expanded] 1
-[sst_vpaned_height] 294
+[sst_vpaned_height] 303
+@29
+functions.send_if5
+@28
+functions.recv_if5
 @24
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
 @28
-functions.send_if5
-functions.recv_if5
 functions.eNB_thread_rxtx0
+@24
+variables.frame_number_RX0_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+variables.frame_number_TX0_RU[63:0]
+variables.subframe_number_TX0_RU[63:0]
+@28
+functions.mac_schedule_dlsch
+functions.macxface_eNB_dlsch_ulsch_scheduler
+functions.macxface_ue_scheduler
+functions.phy_eNB_ofdm_mod_l
 @24
 variables.frame_number_RX0_eNB[63:0]
 variables.subframe_number_RX0_eNB[63:0]
 variables.frame_number_TX0_eNB[63:0]
 variables.subframe_number_TX0_eNB[63:0]
-@28
-functions.eNB_thread_rxtx1
-@24
 variables.frame_number_RX1_eNB[63:0]
 variables.subframe_number_RX1_eNB[63:0]
 variables.frame_number_TX1_eNB[63:0]
 variables.subframe_number_TX1_eNB[63:0]
 @28
+functions.phy_eNB_dlsch_modulation
+functions.phy_eNB_dlsch_encoding
+functions.phy_eNB_dlsch_scrambling
+functions.phy_eNB_beam_precoding
+functions.phy_enb_pdcch_tx
+functions.phy_enb_prach_rx
+functions.phy_procedures_ru_feprx0
+functions.phy_procedures_eNb_rx_uespec0
+functions.phy_procedures_eNb_rx_uespec1
 functions.phy_enb_sfgen
-functions.phy_eNB_slot_fep
+functions.phy_procedures_eNb_tx0
+functions.phy_procedures_eNb_tx1
+functions.phy_procedures_ru_feprx1
+functions.phy_procedures_ru_feptx_ofdm0
+functions.phy_procedures_ru_feptx_ofdm1
+functions.phy_procedures_ru_feptx_prec0
+functions.phy_procedures_ru_feptx_prec1
+functions.eNB_thread_rxtx1
+functions.phy_enb_sfgen
 functions.phy_enb_prach_rx
 @24
 variables.dci_info[63:0]
