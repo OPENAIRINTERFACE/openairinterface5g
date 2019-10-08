@@ -122,7 +122,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int i    = 0;
   int j    = 0;
   int ret  = 0;
-  int nb_antenna_ports = 8;
+  int nb_antenna_ports = 4;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
   start_meas(&ru->ofdm_total_stats);
@@ -278,6 +278,7 @@ void nr_init_feptx_thread(RU_t *ru) {
     pthread_cond_init( &feptx[i].cond_feptx, NULL);
 
     threadCreate(&feptx[i].pthread_feptx, nr_feptx_thread, (void*)&feptx[i], "feptx", -1, OAI_PRIORITY_RT);
+    LOG_I(PHY,"init feptx thread %d\n", i);
   }
 
 }
