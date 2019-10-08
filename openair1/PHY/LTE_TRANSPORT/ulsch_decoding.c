@@ -581,7 +581,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
+    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, Nl %d)...\n",
            r, G,
            Kr*3,
            ulsch_harq->Qm,
