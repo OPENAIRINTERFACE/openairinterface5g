@@ -403,14 +403,8 @@ ue_send_sdu(module_id_t module_idP,
 
   //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
 
-  if (opt_enabled) {
     trace_pdu(DIRECTION_DOWNLINK, sdu, sdu_len, module_idP, WS_C_RNTI,
               UE_mac_inst[module_idP].crnti, frameP, subframeP, 0, 0);
-    LOG_D(OPT,
-          "[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
-          module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
-  }
-
   payload_ptr =
     parse_header(sdu, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths,
                  sdu_len);
@@ -617,7 +611,6 @@ ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
-    if (opt_enabled == 1) {
        trace_pdu(DIRECTION_UPLINK,
                  (uint8_t *) pdu,
                  len,
@@ -626,10 +619,6 @@ ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frameP,
                  0xffff,
                  UE_mac_inst[module_idP].rxFrame,
                  UE_mac_inst[module_idP].rxSubframe, 0, 0);
-       LOG_D(OPT,
-             "[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-             module_idP, frameP, CC_id, 0xffff, len);
-    }
 }
 #endif
 
@@ -653,7 +642,6 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
   stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
 
-  if (opt_enabled == 1) {
     trace_pdu(DIRECTION_UPLINK,
               (uint8_t *) pdu,
               len,
@@ -662,10 +650,6 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
               0xffff,
               UE_mac_inst[module_idP].rxFrame,
               UE_mac_inst[module_idP].rxSubframe, 0, 0);
-    LOG_D(OPT,
-          "[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-          module_idP, frameP, CC_id, 0xffff, len);
-  }
 }
 
 void
@@ -689,7 +673,6 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
   stop_meas(&UE_mac_inst[module_idP].rx_p);
 #endif
 
-  if (opt_enabled == 1) {
     trace_pdu(DIRECTION_UPLINK,
               (uint8_t *) pdu,
               len,
@@ -698,10 +681,6 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
               P_RNTI,
               UE_mac_inst[module_idP].rxFrame,
               UE_mac_inst[module_idP].rxSubframe, 0, 0);
-    LOG_D(OPT,
-          "[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-          module_idP, frameP, CC_id, P_RNTI, len);
-  }
 }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -2462,16 +2441,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
 #endif
 
-  if (opt_enabled) {
     trace_pdu(DIRECTION_UPLINK, ulsch_buffer, buflen, module_idP, WS_C_RNTI,
               UE_mac_inst[module_idP].crnti,
               UE_mac_inst[module_idP].txFrame,
               UE_mac_inst[module_idP].txSubframe, 0, 0);
-    LOG_D(OPT,
-          "[UE %d][ULSCH] Frame %d subframe %d trace pdu for rnti %x  with size %d\n",
-          module_idP, frameP, subframe, UE_mac_inst[module_idP].crnti,
-          buflen);
-  }
 }
 
 

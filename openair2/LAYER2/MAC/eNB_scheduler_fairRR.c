@@ -1703,13 +1703,9 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
             UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset+sdu_length_total+j] = (char)(taus()&0xff);
           }
 
-          if (opt_enabled == 1) {
             trace_pdu(DIRECTION_DOWNLINK, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                       TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP, UE_id),
                       eNB->frame, eNB->subframe,0,0);
-            LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-                  module_idP, CC_id, frameP, UE_RNTI(module_idP, UE_id), TBS);
-          }
 
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
             T_INT(harq_pid), T_BUFFER(UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));

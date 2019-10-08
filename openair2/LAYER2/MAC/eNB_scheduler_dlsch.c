@@ -1422,7 +1422,6 @@ schedule_ue_spec(module_id_t module_idP,
             dlsch_pdu->payload[0][offset + sdu_length_total + j] = 0;
           }
 
-          if (opt_enabled == 1) {
             trace_pdu(DIRECTION_DOWNLINK,
                       (uint8_t *) dlsch_pdu->payload[0],
                       TBS,
@@ -1434,14 +1433,6 @@ schedule_ue_spec(module_id_t module_idP,
                       eNB->subframe,
                       0,
                       0);
-            LOG_D(OPT, "[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-                  module_idP,
-                  CC_id,
-                  frameP,
-                  UE_RNTI(module_idP,
-                          UE_id),
-                  TBS);
-          }
 
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
             T_INT(module_idP),
@@ -2345,8 +2336,7 @@ schedule_ue_spec_br(module_id_t module_idP,
             UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = (char)(taus()&0xff);
           }
 
-          if (opt_enabled == 1) {
-            trace_pdu(1,
+          trace_pdu(DIRECTION_DOWNLINK,
                       (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                       TBS,
                       module_idP,
@@ -2356,13 +2346,6 @@ schedule_ue_spec_br(module_id_t module_idP,
                       mac->subframe,
                       0,
                       0);
-            LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
-                  module_idP,
-                  CC_id,
-                  frameP,
-                  UE_RNTI(module_idP, UE_id),
-                  TBS);
-          }
 
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA,
             T_INT(module_idP),
@@ -2557,7 +2540,6 @@ schedule_ue_spec_br(module_id_t module_idP,
         T_INT (0 /* harq_pid always 0? */ ),
         T_BUFFER (&mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TX_req->pdu_length));
 
-      if (opt_enabled == 1) {
         trace_pdu(1,
                   (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0],
                   TX_req->pdu_length,
@@ -2568,13 +2550,6 @@ schedule_ue_spec_br(module_id_t module_idP,
                   subframeP,
                   0,
                   0);
-        LOG_D(OPT, "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n",
-              module_idP,
-              CC_id,
-              frameP,
-              rnti,
-              TX_req->pdu_length);
-      }
     } // end else if ((subframeP == 7) && (round_DL < 8))
   } // end loop on UE_id
 }
@@ -3180,7 +3155,6 @@ schedule_PCH(module_id_t module_idP,
           continue;
         }
 
-        if (opt_enabled == 1) {
           trace_pdu(DIRECTION_DOWNLINK,
                     &eNB->common_channels[CC_id].PCCH_pdu.payload[0],
                     pcch_sdu_length,
@@ -3191,13 +3165,6 @@ schedule_PCH(module_id_t module_idP,
                     eNB->subframe,
                     0,
                     0);
-          LOG_D(OPT,"[eNB %d][PCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-                module_idP,
-                frameP,
-                CC_id,
-                0xffff,
-                pcch_sdu_length);
-        }
 
         eNB->eNB_stats[CC_id].total_num_pcch_pdu++;
         eNB->eNB_stats[CC_id].pcch_buffer = pcch_sdu_length;

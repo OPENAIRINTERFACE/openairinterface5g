@@ -390,11 +390,13 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
-void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
                int oob_event_value) {
   MAC_Context_Info_t pdu_context;
   int radioType=FDD_RADIO;
+  LOG_D(OPT,"sending packet to wireshark: direction=%s, size: %d, ueid: %d, rnti: %x, frame/sf: %d.%d\n",
+		  direction?"DL":"UL", pdu_buffer_size, ueid, rnti, sysFrameNumber,subFrameNumber);
 
   if (RC.eNB && RC.eNB[0][0]!=NULL)
     radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;

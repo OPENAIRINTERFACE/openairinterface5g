@@ -281,15 +281,10 @@ schedule_SIB1_MBMS(module_id_t module_idP,
         eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
         eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
 
-	if (opt_enabled == 1) {
 	    trace_pdu(DIRECTION_DOWNLINK,
 		      &cc->BCCH_BR_pdu[0].payload[0],
 		      bcch_sdu_length,
 		      0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-	    LOG_D(OPT,
-		  "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-		  module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-	}
 	if (cc->tdd_Config != NULL) {	//TDD
 	    LOG_D(MAC,
 		  "[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (TDD) for CC_id %d SIB1-BR %d bytes\n",
@@ -509,15 +504,10 @@ schedule_SIB1_BR(module_id_t module_idP,
         eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
         eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
 
-	if (opt_enabled == 1) {
-	    trace_pdu(DIRECTION_DOWNLINK,
+	trace_pdu(DIRECTION_DOWNLINK,
 		      &cc->BCCH_BR_pdu[0].payload[0],
 		      bcch_sdu_length,
 		      0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-	    LOG_D(OPT,
-		  "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-		  module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-	}
 	if (cc->tdd_Config != NULL) {	//TDD
 	    LOG_D(MAC,
 		  "[eNB] Frame %d : Scheduling BCCH-BR 0->DLSCH (TDD) for CC_id %d SIB1-BR %d bytes\n",
@@ -709,7 +699,6 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
             TX_req->segments[0].segment_data                                      = cc->BCCH_BR_pdu[i+1].payload;
             eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
 
-            if (opt_enabled == 1) {
                 trace_pdu(DIRECTION_DOWNLINK,
                     &cc->BCCH_BR_pdu[i + 1].payload[0],
                     bcch_sdu_length,
@@ -717,9 +706,6 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
                     WS_SI_RNTI,
                     0xffff, eNB->frame, eNB->subframe, 0,
                     0);
-                LOG_D(OPT, "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-                      module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-            }
             if (cc->tdd_Config != NULL) {	//TDD
                 LOG_D(MAC, "[eNB] Frame %d : Scheduling BCCH-BR %d->DLSCH (TDD) for CC_id %d SI-BR %d bytes\n",
                       frameP, i, CC_id, bcch_sdu_length);
@@ -919,17 +905,11 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
                 T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
                   T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_MBMS_pdu.payload, bcch_sdu_length));
 
-		if (opt_enabled == 1) {
 		    trace_pdu(DIRECTION_DOWNLINK,
 			      &cc->BCCH_MBMS_pdu.payload[0],
 			      bcch_sdu_length,
 			      0xffff,
 			     WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-		    LOG_D(OPT,
-			  "[eNB %d][BCH-MBMS] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-			  module_idP, frameP, CC_id, 0xffff,
-			  bcch_sdu_length);
-		}
 		if (0/*cc->tdd_Config != NULL*/) {	//TDD not for FeMBMS
 		    LOG_D(MAC,
 			  "[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
@@ -1224,17 +1204,11 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
                 T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
                   T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_pdu.payload, bcch_sdu_length));
 
-		if (opt_enabled == 1) {
-		    trace_pdu(DIRECTION_DOWNLINK,
+		trace_pdu(DIRECTION_DOWNLINK,
 			      &cc->BCCH_pdu.payload[0],
 			      bcch_sdu_length,
 			      0xffff,
 			     WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-		    LOG_D(OPT,
-			  "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-			  module_idP, frameP, CC_id, 0xffff,
-			  bcch_sdu_length);
-		}
 		if (cc->tdd_Config != NULL) {	//TDD
 		    LOG_D(MAC,
 			  "[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",

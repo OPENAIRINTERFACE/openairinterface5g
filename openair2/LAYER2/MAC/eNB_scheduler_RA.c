@@ -914,10 +914,10 @@ generate_Msg4(module_id_t module_idP,
       T (T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT (module_idP), T_INT (CC_idP), T_INT (ra->rnti), T_INT (frameP), T_INT (subframeP),
          T_INT (0 /*harq_pid always 0? */ ), T_BUFFER (&mac->UE_list.DLSCH_pdu[CC_idP][0][UE_id].payload[0], ra->msg4_TBsize));
 
-      if (opt_enabled == 1) {
-        trace_pdu (1, (uint8_t *) mac->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char) UE_id].payload[0], ra->msg4_rrc_sdu_length, UE_id, 3, UE_RNTI (module_idP, UE_id), mac->frame, mac->subframe, 0, 0);
-        LOG_D (OPT, "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n", module_idP, CC_idP, frameP, UE_RNTI (module_idP, UE_id), ra->msg4_rrc_sdu_length);
-      }
+      trace_pdu (DIRECTION_DOWNLINK, (uint8_t *) mac->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char) UE_id].payload[0], 
+		      ra->msg4_rrc_sdu_length, 
+		      UE_id, 3, UE_RNTI (module_idP, UE_id), 
+		      mac->frame, mac->subframe, 0, 0);
     }                           // Msg4 frame/subframe
   }                             // rach_resource_type > 0
   else
@@ -1095,20 +1095,12 @@ generate_Msg4(module_id_t module_idP,
             T_BUFFER(&mac->UE_list.DLSCH_pdu[CC_idP][0][UE_id].
                      payload[0], ra->msg4_TBsize));
 
-          if (opt_enabled == 1) {
-            trace_pdu(DIRECTION_DOWNLINK,
+          trace_pdu(DIRECTION_DOWNLINK,
                       (uint8_t *) mac->
                       UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0],
                       rrc_sdu_length, UE_id,  WS_C_RNTI,
                       UE_RNTI(module_idP, UE_id), mac->frame,
                       mac->subframe, 0, 0);
-            LOG_D(OPT,
-                  "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n",
-                  module_idP, CC_idP, frameP, UE_RNTI(module_idP,
-                      UE_id),
-                  rrc_sdu_length);
-          }
-
           if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR) {
             set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);
           }

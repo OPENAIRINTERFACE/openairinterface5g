@@ -766,14 +766,9 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	}
 
 	/* Tracing of PDU is done on UE side */
-	if (opt_enabled == 1) {
-	    trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) cc->MCH_pdu.payload, TBS, module_idP, WS_M_RNTI , 0xffff,	// M_RNTI = 6 in wirehsark
+	trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) cc->MCH_pdu.payload, TBS, module_idP, WS_M_RNTI , 0xffff,	// M_RNTI = 6 in wirehsark
 		      RC.mac[module_idP]->frame,
 		      RC.mac[module_idP]->subframe, 0, 0);
-	    LOG_D(OPT,
-		  "[eNB %d][MCH] CC_id %d Frame %d : MAC PDU with size %d\n",
-		  module_idP, CC_id, frameP, TBS);
-	}
 
 	/*
 	   for (j=0;j<sdu_length_total;j++)
