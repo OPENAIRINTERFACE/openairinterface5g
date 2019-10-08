@@ -1202,7 +1202,8 @@ void wakeup_L1s(RU_t *ru) {
     ru->proc.emulate_rf_busy = 0;
   
 }
-inline int wakeup_prach_ru(RU_t *ru) {
+
+void  wakeup_prach_ru(RU_t *ru) {
   int ret;
   struct timespec wait;
   int time_ns = 5000000L;
@@ -1234,11 +1235,10 @@ inline int wakeup_prach_ru(RU_t *ru) {
   } else LOG_W(PHY,"RU prach thread busy, skipping\n");
 
   AssertFatal((ret=pthread_mutex_unlock( &ru->proc.mutex_prach ))==0,"mutex_unlock returns %d\n",ret);
-  return(0);
 }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-inline int wakeup_prach_ru_br(RU_t *ru) {
+void wakeup_prach_ru_br(RU_t *ru) {
   int ret;
   struct timespec wait;
   int time_ns = 5000000L;
@@ -1264,7 +1264,6 @@ inline int wakeup_prach_ru_br(RU_t *ru) {
   } else LOG_W(PHY,"RU prach thread busy, skipping\n");
 
   AssertFatal((ret=pthread_mutex_unlock( &ru->proc.mutex_prach_br ))==0,"mutex_unlock returns %d\n",ret);
-  return(0);
 }
 #endif
 

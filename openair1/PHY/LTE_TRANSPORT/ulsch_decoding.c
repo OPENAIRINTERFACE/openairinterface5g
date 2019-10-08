@@ -584,8 +584,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
            r, G,
            Kr*3,
-           Q_m,
-           nb_rb,
+           ulsch_harq->Qm,
            ulsch_harq->Nl);
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);

@@ -590,10 +590,10 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
 
     LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
   } else {
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
 
   }
