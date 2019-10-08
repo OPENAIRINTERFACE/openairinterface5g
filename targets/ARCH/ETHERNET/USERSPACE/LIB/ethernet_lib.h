@@ -42,11 +42,11 @@
 #include <net/if.h>
 #include <netinet/ether.h>
 
-#define MAX_INST      4
-#define DEFAULT_IF   "lo"
+#define MAX_INST 4
+#define DEFAULT_IF "lo"
 
-#define TX_FLAG	        1
-#define RX_FLAG 	0
+#define TX_FLAG 1
+#define RX_FLAG 0
 
 #include "if_defs.h"
 #define APP_HEADER_SIZE_BYTES (sizeof(int32_t) + sizeof(openair0_timestamp))

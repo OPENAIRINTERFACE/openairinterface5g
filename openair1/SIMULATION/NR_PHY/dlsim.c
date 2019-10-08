@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 {
   char c;
   int i,aa;//,l;
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
+  double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
@@ -735,7 +735,7 @@ int main(int argc, char **argv)
         available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15.nb_layers);
         
         printf("\n");
-        printf("available_bits = %d\n",available_bits);
+        printf("available_bits = %u\n", available_bits);
   
         for (i = 0; i < available_bits; i++) {
           
@@ -774,7 +774,7 @@ int main(int argc, char **argv)
         if (errors_bit > 0) {
           n_false_positive++;
           if (n_trials == 1)
-            printf("errors_bit = %d (trial %d)\n", errors_bit, trial);
+            printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
         }
 
         printf("\n");

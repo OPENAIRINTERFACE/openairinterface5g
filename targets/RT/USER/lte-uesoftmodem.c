@@ -25,7 +25,7 @@
  * \date 2012
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
+ * \email: {knopp, florian.kaltenberger, navid.nikaein}@eurecom.fr
  * \note
  * \warning
  */
@@ -172,14 +172,9 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-/* prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include
-   file */
+// prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
 extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
-
-extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t UE_id,
-                                 uint8_t abstraction_flag);
-
+extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;

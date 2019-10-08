@@ -25,7 +25,6 @@
 * \date 2009 - 2014
 * \version 0.5
 * @ingroup util
-
 */
 
 #ifndef __LOG_H__
@@ -297,7 +296,7 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-int isLogInitDone (void);
+int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );

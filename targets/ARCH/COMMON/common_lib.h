@@ -41,9 +41,9 @@
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
 /* name of shared library implementing the basic/rf simulator */
-#define OAI_RFSIM_LIBNAME        "rfsimulator"
+#define OAI_RFSIM_LIBNAME     "rfsimulator"
 /* name of shared library implementing the basic/rf simulator */
-#define OAI_BASICSIM_LIBNAME        "tcp_bridge_oai"
+#define OAI_BASICSIM_LIBNAME  "tcp_bridge_oai"
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
