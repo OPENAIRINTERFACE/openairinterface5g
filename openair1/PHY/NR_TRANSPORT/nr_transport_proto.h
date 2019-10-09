@@ -329,7 +329,7 @@ void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 int nr_generate_csi_rs(uint32_t **gold_csi_rs,
                        int32_t *txdataF,
                        NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_config_request_t config);
+                       nfapi_nr_csi_rs_pdu_t csi_params);
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
@@ -347,7 +347,7 @@ void nr_decode_pucch1(int32_t **rxdataF,
                       uint8_t nr_bit);
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
-              int slot,
+                      int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 

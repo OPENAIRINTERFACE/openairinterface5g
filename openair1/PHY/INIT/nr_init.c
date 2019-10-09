@@ -199,6 +199,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
+
   gNB->first_run_I0_measurements = 1;
 
   common_vars->rxdata  = (int32_t **)malloc16(Prx*sizeof(int32_t*));

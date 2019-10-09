@@ -21,20 +21,27 @@
 
 
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 //#define NR_CSIRS_DEBUG
 
 int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t *txdataF,
+                       int32_t** txdataF,
+                       int16_t amp,
                        NR_DL_FRAME_PARMS frame_parms,
                        nfapi_nr_csi_rs_pdu_t csi_params)
 {
 
+  int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1];
   uint16_t b = csi_params.freq_domain;
-  uint8_t size, ports, kprime, lprime, i;
+  uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
+  uint8_t size, ports, kprime, lprime, i, gs;
   uint8_t j[16], k_n[6], koverline[16], loverline[16];
   int found = 0;
+  int wf, wt, lp, kp, symb;
   uint8_t fi = 0;
+  double rho, alpha;
+  uint32_t beta;
 
   switch (csi_params.row) {
   // implementation of table 7.4.1.5.3-1 of 38.211
@@ -55,7 +62,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     for (i=0; i<size; i++) {
       j[i] = 0;
       loverline[i] = csi_params.symb_l0;
-      koverline[i] = k_n[0] + i<<2;
+      koverline[i] = k_n[0] + (i<<2);
     }
     break;
 
@@ -115,7 +122,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     for (i=0; i<size; i++) {
       j[i] = i;
       loverline[i] = csi_params.symb_l0;
-      koverline[i] = k_n[0] + i<<1;
+      koverline[i] = k_n[0] + (i<<1);
     }
     break;
 
@@ -172,7 +179,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0 + i>>1;
+      loverline[i] = csi_params.symb_l0 + (i>>1);
       koverline[i] = k_n[i%2];
     }
     break;
@@ -233,7 +240,6 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
       koverline[i] = k_n[i];
     }
     break;
-  }
 
   case 11:
     ports = 16;
@@ -249,11 +255,10 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0 + i>>2;
+      loverline[i] = csi_params.symb_l0 + (i>>2);
       koverline[i] = k_n[i%4];
     }
     break;
-  }
 
   case 12:
     ports = 16;
@@ -352,9 +357,9 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     for (i=0; i<size; i++) {
       j[i] = i;
       if (i<8)
-        loverline[i] = csi_params.symb_l0 + i>>2;
+        loverline[i] = csi_params.symb_l0 + (i>>2);
       else
-        loverline[i] = csi_params.symb_l1 + i>>4;
+        loverline[i] = csi_params.symb_l1 + (i>>4);
       koverline[i] = k_n[i%4];
     }
     break;
@@ -401,6 +406,155 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     break;
 
   }
+
+  // setting the frequency density from its index
+  switch (csi_params.freq_density) {
+  
+  case 0:
+    rho = 0.5;
+    break;
+  
+  case 1:
+    rho = 0.5;
+    break;
+
+   case 2:
+    rho = 1;
+    break;
+
+   case 3:
+    rho = 3;
+    break;
+  }
+
+  if (ports == 1)
+    alpha = rho;
+  else
+    alpha = 2*rho; 
+
+  // CDM group size from CDM type index
+  switch (csi_params.cdm_type) {
+  
+  case 0:
+    gs = 1;
+    break;
+  
+  case 1:
+    gs = 2;
+    break;
+
+  case 2:
+    gs = 4;
+    break;
+
+  case 3:
+    gs = 8;
+    break;
+  }
+
+  // according to 38.214 5.2.2.3.1 last paragraph
+  if (csi_params.start_rb<csi_params.bwp_start)
+    csi_start = csi_params.bwp_start;
+  else 
+    csi_start = csi_params.start_rb;
+  if (csi_params.nr_of_rbs > (csi_params.bwp_start+csi_params.bwp_size-csi_start))
+    csi_bw = csi_params.bwp_start+csi_params.bwp_size-csi_start;
+  else
+    csi_bw = csi_params.nr_of_rbs;
+
+  if (rho < 1)
+    csi_length = ((csi_bw + csi_start)>>1)<<kprime; 
+  else
+    csi_length = ((uint16_t) rho*(csi_bw + csi_start))<<kprime; 
+
+
+  // TRS
+  if (csi_params.csi_type == 0) {
+    // ???
+  }
+
+  // NZP CSI RS
+  if (csi_params.csi_type == 1) {
+   // assuming amp is the amplitude of SSB channels
+   switch (csi_params.power_control_offset_ss) {
+   case 0:
+    beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
+    break;
+  
+   case 1:
+    beta = amp;
+    break;
+
+   case 2:
+    beta = (amp*ONE_OVER_SQRT2_Q15)>>14;
+    break;
+
+   case 3:
+    beta = amp<<1;
+    break;
+   }
+
+   for (lp=0; lp<=lprime; lp++){
+     symb = csi_params.symb_l0;
+     nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+     if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
+       nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
+     if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
+       symb = csi_params.symb_l1;
+       nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+       if ((csi_params.row == 13) || (csi_params.row == 16))
+         nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
+     }
+   }
+      
+  }
+
+  // resource mapping according to 38.211 7.4.1.5.3
+  for (n=csi_start; n<(csi_start+csi_bw); n++) {
+   if ( (csi_params.freq_density > 1) || (csi_params.freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
+    for (int ji=0; ji<size; ji++) { // loop over CDM groups
+      for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
+        p = 3000+s+j[ji]*gs; // port index
+        for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
+          k = (n*NR_NB_SC_PER_RB)+koverline[ji]+kp;  // frequency index of current resource element
+          // wf according to tables 7.4.5.3-2 to 7.4.5.3-5 
+          if (kp == 0)
+            wf = 1;
+          else
+            wf = -2*(s%2)+1;
+          na = n*alpha;
+          kpn = (rho*koverline[ji])/NR_NB_SC_PER_RB;
+          mprime = na + kp + kpn; // sequence index
+          for (lp=0; lp<=lprime; lp++) { // loop over frequency resource elements within a group
+            l = lp + loverline[ji];
+            // wt according to tables 7.4.5.3-2 to 7.4.5.3-5 
+            if (s < 2)
+              wt = 1;
+            else if (s < 4)
+              wt = -2*(lp%2)+1;
+            else if (s < 6)
+              wt = -2*(lp/2)+1;
+            else {
+              if ((lp == 0) || (lp == 3))
+                wt = 1;
+              else
+                wt = -1;
+            }
+            // ZP CSI RS
+            if (csi_params.csi_type == 2) {
+              ((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1] = 0;
+              ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = 0;
+            }
+            else {
+              ((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
+              ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
+            }
+          }
+        }
+      }    
+    }
+   }
+  } 
 
   return 0;
 }
