@@ -6498,7 +6498,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     /* CDRX: (under test) activated when RRC Connection Reconfiguration was sent */
     int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
     if (UE_id_mac == -1) {
-      LOG_E(rrc, "Can't find UE_id(MAC) of UE rnti %x\n", ue_context_pP->ue_context.rnti);
+      LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", ue_context_pP->ue_context.rnti);
       return;
     }
     
