@@ -209,7 +209,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   config_common(Mod_idP, 
 		scc);
-
   LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
 
   // if in nFAPI mode 

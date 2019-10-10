@@ -120,6 +120,7 @@ int                      threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
+
 extern int16_t nr_dlsch_demod_shift;
 
 int UE_scan = 0;
@@ -397,7 +398,7 @@ int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;
-  int tddflag=0, nonbiotflag;
+  int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
   uint32_t online_log_messages;
@@ -406,18 +407,6 @@ static void get_options(void) {
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-
-  if (strlen(in_path) > 0) {
-    opt_type = OPT_PCAP;
-    opt_enabled=1;
-    printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-  }
-
-  if (strlen(in_ip) > 0) {
-    opt_enabled=1;
-    opt_type = OPT_WIRESHARK;
-    printf("Enabling OPT for wireshark for local interface");
-  }
 
   config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
@@ -465,6 +454,9 @@ static void get_options(void) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
       frame_parms[CC_id]->frame_type = TDD;
   }
+
+  if (vcdflag > 0)
+    ouput_vcd = 1;
 
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
@@ -698,9 +690,10 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
-  if (opt_type != OPT_NONE) {
-    if (init_opt() == -1)
-      LOG_E(OPT,"failed to run OPT \n");
+  init_opt() ;
+
+  if (ouput_vcd) {
+    vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
 #ifdef PDCP_USE_NETLINK
@@ -795,6 +788,9 @@ int main( int argc, char **argv ) {
 
   while(true)
     sleep(3600);
+
+  if (ouput_vcd)
+    vcd_signal_dumper_close();
 
   return 0;
 }

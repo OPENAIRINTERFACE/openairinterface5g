@@ -21,41 +21,14 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>run-oai-gnb-nr-ue</htmlTabRef>
-        <htmlTabName>Run-gNB-and-NR-UE</htmlTabName>
+        <htmlTabRef>terminate-oai-gnb-nr-ue</htmlTabRef>
+        <htmlTabName>Terminate-gNB-and-NR-UE</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
-	<repeatCount>4</repeatCount>
 	<TestCaseRequestedList>
-090101 000001 090102 000002 090108 090109
+090108 090109
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 	
-        <testCase id="090101">
-                <class>Initialize_eNB</class>
-                <desc>Initialize gNB USRP</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf</Initialize_eNB_args>
-		<air_interface>NR</air_interface>
-        </testCase>
-
-	<testCase id="000001">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
-	</testCase>
-
-	<testCase id="000002">
-		<class>IdleSleep</class>
-		<desc>Waiting for NR UE to synchronize w/ gNB</desc>
-		<idle_sleep_time_in_sec>180</idle_sleep_time_in_sec>
-	</testCase>
-
-        <testCase id="090102">
-                <class>Initialize_OAI_UE</class>
-                <desc>Initialize NR UE USRP</desc>
-		<Initialize_OAI_UE_args>-C 3510000000 --numerology 1 -r 106 --phy-test --usrp-args "addr=192.168.30.2,clock_source=external,time_source=external" --threadoffset 16</Initialize_OAI_UE_args>
-		<air_interface>NR</air_interface>
-        </testCase>
-
         <testCase id="090108">
                 <class>Terminate_OAI_UE</class>
                 <desc>Terminate NR UE</desc>

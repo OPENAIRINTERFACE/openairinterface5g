@@ -394,7 +394,6 @@ int8_t nr_ue_decode_mib(
     }else{
       rb_offset   = table_38213_13_10_c4[index_4msb];
     }
-                
     break;
 
   default:
@@ -588,7 +587,6 @@ int8_t nr_ue_decode_mib(
   mac->type0_pdcch_ss_sfn_c = sfn_c;
   mac->type0_pdcch_ss_n_c = n_c;
         
-
   // fill in the elements in config request inside P5 message
   
   //mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation

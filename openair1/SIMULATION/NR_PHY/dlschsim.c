@@ -28,6 +28,8 @@
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "T.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -154,7 +156,7 @@ int main(int argc, char **argv)
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -226,6 +228,10 @@ int main(int argc, char **argv)
 			printf("Setting SNR0 to %f\n", snr0);
 #endif
 			break;
+
+		case 'V':
+		  ouput_vcd = 1;
+		  break;
 
 		case 'S':
 			snr1 = atof(optarg);
@@ -325,6 +331,7 @@ int main(int argc, char **argv)
 			printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
 			printf("-h This message\n");
 			printf("-p Use extended prefix mode\n");
+			printf("-V Enable VCD dumb functions\n");
 			//printf("-d Use TDD\n");
 			printf("-n Number of frames to simulate\n");
 			printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
@@ -355,6 +362,9 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
+
+	if (ouput_vcd)
+        vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
 
 	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
 				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
@@ -562,9 +572,14 @@ int main(int argc, char **argv)
 			printf("\n");
 			exit(-1);
 #endif
+
+			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
+
 			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
 					slot,harq_pid, is_crnti, llr8_flag);
+
+			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_OUT);
 
 			if (ret > dlsch0_ue->max_ldpc_iterations)
 				n_errors++;
@@ -658,6 +673,9 @@ int main(int argc, char **argv)
 
 	if (input_fd)
 		fclose(input_fd);
+
+	if (ouput_vcd)
+        vcd_signal_dumper_close();
 
 	return (n_errors);
 }

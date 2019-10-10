@@ -25,8 +25,7 @@
 uint16_t dl_S_table_normal[10]= {3,9,10,11,12,3,9,10,11,6};
 uint16_t dl_S_table_extended[10]= {3,8,9,10,3,8,9,5,0,0};
 
-void set_S_config(LTE_DL_FRAME_PARMS *fp)
-{
+void set_S_config(LTE_DL_FRAME_PARMS *fp) {
   int X = fp->srsX;
   fp->ul_symbols_in_S_subframe=(1+X);
 
@@ -37,8 +36,7 @@ void set_S_config(LTE_DL_FRAME_PARMS *fp)
 }
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
-		             uint8_t osf)
-{
+                     uint8_t osf) {
   uint8_t log2_osf;
   LOG_I(PHY,"Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
 
@@ -128,12 +126,10 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
       frame_parms->nb_prefix_samples0>>=(2-log2_osf);
       frame_parms->N_RBGS = 2;
       frame_parms->N_RBG = 13;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       frame_parms->ofdm_symbol_size_khz_1dot25     = 6144*osf;
       frame_parms->first_carrier_offset_khz_1dot25 = frame_parms->ofdm_symbol_size_khz_1dot25 - 1800; //4344
       frame_parms->nb_prefix_samples_khz_1dot25>>=(2-log2_osf);
       frame_parms->nb_prefix_samples0_khz_1dot25>>=(2-log2_osf);
-#endif
       break;
 
     case 15:
@@ -172,8 +168,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
-{
+void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
   LOG_I(PHY,"frame_parms->N_RB_DL=%d\n",frame_parms->N_RB_DL);
   LOG_I(PHY,"frame_parms->N_RB_UL=%d\n",frame_parms->N_RB_UL);
   LOG_I(PHY,"frame_parms->Nid_cell=%d\n",frame_parms->Nid_cell);

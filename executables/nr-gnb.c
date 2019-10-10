@@ -663,11 +663,7 @@ static void* gNB_thread_prach( void* param ) {
    if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
 
    LOG_D(PHY,"Running gNB prach procedures\n");
-   prach_procedures(gNB
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      ,0
-#endif
-      );
+   prach_procedures(gNB ,0);
 
    if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
  }
@@ -682,6 +678,27 @@ static void* gNB_thread_prach( void* param ) {
 extern void init_td_thread(PHY_VARS_gNB *);
 extern void init_te_thread(PHY_VARS_gNB *);
 
+static void* process_stats_thread(void* param) {
+
+  PHY_VARS_gNB *gNB  = (PHY_VARS_gNB*)param;
+
+  reset_meas(&gNB->dlsch_encoding_stats);
+  reset_meas(&gNB->dlsch_scrambling_stats);
+  reset_meas(&gNB->dlsch_modulation_stats);
+
+  wait_sync("process_stats_thread");
+
+  while(!oai_exit)
+  {
+    sleep(1);
+    print_meas(&gNB->dlsch_encoding_stats, "pdsch_encoding", NULL, NULL);
+    print_meas(&gNB->dlsch_scrambling_stats, "pdsch_scrambling", NULL, NULL);
+    print_meas(&gNB->dlsch_modulation_stats, "pdsch_modulation", NULL, NULL);
+  }
+  return(NULL);
+}
+
+
 void init_gNB_proc(int inst) {
   int i=0;
   int CC_id;
@@ -693,6 +710,7 @@ void init_gNB_proc(int inst) {
 #ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
 #endif
+  
   proc = &gNB->proc;
   L1_proc                        = &proc->L1_proc;
   L1_proc_tx                     = &proc->L1_proc_tx;
@@ -702,7 +720,7 @@ void init_gNB_proc(int inst) {
   L1_proc_tx->instance_cnt_RUs   = 0;
   proc->instance_cnt_prach       = -1;
   proc->instance_cnt_asynch_rxtx = -1;
-  proc->CC_id                    = 0;
+  proc->CC_id                    = CC_id;
   proc->first_rx                 =1;
   proc->first_tx                 =1;
   proc->RU_mask                  =0;
@@ -726,6 +744,20 @@ void init_gNB_proc(int inst) {
     threadCreate( &L1_proc->pthread, gNB_L1_thread, gNB, "L1_proc", -1, OAI_PRIORITY_RT );
     threadCreate( &L1_proc_tx->pthread, gNB_L1_thread_tx, gNB,"L1_proc_tx", -1, OAI_PRIORITY_RT);
   }
+  
+  if(opp_enabled == 1) threadCreate(&proc->L1_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
+  //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
+  char name[16];
+  
+  if (gNB->single_thread_flag==0) {
+    snprintf( name, sizeof(name), "L1 %d", i );
+    pthread_setname_np( L1_proc->pthread, name );
+    snprintf( name, sizeof(name), "L1TX %d", i );
+    pthread_setname_np( L1_proc_tx->pthread, name );
+  }
+  
+  AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+
   
   //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
   char name[16];

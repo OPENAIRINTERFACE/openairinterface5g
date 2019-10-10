@@ -22,7 +22,7 @@
 /*!\file nrLDPC_cnProc.h
  * \brief Defines the functions for check node processing
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
- * \date 27-03-2018
+ * \date 30-09-2019
  * \version 1.0
  * \note
  * \warning
@@ -34,6 +34,7 @@
 /**
    \brief Performs CN processing for BG2 on the CN processing buffer and stores the results in the CN processing results buffer.
    \param p_lut Pointer to decoder LUTs
+   \param p_procBuf Pointer to processing buffers
    \param Z Lifting size
 */
 static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)

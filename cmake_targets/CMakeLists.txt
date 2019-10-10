@@ -245,6 +245,7 @@ add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" )
+add_boolean_option(ENABLE_VCD          True  "always true now, time measurements of proc calls and var displays")
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
@@ -285,34 +286,10 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
-add_list2_option(RRC_ASN1_VERSION "Rel15" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
+set (RRC_ASN1_VERSION "Rel15")
+make_version(LTE_RRC_VERSION 15 6 0)
+set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.6.0.asn1)
 
-if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
-  make_version(LTE_RRC_VERSION 8 6 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
-elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
-  make_version(LTE_RRC_VERSION 10 2 0)
-  add_definitions(-DCBA)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20-lola.asn)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
-  make_version(LTE_RRC_VERSION 10 2 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel11")
-  make_version(LTE_RRC_VERSION 11 18 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-11.18.0.asn1)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel12")
-  make_version(LTE_RRC_VERSION 12 16 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-12.16.0.asn1)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel13")
-  make_version(LTE_RRC_VERSION 13 9 1)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-13.9.1.asn1)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
-  make_version(LTE_RRC_VERSION 14 7 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.7.0.asn1)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
-  make_version(LTE_RRC_VERSION 15 6 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.6.0.asn1)
-endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DLTE_RRC_VERSION=${LTE_RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 
@@ -339,12 +316,9 @@ include_directories ("${RRC_FULL_DIR}")
 
 #NR RRC
 #######
-add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
-
-if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  make_version(NR_RRC_VERSION 15 6 0)
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.6.0.asn1)
-endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
+set (NR_RRC_ASN1_VERSION "NR_Rel15" )
+make_version(NR_RRC_VERSION 15 6 0)
+set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.6.0.asn1)
 add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
@@ -373,34 +347,12 @@ include_directories ("${NR_RRC_FULL_DIR}")
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(S1AP_RELEASE R15 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
+set (S1AP_RELEASE R15)
 
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
-if (${S1AP_RELEASE} STREQUAL "R8")
-  make_version(S1AP_VERSION 8 10 0)
-  set(S1AP_ASN_FILES "s1ap-8.10.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R9")
-  make_version(S1AP_VERSION 9 10 0)
-  set(S1AP_ASN_FILES "s1ap-9.10.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R10")
-  make_version(S1AP_VERSION 10 9 0)
-  set(S1AP_ASN_FILES "s1ap-10.9.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R11")
-  make_version(S1AP_VERSION 11 8 0)
-  set(S1AP_ASN_FILES "s1ap-11.8.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R12")
-  make_version(S1AP_VERSION 12 7 0)
-  set(S1AP_ASN_FILES "s1ap-12.7.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R13")
-  make_version(S1AP_VERSION 13 6 0)
-  set(S1AP_ASN_FILES "s1ap-13.6.0.asn1")
-elseif (${S1AP_RELEASE} STREQUAL "R14")
-  make_version(S1AP_VERSION 14 9 0)
-  set(S1AP_ASN_FILES "s1ap-14.9.0.asn1")
-else (${S1AP_RELEASE} STREQUAL "R15")
-  make_version(S1AP_VERSION 15 6 0)
-  set(S1AP_ASN_FILES "s1ap-15.6.0.asn1")
-endif(${S1AP_RELEASE} STREQUAL "R8")
+make_version(S1AP_VERSION 15 6 0)
+set(S1AP_ASN_FILES "s1ap-15.6.0.asn1")
+
 add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
 set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
@@ -448,25 +400,12 @@ add_dependencies(S1AP_ENB rrc_flag s1ap_flag)
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(X2AP_RELEASE R15 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
+set (X2AP_RELEASE R15)
 
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
-if (${X2AP_RELEASE} STREQUAL "R8")
-  make_version(X2AP_VERSION 8 9 0)
-  set(X2AP_ASN_FILES x2ap-8.9.0.asn1)
-elseif (${X2AP_RELEASE} STREQUAL "R11")
-  make_version(X2AP_VERSION 11 9 0)
-  set(X2AP_ASN_FILES x2ap-11.9.0.asn1)
-elseif (${X2AP_RELEASE} STREQUAL "R12")
-  make_version(X2AP_VERSION 12 9 0)
-  set(X2AP_ASN_FILES x2ap-12.9.0.asn1)
-elseif (${X2AP_RELEASE} STREQUAL "R14")
-  make_version(X2AP_VERSION 14 7 0)
-  set(X2AP_ASN_FILES x2ap-14.7.0.asn1)
-elseif (${X2AP_RELEASE} STREQUAL "R15")
-  make_version(X2AP_VERSION 15 6 0)
-  set(X2AP_ASN_FILES x2ap-15.6.0.asn1)
-endif(${X2AP_RELEASE} STREQUAL "R8")
+make_version(X2AP_VERSION 15 6 0)
+set(X2AP_ASN_FILES x2ap-15.6.0.asn1)
+
 add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
@@ -1033,7 +972,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/LISTS/list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
-#  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
+  ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
 #  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
@@ -2550,6 +2489,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
+  ${UTIL_SRC}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2665,32 +2605,50 @@ add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
   target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+=======
+  ${UTIL_SRC}
+  ${T_SOURCE})
+target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+>>>>>>> origin/develop-nr
 
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
 target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
+=======
+  ${UTIL_SRC}
+  ${T_SOURCE})
+target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB}  dl)
+>>>>>>> origin/develop-nr
 
 #PUCCH ---> Prashanth
 add_executable(nr_pucchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+=======
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${UTIL_SRC}
+>>>>>>> origin/develop-nr
   ${T_SOURCE})
-target_link_libraries(nr_pucchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+target_link_libraries(nr_pucchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 #PUCCH ---> Prashanth
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})   
 target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON MAC_NR RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
@@ -2703,20 +2661,37 @@ add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${T_SOURCE})   
 target_link_libraries(nr_prachsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+=======
+  ${UTIL_SRC}
+  ${T_SOURCE})   
+target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+>>>>>>> origin/develop-nr
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
 target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+=======
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${UTIL_SRC}
+  ${T_SOURCE})
+target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+>>>>>>> origin/develop-nr
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
+<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+=======
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${UTIL_SRC}
+>>>>>>> origin/develop-nr
   ${T_SOURCE})
-target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
