@@ -990,7 +990,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
 //-----------------------------------------------------------------------------
 /*
-* Configure local DRX timers and thresholds following the drx_configuration input
+* Configure local CDRX timers and thresholds following the drx_configuration input
 */
 void eNB_Config_Local_DRX(
   module_id_t Mod_id,
@@ -1022,20 +1022,19 @@ void eNB_Config_Local_DRX(
 
   /* Check drx_Configuration */
   if (drx_Configuration == NULL) {
-    LOG_I(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
+    LOG_W(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters for CDRX\n");
     return;
   }
 
   /* Check if drx config present */
   if (drx_Configuration->present != LTE_DRX_Config_PR_setup) {
-    LOG_I(MAC, "No drx_Configuration present, don't configure local UE parameters\n");
+    LOG_I(MAC, "No drx_Configuration present, don't configure local UE parameters for CDRX\n");
     return;
   }
 
   /* Modify scheduling control structure according to DRX configuration: doesn't support every configurations! */  
-  LOG_I(MAC, "Initial cdrx_waiting_ack state: %s\n", UE_scheduling_control->cdrx_waiting_ack ? "TRUE" : "FALSE");
-  UE_scheduling_control->cdrx_configured = TRUE; // will be set to true 
-  UE_scheduling_control->cdrx_waiting_ack = TRUE; // For debugging only
+  UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when receiving RRC Reconfiguration Complete
+  UE_scheduling_control->cdrx_waiting_ack = TRUE; // waiting for RRC Reconfiguration Complete message
   UE_scheduling_control->in_active_time = FALSE;
   UE_scheduling_control->dci0_ongoing_timer = 0;
 

@@ -750,7 +750,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcConnectionReconfigurationComplete\n");
         
-        /* CDRX: (under test) activated when RRC Connection Reconfiguration was sent */
+        /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
         int UE_id_mac = find_UE_id(instance, rnti);
         
         if (UE_id_mac == -1) {
@@ -762,7 +762,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
         
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;
-          // UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration is sent (under test)
+          UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
           LOG_I(F1AP, "CDRX configuration after first RRC Connection Reconfiguration Complete reception\n");
         }
         /* End of CDRX processing */
