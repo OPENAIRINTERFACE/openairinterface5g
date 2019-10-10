@@ -172,18 +172,6 @@ err_code_t flexran_agent_destroy_timers(void) {
   return 0;
 }
 
-void flexran_agent_sleep_until(struct timespec *ts, int delay) {
-  ts->tv_nsec += delay;
-
-  if(ts->tv_nsec >= 1000*1000*1000) {
-    ts->tv_nsec -= 1000*1000*1000;
-    ts->tv_sec++;
-  }
-
-  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ts,  NULL);
-}
-
-
 err_code_t flexran_agent_stop_timer(long timer_id) {
   struct flexran_agent_timer_element_s *e=NULL;
   struct flexran_agent_timer_element_s search;

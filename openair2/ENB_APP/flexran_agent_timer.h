@@ -125,8 +125,5 @@ Protocol__FlexranMessage * flexran_agent_process_timeout(long timer_id, void* ti
 /* Comparator function comparing two timers. Decides the ordering of the timers */
 int flexran_agent_compare_timer(struct flexran_agent_timer_element_s *a, struct flexran_agent_timer_element_s *b);
 
-/*Specify a delay in nanoseconds to timespec and sleep until then*/
-void flexran_agent_sleep_until(struct timespec *ts, int delay);
-
 /* RB_PROTOTYPE is for .h files */
 RB_PROTOTYPE(flexran_agent_map, flexran_agent_timer_element_s, entry, flexran_agent_compare_timer);
