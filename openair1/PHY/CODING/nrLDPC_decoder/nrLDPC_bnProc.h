@@ -2785,9 +2785,6 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 */
 static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 {
-    /** Vector for moving LSB 1 to MSB 1 */
-    const uint8_t const127_256_epu8[32] __attribute__ ((aligned(32))) = {127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127};
-
     /** Vector of indices for shuffling input */
     const uint8_t constShuffle_256_epi8[32] __attribute__ ((aligned(32))) = {7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8};
 
@@ -2799,13 +2796,14 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
     uint32_t i;
     uint32_t M  = numLLR>>5;
     uint32_t Mr = numLLR&31;
-    const __m256i* p_127  = (__m256i*) const127_256_epu8;
     const __m256i* p_shuffle = (__m256i*) constShuffle_256_epi8;
 
     for (i=0; i<M; i++)
     {
+        // Move LSB to MSB on 8 bits
         inPerm = _mm256_shuffle_epi8(*p_llrOut,*p_shuffle);
-        *p_bits++ = _mm256_movemask_epi8(_mm256_adds_epu8(inPerm, *p_127));
+        // Hard decision
+        *p_bits++ = _mm256_movemask_epi8(inPerm);
         p_llrOut++;
     }
 
