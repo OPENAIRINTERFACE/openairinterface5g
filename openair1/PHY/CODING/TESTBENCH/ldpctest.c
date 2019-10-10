@@ -362,7 +362,7 @@ int test_ldpc(short No_iteration,
           printf("\ne %d..%d:    ",i,i+15);
 #endif
 
-        if (channel_input[j][i-2*Zc]==0)
+        if (channel_input_optim[j][i-2*Zc]==0)
           modulated_input[j][i]=1.0;///sqrt(2);  //QPSK
         else
           modulated_input[j][i]=-1.0;///sqrt(2);
@@ -386,7 +386,7 @@ int test_ldpc(short No_iteration,
 	else
             channel_output_uncoded[j][i]=0;
 
-        if (channel_output_uncoded[j][i] != channel_input[j][i-2*Zc])
+        if (channel_output_uncoded[j][i] != channel_input_optim[j][i-2*Zc])
 	  *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
 
 	}
