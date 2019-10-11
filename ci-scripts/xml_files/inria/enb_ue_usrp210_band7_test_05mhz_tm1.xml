@@ -1,0 +1,103 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-05-tm1-oai-ue</htmlTabRef>
+	<htmlTabName>Test-05MHz-TM1-OAI-UE</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>4</repeatCount>
+	<TestCaseRequestedList>
+ 030201 090109
+ 030102 000001 090102 000002 040503 000002 040603 040604 040643 040644 000002 090109 000001 030201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep for 10 sec</desc>
+		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep for 3 sec</desc>
+		<idle_sleep_time_in_sec>3</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030102">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<testCase id="090102">
+		<class>Initialize_OAI_UE</class>
+		<desc>Initialize OAI UE (FDD/Band7/5MHz)</desc>
+		<Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 130 --ue-txgain 1 --ue-max-power -6 --ue-scan-carrier --nokrnmod 1</Initialize_OAI_UE_args>
+	</testCase>
+
+	<testCase id="090109">
+		<class>Terminate_OAI_UE</class>
+		<desc>Terminate OAI UE</desc>
+	</testCase>
+
+	<testCase id="040503">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+       		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040603">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040604">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/12Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 12M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040643">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040644">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/2Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 2M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+</testCaseList>
