@@ -273,7 +273,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 
   if(tinput != NULL) start_meas(tinput);
   for (i=0; i<block_length; i++) {
-      c[i] = (test_input[i/8]&(128>>(i&7)))>>(i&7);
+    c[i] = (test_input[i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
     }
 
@@ -330,7 +330,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 
 #ifdef __AVX2__
   __m256i shufmask = _mm256_set_epi64x(0x0303030303030303, 0x0202020202020202,0x0101010101010101, 0x0000000000000000);
-  __m256i andmask  = _mm256_set1_epi64x(0x8040201008040201);  // every 8 bits -> 8 bytes, pattern repeats.
+  __m256i andmask  = _mm256_set1_epi64x(0x0102040810204080);  // every 8 bits -> 8 bytes, pattern repeats.
   __m256i zero256   = _mm256_setzero_si256();
   __m256i masks[8];
   register __m256i c256;
@@ -413,7 +413,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   for (i=0; i<block_length; i++) {
     for (j=0; j<n_segments; j++) {
 
-      temp = (test_input[j][i/8]&(1<<(i&7)))>>(i&7);
+      temp = (test_input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
       c[i] |= (temp << j);
     }
@@ -431,7 +431,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   for (i=(block_length>>5)<<5;i<block_length;i++) {
     for (j=0; j<n_segments; j++) {
 
-      temp = (test_input[j][i/8]&(128>>(i&7)))>>(i&7);
+      temp = (test_input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
       c[i] |= (temp << j);
     }
@@ -639,7 +639,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
     //for (j=0; j<n_segments; j++) {
 	  for (j=macro_segment; j < macro_segment_end; j++) {
 
-      temp = (test_input[j][i/8]&(128>>(i&7)))>>(i&7);
+	    temp = (test_input[j][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
       c[i] |= (temp << (j-macro_segment));
     }
