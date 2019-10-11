@@ -78,8 +78,8 @@ mac_rrc_data_req(
   carrier = &rrc->carrier[0];
   mib     = &carrier->mib;
 
-  if(Srb_id == BCCH_SI_MBMS){
-    if (frameP%4 == 0){
+  if(Srb_id == BCCH_SI_MBMS) {
+    if (frameP%4 == 0) {
       memcpy(&buffer_pP[0],
              RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
              RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
@@ -162,13 +162,12 @@ mac_rrc_data_req(
   }
 
   if( (Srb_id & RAB_OFFSET ) == CCCH) {
-
     struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP],rnti);
 
     if (ue_context_p == NULL) return(0);
+
     eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
     LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
-
     Srb_info=&ue_p->Srb0;
 
     // check if data is there for MAC
@@ -197,8 +196,6 @@ mac_rrc_data_req(
     return (Sdu_size);
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if((Srb_id & RAB_OFFSET) == MCCH) {
     if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
       return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
@@ -221,9 +218,6 @@ mac_rrc_data_req(
     return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
   }
 
-#endif // #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR) {
     memcpy(&buffer_pP[0],
            RC.rrc[Mod_idP]->carrier[CC_id].SIB1_BR,
@@ -238,7 +232,6 @@ mac_rrc_data_req(
     return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
   }
 
-#endif
   return(0);
 }
 
@@ -255,31 +248,25 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t        *sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_areaP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  , const boolean_t		brOption
-#endif
-
+  const uint8_t         mbsfn_sync_areaP,
+  const boolean_t   brOption
 )
 //--------------------------------------------------------------------------
 {
-
-
   if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
-            module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
-  
+          module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
     /* do ITTI message */
     DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
       module_idP,
       CC_id,
       UE_id,
-      rntiP,  
+      rntiP,
       sduP,
       sdu_lenP
     );
     return(0);
-  } 
+  }
 
   //SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
@@ -293,9 +280,8 @@ mac_rrc_data_ind(
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
     LOG_D(RRC, "[eNB %d] Received SDU for CCCH on SRB %d\n", module_idP, srb_idP);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ctxt.brOption = brOption;
-#endif
+
     /*Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     if (sdu_lenP > 0) {
       memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
@@ -362,10 +348,12 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
   } else {
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
+
   if (flexran_agent_get_rrc_xface(Mod_instP)) {
     flexran_agent_get_rrc_xface(Mod_instP)->flexran_agent_notify_ue_state_change(Mod_instP,
-								     rntiP, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+        rntiP, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
+
   //rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 

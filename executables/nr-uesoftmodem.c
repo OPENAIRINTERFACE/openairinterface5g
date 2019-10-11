@@ -409,18 +409,6 @@ static void get_options(void) {
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
-  if (strlen(in_path) > 0) {
-    opt_type = OPT_PCAP;
-    opt_enabled=1;
-    printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-  }
-
-  if (strlen(in_ip) > 0) {
-    opt_enabled=1;
-    opt_type = OPT_WIRESHARK;
-    printf("Enabling OPT for wireshark for local interface");
-  }
-
   config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
   if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
@@ -703,10 +691,7 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
-  if (opt_type != OPT_NONE) {
-    if (init_opt() == -1)
-      LOG_E(OPT,"failed to run OPT \n");
-  }
+  init_opt() ;
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");

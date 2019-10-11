@@ -184,20 +184,15 @@ void *send_UE_status_notification(void *);
 #include "LTE_BCCH-DL-SCH-Message.h"
 #include "LTE_SBCCH-SL-BCH-MessageType.h"
 #include "LTE_BCCH-BCH-Message.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  #include "LTE_MCCH-Message.h"
-  #include "LTE_MBSFNAreaConfiguration-r9.h"
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  #include "LTE_SCellToAddMod-r10.h"
-#endif
+#include "LTE_MCCH-Message.h"
+#include "LTE_MBSFNAreaConfiguration-r9.h"
+#include "LTE_SCellToAddMod-r10.h"
 #include "LTE_AS-Config.h"
 #include "LTE_AS-Context.h"
 #include "LTE_UE-EUTRA-Capability.h"
 #include "LTE_MeasResults.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 0, 0))
-  #include "LTE_SidelinkUEInformation-r12.h"
-#endif
+#include "LTE_SidelinkUEInformation-r12.h"
+
 
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
@@ -207,68 +202,7 @@ void *send_UE_status_notification(void *);
 /* correct Rel(8|10)/Rel14 differences
  * the code is in favor of Rel14, those defines do the translation
  */
-#if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
-  #define CipheringAlgorithm_r12_t e_SecurityAlgorithmConfig__cipheringAlgorithm
-  #define CipheringAlgorithm_r12_eea0 SecurityAlgorithmConfig__cipheringAlgorithm_eea0
-  #define CipheringAlgorithm_r12_eea1 SecurityAlgorithmConfig__cipheringAlgorithm_eea1
-  #define CipheringAlgorithm_r12_eea2 SecurityAlgorithmConfig__cipheringAlgorithm_eea2
-  #define CipheringAlgorithm_r12_spare1 SecurityAlgorithmConfig__cipheringAlgorithm_spare1
-  #define Alpha_r12_al0 UplinkPowerControlCommon__alpha_al0
-  #define Alpha_r12_al04 UplinkPowerControlCommon__alpha_al04
-  #define Alpha_r12_al05 UplinkPowerControlCommon__alpha_al05
-  #define Alpha_r12_al06 UplinkPowerControlCommon__alpha_al06
-  #define Alpha_r12_al07 UplinkPowerControlCommon__alpha_al07
-  #define Alpha_r12_al08 UplinkPowerControlCommon__alpha_al08
-  #define Alpha_r12_al09 UplinkPowerControlCommon__alpha_al09
-  #define Alpha_r12_al1 UplinkPowerControlCommon__alpha_al1
-  #define PreambleTransMax_n3 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3
-  #define PreambleTransMax_n4 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4
-  #define PreambleTransMax_n5 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5
-  #define PreambleTransMax_n6 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6
-  #define PreambleTransMax_n7 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7
-  #define PreambleTransMax_n8 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8
-  #define PreambleTransMax_n10 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10
-  #define PreambleTransMax_n20 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20
-  #define PreambleTransMax_n50 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50
-  #define PreambleTransMax_n100 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100
-  #define PreambleTransMax_n200 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200
-  #define PeriodicBSR_Timer_r12_sf5 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5
-  #define PeriodicBSR_Timer_r12_sf10 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10
-  #define PeriodicBSR_Timer_r12_sf16 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16
-  #define PeriodicBSR_Timer_r12_sf20 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20
-  #define PeriodicBSR_Timer_r12_sf32 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32
-  #define PeriodicBSR_Timer_r12_sf40 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40
-  #define PeriodicBSR_Timer_r12_sf64 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64
-  #define PeriodicBSR_Timer_r12_sf80 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80
-  #define PeriodicBSR_Timer_r12_sf128 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128
-  #define PeriodicBSR_Timer_r12_sf160 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160
-  #define PeriodicBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320
-  #define PeriodicBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640
-  #define PeriodicBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280
-  #define PeriodicBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560
-  #define PeriodicBSR_Timer_r12_infinity MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
-  #define RetxBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320
-  #define RetxBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640
-  #define RetxBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280
-  #define RetxBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560
-  #define RetxBSR_Timer_r12_sf5120 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120
-  #define RetxBSR_Timer_r12_sf10240 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240
-#endif
 
-// This corrects something generated by asn1c which is different between Rel8 and Rel10
-#if (LTE_RRC_VERSION <= MAKE_VERSION(10, 0, 0))
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member SystemInformation_r8_IEs_sib_TypeAndInfo_Member
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib2
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib3
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib4
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib5
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib6
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib7
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib8
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib9
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib10
-  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib11
-#endif
 
 
 #define NB_SIG_CNX_CH 1
@@ -276,13 +210,6 @@ void *send_UE_status_notification(void *);
 #define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
 
-/*
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib12_v920
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib13_v920
-#endif
-*/
-//#include "L3_rrc_defs.h"
 #ifndef NO_RRM
   #include "L3_rrc_interface.h"
   #include "rrc_rrm_msg.h"
@@ -419,25 +346,16 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t SIB1systemInfoValueTag_MBMS;
   uint32_t SIStatus_MBMS;
   uint32_t SIcnt_MBMS;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
-#endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
-#endif
-
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
   uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
-#endif
   unsigned short UE_index;
   uint32_t T300_active;
   uint32_t T300_cnt;
@@ -621,9 +539,7 @@ typedef struct rrc_gummei_s {
 
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   LTE_SCellToAddMod_r10_t            sCell_config[2];
-#endif
   LTE_SRB_ToAddModList_t            *SRB_configList;
   LTE_SRB_ToAddModList_t            *SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   LTE_DRB_ToAddModList_t            *DRB_configList;
@@ -755,7 +671,6 @@ typedef struct {
   uint8_t                           sizeof_SIB1;
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t                           *SIB1_BR;
   uint8_t                           sizeof_SIB1_BR;
   uint8_t                           *SIB23_BR;
@@ -764,7 +679,6 @@ typedef struct {
   uint8_t                           sizeof_MIB_FeMBMS;
   uint8_t                           *SIB1_MBMS;
   uint8_t                           sizeof_SIB1_MBMS;
-#endif
   int                                   physCellId;
   int                                   Ncp;
   int                                   p_eNB;
@@ -780,23 +694,17 @@ typedef struct {
   LTE_BCCH_DL_SCH_Message_t             *siblock1_DU;
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
-  //  SystemInformation_t               systemInformation;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_BCCH_BCH_Message_MBMS_t            mib_fembms;
   LTE_BCCH_DL_SCH_Message_MBMS_t         siblock1_MBMS;
   LTE_BCCH_DL_SCH_Message_MBMS_t         systemInformation_MBMS;
-#endif
   LTE_SystemInformationBlockType1_t     *sib1;
   LTE_SystemInformationBlockType2_t     *sib2;
   LTE_SystemInformationBlockType3_t     *sib3;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType1_t     *sib1_BR;
   LTE_SystemInformationBlockType2_t     *sib2_BR;
   LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS;
   LTE_SystemInformationBlockType13_r9_t *sib13_MBMS;
-  uint8_t				FeMBMS_flag;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+  uint8_t       FeMBMS_flag;
   LTE_SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
   uint8_t                           num_mbsfn_sync_area;
@@ -805,7 +713,6 @@ typedef struct {
   LTE_MCCH_Message_t                mcch;
   LTE_MBSFNAreaConfiguration_r9_t  *mcch_message;
   SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
-#endif
   //TTN - SIB 18,19,21 for D2D
   LTE_SystemInformationBlockType18_r12_t *sib18;
   LTE_SystemInformationBlockType19_r12_t *sib19;
@@ -816,7 +723,7 @@ typedef struct {
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
 
-  
+
 typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
   ngran_node_t                    node_type;
@@ -898,22 +805,16 @@ typedef struct UE_RRC_INST_s {
   uint8_t sizeof_SI[NB_CNX_UE];
   uint8_t SIB1Status[NB_CNX_UE];
   uint8_t SIStatus[NB_CNX_UE];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t *SIB1_MBMS[NB_CNX_UE];
   uint8_t sizeof_SIB1_MBMS[NB_CNX_UE];
   uint8_t *SI_MBMS[NB_CNX_UE];
   uint8_t sizeof_SI_MBMS[NB_CNX_UE];
   uint8_t SIB1Status_MBMS[NB_CNX_UE];
   uint8_t SIStatus_MBMS[NB_CNX_UE];
-#endif
   LTE_SystemInformationBlockType1_t *sib1[NB_CNX_UE];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS[NB_CNX_UE];
-#endif
   LTE_SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformation_MBMS_r14_t *si_MBMS[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
-#endif
   LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   LTE_SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   LTE_SystemInformationBlockType4_t *sib4[NB_CNX_UE];
@@ -925,7 +826,6 @@ typedef struct UE_RRC_INST_s {
   LTE_SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   LTE_SystemInformationBlockType11_t *sib11[NB_CNX_UE];
   uint8_t                           *MIB;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //SIB18
   LTE_SystemInformationBlockType18_r12_t *sib18[NB_CNX_UE];
   LTE_SystemInformationBlockType19_r12_t *sib19[NB_CNX_UE];
@@ -944,9 +844,6 @@ typedef struct UE_RRC_INST_s {
   uint32_t destinationList[MAX_NUM_DEST];
   //sl_discovery..
   SRB_INFO SL_Discovery[NB_CNX_UE];
-#endif
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MBMS_flag;
   uint8_t *MCCH_MESSAGE[NB_CNX_UE];
   uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];
@@ -954,15 +851,8 @@ typedef struct UE_RRC_INST_s {
   LTE_MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];
   LTE_SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   LTE_SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13_MBMS[NB_CNX_UE];
-  uint8_t 			  	FeMBMS_flag;
-#endif
-#ifdef CBA
-  uint8_t                         num_active_cba_groups;
-  uint16_t                        cba_rnti[NUM_MAX_CBA_GROUP];
-#endif
+  uint8_t           FeMBMS_flag;
   uint8_t                         num_srb;
   struct LTE_SRB_ToAddMod         *SRB1_config[NB_CNX_UE];
   struct LTE_SRB_ToAddMod         *SRB2_config[NB_CNX_UE];
@@ -994,11 +884,8 @@ typedef struct UE_RRC_INST_s {
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Used for Sidelink Preconfiguration
   LTE_DRB_ToAddModList_t *DRB_configList;
-#endif
 } UE_RRC_INST;
 
 typedef struct UE_PF_PO_s {

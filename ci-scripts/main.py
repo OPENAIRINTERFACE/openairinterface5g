@@ -984,8 +984,14 @@ class SSHConnection():
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
 				else:
-					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
-					tunnelInterfaceStatus = False
+					self.command('ifconfig oaitun_ue1', '\$', 4)
+					result = re.search('inet addr', str(self.ssh.before))
+					if result is not None:
+						logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+						tunnelInterfaceStatus = True
+					else:
+						logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+						tunnelInterfaceStatus = False
 			else:
 				tunnelInterfaceStatus = True
 		else:
@@ -1807,7 +1813,6 @@ class SSHConnection():
 			else:
 				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 				self.command('cd ' + self.UESourceCodePath + '/cmake_targets/', '\$', 5)
-			self.command('cd cmake_targets', '\$', 5)
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '.log', '\$', int(ping_time[0])*1.5)
 			# TIMEOUT CASE

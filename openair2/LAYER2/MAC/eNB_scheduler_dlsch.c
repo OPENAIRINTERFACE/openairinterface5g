@@ -566,7 +566,6 @@ schedule_ue_spec(module_id_t module_idP,
     dl_Bandwidth = cc[CC_id].mib->message.dl_Bandwidth;
     N_RB_DL[CC_id] = to_prb(dl_Bandwidth);
     min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
-
     // get number of PRBs less those used by common channels
     total_nb_available_rb[CC_id] = N_RB_DL[CC_id];
 
@@ -623,7 +622,6 @@ schedule_ue_spec(module_id_t module_idP,
       LOG_D(MAC, "doing schedule_ue_spec for CC_id %d UE %d\n",
             CC_id,
             UE_id);
-
       continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP, UE_id);
       ue_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
@@ -777,7 +775,8 @@ schedule_ue_spec(module_id_t module_idP,
 
           if (ue_sched_ctrl->cdrx_configured) {
             ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-            /* 
+
+            /*
              * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
              */
             if (harq_pid == 0) {
@@ -981,11 +980,7 @@ schedule_ue_spec(module_id_t module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           DCCH,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                          , 0
-                                          , 0
-#endif
+                                          TBS - ta_len - header_length_total - sdu_length_total - 3, 0, 0
                                          );
           sdu_lengths[0] = 0;
 
@@ -1004,17 +999,14 @@ schedule_ue_spec(module_id_t module_idP,
                                               MBMS_FLAG_NO,
                                               DCCH,
                                               TBS, //not used
-                                              (char *)&dlsch_buffer[0]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                              , 0
-                                              , 0
-#endif
+                                              (char *)&dlsch_buffer[0], 0, 0
                                              );
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
-              while(pthread_mutex_trylock(&rrc_release_freelist)){
+              while(pthread_mutex_trylock(&rrc_release_freelist)) {
                 /* spin... */
               }
+
               uint16_t release_total = 0;
 
               for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
@@ -1061,9 +1053,9 @@ schedule_ue_spec(module_id_t module_idP,
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
               }
+
               pthread_mutex_unlock(&rrc_release_freelist);
             }
-
 
             for (ra_ii = 0, ra = &eNB->common_channels[CC_id].ra[0]; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
               if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
@@ -1125,11 +1117,7 @@ schedule_ue_spec(module_id_t module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           DCCH + 1,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                          , 0
-                                          , 0
-#endif
+                                          TBS - ta_len - header_length_total - sdu_length_total - 3, 0, 0
                                          );
           // DCCH SDU
           sdu_lengths[num_sdus] = 0;
@@ -1145,11 +1133,7 @@ schedule_ue_spec(module_id_t module_idP,
                                      ENB_FLAG_YES,
                                      MBMS_FLAG_NO, DCCH + 1,
                                      TBS, //not used
-                                     (char *) &dlsch_buffer[sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                     , 0
-                                     , 0
-#endif
+                                     (char *) &dlsch_buffer[sdu_length_total], 0, 0
                                                      );
             T(T_ENB_MAC_UE_DL_SDU,
               T_INT(module_idP),
@@ -1204,11 +1188,7 @@ schedule_ue_spec(module_id_t module_idP,
                                             ENB_FLAG_YES,
                                             MBMS_FLAG_NO,
                                             lcid,
-                                            TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                            , 0
-                                            , 0
-#endif
+                                            TBS - ta_len - header_length_total - sdu_length_total - 3, 0, 0
                                            );
 
             if (rlc_status.bytes_in_buffer > 0) {
@@ -1226,11 +1206,7 @@ schedule_ue_spec(module_id_t module_idP,
                                       MBMS_FLAG_NO,
                                       lcid,
                                       TBS, //not used
-                                      (char *) &dlsch_buffer[sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                      , 0
-                                      , 0
-#endif
+                                      (char *) &dlsch_buffer[sdu_length_total], 0, 0
                                                       );
               T(T_ENB_MAC_UE_DL_SDU,
                 T_INT(module_idP),
@@ -1255,7 +1231,6 @@ schedule_ue_spec(module_id_t module_idP,
               header_length_total += header_length_last;
               num_sdus++;
               ue_sched_ctrl->uplane_inactivity_timer = 0;
-
               // reset RRC inactivity timer after uplane activity
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
 
@@ -1579,17 +1554,17 @@ schedule_ue_spec(module_id_t module_idP,
             dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
             eNB->DL_req[CC_id].sfn_sf = frameP << 4 | subframeP;
             eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-
             /* CDRX */
             ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
 
             if (ue_sched_ctrl->cdrx_configured) {
               ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
               ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-              /* 
+              /*
                * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
                */
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
+
               if (harq_pid == 0) {
                 VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
               }
@@ -1876,8 +1851,6 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
   }
 }
 
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 /*
  * Default DLSCH scheduler for LTE-M
@@ -2579,7 +2552,6 @@ schedule_ue_spec_br(module_id_t module_idP,
     } // end else if ((subframeP == 7) && (round_DL < 8))
   } // end loop on UE_id
 }
-#endif
 
 //------------------------------------------------------------------------------
 void
@@ -3090,8 +3062,8 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(n_rb_dl, first_rb, 4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
@@ -3142,7 +3114,6 @@ schedule_PCH(module_id_t module_idP,
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
-          // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
@@ -3151,17 +3122,10 @@ schedule_PCH(module_id_t module_idP,
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
-          // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
-          // Rel10 fields
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
-#endif
-          // Rel13 fields
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
           dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
-#endif
           dl_req->number_pdu++;
           eNB->TX_req[CC_id].sfn_sf                                                      = (frameP<<4)+subframeP;
           TX_req = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus];

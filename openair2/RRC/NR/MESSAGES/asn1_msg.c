@@ -240,12 +240,8 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   mib->message.choice.mib->spare.bits_unused = 7;  // This makes a spare of 1 bits
 
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = (pdcch_ConfigSIB1 / 16);
   mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = (pdcch_ConfigSIB1 % 16);
-#else
-  mib->message.choice.mib->pdcch_ConfigSIB1 = pdcch_ConfigSIB1;
-#endif
   switch (subCarrierSpacingCommon) {
     case 15:
       mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
@@ -341,11 +337,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     //(*servingcellconfigcommon)->lte_CRS_ToMatchAround           = CALLOC(1,sizeof(struct NR_SetupRelease_RateMatchPatternLTE_CRS));
     (*servingcellconfigcommon)->rateMatchPatternToAddModList              = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToAddModList));
     (*servingcellconfigcommon)->rateMatchPatternToReleaseList             = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToReleaseList));
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 5, 0))
     (*servingcellconfigcommon)->ssbSubcarrierSpacing                      = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-#else 
-    (*servingcellconfigcommon)->subcarrierSpacing                         = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-#endif
     (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon             = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
 
 
@@ -360,11 +352,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero    = CALLOC(1,sizeof(long));
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero           = CALLOC(1,sizeof(long));
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet  = CALLOC(1,sizeof(struct NR_ControlResourceSet));
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList     = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
-#else
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpace         = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpace));
-#endif
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1                    = CALLOC(1,sizeof(NR_SearchSpaceId_t));
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
     (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace                  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
@@ -388,11 +376,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB            = CALLOC(1,sizeof(NR_RSRP_Range_t));
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL        = CALLOC(1,sizeof(NR_RSRP_Range_t));
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing       = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = CALLOC(1,sizeof(long));
-#else
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoding      = CALLOC(1,sizeof(long));
-#endif    
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_PUSCH_ConfigCommon_t)); 
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PUSCH_ConfigCommon));
     (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = CALLOC(1,sizeof(long));
@@ -588,32 +572,19 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel8   = CALLOC(1,sizeof(long)); 
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel16  = CALLOC(1,sizeof(long));
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3                         = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format2_3));
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy1                 = CALLOC(1,sizeof(long));
-#else
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->monitoringPeriodicity  = CALLOC(1,sizeof(long));
-#endif
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel1)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[CC_id];
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel2)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[CC_id];
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel4)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[CC_id];
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel8)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[CC_id];
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel16) = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[CC_id];
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy1)                = configuration->Common_dci_Format2_3_monitoringPeriodicity[CC_id];
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy2                   = configuration->Common_dci_Format2_3_nrofPDCCH_Candidates[CC_id];
-#else
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->monitoringPeriodicity) = configuration->Common_dci_Format2_3_monitoringPeriodicity[CC_id];
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->nrofPDCCH_Candidates     = configuration->Common_dci_Format2_3_nrofPDCCH_Candidates[CC_id];
-#endif
   }else if (bwp_dl_searchspace->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific){
     bwp_dl_searchspace->searchSpaceType->choice.ue_Specific->dci_Formats = configuration->ue_Specific__dci_Formats[CC_id];
   }
 
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,&bwp_dl_searchspace);
-#else
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpace->list,&bwp_dl_searchspace);
-#endif
 
   *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1)                    = configuration->searchSpaceSIB1[CC_id];
   *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation)  = configuration->searchSpaceOtherSystemInformation[CC_id];
@@ -701,11 +672,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig          = configuration->restrictedSetConfig[CC_id];
 
   if(configuration->msg3_transformPrecoding[CC_id]){
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
     *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)   = NR_RACH_ConfigCommon__msg3_transformPrecoder_enabled;
-#else
-    *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoding)   = NR_RACH_ConfigCommon__msg3_transformPrecoding_enabled;
-#endif
   }
 
   //Fill  initialUplinkBWP -> BWP-UplinkCommon -> rach_ConfigCommon -> rach_ConfigGeneric//  
@@ -740,12 +707,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal)           = configuration->p0_nominal[CC_id];
   *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon) = configuration->pucch_ResourceCommon[CC_id];
   *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId)            = configuration->hoppingId[CC_id];
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   (*servingcellconfigcommon)->uplinkConfigCommon->dummy                    = configuration->UL_timeAlignmentTimerCommon[CC_id];
-#else
-  (*servingcellconfigcommon)->uplinkConfigCommon->timeAlignmentTimerCommon = configuration->UL_timeAlignmentTimerCommon[CC_id];
-#endif
-
   (*servingcellconfigcommon)->n_TimingAdvanceOffset = CALLOC(1,sizeof(long));
   *((*servingcellconfigcommon)->n_TimingAdvanceOffset)=configuration->ServingCellConfigCommon_n_TimingAdvanceOffset[CC_id];
   //ssb_PositionsInBurst
@@ -860,11 +822,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   }
 
   *(ratematchpattern->subcarrierSpacing) = configuration->RateMatchPattern_subcarrierSpacing[CC_id];
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   ratematchpattern->dummy = configuration->RateMatchPattern_mode[CC_id];
-#else
-  ratematchpattern->mode  = configuration->RateMatchPattern_mode[CC_id];
-#endif
 
   ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->rateMatchPatternToAddModList->list,&ratematchpattern);
   
@@ -873,11 +831,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->rateMatchPatternToReleaseList->list,&ratematchpatternid);
 
   //subcarrierSpacing
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 5, 0))
   *(*servingcellconfigcommon)->ssbSubcarrierSpacing         = configuration->NIA_SubcarrierSpacing[CC_id];
-#else
-  *(*servingcellconfigcommon)->subcarrierSpacing            = configuration->NIA_SubcarrierSpacing[CC_id];
-#endif
 
   //tdd_UL_DL_ConfigurationCommon
   (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing             = configuration->referenceSubcarrierSpacing[CC_id];
@@ -1097,11 +1051,7 @@ void  do_MAC_CELLGROUP(uint8_t Mod_id,
   mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer         = mac_cellgroup_config->phr_ProhibitTimer[CC_id];
   mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange  = mac_cellgroup_config->phr_Tx_PowerFactorChange[CC_id];
   mac_CellGroupConfig->phr_Config->choice.setup->multiplePHR               = mac_cellgroup_config->multiplePHR[CC_id];
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   mac_CellGroupConfig->phr_Config->choice.setup->dummy                     = mac_cellgroup_config->phr_Type2SpCell[CC_id];
-#else
-  mac_CellGroupConfig->phr_Config->choice.setup->phr_Type2SpCell           = mac_cellgroup_config->phr_Type2SpCell[CC_id];
-#endif
   mac_CellGroupConfig->phr_Config->choice.setup->phr_Type2OtherCell        = mac_cellgroup_config->phr_Type2OtherCell[CC_id];
   mac_CellGroupConfig->phr_Config->choice.setup->phr_ModeOtherCG           = mac_cellgroup_config->phr_ModeOtherCG[CC_id];
 
@@ -1116,11 +1066,7 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
   physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH = CALLOC(1,sizeof(long));
   physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH = CALLOC(1,sizeof(long));
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   physicalCellGroupConfig->p_NR_FR1                      = CALLOC(1,sizeof(NR_P_Max_t));
-#else
-  physicalCellGroupConfig->p_NR                          = CALLOC(1,sizeof(NR_P_Max_t));
-#endif
   physicalCellGroupConfig->tpc_SRS_RNTI                  = CALLOC(1,sizeof(NR_RNTI_Value_t));
   physicalCellGroupConfig->tpc_PUCCH_RNTI                = CALLOC(1,sizeof(NR_RNTI_Value_t));
   physicalCellGroupConfig->tpc_PUSCH_RNTI                = CALLOC(1,sizeof(NR_RNTI_Value_t));
@@ -1128,11 +1074,7 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
   *(physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH) = physicalcellgroup_config->harq_ACK_SpatialBundlingPUCCH[CC_id];
   *(physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH) = physicalcellgroup_config->harq_ACK_SpatialBundlingPUSCH[CC_id];
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
   *(physicalCellGroupConfig->p_NR_FR1)                      = physicalcellgroup_config->p_NR[CC_id];
-#else
-  *(physicalCellGroupConfig->p_NR)                          = physicalcellgroup_config->p_NR[CC_id];
-#endif
   physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook          = physicalcellgroup_config->pdsch_HARQ_ACK_Codebook[CC_id];
   *(physicalCellGroupConfig->tpc_SRS_RNTI)                  = physicalcellgroup_config->tpc_SRS_RNTI[CC_id];
   *(physicalCellGroupConfig->tpc_PUCCH_RNTI)                = physicalcellgroup_config->tpc_PUCCH_RNTI[CC_id];
