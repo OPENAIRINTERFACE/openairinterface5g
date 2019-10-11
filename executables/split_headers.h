@@ -11,7 +11,7 @@
 #define DU_PORT "8787"
 
 #define MTU 65536
-#define UDP_TIMEOUT 100000L // in nano second
+#define UDP_TIMEOUT 1000L // in micro  second (struct timeval, NOT struct timespec)
 #define MAX_BLOCKS 16
 #define blockAlign 32 //bytes
 

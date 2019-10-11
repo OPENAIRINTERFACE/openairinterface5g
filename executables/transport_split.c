@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <netinet/udp.h>
 #include <netdb.h>
+#include <targets/RT/USER/lte-softmodem.h>
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result) {
   struct addrinfo hints= {0}, *servinfo, *p;
@@ -56,8 +57,9 @@ bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPo
 
   int enable=1;
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))==0,"");
-  //struct timeval tv= {0,UDP_TIMEOUT};
-  struct timeval tv= {2,UDP_TIMEOUT}; //debug: wait 2 seconds for human understanding
+  struct timeval tv= {0,UDP_TIMEOUT};
+  if (IS_SOFTMODEM_RFSIM)
+    tv.tv_sec=2; //debug: wait 2 seconds for human understanding
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) ==0,"");
   // Make a send/recv buffer larger than a a couple of subframe
   // so the kernel will store for us in and out paquets

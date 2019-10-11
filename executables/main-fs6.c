@@ -793,7 +793,7 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
 	       sizeof(ulsch_harq->o_ACK));
         memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
         ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
-        LOG_D(PHY,"Received ulsch data for: rnti:%d, fsf: %d/%d, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
+        LOG_D(PHY,"Received ulsch data for: rnti:%x, fsf: %d/%d, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
               ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment , hULUE(bufPtr)->segLen);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
@@ -1155,7 +1155,7 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   memcpyToDuHarq(delta_TF);
   memcpyToDuHarq(repetition_number );
   memcpyToDuHarq(total_number_of_repetitions);
-  LOG_W(PHY,"Added request to perform ulsch for: rnti:%d, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
+  LOG_D(PHY,"Added request to perform ulsch for: rnti:%x, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
 }
 void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;

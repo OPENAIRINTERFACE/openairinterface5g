@@ -18,7 +18,7 @@ names like RRH/RRU/RE/RU/PNF.
 
 In OpenAir code, the terminology is often RU and BBU.
 
-#Usage
+# OpenAirUsage
 ##EPC and general environment
 ### OAI EPC
 
@@ -137,36 +137,60 @@ I/Q samples sending.
 The main loop uses extensively function pointers to call the right
 processing function depending on the split case.
 
+A lot of OAI reduntant global variables contains the same semantic data: time,frame, subframe.
+The reworked main loop take care of a uniq variable that comes directly from harware: RF board sampling number.
+
+To use OAI, we need to set all OAI variables that derivates from this timestamp value. The function setAllfromTS() implements this.
+
+
+### Splitted main level
+When FS6 is actived, a main loop for DU (du_fs6()) a main loop for CU case replaces the uniq eNB main loop.
+
+Each of these main loops calls initialization of OAI LTE data and the FS6 transport layer initialization.
+
+Then, it runs a infinite loop on: set time, call UL and DL. The time comes from the RF board, so the DU sends the time to the CU.
+
 This is enough for RF board dialog, but the FS6 is higher in SW layers,
 we need to cut higher functions inside downlink and uplink procedures.
 
+As much as possible, the FS6 code is in the directory OPENAIR_DIR/executables. When a given OAI piece of code is small or need complex changes, it is reworked in the file fs6-main.c. The functions naming keeps the OAI function name, adding suffix _fromsplit() or _tosplit().
+
+When this organization would lead to large code copy, it is better to insert modifications in OAI code. This is done in two files: 
+
+- openair1/SCHED/phy_procedures_lte_eNb.c: to send signaling channels computation results
+    - the function sendFs6Ulharq() centralizes all signaling channels forwarding to CU
+- openair1/PHY/LTE_TRANSPORT/ulsch_decoding.c: to deal with FS6 user plane split
+    - sendFs6Ul() is used once to forward user plane to CU
+
+
 ### DownLink
 
-The main procedure is phy\_procedures\_eNB\_TX
+The main procedure is phy\_procedures\_eNB\_TX()
 
 This is building the common channels (beacon, multi-UE signaling).
 
 The FS6 split breaks this function into pieces:
 
--   The multi-UE signals, built by common\_signal\_procedures(),
+*   The multi-UE signals, built by common\_signal\_procedures(),
     subframe2harq\_pid(), generate\_dci\_top(), subframe2harq\_pid()
-
-    -   These functions will be executed in the DU, nevertheless all
-        context has to be sent (it is also needed partially for
-        UL spitting)
-    -   IT should be in the DU also to meet the requirement of pushing
+    *   These functions run in the DU, nevertheless all  context has to be sent 
+    (it is also needed partially for UL spitting)
+    * Run in the DU also to meet the requirement of pushing
         in DU the data encoded with large redundancy (&gt;3 redundancy)
--   the per UE data: pdsch\_procedures() that needs further splitting:
+        
+*   the per UE data: pdsch\_procedures() needs further splitting:
 
-    -   dlsch\_encoding\_all() that makes the encoding: turbo code
+    *   dlsch\_encoding\_all() that makes the encoding: turbo code
         and lte\_rate\_matching\_turbo() that will be in the DU (some
         unlikely cases can reach redundancy up to x3, when MCS is very
         low (negative SINR cases)).
 
-        -   dlsch\_encoding() output needs to be transmitted between the
+        *   dlsch\_encoding() output needs to be transmitted between the
             DU and the CU for functional split 6.
-    -   dlsch\_scrambling() that will go in the DU
-    -   dlsch\_modulation() that will go in the DU
+            * dlsch\_scrambling() that will go in the DU
+            * dlsch\_modulation() that will go in the DU
+   
+   The du user plane data is made of expanded bit in OAI at FS6 split level. 1 pair of functions compact back these bits into 8bits/byte before sending data and expand it again in the DU data reception (functions: fs6Dl(un)pack()).
 
 ### Uplink
 
@@ -178,20 +202,36 @@ channels.
 Ocp-main.c:rxtx() calls directly the entry procedure
 phy\_procedures\_eNB\_uespec\_RX() calls:
 
--   rx\_ulsch() that demodulate and extract soft bits per UE.
+*   rx\_ulsch() that demodulate and extract soft bits per UE.
 
-    -   This function runs in the DU
-    -   the output data will be processes in the DU, so it needs to be
+    *   This function runs in the DU
+    *   the output data will be processes in the DU, so it needs to be
         transmitted to the DU
--   ulsch\_decoding() that do lte\_rate\_matching\_turbo\_rx()
-    sub\_block\_deinterleaving\_turbo() then turbo decode
+*   ulsch\_decoding() that do lte\_rate\_matching\_turbo\_rx()
+    sub\_block\_deinterleaving\_turbo() 
+    then turbo decode that is in the CU
+*   fill\_ulsch\_cqi\_indication()  fill\_crc\_indication() , fill\_rx\_indication()
+          *   DU performs the signal processing of each channel data, prepare and sent to the CU the computed result
 
-    -   it runs
--   fill\_ulsch\_cqi\_indication()
+* Random access channel detection runs in the DU
+      * the DU reports to the CU only the detected temprary identifier for RACH response
 
-    -   TBD: either runs in DU or output needs to be transmitted to DU
--   fill\_crc\_indication() , fill\_rx\_indication() results need also
-    to be transmitted or made in the DU
+
+### signaling data in each direction (UL and DL)
+
+
+*   each LTE channel needs to be propagated between CU and DU
+    * the simplest are the almost static data such as PSS/SSS, that need only static eNB parameters and primary information (frame numbering)
+    * all the other channels require data transmission CU to DU and DU to CU
+    * the general design push all the low level processing for these channels in the DU 
+    * the CU interface transports only signal processing results (UL) or configuration to create the RF signal (DL case)
+* HARQ is detected in the DU, then only the ACK or NACK is reported to CU
+
+* the CU have to control the power and MCS (modulation and coding scheme)
+    * the DU performs the signal processing and report only the decoded data like the CQI
+  * as the DU performas the modulation, scrambling and puncturing, each data packet is associated with the LTE parameters required for these features
+       * in DL, the CU associates the control parameters and the user plane data
+       * in UL, the CU sends upfront the scheduled UL data to the DU.  So, the DU have the required knowledge to decode the next subframes in time.
 
 ### UDP transport layer
 
@@ -233,6 +273,10 @@ Run the CU init of the split 6 eNB.
 
 `fs6=du ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
 `
+If the CU and the DU are not on the same machine, the remote address of each side need to be specified as per this example
+
+`fs6=du FS6_REMOTE_IP=192.168.2.211 ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
+`
 
 runs the functional split 6 DU
 
@@ -243,6 +287,9 @@ Runs the UE (to have the UE signal scope, compile it with make uescope)
 
 CU and DU IP address and port are configurable in the eNB configuration
 file (as X2, GTP, … interfaces).
+
+CU+DU+UE can run with option --noS1 to avoid to use a EPC.
+
 
 ##5G and F1
 
