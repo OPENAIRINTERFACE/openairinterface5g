@@ -725,7 +725,7 @@ void *UE_thread(void *arg) {
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
-                     (2*UE->frame_parms.samples_per_slot) -
+                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
                      UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
