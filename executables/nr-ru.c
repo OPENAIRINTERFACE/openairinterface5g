@@ -732,9 +732,17 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
   int sf_extension = 0;
-  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
+  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
-    int siglen=fp->samples_per_slot,flags=1;
+  if ((slot == 0) ||
+      (slot == 1)) {
+    int siglen=fp->samples_per_slot;
+    int flags;
+    if (slot==0)
+      flags = 2;
+    else if (slot==1)
+      flags=3;
+
     /*
         if (SF_type == SF_S) {
           siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
@@ -774,6 +782,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
           (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
+  }
 }
 
 
