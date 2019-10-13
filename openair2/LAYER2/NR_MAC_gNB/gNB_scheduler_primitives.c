@@ -614,9 +614,9 @@ find_nr_UE_id(module_id_t mod_idP,
 
   return -1;
 }
-
+ 
 int add_new_nr_ue(module_id_t mod_idP,
-		  rnti_t rntiP) {
+		  rnti_t rntiP){
 
   int UE_id;
   int i, j;
