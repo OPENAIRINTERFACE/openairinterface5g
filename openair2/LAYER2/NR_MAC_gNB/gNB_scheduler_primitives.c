@@ -621,7 +621,7 @@ int add_new_nr_ue(module_id_t mod_idP,
   int UE_id;
   int i, j;
   NR_UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
-  LOG_D(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
+  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_list->avail,
@@ -639,7 +639,7 @@ int add_new_nr_ue(module_id_t mod_idP,
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
-    LOG_D(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);
