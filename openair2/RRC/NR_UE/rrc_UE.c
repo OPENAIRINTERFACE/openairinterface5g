@@ -218,7 +218,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
   switch (nsa_message_type) {
     case nr_SecondaryCellGroupConfig_r15:
       {
-	NR_RRCReconfiguration_t *RRCReconfiguration;
+	NR_RRCReconfiguration_t *RRCReconfiguration=NULL;
 	asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
 							&asn_DEF_NR_RRCReconfiguration,
 							(void **)&RRCReconfiguration,
@@ -236,7 +236,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
       break;
     case nr_RadioBearerConfigX_r15:
       {
-	NR_RadioBearerConfig_t *RadioBearerConfig;
+	NR_RadioBearerConfig_t *RadioBearerConfig=NULL;
 	asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
 							&asn_DEF_NR_RadioBearerConfig,
 							(void **)&RadioBearerConfig,

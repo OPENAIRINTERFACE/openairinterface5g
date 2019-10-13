@@ -626,7 +626,7 @@ int add_new_nr_ue(module_id_t mod_idP,
         rntiP,
         UE_list->avail,
         UE_list->num_UEs);
-  dump_ue_list(UE_list, 0);
+  dump_nr_ue_list(UE_list, 0);
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_list->active[i] == TRUE)

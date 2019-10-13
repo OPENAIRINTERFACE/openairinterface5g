@@ -210,6 +210,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (scc != NULL ) {
     AssertFatal(scc->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap, "SSB Bitmap is not 8-bits!\n");
 
+    LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
+
     config_common(Mod_idP, 
 		  scc);
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
@@ -238,10 +240,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (add_ue == 1) {
       int UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     }
     else { // secondaryCellGroup has been updated
-      int UE_id = find_nr_UE_id(rnti);
+      int UE_id = find_nr_UE_id(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      LOG_I(PHY,"Modified UE_id %d/%x with secondaryCellGroup\n",UE_id,rnti);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
