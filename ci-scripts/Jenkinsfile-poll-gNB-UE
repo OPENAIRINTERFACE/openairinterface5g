@@ -51,14 +51,10 @@ def eNB_Repository
 def eNB_Branch
 def eNB_CommitID
 def eNB_AllowMergeRequestProcess = false
-def eNB_TargetBranch
-def PROJECT_NAME = "test-boris"
-def GIT_COMMIT_AUTHORi
+def eNB_TargetBranch = "develop-nr"
+def GIT_COMMIT_AUTHOR
 def GIT_COMMIT_EMAIL
 def testStageName
-// Reversing list because pop() will take the last (right-most) element
-//def modeList = ['TesteNB', 'TestUE', 'TesteNB'].reverse()
-
 // Global Parameters not to break the main.py command line and code.
 def ADB_IPAddress = "none"
 def ADB_Username = "none"
@@ -201,12 +197,12 @@ pipeline {
         	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
         	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
         	    	]) {
-        	    	    sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --ADBIPAddress=${ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} ${mainPythonAllXmlFiles}"
+        	    	    sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} ${mainPythonAllXmlFiles}"
         	    	    String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
         	    	    for (xmlFile in myXmlTestSuite) {
         	    	    if (fileExists(xmlFile)) {
         	    	        try {
-        	    	            sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${eNB_Username} --UEPassword=${eNB_Password} --eNBBranch=${eNB_Branch} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UESourceCodePath=${params.eNB_SourceCodePath} --eNBRepository=${eNB_Repository} --eNBCommitID=${eNB_CommitID} --ADBIPAddress=${ADB_IPAddress} --EPCIPAddress=${EPC_IPAddress} --XMLTestFile=${xmlFile}"
+        	    	            sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${eNB_Username} --UEPassword=${eNB_Password} --UESourceCodePath=${params.eNB_SourceCodePath} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --EPCIPAddress=${EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=/tmp/${EPC_Username} --EPCType=ltebox --XMLTestFile=${xmlFile}"
         	    	        } catch (Exception e) {
         	    	            currentBuild.result = 'FAILURE'
         	    	            buildStageStatus = false

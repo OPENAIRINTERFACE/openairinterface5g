@@ -90,8 +90,8 @@ what about the implementation
 
 #include <pthread.h>
 #include <stdint.h>
-#include "opt.h"
 #include "common/config/config_userapi.h"
+#include "opt.h"
 #include "common/utils/system.h"
 
 int opt_enabled=0;
@@ -99,8 +99,8 @@ int opt_enabled=0;
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
-char in_ip[40];
-char in_path[FILENAME_MAX];
+static char *in_ip;
+static char *in_path;
 FILE *file_fd = NULL;
 pcap_hdr_t file_header = {
   0xa1b2c3d4,   /* magic number */
@@ -132,8 +132,7 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size);
 
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const unsigned char *PDU,
-								 unsigned int length);
+                                 const unsigned char *PDU, unsigned int length);
 
 static void *opt_listener_thread(void *arg) {
   ssize_t ret;

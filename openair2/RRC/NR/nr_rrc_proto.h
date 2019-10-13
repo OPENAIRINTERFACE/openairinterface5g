@@ -36,6 +36,7 @@
 #include "NR_RRCReconfiguration.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 #include "NR_CG-ConfigInfo.h"
 
@@ -64,7 +65,7 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 
 struct rrc_gNB_ue_context_s *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP);
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList);
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList);
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p);
 

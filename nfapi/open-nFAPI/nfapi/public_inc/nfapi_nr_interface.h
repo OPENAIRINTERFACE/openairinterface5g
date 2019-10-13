@@ -612,8 +612,8 @@ typedef struct {
   uint16_t nb_mod_symbols;
   uint8_t time_allocation_type;
   uint8_t freq_allocation_type;
-  uint8_t start_prb;
-  uint8_t n_prb;
+  uint16_t start_prb;
+  uint16_t n_prb;
   uint8_t start_symbol;
   uint8_t nb_symbols;
   uint8_t mcs_idx;

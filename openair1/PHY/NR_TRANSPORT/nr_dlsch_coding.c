@@ -366,7 +366,6 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 
     //LOG_D(PHY,"segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
-    //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       //d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
       //channel_input[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
@@ -398,9 +397,6 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
     //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
     ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
 
-    //stop_meas(te_stats);
-    //LOG_D(PHY,"end ldpc encoder -- output\n");
-
 #ifdef DEBUG_DLSCH_CODING
       write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
       write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[0][0],(3*8*Kr_bytes)+12,1,4);
@@ -425,7 +421,6 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
         mod_order,nb_rb);
 #endif
 
-    //start_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
   LOG_D(PHY,"rvidx in encoding = %d\n", rel15->redundancy_version);
 #endif
@@ -447,14 +442,11 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
     for (int i =0; i<16; i++)
       LOG_D(PHY,"output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
 #endif
-    //stop_meas(rm_stats);
 
-    //start_meas(i_stats);
 	nr_interleaving_ldpc(E,
 						mod_order,
 						dlsch->harq_processes[harq_pid]->e+r_offset,
 						dlsch->harq_processes[harq_pid]->f+r_offset);
-    //stop_meas(i_stats);
 
 
 #ifdef DEBUG_DLSCH_CODING

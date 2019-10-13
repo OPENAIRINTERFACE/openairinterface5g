@@ -35,7 +35,7 @@
 
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+  #define _GNU_SOURCE
 #endif
 #include <sched.h>
 #include <stdio.h>
@@ -61,7 +61,7 @@
 //#include <complex.h>
 #include "PHY/TOOLS/time_meas.h"
 #include "platform_types.h"
-#define MAX_NUM_RU_PER_eNB 64 
+#define MAX_NUM_RU_PER_eNB 64
 
 #include <pthread.h>
 
@@ -156,7 +156,6 @@ typedef struct {
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
@@ -173,7 +172,7 @@ typedef struct {
   uint8_t prach_ConfigIndex[4];
   /// indicator for CE level activation
   uint8_t prach_CElevel_enable[4];
-  /// prach frequency offset for each CE level 
+  /// prach frequency offset for each CE level
   uint8_t prach_FreqOffset[4];
   /// indicator for CE level hopping activation
   uint8_t prach_hopping_enable[4];
@@ -188,12 +187,9 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
-#endif  
 } PRACH_eMTC_CONFIG_COMMON;
 
-#endif
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
@@ -575,14 +571,11 @@ typedef struct {
   int mbsfn_SubframeConfig;
 } MBSFN_config_t;
 
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef struct {
   int radioframeAllocationPeriod;
   int radioframeAllocationOffset;
   int non_mbsfn_SubframeConfig;
 } NonMBSFN_config_t;
-#endif
 
 
 typedef struct LTE_DL_FRAME_PARMS {
@@ -628,29 +621,21 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint8_t threequarter_fs;
   /// Size of FFT
   uint16_t ofdm_symbol_size;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t FeMBMS_active;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Size of FFT
   uint16_t ofdm_symbol_size_khz_1dot25;
-#endif
   /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples;
   /// Number of prefix samples in first symbol of slot
   uint16_t nb_prefix_samples0;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
- /// Number of prefix samples in all but first symbol of slot
+  /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples_khz_1dot25;
   /// Number of prefix samples in first symbol of slot
   uint16_t nb_prefix_samples0_khz_1dot25;
-#endif
   /// Carrier offset in FFT buffer for first RE in PRB0
   uint16_t first_carrier_offset;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Carrier offset in FFT buffer for first RE in PRB0 (FeMBMS
   uint16_t first_carrier_offset_khz_1dot25;
-#endif
   /// Number of samples in a subframe
   uint32_t samples_per_tti;
   /// Number of samples in a subframe
@@ -671,10 +656,8 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// PRACH_eMTC_CONFIG
   PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
-#endif
   /// PUCCH Config Common (from 36-331 RRC spec)
   PUCCH_CONFIG_COMMON pucch_config_common;
   /// PDSCH Config Common (from 36-331 RRC spec)
@@ -691,10 +674,8 @@ typedef struct LTE_DL_FRAME_PARMS {
   int num_MBSFN_config;
   /// Array of MBSFN Configurations (max 8 (maxMBSFN-Allocations) elements as per 36.331)
   MBSFN_config_t MBSFN_config[8];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t NonMBSFN_config_flag;
   NonMBSFN_config_t NonMBSFN_config;
-#endif
   /// Maximum Number of Retransmissions of RRCConnectionRequest (from 36-331 RRC Spec)
   uint8_t maxHARQ_Msg3Tx;
   /// Size of SI windows used for repetition of one SI message (in frames)
@@ -709,9 +690,7 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   struct NonMBSFN_SubframeConfig *non_mbsfn_SubframeConfig;
-#endif
   /// for fair RR scheduler
   uint32_t ue_multiple_max;
 } LTE_DL_FRAME_PARMS;
@@ -812,7 +791,7 @@ typedef struct {
   rnti_t rnti;
   /// Format
   DCI_format_t format;
-  /// epdcch resource assignment (0=localized,1=distributed) 
+  /// epdcch resource assignment (0=localized,1=distributed)
   uint8_t epdcch_resource_assignment_flag;
   /// epdcch index
   uint16_t epdcch_id;
@@ -821,7 +800,7 @@ typedef struct {
   /// epdcch number of PRBs in set
   uint8_t epdcch_num_prb;
   /// vector of prb ids for set
-  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];  
+  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];
   /// LBT parameter for frame configuration
   uint8_t dwpts_symbols;
   /// LBT parameter for frame configuration
@@ -829,7 +808,7 @@ typedef struct {
   /// DCI pdu
   uint8_t dci_pdu[8];
 } eDCI_ALLOC_t;
- 
+
 typedef struct {
   /// Length of DCI in bits
   uint8_t dci_length;
@@ -853,7 +832,7 @@ typedef struct {
   uint8_t number_of_prb_pairs;
   /// mpdcch resource assignment (combinatorial index r)
   uint8_t resource_block_assignment;
-  /// transmission type (0=localized,1=distributed) 
+  /// transmission type (0=localized,1=distributed)
   uint8_t transmission_type;
   /// mpdcch start symbol
   uint8_t start_symbol;
@@ -902,9 +881,9 @@ typedef enum {
   RESYNCH=4
 } UE_MODE_t;
 
-#define FOREACH_PARALLEL(GEN)		\
-  GEN(PARALLEL_SINGLE_THREAD)		\
-  GEN(PARALLEL_RU_L1_SPLIT)			\
+#define FOREACH_PARALLEL(GEN)   \
+  GEN(PARALLEL_SINGLE_THREAD)   \
+  GEN(PARALLEL_RU_L1_SPLIT)     \
   GEN(PARALLEL_RU_L1_TRX_SPLIT)
 
 #define GENERATE_ENUM(N) N,
@@ -917,7 +896,7 @@ typedef enum {
 #define FOREACH_WORKER(GEN) GEN(WORKER_DISABLE) GEN(WORKER_ENABLE)
 typedef enum {
   FOREACH_WORKER(GENERATE_ENUM)
-}WORKER_CONF_t;
+} WORKER_CONF_t;
 
 typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
@@ -1009,19 +988,19 @@ extern int sync_var;
 
 typedef uint8_t(decoder_if_t)(int16_t *y,
                               int16_t *y2,
-							  uint8_t *decoded_bytes,
-							  uint8_t *decoded_bytes2,
-							  uint16_t n,
-							  uint8_t max_iterations,
-							  uint8_t crc_type,
-							  uint8_t F,
-							  time_stats_t *init_stats,
-							  time_stats_t *alpha_stats,
-							  time_stats_t *beta_stats,
-							  time_stats_t *gamma_stats,
-							  time_stats_t *ext_stats,
-							  time_stats_t *intl1_stats,
-							  time_stats_t *intl2_stats);
+                              uint8_t *decoded_bytes,
+                              uint8_t *decoded_bytes2,
+                              uint16_t n,
+                              uint8_t max_iterations,
+                              uint8_t crc_type,
+                              uint8_t F,
+                              time_stats_t *init_stats,
+                              time_stats_t *alpha_stats,
+                              time_stats_t *beta_stats,
+                              time_stats_t *gamma_stats,
+                              time_stats_t *ext_stats,
+                              time_stats_t *intl1_stats,
+                              time_stats_t *intl2_stats);
 
 typedef uint8_t(encoder_if_t)(uint8_t *input,
                               uint16_t input_length_bytes,
@@ -1029,18 +1008,15 @@ typedef uint8_t(encoder_if_t)(uint8_t *input,
                               uint8_t F);
 
 
-static inline void wait_sync(char *thread_name)
-{
+static inline void wait_sync(char *thread_name) {
   int rc;
-
   printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
   AssertFatal((rc = pthread_mutex_lock( &sync_mutex ))==0,"sync mutex lock error");
-  
+
   while (sync_var<0)
     pthread_cond_wait( &sync_cond, &sync_mutex );
-  
+
   AssertFatal((rc = pthread_mutex_unlock( &sync_mutex ))==0,"sync mutex unlock error");
-  
   printf( "got sync (%s)\n", thread_name);
   /*
    * Raphael Defosseux: added for CI to get faster the got sync message.
@@ -1055,24 +1031,22 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,
                                 int *instance_cnt,
                                 char *name,
                                 int sleeptime,
-                                int sleep_cnt_max)
-{
+                                int sleep_cnt_max) {
   int rc;
   int sleep_cnt=0;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   while (*instance_cnt == 0) {
-
     AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
-
     sleep_cnt++;
+
     if (sleep_cnt>sleep_cnt_max) return(-1);
+
     usleep(sleeptime);
     AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
   }
-  *instance_cnt = *instance_cnt + 1;
 
+  *instance_cnt = *instance_cnt + 1;
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   // the thread can now be woken up
@@ -1088,33 +1062,31 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,
 
 
 static inline int timedwait_on_condition(pthread_mutex_t *mutex,
-                                         pthread_cond_t *cond,
-                                         int *instance_cnt,
-                                         char *name,
-                                         uint32_t time_ns)
-{
+    pthread_cond_t *cond,
+    int *instance_cnt,
+    char *name,
+    uint32_t time_ns) {
   int rc;
   int waitret=0;
   struct timespec now, abstime;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   while (*instance_cnt < 0) {
-	clock_gettime(CLOCK_REALTIME, &now);
+    clock_gettime(CLOCK_REALTIME, &now);
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
     abstime.tv_sec = now.tv_sec;
     abstime.tv_nsec = now.tv_nsec + time_ns;
-    if (abstime.tv_nsec >= 1000*1000*1000)
-    {
+
+    if (abstime.tv_nsec >= 1000*1000*1000) {
       abstime.tv_nsec -= 1000*1000*1000;
       abstime.tv_sec  += 1;
     }
+
     if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime)) == 0) break; // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex)) == 0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(waitret);
 }
 
@@ -1122,10 +1094,8 @@ static inline int timedwait_on_condition(pthread_mutex_t *mutex,
 static inline int wait_on_condition(pthread_mutex_t *mutex,
                                     pthread_cond_t *cond,
                                     int *instance_cnt,
-                                    char *name)
-{
+                                    char *name) {
   int rc;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   while (*instance_cnt < 0) {
@@ -1135,16 +1105,14 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 
 
 static inline int wait_on_busy_condition(pthread_mutex_t *mutex,
-                                         pthread_cond_t *cond,
-                                         int *instance_cnt,
-                                         char *name)
-{
+    pthread_cond_t *cond,
+    int *instance_cnt,
+    char *name) {
   int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
@@ -1155,23 +1123,17 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 
 
 static inline int release_thread(pthread_mutex_t *mutex,
                                  int *instance_cnt,
-                                 char *name)
-{
+                                 char *name) {
   int rc;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
-
   *instance_cnt=-1;
-
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] release_thread(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 

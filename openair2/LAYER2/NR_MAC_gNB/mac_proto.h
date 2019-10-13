@@ -41,7 +41,10 @@ void config_common(int Mod_idP,
 		   );
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
-                           NR_ServingCellConfigCommon_t *scc
+                           NR_ServingCellConfigCommon_t *scc,
+			   int nsa_flag,
+			   uint32_t rnti,
+			   NR_CellGroupConfig_t *secondaryCellGroup
                            );
 int  is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slotP);
 

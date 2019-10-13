@@ -56,6 +56,7 @@ OAI_UE_PROCESS_COULD_NOT_SYNC = -21
 OAI_UE_PROCESS_ASSERTION = -22
 OAI_UE_PROCESS_FAILED = -23
 OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
+OAI_UE_PROCESS_SEG_FAULT = -25
 OAI_UE_PROCESS_OK = +6
 
 UE_STATUS_DETACHED = 0
@@ -175,7 +176,6 @@ class SSHConnection():
 		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
-		self.Initialize_OAI_eNB_args = ''
 		self.clean_repository = True
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
@@ -762,13 +762,18 @@ class SSHConnection():
 		self.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('hostnamectl','\$', 5)
+		result = re.search('CentOS Linux 7', str(self.ssh.before))
+		if result is not None:
+			self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+		else:
+			self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
 		time.sleep(6)
 		doLoop = True
-		loopCounter = 10
+		loopCounter = 20
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
@@ -979,18 +984,30 @@ class SSHConnection():
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
 				else:
-					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
-					tunnelInterfaceStatus = False
+					self.command('ifconfig oaitun_ue1', '\$', 4)
+					result = re.search('inet addr', str(self.ssh.before))
+					if result is not None:
+						logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+						tunnelInterfaceStatus = True
+					else:
+						logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+						tunnelInterfaceStatus = False
 			else:
 				tunnelInterfaceStatus = True
+		else:
+			tunnelInterfaceStatus = True
 
 		self.close()
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 		else:
-			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
-			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			if self.air_interface == 'lte':
+				self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			else:
+				self.htmlUEFailureMsg = 'nr-uesoftmodem did NOT synced'
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
 
@@ -1796,7 +1813,6 @@ class SSHConnection():
 			else:
 				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 				self.command('cd ' + self.UESourceCodePath + '/cmake_targets/', '\$', 5)
-			self.command('cd cmake_targets', '\$', 5)
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '.log', '\$', int(ping_time[0])*1.5)
 			# TIMEOUT CASE
@@ -2557,7 +2573,8 @@ class SSHConnection():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		# in noS1 config, no need to check status from EPC
-		result = re.search('noS1', str(self.Initialize_eNB_args))
+		# in gNB also currently no need to check
+		result = re.search('noS1|band78', str(self.Initialize_eNB_args))
 		if result is None:
 			p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
@@ -3129,6 +3146,10 @@ class SSHConnection():
 				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				self.htmlUEFailureMsg += statMsg + '\n'
+			if not frequency_found:
+				statMsg = 'NR-UE could NOT synch!'
+				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -3143,20 +3164,32 @@ class SSHConnection():
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
-			return ENB_PROCESS_SEG_FAULT
+			if not nrUEFlag:
+				return OAI_UE_PROCESS_SEG_FAULT
+			else:
+				if not frequency_found:
+					return OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE showed an assertion!\n'
-			if not mib_found or not frequency_found:
-				return OAI_UE_PROCESS_ASSERTION
+			if not nrUEFlag:
+				if not mib_found or not frequency_found:
+					return OAI_UE_PROCESS_ASSERTION
+			else:
+				if not frequency_found:
+					return OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
 			#return ENB_PROCESS_REALTIME_ISSUE
-		if no_cell_sync_found and not mib_found:
-			logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
-			self.htmlUEFailureMsg += 'UE could not synchronize!\n'
-			return OAI_UE_PROCESS_COULD_NOT_SYNC
+		if nrUEFlag:
+			if not frequency_found:
+				return OAI_UE_PROCESS_COULD_NOT_SYNC
+		else:
+			if no_cell_sync_found and not mib_found:
+				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
+				self.htmlUEFailureMsg += 'UE could not synchronize!\n'
+				return OAI_UE_PROCESS_COULD_NOT_SYNC
 		return 0
 
 	def TerminateeNB(self):
@@ -3379,11 +3412,14 @@ class SSHConnection():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				# for NR-UE at the moment keep running 
 				if self.air_interface == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
 					# Not an error then
 					if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
+						self.Initialize_OAI_UE_args = ''
+						self.AutoTerminateUEandeNB()
+				else:
+					if (logStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB()
 			else:
@@ -3938,7 +3974,7 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
 				elif (processesStatus == OAI_UE_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - OAI UE process not found</td>\n')
-				elif (processesStatus == ENB_PROCESS_SEG_FAULT):
+				elif (processesStatus == ENB_PROCESS_SEG_FAULT) or (processesStatus == OAI_UE_PROCESS_SEG_FAULT):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
 				elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')

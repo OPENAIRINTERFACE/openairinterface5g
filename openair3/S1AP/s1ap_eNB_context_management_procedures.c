@@ -104,46 +104,6 @@ int s1ap_ue_context_release_complete(instance_t instance,
   ie->value.choice.ENB_UE_S1AP_ID = ue_release_complete_p->eNB_ue_s1ap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CriticalityDiagnostics;
-    // ie->value.choice.CriticalityDiagnostics = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* release 12, optional */
-#if (S1AP_VERSION >= MAKE_VERSION(12, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_UserLocationInformation;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_UserLocationInformation;
-    // ie->value.choice.UserLocationInformation = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* release 13, optional */
-#if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_InformationOnRecommendedCellsAndENBsForPaging;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_InformationOnRecommendedCellsAndENBsForPaging;
-    // ie->value.choice.InformationOnRecommendedCellsAndENBsForPaging = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_CellIdentifierAndCELevelForCECapableUEs;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CellIdentifierAndCELevelForCECapableUEs;
-    // ie->value.choice.CellIdentifierAndCELevelForCECapableUEs = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0)) */
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(12, 0, 0)) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
@@ -278,17 +238,7 @@ int s1ap_ue_context_release_req(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
-#if (S1AP_VERSION >= MAKE_VERSION(10, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_GWContextReleaseIndication;
-    ie->criticality = S1AP_Criticality_reject;
-    ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_GWContextReleaseIndication;
-    ie->value.choice.GWContextReleaseIndication = TRUE;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(10, 0, 0)) */
+
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */

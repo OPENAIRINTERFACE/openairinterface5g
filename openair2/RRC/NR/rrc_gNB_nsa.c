@@ -33,24 +33,23 @@
 #include "nr_rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
 #include "NR_UE-NR-Capability.h"
-#include "NR_UE-CapabilityRAT-ContainerList.h"
+//#include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
   int rnti = taus()&65535;
   OCTET_STRING_t *ueCapabilityRAT_Container_nr;
   OCTET_STRING_t *ueCapabilityRAT_Container_MRDC;
-
+  int list_size;
   AssertFatal(UE_CapabilityRAT_ContainerList!=NULL,"UE_CapabilityRAT_ContainerList is null\n");
-  AssertFatal(UE_CapabilityRAT_ContainerList->list.size != 2, "UE_CapabilityRAT_ContainerList->list.size %d != 2\n",UE_CapabilityRAT_ContainerList->list.size);
-  if (UE_CapabilityRAT_ContainerList->list.array[0]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[0]->ue_CapabilityRAT_Container;
-  else if (UE_CapabilityRAT_ContainerList->list.array[0]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[0]->ue_CapabilityRAT_Container;
-
-  if (UE_CapabilityRAT_ContainerList->list.array[1]->rat_Type == NR_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[1]->ue_CapabilityRAT_Container;
-  else if (UE_CapabilityRAT_ContainerList->list.array[1]->rat_Type == NR_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[1]->ue_CapabilityRAT_Container;
-
+  AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
+  for (int i=0;i<list_size;i++) {
+    if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_nr) ueCapabilityRAT_Container_nr = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
+    else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
+  }    
 
   AssertFatal(ueCapabilityRAT_Container_nr!=NULL,"ueCapabilityRAT_Container_nr is NULL\n");
   AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
@@ -65,7 +64,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerLi
 					ueCapabilityRAT_Container_nr->size, 0, 0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes)\n", dec_rval.consumed);
+    LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes) container size %d\n", dec_rval.consumed,ueCapabilityRAT_Container_nr->size);
       ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,
                       ue_context_p->ue_context.UE_Capability_nr);
       ue_context_p->ue_context.UE_Capability_nr = 0;
@@ -88,13 +87,13 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerLi
 
   // dump ue_capabilities
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+//  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout, &asn_DEF_NR_UE_NR_Capability, ue_context_p->ue_context.UE_Capability_nr);
-  }  
+//  }  
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+//  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
-  }  
+//  }  
 
   rrc_add_nsa_user(rrc,ue_context_p);
 }
@@ -134,6 +133,13 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // Send to X2 entity to transport to MeNB
 
   rrc->Nb_ue++;
+  // configure MAC and RLC
+  rrc_mac_config_req_gNB(rrc->module_id,
+			 rrc->carrier.ssb_SubcarrierOffset,
+			 NULL,
+			 1, // add_ue flag
+			 ue_context_p->ue_id_rnti,
+			 ue_context_p->ue_context.secondaryCellGroup);
 }
 
 

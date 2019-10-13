@@ -65,6 +65,7 @@ extern int16_t nr_ru[2*839];
 
 
 
+
 int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {
 
