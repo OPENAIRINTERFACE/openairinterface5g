@@ -513,8 +513,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss3->monitoringSymbolsWithinSlot->buf = calloc(1,2);
  ss3->monitoringSymbolsWithinSlot->size = 2;
  ss3->monitoringSymbolsWithinSlot->bits_unused = 2;
- ss3->monitoringSymbolsWithinSlot->buf[0]=0x3;
- ss3->monitoringSymbolsWithinSlot->buf[0]=0x0;
+ ss3->monitoringSymbolsWithinSlot->buf[0]=0xc0;
+ ss3->monitoringSymbolsWithinSlot->buf[1]=0x0;
  ss3->nrofCandidates=calloc(1,sizeof(*ss3->nrofCandidates));
  ss3->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
  ss3->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
@@ -540,8 +540,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss2->monitoringSymbolsWithinSlot->buf = calloc(1,2);
  ss2->monitoringSymbolsWithinSlot->size = 2;
  ss2->monitoringSymbolsWithinSlot->bits_unused = 2;
- ss2->monitoringSymbolsWithinSlot->buf[0]=0x3;
- ss2->monitoringSymbolsWithinSlot->buf[0]=0x0;
+ ss2->monitoringSymbolsWithinSlot->buf[0]=0xc0;
+ ss2->monitoringSymbolsWithinSlot->buf[1]=0x0;
  ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
  ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;

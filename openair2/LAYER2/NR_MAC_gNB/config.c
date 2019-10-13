@@ -237,16 +237,20 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (secondaryCellGroup) {
 
     NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+    int UE_id;
     if (add_ue == 1) {
-      int UE_id = add_new_nr_ue(Mod_idP,rnti);
+      UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     }
     else { // secondaryCellGroup has been updated
-      int UE_id = find_nr_UE_id(Mod_idP,rnti);
+      UE_id = find_nr_UE_id(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
       LOG_I(PHY,"Modified UE_id %d/%x with secondaryCellGroup\n",UE_id,rnti);
     }
+    fill_nfapi_coresets_and_searchspaces(secondaryCellGroup,
+					 UE_list->coreset[UE_id],
+					 UE_list->search_space[UE_id]);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   

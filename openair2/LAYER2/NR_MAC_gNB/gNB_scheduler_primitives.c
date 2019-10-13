@@ -55,6 +55,9 @@
 #endif
 
 #include "T.h"
+#include "NR_PDCCH-ConfigCommon.h"
+#include "NR_ControlResourceSet.h"
+#include "NR_SearchSpace.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
@@ -413,10 +416,10 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 }
 
 int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
-                                nfapi_nr_coreset_t coreset,
-                                uint16_t frame,
-                                uint16_t slot,
-                                nfapi_nr_config_request_t cfg) {
+			  nfapi_nr_coreset_t coreset,
+			  uint16_t frame,
+			  uint16_t slot,
+			  nfapi_nr_config_request_t cfg) {
 
   AssertFatal(search_space.coreset_id==coreset.coreset_id, "Invalid association of coreset(%d) and search space(%d)\n",
   search_space.search_space_id, coreset.coreset_id);
@@ -653,4 +656,296 @@ int add_new_nr_ue(module_id_t mod_idP,
   dump_nr_ue_list(UE_list,
 		  0);
   return -1;
+}
+
+void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
+					  nfapi_nr_coreset_t *coreset,
+					  nfapi_nr_search_space_t *search_space) {
+
+  nfapi_nr_coreset_t *cs;
+  nfapi_nr_search_space_t *ss;
+
+  AssertFatal(cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+	      "downlinkBWP_ToAddModList has %d BWP!\n",
+	      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+
+  NR_BWP_Downlink_t *bwp=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+  struct NR_PDCCH_Config__controlResourceSetToAddModList *coreset_list = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList;
+  AssertFatal(coreset_list->list.count>0,
+	      "cs list has 0 elements\n");
+  for (int i=0;i<coreset_list->list.count;i++) {
+    NR_ControlResourceSet_t *coreset_i=coreset_list->list.array[i];
+    cs = coreset + coreset_i->controlResourceSetId;
+      
+    cs->coreset_id = coreset_i->controlResourceSetId;
+    AssertFatal(coreset_i->frequencyDomainResources.size <=8 && coreset_i->frequencyDomainResources.size>0,
+		"coreset_i->frequencyDomainResources.size=%d\n",
+		coreset_i->frequencyDomainResources.size);
+  
+    for (int f=0;f<coreset_i->frequencyDomainResources.size;f++)
+      ((uint8_t*)&cs->frequency_domain_resources)[coreset_i->frequencyDomainResources.size-1-f]=coreset_i->frequencyDomainResources.buf[f];
+    
+    cs->frequency_domain_resources>>=coreset_i->frequencyDomainResources.bits_unused;
+    
+    cs->duration = coreset_i->duration;
+    // Need to add information about TCI_StateIDs
+
+    if (coreset_i->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved)
+      cs->cce_reg_mapping_type = NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
+    else {
+      cs->cce_reg_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
+
+      if (coreset_i->cce_REG_MappingType.choice.interleaved->reg_BundleSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6)
+	cs->reg_bundle_size = 6;
+      else cs->reg_bundle_size = 2+coreset_i->cce_REG_MappingType.choice.interleaved->reg_BundleSize;
+
+      if (coreset_i->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6)
+	cs->interleaver_size = 6;
+      else cs->interleaver_size = 2+coreset_i->cce_REG_MappingType.choice.interleaved->interleaverSize;
+
+      if (coreset_i->cce_REG_MappingType.choice.interleaved->shiftIndex)
+	cs->shift_index = *coreset_i->cce_REG_MappingType.choice.interleaved->shiftIndex;
+      else cs->shift_index = 0;
+    }
+    
+    if (coreset_i->precoderGranularity == NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle)
+      cs->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
+    else cs->precoder_granularity = NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS;
+    if (coreset_i->tci_PresentInDCI == NULL) cs->tci_present_in_dci = 0;
+    else                                     cs->tci_present_in_dci = 1;
+
+    if (coreset_i->tci_PresentInDCI == NULL) cs->dmrs_scrambling_id = 0;
+    else                                     cs->dmrs_scrambling_id = *coreset_i->tci_PresentInDCI;
+  }
+
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+  AssertFatal(commonSearchSpaceList->list.count>0,
+	      "common SearchSpace list has 0 elements\n");
+  // Common searchspace list
+  for (int i=0;i<commonSearchSpaceList->list.count;i++) {
+    NR_SearchSpace_t *searchSpace_i=commonSearchSpaceList->list.array[i];  
+    ss=search_space + searchSpace_i->searchSpaceId;
+    if (searchSpace_i->controlResourceSetId) ss->coreset_id = *searchSpace_i->controlResourceSetId;
+    switch(searchSpace_i->monitoringSlotPeriodicityAndOffset->present) {
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL4;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl4;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL5;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl5;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL8;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl8;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl10;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL16;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl16;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL20;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl20;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL40;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl40;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL80;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl80;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL160;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl160;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL320;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl320;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL640;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl640;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1280;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl1280;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2560;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2560;
+      break;
+    default:
+      AssertFatal(1==0,"Shouldn't get here\n");
+      break;    
+    }
+    if (searchSpace_i->duration) ss->duration = *searchSpace_i->duration;
+    else                         ss->duration = 1;
+
+
+    AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
+		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
+		searchSpace_i->monitoringSymbolsWithinSlot->size);
+    ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
+    ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
+
+    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",searchSpace_i->searchSpaceId);
+    if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
+      ss->number_of_candidates[0] = 8;
+    else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
+    if (searchSpace_i->nrofCandidates->aggregationLevel2 == NR_SearchSpace__nrofCandidates__aggregationLevel2_n8)
+      ss->number_of_candidates[1] = 8;
+    else ss->number_of_candidates[1] = searchSpace_i->nrofCandidates->aggregationLevel2;
+    if (searchSpace_i->nrofCandidates->aggregationLevel4 == NR_SearchSpace__nrofCandidates__aggregationLevel4_n8)
+      ss->number_of_candidates[2] = 8;
+    else ss->number_of_candidates[2] = searchSpace_i->nrofCandidates->aggregationLevel4;
+    if (searchSpace_i->nrofCandidates->aggregationLevel8 == NR_SearchSpace__nrofCandidates__aggregationLevel8_n8)
+      ss->number_of_candidates[3] = 8;
+    else ss->number_of_candidates[3] = searchSpace_i->nrofCandidates->aggregationLevel8;
+    if (searchSpace_i->nrofCandidates->aggregationLevel16 == NR_SearchSpace__nrofCandidates__aggregationLevel16_n8)
+      ss->number_of_candidates[4] = 8;
+    else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
+
+    AssertFatal(searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_common,
+		"searchspace %d is not common\n",searchSpace_i->searchSpaceId);
+    AssertFatal(searchSpace_i->searchSpaceType->choice.common!=NULL,
+		"searchspace %d common is null\n",searchSpace_i->searchSpaceId);
+    ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
+    if (searchSpace_i->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0)
+      ss->css_formats_0_0_and_1_0 = 1;
+    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_0) {
+      ss->css_format_2_0 = 1;
+      // add aggregation info
+    }
+    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_1)
+      ss->css_format_2_1 = 1;
+    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_2)
+      ss->css_format_2_2 = 1;
+    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_3)
+      ss->css_format_2_3 = 1;
+  }
+
+  struct NR_PDCCH_Config__searchSpacesToAddModList *dedicatedSearchSpaceList = bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList;
+  AssertFatal(dedicatedSearchSpaceList->list.count>0,
+	      "Dedicated Search Space list has 0 elements\n");
+  // Dedicated searchspace list
+  for (int i=0;i<dedicatedSearchSpaceList->list.count;i++) {
+    NR_SearchSpace_t *searchSpace_i=dedicatedSearchSpaceList->list.array[i];  
+    ss=search_space + searchSpace_i->searchSpaceId;
+    ss->search_space_id = searchSpace_i->searchSpaceId;
+    if (searchSpace_i->controlResourceSetId) ss->coreset_id = *searchSpace_i->controlResourceSetId;
+    switch(searchSpace_i->monitoringSlotPeriodicityAndOffset->present) {
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL4;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl4;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL5;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl5;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL8;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl8;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl10;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL16;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl16;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL20;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl20;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL40;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl40;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL80;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl80;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL160;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl160;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL320;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl320;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL640;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl640;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1280;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl1280;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
+      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2560;
+      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2560;
+      break;
+    default:
+      AssertFatal(1==0,"Shouldn't get here\n");
+      break;    
+    }
+    if (searchSpace_i->duration) ss->duration = *searchSpace_i->duration;
+    else                         ss->duration = 1;
+
+
+    AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
+		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
+		searchSpace_i->monitoringSymbolsWithinSlot->size);
+    ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
+    ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
+
+    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",searchSpace_i->searchSpaceId);
+    if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
+      ss->number_of_candidates[0] = 8;
+    else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
+    if (searchSpace_i->nrofCandidates->aggregationLevel2 == NR_SearchSpace__nrofCandidates__aggregationLevel2_n8)
+      ss->number_of_candidates[1] = 8;
+    else ss->number_of_candidates[1] = searchSpace_i->nrofCandidates->aggregationLevel2;
+    if (searchSpace_i->nrofCandidates->aggregationLevel4 == NR_SearchSpace__nrofCandidates__aggregationLevel4_n8)
+      ss->number_of_candidates[2] = 8;
+    else ss->number_of_candidates[2] = searchSpace_i->nrofCandidates->aggregationLevel4;
+    if (searchSpace_i->nrofCandidates->aggregationLevel8 == NR_SearchSpace__nrofCandidates__aggregationLevel8_n8)
+      ss->number_of_candidates[3] = 8;
+    else ss->number_of_candidates[3] = searchSpace_i->nrofCandidates->aggregationLevel8;
+    if (searchSpace_i->nrofCandidates->aggregationLevel16 == NR_SearchSpace__nrofCandidates__aggregationLevel16_n8)
+      ss->number_of_candidates[4] = 8;
+    else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
+
+    AssertFatal(searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_ue_Specific,
+		"searchspace %d is not ue-Specific\n",searchSpace_i->searchSpaceId);
+    AssertFatal(searchSpace_i->searchSpaceType->choice.ue_Specific!=NULL,
+		"searchspace %d ue-Specific is null\n",searchSpace_i->searchSpaceId);
+    ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
+
+    ss->uss_dci_formats = searchSpace_i->searchSpaceType->choice.ue_Specific-> dci_Formats;
+
+
+  }
+
+
 }

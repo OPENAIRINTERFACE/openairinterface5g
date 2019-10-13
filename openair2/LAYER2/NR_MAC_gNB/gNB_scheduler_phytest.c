@@ -208,8 +208,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
 
-    nfapi_nr_coreset_t* coreset = &nr_mac->coreset[CC_id][1];
-    nfapi_nr_search_space_t* search_space = &nr_mac->search_space[CC_id][1];
+    nfapi_nr_coreset_t* coreset = &nr_mac->UE_list.coreset[0][1];
+    nfapi_nr_search_space_t* search_space = &nr_mac->UE_list.search_space[0][1];
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
     dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];

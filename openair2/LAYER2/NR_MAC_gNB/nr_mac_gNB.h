@@ -115,6 +115,12 @@ typedef struct {
   boolean_t active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  /// NFAPI coreset structure
+  nfapi_nr_coreset_t   coreset[MAX_MOBILES_PER_GNB][NFAPI_NR_MAX_NB_CORESETS];
+  /// NFAPI search space structure
+  nfapi_nr_search_space_t search_space[MAX_MOBILES_PER_GNB][NFAPI_NR_MAX_NB_SEARCH_SPACES];
+
+
 } NR_UE_list_t;
 
 /*! \brief top level eNB MAC structure */
@@ -158,11 +164,6 @@ typedef struct gNB_MAC_INST_s {
   nfapi_tx_request_pdu_t            tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
   /// NFAPI DL PDU structure
   nfapi_tx_request_t                TX_req[NFAPI_CC_MAX];
-  /// NFAPI coreset structure
-  nfapi_nr_coreset_t                coreset[NFAPI_CC_MAX][NFAPI_NR_MAX_NB_CORESETS];
-  /// NFAPI search space structure
-  nfapi_nr_search_space_t           search_space[NFAPI_CC_MAX][NFAPI_NR_MAX_NB_SEARCH_SPACES];
-
   NR_UE_list_t UE_list;
 
   /// UL handle

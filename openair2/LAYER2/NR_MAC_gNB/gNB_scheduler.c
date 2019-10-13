@@ -337,21 +337,18 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if (UE_list->active[i]) {
 
       nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
-
-      nfapi_nr_coreset_t coreset = RC.nrmac[module_idP]->coreset[CC_id][1];
-      nfapi_nr_search_space_t search_space = RC.nrmac[module_idP]->search_space[CC_id][1];
-
-      if (nr_is_dci_opportunity(search_space,
-                                    coreset,
-                                    frameP,
-                                    slotP,
-                                    *cfg))
-          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
-
+      
+      if (nr_is_dci_opportunity(UE_list->search_space[i][1],
+				UE_list->coreset[i][1],
+				frameP,
+				slotP,
+				*cfg))
+	nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+      
       
       rnti = 0;//UE_RNTI(module_idP, i);
       CC_id = 0;//UE_PCCID(module_idP, i);
-
+      
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   
@@ -372,7 +369,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
   if (slotP==1)
-  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
   /*
   // Allocate CCEs for good after scheduling is done
