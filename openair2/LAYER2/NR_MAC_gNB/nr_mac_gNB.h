@@ -95,6 +95,28 @@ typedef struct {
     uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
+/*! \brief scheduling control information set through an API (not used)*/
+typedef struct {
+  int dummy;
+} NR_UE_sched_ctrl_t;
+
+/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
+typedef struct {
+
+  DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
+  /// scheduling control info
+  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  int next[MAX_MOBILES_PER_GNB];
+  int head;
+  int next_ul[MAX_MOBILES_PER_GNB];
+  int head_ul;
+  int avail;
+  int num_UEs;
+  boolean_t active[MAX_MOBILES_PER_GNB];
+  rnti_t rnti[MAX_MOBILES_PER_GNB];
+  NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+} NR_UE_list_t;
+
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
@@ -141,7 +163,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI search space structure
   nfapi_nr_search_space_t           search_space[NFAPI_CC_MAX][NFAPI_NR_MAX_NB_SEARCH_SPACES];
 
-  UE_list_t UE_list;
+  NR_UE_list_t UE_list;
 
   /// UL handle
   uint32_t ul_handle;

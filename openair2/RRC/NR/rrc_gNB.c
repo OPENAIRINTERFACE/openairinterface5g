@@ -196,7 +196,10 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
   rrc_mac_config_req_gNB(rrc->module_id,
 			 rrc->carrier.ssb_SubcarrierOffset,
-                         (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon
+                         (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			 0,
+			 0,
+			 (NR_CellGroupConfig_t *)NULL
                          );
 
 

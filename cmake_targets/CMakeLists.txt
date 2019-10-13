@@ -2605,41 +2605,25 @@ add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
-<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
   target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
-=======
-  ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
->>>>>>> origin/develop-nr
 
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
-<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
-target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
-
-=======
-  ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB}  dl)
->>>>>>> origin/develop-nr
+target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} $(ITTI_LIB) dl)
 
 #PUCCH ---> Prashanth
 add_executable(nr_pucchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
-<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-=======
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
->>>>>>> origin/develop-nr
   ${T_SOURCE})
 target_link_libraries(nr_pucchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 #PUCCH ---> Prashanth
@@ -2648,10 +2632,10 @@ add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c 
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
-<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE})   
-target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON MAC_NR RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+  ${UTIL_SRC}
+  ${T_SOURCE})
+target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c 
@@ -2661,35 +2645,22 @@ add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${T_SOURCE})   
 target_link_libraries(nr_prachsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
-=======
-  ${UTIL_SRC}
-  ${T_SOURCE})   
-target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
->>>>>>> origin/develop-nr
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
-<<<<<<< HEAD
-  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE})
-target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
-=======
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE})
 target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
->>>>>>> origin/develop-nr
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
-<<<<<<< HEAD
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-=======
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
->>>>>>> origin/develop-nr
   ${T_SOURCE})
 target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 

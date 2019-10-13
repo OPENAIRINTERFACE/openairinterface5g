@@ -308,11 +308,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   // HOT FIX for all zero pdu problem
   // ------------------------------------------------------------------------------------------------
   for(int i = 0; i < dlsch_pdu_rel15->transport_block_size/8; i++) {
-    ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
+    ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) rand();
   }
   // ------------------------------------------------------------------------------------------------
 
-  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[0][0].payload[0];
   TX_req->segments[0].segment_length = dlsch_pdu_rel15->transport_block_size+2;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;

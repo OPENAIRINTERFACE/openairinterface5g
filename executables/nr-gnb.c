@@ -758,19 +758,6 @@ void init_gNB_proc(int inst) {
   
   AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
-  
-  //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
-  char name[16];
-  
-  if (gNB->single_thread_flag==0) {
-    snprintf( name, sizeof(name), "L1 %d", i );
-    pthread_setname_np( L1_proc->pthread, name );
-    snprintf( name, sizeof(name), "L1TX %d", i );
-    pthread_setname_np( L1_proc_tx->pthread, name );
-  }
-  
-  AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
-
   /* setup PHY proc TX sync mechanism */
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);

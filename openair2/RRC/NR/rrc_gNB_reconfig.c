@@ -45,11 +45,11 @@
 #define true 1
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-				       NR_CellGroupConfig_t *secondaryCellGroup,
-				       int scg_id,
-				       int servCellIndex,
-				       int n_physical_antenna_ports,
-				       int initial_csi_index) {
+				     NR_CellGroupConfig_t *secondaryCellGroup,
+				     int scg_id,
+				     int servCellIndex,
+				     int n_physical_antenna_ports,
+				     int initial_csi_index) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 

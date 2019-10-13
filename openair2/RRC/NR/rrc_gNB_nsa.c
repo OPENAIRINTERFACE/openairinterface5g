@@ -133,6 +133,13 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // Send to X2 entity to transport to MeNB
 
   rrc->Nb_ue++;
+  // configure MAC and RLC
+  rrc_mac_config_req_gNB(rrc->module_id,
+			 rrc->carrier.ssb_SubcarrierOffset,
+			 NULL,
+			 1, // add_ue flag
+			 ue_context_p->ue_id_rnti,
+			 ue_context_p->ue_context.secondaryCellGroup);
 }
 
 

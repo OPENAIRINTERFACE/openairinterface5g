@@ -201,35 +201,51 @@ void config_common(int Mod_idP,
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
-                           NR_ServingCellConfigCommon_t *scc
+                           NR_ServingCellConfigCommon_t *scc,
+			   int add_ue,
+			   uint32_t rnti,
+			   NR_CellGroupConfig_t *secondaryCellGroup
                            ){
 
-  AssertFatal(scc!=NULL,"scc is null\n");
-  AssertFatal(scc->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap, "SSB Bitmap is not 8-bits!\n");
+  if (scc != NULL ) {
+    AssertFatal(scc->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap, "SSB Bitmap is not 8-bits!\n");
 
-  config_common(Mod_idP, 
-		scc);
-  LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
+    config_common(Mod_idP, 
+		  scc);
+    LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
+  
+    // if in nFAPI mode 
+    if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
+      while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
+	// DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+	usleep(100 * 1000);
+	printf("Waiting for PHY_config_req\n");
+      }
+    }
+  
+  
+    NR_PHY_Config_t phycfg;
+    phycfg.Mod_id = Mod_idP;
+    phycfg.CC_id  = 0;
+    phycfg.cfg    = &RC.nrmac[Mod_idP]->config[0];
+    
+    if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg); 
+  }
+  
+  if (secondaryCellGroup) {
 
-  // if in nFAPI mode 
-  if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
-    while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
-      // DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
-      usleep(100 * 1000);
-      printf("Waiting for PHY_config_req\n");
+    NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+    if (add_ue == 1) {
+      int UE_id = add_new_nr_ue(Mod_idP,rnti);
+      UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+    }
+    else { // secondaryCellGroup has been updated
+      int UE_id = find_nr_UE_id(rnti);
+      UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
     }
   }
-
-  
-  NR_PHY_Config_t phycfg;
-  phycfg.Mod_id = Mod_idP;
-  phycfg.CC_id  = 0;
-  phycfg.cfg    = &RC.nrmac[Mod_idP]->config[0];
-  
-  if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg); 
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
-
+  
     
   return(0);
 

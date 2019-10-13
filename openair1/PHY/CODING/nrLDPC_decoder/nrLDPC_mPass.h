@@ -812,32 +812,6 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     }
 
 }
-static inline uint32_t *bn2cnmap(uint32_t* p_lut_cn2bn,int8_t *p_cnProcBuf,int8_t *bnProcBufRes,int M2) __attribute__((always_inline));
-
-static inline uint32_t *bn2cnmap(uint32_t* p_lut_cn2bn,int8_t *p_cnProcBuf,int8_t *bnProcBufRes,int M2) {
-
-  __m128i tmp;
-
-  for (int i=0;i<M2;i++) {
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],0);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],1);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],2);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],3);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],4);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],5);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],6);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],7);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],8);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],9);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],10);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],11);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],12);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],13);
-    tmp=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],14);
-    ((__m128i *)p_cnProcBuf)[i]=_mm_insert_epi8(tmp,bnProcBufRes[*p_lut_cn2bn++],15);
-  }
-  return(p_lut_cn2bn);
-} 
 
 /**
    \brief Copies the values in the BN processing results buffer to their corresponding place in the CN processing buffer for BG2.
@@ -1041,7 +1015,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     for (j=0;j<2; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
-	p_lut_cn2bn = bn2cnmap(p_lut_cn2bn,p_cnProcBuf,bnProcBufRes,M>>4);
         nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[lut_startAddrBnProcBuf_CNG3[j][0]], Z, lut_circShift_CNG3[j][0]);
     }
 
@@ -1174,21 +1147,6 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         }
     }
 
-}
-static inline void memcpy_printer(uint32_t* p_lut_cn2bn,int dest0,int M) {
-
-  int dest=0,src=p_lut_cn2bn[0],len=1;
-  for (int i=1;i<M;i++) {
-    if (p_lut_cn2bn[i]!= (1+p_lut_cn2bn[i-1])) {
-      printf("memcpy(%d,%d,%d)\n",dest0+dest,src,len);
-      len=1;
-      dest=i;
-      src=p_lut_cn2bn[i];
-    }
-    else if (i==(M-1)) printf("memcpy(%d,%d,%d)\n",dest0+dest,src,len);
-    else len++;
-    //    printf("p_lut_cn2bn[%d] : %d\n",i,p_lut_cn2bn[i]);
-  }
 }
 
 /**
