@@ -36,8 +36,8 @@
 #include "PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_PDCCH_DMRS
-#define DEBUG_DCI
-#define DEBUG_CHANNEL_CODING
+//#define DEBUG_DCI
+//#define DEBUG_CHANNEL_CODING
 
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
