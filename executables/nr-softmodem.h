@@ -47,12 +47,6 @@
     {"nokrnmod",              CONFIG_HLP_NOKRNMOD,    PARAMFLAG_BOOL,   uptr:&nokrnmod,                     defintval:0,                   TYPE_INT,    0}         \
   }
 
-
-typedef struct {
-  int *argc;
-  char **argv;
-} scopeParms_t;
-
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 
