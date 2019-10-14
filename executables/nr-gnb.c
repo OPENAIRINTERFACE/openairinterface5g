@@ -193,7 +193,6 @@ static inline int rxtx(PHY_VARS_gNB *gNB,int frame_rx, int slot_rx, int frame_tx
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) */
 
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -665,11 +664,7 @@ static void* gNB_thread_prach( void* param ) {
    if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
 
    LOG_D(PHY,"Running gNB prach procedures\n");
-   prach_procedures(gNB
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      ,0
-#endif
-      );
+   prach_procedures(gNB ,0);
 
    if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"gNB_prach_thread") < 0) break;
  }

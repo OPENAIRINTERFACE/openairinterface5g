@@ -79,6 +79,32 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_f
   return symbol;
 }
 
+int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot)
+{
+
+  uint8_t n_hf;
+  int rel_slot;
+
+  n_hf = cfg->sch_config.half_frame_index.value;
+
+  // if SSB periodicity is 5ms, they are transmitted in both half frames
+  if ( cfg->sch_config.ssb_periodicity.value == 5) {
+    if (slot<10)
+      n_hf=0;
+    else
+      n_hf=1;
+  }
+
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
+  rel_slot = (n_hf)? (slot-10) : slot;
+
+  if(rel_slot<10 && rel_slot>=0)
+    return 1;
+  else
+    return 0;
+
+}
+
 
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,

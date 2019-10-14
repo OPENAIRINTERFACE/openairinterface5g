@@ -65,11 +65,11 @@ typedef volatile struct {
 * \param[in]  chan_idP                  Transport channel identifier.
 */
 void config_req_rlc_um (
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      const srb_flag_t srb_flagP,
-                                      const rlc_um_info_t * const config_umP,
-                                      const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP); 
+  const protocol_ctxt_t *const ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const rlc_um_info_t *const config_umP,
+  const rb_id_t rb_idP,
+  const logical_chan_id_t chan_idP);
 
 /*! \fn void config_req_rlc_um_asn1 (
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -92,20 +92,18 @@ void config_req_rlc_um (
 * \param[in]  chan_idP                  Transport channel identifier.
 */
 void config_req_rlc_um_asn1 (
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      const srb_flag_t         srb_flagP,
-                                      const MBMS_flag_t        mbms_flagP,
-                                      const mbms_session_id_t  mbms_session_idP,
-                                      const mbms_service_id_t  mbms_service_idP,
-                                      const LTE_UL_UM_RLC_t  * const ul_rlc_pP,
-                                      const LTE_DL_UM_RLC_t  * const dl_rlc_pP,
-                                      const rb_id_t            rb_idP,
-                                      const logical_chan_id_t  chan_idP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                      ,const uint32_t          sourceL2Id
-                                      ,const uint32_t          destinationL2Id
-#endif
-                                      );
+  const protocol_ctxt_t *const ctxt_pP,
+  const srb_flag_t         srb_flagP,
+  const MBMS_flag_t        mbms_flagP,
+  const mbms_session_id_t  mbms_session_idP,
+  const mbms_service_id_t  mbms_service_idP,
+  const LTE_UL_UM_RLC_t   *const ul_rlc_pP,
+  const LTE_DL_UM_RLC_t   *const dl_rlc_pP,
+  const rb_id_t            rb_idP,
+  const logical_chan_id_t  chan_idP,
+  const uint32_t          sourceL2Id,
+  const uint32_t          destinationL2Id
+);
 
 /*! \fn void rlc_um_init (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
@@ -113,8 +111,8 @@ void config_req_rlc_um_asn1 (
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
 void rlc_um_init (
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t * const rlc_pP);
+  const protocol_ctxt_t *const ctxt_pP,
+  rlc_um_entity_t *const rlc_pP);
 
 /*! \fn void rlc_um_reset_state_variables (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Reset protocol variables and state variables to initial values.
@@ -122,15 +120,15 @@ void rlc_um_init (
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
 void rlc_um_reset_state_variables (
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t * const rlc_pP);
+  const protocol_ctxt_t *const ctxt_pP,
+  rlc_um_entity_t *const rlc_pP);
 
 /*! \fn void rlc_um_cleanup(rlc_um_entity_t * const rlc_pP)
 * \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC UM instance.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
 void rlc_um_cleanup(
-                                      rlc_um_entity_t * const rlc_pP);
+  rlc_um_entity_t *const rlc_pP);
 
 /*! \fn void rlc_um_configure(
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -148,12 +146,12 @@ void rlc_um_cleanup(
 * \param[in]  is_mXchP                  Is the radio bearer for MCCH, MTCH.
 */
 void rlc_um_configure(
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t *const  rlc_pP,
-                                      const uint32_t timer_reorderingP,
-                                      const uint32_t rx_sn_field_lengthP,
-                                      const uint32_t tx_sn_field_lengthP,
-                                      const uint32_t is_mXchP);
+  const protocol_ctxt_t *const ctxt_pP,
+  rlc_um_entity_t *const  rlc_pP,
+  const uint32_t timer_reorderingP,
+  const uint32_t rx_sn_field_lengthP,
+  const uint32_t tx_sn_field_lengthP,
+  const uint32_t is_mXchP);
 
 /*! \fn void rlc_um_set_debug_infos(
 *     const protocol_ctxt_t* const ctxt_pP,
@@ -168,10 +166,10 @@ void rlc_um_configure(
 * \param[in]  chan_idP                  Transport channel identifier.
 */
 void rlc_um_set_debug_infos(
-                                      const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t * const rlc_pP,
-                                      const srb_flag_t srb_flagP,
-                                      const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP); 
+  const protocol_ctxt_t *const ctxt_pP,
+  rlc_um_entity_t *const rlc_pP,
+  const srb_flag_t srb_flagP,
+  const rb_id_t rb_idP,
+  const logical_chan_id_t chan_idP);
 /** @} */
 #    endif

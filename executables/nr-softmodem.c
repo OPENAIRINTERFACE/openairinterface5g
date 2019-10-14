@@ -63,7 +63,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
 #include "UTIL/OPT/opt.h"
 
 //#include "PHY/TOOLS/time_meas.h"
@@ -513,17 +512,7 @@ static void get_options(void) {
   paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
-  if (strlen(in_path) > 0) {
-    opt_type = OPT_PCAP;
-    opt_enabled=1;
-    printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-  }
 
-  if (strlen(in_ip) > 0) {
-    opt_enabled=1;
-    opt_type = OPT_WIRESHARK;
-    printf("Enabling OPT for wireshark for local interface");
-  }
 
   config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
@@ -923,10 +912,8 @@ int main( int argc, char **argv )
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 
-  if (opt_type != OPT_NONE) {
-    if (init_opt() == -1)
-      LOG_E(OPT,"failed to run OPT \n");
-  }
+init_opt();
+
 
 #ifdef PDCP_USE_NETLINK
   netlink_init();
@@ -1158,8 +1145,6 @@ int main( int argc, char **argv )
       RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
   }
 
-  if (opt_enabled == 1)
-    terminate_opt();
 
   logClean();
   printf("Bye.\n");
