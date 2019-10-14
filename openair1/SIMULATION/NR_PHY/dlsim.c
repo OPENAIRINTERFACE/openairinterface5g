@@ -757,7 +757,8 @@ int main(int argc, char **argv)
 
         }
 
-        if (UE_mac->dl_config_request.number_pdus == 0)
+        if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
+	    UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
           n_errors++;
 
         //----------------------------------------------------------

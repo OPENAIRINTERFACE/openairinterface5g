@@ -303,6 +303,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
+  dlsch->last_iteration_cnt = ret;
 
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
