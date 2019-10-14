@@ -246,7 +246,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   }
   */
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
   LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);
 
@@ -290,6 +290,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_IN);
     nr_segmentation(harq_process->b,
         harq_process->c,
         harq_process->B,
@@ -297,6 +298,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
         &harq_process->K,
         pz,
         &harq_process->F);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_OUT);
 
     F = harq_process->F;
     Coderate = (float) A /(float) G;
@@ -352,7 +354,11 @@ opp_enabled=0;
       }
       printf("\n");*/
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
+    
     ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
@@ -394,6 +400,7 @@ opp_enabled=0;
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->Nl, r);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           BG,
@@ -403,6 +410,7 @@ opp_enabled=0;
                           harq_process->C,
                           harq_process->rvidx,
                           E);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_OUT);
 
 
 
@@ -421,10 +429,14 @@ opp_enabled=0;
     //stop_meas(rm_stats);
 
     //start_meas(i_stats);
-  nr_interleaving_ldpc(E,
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INTERLEAVING_LDPC, VCD_FUNCTION_IN);
+    
+    nr_interleaving_ldpc(E,
             mod_order,
             harq_process->e+r_offset,
             harq_process->f+r_offset);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INTERLEAVING_LDPC, VCD_FUNCTION_OUT);
     //stop_meas(i_stats);
 
 
@@ -445,7 +457,7 @@ opp_enabled=0;
 
   memcpy(ulsch->g,harq_process->f,G); // g is the concatenated code block
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return(0);
 }

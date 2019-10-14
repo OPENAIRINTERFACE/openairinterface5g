@@ -34,6 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -47,7 +48,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0;
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 1);
   reset = 1;
   x2 = (n_RNTI<<15) + (q<<14) + Nid;
 
@@ -62,7 +63,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
     *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 0);
 }
 
 
@@ -138,11 +139,13 @@ for (int i=0; i<encoded_length>>8; i++) {
  
   /// Modulation
   start_meas(dlsch_modulation_stats);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 1);
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_modulation(scrambled_output[q],
                          encoded_length,
                          Qm,
                          mod_symbs[q]);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 0);
   stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_symbols);
