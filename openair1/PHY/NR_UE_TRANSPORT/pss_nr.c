@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEFINE_VARIABLES_PSS_NR_H
 #include "PHY/NR_REFSIG/pss_nr.h"
