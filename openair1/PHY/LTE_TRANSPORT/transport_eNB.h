@@ -314,6 +314,12 @@ typedef struct {
   //  int calibration_flag;
   /// delta_TF for power control
   int32_t delta_TF;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  // PUSCH Repetition Number for the current SF
+  uint32_t repetition_number ;
+  // PUSCH Total number of repetitions
+  uint32_t total_number_of_repetitions;
+#endif
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {

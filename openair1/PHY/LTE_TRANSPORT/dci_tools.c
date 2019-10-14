@@ -2001,6 +2001,11 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   ulsch->ue_type = ulsch_pdu->ulsch_pdu_rel13.ue_type;
   AssertFatal(harq_pid ==0 || ulsch->ue_type == NOCE, "Harq PID is not zero for BL/CE UE\n");
 
+  if(ulsch_pdu->ulsch_pdu_rel13.repetition_number >1)	// Fill the Harq process parameters in the first Rep only
+  {
+	  return;
+  }
+
   //AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb>0,"nb_rb = 0\n");
   if(ulsch->harq_processes[harq_pid]->nb_rb == 0) {
     LOG_E(PHY, "fill_ulsch UE_id %d nb_rb = 0\n", UE_id);
@@ -2009,6 +2014,10 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
   ulsch->harq_processes[harq_pid]->handled                               = 0;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  ulsch->harq_processes[harq_pid]->repetition_number                     = ulsch_pdu->ulsch_pdu_rel13.repetition_number ;
+  ulsch->harq_processes[harq_pid]->total_number_of_repetitions           = ulsch_pdu->ulsch_pdu_rel13.total_number_of_repetitions ;
+#endif
   ulsch->harq_processes[harq_pid]->first_rb                              = ulsch_pdu->ulsch_pdu_rel8.resource_block_start;
   ulsch->harq_processes[harq_pid]->nb_rb                                 = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
   ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;

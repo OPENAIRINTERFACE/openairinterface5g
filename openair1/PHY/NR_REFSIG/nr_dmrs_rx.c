@@ -105,12 +105,12 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
 
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
-						unsigned int Ns,
-						unsigned int *nr_gold_pdsch,
-						int32_t *output,
-						unsigned short p,
-						unsigned char lp,
-						unsigned short nb_pdsch_rb)
+                     unsigned int Ns,
+                     unsigned int *nr_gold_pdsch,
+                     int32_t *output,
+                     unsigned short p,
+                     unsigned char lp,
+                     unsigned short nb_pdsch_rb)
 {
   int8_t w,config_type;
   short *mod_table;
@@ -156,15 +156,15 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
-int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
-		     uint8_t eNB_offset,
-		     unsigned int Ns,
-		     unsigned int *nr_gold_pdcch,
-		     int32_t *output,
-		     unsigned short p,
-		     unsigned short nb_rb_coreset)
-{
 
+int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
+                     uint8_t eNB_offset,
+                     unsigned int Ns,
+                     unsigned int *nr_gold_pdcch,
+                     int32_t *output,
+                     unsigned short p,
+                     unsigned short nb_rb_coreset)
+{
   uint8_t idx=0;
   //uint8_t pdcch_rb_offset =0;
   //nr_gold_pdcch += ((int)floor(ue->frame_parms.ssb_start_subcarrier/12)+pdcch_rb_offset)*3/32;
@@ -176,8 +176,8 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
       ((int16_t*)output)[(i<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH
       if (i<8)
-	printf("i %d idx %d pdcch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-	       (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1],&output[0]);
+        printf("i %d idx %d pdcch gold %u b0-b1 %d-%d mod_dmrs %d %d addr %p\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+               (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1],&output[0]);
 #endif
     }
   }
@@ -185,7 +185,10 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
-int nr_pbch_dmrs_rx(int symbol,unsigned int *nr_gold_pbch,int32_t *output	)
+
+int nr_pbch_dmrs_rx(int symbol,
+                    unsigned int *nr_gold_pbch,
+                    int32_t *output)
 {
   int m,m0,m1;
   uint8_t idx=0;
@@ -219,6 +222,3 @@ int nr_pbch_dmrs_rx(int symbol,unsigned int *nr_gold_pbch,int32_t *output	)
   
   return(0);
 }
-
-
-

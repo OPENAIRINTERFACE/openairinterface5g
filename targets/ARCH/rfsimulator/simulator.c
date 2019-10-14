@@ -24,12 +24,15 @@
 
 #include <common/utils/assertions.h>
 #include <common/utils/LOG/log.h>
+#include <common/utils/load_module_shlib.h>
+#include <common/config/config_userapi.h>
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
 #include "openair1/PHY/defs_UE.h"
+#define CHANNELMOD_DYNAMICLOAD
 #include <openair1/SIMULATION/TOOLS/sim.h>
 
-#define PORT 4043 //TCP port for this simulator
+#define PORT 4043 //default TCP port for this simulator
 #define CirSize 3072000 // 100ms is enough
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
@@ -39,11 +42,30 @@
 
 // Fixme: datamodel, external variables in .h files, ...
 #include <common/ran_context.h>
-extern double snr_dB;
+
 extern RAN_CONTEXT_t RC;
 //
 
+#define RFSIMU_SECTION    "rfsimulator"
+#define RFSIMU_OPTIONS_PARAMNAME "options"
+# define RFSIM_CONFIG_HELP_OPTIONS     " list of comma separated options to enable rf simulator functionalities. Available options: \n"\
+  "        chanmod:   enable channel modelisation\n"\
+  "        saviq:     enable saving written iqs to a file\n"
+/*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            configuration parameters for the rfsimulator device                                                                              */
+/*   optname                     helpstr                     paramflags           XXXptr                               defXXXval                          type         numelt  */
+/*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define RFSIMULATOR_PARAMS_DESC {\
+    {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
+    {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0},\
+    {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
+    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 }\
+  };
+
 pthread_mutex_t Sockmutex;
+
+typedef struct complex16 sample_t; // 2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
@@ -63,91 +85,16 @@ typedef struct {
   openair0_timestamp nextTimestamp;
   uint64_t typeStamp;
   char *ip;
+  uint16_t port;
   int saveIQfile;
   buffer_t buf[FD_SETSIZE];
   int rx_num_channels;
   int tx_num_channels;
   double sample_rate;
   double tx_bw;
+  int channelmod;
 } rfsimulator_state_t;
 
-/*
-  Legacy study:
-  The parameters are:
-  gain&loss (decay, signal power, ...)
-  either a fixed gain in dB, a target power in dBm or ACG (automatic control gain) to a target average
-  => don't redo the AGC, as it was used in UE case, that must have a AGC inside the UE
-  will be better to handle the "set_gain()" called by UE to apply it's gain (enable test of UE power loop)
-  lin_amp = pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas);
-  a lot of operations in legacy, grouped in one simulation signal decay: txgain*decay*rxgain
-
-  multi_path (auto convolution, ISI, ...)
-  either we regenerate the channel (call again random_channel(desc,0)), or we keep it over subframes
-  legacy: we regenerate each sub frame in UL, and each frame only in DL
-*/
-void rxAddInput( struct complex16 *input_sig,
-                 struct complex16 *after_channel_sig,
-                 int rxAnt,
-                 channel_desc_t *channelDesc,
-                 int nbSamples,
-                 uint64_t TS
-               ) {
-  // channelDesc->path_loss_dB should contain the total path gain
-  // so, in actual RF: tx gain + path loss + rx gain (+antenna gain, ...)
-  // UE and NB gain control to be added
-  // Fixme: not sure when it is "volts" so dB is 20*log10(...) or "power", so dB is 10*log10(...)
-  const double pathLossLinear = pow(10,channelDesc->path_loss_dB/20.0);
-  // Energy in one sample to calibrate input noise
-  //Fixme: modified the N0W computation, not understand the origin value
-  const double KT = 1.38e-23*290; //Boltzman*temperature
-  // sampling rate is linked to acquisition band (the input pass band filter)
-  const double noise_figure_watt = KT*channelDesc->sampling_rate;
-  // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
-  // the parameter "-s" is declared as SNR, but the input power is not well defined
-  // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain = 132.24 - snr_dB;
-  // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
-  // fixme: the last constant is pure trial results to make decent noise
-  const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;
-  // Fixme: we don't fill the offset length samples at begining ?
-  // anyway, in today code, channel_offset=0
-  const int dd = abs(channelDesc->channel_offset);
-  const int nbTx = channelDesc->nb_tx;
-
-  for (int i=0; i<((int)nbSamples-dd); i++) {
-    struct complex16 *out_ptr=after_channel_sig+dd+i;
-    struct complex rx_tmp= {0};
-
-    for (int txAnt=0; txAnt < nbTx; txAnt++) {
-      const struct complex *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
-
-      //const struct complex *channelModelEnd=channelModel+channelDesc->channel_length;
-      for (int l = 0; l<(int)channelDesc->channel_length; l++) {
-        // let's assume TS+i >= l
-        // fixme: the rfsimulator current structure is interleaved antennas
-        // this has been designed to not have to wait a full block transmission
-        // but it is not very usefull
-        // it would be better to split out each antenna in a separate flow
-        // that will allow to mix ru antennas freely
-        struct complex16 tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
-        rx_tmp.x += tx16.r * channelModel[l].x - tx16.i * channelModel[l].y;
-        rx_tmp.y += tx16.i * channelModel[l].x + tx16.r * channelModel[l].y;
-      } //l
-    }
-
-    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
-    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
-    out_ptr++;
-  }
-
-  if ( (TS*nbTx)%CirSize+nbSamples <= CirSize )
-    // Cast to a wrong type for compatibility !
-    LOG_D(HW,"Input power %f, output power: %f, channel path loss %f, noise coeff: %f \n",
-          10*log10((double)signal_energy((int32_t *)&input_sig[(TS*nbTx)%CirSize], nbSamples)),
-          10*log10((double)signal_energy((int32_t *)after_channel_sig, nbSamples)),
-          channelDesc->path_loss_dB,
-          10*log10(noise_per_sample));
-}
 
 void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   buffer_t *ptr=&bridge->buf[sock];
@@ -165,26 +112,29 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ev.events = EPOLLIN | EPOLLRDHUP;
   ev.data.fd = sock;
   AssertFatal(epoll_ctl(bridge->epollfd, EPOLL_CTL_ADD,  sock, &ev) != -1, "");
-  // create channel simulation model for this mode reception
-  // snr_dB is pure global, coming from configuration paramter "-s"
-  // Fixme: referenceSignalPower should come from the right place
-  // but the datamodel is inconsistant
-  // legacy: RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower
-  // (must not come from ru[]->frame_parms as it doesn't belong to ru !!!)
-  // Legacy sets it as:
-  // ptr->channel_model->path_loss_dB = -132.24 + snr_dB - RC.ru[0]->frame_parms->pdsch_config_common.referenceSignalPower;
-  // we use directly the paramter passed on the command line ("-s")
-  // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
-  // Legacy changes directlty the variable channel_model->path_loss_dB place to place
-  // while calling new_channel_desc_scm() with path losses = 0
-  ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
-                                          AWGN,
-                                          bridge->sample_rate,
-                                          bridge->tx_bw,
-                                          0.0, // forgetting_factor
-                                          0, // maybe used for TA
-                                          0); // path_loss in dB
-  random_channel(ptr->channel_model,false);
+
+  if ( bridge->channelmod > 0) {
+    // create channel simulation model for this mode reception
+    // snr_dB is pure global, coming from configuration paramter "-s"
+    // Fixme: referenceSignalPower should come from the right place
+    // but the datamodel is inconsistant
+    // legacy: RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower
+    // (must not come from ru[]->frame_parms as it doesn't belong to ru !!!)
+    // Legacy sets it as:
+    // ptr->channel_model->path_loss_dB = -132.24 + snr_dB - RC.ru[0]->frame_parms->pdsch_config_common.referenceSignalPower;
+    // we use directly the paramter passed on the command line ("-s")
+    // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
+    // Legacy changes directlty the variable channel_model->path_loss_dB place to place
+    // while calling new_channel_desc_scm() with path losses = 0
+    ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
+                                            bridge->channelmod,
+                                            bridge->sample_rate,
+                                            bridge->tx_bw,
+                                            0.0, // forgetting_factor
+                                            0, // maybe used for TA
+                                            0); // path_loss in dB
+    random_channel(ptr->channel_model,false);
+  }
 }
 
 void removeCirBuf(rfsimulator_state_t *bridge, int sock) {
@@ -213,6 +163,7 @@ void socketError(rfsimulator_state_t *bridge, int sock) {
 rfsimulator: error: you have to run one UE and one eNB\n\
 For this, export RFSIMULATOR=enb (eNB case) or \n\
                  RFSIMULATOR=<an ip address> (UE case)\n\
+                 or use rfsimulator.serveraddr configuration option\n\
 \x1b[m"
 
 enum  blocking_t {
@@ -267,6 +218,48 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
   }
 }
 
+
+
+void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
+  char *saveF=NULL;
+  char *modelname=NULL;
+  paramdef_t rfsimu_params[] = RFSIMULATOR_PARAMS_DESC;
+  int p = config_paramidx_fromname(rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t), RFSIMU_OPTIONS_PARAMNAME) ;
+  int ret = config_get( rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t),RFSIMU_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed");
+  rfsimulator->saveIQfile = -1;
+
+  for(int i=0; i<rfsimu_params[p].numelt ; i++) {
+    if (strcmp(rfsimu_params[p].strlistptr[i],"saviq") == 0) {
+      rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
+
+      if ( rfsimulator->saveIQfile != -1 )
+        LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
+      else
+        LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
+
+      break;
+    } else if (strcmp(rfsimu_params[p].strlistptr[i],"chanmod") == 0) {
+      init_channelmod();
+      rfsimulator->channelmod=modelid_fromname(modelname);
+    } else {
+      fprintf(stderr,"Unknown rfsimulator option: %s\n",rfsimu_params[p].strlistptr[i]);
+      exit(-1);
+    }
+  }
+
+  /* for compatibility keep environment variable usage */
+  if ( getenv("RFSIMULATOR") != NULL ) {
+    rfsimulator->ip=getenv("RFSIMULATOR");
+  }
+
+  if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
+       strncasecmp(rfsimulator->ip,"server",3) == 0 )
+    rfsimulator->typeStamp = ENB_MAGICDL_FDD;
+  else
+    rfsimulator->typeStamp = UE_MAGICDL_FDD;
+}
+
 int server_start(openair0_device *device) {
   rfsimulator_state_t *t = (rfsimulator_state_t *) device->priv;
   t->typeStamp=ENB_MAGICDL_FDD;
@@ -277,7 +270,7 @@ int server_start(openair0_device *device) {
 sin_family:
     AF_INET,
 sin_port:
-    htons(PORT),
+    htons(t->port),
 sin_addr:
     { s_addr: INADDR_ANY }
   };
@@ -299,7 +292,7 @@ int start_ue(openair0_device *device) {
 sin_family:
     AF_INET,
 sin_port:
-    htons(PORT),
+    htons(t->port),
 sin_addr:
     { s_addr: INADDR_ANY }
   };
@@ -307,7 +300,7 @@ sin_addr:
   bool connected=false;
 
   while(!connected) {
-    LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", t->ip, PORT);
+    LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", t->ip, t->port);
 
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
       LOG_I(HW,"rfsimulator: connection established\n");
@@ -327,15 +320,15 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
-
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
     if (b->conn_sock >= 0 ) {
-      if ( abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
+      if ( abs((double)b->lastWroteTS-timestamp) > (double)CirSize )
         LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
+
       samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
-      fullwrite(b->conn_sock,&header, sizeof(header), t);
+      fullwrite(b->conn_sock, &header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
 
       for(int a=0; a<nbAnt; a++) {
@@ -488,39 +481,48 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
+    if ( t->nextTimestamp == 0)
+      LOG_W(HW,"No connected device, generating void samples...\n");
+
     if (!flushInput(t, 10)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
       t->nextTimestamp+=nsamps;
-      LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
+
+      if ( ((t->nextTimestamp/nsamps)%100) == 0)
+        LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
+
       *ptimestamp = t->nextTimestamp-nsamps;
       pthread_mutex_unlock(&Sockmutex);
       return nsamps;
     }
   } else {
-    
     bool have_to_wait;
 
     do {
       have_to_wait=false;
 
-      for ( int sock=0; sock<FD_SETSIZE; sock++) {
+      for (int sock=0; sock<FD_SETSIZE; sock++) {
         buffer_t *b=&t->buf[sock];
+
         if ( b->circularBuf) {
           LOG_D(HW,"sock: %d, lastWroteTS: %lu, lastRecvTS: %lu, TS must be avail: %lu\n",
                 sock, b->lastWroteTS,
                 b->lastReceivedTS,
                 t->nextTimestamp+nsamps);
+
           if (  b->lastReceivedTS > b->lastWroteTS ) {
-	        // The caller momdem (NB, UE, ...) must send Tx in advance, so we fill TX if Rx is in advance
-	        // This occurs for example when UE is in sync mode: it doesn't transmit
-	        // with USRP, it seems ok: if "tx stream" is off, we may consider it actually cuts the Tx power
-	        struct complex16 v={0};
-	        void *samplesVoid[b->th.nbAnt];
-	        for ( int i=0; i <b->th.nbAnt; i++)
-	          samplesVoid[i]=(void*)&v;
-	        rfsimulator_write(device, b->lastReceivedTS, samplesVoid, 1, b->th.nbAnt, 0);
+            // The caller modem (NB, UE, ...) must send Tx in advance, so we fill TX if Rx is in advance
+            // This occurs for example when UE is in sync mode: it doesn't transmit
+            // with USRP, it seems ok: if "tx stream" is off, we may consider it actually cuts the Tx power
+            struct complex16 v = {0};
+            void *samplesVoid[b->th.nbAnt];
+
+            for ( int i=0; i < b->th.nbAnt; i++)
+              samplesVoid[i]=(void *)&v;
+
+            rfsimulator_write(device, b->lastReceivedTS, samplesVoid, 1, b->th.nbAnt, 0);
           }
         }
 
@@ -556,13 +558,24 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
 
-      for (int a=0; a<nbAnt; a++)
-        rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
-                    a,
-                    ptr->channel_model,
-                    nsamps,
-                    t->nextTimestamp
-                  );
+      for (int a=0; a<nbAnt; a++) {
+        if ( ptr->channel_model != NULL ) // apply a channel model
+          rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+                      a,
+                      ptr->channel_model,
+                      nsamps,
+                      t->nextTimestamp,
+                      CirSize
+                    );
+        else { // no channel modeling
+          sample_t *out=(sample_t *)samplesVoid[a];
+
+          for ( int i=0; i < nsamps; i++ ) {
+            out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].r;
+            out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].i;
+          }
+        } // end of no channel modeling
+      } // end for a...
     }
   }
 
@@ -605,33 +618,9 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // --log_config.hw_log_level debug
   // (for phy layer, replace "hw" by "phy")
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
-
-  if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {
-    LOG_E(HW,helpTxt);
-    exit(1);
-  }
-
+  rfsimulator_readconfig(rfsimulator);
   pthread_mutex_init(&Sockmutex, NULL);
-
-  if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||
-       strncasecmp(rfsimulator->ip,"server",3) == 0 )
-    rfsimulator->typeStamp = ENB_MAGICDL_FDD;
-  else
-    rfsimulator->typeStamp = UE_MAGICDL_FDD;
-
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL_FDD ? "(eg)NB" : "UE");
-  char *saveF;
-
-  if ((saveF=getenv("saveIQfile")) != NULL) {
-    rfsimulator->saveIQfile=open(saveF,O_APPEND| O_CREAT|O_TRUNC | O_WRONLY, 0666);
-
-    if ( rfsimulator->saveIQfile != -1 )
-      LOG_I(HW,"rfsimulator: will save written IQ samples  in %s\n", saveF);
-    else
-      LOG_E(HW, "can't open %s for IQ saving (%s)\n", saveF, strerror(errno));
-  } else
-    rfsimulator->saveIQfile = -1;
-
   device->trx_start_func       = rfsimulator->typeStamp == ENB_MAGICDL_FDD ?
                                  server_start :
                                  start_ue;

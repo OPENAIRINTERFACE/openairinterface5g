@@ -64,6 +64,7 @@
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13           "pdsch_maxNumRepetitionCEmodeB_r13"
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13           "pusch_maxNumRepetitionCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13           "pusch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_REPETITION_LEVEL_CE_MODE_A_R13			   "pusch_repetitionLevelCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                       "pusch_HoppingOffset_v1310"
 #define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                       "system_info_value_tag_SI"
 #define ENB_CONFIG_STRING_FIRST_PREAMBLE_R13                               "firstPreamble_r13"
@@ -161,6 +162,7 @@ typedef struct ccparams_eMTC_s {
   char          *pdsch_maxNumRepetitionCEmodeB_r13;
   char          *pusch_maxNumRepetitionCEmodeA_r13;
   char          *pusch_maxNumRepetitionCEmodeB_r13;
+  char			*pusch_repetitionLevelCEmodeA_r13;
 } ccparams_eMTC_t;
 
 
@@ -230,6 +232,7 @@ typedef struct ccparams_eMTC_s {
   {ENB_CONFIG_STRING_PRACH_HOPPING_OFFSET_R13,                     NULL,   0,           iptr:&eMTCconfig->prach_HoppingOffset_r13,                  defintval:0,               TYPE_INT,        0}, \
   {ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13,       NULL,   0,           strptr:&eMTCconfig->pdsch_maxNumRepetitionCEmodeA_r13,      defstrval:"r16",           TYPE_STRING,     0}, \
   {ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13,       NULL,   0,           strptr:&eMTCconfig->pusch_maxNumRepetitionCEmodeA_r13,      defstrval:"r8",            TYPE_STRING,     0},	\
+  {ENB_CONFIG_STRING_PUSCH_REPETITION_LEVEL_CE_MODE_A_R13,		   NULL,   0,           strptr:&eMTCconfig->pusch_repetitionLevelCEmodeA_r13,       defstrval:"l1",      	   TYPE_STRING,     0}, \
 {ENB_CONFIG_STRING_CELL_SELECTION_INFO_CE_R13,                           NULL,   0,           strptr:&eMTCconfig->cellSelectionInfoCE_r13,                   defstrval:"ENABLE",                TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_Q_RX_LEV_MIN_CE_R13,                                  NULL,   0,           iptr:&eMTCconfig->q_RxLevMinCE_r13,                            defintval:-70,                     TYPE_INT,          0}, \
 {ENB_CONFIG_STRING_BANDWIDTH_REDUCED_ACCESS_RELATED_INFO_R13,            NULL,   0,           strptr:&eMTCconfig->bandwidthReducedAccessRelatedInfo_r13,     defstrval:"ENABLE",                TYPE_STRING,       0}, \

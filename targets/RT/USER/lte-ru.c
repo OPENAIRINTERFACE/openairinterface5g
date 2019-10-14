@@ -50,10 +50,6 @@
 
 #include "assertions.h"
 #include "msc.h"
-
-#include "../../ARCH/COMMON/common_lib.h"
-#include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-
 #include "PHY/defs_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/types.h"
@@ -64,7 +60,6 @@
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY_INTERFACE/phy_interface.h"
-#include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
@@ -78,6 +73,8 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "enb_config.h"
+#include "targets/ARCH/COMMON/common_lib.h"
+#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "targets/RT/USER/lte-softmodem.h"
 //#include "PHY/TOOLS/time_meas.h"
 
@@ -95,7 +92,6 @@ static int DEFENBS[] = {0};
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
-
 #include "T.h"
 
 #include "pdcp.h"
@@ -104,9 +100,9 @@ extern volatile int oai_exit;
 extern int emulate_rf;
 extern int numerology;
 extern clock_source_t clock_source;
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern void phy_init_RU(RU_t *);
 
 void stop_RU(int nb_ru);

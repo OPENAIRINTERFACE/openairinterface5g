@@ -26,7 +26,6 @@
 * \version 1.0
 * \email navid.nikaein@eurecom.fr
 * @ingroup _mac
-
 */
 
 
@@ -102,7 +101,6 @@ MAC_RLC_XFACE *Mac_rlc_xface;
 int pCC_id[NUMBER_OF_eNB_MAX];
 
 
-
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB]; // eNBxUE = 8x8
 eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB]; // eNBxUE = 8x8
 
@@ -125,7 +123,6 @@ DCI1A_5MHz_TDD_1_6_t BCCH_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t CCCH_alloc_pdu;
 DCI1_5MHz_TDD_t DLSCH_alloc_pdu;
 DCI1C_5MHz_t MCCH_alloc_pdu;
-
 
 DCI0_5MHz_FDD_t UL_alloc_pdu_fdd;
 

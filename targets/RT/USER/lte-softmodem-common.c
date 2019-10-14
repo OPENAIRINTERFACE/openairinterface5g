@@ -34,11 +34,11 @@
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include "executables/thread-common.h"
 #include <dlfcn.h>
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
-double snr_dB=25;
 
 uint64_t get_softmodem_optmask(void) {
   return softmodem_params.optmask;
@@ -56,14 +56,10 @@ softmodem_params_t *get_softmodem_params(void) {
 void get_common_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level ;
-  uint32_t start_telnetsrv;
-  uint32_t noS1;
-  uint32_t nokrnmod;
-  uint32_t nonbiot;
-  uint32_t rfsim;
-  uint32_t basicsim;
+  uint32_t start_telnetsrv = 0;
+  uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
+  uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
-  uint32_t do_forms;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;

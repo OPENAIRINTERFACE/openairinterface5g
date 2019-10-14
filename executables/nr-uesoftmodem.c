@@ -103,9 +103,11 @@ FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-static pthread_t                forms_thread; //xforms
+static pthread_t forms_thread; //xforms
 
 #include <executables/nr-uesoftmodem.h>
+#include "executables/softmodem-common.h"
+#include "executables/thread-common.h"
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
@@ -148,7 +150,7 @@ double bw = 10.0e6;
 
 static int  tx_max_power[MAX_NUM_CCs] = {0};
 
-char   rf_config_file[1024];
+char rf_config_file[1024];
 
 int chain_offset=0;
 int phy_test = 0;
@@ -163,53 +165,18 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-typedef struct {
-  uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  int            phy_test;
-  uint8_t        usim_test;
-  int            emulate_rf;
-  int            wait_for_sync; //eNodeB only
-  int            single_thread_flag; //eNodeB only
-  int            chain_offset;
-  int            numerology;
-  unsigned int   start_msc;
-  uint32_t       clock_source;
-  int            hw_timing_advance;
-} softmodem_params_t;
 static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
 
-void set_parallel_conf(char *parallel_conf) {
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-}
-void set_worker_conf(char *worker_conf) {
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-}
-PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;
 
 uint32_t do_forms=0;
 int otg_enabled;
-//int                             number_of_cards =   1;
+//int number_of_cards = 1;
 
 static NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 int16_t node_synch_ref[MAX_NUM_CCs];
