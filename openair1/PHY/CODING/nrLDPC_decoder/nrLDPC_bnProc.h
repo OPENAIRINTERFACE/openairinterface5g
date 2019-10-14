@@ -47,7 +47,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
     int8_t* llrRes       = p_procBuf->llrRes;
     int8_t* llrProcBuf   = p_procBuf->llrProcBuf;
-        
+
     __m128i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
     __m128i* p_llrProcBuf;
@@ -1693,7 +1693,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
     int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
     int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
     int8_t* llrRes       = p_procBuf->llrRes;
-    
+
     __m256i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
     __m256i* p_llrRes;
@@ -2775,24 +2775,35 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 }
 
 /**
-   \brief Performs hard-decision on output LLRs and packs the output in 32 bit values.
+   \brief Performs hard-decision on output LLRs and packs the output in byte aligned output according to TS 38.321 Section 6.1.1.
+   i = 0,1,2,...
+   IN[i] : a0, a1, a2, ..., a_{A-1}
+   OUT[i]: a7,a6,a5,a4,a3,a2,a1,a0|a15,14,...,a8|a23,a22,...,a16|a31,a30,...,a24|...
    \param out Pointer hard-decision output, every int8_t contains 8 bits
    \param llrOut Pointer to output LLRs
    \param numLLR Number of LLRs
 */
 static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 {
+    /** Vector of indices for shuffling input */
+    const uint8_t constShuffle_256_epi8[32] __attribute__ ((aligned(32))) = {7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8};
+
     __m256i*  p_llrOut = (__m256i*)  llrOut;
     uint32_t* p_bits   = (uint32_t*) out;
+    __m256i inPerm;
     int8_t* p_llrOut8;
     uint32_t bitsTmp = 0;
     uint32_t i;
     uint32_t M  = numLLR>>5;
     uint32_t Mr = numLLR&31;
+    const __m256i* p_shuffle = (__m256i*) constShuffle_256_epi8;
 
     for (i=0; i<M; i++)
     {
-        *p_bits++ = _mm256_movemask_epi8(*p_llrOut);
+        // Move LSB to MSB on 8 bits
+        inPerm = _mm256_shuffle_epi8(*p_llrOut,*p_shuffle);
+        // Hard decision
+        *p_bits++ = _mm256_movemask_epi8(inPerm);
         p_llrOut++;
     }
 
@@ -2805,11 +2816,11 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
         {
             if (p_llrOut8[i] < 0)
             {
-                bitsTmp |= (1<<i);
+                bitsTmp |= (1<<((7-i) + (16*(i/8))));
             }
             else
             {
-                bitsTmp &= (0<<i);
+                bitsTmp |= (0<<((7-i) + (16*(i/8))));
             }
         }
     }
