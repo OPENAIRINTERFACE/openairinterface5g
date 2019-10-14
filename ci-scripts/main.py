@@ -778,13 +778,13 @@ class SSHConnection():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
+			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				self.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 15)
+				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -3766,7 +3766,7 @@ class SSHConnection():
 			if result is not None:
 				self.UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 12)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 30)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		count = 0
 		for board in usrp_boards:
