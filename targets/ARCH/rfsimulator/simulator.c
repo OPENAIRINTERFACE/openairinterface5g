@@ -489,10 +489,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
       t->nextTimestamp+=nsamps;
-
-      if ( ((t->nextTimestamp/nsamps)%100) == 0)
-        LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
-
+      LOG_D(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
       *ptimestamp = t->nextTimestamp-nsamps;
       pthread_mutex_unlock(&Sockmutex);
       return nsamps;

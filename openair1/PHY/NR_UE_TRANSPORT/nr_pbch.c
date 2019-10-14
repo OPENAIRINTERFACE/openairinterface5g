@@ -611,7 +611,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
-  rx_ind.number_pdus = 1;
+  rx_ind.number_pdus = 1; //rx_ind.number_pdus++;
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication);

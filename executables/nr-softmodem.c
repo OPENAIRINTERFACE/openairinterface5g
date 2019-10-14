@@ -474,6 +474,8 @@ static void get_options(void) {
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv = 0;
+  uint32_t noS1;
+  uint32_t nokrnmod;
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
   paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
@@ -511,6 +513,7 @@ static void get_options(void) {
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL) set_worker_conf(worker_config);
+
 }
 
 
@@ -831,6 +834,30 @@ static  void wait_nfapi_init(char *thread_name) {
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
+void init_pdcp(void) {
+  //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
+    if (IS_SOFTMODEM_NOS1){
+    	printf("IS_SOFTMODEM_NOS1 option enabled \n");
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+    }
+
+    pdcp_module_init(pdcp_initmask);
+
+    /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {*/
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    //}
+  /*} else {
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }*/
+}
+
 int main( int argc, char **argv )
 {
   int i, ru_id, CC_id = 0;
@@ -852,6 +879,7 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
+  get_common_options();
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -913,6 +941,9 @@ init_opt();
   for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
+
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);

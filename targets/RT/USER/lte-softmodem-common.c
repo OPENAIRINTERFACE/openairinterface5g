@@ -92,6 +92,7 @@ void get_common_options(void) {
   }
 
   if (nokrnmod) {
+	  printf("nokrnmod bit enabled \n");
     set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
   }
 

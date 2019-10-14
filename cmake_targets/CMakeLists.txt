@@ -1566,6 +1566,44 @@ set(L2_SRC_UE
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
   )
+  
+  set(LTE_NR_L2_SRC_UE
+  ${PDCP_DIR}/pdcp.c
+  ${PDCP_DIR}/pdcp_fifo.c
+  ${PDCP_DIR}/pdcp_sequence_manager.c
+  ${PDCP_DIR}/pdcp_primitives.c
+  ${PDCP_DIR}/pdcp_util.c
+  ${PDCP_DIR}/pdcp_security.c
+  ${PDCP_DIR}/pdcp_netlink.c
+  ${RLC_AM_DIR}/rlc_am.c
+  ${RLC_AM_DIR}/rlc_am_init.c
+  ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
+  ${RLC_AM_DIR}/rlc_am_timer_reordering.c
+  ${RLC_AM_DIR}/rlc_am_timer_status_prohibit.c
+  ${RLC_AM_DIR}/rlc_am_segment.c
+  ${RLC_AM_DIR}/rlc_am_segments_holes.c
+  ${RLC_AM_DIR}/rlc_am_in_sdu.c
+  ${RLC_AM_DIR}/rlc_am_receiver.c
+  ${RLC_AM_DIR}/rlc_am_retransmit.c
+  ${RLC_AM_DIR}/rlc_am_windows.c
+  ${RLC_AM_DIR}/rlc_am_rx_list.c
+  ${RLC_AM_DIR}/rlc_am_reassembly.c
+  ${RLC_AM_DIR}/rlc_am_status_report.c
+  ${RLC_TM_DIR}/rlc_tm.c
+  ${RLC_TM_DIR}/rlc_tm_init.c
+  ${RLC_UM_DIR}/rlc_um.c
+  ${RLC_UM_DIR}/rlc_um_fsm.c
+  ${RLC_UM_DIR}/rlc_um_control_primitives.c
+  ${RLC_UM_DIR}/rlc_um_segment.c
+  ${RLC_UM_DIR}/rlc_um_reassembly.c
+  ${RLC_UM_DIR}/rlc_um_receiver.c
+  ${RLC_UM_DIR}/rlc_um_dar.c
+  ${RLC_DIR}/rlc_mac.c
+  ${RLC_DIR}/rlc.c
+  ${RLC_DIR}/rlc_rrc.c
+  ${RLC_DIR}/rlc_mpls.c
+  ${RRC_DIR}/L2_interface_common.c  
+  )
 
 set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
@@ -1618,7 +1656,7 @@ set (MAC_SRC_UE
   ${MAC_DIR}/config_ue.c
   
  )
-
+ 
 set (MAC_NR_SRC_UE
   ${NR_UE_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_UE_MAC_DIR}/config_ue.c
@@ -1674,6 +1712,10 @@ endif()
 add_dependencies(L2_UE rrc_flag s1ap_flag x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
+
+add_library ( LTE_NR_L2_UE
+    ${LTE_NR_L2_SRC_UE}
+    )
   
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c )
 
@@ -2504,6 +2546,8 @@ add_executable(nr-uesoftmodem-nos1
   ${rrc_h}
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
@@ -2517,9 +2561,10 @@ add_executable(nr-uesoftmodem-nos1
   ${SHLIB_LOADER_SOURCES}
   )
 
+
 target_link_libraries (nr-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_NR_UE PHY_UE PHY_RU LFDS NR_L2_UE MAC_NR_COMMON
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_NR_UE PHY_RU LFDS LTE_NR_L2_UE NR_L2_UE MAC_NR_COMMON
   ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 

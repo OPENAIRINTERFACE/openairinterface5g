@@ -45,6 +45,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "executables/nr-softmodem.h"
 
 #include "T.h"
 
@@ -412,6 +413,15 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
+  if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
+	  //Hardcoded rnti value
+	  protocol_ctxt_t ctxt;
+	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
+                                   0x1234, proc->frame_rx,
+                                   proc->nr_tti_rx, 0);
+	  //pdcp_run(&ctxt);
+          pdcp_fifo_flush_sdus(&ctxt);
+  }
   }
 
   
@@ -722,6 +732,7 @@ void *UE_thread(void *arg) {
                                            rxp,
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
+    /*
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
@@ -732,6 +743,7 @@ void *UE_thread(void *arg) {
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
                      1),"");
+    */
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
@@ -776,7 +788,7 @@ void *UE_thread(void *arg) {
     msgToPush->key=slot_nr;
     pushTpool(Tpool, msgToPush);
 
-    if (getenv("RFSIMULATOR")) {
+    if (getenv("RFSIMULATOR") || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done
