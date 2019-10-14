@@ -31,6 +31,7 @@
 */
 
 #include "sched_nr.h"
+#include "PHY/INIT/phy_init.h"
 
 nr_subframe_t nr_slot_select(nfapi_nr_config_request_t *cfg,
 		                     unsigned char slot)

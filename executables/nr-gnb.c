@@ -193,7 +193,6 @@ static inline int rxtx(PHY_VARS_gNB *gNB,int frame_rx, int slot_rx, int frame_tx
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) */
 
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
