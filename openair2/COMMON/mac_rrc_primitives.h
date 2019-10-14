@@ -20,15 +20,14 @@
  */
 
 #ifndef __MAC_RRC_PRIMITIVES_H__
-#    define __MAC_RRC_PRIMITIVES_H__
-
-
+#define __MAC_RRC_PRIMITIVES_H__
 
 #ifndef OPENAIR2_IN
   #include "LAYER2/RLC/rlc.h"
 #endif
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
+#include "openair2/RRC/LTE/rrc_defs.h"
 
 #include "LTE_RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"
@@ -398,5 +397,3 @@ typedef struct {
 #define REMOVE_LC 1
 
 #endif
-
-

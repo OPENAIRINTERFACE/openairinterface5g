@@ -429,9 +429,9 @@ typedef struct NRRrcConfigurationReq_s {
   long                    DL_absoluteFrequencyPointA[MAX_NUM_CCs];
 
   //NR DL SCS-SpecificCarrier
-  uint32_t                DL_offsetToCarrier[MAX_NUM_CCs];
+  long                    DL_offsetToCarrier[MAX_NUM_CCs];
   long                    DL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
-  uint32_t                DL_carrierBandwidth[MAX_NUM_CCs];
+  long                    DL_carrierBandwidth[MAX_NUM_CCs];
 
   //NR BWP-DownlinkCommon
   uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs];

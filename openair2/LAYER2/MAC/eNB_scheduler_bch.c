@@ -200,7 +200,8 @@ schedule_SIB1_MBMS(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -429,7 +430,8 @@ schedule_SIB1_BR(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 0xFFFF, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -595,7 +597,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
         long si_Narrowband_r13 = schedulingInfoList_BR_r13->list.array[i]->si_Narrowband_r13;
         long si_TBS_r13 = si_TBS_r13tab[schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13];
         // check if the SI is to be scheduled now
-        int period_in_sf;
+        int period_in_sf = 0;
 
         if ((si_Periodicity >= 0) && (si_Periodicity < 25)) {
           // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
