@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
+#include "executables/nr-softmodem.h"
 
 #include <stdio.h>
 
@@ -70,8 +71,14 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
 
 }
 //  L2 Abstraction Layer
-int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len){
+int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot){
 
+	LOG_I(MAC, "handle_dlsch at MAC layer \n");
+	if (IS_SOFTMODEM_NOS1)
+		nr_ue_send_sdu(module_id, 0, frame, slot,
+										pduP,
+										pdu_len,
+										0);
   return 0;
   /*
   return nr_ue_process_dlsch( module_id,
@@ -209,7 +216,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
   }
 
   if(dl_info->rx_ind != NULL){
-    LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND]\n");
+    LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
@@ -220,6 +227,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
+    	  LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], MIB case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
+	/*ret_mask |= (handle_bcch_bch( dl_info->proc,
+					     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.pdu,
+					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.additional_bits,
+					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.ssb_index,
+					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.ssb_length,
+					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;*/
 	break;
       case FAPI_NR_RX_PDU_TYPE_SIB:
 	ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
@@ -231,8 +246,21 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 	//                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 	ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
 				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length, dl_info->frame, dl_info->slot)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 
+    	  LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], DLSCH case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
+
+	  /*
+	  // dl_config structure just stores what was received - not really needed
+	  dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+	  dl_config->number_pdus = dl_config->number_pdus + 1;
+	  */
+
+	/*ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
+					  dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu,
+					  dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length, dl_info->frame, dl_info->slot)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+
+	*/
 	break;
       default:
 

@@ -75,30 +75,42 @@ void get_band(uint32_t downlink_frequency,
               lte_frame_type_t *current_type)
 {
     int ind;
-    int64_t dl_freq_khz = downlink_frequency/1000;
+    uint64_t center_frequency_khz;
+    uint64_t center_freq_diff_khz;
+    uint64_t dl_freq_khz = downlink_frequency/1000;
+
+    center_freq_diff_khz = 999999999999999999; // 2^64
+    *current_band = 0;
+
     for ( ind=0;
           ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
           ind++) {
 
-      *current_band = nr_bandtable[ind].band;
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", ind, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
+      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
 
       if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
-	*current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-	if (*current_offset == 0)
-	  *current_type = TDD;
-	else
-	  *current_type = FDD;
 
-	LOG_I( PHY, "DL frequency %"PRIu32": band %d, frame_type %d, UL frequency %"PRIu32"\n",
-	       downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
-        break;
+        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
+
+        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+
+          *current_band = nr_bandtable[ind].band;
+	        *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
+          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+
+	        if (*current_offset == 0)
+	          *current_type = TDD;
+	        else
+	          *current_type = FDD;
+        }
       }
     }
 
-    AssertFatal(ind != (sizeof(nr_bandtable) / sizeof(nr_bandtable[0])),
-	    "Can't find EUTRA band for frequency %d\n", downlink_frequency);
+    LOG_I( PHY, "DL frequency %"PRIu32": band %d, frame_type %d, UL frequency %"PRIu32"\n",
+         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
 
+    AssertFatal(*current_band != 0,
+	    "Can't find EUTRA band for frequency %u\n", downlink_frequency);
 }
 
 uint32_t to_nrarfcn(int nr_bandP,

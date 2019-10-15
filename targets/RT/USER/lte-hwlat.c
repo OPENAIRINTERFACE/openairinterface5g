@@ -187,7 +187,7 @@ int32_t **txdata;
 
 int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 
-static inline void saif_meas(int frame_rx, int subframe_rx) {
+static inline void saif_meas(unsigned int frame_rx, unsigned int subframe_rx) {
     static latency_stat_t __thread latency_stat;
     static struct timespec __thread last= {0};
     struct timespec now;
@@ -238,7 +238,7 @@ static inline void saif_meas(int frame_rx, int subframe_rx) {
         if ( (diffTime>=1500) || ( !(frame_rx%1024) && subframe_rx == 0 ) ) {
             time_t current=time(NULL);
             printf("\n");
-            printf("%.2f Period stats cnt=%7.7ld    0.. 250=%7.7ld  250.. 500=%7.7ld  500.. 600=%7.7ld  600.. 700=%7.7ld  700.. 800=%7.7ld - (frame_rx=%d) - %s",
+            printf("%.2f Period stats cnt=%7.7ld    0.. 250=%7.7ld  250.. 500=%7.7ld  500.. 600=%7.7ld  600.. 700=%7.7ld  700.. 800=%7.7ld - (frame_rx=%u) - %s",
                   now.tv_sec+(double)now.tv_nsec/1e9,
                   latency_stat.counter,
                   latency_stat.stat250, latency_stat.stat500,
@@ -246,7 +246,7 @@ static inline void saif_meas(int frame_rx, int subframe_rx) {
                   latency_stat.stat800,
                   frame_rx,
                   ctime(&current));
-            printf("%.2f Period stats cnt=%7.7ld  800.. 880=%7.7ld  880.. 960=%7.7ld  960..1040=%7.7ld 1040..1120=%7.7ld 1120..1200=%7.7ld - (frame_rx=%d) - %s",
+            printf("%.2f Period stats cnt=%7.7ld  800.. 880=%7.7ld  880.. 960=%7.7ld  960..1040=%7.7ld 1040..1120=%7.7ld 1120..1200=%7.7ld - (frame_rx=%u) - %s",
                   now.tv_sec+(double)now.tv_nsec/1e9,
                   latency_stat.counter,
                   latency_stat.stat880, latency_stat.stat960,
@@ -254,7 +254,7 @@ static inline void saif_meas(int frame_rx, int subframe_rx) {
                   latency_stat.stat1200,
                   frame_rx,
                   ctime(&current));
-            printf("%.2f Period stats cnt=%7.7ld 1200..1300=%7.7ld 1300..1500=%7.7ld 1500..2000=%7.7ld 2000..2500=%7.7ld      >3000=%7.7ld - (frame_rx=%d) - %s",
+            printf("%.2f Period stats cnt=%7.7ld 1200..1300=%7.7ld 1300..1500=%7.7ld 1500..2000=%7.7ld 2000..2500=%7.7ld      >3000=%7.7ld - (frame_rx=%u) - %s",
                   now.tv_sec+(double)now.tv_nsec/1e9,
                   latency_stat.counter,
                   latency_stat.stat1300, latency_stat.stat1500,
@@ -326,7 +326,7 @@ int main(void)
 	openair0_device     rf_device;
 	openair0_timestamp	timestamp       = 0;
 
-	int					sub_frame       = 0;
+	unsigned int        sub_frame       = 0;
 	unsigned int        frame_rx        = 0;
 
 	unsigned int        nb_antennas_tx  = 1;
@@ -922,7 +922,7 @@ int main(void)
 
 	rxp[0] = (void*)&rxdata[0][sub_frame*nb_sample_per_tti];
 
-	readBlockSize = rf_device.trx_read_func( &rf_device,
+	readBlockSize = rf_device.trx_read_func(&rf_device,
 											&timestamp,
 											rxp,
 											nb_sample_per_tti,

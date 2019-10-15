@@ -29,7 +29,6 @@
 #include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
 #include "common/ran_context.h"
 #include <openair1/PHY/defs_gNB.h>
-#include <nr-softmodem.h>
 #include <forms.h>
 #include "PHY/defs_gNB.h"
 //#include "PHY/defs_nrUE.h"
@@ -67,6 +66,11 @@ typedef struct {
     FL_OBJECT * button_0;
 } FD_phy_scope_nrue;
 
+typedef struct {
+  int *argc;
+  char **argv;
+} scopeParms_t;
+
 extern unsigned char scope_enb_num_ue;
 FD_phy_scope_gnb * create_phy_scope_gnb( void );
 FD_phy_scope_nrue * create_phy_scope_nrue( void );
@@ -82,5 +86,10 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
                   int eNB_id,
                   int UE_id,
                   uint8_t subframe);
+
+
+void startScope(scopeParms_t * p);
+
+
 extern RAN_CONTEXT_t RC;
 #endif

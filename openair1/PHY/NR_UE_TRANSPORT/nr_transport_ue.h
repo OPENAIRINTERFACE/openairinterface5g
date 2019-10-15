@@ -159,10 +159,6 @@ typedef struct {
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// Current Number of Symbols
-  uint8_t Nsymb_pusch;
-  /// Nsc_pusch, number of allocated subcarriers for ULSCH
-  uint16_t Nsc_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
   /// DMRS length

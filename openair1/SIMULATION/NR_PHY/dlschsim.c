@@ -53,8 +53,11 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -437,7 +440,7 @@ int main(int argc, char **argv)
 	mod_order = nr_get_Qm(Imcs, 1);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
 	TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
-	printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
+	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;
 	rel15->nb_symbols = nb_symb_sch;
@@ -473,7 +476,7 @@ int main(int argc, char **argv)
 	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
-	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
+	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
 #endif
 
 	/*for (int i=0; i<TBS/8; i++)
@@ -563,7 +566,7 @@ int main(int argc, char **argv)
 			if (errors_bit > 0) {
 				n_false_positive++;
 				if (n_trials == 1)
-					printf("errors_bit %d (trial %d)\n", errors_bit, trial);
+					printf("errors_bit %u (trial %d)\n", errors_bit, trial);
 			}
 		}
 

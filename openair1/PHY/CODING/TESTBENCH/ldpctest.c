@@ -23,13 +23,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
 #define MAX_NUM_DLSCH_SEGMENTS 16
+#define MAX_BLOCK_LENGTH 8448
 
 #ifndef malloc16
 #  ifdef __AVX2__
@@ -41,7 +42,6 @@
 
 #define NR_LDPC_PROFILER_DETAIL
 #define NR_LDPC_ENABLE_PARITY_CHECK
-
 
 // 4-bit quantizer
 char quantize4bit(double D,double x)
@@ -76,31 +76,15 @@ char quantize8bit(double D,double x)
   return((char)qxd);
 }
 
-char quantize(double D,double x,unsigned char B)
-{
-  double qxd;
-  short maxlev;
-  qxd = floor(x/D);
-
-  maxlev = 1<<(B-1);//(char)(pow(2,B-1));
-
-  //printf("x=%f,qxd=%f,maxlev=%d\n",x,qxd, maxlev);
-
-  if (qxd <= -maxlev)
-    qxd = -maxlev;
-  else if (qxd >= maxlev)
-    qxd = maxlev-1;
-
-  return((char)qxd);
-}
-
 typedef struct {
-double n_iter_mean;
-double n_iter_std;
-int n_iter_max;
+  double n_iter_mean;
+  double n_iter_std;
+  int n_iter_max;
 } n_iter_stats_t;
 
-#define MAX_BLOCK_LENGTH 8448
+RAN_CONTEXT_t RC;
+PHY_VARS_UE ***PHY_vars_UE_g;
+uint16_t NB_UE_INST = 1;
 
 short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
 
@@ -118,7 +102,7 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t * dec_iter)
+              n_iter_stats_t *dec_iter)
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -146,12 +130,12 @@ int test_ldpc(short No_iteration,
   double *modulated_input[MAX_NUM_DLSCH_SEGMENTS];
   char *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
   unsigned int i,j,trial=0;
-  short BG,Zc,Kb,nrows;//,ncols;
+  short BG=0,Zc,Kb=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
   int i1;
   int R_ind = 0;
   //Table of possible lifting sizes
-//short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
+  //short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
   //int n_segments=1;
   int code_rate_vec[8] = {15, 13, 25, 12, 23, 34, 56, 89};
   //double code_rate_actual_vec[8] = {0.2, 0.33333, 0.4, 0.5, 0.66667, 0.73333, 0.81481, 0.88};
@@ -227,15 +211,15 @@ int test_ldpc(short No_iteration,
   //determine number of bits in codeword
   if (block_length>3840)
   {
-    BG=1;
+    BG = 1;
     Kb = 22;
-    nrows=46; //parity check bits
+    nrows = 46; //parity check bits
     //ncols=22; //info bits
   }
   else if (block_length<=3840)
   {
-    BG=2;
-    nrows=42; //parity check bits
+    BG = 2;
+    nrows = 42; //parity check bits
     //ncols=10; // info bits
 
     if (block_length>640)
@@ -246,7 +230,7 @@ int test_ldpc(short No_iteration,
       Kb = 8;
     else
       Kb = 6;
-      }
+  }
 
   if (nom_rate == 1)
 	  if (denom_rate == 5)
@@ -298,7 +282,7 @@ int test_ldpc(short No_iteration,
     }
   }
 
-  printf("ldpc_test: codeword_length %d, n_segments %d, block_length %d, BG %d, Zc %d, Kb %d\n",n_segments *block_length, n_segments, block_length,BG, Zc, Kb);
+  printf("ldpc_test: codeword_length %d, n_segments %d, block_length %d, BG %d, Zc %d, Kb %d\n",n_segments *block_length, n_segments, block_length, BG, Zc, Kb);
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*(1/((float)nom_rate/(float)denom_rate)))/Zc;
   //  printf("puncture:%d\n",no_punctured_columns);
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
@@ -330,11 +314,11 @@ int test_ldpc(short No_iteration,
     
     if (ntrials==1)    
       for (j=0;j<n_segments;j++)
-    for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)
-      if (channel_input[j][i]!=channel_input_optim[j][i]) {
-        printf("differ in seg %d pos %d (%d,%d)\n",j,i,channel_input[j][i],channel_input_optim[j][i]);
-        return (-1);
-      }
+        for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)
+          if (channel_input[j][i]!=channel_input_optim[j][i]) {
+            printf("differ in seg %u pos %u (%u,%u)\n", j, i, channel_input[j][i], channel_input_optim[j][i]);
+            return (-1);
+          }
       //else{
            // printf("NOT differ in seg %d pos %d (%d,%d)\n",j,i,channel_input[j][i],channel_input_optim[j][i]);
      // }
@@ -344,7 +328,6 @@ int test_ldpc(short No_iteration,
       printf("removed_bit: %d\n", removed_bit);
       printf("To: %d\n", (Kb+nrows-no_punctured_columns) * Zc-removed_bit);
       printf("number of undecoded bits: %d\n", (Kb+nrows-no_punctured_columns-2) * Zc-removed_bit);
-
     }
 
     //print_meas_now(&time, "", stdout);
@@ -359,17 +342,17 @@ int test_ldpc(short No_iteration,
 	for (i = 2*Zc; i < (Kb+nrows-no_punctured_columns) * Zc-removed_bit; i++) {
 #ifdef DEBUG_CODER
         if ((i&0xf)==0)
-          printf("\ne %d..%d:    ",i,i+15);
+          printf("\ne %u..%u:    ",i,i+15);
 #endif
 
-        if (channel_input[j][i-2*Zc]==0)
+        if (channel_input_optim[j][i-2*Zc]==0)
           modulated_input[j][i]=1.0;///sqrt(2);  //QPSK
         else
           modulated_input[j][i]=-1.0;///sqrt(2);
 
         ///channel_output[i] = modulated_input[i] + gaussdouble(0.0,1.0) * 1/sqrt(2*SNR);
         //channel_output_fixed[i] = (char) ((channel_output[i]*128)<0?(channel_output[i]*128-0.5):(channel_output[i]*128+0.5)); //fixed point 9-7
-    //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
+        //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
 
         //channel_output_fixed[i] = (char)quantize(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
         channel_output_fixed[j][i] = (char)quantize(sigma/4.0/4.0,modulated_input[j][i] + sigma*gaussdouble(0.0,1.0),qbits);
@@ -383,10 +366,10 @@ int test_ldpc(short No_iteration,
         //Uncoded BER
         if (channel_output_fixed[j][i]<0)
             channel_output_uncoded[j][i]=1;  //QPSK demod
-	else
+        else
             channel_output_uncoded[j][i]=0;
 
-        if (channel_output_uncoded[j][i] != channel_input[j][i-2*Zc])
+        if (channel_output_uncoded[j][i] != channel_input_optim[j][i-2*Zc])
 	  *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
 
 	}
@@ -541,7 +524,7 @@ int main(int argc, char *argv[])
   time_stats_t time_optim[10], time_decoder[10];
   n_iter_stats_t dec_iter[3];
 
-  short BG,Zc,Kb;
+  short BG=0,Zc,Kb;
 
   while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h")) != -1)
     switch (c)
@@ -571,8 +554,8 @@ int main(int argc, char *argv[])
         break;
 
       case 'S':
-	n_segments = atof(optarg);
-	break;
+        n_segments = atof(optarg);
+        break;
 
       case 't':
         SNR_step = atof(optarg);
@@ -583,8 +566,8 @@ int main(int argc, char *argv[])
         break;
 
       case 'u':
-              test_uncoded = atoi(optarg);
-              break;
+        test_uncoded = atoi(optarg);
+        break;
 
       case 'h':
             default:
@@ -622,14 +605,14 @@ int main(int argc, char *argv[])
   //determine number of bits in codeword
   if (block_length>3840)
   {
-    BG=1;
+    BG = 1;
     Kb = 22;
     //nrows=46; //parity check bits
     //ncols=22; //info bits
   }
   else if (block_length<=3840)
   {
-    BG=2;
+    BG = 2;
     //nrows=42; //parity check bits
     //ncols=10; // info bits
 
@@ -663,8 +646,7 @@ int main(int argc, char *argv[])
 
   fprintf(fd,"SNR BLER BER UNCODED_BER ENCODER_MEAN ENCODER_STD ENCODER_MAX DECODER_TIME_MEAN DECODER_TIME_STD DECODER_TIME_MAX DECODER_ITER_MEAN DECODER_ITER_STD DECODER_ITER_MAX\n");
 
-  for (SNR=SNR0;SNR<SNR0+20.0;SNR+=SNR_step)
-  {
+  for (SNR=SNR0;SNR<SNR0+20.0;SNR+=SNR_step) {
 	  //reset_meas(&time_optim);
 	  //reset_meas(&time_decoder);
 	  //n_iter_stats_t dec_iter = {0, 0, 0};
@@ -689,9 +671,9 @@ int main(int argc, char *argv[])
                                 time_decoder,
                                 dec_iter);
 
-    printf("SNR %f, BLER %f (%d/%d)\n",SNR,(float)decoded_errors[i]/(float)n_trials,decoded_errors[i],n_trials);
-    printf("SNR %f, BER %f (%d/%d)\n",SNR,(float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments ,decoded_errors[i],n_trials);
-    printf("SNR %f, Uncoded BER %f (%d/%d)\n",SNR,errors_bit_uncoded/(float)n_trials/(double)n_segments ,decoded_errors[i],n_trials);
+    printf("SNR %f, BLER %f (%u/%d)\n", SNR, (float)decoded_errors[i]/(float)n_trials, decoded_errors[i], n_trials);
+    printf("SNR %f, BER %f (%u/%d)\n", SNR, (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments, decoded_errors[i], n_trials);
+    printf("SNR %f, Uncoded BER %f (%u/%d)\n",SNR, errors_bit_uncoded/(float)n_trials/(double)n_segments, decoded_errors[i], n_trials);
     printf("SNR %f, Mean iterations: %f\n",SNR, dec_iter->n_iter_mean);
     printf("SNR %f, Std iterations: %f\n",SNR, dec_iter->n_iter_std);
     printf("SNR %f, Max iterations: %d\n",SNR, dec_iter->n_iter_max);
@@ -720,23 +702,11 @@ int main(int argc, char *argv[])
     		dec_iter->n_iter_max
     		);
 
-    if (decoded_errors[i] == 0)
-    	break;
+    if (decoded_errors[i] == 0) break;
+
     i=i+1;
-
-
   }
   fclose(fd);
 
   return(0);
 }
-
-
-
-
-
-
-
-
-
-

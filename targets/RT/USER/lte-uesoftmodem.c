@@ -25,7 +25,7 @@
  * \date 2012
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
+ * \email: {knopp, florian.kaltenberger, navid.nikaein}@eurecom.fr
  * \note
  * \warning
  */
@@ -87,7 +87,6 @@
 
 
 #include "lte-softmodem.h"
-
 
 
 /* temporary compilation wokaround (UE/eNB split */
@@ -173,14 +172,9 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-/* prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include
-   file */
+// prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
 extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
-
-extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t UE_id,
-                                 uint8_t abstraction_flag);
-
+extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;
@@ -318,7 +312,6 @@ static void get_options(void) {
   int CC_id;
   int tddflag = 0;
   char *loopfile = NULL;
-
   int dumpframe = 0;
   int timingadv = 0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
@@ -592,7 +585,7 @@ int main( int argc, char **argv ) {
   if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
- 
+
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   set_latency_target();
@@ -792,7 +785,7 @@ int main( int argc, char **argv ) {
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
   if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm(snr_dB,0);
+    init_ocm();
     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
   }
 
