@@ -30,6 +30,7 @@
  * \warning
  */
 
+#include "PHY/defs_nr_UE.h"
 #include "NR_IF_Module.h"
 #include "mac_proto.h"
 #include "assertions.h"
@@ -71,22 +72,23 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
 
 }
 //  L2 Abstraction Layer
-int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot){
+int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
-	LOG_I(MAC, "handle_dlsch at MAC layer \n");
-	if (IS_SOFTMODEM_NOS1)
-		nr_ue_send_sdu(module_id, 0, frame, slot,
-										pduP,
-										pdu_len,
-										0);
+  if (IS_SOFTMODEM_NOS1 || IS_SOFTMODEM_RFSIM)
+    nr_ue_send_sdu(module_id, cc_id, frame, slot,
+                   pduP,
+                   pdu_len,
+                   gNB_index,
+                   ul_time_alignment);
+
   return 0;
   /*
-  return nr_ue_process_dlsch( module_id,
-			      cc_id,
-			      gNB_index,
-			      dci_ind,
-			      pduP,
-			      pdu_len);
+  return nr_ue_process_dlsch(module_id,
+                             cc_id,
+                             gNB_index,
+                             dci_ind,
+                             pduP,
+                             pdu_len);
   */
 }
 
@@ -130,7 +132,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   return 0;
 }
 
-int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
+int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
     
   int32_t i;
   uint32_t ret_mask = 0x0;
@@ -246,7 +248,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 	//                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 	ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
 				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length, dl_info->frame, dl_info->slot)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length, dl_info->frame, dl_info->slot,ul_time_alignment)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 
     	  LOG_I(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], DLSCH case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
 

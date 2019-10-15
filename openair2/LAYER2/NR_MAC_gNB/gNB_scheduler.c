@@ -299,12 +299,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       
   protocol_ctxt_t   ctxt;
 
-  int               CC_id, i = -1;
-  UE_list_t         *UE_list = &RC.nrmac[module_idP]->UE_list;
-  rnti_t            rnti;
-
-  NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
-  //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
+  int CC_id, i = -1, UE_id = 0, ta_update;
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  UE_list_t *UE_list = &gNB->UE_list;
+  rnti_t rnti;
+  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  NR_COMMON_channels_t *cc = gNB->common_channels;
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -372,6 +372,20 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Phytest scheduling
  
+  // TODO once RACH is available, start ta_timer when UE is connected
+  if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+
+  if (ue_sched_ctl->ta_timer == 0) {
+    gNB->ta_command = ue_sched_ctl->ta_update;
+    /* if time is up, then set the timer to not send it for 4 frames
+    // regardless of the TA value */
+    ue_sched_ctl->ta_timer = 80;
+    /* reset ta_update */
+    ue_sched_ctl->ta_update = 31;
+    /* MAC CE flag indicating TA length */
+    gNB->ta_len = 2;
+  }
+
   if (slot_rxP == NR_UPLINK_SLOT){
     nr_schedule_uss_ulsch_phytest(&RC.nrmac[module_idP]->UL_tti_req[0], frame_rxP, slot_rxP);
   }

@@ -3161,7 +3161,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
     dl_indication.dci_ind = &dci_ind; 
     
     //  send to mac
-    ue->if_inst->dl_indication(&dl_indication);
+    ue->if_inst->dl_indication(&dl_indication, NULL);
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_rx_pdcch_stats);
@@ -3368,7 +3368,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
     uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
     uint16_t s1 =  dlsch0->harq_processes[harq_pid]->nb_symbols;
 
-    LOG_I(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
+    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,pdsch_start_rb,pdsch_nb_rb,s0,s1);
 
     for (m = s0; m < (s1 + s0); m++) {
 
@@ -3535,7 +3535,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
-  uint8_t CC_id = ue->CC_id;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
@@ -3548,7 +3547,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   fapi_nr_rx_indication_t rx_ind;
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[eNB_id];
-  unsigned char *apply_ta = &ul_time_alignment->apply_ta;
   uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
   uint16_t slots_per_subframe = ue->frame_parms.slots_per_subframe;
   uint8_t numerology = ue->frame_parms.numerology_index, mapping_type_ul, mapping_type_dl;
@@ -3821,7 +3819,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       dl_indication.dci_ind = NULL; //&ue->dci_ind;
       //  send to mac
       if (ue->if_inst && ue->if_inst->dl_indication)
-      ue->if_inst->dl_indication(&dl_indication);
+      ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
       }
 
       // TODO CRC check for CW0
@@ -3858,46 +3856,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }*/
 
       if (ue->mac_enabled == 1) {
-        switch (pdsch) {
-          case PDSCH:
-          printf("PDSCH procedures\n");
-          nr_ue_send_sdu(ue->Mod_id,
-                      CC_id,
-                      frame_rx,
-                      nr_tti_rx,
-                      dlsch0->harq_processes[harq_pid]->b,
-                      dlsch0->harq_processes[harq_pid]->TBS>>3,
-                      eNB_id,
-                      ul_time_alignment);
-          break;
-          case SI_PDSCH:
-          /*ue_decode_si(ue->Mod_id,
-                      CC_id,
-                      frame_rx,
-                      eNB_id,
-                      ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
-                      ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);*/
-          break;
-          case P_PDSCH:
-          /*ue_decode_p(ue->Mod_id,
-                      CC_id,
-                      frame_rx,
-                      eNB_id,
-                      ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
-                      ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);*/
-          break;
-          case RA_PDSCH:
-          /*process_rar(ue,proc,eNB_id,mode,abstraction_flag);*/
-          break;
-          case PDSCH1:
-          /*LOG_E(PHY,"Shouldn't have PDSCH1 yet, come back later\n");
-          AssertFatal(1==0,"exiting");*/
-          break;
-          case PMCH:
-          /*LOG_E(PHY,"Shouldn't have PMCH here\n");
-          AssertFatal(1==0,"exiting");*/
-          break;
-        }
 
         // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
         switch (ue->frame_parms.N_RB_DL) {

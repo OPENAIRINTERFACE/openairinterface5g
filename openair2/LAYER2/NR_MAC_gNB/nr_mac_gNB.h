@@ -114,6 +114,10 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  /// TA command
+  int                             ta_command;
+  /// MAC CE flag indicating TA length
+  int                             ta_len;
     /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

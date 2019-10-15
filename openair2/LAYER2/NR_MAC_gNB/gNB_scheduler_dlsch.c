@@ -45,22 +45,22 @@
 #include "NR_TAG-Id.h"
 
 
-int nr_generate_dlsch_pdu(unsigned char *sdus_payload, 
-	                        unsigned char *mac_pdu,
+int nr_generate_dlsch_pdu(module_id_t module_idP,
+                          unsigned char *sdus_payload,
+                          unsigned char *mac_pdu,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
                           unsigned char *sdu_lcids,
                           unsigned char drx_cmd,
-                          unsigned short timing_advance_cmd,
-                          NR_TAG_Id_t tag_id,
-                          int ta_length,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding){
+
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
 
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   unsigned char * dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
-  int offset = 0, mac_ce_size, i;
+  int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
 
   // MAC CEs 
   uint8_t mac_header_control_elements[16], *ce_ptr;
@@ -81,24 +81,31 @@ int nr_generate_dlsch_pdu(unsigned char *sdus_payload,
   // now TA is always send when ta_timer resets regardless of its value
   // this is done to avoid issues with the timeAlignmentTimer which is
   // supposed to monitor if the UE received TA or not */
-  if (ta_length){
+  if (gNB->ta_len){
     mac_pdu_ptr->R = 0;
     mac_pdu_ptr->LCID = DL_SCH_LCID_TA_COMMAND;
     //last_size = 1;
     mac_pdu_ptr++;
 
     // TA MAC CE (1 octet)
+    timing_advance_cmd = gNB->ta_command;
     AssertFatal(timing_advance_cmd < 64,"timing_advance_cmd %d > 63\n", timing_advance_cmd);
     ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
-    ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
+    if (gNB->tag->tag_Id != NULL){
+       tag_id = gNB->tag->tag_Id;
+      ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
+    }
 
-    LOG_D(MAC, "NR MAC CE timing advance command =%d (%d) TAG ID =%d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
+    LOG_D(MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
     mac_ce_size = sizeof(NR_MAC_CE_TA);
 
     // Copying  bytes for MAC CEs to the mac pdu pointer
     memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
     ce_ptr += mac_ce_size;
     mac_pdu_ptr += (unsigned char) mac_ce_size;
+
+    // resetting ta flag
+    gNB->ta_len = 0;
   }
 
 
@@ -191,7 +198,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   uint16_t sdu_lengths[NR_MAX_NB_RB] = {0};
 
   int padding = 0, post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
-  int CC_id, sub_pdu_id, lcid, offset, i, j=0, k=0, ta_update;
+  int CC_id, sub_pdu_id, lcid, offset, i, j=0, k=0, ta_command;
 
   // hardcoded parameters
   // for DMRS configuration type 1
@@ -201,21 +208,18 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   uint16_t R = 697;
   uint16_t nb_rb = 50 ;
   uint32_t TBS = nr_compute_tbs(Qm, R, nb_rb, 12, 6, 0, 1)/8; // this is in bits TODO use nr_get_tbs
-  NR_TAG_Id_t tag_id = 0;
   int UE_id = 0; // UE_list->head is -1 !
 
   UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   //ta_update = ue_sched_ctl->ta_update;
   
   for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP]; CC_id++) {
-    LOG_D(MAC, "doing nr_schedule_ue_spec for UE_id %d CC_id %d frame %d slot %d\n",
-      UE_id, CC_id, frameP, slotP);
+
+    LOG_D(MAC, "doing nr_schedule_ue_spec for UE_id %d CC_id %d frame %d slot %d\n", UE_id, CC_id, frameP, slotP);
+
     dl_req = &gNB->DL_req[CC_id].dl_config_request_body;
 
     //for (UE_id = UE_list->head; UE_id >= -1; UE_id = UE_list->next[UE_id]) {
-
-    // this was taken from the preprocessor
-    if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
 
       /*
       //process retransmission
@@ -223,22 +227,7 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
       } else {	// This is a potentially new SDU opportunity */
 
-        if (ue_sched_ctl->ta_timer == 0) {
-          ta_update = ue_sched_ctl->ta_update;
-          /* if time is up, then set the timer to not send it for 20 NR_DOWNLINK_SLOT (20 frames)
-          // regardless of the TA value */
-          ue_sched_ctl->ta_timer = 2; //set to 20 when transmission will be in every slot
-          /* reset ta_update */
-          ue_sched_ctl->ta_update = 31;
-          ta_len = 2;
-        } // else ta_update = 31;
-
         //ta_len = (ta_update != 31) ? 2 : 0;
-
-        // retrieve TAG ID
-        if(gNB->tag->tag_Id != NULL ){
-          tag_id = gNB->tag->tag_Id;
-        }
 
         // fill dlsch_buffer with random data
         for (i = 0; i < MAX_NR_DLSCH_PAYLOAD_BYTES; i++){
@@ -305,17 +294,15 @@ nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
           }
 
 
-          offset = nr_generate_dlsch_pdu((unsigned char *) dlsch_buffer,
-          	                            (unsigned char *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-          	                            num_sdus,    //num_sdus
-                                        sdu_lengths,
-                                        sdu_lcids,
-          	                            255,          // no drx
-          	                            ta_update,    // timing advance
-                                        tag_id,
-                                        ta_len,
-          	                            NULL,         // contention res id
-          	                            post_padding);
+          offset = nr_generate_dlsch_pdu(module_idP,
+                                         (unsigned char *) dlsch_buffer,
+                                         (unsigned char *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                                         num_sdus,    //num_sdus
+                                         sdu_lengths,
+                                         sdu_lcids,
+                                         255,          // no drx
+                                         NULL,         // contention res id
+                                         post_padding);
           // Padding: fill remainder of DLSCH with 0 
           if (post_padding > 0){
             for (int j = 0; j < (TBS - offset); j++)

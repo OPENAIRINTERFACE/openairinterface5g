@@ -390,25 +390,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
           post_padding = 1;
         }
 
-        offset = generate_dlsch_header((unsigned char *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0], //DLSCH_pdu.payload[0],
-                                       num_sdus,    //num_sdus
-                                       sdu_lengths,    //
-                                       sdu_lcids, 255,    // no drx
-                                       ta_update,    // timing advance
-                                       NULL,    // contention res id
-                                       padding, post_padding);
-        LOG_D(MAC, "Offset bits: %d \n", offset);
-        // Probably there should be other actions done before that
-        // cycle through SDUs and place in dlsch_buffer
-        //memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
-        memcpy(&nr_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0][offset], dlsch_buffer, sdu_length_total);
-
-        // fill remainder of DLSCH with 0
-        for (int j = 0; j < (TBS - sdu_length_total - offset); j++) {
-          //UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = 0;
-          nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0][offset + sdu_length_total + j] = 0;
-        }
-
         TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
         LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
@@ -432,11 +413,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     else {
       TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);
 
-      for(int i = 0; i < TBS_bytes; i++) { //
-        ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
-        //LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-      }
-
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 
       if (frameP%100 == 0) {
@@ -451,11 +427,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       //TX_req->segments[0].segment_length = 8;
       TX_req->segments[0].segment_length = TBS_bytes +2;
       TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
+
       nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
       nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
       nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
       nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-
     }
   } //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
 }

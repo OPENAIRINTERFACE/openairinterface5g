@@ -614,7 +614,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   rx_ind.number_pdus = 1; //rx_ind.number_pdus++;
 
   if (ue->if_inst && ue->if_inst->dl_indication)
-    ue->if_inst->dl_indication(&dl_indication);
+    ue->if_inst->dl_indication(&dl_indication, NULL);
 
   return 0;
 }

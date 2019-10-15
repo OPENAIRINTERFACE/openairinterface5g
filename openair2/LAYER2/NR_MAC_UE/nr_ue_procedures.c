@@ -2047,9 +2047,10 @@ void nr_ue_send_sdu(module_id_t module_idP,
                     uint8_t CC_id,
                     frame_t frameP,
                     uint8_t ttiP,
-                    uint8_t * pdu, uint16_t pdu_len, uint8_t eNB_index, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
+                    uint8_t * pdu, uint16_t pdu_len, uint8_t gNB_index,
+                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
-  printf("nr_ue_send_sdu frame %d\n", frameP);
+  LOG_D(MAC, "Handling PDU frame %d slot %d\n", frameP, ttiP);
 
   // Changes wrt LTE: replaced subframeP with ttiP
   // TODO double check this and eventually create a type for TTI (tti_t)
@@ -2077,8 +2078,8 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   /*
   #ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",
-      module_idP, frameP, eNB_index, num_ce, num_sdu);
+    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d gNB_index %d : num_ce %d num_sdu %d\n",
+      module_idP, frameP, gNB_index, num_ce, num_sdu);
   #endif
   */
 
@@ -2094,7 +2095,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
-  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, eNB_index, ul_time_alignment);
+  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, gNB_index, ul_time_alignment);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 
@@ -2110,7 +2111,7 @@ void nr_ue_process_mac_pdu(
     uint8_t CC_id,
     uint8_t *pduP, 
     uint16_t mac_pdu_len,
-    uint8_t eNB_index,
+    uint8_t gNB_index,
     NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
     // This function is adapting code from the old
@@ -2411,213 +2412,3 @@ void nr_ue_process_mac_pdu(
         AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
     }
 }
-
-//---------------------------------------------------------------------------------
-
-
-unsigned char *parse_header(unsigned char *mac_header,
-			    unsigned char *num_ce,
-			    unsigned char *num_sdu,
-			    unsigned char *rx_ces,
-			    unsigned char *rx_lcids,
-			    unsigned short *rx_lengths,
-			    unsigned short tb_length)
-{
-
-    unsigned char not_done = 1, num_ces = 0, num_cont_res =
-	0, num_padding = 0, num_sdus = 0, lcid, num_sdu_cnt;
-    unsigned char *mac_header_ptr = mac_header;
-    unsigned short length, ce_len = 0;
-
-    while (not_done == 1) {
-
-	if (((SCH_SUBHEADER_FIXED *) mac_header_ptr)->E == 0) {
-	    //      printf("E=0\n");
-	    not_done = 0;
-	}
-
-	lcid = ((SCH_SUBHEADER_FIXED *) mac_header_ptr)->LCID;
-
-	if (lcid < UE_CONT_RES) {
-	    //printf("[MAC][UE] header %x.%x.%x\n",mac_header_ptr[0],mac_header_ptr[1],mac_header_ptr[2]);
-	    if (not_done == 0) {	// last MAC SDU, length is implicit
-		mac_header_ptr++;
-		length =
-		    tb_length - (mac_header_ptr - mac_header) - ce_len;
-
-		for (num_sdu_cnt = 0; num_sdu_cnt < num_sdus;
-		     num_sdu_cnt++) {
-		    length -= rx_lengths[num_sdu_cnt];
-		}
-	    } else {
-		if (((SCH_SUBHEADER_LONG *) mac_header_ptr)->F == 1) {
-		    length =
-			((((SCH_SUBHEADER_LONG *) mac_header_ptr)->
-			  L_MSB & 0x7f)
-			 << 8) | (((SCH_SUBHEADER_LONG *) mac_header_ptr)->
-				  L_LSB & 0xff);
-		    mac_header_ptr += 3;
-#ifdef DEBUG_HEADER_PARSING
-		    LOG_D(MAC, "[UE] parse long sdu, size %x \n", length);
-#endif
-
-		} else {	//if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
-		    length = ((SCH_SUBHEADER_SHORT *) mac_header_ptr)->L;
-		    mac_header_ptr += 2;
-		}
-	    }
-
-#ifdef DEBUG_HEADER_PARSING
-	    LOG_D(MAC, "[UE] sdu %d lcid %d length %d (offset now %ld)\n",
-		  num_sdus, lcid, length, mac_header_ptr - mac_header);
-#endif
-	    rx_lcids[num_sdus] = lcid;
-	    rx_lengths[num_sdus] = length;
-	    num_sdus++;
-	} else {		// This is a control element subheader
-	    if (lcid == SHORT_PADDING) {
-		num_padding++;
-		mac_header_ptr++;
-	    } else {
-		rx_ces[num_ces] = lcid;
-		num_ces++;
-		mac_header_ptr++;
-
-		if (lcid == TIMING_ADV_CMD) {
-		    ce_len++;
-		} else if (lcid == UE_CONT_RES) {
-
-		    // FNA: check MAC Header is one of thoses defined in Annex B of 36.321
-		    // Check there is only 1 Contention Resolution
-		    if (num_cont_res) {
-			LOG_W(MAC,
-			      "[UE] Msg4 Wrong received format: More than 1 Contention Resolution\n");
-			// exit parsing
-			return NULL;
-
-		    }
-		    // UE_CONT_RES shall never be the last subheader unless this is the only MAC subheader
-		    if ((not_done == 0)
-			&& ((num_sdus) || (num_ces > 1) || (num_padding))) {
-			LOG_W(MAC,
-			      "[UE] Msg4 Wrong received format: Contention Resolution after num_ces=%d num_sdus=%d num_padding=%d\n",
-			      num_ces, num_sdus, num_padding);
-			// exit parsing
-			return NULL;
-		    }
-		    num_cont_res++;
-		    ce_len += 6;
-		}
-	    }
-
-#ifdef DEBUG_HEADER_PARSING
-	    LOG_D(MAC, "[UE] ce %d lcid %d (offset now %ld)\n", num_ces,
-		  lcid, mac_header_ptr - mac_header);
-#endif
-	}
-    }
-
-    *num_ce = num_ces;
-    *num_sdu = num_sdus;
-
-    return (mac_header_ptr);
-}
-
-
-//------------------------------------------------------------------------------
-void
-nr_ue_send_sdu(module_id_t module_idP,
-	    uint8_t CC_id,
-	    frame_t frameP,
-	    sub_frame_t subframeP,
-	    uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index)
-//------------------------------------------------------------------------------
-{
-
-    unsigned char rx_ces[MAX_NUM_CE], num_ce, num_sdu, i, *payload_ptr;
-    unsigned char rx_lcids[NB_RB_MAX];
-    unsigned short rx_lengths[NB_RB_MAX];
-
-
-  //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
-
-
-    payload_ptr =
-	parse_header(sdu, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths,
-		     sdu_len);
-
-#ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC,
-	  "[UE %d] ue_send_sdu : Frame %d eNB_index %d : num_ce %d num_sdu %d\n",
-	  module_idP, frameP, eNB_index, num_ce, num_sdu);
-#endif
-
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
-
-    for (i = 0; i < 32; i++) {
-	LOG_T(MAC, "%x.", sdu[i]);
-    }
-
-    LOG_T(MAC, "\n");
-#endif
-
-    if (payload_ptr != NULL) {
-
-	for (i = 0; i < num_ce; i++) {
-	    //    printf("ce %d : %d\n",i,rx_ces[i]);
-	    switch (rx_ces[i]) {
-	    case UE_CONT_RES:
-
-		break;
-
-	    case TIMING_ADV_CMD:
-
-        break;
-
-	    case DRX_CMD:
-
-		break;
-	    }
-	}
-
-	for (i = 0; i < num_sdu; i++) {
-#ifdef DEBUG_HEADER_PARSING
-	    LOG_I(MAC, "[UE] SDU %d : LCID %d, length %d\n", i,
-		  rx_lcids[i], rx_lengths[i]);
-#endif
-	    if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
-
-		LOG_D(MAC,
-		      "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index,
-		      rx_lengths[i]);
-
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-		LOG_I(MAC, "Printing MAC PDU contents at slot: %d \n", subframeP);
-		int j;
-		for (j = 0; j < 20; j++) //rx_lengths[i]
-			LOG_I(MAC, "%x.", (unsigned char) payload_ptr[j]);
-		LOG_I(MAC, "\n");
-#endif
-		mac_rlc_data_ind(module_idP,
-				 4660, //UE_mac_inst[module_idP].crnti //hardcode value corresponding to the one from the eNB
-				 eNB_index,
-				 frameP,
-				 ENB_FLAG_NO,
-				 MBMS_FLAG_NO,
-				 rx_lcids[i],
-				 (char *) payload_ptr, rx_lengths[i], 1,
-				 NULL);
-	    } else {
-		LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (eNB %d)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index);
-	    }
-	    payload_ptr += rx_lengths[i];
-	}
-    }				// end if (payload_ptr != NULL)
-
-}
-
-
-
