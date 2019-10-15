@@ -1113,9 +1113,9 @@
                   -n100 -R217 -j5
                   -n100 -R106 -e0
                   -n100 -R273 -e28</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6</tags>
-      <search_expr_true>PDCCH test OK</search_expr_true>
-      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6  nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14</tags>
+      <search_expr_true>"PDCCH test OK" "PDSCH test OK"</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal|CRC NOK</search_expr_false>
       <nruns>3</nruns>
     </testCase> 
  
