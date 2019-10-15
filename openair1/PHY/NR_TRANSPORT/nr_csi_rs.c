@@ -43,6 +43,8 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
   double rho, alpha;
   uint32_t beta;
 
+  AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
+
   switch (csi_params.row) {
   // implementation of table 7.4.1.5.3-1 of 38.211
   // lprime and kprime are the max value of l' and k'
@@ -359,7 +361,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
       if (i<8)
         loverline[i] = csi_params.symb_l0 + (i>>2);
       else
-        loverline[i] = csi_params.symb_l1 + (i>>4);
+        loverline[i] = csi_params.symb_l1 + (i/12);
       koverline[i] = k_n[i%4];
     }
     break;
@@ -405,7 +407,26 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     }
     break;
 
+  default:
+    AssertFatal(0==1, "Row %d is not valid for CSI Table 7.4.1.5.3-1\n", csi_params.row);
   }
+
+#ifdef NR_CSIRS_DEBUG
+  printf(" row %d, n. of ports %d\n k' ",csi_params.row,ports);
+  for (kp=0; kp<=kprime; kp++)
+    printf("%d, ",kp);
+  printf("l' ");
+  for (lp=0; lp<=lprime; lp++)
+    printf("%d, ",lp);
+  printf("\n k overline ");
+  for (i=0; i<size; i++)
+    printf("%d, ",koverline[i]);
+  printf("\n l overline ");
+  for (i=0; i<size; i++)
+    printf("%d, ",loverline[i]);
+  printf("\n");
+#endif
+
 
   // setting the frequency density from its index
   switch (csi_params.freq_density) {
@@ -425,12 +446,19 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
    case 3:
     rho = 3;
     break;
+
+  default:
+    AssertFatal(0==1, "Invalid frequency density index for CSI\n");
   }
 
   if (ports == 1)
     alpha = rho;
   else
     alpha = 2*rho; 
+
+#ifdef NR_CSIRS_DEBUG
+    printf(" rho %f, alpha %f\n",rho,alpha);
+#endif
 
   // CDM group size from CDM type index
   switch (csi_params.cdm_type) {
@@ -450,6 +478,9 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
   case 3:
     gs = 8;
     break;
+
+  default:
+    AssertFatal(0==1, "Invalid cdm type index for CSI\n");
   }
 
   // according to 38.214 5.2.2.3.1 last paragraph
@@ -462,10 +493,18 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
   else
     csi_bw = csi_params.nr_of_rbs;
 
-  if (rho < 1)
-    csi_length = ((csi_bw + csi_start)>>1)<<kprime; 
+  if (rho < 1) {
+    if (csi_params.freq_density == 0)
+      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1; 
+    else
+      csi_length = ((((csi_bw + csi_start)>>1)<<kprime)+1)<<1;
+  }
   else
-    csi_length = ((uint16_t) rho*(csi_bw + csi_start))<<kprime; 
+    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1; 
+
+#ifdef NR_CSIRS_DEBUG
+    printf(" start rb %d, n. rbs %d, csi length %d\n",csi_start,csi_bw,csi_length);
+#endif
 
 
   // TRS
@@ -492,6 +531,9 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
    case 3:
     beta = amp<<1;
     break;
+
+  default:
+    AssertFatal(0==1, "Invalid SS power offset density index for CSI\n");
    }
 
    for (lp=0; lp<=lprime; lp++){
@@ -549,6 +591,10 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
               ((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
               ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
+#ifdef NR_CSIRS_DEBUG
+            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p,((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1],
+               ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+#endif
           }
         }
       }    
