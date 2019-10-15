@@ -63,9 +63,12 @@ pthread_mutex_t sc_update_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 
 int flexran_agent_mac_stats_reply(mid_t mod_id,
-          const report_config_t *report_config,
            Protocol__FlexUeStatsReport **ue_report,
-           Protocol__FlexCellStatsReport **cell_report) {
+           int      n_ue,
+           uint32_t ue_flags,
+           Protocol__FlexCellStatsReport **cell_report,
+           int      n_cc,
+           uint32_t cc_flags) {
 
 
   // Protocol__FlexHeader *header;
@@ -75,18 +78,16 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
   int enb_id = mod_id;
 
   /* Allocate memory for list of UE reports */
-  if (report_config->nr_ue > 0) {
+  if (n_ue > 0) {
 
 
-          for (i = 0; i < report_config->nr_ue; i++) {
+          for (i = 0; i < n_ue; i++) {
 
-                UE_id = flexran_get_mac_ue_id(mod_id, i);
-
-                ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
-                ue_report[i]->has_rnti = 1;
+                const rnti_t rnti = ue_report[i]->rnti;
+                UE_id = flexran_get_mac_ue_id_rnti(mod_id, rnti);
 
                 /* Check flag for creation of buffer status report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
                       //TODO should be automated
                         ue_report[i]->n_bsr = 4;
                         uint32_t *elem;
@@ -103,7 +104,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                 /* Check flag for creation of PHR report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
                         ue_report[i]->phr = flexran_get_ue_phr (enb_id, UE_id); // eNB_UE_list->UE_template[UE_PCCID(enb_id,UE_id)][UE_id].phr_info;
                         ue_report[i]->has_phr = 1;
                         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR;
@@ -111,7 +112,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                 /* Check flag for creation of RLC buffer status report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
                         ue_report[i]->n_rlc_report = 3; // Set this to the number of LCs for this UE. This needs to be generalized for for LCs
                         Protocol__FlexRlcBsr ** rlc_reports;
                         rlc_reports = malloc(sizeof(Protocol__FlexRlcBsr *) * ue_report[i]->n_rlc_report);
@@ -157,7 +158,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                 /* Check flag for creation of MAC CE buffer status report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
                         // TODO: Fill in the actual MAC CE buffer status report
                         ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id, UE_id, 0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15;
                                       // Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
@@ -169,7 +170,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                 /* Check flag for creation of DL CQI report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI) {
                         // TODO: Fill in the actual DL CQI report for the UE based on its configuration
                         Protocol__FlexDlCqiReport * dl_report;
                         dl_report = malloc(sizeof(Protocol__FlexDlCqiReport));
@@ -420,7 +421,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                 /* Check flag for creation of paging buffer status report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS) {
                             //TODO: Fill in the actual paging buffer status report. For this field to be valid, the RNTI
                             //set in the report must be a P-RNTI
                             Protocol__FlexPagingBufferReport *paging_report;
@@ -474,7 +475,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 }
 
                   /* Check flag for creation of UL CQI report */
-                if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI) {
+                if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI) {
 
                       //Fill in the full UL CQI report of the UE
                       Protocol__FlexUlCqiReport *full_ul_report;
@@ -559,7 +560,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI;
 
                      }
-                      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
+                      if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
 
                             Protocol__FlexMacStats *macstats;
                             macstats = malloc(sizeof(Protocol__FlexMacStats));
@@ -668,15 +669,15 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
      }
 
   /* Allocate memory for list of cell reports */
-  if (report_config->nr_cc > 0) {
+  if (n_cc > 0) {
 
 
             // Fill in the Cell reports
-            for (i = 0; i < report_config->nr_cc; i++) {
+            for (i = 0; i < n_cc; i++) {
 
 
                       /* Check flag for creation of noise and interference report */
-                      if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
+                      if(cc_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
                             // TODO: Fill in the actual noise and interference report for this cell
                             Protocol__FlexNoiseInterferenceReport *ni_report;
                             ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
@@ -710,8 +711,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
  error:
 
   if (cell_report != NULL) {
-    if (report_config->nr_cc > 0) {
-      for (i = 0; i < report_config->nr_cc; i++) {
+    if (n_cc > 0) {
+      for (i = 0; i < n_cc; i++) {
         if (cell_report[i]->noise_inter_report != NULL) {
           free(cell_report[i]->noise_inter_report);
           cell_report[i]->noise_inter_report = NULL;
@@ -723,8 +724,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
   }
 
   if (ue_report != NULL) {
-    if (report_config->nr_ue > 0) {
-      for (i = 0; i < report_config->nr_ue; i++) {
+    if (n_ue > 0) {
+      for (i = 0; i < n_ue; i++) {
         if (ue_report[i]->bsr != NULL) {
           free(ue_report[i]->bsr);
           ue_report[i]->bsr = NULL;

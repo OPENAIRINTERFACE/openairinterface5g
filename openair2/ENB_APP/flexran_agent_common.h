@@ -153,20 +153,16 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
 Protocol__FlexranMessage *flexran_agent_handle_timed_task(void *args);
 
 /*Top level Statistics hanlder*/
+Protocol__FlexranMessage *flexran_agent_send_stats_reply(void *args);
 int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
 /* Function to be used to handle reply message . */
-int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg);
+int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const Protocol__FlexStatsRequest *stats_req, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_stats_reply(Protocol__FlexranMessage *msg);
 
 /* Top level Statistics request protocol message constructor and destructor */
-int flexran_agent_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
+//int flexran_agent_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg);
-
-err_code_t flexran_agent_init_cont_stats_update(mid_t mod_id);
-
-err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id, xid_t xid, stats_request_config_t *stats_req) ;
-err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id);
 
 /* Handle a received eNB config reply message as an "order" to reconfigure. It
  * does not come as a reconfiguration message as this is a "structured"

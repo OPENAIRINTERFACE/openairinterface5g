@@ -58,48 +58,48 @@ int flexran_agent_compare_timer(struct flexran_agent_timer_element_s *a, struct 
   return 0;
 }
 
-err_code_t flexran_agent_create_timer(uint32_t interval_sec,
-                                      uint32_t interval_usec,
-                                      agent_id_t     agent_id,
-                                      instance_t     instance,
+err_code_t flexran_agent_create_timer(mid_t    mod_id,
+                                      uint32_t sf,
                                       uint32_t timer_type,
-                                      xid_t xid,
+                                      xid_t    xid,
                                       flexran_agent_timer_callback_t cb,
-                                      void    *timer_args,
-                                      long *timer_id) {
-  struct flexran_agent_timer_element_s *e = calloc(1, sizeof(*e));
-  DevAssert(e != NULL);
-  //uint32_t timer_id;
+                                      void    *timer_args) {
   int ret=-1;
 
-  if ((interval_sec == 0) && (interval_usec == 0 )) {
-    free(e);
+  if (sf <= 0)
     return TIMER_NULL;
-  }
 
-  if (timer_type >= FLEXRAN_AGENT_TIMER_TYPE_MAX) {
-    free(e);
+  if (timer_type >= FLEXRAN_AGENT_TIMER_TYPE_MAX)
     return TIMER_TYPE_INVALIDE;
-  }
 
+  uint32_t interval_usec = sf * 1000;
+  uint32_t interval_sec = 0;
+  if (interval_usec >= 1000 * 1000) {
+    interval_sec = interval_usec / (1000 * 1000);
+    interval_usec = interval_usec % (1000 * 1000);
+  }
+  struct flexran_agent_timer_element_s *e = calloc(1, sizeof(*e));
+  DevAssert(e != NULL);
+  long timer_id = 0;
+  AssertFatal(e, "cannot allocate memory for FlexRAN timer!\n");
   if (timer_type  ==   FLEXRAN_AGENT_TIMER_TYPE_ONESHOT) {
     ret = timer_setup(interval_sec,
                       interval_usec,
                       TASK_FLEXRAN_AGENT,
-                      instance,
+                      mod_id,
                       TIMER_ONE_SHOT,
                       timer_args,
-                      timer_id);
+                      &timer_id);
 
     e->type = TIMER_ONE_SHOT;
   } else if (timer_type  ==   FLEXRAN_AGENT_TIMER_TYPE_PERIODIC ) {
     ret = timer_setup(interval_sec,
                       interval_usec,
                       TASK_FLEXRAN_AGENT,
-                      instance,
+                      mod_id,
                       TIMER_PERIODIC,
                       timer_args,
-                      timer_id);
+                      &timer_id);
     e->type = TIMER_PERIODIC;
   }
 
@@ -108,10 +108,10 @@ err_code_t flexran_agent_create_timer(uint32_t interval_sec,
     return TIMER_SETUP_FAILED;
   }
 
-  e->agent_id = agent_id;
-  e->instance = instance;
+  e->agent_id = mod_id;
+  e->instance = mod_id;
   e->state = FLEXRAN_AGENT_TIMER_STATE_ACTIVE;
-  e->timer_id = *timer_id;
+  e->timer_id = timer_id;
   e->xid = xid;
   e->timer_args = timer_args;
   e->cb = cb;

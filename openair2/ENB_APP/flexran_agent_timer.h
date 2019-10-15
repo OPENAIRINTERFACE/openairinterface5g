@@ -89,17 +89,13 @@ typedef struct flexran_agent_timer_instance_s{
 
 err_code_t flexran_agent_init_timer(void);
 
-/* Create a timer for some agent related event with id xid. Will store the id 
-   of the generated timer in timer_id */
-err_code_t flexran_agent_create_timer(uint32_t interval_sec,
-				  uint32_t interval_usec,
-				  agent_id_t     agent_id,
-				  instance_t     instance,
-				  uint32_t timer_type,
-				  xid_t xid,
-				  flexran_agent_timer_callback_t cb,
-				  void*    timer_args,
-				  long *timer_id);
+/* Create a timer for some agent related event with id xid. */
+err_code_t flexran_agent_create_timer(mid_t    mod_id,
+                                      uint32_t sf,
+                                      uint32_t timer_type,
+                                      xid_t    xid,
+                                      flexran_agent_timer_callback_t cb,
+                                      void    *timer_args);
 
 /* Destroy all existing timers */
 err_code_t flexran_agent_destroy_timers(void);

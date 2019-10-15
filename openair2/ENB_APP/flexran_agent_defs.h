@@ -193,38 +193,4 @@ typedef struct {
 
 } agent_reconf_rrc;
 
-
-/* These structs will be used to give
-   instructions for the type of stats reports
-   we need to create */
-
-
-typedef struct {
-  uint16_t ue_rnti;
-  uint32_t ue_report_flags; /* Indicates the report elements
-             required for this UE id. See
-             FlexRAN specification 1.2.4.2 */
-} ue_report_type_t;
-
-typedef struct {
-  uint16_t cc_id;
-  uint32_t cc_report_flags; /* Indicates the report elements
-            required for this CC index. See
-            FlexRAN specification 1.2.4.3 */
-} cc_report_type_t;
-
-typedef struct {
-  int nr_ue;
-  ue_report_type_t *ue_report_type;
-  int nr_cc;
-  cc_report_type_t *cc_report_type;
-} report_config_t;
-
-typedef struct stats_request_config_s{
-  uint8_t report_type;
-  uint8_t report_frequency;
-  uint16_t period; /*In number of subframes*/
-  report_config_t *config;
-} stats_request_config_t;
-
 #endif 

@@ -202,8 +202,6 @@ int flexran_agent_start(mid_t mod_id)
    *flexran_agent_register_channel(mod_id, channel, FLEXRAN_AGENT_MAC);
    */
 
-  /*Initialize the continuous stats update mechanism*/
-  flexran_agent_init_cont_stats_update(mod_id);
   pthread_t t; 
   threadCreate(&t, receive_thread, flexran, "flexran", -1, OAI_PRIORITY_RT);
 
