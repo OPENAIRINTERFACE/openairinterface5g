@@ -276,13 +276,47 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 
  
 
-    /* buff[i] points to the position in tx buffer where the payload to be sent is
+
+  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+  
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+  nsamps2 = (nsamps+7)>>3;
+  __m256i buff_tx[nsamps2+1];
+  __m256i *buff_tx2=buff_tx+1;
+#else
+  nsamps2 = (nsamps+3)>>2;
+  __m128i buff_tx[nsamps2+2];
+  __m128i *buff_tx2=buff_tx+2;
+#endif
+#elif defined(__arm__)
+  nsamps2 = (nsamps+3)>>2;
+  int16x8_t buff_tx[nsamps2+2];
+  int16x8_t *buff_tx2=buff_tx+2;
+#else
+#error Unsupported CPU architecture, USRP device cannot be built
+#endif
+
+    
+    // bring RX data into 12 LSBs for softmodem RX
+  for (int j=0; j<nsamps2; j++) {
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    buff_tx2[j] = _mm256_slli_epi16(((__m256i *)buff)[j],4);
+#else
+    buff_tx2[j] = _mm_slli_epi16(((__m128i *)buff)[j],4);
+#endif
+#elif defined(__arm__)
+    buff_tx2[j] = vshlq_n_s16(((int16x8_t *)buff)[j],4);
+#endif
+  }
+
+        /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
-    void *buff2 = (void*)(buff- APP_HEADER_SIZE_BYTES); 
+    void *buff2 = ((void*)buff_tx2)- APP_HEADER_SIZE_BYTES; 
     
     /* we don't want to ovewrite with the header info the previous tx buffer data so we store it*/
    
-    memcpy((void *)temp0,(void *)buff2,APP_HEADER_SIZE_BYTES);
  
     bytes_sent = 0;
     
@@ -290,15 +324,24 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     // ECPRI Protocol revision + reserved bits (1 byte)
     *(uint8_t *)buff2 = ECPRIREV;
     // ECPRI Message type (1 byte)
-    *(uint8_t *)(buff2 + 1) = 0;
+    *(uint8_t *)(buff2 + 1) = 64;
     // ECPRI Payload Size (2 bytes)
     AssertFatal(nsamps<16381,"nsamps > 16381\n");
-    *(uint16_t *)(buff2 + 2) = (nsamps<<2);
+    *(uint8_t *)(buff2 + 2) = (nsamps<<2)>>8;
+    *(uint8_t *)(buff2 + 3) = (nsamps<<2)&0xff;
     // ECPRI PC_ID (2 bytes)
     *(uint16_t *)(buff2 + 4) = cc;
     // OAI modified SEQ_ID (4 bytes)
     *(uint64_t *)(buff2 + 6) = ((uint64_t )timestamp)*3;
 
+    /*
+    printf("ECPRI TX (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
+	   *(uint8_t *)buff2,
+	   *(uint8_t *)(buff2+1),
+	   *(uint16_t *)(buff2+2),
+	   *(uint16_t *)(buff2+4),
+	   *(uint64_t *)(buff2+6));
+	   */	   	   
     
     int sent_byte;
     if (eth->compression == ALAW_COMPRESS) {
@@ -361,7 +404,8 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   int block_cnt=0;
   int again_cnt=0;
   char temp0[APP_HEADER_SIZE_BYTES];
-
+  static int packet_cnt=0;
+  
   eth->rx_nsamps=256;
 
     /* buff[i] points to the position in rx buffer where the payload to be received will be placed
@@ -394,7 +438,16 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 				rcvfrom_flag,
 				(struct sockaddr *)&eth->dest_addrd,
 				(socklen_t *)&eth->addr_len);
-      
+      /*
+      if (packet_cnt%1000000<10) {
+        printf("[AW2S] Received ECPRI packet %d (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
+               packet_cnt,*(uint8_t *)buff2,
+               *(uint8_t *)(buff2+1),
+               (*(uint8_t *)(buff2+2)<<8)+*(uint8_t *)(buff2+3),
+               *(uint16_t *)(buff2+4),
+               *(uint64_t *)(buff2+6));
+      }*/
+      packet_cnt++;
       if (bytes_received ==-1) {
 	eth->num_rx_errors++;
 	if (errno == EAGAIN) {

@@ -96,6 +96,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int prach_ifft_cnt=0;
 #endif
+  nb_rx = ru->nb_rx;
   if(eNB)  {
     fp    = &(eNB->frame_parms);
     nb_rx = fp->nb_antennas_rx;
@@ -197,7 +198,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   AssertFatal(ru!=NULL,"ru is null\n");
 
   for (aa=0; aa<nb_rx; aa++) {
-    if (ru->if_south == LOCAL_RF) { // set the time-domain signal if we have to use it in this node
+    if (ru->if_south == LOCAL_RF || ru->function == NGFI_RAU_IF5) { // set the time-domain signal if we have to use it in this node
       // DJP - indexing below in subframe zero takes us off the beginning of the array???
       prach[aa] = (int16_t *)&ru->common.rxdata[aa][(subframe*fp->samples_per_tti)-ru->N_TA_offset];
 

@@ -52,7 +52,7 @@
 #define ECPRICOMMON_BYTES 4
 #define ECPRIPCID_BYTES 2
 #define APP_HEADER_SIZE_BYTES (ECPRICOMMON_BYTES + ECPRIPCID_BYTES + sizeof(openair0_timestamp))
-#define ECPRIREV 16 // ECPRI Version 1, C=0 - single ECPRI message per OAI TX packet
+#define ECPRIREV 1 // ECPRI Version 1, C=0 - single ECPRI message per OAI TX packet
 
 /*!\brief opaque ethernet data structure */
 typedef struct {

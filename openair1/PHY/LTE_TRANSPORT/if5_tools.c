@@ -114,17 +114,16 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
           //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
-        /*  ru->ifdevice.trx_write_func2(&ru->ifdevice,
+          ru->ifdevice.trx_write_func2(&ru->ifdevice,
 	  			       (proc_timestamp + packet_id*spp_eth),
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,
-				       0); */
+				       0); 
           clock_gettime( CLOCK_MONOTONIC, &end_comp);
           LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_comp, end_comp));
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
-          for (i=0; i < fp->nb_antennas_tx; i++)
-            txp[i] += spp_eth;
+	  txp[aid] += spp_eth;
 
         }
      }
