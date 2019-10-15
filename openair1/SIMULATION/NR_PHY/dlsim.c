@@ -369,6 +369,11 @@ int main(int argc, char **argv)
       //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-o CORESET offset\n");
+      printf("-a Start PRB for PDSCH\n");
+      printf("-b Number of PRB for PDSCH\n");
+      printf("-c Start symbol for PDSCH\n");
+      printf("-j Number of symbols for PDSCH\n");
+      printf("-e MSC index\n");
       exit (-1);
       break;
     }
