@@ -590,7 +590,7 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_uss_dlsch_phytest(0,frame,slot);
+    nr_schedule_uss_dlsch_phytest(0,frame,slot,&dlsch_config);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
