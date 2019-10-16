@@ -601,7 +601,8 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
 uint32_t polar_decoder_int16(int16_t *input,
                              uint64_t *out,
-                             const t_nrPolar_params *polarParams) {
+                             const t_nrPolar_params *polarParams)
+{
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
 
@@ -645,8 +646,8 @@ uint32_t polar_decoder_int16(int16_t *input,
   //int len_mod64=len&63;
   int crclen = polarParams->crcParityBits;
   uint64_t rxcrc=B[0]&((1<<crclen)-1);
-  uint32_t crc;
-  uint64_t Ar;
+  uint32_t crc = 0;
+  uint64_t Ar = 0;
   AssertFatal(len<65,"A must be less than 65 bits\n");
 
   if (len<=32) {

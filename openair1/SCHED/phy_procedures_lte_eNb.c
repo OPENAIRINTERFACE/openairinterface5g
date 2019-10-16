@@ -1134,6 +1134,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
+  int   rvidx_tab[4] = {0,2,3,1};
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
@@ -1150,8 +1151,8 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        (ulsch_harq->frame == frame) &&
-        (ulsch_harq->subframe == subframe) &&
+        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
       for (int rb=0;
@@ -1208,6 +1209,10 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
             ulsch_harq->cqi_crc_status,
             ulsch_harq->O_ACK,
             eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
+      if (ulsch_harq->repetition_number < ulsch_harq->total_number_of_repetitions){
+    	  ulsch_harq->rvidx = rvidx_tab[(ulsch_harq->repetition_number%4)] ;  			// Set the correct rvidx for the next emtc repetitions
+    	  ulsch_harq->repetition_number +=1  ; 							// Increment repetition_number for the next ULSCH allocation
+      }
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
 
@@ -1263,7 +1268,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
          */
         ulsch_harq->handled = 1;
       }                         // ulsch in error
-      else {
+      else if(ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions){
         fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
         fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
         ulsch_harq->status = SCH_IDLE;

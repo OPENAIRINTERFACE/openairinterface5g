@@ -59,7 +59,7 @@
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
+#include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"
@@ -77,10 +77,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(char *parallel_conf);
-extern void set_worker_conf(char *worker_conf);
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+
 extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
@@ -808,11 +805,10 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
         
             NRRRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= N_RB_DL;
-            if(N_RB_DL == 217)      sf_ahead = 2;
-            else if(N_RB_DL == 106) sf_ahead = 4;
-            else                    sf_ahead = 4;
-            /*else                    AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for N_RB_DL choice: 106, 217 !\n",
-                                                 RC.config_file_name, i, N_RB_DL);*/
+            //if(N_RB_DL == 217)      sf_ahead = 2;
+            //else if(N_RB_DL == 106) sf_ahead = 4;
+            if ((N_RB_DL != 217) && (N_RB_DL != 106))
+	      AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for N_RB_DL choice: 106, 217 !\n", RC.config_file_name, i, N_RB_DL);
             
             /*
             if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100)) {

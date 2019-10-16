@@ -39,6 +39,7 @@ extern "C"
 {
 #endif
 
+/* utility functions to ease usage of config module structures */
 #define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
 #define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
 #define CONFIG_GETP(P)      ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgP[P]       )
@@ -46,6 +47,8 @@ extern "C"
 #define CONFIG_SETRTFLAG(P)   if (config_get_if()) { config_get_if()->rtflags |= P; }
 #define CONFIG_CLEARRTFLAG(P) if (config_get_if()) { config_get_if()->rtflags &= (~P); }
 #define CONFIG_ISPARAMFLAGSET(P,F) ( !!(P.paramflags & F))
+extern int config_paramidx_fromname(paramdef_t *params,int numparams, char *name);
+
 /* utility functions, to be used by configuration module and/or configuration libraries */
 extern configmodule_interface_t *config_get_if(void);
 extern char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;

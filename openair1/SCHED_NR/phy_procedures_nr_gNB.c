@@ -26,10 +26,13 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "SCHED/sched_eNB.h"
+#include "sched_nr.h"
 #include "SCHED/sched_common_extern.h"
-#include "nfapi_interface.h"
-#include "SCHED/fapi_l1.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
+#include "fapi_nr_l1.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
@@ -210,10 +213,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 }
 
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
-                         gNB_L1_rxtx_proc_t *proc,
-                         int UE_id,
-                         uint8_t harq_pid)
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id, uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
@@ -249,9 +249,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                     UE_id,
                     gNB->pusch_vars[UE_id]->llr,
                     frame_parms,
-                    proc->frame_rx,
+                    frame_rx,
                     nfapi_ulsch_pdu_rel15->number_symbols,
-                    proc->slot_rx,
+                    slot_rx,
                     harq_pid,
                     0);
         
@@ -261,7 +261,74 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
 }
 
 
-void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
+void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t harq_pid)
+{
+  // --------------------
+  // [hna] TO BE CLEANED
+  // --------------------
+
+  // nfapi_rx_indication_pdu_t *pdu;
+
+  int timing_advance_update;
+  int sync_pos;
+
+  // pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  // gNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| slot_rx;
+  // gNB->UL_INFO.rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
+
+  // pdu                                    = &gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
+
+  // pdu->rx_ue_information.handle          = gNB->ulsch[UE_id+1][0]->handle;
+  // pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
+  // pdu->rx_ue_information.rnti            = gNB->ulsch[UE_id+1][0]->rnti;
+  // pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
+  // pdu->rx_indication_rel8.length         = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->TBS>>3;
+  // pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
+  // pdu->data                              = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
+  // estimate timing advance for MAC
+  sync_pos                               = nr_est_timing_advance_pusch(gNB, UE_id);
+  timing_advance_update                  = sync_pos; // - gNB->frame_parms.nb_prefix_samples/4; //to check
+  // printf("\x1B[33m" "timing_advance_update = %d\n" "\x1B[0m", timing_advance_update);
+
+  switch (gNB->frame_parms.N_RB_DL) {
+    // case 6:   /* nothing to do */          break;
+    // case 15:  timing_advance_update /= 2;  break;
+    // case 25:  timing_advance_update /= 4;  break;
+    // case 50:  timing_advance_update /= 8;  break;
+    // case 75:  timing_advance_update /= 12; break;
+    case 106: timing_advance_update /= 16; break;
+    case 217: timing_advance_update /= 32; break;
+    default: abort();
+  }
+
+  // put timing advance command in 0..63 range
+  timing_advance_update += 31;
+
+  if (timing_advance_update < 0)  timing_advance_update = 0;
+  if (timing_advance_update > 63) timing_advance_update = 63;
+
+  // pdu->rx_indication_rel8.timing_advance = timing_advance_update;
+
+  // estimate UL_CQI for MAC (from antenna port 0 only)
+  // int SNRtimes10 = dB_fixed_times10(gNB->pusch_vars[UE_id]->ulsch_power[0]) - 300;//(10*gNB->measurements.n0_power_dB[0]);
+
+  // if      (SNRtimes10 < -640) pdu->rx_indication_rel8.ul_cqi=0;
+  // else if (SNRtimes10 >  635) pdu->rx_indication_rel8.ul_cqi=255;
+  // else                        pdu->rx_indication_rel8.ul_cqi=(640+SNRtimes10)/5;
+
+  // LOG_D(PHY,"[PUSCH %d] Frame %d Subframe %d Filling RX_indication with SNR %d (%d), timing_advance %d (update %d)\n",
+  // harq_pid,frame,slot_rx,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
+  // timing_advance_update);
+
+  // gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
+  // gNB->UL_INFO.rx_ind.sfn_sf = frame<<4 | slot_rx;
+
+  // pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+}
+
+
+void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   uint8_t symbol;
   unsigned char aa;
@@ -273,7 +340,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
                      gNB->common_vars.rxdata[aa],
                      gNB->common_vars.rxdataF[aa],
                      symbol,
-                     proc->slot_rx,
+                     slot_rx,
                      0,
                      0);
     }
@@ -282,23 +349,18 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
 }
 
 
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end) {
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, uint8_t symbol_start, uint8_t symbol_end) {
   
   uint8_t UE_id;
   uint8_t symbol;
   uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
                         //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
 
-  for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
-    
+  for (UE_id = 0; UE_id < 1; UE_id++) { // temporary set to 1 untill list of connected UEs is implemented
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
-
-      nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
-
+      nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);
     }
-      
-    nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
-        
+    nr_ulsch_procedures(gNB, frame_rx, slot_rx, UE_id, harq_pid);
+    nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);  // indicate SDU to MAC
   }
-
 }

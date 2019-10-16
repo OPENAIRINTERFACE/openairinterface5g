@@ -84,6 +84,14 @@ uint8_t rb_table[34] = {
   81, 90, 96, 100     // 30-33
 };
 
+// This table hold the possible number of MTC repetition for CE ModeA
+const uint8_t pusch_repetition_Table8_2_36213[3][4]=
+{
+		{1 , 2 , 4 , 8 },
+		{1 , 4 , 8 , 16},
+		{1 , 4 , 16, 32}
+};
+
 extern mui_t rrc_eNB_mui;
 
 //-----------------------------------------------------------------------------
@@ -293,16 +301,22 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
       } else {
-        // first_rb = UE_template_ptr->first_rb_ul[harq_pid]; // UE_id = -1 !!!!
-        ra->msg3_round++;
-        /* Prepare handling of retransmission */
-        get_Msg3allocret(&mac->common_channels[CC_idP],
-                         ra->Msg3_subframe,
-                         ra->Msg3_frame,
-                         &ra->Msg3_frame,
-                         &ra->Msg3_subframe);
-        // prepare handling of retransmission
-        add_msg3(enb_mod_idP, CC_idP, ra, frameP, subframeP);
+    	  if (ra->rach_resource_type > 0) {
+    		  cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);				// TODO: Currently we don't support retransmission of Msg3 ( If in error Cancel RA procedure and reattach)
+    	      }
+    	  else
+    	  {
+    		  // first_rb = UE_template_ptr->first_rb_ul[harq_pid]; // UE_id = -1 !!!!
+    		          ra->msg3_round++;
+    		          /* Prepare handling of retransmission */
+    		          get_Msg3allocret(&mac->common_channels[CC_idP],
+    		                           ra->Msg3_subframe,
+    		                           ra->Msg3_frame,
+    		                           &ra->Msg3_frame,
+    		                           &ra->Msg3_subframe);
+    		          // prepare handling of retransmission
+    		          add_msg3(enb_mod_idP, CC_idP, ra, frameP, subframeP);
+    	  }
       }
 
       /* TODO: program NACK for PHICH? */
@@ -1925,10 +1939,13 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   int               tpc = 0;
   int               cqi_req = 0;
   eNB_MAC_INST      *eNB = RC.mac[module_idP];
+  eNB_RRC_INST      *rrc = RC.rrc[module_idP];
   COMMON_channels_t *cc  = eNB->common_channels;
   UE_list_t         *UE_list = &(eNB->UE_list);
   UE_TEMPLATE       *UE_template = NULL;
   UE_sched_ctrl_t     *UE_sched_ctrl = NULL;
+  uint8_t	    Total_Num_Rep_ULSCH,pusch_maxNumRepetitionCEmodeA_r13;
+  uint8_t	    UL_Scheduling_DCI_SF,UL_Scheduling_DCI_Frame_Even_Odd_Flag;							//TODO: To be removed after scheduler relaxation Task
 
   if (sched_subframeP < subframeP) {
     sched_frame++;
@@ -1937,11 +1954,9 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &(eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body);
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu = NULL;
   nfapi_ul_config_request_body_t *ul_req_tmp = &(eNB->UL_req_tmp[CC_id][sched_subframeP].ul_config_request_body);
-
-  /* If frameP odd don't schedule */
-  if ((frameP & 1) == 1) {
-    return;
-  }
+  nfapi_ul_config_request_body_t *ul_req_body_Rep;
+  nfapi_ul_config_request_pdu_t  *ul_config_pdu;
+  nfapi_ul_config_request_pdu_t  *ul_config_pdu_Rep;
 
   /* Loop over all active UEs */
   for (UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
@@ -1999,8 +2014,18 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->estimated_ul_buffer;
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO, UE_template->estimated_ul_buffer);
 
+      pusch_maxNumRepetitionCEmodeA_r13= *(rrc->configuration.pusch_maxNumRepetitionCEmodeA_r13[CC_id]);
+      Total_Num_Rep_ULSCH = pusch_repetition_Table8_2_36213[pusch_maxNumRepetitionCEmodeA_r13][UE_template->pusch_repetition_levels];
+      UL_Scheduling_DCI_SF = (40-4 - Total_Num_Rep_ULSCH)%10;										//TODO: [eMTC Scheduler] To be removed after scheduler relaxation task
+      UL_Scheduling_DCI_Frame_Even_Odd_Flag= ! (((40-4 - Total_Num_Rep_ULSCH)/10 )%2);							//TODO: [eMTC Scheduler] To be removed after scheduler relaxation task
+
+      /* If frameP odd don't schedule */
+      if ((frameP&1) == UL_Scheduling_DCI_Frame_Even_Odd_Flag)										//TODO: [eMTC Scheduler] To be removed after scheduler relaxation task
+      {
+
+
       //if ((UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0) && (subframeP == 5)) {
-      if ((UE_template->ul_SR > 0 || round_UL > 0 || status < RRC_CONNECTED) && (subframeP == 5)) {
+      if ((UE_template->ul_SR > 0 || round_UL > 0 || status < RRC_CONNECTED) && (subframeP == UL_Scheduling_DCI_SF)) {
         /*
          * if there is information on bsr of DCCH, DTCH,
          * or if there is UL_SR,
@@ -2151,7 +2176,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.resource_block_start = UE_template->first_rb_ul[harq_pid];
           hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.number_of_resource_blocks = 6;
           hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.mcs = 4;       // adjust according to size of RAR, 208 bits with N1A_PRB = 3
-          hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.pusch_repetition_levels = 0;
+          hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.pusch_repetition_levels = UE_template->pusch_repetition_levels;
           AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13 == LTE_EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off,
                       "epdcch_setconfig_r11->ext2->mpdcch_config_r13->mpdcch_pdsch_HoppingConfig_r13 is not off\n");
           hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.frequency_hopping_flag = 1 - epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13;
@@ -2201,7 +2226,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                                               );
           fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
                                                UE_template->rach_resource_type > 2 ? 2 : 1,
-                                               1, // total_number_of_repetitions
+                                               Total_Num_Rep_ULSCH, // total_number_of_repetitions
                                                1, // repetition_number
                                                (frameP * 10) + subframeP);
           ul_req_tmp->number_of_pdus++;
@@ -2330,5 +2355,24 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
         }
       } // UE_is_to_be_scheduled
     } // ULCCs
-  } // loop over UE_id
+   } // loop over UE_id
+  } // Schedule new ULSCH
+
+  // This section is to repeat ULSCH PDU for a number of MTC repetitions
+  for(int i=0;i<ul_req_tmp->number_of_pdus;i++)
+  {
+	  ul_config_pdu = &ul_req_tmp->ul_config_pdu_list[i];
+	  if (ul_config_pdu->pdu_type!=NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) // Repeat ULSCH PDUs only
+		  continue ;
+
+	  if(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number < ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.total_number_of_repetitions)
+	  {
+		  ul_req_body_Rep = &eNB->UL_req_tmp[CC_id][(sched_subframeP+1)%10].ul_config_request_body;
+		  ul_config_pdu_Rep = &ul_req_body_Rep->ul_config_pdu_list[ul_req_body_Rep->number_of_pdus];
+		  memcpy ((void *) ul_config_pdu_Rep, ul_config_pdu, sizeof (nfapi_ul_config_request_pdu_t));
+		  ul_config_pdu_Rep->ulsch_pdu.ulsch_pdu_rel8.handle = eNB->ul_handle++;
+		  ul_config_pdu_Rep->ulsch_pdu.ulsch_pdu_rel13.repetition_number = ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.repetition_number +1;
+		  ul_req_body_Rep->number_of_pdus++;
+	  } //repetition_number < total_number_of_repetitions
+  }   // For loop on PDUs
 }

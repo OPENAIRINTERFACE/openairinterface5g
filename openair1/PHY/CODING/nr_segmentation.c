@@ -59,12 +59,12 @@ int32_t nr_segmentation(unsigned char *input_buffer,
 
     Bprime = B+((*C)*L);
 #ifdef DEBUG_SEGMENTATION
-    printf("Bprime %d\n",Bprime);
+    printf("Bprime %u\n",Bprime);
 #endif
   }
 
   if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
-      LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
+    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }
 
@@ -93,7 +93,7 @@ else
   Z = (Kprime/Kb);
 
 #ifdef DEBUG_SEGMENTATION
- printf("nr segmetation B %d Bprime %d Kprime %d z %d \n", B, Bprime, Kprime, Z);
+ printf("nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
 #endif
 	  
   if (Z <= 2) {
@@ -120,7 +120,7 @@ else
       *K = *K + 8;
 
 #ifdef DEBUG_SEGMENTATION
-    printf("Z_by_C %d , K2 %d\n",Z,*K);
+    printf("Z_by_C %u , K2 %u\n",Z,*K);
 #endif
   } else if (Z <= 256) { // increase by 4 bytes til here
       *K = (Z>>4)<<4;
@@ -149,8 +149,8 @@ else
   *F = ((*K) - Kprime);
 
 #ifdef DEBUG_SEGMENTATION
-  printf("final nr seg output Z %d K %d F %d \n", *Zout, *K, *F);
-  printf("C %d, K %d, Bprime_bytes %d, Bprime %d, F %d\n",*C,*K,Bprime>>3,Bprime,*F);
+  printf("final nr seg output Z %u K %u F %u \n", *Zout, *K, *F);
+  printf("C %u, K %u, Bprime_bytes %u, Bprime %u, F %u\n",*C,*K,Bprime>>3,Bprime,*F);
 #endif
 
   if ((input_buffer) && (output_buffers)) {

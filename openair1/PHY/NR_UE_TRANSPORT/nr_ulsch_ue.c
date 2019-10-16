@@ -43,80 +43,7 @@
 #include "PHY/TOOLS/tools_defs.h"
 
 //#define DEBUG_SCFDMA
-
-
-int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
-                             uint8_t thread_id,
-                             int gNB_id,
-                             unsigned char harq_pid){
-
-  int N_PRB_oh, N_RE_prime, cwd_idx, length_dmrs, Nid_cell;
-  int nb_rb, Nsymb_pusch, first_rb, nb_codewords,mcs,rvidx;
-  uint16_t n_rnti;
-  unsigned char mod_order;
-  uint16_t code_rate;
-
-  NR_UE_ULSCH_t *ulsch_ue;
-  NR_UL_UE_HARQ_t *harq_process_ul_ue;
-
-  LOG_W(PHY,"This function should not be used. Use FAPI interfaces instead\n");
-  
-  //--------------------------Temporary configuration-----------------------------//
-  length_dmrs = 1;
-  n_rnti = 0x1234;
-  Nid_cell = 0;
-  nb_rb = 50;
-  first_rb = 30;
-  Nsymb_pusch = 12;
-  nb_codewords = 1;
-  mcs = 9;
-  rvidx = 0;
-  //------------------------------------------------------------------------------//
-
-  for (cwd_idx = 0; cwd_idx < nb_codewords; cwd_idx++) {
-
-    ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_idx];
-    harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-
-    ulsch_ue->length_dmrs = length_dmrs;
-    ulsch_ue->rnti        = n_rnti;
-    ulsch_ue->Nid_cell    = Nid_cell;
-    ulsch_ue->Nsc_pusch   = nb_rb*NR_NB_SC_PER_RB;
-    ulsch_ue->Nsymb_pusch = Nsymb_pusch;
-    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
-
-
-    N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
-    N_RE_prime = NR_NB_SC_PER_RB*Nsymb_pusch - ulsch_ue->nb_re_dmrs - N_PRB_oh;
-
-    if (harq_process_ul_ue) {
-
-      mod_order      = nr_get_Qm_ul(mcs, 1);
-      code_rate      = nr_get_code_rate_ul(mcs, 1);
-
-      harq_process_ul_ue->mcs                = mcs;
-      harq_process_ul_ue->Nl                 = nb_codewords;
-      harq_process_ul_ue->nb_rb              = nb_rb;
-      harq_process_ul_ue->first_rb           = first_rb;
-      harq_process_ul_ue->number_of_symbols  = Nsymb_pusch;
-      harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-      harq_process_ul_ue->rvidx              = rvidx;
-      harq_process_ul_ue->TBS                = nr_compute_tbs(mod_order,
-                                                              code_rate,
-                                                              nb_rb,
-                                                              Nsymb_pusch,
-                                                              ulsch_ue->nb_re_dmrs,
-                                                              length_dmrs,
-                                                              harq_process_ul_ue->Nl);
-
-    }
-
-  }
-
-  return 0;
-}
-
-
+//#define DEBUG_PUSCH_MAPPING
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint16_t size,
@@ -157,38 +84,69 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 }
 
-uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id) {
+                               int gNB_id) {
 
   unsigned int available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  int32_t *mod_symbols[MAX_NUM_NR_RE];
   uint32_t ***pusch_dmrs;
   int16_t **tx_layers;
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
   uint16_t n_dmrs,code_rate;
-  uint8_t dmrs_type;
+  uint8_t dmrs_type, length_dmrs;
   uint8_t mapping_type;
-  int ap, start_symbol, i;
-  int sample_offsetF;
+  int ap, start_symbol, Nid_cell, i;
+  int sample_offsetF, N_RE_prime, N_PRB_oh;
+  uint16_t n_rnti;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][eNB_id];
+  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
 
   num_of_codewords = 1; // tmp assumption
+  length_dmrs = 1;
+  n_rnti = 0x1234;
+  Nid_cell = 0;
+  N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
-    ulsch_ue = UE->ulsch[thread_id][eNB_id][cwd_index];
+    ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+
+    ulsch_ue->length_dmrs = length_dmrs;
+    ulsch_ue->rnti        = n_rnti;
+    ulsch_ue->Nid_cell    = Nid_cell;
+    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+
+    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs - N_PRB_oh;
+
+    harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
+
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
+    code_rate      = nr_get_code_rate_ul(harq_process_ul_ue->mcs, 1);
+
+    harq_process_ul_ue->TBS = nr_compute_tbs( mod_order, harq_process_ul_ue->nb_rb, code_rate, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+
+    //-----------------------------------------------------//
+    // to be removed later when MAC is ready
+
+    if (harq_process_ul_ue != NULL){
+      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++)
+        harq_process_ul_ue->a[i] = (unsigned char) rand();
+    } else {
+      LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+      return;
+    }
+
+    //-----------------------------------------------------//
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
@@ -204,7 +162,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
 
     available_bits = nr_get_G(harq_process_ul_ue->nb_rb,
-                              ulsch_ue->Nsymb_pusch,
+                              harq_process_ul_ue->number_of_symbols,
                               ulsch_ue->nb_re_dmrs,
                               ulsch_ue->length_dmrs,
                               mod_order,
@@ -230,22 +188,19 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                   mod_order,
                   (int16_t *)ulsch_ue->d_mod);
 
+
     // pusch_transform_precoding(ulsch_ue, frame_parms, harq_pid);
 
     ///////////
     ////////////////////////////////////////////////////////////////////////
 
-    mod_symbols[cwd_index] = (int32_t *)malloc16((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
-
-    memcpy(mod_symbols[cwd_index],ulsch_ue->d_mod,(available_bits/mod_order)*sizeof(int32_t));
 
   }
 
-  start_symbol = 14 - ulsch_ue->Nsymb_pusch;
+  start_symbol = 14 - harq_process_ul_ue->number_of_symbols;
 
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
-
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs);
   int16_t mod_dmrs[n_dmrs<<1];
@@ -255,7 +210,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   l0 = get_l0_ul(mapping_type, 2);
   nr_modulation(pusch_dmrs[l0][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
-
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -264,13 +218,10 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
-  nr_layer_mapping((int16_t **)mod_symbols,
+  nr_ue_layer_mapping(UE->ulsch[thread_id][gNB_id],
                    harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
-  
-  for (uint32_t i = 0; i < 2*available_bits/mod_order; i++)
-      tx_layers[0][i] = (tx_layers[0][i] * AMP) >> 15;
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -286,7 +237,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint32_t nb_re_pusch, nb_re_dmrs_per_rb;
   uint32_t y_offset = 0;
 
-  for (l = start_symbol; l < start_symbol + ulsch_ue->Nsymb_pusch; l++) {
+  for (l = start_symbol; l < start_symbol + harq_process_ul_ue->number_of_symbols; l++) {
 
     if(l == dmrs_symbol)
       nb_re_dmrs_per_rb = ulsch_ue->nb_re_dmrs; // [hna] ulsch_ue->nb_re_dmrs = 6 in this configuration
@@ -330,7 +281,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
 
-    for (l=start_symbol; l<start_symbol+ulsch_ue->Nsymb_pusch; l++) {
+    for (l=start_symbol; l<start_symbol+harq_process_ul_ue->number_of_symbols; l++) {
 
       k = start_sc;
 
@@ -344,10 +295,11 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 
           #ifdef DEBUG_PUSCH_MAPPING
-            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
+            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t dmrs: %d %d\n",
             dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
           #endif
+
 
           dmrs_idx++;
           k_prime++;
@@ -378,23 +330,37 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  return 0;
+  return;
 }
 
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
+                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t Nl,
+                                      uint8_t thread_id,
+                                      uint8_t gNB_id,
                                       NR_DL_FRAME_PARMS *frame_parms) {
 
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
+  int timing_advance;
+  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->Nl; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////
 
-  tx_offset = slot*frame_parms->samples_per_slot;
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)  || defined(OAI_ADRV9371_ZC706)
+  timing_advance = UE->timing_advance;
+#else
+  timing_advance = 0;
+#endif
+
+  tx_offset = slot*frame_parms->samples_per_slot - timing_advance;
+
+  if (tx_offset < 0)
+    tx_offset += frame_parms->samples_per_frame;
+
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
@@ -413,7 +379,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
            frame_parms);
       }
     }
-
   ///////////
   ////////////////////////////////////////////////////
   return 0;

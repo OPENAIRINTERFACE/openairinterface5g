@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "executables/nr-softmodem-common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
@@ -30,7 +31,7 @@
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "assertions.h"
 #include <math.h>
 
@@ -38,6 +39,7 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "nfapi_nr_interface.h"
 
 /*
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
@@ -207,24 +209,32 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     //FIXME
     pusch_vars[UE_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
-    pusch_vars[UE_id]->rxdataF_ext           = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->rxdataF_ext2          = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->drs_ch_estimates      = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->rxdataF_comp          = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->ul_ch_mag             = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->ul_ch_magb            = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rxdataF_ext           = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rxdataF_ext2          = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_estimates       = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_estimates_ext   = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_estimates_time  = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rxdataF_comp          = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_mag0             = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_magb0            = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_mag             = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_magb            = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rho                   = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
 
-    for (i=0; i<2; i++) {
+    for (i=0; i<fp->nb_antennas_rx; i++) {
       // RK 2 times because of output format of FFT!
       // FIXME We should get rid of this
       pusch_vars[UE_id]->rxdataF_ext[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
       pusch_vars[UE_id]->rxdataF_ext2[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->drs_ch_estimates[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+      pusch_vars[UE_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
       pusch_vars[UE_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->ul_ch_mag0[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
+      pusch_vars[UE_id]->ul_ch_magb0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
       pusch_vars[UE_id]->ul_ch_mag[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
       pusch_vars[UE_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
+      pusch_vars[UE_id]->rho[i]                   = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->N_RB_UL*12*7*2) );
     }
 
     pusch_vars[UE_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear 
@@ -285,7 +295,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  //NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
@@ -321,29 +331,38 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   free_and_zero(prach_vars->prach_ifft[0]);
   free_and_zero(prach_vars->rxsigF[0]);
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-    for (i = 0; i < 2; i++) {
+*/
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for (int i = 0; i < 2; i++) {
       free_and_zero(pusch_vars[UE_id]->rxdataF_ext[i]);
       free_and_zero(pusch_vars[UE_id]->rxdataF_ext2[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates[i]);
-      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_ext[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_time[i]);
       free_and_zero(pusch_vars[UE_id]->rxdataF_comp[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_mag0[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_magb0[i]);
       free_and_zero(pusch_vars[UE_id]->ul_ch_mag[i]);
       free_and_zero(pusch_vars[UE_id]->ul_ch_magb[i]);
+      free_and_zero(pusch_vars[UE_id]->rho[i]);
     }
 
     free_and_zero(pusch_vars[UE_id]->rxdataF_ext);
     free_and_zero(pusch_vars[UE_id]->rxdataF_ext2);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates);
-    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_ext);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_estimates_time);
     free_and_zero(pusch_vars[UE_id]->rxdataF_comp);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_mag0);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_magb0);
     free_and_zero(pusch_vars[UE_id]->ul_ch_mag);
     free_and_zero(pusch_vars[UE_id]->ul_ch_magb);
+    free_and_zero(pusch_vars[UE_id]->rho);
+
     free_and_zero(pusch_vars[UE_id]->llr);
     free_and_zero(pusch_vars[UE_id]);
   } //UE_id
-
+/*
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
 }
@@ -410,23 +429,25 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->sch_config.ssb_periodicity.value		    = phy_config->cfg->sch_config.ssb_periodicity.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
-    gNB_config->subframe_config.duplex_mode.value    = TDD;
-  } else {
     gNB_config->subframe_config.duplex_mode.value    = FDD;
+  } else {
+    gNB_config->subframe_config.duplex_mode.value    = TDD;
   }
 
   RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  get_band(fp->dl_CarrierFreq, &gNB_config->nfapi_config.rf_bands.rf_band[0], &uplink_frequency_offset[CC_id][0], &fp->frame_type);
+  fp->ul_CarrierFreq = fp->dl_CarrierFreq + uplink_frequency_offset[CC_id][0];
   fp->threequarter_fs                    = openair0_cfg[0].threequarter_fs;
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u)\n",
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u, UL freq %u)\n",
         Mod_id,
         CC_id,
         gNB_config->nfapi_config.rf_bands.rf_band[0],
         gNB_config->rf_config.dl_carrier_bandwidth.value,
         gNB_config->rf_config.ul_carrier_bandwidth.value,
         gNB_config->sch_config.physical_cell_id.value,
-        fp->dl_CarrierFreq );
+        fp->dl_CarrierFreq,
+        fp->ul_CarrierFreq);
 
   nr_init_frame_parms(gNB_config, fp);
 
@@ -485,6 +506,26 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
         LOG_E(PHY,"Can't get gNB ulsch structures\n");
         exit(-1);
       }
+
+      LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d\n",i);
+      // [hna] added here for RT implementation
+      uint8_t harq_pid = 0;
+      nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &gNB->ulsch[i+1][j]->harq_processes[harq_pid]->ulsch_pdu;
+  
+      // --------- setting rel15_ul parameters ----------
+      rel15_ul->rnti                           = 0x1234;
+      rel15_ul->ulsch_pdu_rel15.start_rb       = 0;
+      rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
+      rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
+      rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
+      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6;
+      rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1;
+      rel15_ul->ulsch_pdu_rel15.Qm             = 2;
+      rel15_ul->ulsch_pdu_rel15.mcs            = 9;
+      rel15_ul->ulsch_pdu_rel15.rv             = 0;
+      rel15_ul->ulsch_pdu_rel15.n_layers       = 1;
+      ///////////////////////////////////////////////////
+
       //////////////////////////////////////////////////////////////////////////
     }
 

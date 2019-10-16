@@ -1173,7 +1173,7 @@ void nr_dci_decoding_procedure0(int s,
     } else {
       nb_candidates = (L2 == 4) ? 4 : ((L2 == 8)? 2 : 1); // according to Table 10.1-1 (38.213 section 10.1)
 #ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> we are in common searchSpace and nb_candidates=%d for L2=%d\n",nb_candidates,L2);
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> we are in common searchSpace and nb_candidates=%u for L2=%d\n", nb_candidates, L2);
 #endif
     }
   } else {
@@ -1212,7 +1212,7 @@ void nr_dci_decoding_procedure0(int s,
   }
 
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> L2(%d) | nCCE[%d](%d) | Yk(%d) | nb_candidates(%d)\n",L2,p,nCCE[p],Yk,nb_candidates);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> L2(%d) | nCCE[%d](%d) | Yk(%u) | nb_candidates(%u)\n", L2, p, nCCE[p], Yk, nb_candidates);
 #endif
   /*  for (CCEind=0;
       CCEind<nCCE2;
@@ -1225,7 +1225,7 @@ void nr_dci_decoding_procedure0(int s,
   if (L==4) m_p_s_L_max=1; // Table 10.1-2 is not defined for L=4
 
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> m_max_slot_pdcch_Table10_1_2(%d)=%d\n",L,m_max_slot_pdcch_Table10_1_2[L]);
+  if(0 <= L && L < 4) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> m_max_slot_pdcch_Table10_1_2(%d)=%d\n",L,m_max_slot_pdcch_Table10_1_2[L]);
 #endif
 
   for (m = 0; m < nb_candidates; m++) {
@@ -1234,16 +1234,16 @@ void nr_dci_decoding_procedure0(int s,
     if (nCCE[p] < L2) return;
 
 #ifdef NR_PDCCH_DCI_DEBUG
-    int debug1 = nCCE[p] / L2;
-    int debug2 = L2*m_p_s_L_max;
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
+  int debug1 = nCCE[p] / L2;
+  int debug2 = L2*m_p_s_L_max;
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
 #endif
-    CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
+  CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
 #ifdef NR_PDCCH_DCI_DEBUG
-    printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%d) + ((m(%d)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) % (nCCE[p] / L2)) * L2)\n",
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%u) + ((m(%u)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) %% (nCCE[p] / L2)) * L2)\n",
             CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);
-    printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> n_candidate(m)=%d | CCEind=%d |",m,CCEind);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> n_candidate(m)=%u | CCEind=%d |",m,CCEind);
 #endif
 
     if (CCEind < 32)
@@ -1252,7 +1252,7 @@ void nr_dci_decoding_procedure0(int s,
       CCEmap = CCEmap1;
     else if (CCEind < 96)
       CCEmap = CCEmap2;
-    else AssertFatal(1==0,"Illegal CCEind %d (Yk %d, m %d, nCCE %d, L2 %d\n",CCEind, Yk, m, nCCE[p], L2);
+    else AssertFatal(1==0,"Illegal CCEind %d (Yk %u, m %u, nCCE %d, L2 %d\n", CCEind, Yk, m, nCCE[p], L2);
 
     switch (L2) {
       case 1:
@@ -1284,7 +1284,7 @@ void nr_dci_decoding_procedure0(int s,
     CCEmap_cand = (*CCEmap) & CCEmap_mask;
     // CCE is not allocated yet
 #ifdef NR_PDCCH_DCI_DEBUG
-    printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEmap_cand=%d \n",CCEmap_cand);
+    printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEmap_cand=%u \n",CCEmap_cand);
 #endif
 
     if (CCEmap_cand == 0) {
