@@ -911,14 +911,14 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
     }
     if (searchSpace_i->duration) ss->duration = *searchSpace_i->duration;
     else                         ss->duration = 1;
-
-
+    
+    
     AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
 		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
 		searchSpace_i->monitoringSymbolsWithinSlot->size);
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
-
+    
     AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",searchSpace_i->searchSpaceId);
     if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
       ss->number_of_candidates[0] = 8;
@@ -935,17 +935,28 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
     if (searchSpace_i->nrofCandidates->aggregationLevel16 == NR_SearchSpace__nrofCandidates__aggregationLevel16_n8)
       ss->number_of_candidates[4] = 8;
     else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
-
-    AssertFatal(searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_ue_Specific,
-		"searchspace %d is not ue-Specific\n",searchSpace_i->searchSpaceId);
-    AssertFatal(searchSpace_i->searchSpaceType->choice.ue_Specific!=NULL,
-		"searchspace %d ue-Specific is null\n",searchSpace_i->searchSpaceId);
-    ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
-
-    ss->uss_dci_formats = searchSpace_i->searchSpaceType->choice.ue_Specific-> dci_Formats;
-
-
+    
+    if (searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_ue_Specific && searchSpace_i->searchSpaceType->choice.ue_Specific!=NULL) {
+      
+      ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
+      
+      ss->uss_dci_formats = searchSpace_i->searchSpaceType->choice.ue_Specific-> dci_Formats;
+      
+    } else if (searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_common && searchSpace_i->searchSpaceType->choice.common!=NULL) {
+      ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
+      
+      if (searchSpace_i->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0)
+	ss->css_formats_0_0_and_1_0 = 1;
+      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_0) {
+	ss->css_format_2_0 = 1;
+	// add aggregation info
+      }
+      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_1)
+	ss->css_format_2_1 = 1;
+      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_2)
+	ss->css_format_2_2 = 1;
+      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_3)
+	ss->css_format_2_3 = 1;
+    }
   }
-
-
 }

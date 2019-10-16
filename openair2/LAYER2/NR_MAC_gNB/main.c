@@ -48,7 +48,7 @@ void mac_top_init_gNB(void)
 {
   module_id_t     i,j;
   int             list_el;
-  UE_list_t       *UE_list;
+  NR_UE_list_t    *UE_list;
   gNB_MAC_INST    *nrmac;
 
   LOG_I(MAC, "[MAIN] Init function start:nb_nr_macrlc_inst=%d\n",RC.nb_nr_macrlc_inst);
@@ -115,8 +115,8 @@ void mac_top_init_gNB(void)
     UE_list->head_ul = -1;
     UE_list->avail = 0;
     
-    for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-      UE_list->next[list_el] = list_el + 1;
+    for (list_el = 0; list_el < MAX_MOBILES_PER_GNB - 1; list_el++) {
+       UE_list->next[list_el] = list_el + 1;
       UE_list->next_ul[list_el] = list_el + 1;
       UE_list->active[list_el] = FALSE;
     }

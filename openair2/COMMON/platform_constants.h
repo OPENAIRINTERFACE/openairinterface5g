@@ -84,7 +84,7 @@
     #else
       #define MAX_MOBILES_PER_ENB         16
       #define MAX_MOBILES_PER_ENB_NB_IoT  16
-      #define MAX_MOBILES_PER_GNB         16
+      #define MAX_MOBILES_PER_GNB         2//16
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #endif
@@ -97,7 +97,7 @@
   #define MAX_gNB                      2
 #endif
 
-#define NUMBER_OF_NR_DLSCH_MAX 16
+#define NUMBER_OF_NR_DLSCH_MAX 2//16
 #define NUMBER_OF_NR_ULSCH_MAX 16
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2

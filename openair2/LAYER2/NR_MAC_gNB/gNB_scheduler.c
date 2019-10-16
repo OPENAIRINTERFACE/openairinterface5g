@@ -333,6 +333,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
+  /*
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_list->active[i]) {
 
@@ -351,7 +352,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
-  
+  */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
   
   //  pdcp_run(&ctxt);
