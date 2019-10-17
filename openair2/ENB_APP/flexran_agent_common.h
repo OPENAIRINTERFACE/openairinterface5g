@@ -179,4 +179,8 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void* params, Prot
  * request message. */
 int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg);
 
+/* Return the number of UEs in the BS of this agent across RRC/MAC. If they
+ * disagree, prints an error and returns the minimum of both. */
+int flexran_agent_get_num_ues(mid_t mod_id);
+
 #endif

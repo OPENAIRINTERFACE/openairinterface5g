@@ -274,21 +274,7 @@ int flexran_agent_stats_reply(mid_t enb_id,
   const uint32_t cell_flags = stats_req->complete_stats_request->cell_report_flags;
   const uint32_t ue_flags = stats_req->complete_stats_request->ue_report_flags;
 
-  /* TODO: get_number in own function */
-  int n_ue = 0;
-  if (flexran_agent_get_rrc_xface(enb_id))
-    n_ue = flexran_get_rrc_num_ues(enb_id);
-  else if (flexran_agent_get_mac_xface(enb_id))
-    n_ue = flexran_get_mac_num_ues(enb_id);
-
-  if (flexran_agent_get_rrc_xface(enb_id) && flexran_agent_get_mac_xface(enb_id)
-      && flexran_get_rrc_num_ues(enb_id) != flexran_get_mac_num_ues(enb_id)) {
-    const int nrrc = flexran_get_rrc_num_ues(enb_id);
-    const int nmac = flexran_get_mac_num_ues(enb_id);
-    n_ue = nrrc < nmac ? nrrc : nmac;
-    LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %d UEs\n",
-          __func__, nrrc, nmac, n_ue);
-  }
+  int n_ue = flexran_agent_get_num_ues(enb_id);
 
   rnti_t rntis[n_ue];
   if (flexran_agent_get_rrc_xface(enb_id))

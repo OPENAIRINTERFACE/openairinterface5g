@@ -598,21 +598,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     goto error;
 
   ue_config_reply_msg->header = header;
-  ue_config_reply_msg->n_ue_config = 0;
-
-  if (flexran_agent_get_rrc_xface(mod_id))
-    ue_config_reply_msg->n_ue_config = flexran_get_rrc_num_ues(mod_id);
-  else if (flexran_agent_get_mac_xface(mod_id))
-    ue_config_reply_msg->n_ue_config = flexran_get_mac_num_ues(mod_id);
-
-  if (flexran_agent_get_rrc_xface(mod_id) && flexran_agent_get_mac_xface(mod_id)
-      && flexran_get_rrc_num_ues(mod_id) != flexran_get_mac_num_ues(mod_id)) {
-    const int nrrc = flexran_get_rrc_num_ues(mod_id);
-    const int nmac = flexran_get_mac_num_ues(mod_id);
-    ue_config_reply_msg->n_ue_config = nrrc < nmac ? nrrc : nmac;
-    LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %lu UEs\n",
-          __func__, nrrc, nmac, ue_config_reply_msg->n_ue_config);
-  }
+  ue_config_reply_msg->n_ue_config = flexran_agent_get_num_ues(mod_id);
 
   Protocol__FlexUeConfig **ue_config;
 
@@ -934,4 +920,25 @@ int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Proto
 
   *msg = NULL;
   return 0;
+}
+
+int flexran_agent_get_num_ues(mid_t mod_id) {
+  const int has_rrc = flexran_agent_get_rrc_xface(mod_id) != NULL;
+  const int has_mac = flexran_agent_get_mac_xface(mod_id) != NULL;
+  DevAssert(has_rrc || has_mac);
+  if (has_rrc && !has_mac)
+    return flexran_get_rrc_num_ues(mod_id);
+  if (!has_rrc && has_mac)
+    return flexran_get_mac_num_ues(mod_id);
+
+  /* has both */
+  const int nrrc = flexran_get_rrc_num_ues(mod_id);
+  const int nmac = flexran_get_mac_num_ues(mod_id);
+  if (nrrc != nmac) {
+    const int n_ue = nrrc < nmac ? nrrc : nmac;
+    LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %d UEs\n",
+          __func__, nrrc, nmac, n_ue);
+    return n_ue;
+  }
+  return nrrc;
 }
