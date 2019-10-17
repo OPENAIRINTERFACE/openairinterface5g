@@ -272,7 +272,8 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
   newUDPheader->contentBytes+=sizeof(fs6_ul_uespec_uci_element_t);
 }
 
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen) {
+
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   uint8_t *bufferZone=eNB->FS6bufferZone;
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end
@@ -298,13 +299,15 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->cqi_crc_status=eNB->ulsch[UE_id]->harq_processes[harq_pid]->cqi_crc_status;
   hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
   memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
-	 sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
+         sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
   hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));
   memcpy(hULUE(newUDPheader)+1, data, dataLen);
   hULUE(newUDPheader)->segLen=dataLen;
+  hULUE(newUDPheader)->r_offset=r_offset;
+  hULUE(newUDPheader)->G=eNB->ulsch[UE_id]->harq_processes[harq_pid]->G;
 }
 
 void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
@@ -427,102 +430,6 @@ void phy_procedures_eNB_uespec_RX_tosplit(uint8_t *bufferZone, int bufSize, PHY_
   return;
 }
 
-int ulsch_decoding_process(PHY_VARS_eNB *eNB, int UE_id, int llr8_flag) {
-  int harq_pid;
-  LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
-
-  if (ulsch->ue_type>0)
-    harq_pid = 0;
-  else
-    harq_pid = subframe2harq_pid(&eNB->frame_parms,eNB->proc.frame_rx,eNB->proc.subframe_rx);
-
-  LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  decoder_if_t *tc;
-  int offset, ret=-1;
-
-  if (llr8_flag == 0)
-    tc = *decoder16;
-  else
-    tc = *decoder8;
-
-  // This is a new packet, so compute quantities regarding segmentation
-  // Fixme: very dirty: all the variables produced by let_segmentation are only used localy
-  // Furthermore, variables as 1 letter and global is "time consuming" for everybody !!!
-  ulsch_harq->B = ulsch_harq->TBS+24;
-  lte_segmentation(NULL,
-                   NULL,
-                   ulsch_harq->B,
-                   &ulsch_harq->C,
-                   &ulsch_harq->Cplus,
-                   &ulsch_harq->Cminus,
-                   &ulsch_harq->Kplus,
-                   &ulsch_harq->Kminus,
-                   &ulsch_harq->F);
-
-  for (int r=0; r<ulsch_harq->C; r++) {
-    //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
-    // Get Turbo interleaver parameters
-    int Kr;
-
-    if (r<ulsch_harq->Cminus)
-      Kr = ulsch_harq->Kminus;
-    else
-      Kr = ulsch_harq->Kplus;
-
-    int Kr_bytes = Kr>>3;
-    int crc_type;
-
-    if (ulsch_harq->C == 1)
-      crc_type = CRC24_A;
-    else
-      crc_type = CRC24_B;
-
-    start_meas(&eNB->ulsch_turbo_decoding_stats);
-    ret = tc(&ulsch_harq->d[r][96],
-             NULL,
-             ulsch_harq->c[r],
-             NULL,
-             Kr,
-             ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
-             crc_type,
-             (r==0) ? ulsch_harq->F : 0,
-             &eNB->ulsch_tc_init_stats,
-             &eNB->ulsch_tc_alpha_stats,
-             &eNB->ulsch_tc_beta_stats,
-             &eNB->ulsch_tc_gamma_stats,
-             &eNB->ulsch_tc_ext_stats,
-             &eNB->ulsch_tc_intl1_stats,
-             &eNB->ulsch_tc_intl2_stats);
-    stop_meas(&eNB->ulsch_turbo_decoding_stats);
-
-    // Reassembly of Transport block here
-
-    if (ret != (1+ulsch->max_turbo_iterations)) {
-      if (r<ulsch_harq->Cminus)
-        Kr = ulsch_harq->Kminus;
-      else
-        Kr = ulsch_harq->Kplus;
-
-      Kr_bytes = Kr>>3;
-
-      if (r==0) {
-        memcpy(ulsch_harq->b,
-               &ulsch_harq->c[0][(ulsch_harq->F>>3)],
-               Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0));
-        offset = Kr_bytes - (ulsch_harq->F>>3) - ((ulsch_harq->C>1)?3:0);
-      } else {
-        memcpy(ulsch_harq->b+offset,
-               ulsch_harq->c[r],
-               Kr_bytes - ((ulsch_harq->C>1)?3:0));
-        offset += (Kr_bytes- ((ulsch_harq->C>1)?3:0));
-      }
-    } else {
-      break;
-    }
-  }
-
-  return(ret);
-}
 
 void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe, ul_propagation_t *ul_propa) {
   nfapi_rx_indication_pdu_t *pdu;
@@ -645,16 +552,19 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
       }
 
       start_meas(&eNB->ulsch_decoding_stats);
-      /*
-      int ret = ulsch_decoding(eNB,&eNB->proc.L1_proc,
-                               i,
-                               0, // control_only_flag
-                               ulsch_harq->V_UL_DAI,
-                               ulsch_harq->nb_rb>20 ? 1 : 0);
-      */
-      int ret = ulsch_decoding_process(eNB,
-                                       i,
-                                       ulsch_harq->nb_rb>20 ? 1 : 0);
+      // This is a new packet, so compute quantities regarding segmentation
+      ulsch_harq->B = ulsch_harq->TBS+24;
+      lte_segmentation(NULL,
+                       NULL,
+                       ulsch_harq->B,
+                       &ulsch_harq->C,
+                       &ulsch_harq->Cplus,
+                       &ulsch_harq->Cminus,
+                       &ulsch_harq->Kplus,
+                       &ulsch_harq->Kminus,
+                       &ulsch_harq->F);
+      int ret = ulsch_decoding_data(eNB, i, harq_pid,
+                                    ulsch_harq->nb_rb>20 ? 1 : 0);
       stop_meas(&eNB->ulsch_decoding_stats);
       LOG_D(PHY,
             "[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d ulsch_harq->cqi_crc_status:%d ackBits:%d ulsch_decoding_stats[t:%lld max:%lld]\n",
@@ -781,20 +691,21 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
       if ( type == fs6ULsch)  {
         LTE_eNB_ULSCH_t *ulsch =eNB->ulsch[hULUE(bufPtr)->UE_id];
         LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hULUE(bufPtr)->harq_id];
-        memcpy(&ulsch_harq->d[hULUE(bufPtr)->segment][96],
+        memcpy(ulsch_harq->e+hULUE(bufPtr)->r_offset,
                hULUE(bufPtr)+1,
                hULUE(bufPtr)->segLen);
         memcpy(eNB->pusch_vars[hULUE(bufPtr)->UE_id]->ulsch_power,
                hULUE(bufPtr)->ulsch_power,
                sizeof(int)*2);
+        ulsch_harq->G=hULUE(bufPtr)->G;
         ulsch_harq->cqi_crc_status=hULUE(bufPtr)->cqi_crc_status;
-	//ulsch_harq->O_ACK= hULUE(bufPtr)->O_ACK;
-	memcpy(ulsch_harq->o_ACK, hULUE(bufPtr)->o_ACK,
-	       sizeof(ulsch_harq->o_ACK));
+        //ulsch_harq->O_ACK= hULUE(bufPtr)->O_ACK;
+        memcpy(ulsch_harq->o_ACK, hULUE(bufPtr)->o_ACK,
+               sizeof(ulsch_harq->o_ACK));
         memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
         ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
         LOG_D(PHY,"Received ulsch data for: rnti:%x, fsf: %d/%d, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
-              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment , hULUE(bufPtr)->segLen);
+              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment, hULUE(bufPtr)->segLen);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
@@ -1157,6 +1068,7 @@ void appendFs6TxULUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int curUE, LTE
   memcpyToDuHarq(total_number_of_repetitions);
   LOG_D(PHY,"Added request to perform ulsch for: rnti:%x, fsf: %d/%d\n", ulsch->rnti, frame, subframe);
 }
+
 void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_t harq_pid, LTE_eNB_DLSCH_t *dlsch0, LTE_DL_eNB_HARQ_t *harqData, int frame, int subframe) {
   commonUDP_t *FirstUDPheader=(commonUDP_t *) bufferZone;
   // move to the end

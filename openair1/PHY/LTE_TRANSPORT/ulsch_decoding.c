@@ -279,14 +279,6 @@ int ulsch_decoding_data_2thread0(td_params *tdp) {
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
-#ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
-           r, G,
-           Kr*3,
-           Q_m,
-           nb_rb,
-           ulsch_harq->Nl);
-#endif
 
     if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
                                    G,
@@ -453,14 +445,6 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
-#ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
-           r, G,
-           Kr*3,
-           Q_m,
-           nb_rb,
-           ulsch_harq->Nl);
-#endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
 
     if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
@@ -583,13 +567,29 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
+    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, Nl %d, r_offset %d)...\n",
            r, G,
            Kr*3,
            ulsch_harq->Qm,
-           ulsch_harq->Nl);
+           ulsch_harq->Nl, r_offset);
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
+    #ifdef FS6
+    if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
+     int Gp=G/ulsch_harq->Qm;
+     int GpmodC = Gp%ulsch_harq->C;
+
+      if (r < (ulsch_harq->C-(GpmodC)))
+          E = ulsch_harq->Qm * (Gp/ulsch_harq->C);
+      else
+          E = ulsch_harq->Qm * ((GpmodC==0?0:1) + (Gp/ulsch_harq->C));
+      sendFs6Ul(eNB, UE_id, harq_pid, r, ulsch_harq->e+r_offset, E*sizeof(int16_t), r_offset);
+      
+      r_offset += E;
+      continue;
+    }
+
+    #endif
 
     if (lte_rate_matching_turbo_rx(ulsch_harq->RTC[r],
                                    G,
@@ -639,39 +639,6 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
-#ifdef FS6
-    if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
-      // r is the segment id,
-      // Kr is the segment length in short 
-      // *3 because LTE redudancy scheme
-      sendFs6Ul(eNB, UE_id, harq_pid, r, &ulsch_harq->d[r][96], Kr*sizeof(int16_t)*3);
-/*
-      int iter=tc(&ulsch_harq->d[r][96],
-             NULL,
-             ulsch_harq->c[r],
-             NULL,
-             Kr,
-             ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
-             crc_type,
-             (r==0) ? ulsch_harq->F : 0,
-             &eNB->ulsch_tc_init_stats,
-             &eNB->ulsch_tc_alpha_stats,
-             &eNB->ulsch_tc_beta_stats,
-             &eNB->ulsch_tc_gamma_stats,
-             &eNB->ulsch_tc_ext_stats,
-             &eNB->ulsch_tc_intl1_stats,
-             &eNB->ulsch_tc_intl2_stats);
-      LOG_D(PHY, "Cu should decode in %d iter\n",iter);
-      if ( 1) { //iter == 5 ) { 
-	      for (int i=0; i < Kr; i++ )
-		      printf("%hhx:", ulsch_harq->d[r][96+i]);
-	      printf("\n");
-      }
-*/
-      continue;
-    }
-
-    #endif
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     ret = tc(&ulsch_harq->d[r][96],
              NULL,

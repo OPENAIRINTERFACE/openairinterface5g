@@ -173,6 +173,8 @@ typedef struct {
   uint8_t harq_id;
   uint8_t segment;
   int segLen;
+  int r_offset;
+  int G;
   int ulsch_power[2];
   uint8_t o_ACK[4];
   uint8_t O_ACK;
@@ -230,7 +232,7 @@ static inline void *commonUDPdata(uint8_t *ptr) {
 void setAllfromTS(uint64_t TS);
 void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
                    uint16_t rnti,  int32_t stat);
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen);
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset);
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
