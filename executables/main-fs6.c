@@ -1464,11 +1464,22 @@ void *cu_fs6(void *arg) {
 
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
   uint64_t timeStamp=0;
+  initStaticTime(begingWait);
+  initStaticTime(begingWait2);
+  initRefTimes(waitDUAndProcessingUL);
+  initRefTimes(makeSendDL);
+    initRefTimes(fullLoop);
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
+    updateTimes(begingWait, &fullLoop, 1000, "CU for full SubFrame (must be less 1ms)");
+    pickStaticTime(begingWait);
+    updateTimes(begingWait, &waitDUAndProcessingUL, 1000, "CU Time in wait Rx + Ul processing");
     UL_cu_fs6(ru, &timeStamp);
+    pickStaticTime(begingWait2);
     DL_cu_fs6(ru);
+    updateTimes(begingWait2, &makeSendDL, 1000, "CU Time in DL build+send");
+
   }
 
   return NULL;
@@ -1498,17 +1509,20 @@ void *du_fs6(void *arg) {
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
   initStaticTime(begingWait);
-  initRefTimes(waitRxAndProcessingUL);
+   initStaticTime(begingWait2);
+ initRefTimes(waitRxAndProcessingUL);
   initRefTimes(makeSendDL);
+  initRefTimes(fullLoop);
    
   while(1) {
     L1_proc_t *proc = &ru->eNB_list[0]->proc;
+    updateTimes(begingWait, &fullLoop, 1000, "DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
     updateTimes(begingWait, &waitRxAndProcessingUL, 1000, "DU Time in wait Rx + Ul processing");
-    pickStaticTime(begingWait);
+    pickStaticTime(begingWait2);
     DL_du_fs6(ru);
-    updateTimes(begingWait, &makeSendDL, 1000, "DU Time in build and send Tx");
+    updateTimes(begingWait2, &makeSendDL, 1000, "DU Time in build and send Tx");
   }
 
   return NULL;
