@@ -31,17 +31,49 @@ int sum(uint8_t *b, int s) {
   return sum;
 }
 
-static inline void updateTimesReset(uint64_t start, Meas *M, int period, char *txt) {
+static inline int cmpintRev(const void *a, const void *b) {
+  uint64_t *aa=(uint64_t *)a;
+  uint64_t *bb=(uint64_t *)b;
+  return (int)(*bb-*aa);
+}
+
+static inline void printMeas2(char *txt, Meas *M, int period, bool MaxMin) {
+  if (M->iterations%period == 0 ) {
+    char txt2[512];
+    sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " %s=%"
+            PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
+            txt,
+            M->sum/M->iterations,
+            M->iterations,
+	    MaxMin?"max":"min",
+            M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
+            M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
+#if T_TRACER
+    LOG_W(PHY,"%s",txt2);
+#else
+    printf("%s",txt2);
+#endif
+  }
+}
+
+static inline void updateTimesReset(uint64_t start, Meas *M, int period, bool MaxMin, char *txt) {
   if (start!=0) {
     uint64_t end=rdtsc();
     long long diff=(end-start)/(cpuf*1000);
     M->maxArray[0]=diff;
     M->sum+=diff;
     M->iterations++;
-    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
-    printMeas(txt,M,period);
-    if (M->iterations%period == 0 )
-      bzero(M,sizeof(*M));
+    if ( MaxMin)
+      qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+    else
+      qsort(M->maxArray, 11, sizeof(uint64_t), cmpintRev);
+    printMeas2(txt,M,period, MaxMin);
+    if (M->iterations%period == 0 ) {
+	bzero(M,sizeof(*M));
+	if (!MaxMin)
+	  for (int i=0;i<11;i++)
+	    M->maxArray[i]=INT_MAX;
+    }
   }
 }
 
@@ -1377,7 +1409,7 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
   rx_rf(ru);
-  updateTimesReset(begingWait, &fullLoop, 1000, "DU wait USRP");
+  updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait USRP");
   
   setAllfromTS(ru_proc->timestamp_rx);
   // front end processing: convert from time domain to frequency domain
@@ -1443,7 +1475,7 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
   int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
-  updateTimesReset(begingWait, &fullLoop, 1000, "CU wait DU");
+  updateTimesReset(begingWait, &fullLoop, 1000, false, "CU wait DU");
 
   if (nb_blocks ==0) {
     LOG_W(PHY, "CU lost a subframe\n");
@@ -1498,13 +1530,13 @@ void *cu_fs6(void *arg) {
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
-    updateTimesReset(begingWait, &fullLoop, 1000, "CU for full SubFrame (must be less 1ms)");
+    updateTimesReset(begingWait, &fullLoop, 1000, true, "CU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
-    updateTimesReset(begingWait, &waitDUAndProcessingUL, 1000, "CU Time in wait Rx + Ul processing");
+    updateTimesReset(begingWait, &waitDUAndProcessingUL, 1000,  true,"CU Time in wait Rx + Ul processing");
     UL_cu_fs6(ru, &timeStamp);
     pickStaticTime(begingWait2);
     DL_cu_fs6(ru);
-    updateTimesReset(begingWait2, &makeSendDL, 1000, "CU Time in DL build+send");
+    updateTimesReset(begingWait2, &makeSendDL, 1000,  true,"CU Time in DL build+send");
 
   }
 
@@ -1545,13 +1577,13 @@ void *du_fs6(void *arg) {
    
   while(1) {
     L1_proc_t *proc = &ru->eNB_list[0]->proc;
-    updateTimesReset(begingWait, &fullLoop, 1000, "DU for full SubFrame (must be less 1ms)");
+    updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
-    updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000, "DU Time in wait Rx + Ul processing");
+    updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
     pickStaticTime(begingWait2);
     DL_du_fs6(ru);
-    updateTimesReset(begingWait2, &makeSendDL, 1000, "DU Time in build and send Tx");
+    updateTimesReset(begingWait2, &makeSendDL, 1000, true, "DU Time in build and send Tx");
   }
 
   return NULL;
