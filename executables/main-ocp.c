@@ -746,6 +746,7 @@ void tx_rf(RU_t *ru) {
 }
 
 static void *ru_thread( void *param ) {
+   setbuf(stdout, NULL);
   RU_t               *ru      = (RU_t *)param;
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only

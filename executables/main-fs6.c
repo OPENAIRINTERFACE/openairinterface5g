@@ -1373,7 +1373,12 @@ void DL_du_fs6(RU_t *ru) {
 
 void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   RU_proc_t *ru_proc=&ru->proc;
+  initStaticTime(begingWait);
+  initRefTimes(fullLoop);
+  pickStaticTime(begingWait);
   rx_rf(ru);
+  updateTimesReset(begingWait, &fullLoop, 1000, "DU wait USRP");
+  
   setAllfromTS(ru_proc->timestamp_rx);
   // front end processing: convert from time domain to frequency domain
   // fills rxdataF buffer
@@ -1434,7 +1439,11 @@ void DL_cu_fs6(RU_t *ru) {
 
 void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
   initBufferZone(bufferZone);
+  initStaticTime(begingWait);
+  initRefTimes(fullLoop);
+  pickStaticTime(begingWait);
   int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
+  updateTimesReset(begingWait, &fullLoop, 1000, "CU wait DU");
 
   if (nb_blocks ==0) {
     LOG_W(PHY, "CU lost a subframe\n");
