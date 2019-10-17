@@ -31,6 +31,20 @@ int sum(uint8_t *b, int s) {
   return sum;
 }
 
+static inline void updateTimesReset(uint64_t start, Meas *M, int period, char *txt) {
+  if (start!=0) {
+    uint64_t end=rdtsc();
+    long long diff=(end-start)/(cpuf*1000);
+    M->maxArray[0]=diff;
+    M->sum+=diff;
+    M->iterations++;
+    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+    printMeas(txt,M,period);
+    if (M->iterations%period == 0 )
+      bzero(M,sizeof(*M));
+  }
+}
+
 #define ceil16_bytes(a) ((((a+15)/16)*16)/8)
 static void fs6Dlunpack(void *out, void *in, int szUnpacked) {
   static uint64_t *lut=NULL;
@@ -1472,13 +1486,13 @@ void *cu_fs6(void *arg) {
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
-    updateTimes(begingWait, &fullLoop, 1000, "CU for full SubFrame (must be less 1ms)");
+    updateTimesReset(begingWait, &fullLoop, 1000, "CU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
-    updateTimes(begingWait, &waitDUAndProcessingUL, 1000, "CU Time in wait Rx + Ul processing");
+    updateTimesReset(begingWait, &waitDUAndProcessingUL, 1000, "CU Time in wait Rx + Ul processing");
     UL_cu_fs6(ru, &timeStamp);
     pickStaticTime(begingWait2);
     DL_cu_fs6(ru);
-    updateTimes(begingWait2, &makeSendDL, 1000, "CU Time in DL build+send");
+    updateTimesReset(begingWait2, &makeSendDL, 1000, "CU Time in DL build+send");
 
   }
 
@@ -1509,20 +1523,20 @@ void *du_fs6(void *arg) {
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
   initStaticTime(begingWait);
-   initStaticTime(begingWait2);
- initRefTimes(waitRxAndProcessingUL);
+  initStaticTime(begingWait2);
+  initRefTimes(waitRxAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
    
   while(1) {
     L1_proc_t *proc = &ru->eNB_list[0]->proc;
-    updateTimes(begingWait, &fullLoop, 1000, "DU for full SubFrame (must be less 1ms)");
+    updateTimesReset(begingWait, &fullLoop, 1000, "DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
-    updateTimes(begingWait, &waitRxAndProcessingUL, 1000, "DU Time in wait Rx + Ul processing");
+    updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000, "DU Time in wait Rx + Ul processing");
     pickStaticTime(begingWait2);
     DL_du_fs6(ru);
-    updateTimes(begingWait2, &makeSendDL, 1000, "DU Time in build and send Tx");
+    updateTimesReset(begingWait2, &makeSendDL, 1000, "DU Time in build and send Tx");
   }
 
   return NULL;
