@@ -1381,8 +1381,12 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 void DL_du_fs6(RU_t *ru) {
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
+    initStaticTime(begingWait);
+    initRefTimes(fullLoop);
+    pickStaticTime(begingWait);
     int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
-
+    updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
+ 
     if (nb_blocks > 0) {
       L1_proc_t *L1_proc = &ru->eNB_list[i]->proc;
 
