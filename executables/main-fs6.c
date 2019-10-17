@@ -1497,10 +1497,18 @@ void *du_fs6(void *arg) {
     else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
+  initStaticTime(begingWait);
+  initRefTimes(waitRxAndProcessingUL);
+  initRefTimes(makeSendDL);
+   
   while(1) {
     L1_proc_t *proc = &ru->eNB_list[0]->proc;
+    pickStaticTime(begingWait);
     UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
+    updateTimes(begingWait, &waitRxAndProcessingUL, 1000, "DU Time in wait Rx + Ul processing");
+    pickStaticTime(begingWait);
     DL_du_fs6(ru);
+    updateTimes(begingWait, &makeSendDL, 1000, "DU Time in build and send Tx");
   }
 
   return NULL;
