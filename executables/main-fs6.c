@@ -1472,6 +1472,9 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
 }
 
 void *cu_fs6(void *arg) {
+     setbuf(stdout, NULL);
+   setbuf(stderr, NULL);
+
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
@@ -1509,6 +1512,9 @@ void *cu_fs6(void *arg) {
 }
 
 void *du_fs6(void *arg) {
+     setbuf(stdout, NULL);
+   setbuf(stderr, NULL);
+
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
