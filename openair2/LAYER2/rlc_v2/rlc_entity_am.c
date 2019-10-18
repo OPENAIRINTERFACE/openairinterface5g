@@ -530,6 +530,7 @@ void cleanup_sdu_list(rlc_entity_am_t *entity)
       cur = prev->next;
     } else {
       entity->tx_end = cur;
+      prev = cur;
       cur = cur->next;
     }
   }
