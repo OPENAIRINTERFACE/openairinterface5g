@@ -1084,11 +1084,11 @@
                                  (Test3: 273 PRB),
                                  (Test4: 106 PRB 12 CSET-Offset),
                                  (Test5: 217 PRB 48 CSET-Offset),
-                                 (Test6: 106 PRB 25 PDSCH-Offset),
+                                 <!--(Test6: 106 PRB 25 PDSCH-Offset),
                                  (Test7: 106 PRB 51 PDSCH-Offset),
                                  (Test8: 217 PRB 100 PDSCH-PRBs),
                                  (Test9: 217 PRB 80 PDSCH-Offset),
-                                 (Test10: 217 PRB 100 PDSCH-PRBs 80 PDSCH-Offset),
+                                 (Test10: 217 PRB 100 PDSCH-PRBs 80 PDSCH-Offset),-->
                                  (Test11: 106 PRB 4 PDSCH-Start-Symbols),
                                  (Test12: 217 PRB 5 PDSCH-Symbols),
                                  (Test13: 106 PRB 0 MCS),
@@ -1104,18 +1104,18 @@
 		              -n100 -R273
                   -n100 -R106 -o12
                   -n100 -R217 -o48
-                  -n100 -R106 -a25
+                  <!---n100 -R106 -a25
                   -n100 -R106 -a51
                   -n100 -R217 -b100
                   -n100 -R217 -a80
-                  -n100 -R217 -a80 -b100
+                  -n100 -R217 -a80 -b100-->
                   -n100 -R106 -c4
                   -n100 -R217 -j5
                   -n100 -R106 -e0
                   -n100 -R273 -e28</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6  nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14</tags>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 <!--nr_dlsim.test6  nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10-->nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14</tags>
       <search_expr_true>"PDCCH test OK" "PDSCH test OK"</search_expr_true>
-      <search_expr_false>segmentation fault|assertion|exiting|fatal|CRC NOK</search_expr_false>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase> 
  
