@@ -551,14 +551,16 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
       
   }
 
+  uint16_t start_sc = frame_parms->first_carrier_offset;
+
   // resource mapping according to 38.211 7.4.1.5.3
   for (n=csi_start; n<(csi_start+csi_bw); n++) {
    if ( (csi_params.freq_density > 1) || (csi_params.freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
     for (int ji=0; ji<size; ji++) { // loop over CDM groups
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
-        p = 3000+s+j[ji]*gs; // port index
+        p = s+j[ji]*gs; // port index
         for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
-          k = (n*NR_NB_SC_PER_RB)+koverline[ji]+kp;  // frequency index of current resource element
+          k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms->ofdm_symbol_size);  // frequency index of current resource element
           // wf according to tables 7.4.5.3-2 to 7.4.5.3-5 
           if (kp == 0)
             wf = 1;
@@ -584,16 +586,16 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
             }
             // ZP CSI RS
             if (csi_params.csi_type == 2) {
-              ((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1] = 0;
-              ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = 0;
+              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = 0;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = 0;
             }
             else {
-              ((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
-              ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
+              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
-            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p,((int16_t*)txdataF[p-3000])[(l*frame_parms.ofdm_symbol_size + k)<<1],
-               ((int16_t*)txdataF[p-3000])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k-start_sc,mprime,p+3000,((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1],
+               ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
           }
         }
