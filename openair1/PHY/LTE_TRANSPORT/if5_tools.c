@@ -308,7 +308,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 }
 
 
-void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
+void recv_IF5(RU_t *ru, L1_rxtx_proc_t *proc, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
 
   LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
@@ -505,7 +505,6 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms.samples_per_tti];
       rxp128 = (__m128i *) (rxp[0]);
    
-      RU_proc_t *proc = &ru->proc;
 /*
    //   while(packet_id<fp->samples_per_tti/db_fulllength) {
         data_block = data_block_head;
@@ -569,13 +568,13 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
           subframe_skip++;
           offset_cnt = header->seqno;
         } else {
-          if ((offset_cnt != header->seqno) && (start_flag == 0) && (proc->first_rx > 3)){
+          if ((offset_cnt != header->seqno) && (start_flag == 0) ){
 #ifdef DEBUG_UL_MOBIPASS
              LOG_D(PHY,"[Mobipass] Reset sequence number, offset_cnt:%d, header->seqno:%d, packet_id:%d\n", offset_cnt, header->seqno, packet_id);
 #endif
              reset_flag=1;
           }
-          if ((reset_flag == 1) && (proc->first_rx > 3 ) && (start_flag == 0) && (packet_id == 0)) {
+          if ((reset_flag == 1)  && (start_flag == 0) && (packet_id == 0)) {
              packet_id = 1;  
              reset_flag = 0;
           }

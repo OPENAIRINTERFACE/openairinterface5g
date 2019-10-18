@@ -76,4 +76,4 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
 
 void handle_srs_pdu(PHY_VARS_eNB *eNB,nfapi_ul_config_request_pdu_t *ul_config_pdu,uint16_t frame,uint8_t subframe);
 
-void schedule_response(Sched_Rsp_t *Sched_INFO);
+void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);

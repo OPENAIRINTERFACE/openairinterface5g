@@ -730,9 +730,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   }
 }
 
-void schedule_response(Sched_Rsp_t *Sched_INFO) {
+void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
   PHY_VARS_eNB *eNB;
-  L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t               Mod_id       = Sched_INFO->module_id;
   uint8_t                   CC_id        = Sched_INFO->CC_id;
@@ -752,7 +751,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   AssertFatal(RC.eNB[Mod_id][CC_id]!=NULL,"RC.eNB[%d][%d] is null\n",Mod_id,CC_id);
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
-  proc        = &eNB->proc.L1_proc;
   /* TODO: check that following line is correct - in the meantime it is disabled */
   //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);

@@ -1360,50 +1360,7 @@ extern int      oai_exit;
 
 extern void    *td_thread (void *);
 
-void init_td_thread(PHY_VARS_eNB *eNB) {
-  L1_proc_t *proc = &eNB->proc;
-  proc->tdp.eNB = eNB;
-  proc->instance_cnt_td         = -1;
-  pthread_attr_init( &proc->attr_td);
-  pthread_mutex_init( &proc->mutex_td, NULL);
-  pthread_cond_init( &proc->cond_td, NULL);
-  pthread_create(&proc->pthread_td, &proc->attr_td, td_thread, (void *)&proc->tdp);
-}
-void kill_td_thread(PHY_VARS_eNB *eNB) {
-  L1_proc_t *proc = &eNB->proc;
-  proc->instance_cnt_td         = 0;
-  pthread_cond_signal(&proc->cond_td);
-  pthread_join(proc->pthread_td, NULL);
-  pthread_mutex_destroy( &proc->mutex_td );
-  pthread_cond_destroy( &proc->cond_td );
-}
-
 extern void    *te_thread (void *);
-
-void init_te_thread(PHY_VARS_eNB *eNB) {
-  L1_proc_t *proc = &eNB->proc;
-
-  for(int i=0; i<3 ; i++) {
-    proc->tep[i].eNB = eNB;
-    proc->tep[i].instance_cnt_te         = -1;
-    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
-    pthread_cond_init( &proc->tep[i].cond_te, NULL);
-    pthread_attr_init( &proc->tep[i].attr_te);
-    LOG_I(PHY,"Creating te_thread %d\n",i);
-    pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void *)&proc->tep[i]);
-  }
-}
-void kill_te_thread(PHY_VARS_eNB *eNB) {
-  L1_proc_t *proc = &eNB->proc;
-
-  for(int i=0; i<3 ; i++) {
-    proc->tep[i].instance_cnt_te         = 0;
-    pthread_cond_signal(&proc->tep[i].cond_te);
-    pthread_join(proc->tep[i].pthread_te, NULL);
-    pthread_mutex_destroy( &proc->tep[i].mutex_te);
-    pthread_cond_destroy( &proc->tep[i].cond_te);
-  }
-}
 
 void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   nfapi_rx_indication_pdu_t *pdu;

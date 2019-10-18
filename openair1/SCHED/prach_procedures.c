@@ -53,7 +53,8 @@
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
-void prach_procedures(PHY_VARS_eNB *eNB
+void prach_procedures(PHY_VARS_eNB *eNB,
+   L1_rxtx_proc_t *proc
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,
   int br_flag
@@ -65,8 +66,8 @@ void prach_procedures(PHY_VARS_eNB *eNB
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (br_flag==1) {
-    subframe = eNB->proc.subframe_prach_br;
-    frame = eNB->proc.frame_prach_br;
+    subframe = proc->subframe_prach_br;
+    frame = proc->frame_prach_br;
     pthread_mutex_lock(&eNB->UL_INFO_mutex);
     eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles=0;
     pthread_mutex_unlock(&eNB->UL_INFO_mutex);
@@ -76,8 +77,8 @@ void prach_procedures(PHY_VARS_eNB *eNB
     pthread_mutex_lock(&eNB->UL_INFO_mutex);
     eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles=0;
     pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-    subframe = eNB->proc.subframe_prach;
-    frame = eNB->proc.frame_prach;
+    subframe = proc->subframe_prach;
+    frame = proc->frame_prach;
   }
 
   RU_t *ru;
@@ -102,6 +103,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 
   // run PRACH detection for CE-level 0 only for now when br_flag is set
   rx_prach(eNB,
+          proc,
            eNB->RU_list[0],
            &max_preamble[0],
            &max_preamble_energy[0],
@@ -125,7 +127,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 
   if (br_flag==1) {
     int             prach_mask;
-    prach_mask = is_prach_subframe (&eNB->frame_parms, eNB->proc.frame_prach_br, eNB->proc.subframe_prach_br);
+    prach_mask = is_prach_subframe (&eNB->frame_parms, proc->frame_prach_br, proc->subframe_prach_br);
     eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list = eNB->preamble_list_br;
     int             ind = 0;
     int             ce_level = 0;

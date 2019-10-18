@@ -30,11 +30,6 @@ static int DEFENBS[] = {0};
 #include <executables/split_headers.h>
 
 extern uint16_t sf_ahead;
-extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-extern void fep_full(RU_t *ru);
-extern void feptx_ofdm(RU_t *ru);
-extern void feptx_prec(RU_t *ru);
-extern void  phy_init_RU(RU_t *);
 
 static void *ru_thread( void *param );
 void kill_RU_proc(RU_t *ru) {
@@ -48,29 +43,11 @@ void reset_opp_meas(void) {
 
 // Fixme: there are many mistakes in the datamodel and in redondant variables
 // TDD is also mode complex
-void setAllfromTS(uint64_t TS) {
-  for (int i=0; i <RC.nb_RU; i++) {
-    LTE_DL_FRAME_PARMS *fp=&RC.ru[i]->frame_parms;
-    RU_proc_t *proc =&RC.ru[i]->proc;
-    uint64_t TStx=TS+(sf_ahead)*fp->samples_per_tti;
-    uint64_t TSrach=TS;//-fp->samples_per_tti;
-    proc->timestamp_rx=  TS;
-    proc->timestamp_tx=  TStx;
-    proc->subframe_rx=   (TS    / fp->samples_per_tti)%10;
-    proc->subframe_tx=   (TStx  / fp->samples_per_tti)%10;
-    proc->subframe_prach=(TSrach / fp->samples_per_tti)%10;
-    proc->subframe_prach_br=proc->subframe_prach;
-    proc->frame_rx=      (TS    / (fp->samples_per_tti*10))&1023;
-    proc->frame_prach=   (TSrach    / (fp->samples_per_tti*10))&1023;
-    proc->frame_prach_br=(TSrach    / (fp->samples_per_tti*10))&1023;
-    proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
-  }
+void setAllfromTS(uint64_t TS, L1_rxtx_proc_t *proc) {
 
   for (int i=0; i < RC.nb_inst; i++) {
     for (int j=0; j<RC.nb_CC[i]; j++) {
       LTE_DL_FRAME_PARMS *fp=&RC.eNB[i][j]->frame_parms;
-      L1_proc_t *proc      =&RC.eNB[i][j]->proc;
-      L1_rxtx_proc_t *proc1=&RC.eNB[i][j]->proc.L1_proc;
       uint64_t TStx=TS+(sf_ahead)*fp->samples_per_tti;
       uint64_t TSrach=TS;//-fp->samples_per_tti;
       proc->timestamp_rx=  TS;
@@ -82,11 +59,7 @@ void setAllfromTS(uint64_t TS) {
       proc->frame_prach=   (TSrach    / (fp->samples_per_tti*10))&1023;
       proc->frame_prach_br=(TSrach    / (fp->samples_per_tti*10))&1023;
       proc->frame_tx=      (TStx  / (fp->samples_per_tti*10))&1023;
-      proc1->timestamp_tx= TStx;
-      proc1->subframe_rx=  (TS    / fp->samples_per_tti)%10;
-      proc1->subframe_tx=  (TStx  / fp->samples_per_tti)%10;
-      proc1->frame_rx=     (TS    / (fp->samples_per_tti*10))&1023;
-      proc1->frame_tx=     (TStx  / (fp->samples_per_tti*10))&1023;
+      proc->subframe_tx=  (TStx  / fp->samples_per_tti)%10;
     }
   }
 
@@ -98,24 +71,10 @@ void init_eNB_proc(int inst) {
   /*int i=0;*/
   int CC_id;
   PHY_VARS_eNB *eNB;
-  L1_proc_t *proc;
-  L1_rxtx_proc_t *L1_proc;
 
   for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
-    proc = &eNB->proc;
-    L1_proc                        = &proc->L1_proc;
-    L1_proc->instance_cnt          = -1;
-    L1_proc->instance_cnt_RUs      = 0;
-    proc->instance_cnt_prach       = -1;
-    proc->instance_cnt_synch       = -1;
-    proc->CC_id                    = CC_id;
-    proc->first_rx                 =1;
-    proc->first_tx                 =1;
     pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
-    pthread_mutex_init( &L1_proc->mutex, NULL);
-    pthread_cond_init( &L1_proc->cond, NULL);
-    pthread_mutex_init( &proc->mutex_RU,NULL);
   }
 
   //for multiple CCs: setup master and slaves
@@ -124,8 +83,8 @@ void init_eNB_proc(int inst) {
      eNB = PHY_vars_eNB_g[inst][CC_id];
 
      if (eNB->node_timing == synch_to_ext_device) { //master
-     eNB->proc.num_slaves = MAX_NUM_CCs-1;
-     eNB->proc.slave_proc = (L1_proc_t**)malloc(eNB->proc.num_slaves*sizeof(L1_proc_t*));
+     proc->num_slaves = MAX_NUM_CCs-1;
+     proc->slave_proc = (L1_proc_t**)malloc(proc->num_slaves*sizeof(L1_proc_t*));
 
      for (i=0; i< eNB->proc.num_slaves; i++) {
      if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
@@ -137,19 +96,6 @@ void init_eNB_proc(int inst) {
 }
 
 void init_RU_proc(RU_t *ru) {
-  int i=0;
-  RU_proc_t *proc;
-  proc = &ru->proc;
-  memset((void *)proc,0,sizeof(RU_proc_t));
-  proc->ru = ru;
-  proc->instance_cnt_synch       = -1;
-  proc->instance_cnt_eNBs        = -1;
-  proc->first_rx                 = 1;
-  proc->first_tx                 = 1;
-  proc->num_slaves               = 0;
-  proc->frame_tx_unwrap          = 0;
-
-  for (i=0; i<10; i++) proc->symbol_mask[i]=0;
 
   pthread_t t;
   char *fs6=getenv("fs6");
@@ -469,7 +415,7 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
   }
 }
 
-void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
+void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int br_flag) {
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
   RU_t *ru;
   int aa=0;
@@ -490,12 +436,13 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
 
   // run PRACH detection for CE-level 0 only for now when br_flag is set
   rx_prach(eNB,
+	   proc,
            eNB->RU_list[0],
            &max_preamble[0],
            &max_preamble_energy[0],
            &max_preamble_delay[0],
            &avg_preamble_energy[0],
-           eNB->proc.frame_prach,
+           proc->frame_prach,
            0
            ,br_flag
           );
@@ -508,7 +455,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
 
   if (br_flag==1) {
     int             prach_mask;
-    prach_mask = is_prach_subframe (&eNB->frame_parms, eNB->proc.frame_prach_br, eNB->proc.subframe_prach_br);
+    prach_mask = is_prach_subframe (&eNB->frame_parms, proc->frame_prach_br, proc->subframe_prach_br);
     eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list = eNB->preamble_list_br;
     int             ind = 0;
     int             ce_level = 0;
@@ -528,7 +475,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
         eNB->preamble_list_br[ind].preamble_rel8.timing_advance = max_preamble_delay[ind];      //
         eNB->preamble_list_br[ind].preamble_rel8.preamble = max_preamble[ind];
         // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
-        eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + eNB->proc.subframe_prach + (60*(eNB->prach_vars_br.first_frame[ce_level] % 40));
+        eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + proc->subframe_prach + (60*(eNB->prach_vars_br.first_frame[ce_level] % 40));
         eNB->preamble_list_br[ind].instance_length = 0; //don't know exactly what this is
         eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type = 1 + ce_level;    // CE Level
         LOG_I (PHY, "Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
@@ -549,8 +496,8 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
     LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
           eNB->Mod_id,
           eNB->CC_id,
-          eNB->proc.frame_prach,
-          eNB->proc.subframe_prach,
+          proc->frame_prach,
+          proc->subframe_prach,
           max_preamble[0],
           max_preamble_energy[0]/10,
           max_preamble_energy[0]%10,
@@ -560,11 +507,11 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
     eNB->UL_INFO.rach_ind.rach_indication_body.preamble_list        = &eNB->preamble_list[0];
     eNB->UL_INFO.rach_ind.rach_indication_body.tl.tag               = NFAPI_RACH_INDICATION_BODY_TAG;
     eNB->UL_INFO.rach_ind.header.message_id                         = NFAPI_RACH_INDICATION;
-    eNB->UL_INFO.rach_ind.sfn_sf                                    = eNB->proc.frame_prach<<4 | eNB->proc.subframe_prach;
+    eNB->UL_INFO.rach_ind.sfn_sf                                    = proc->frame_prach<<4 | proc->subframe_prach;
     eNB->preamble_list[0].preamble_rel8.tl.tag                = NFAPI_PREAMBLE_REL8_TAG;
     eNB->preamble_list[0].preamble_rel8.timing_advance        = max_preamble_delay[0];
     eNB->preamble_list[0].preamble_rel8.preamble              = max_preamble[0];
-    eNB->preamble_list[0].preamble_rel8.rnti                  = 1+eNB->proc.subframe_prach;  // note: fid is implicitly 0 here
+    eNB->preamble_list[0].preamble_rel8.rnti                  = 1+proc->subframe_prach;  // note: fid is implicitly 0 here
     eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
     eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
 
@@ -589,11 +536,11 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, int br_flag) {
   }
 } // else br_flag
 
-void prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
+void prach_eNB(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int frame,int subframe) {
   // check if we have to detect PRACH first
   if (is_prach_subframe(&eNB->frame_parms, frame,subframe)>0) {
-    prach_procedures_ocp(eNB, 0);
-    prach_procedures_ocp(eNB, 1);
+    prach_procedures_ocp(eNB, proc, 0);
+    prach_procedures_ocp(eNB, proc, 1);
   }
 }
 
@@ -609,7 +556,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 
   AssertFatal( !(NFAPI_MODE==NFAPI_MODE_PNF &&
                  eNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0), "");
-  prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
+  prach_eNB(eNB,proc,proc->frame_rx,proc->subframe_rx);
   release_UE_in_freeList(eNB->Mod_id);
 
   // UE-specific RX processing for subframe n
@@ -622,41 +569,38 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   phy_procedures_eNB_TX(eNB, proc, 1);
   return(0);
 }
 
-void eNB_top(PHY_VARS_eNB *eNB, int dummy1, int dummy2,  char *string,RU_t *ru) {
-  L1_proc_t *proc           = &eNB->proc;
-  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
+void eNB_top(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int dummy1, int dummy2,  char *string,RU_t *ru) {
 
   if (!oai_exit) {
-    if (rxtx(eNB,L1_proc,string) < 0)
+    if (rxtx(eNB,proc,string) < 0)
       LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
   }
 }
 
-void rx_rf(RU_t *ru) {
-  RU_proc_t *proc = &ru->proc;
+void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
-  openair0_timestamp ts=0,old_ts=0;
-
+  openair0_timestamp ts=0, timestamp_rx;
+  static openair0_timestamp old_ts=0;
+  
   for (i=0; i<ru->nb_rx; i++)
     //receive in the next slot
-    rxp[i] = (void *)&ru->common.rxdata[i][((ru->proc.subframe_rx+1)%10)*fp->samples_per_tti];
+    rxp[i] = (void *)&ru->common.rxdata[i][((proc->subframe_rx+1)%10)*fp->samples_per_tti];
 
-  old_ts = proc->timestamp_rx;
   rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
                                    &ts,
                                    rxp,
                                    fp->samples_per_tti,
                                    ru->nb_rx);
-  proc->timestamp_rx = ts-ru->ts_offset;
+  timestamp_rx = ts-ru->ts_offset;
 
   //  AssertFatal(rxs == fp->samples_per_tti,
   //        "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
@@ -670,23 +614,16 @@ void rx_rf(RU_t *ru) {
 #endif
   }
 
-  if (proc->first_rx == 1) {
-    //ru->ts_offset = proc->timestamp_rx;
-    //proc->timestamp_rx = 0;
-    proc->first_rx = false;
-  } else {
-    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_E(HW,"impossible shift in rx stream, rx: %ld, previous rx distance: %ld, should be %d\n", proc->timestamp_rx, proc->timestamp_rx - old_ts, fp->samples_per_tti);
+  if (timestamp_rx - old_ts != fp->samples_per_tti) {
+      LOG_E(HW,"impossible shift in rx stream, rx: %ld, previous rx distance: %ld, should be %d\n", timestamp_rx, proc->timestamp_rx - old_ts, fp->samples_per_tti);
       //ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       //proc->timestamp_rx = ts-ru->ts_offset;
-    }
   }
-
-  setAllfromTS(proc->timestamp_rx);
+  old_ts=timestamp_rx;
+  setAllfromTS(timestamp_rx, proc);
 }
 
-void tx_rf(RU_t *ru) {
-  RU_proc_t *proc = &ru->proc;
+void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   void *txp[ru->nb_tx];
   int i;
@@ -740,8 +677,8 @@ void tx_rf(RU_t *ru) {
                                 siglen+sf_extension,
                                 ru->nb_tx,
                                 flags);
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
+    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, subframe %d\n",ru->idx,
+          (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->subframe_tx);
   }
 }
 
@@ -749,6 +686,8 @@ static void *ru_thread( void *param ) {
    setbuf(stdout, NULL);
    setbuf(stderr, NULL);
   RU_t               *ru      = (RU_t *)param;
+  L1_rxtx_proc_t L1proc;
+  L1_rxtx_proc_t * proc=&L1proc;
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
@@ -771,11 +710,11 @@ static void *ru_thread( void *param ) {
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     // synchronization on input FH interface, acquire signals/data and block
-    rx_rf(ru);
+    rx_rf(ru, proc);
 
     // do RX front-end processing (frequency-shift, dft) if needed
     if (ru->feprx)
-      ru->feprx(ru);
+      ru->feprx(ru, proc); 
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
@@ -784,20 +723,20 @@ static void *ru_thread( void *param ) {
     for (int i=0; i<ru->num_eNB; i++) {
       char string[20];
       sprintf(string,"Incoming RU %d",ru->idx);
-      ru->eNB_top(ru->eNB_list[i],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
+      ru->eNB_top(ru->eNB_list[i],proc, proc->frame_rx,proc->subframe_rx,string,ru);
     }
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec)
-      ru->feptx_prec(ru);
+      ru->feptx_prec(ru, proc);
 
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm))
-      ru->feptx_ofdm(ru);
+      ru->feptx_ofdm(ru, proc);
 
     // do outgoing fronthaul (south) if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out))
-      ru->fh_south_out(ru);
+      ru->fh_south_out(ru, proc);
   }
 
   LOG_W(PHY,"Exiting ru_thread \n");

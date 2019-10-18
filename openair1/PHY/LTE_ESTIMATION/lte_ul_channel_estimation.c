@@ -54,7 +54,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
  
   int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
 
-  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.subframe_rx;
+  int subframe = proc->subframe_rx;
 
   uint8_t harq_pid; 
   int16_t delta_phase = 0;

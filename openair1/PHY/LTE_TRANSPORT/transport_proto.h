@@ -573,7 +573,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   @returns 0 on success
 
 */
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,
+              L1_rxtx_proc_t *proc,
+              RU_t *ru,
 	      uint16_t *max_preamble, 
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 

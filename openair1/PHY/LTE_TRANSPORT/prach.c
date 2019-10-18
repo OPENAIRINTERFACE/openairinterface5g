@@ -38,12 +38,15 @@
 #include "SCHED/sched_eNB.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "prach_extern.h"
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
+#include <executables/split_headers.h>
 
 #if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
   #define rx_prach0 rx_prach
 #endif
 
 void rx_prach0(PHY_VARS_eNB *eNB,
+               L1_rxtx_proc_t *proc,
                RU_t *ru,
                uint16_t *max_preamble,
                uint16_t *max_preamble_energy,
@@ -147,13 +150,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
     if (br_flag == 1) {
       prach_ifftp         = eNB->prach_vars_br.prach_ifft[ce_level];
-      subframe            = eNB->proc.subframe_prach_br;
+      subframe            = proc->subframe_prach_br;
       prachF              = eNB->prach_vars_br.prachF;
       rxsigF              = eNB->prach_vars_br.rxsigF[ce_level];
 
       if (LOG_DEBUGFLAG(PRACH)){
-        if (((eNB->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
-               br_flag,ce_level,eNB->proc.frame_prach,subframe,
+        if (((proc->frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
+               br_flag,ce_level,proc->frame_prach,subframe,
 				     fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],
 				     prach_ConfigIndex,rootSequenceIndex,
 				     eNB->prach_vars_br.repetition_number[ce_level],
@@ -163,34 +166,30 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #endif
       {
         prach_ifftp       = eNB->prach_vars.prach_ifft[0];
-        subframe          = eNB->proc.subframe_prach;
+        subframe          = proc->subframe_prach;
         prachF            = eNB->prach_vars.prachF;
         rxsigF            = eNB->prach_vars.rxsigF[0];
         if (LOG_DEBUGFLAG(PRACH)){
-          if (((eNB->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n", subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
+          if (((proc->frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n", subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
         }
       }
     } else {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     if (br_flag == 1) {
-      subframe          = ru->proc.subframe_prach_br;
+      subframe          = proc->subframe_prach_br;
       rxsigF            = ru->prach_rxsigF_br[ce_level];
 
       if (LOG_DEBUGFLAG(PRACH)) {
-        if (((ru->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
-              br_flag,ce_level,ru->proc.frame_prach,subframe,fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],prach_ConfigIndex);
+        if (((proc->frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
+              br_flag,ce_level,proc->frame_prach,subframe,fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],prach_ConfigIndex);
       }
     } else
 #endif
     {
-      subframe          = ru->proc.subframe_prach;
+      subframe          = proc->subframe_prach;
       rxsigF            = ru->prach_rxsigF;
 
-      if (LOG_DEBUGFLAG(PRACH)) {
-        if (((ru->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
-              subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex);
-      }
     }
   }
 
@@ -218,8 +217,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
           if (prach[0]!= NULL) LOG_M("prach_rx","prach_rx",prach[0],fp->samples_per_tti,1,1);
 
-          LOG_I(PHY,"RU %d, br_flag %d ce_level %d frame %d subframe %d per_tti:%d prach:%p (energy %d) TA:%d %s rxdata:%p index:%d\n",
-                ru->idx,br_flag,ce_level,ru->proc.frame_prach,subframe,fp->samples_per_tti,
+          LOG_I(PHY,"RU %d, br_flag %d ce_level %d subframe %d per_tti:%d prach:%p (energy %d) TA:%d %s rxdata:%p index:%d\n",
+                ru->idx,br_flag,ce_level,subframe,fp->samples_per_tti,
                 prach[aa],dbEn0,ru->N_TA_offset,buffer,ru->common.rxdata[aa],
                 (subframe*fp->samples_per_tti)-ru->N_TA_offset);
         }
@@ -424,16 +423,16 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   if ((eNB==NULL)  && ru->function == NGFI_RRU_IF4p5) {
     /// **** send_IF4 of rxsigF to RAU **** ///
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    if (br_flag == 1) send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH+1+ce_level);
+    if (br_flag == 1) send_IF4p5(ru, proc->frame_prach, proc->subframe_prach, IF4p5_PRACH+1+ce_level);
     else
 #endif
-      send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH);
+      send_IF4p5(ru, proc->frame_prach, proc->subframe_prach, IF4p5_PRACH);
     return;
   } else if (eNB!=NULL) {
     if ( LOG_DEBUGFLAG(PRACH)) {
       int en = dB_fixed(signal_energy((int32_t *)&rxsigF[0][0],840));
 
-      if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+      if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,proc->frame_rx,proc->subframe_rx,en);
     }
   }
 
@@ -475,7 +474,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     if (LOG_DEBUGFLAG(PRACH)) {
       int en = dB_fixed(signal_energy((int32_t *)&rxsigF[0][0],840));
 
-      if (en>60) LOG_I(PHY,"frame %d, subframe %d : Trying preamble %d (br_flag %d)\n",ru->proc.frame_prach,subframe,preamble_index,br_flag);
+      if (en>60) LOG_I(PHY,"frame %d, subframe %d : Trying preamble %d (br_flag %d)\n",proc->frame_prach,subframe,preamble_index,br_flag);
     }
 
     if (restricted_set == 0) {
@@ -561,7 +560,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       int en = dB_fixed(signal_energy((int32_t *)&rxsigF[0][0],840));
 
       if (en>60) LOG_I(PHY,"frame %d, subframe %d : preamble index %d: offset %d, preamble shift %d (br_flag %d, en %d)\n",
-                         ru->proc.frame_prach,subframe,preamble_index,preamble_offset,preamble_shift,br_flag,en);
+                         proc->frame_prach,subframe,preamble_index,preamble_offset,preamble_shift,br_flag,en);
     }
 
     log2_ifft_size = 10;
@@ -643,7 +642,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       if (LOG_DEBUGFLAG(PRACH)) {
         int en = dB_fixed(signal_energy((int32_t *)&rxsigF[0][0],840));
 
-        if (en>60) LOG_I(PHY,"frame %d, subframe %d: Checking for peak in time-domain (br_flag %d, en %d)\n",ru->proc.frame_prach,subframe,br_flag,en);
+        if (en>60) LOG_I(PHY,"frame %d, subframe %d: Checking for peak in time-domain (br_flag %d, en %d)\n",proc->frame_prach,subframe,br_flag,en);
       }
 
       preamble_shift2 = ((preamble_shift==0) ? 0 : ((preamble_shift<<log2_ifft_size)/N_ZC));
@@ -663,7 +662,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
             if ((en>60) && (br_flag==1))
               LOG_D(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",
-                    ru->proc.frame_prach,subframe,
+                    proc->frame_prach,subframe,
                     *max_preamble_energy,*max_preamble_delay,
                     *max_preamble,br_flag,ce_level,levdB,lev);
           }
@@ -707,6 +706,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void rx_prach(PHY_VARS_eNB *eNB,
+              L1_rxtx_proc_t *proc,
               RU_t *ru,
               uint16_t *max_preamble,
               uint16_t *max_preamble_energy,
@@ -719,21 +719,21 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int prach_mask=0;
 
   if (br_flag == 0) {
-    rx_prach0(eNB,ru,max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,0,0);
+    rx_prach0(eNB,proc, ru,max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,0,0);
   } else { // This is procedure for eMTC, basically handling the repetitions
-    prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
+    prach_mask = is_prach_subframe(&eNB->frame_parms,proc->frame_prach_br,proc->subframe_prach_br);
 
     for (i=0; i<4; i++) {
       if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i]==1) &&
           ((prach_mask&(1<<(i+1))) > 0)) { // check that prach CE level is active now
 
         // if first reception in group of repetitions store frame for later (in RA-RNTI for Msg2)
-        if (eNB->prach_vars_br.repetition_number[i]==0) eNB->prach_vars_br.first_frame[i]=eNB->proc.frame_prach_br;
+        if (eNB->prach_vars_br.repetition_number[i]==0) eNB->prach_vars_br.first_frame[i]=proc->frame_prach_br;
 
         // increment repetition number
         eNB->prach_vars_br.repetition_number[i]++;
         // do basic PRACH reception
-        rx_prach0(eNB,ru,max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,1,i);
+        rx_prach0(eNB,proc, ru,max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,1,i);
 
         // if last repetition, clear counter
         if (eNB->prach_vars_br.repetition_number[i] == eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[i]) {

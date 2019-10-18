@@ -128,7 +128,7 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
   @param br_flag indicator for eMTC PRACH
 */
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-void prach_procedures(PHY_VARS_eNB *eNB,
+void prach_procedures(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
 		      int br_flag);
 #else
 void prach_procedures(PHY_VARS_eNB *eNB);
@@ -195,7 +195,7 @@ int8_t find_ue_ulsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 
 
-void schedule_response(Sched_Rsp_t *Sched_INFO);
+void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
 
 LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 

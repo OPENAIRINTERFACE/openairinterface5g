@@ -229,15 +229,15 @@ static inline void *commonUDPdata(uint8_t *ptr) {
   return (void *) (((commonUDP_t *)ptr)+1);
 }
 
-void setAllfromTS(uint64_t TS);
+void setAllfromTS(uint64_t TS, L1_rxtx_proc_t *proc);
 void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
                    uint16_t rnti,  int32_t stat);
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset);
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
-void rx_rf(RU_t *ru);
-void tx_rf(RU_t *ru);
+void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
+void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 bool dlsch_procedures(PHY_VARS_eNB *eNB,
@@ -256,9 +256,9 @@ void uci_procedures(PHY_VARS_eNB *eNB,
 
 // mistakes in main OAI
 void  phy_init_RU(RU_t *);
-void feptx_prec(RU_t *);
-void feptx_ofdm(RU_t *);
+void feptx_prec(RU_t *, L1_rxtx_proc_t *proc);
+void feptx_ofdm(RU_t *, L1_rxtx_proc_t *proc);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-void fep_full(RU_t *ru);
+void fep_full(RU_t *ru, L1_rxtx_proc_t *proc);
 extern uint16_t sf_ahead;
 #endif

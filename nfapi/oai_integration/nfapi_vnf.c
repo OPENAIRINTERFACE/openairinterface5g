@@ -321,9 +321,8 @@ int pnf_config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_config_
   return 0;
 }
 
-int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
-  L1_proc_t *proc=&eNB->proc;
-  L1_rxtx_proc_t *L1_proc= (sf&1)? &proc->L1_proc : &proc->L1_proc_tx;
+int wake_eNB_rxtx(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, uint16_t sfn, uint16_t sf) {
+  L1_rxtx_proc_t *L1_proc= proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   //printf("%s(eNB:%p, sfn:%d, sf:%d)\n", __FUNCTION__, eNB, sfn, sf);
   //int i;
@@ -398,7 +397,7 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   return(0);
 }
 
-int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn_sf) {
+int phy_subframe_indication(L1_rxtx_proc_t * proc, struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn_sf) {
   static uint8_t first_time = 1;
 
   if (first_time) {
@@ -410,7 +409,7 @@ int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id,
     uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
     uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
     //LOG_D(PHY,"[VNF] subframe indication sfn_sf:%d sfn:%d sf:%d\n", sfn_sf, sfn, sf);
-    wake_eNB_rxtx(RC.eNB[0][0], sfn, sf);
+    wake_eNB_rxtx(RC.eNB[0][0], proc, sfn, sf);
   } else {
     printf("[VNF] %s() RC.eNB:%p\n", __FUNCTION__, RC.eNB);
 

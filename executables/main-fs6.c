@@ -45,7 +45,7 @@ static inline void printMeas2(char *txt, Meas *M, int period, bool MaxMin) {
             txt,
             M->sum/M->iterations,
             M->iterations,
-	    MaxMin?"max":"min",
+            MaxMin?"max":"min",
             M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
             M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
 #if T_TRACER
@@ -63,16 +63,20 @@ static inline void updateTimesReset(uint64_t start, Meas *M, int period, bool Ma
     M->maxArray[0]=diff;
     M->sum+=diff;
     M->iterations++;
+
     if ( MaxMin)
       qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
     else
       qsort(M->maxArray, 11, sizeof(uint64_t), cmpintRev);
+
     printMeas2(txt,M,period, MaxMin);
+
     if (M->iterations%period == 0 ) {
-	bzero(M,sizeof(*M));
-	if (!MaxMin)
-	  for (int i=0;i<11;i++)
-	    M->maxArray[i]=INT_MAX;
+      bzero(M,sizeof(*M));
+
+      if (!MaxMin)
+        for (int i=0; i<11; i++)
+          M->maxArray[i]=INT_MAX;
     }
   }
 }
@@ -111,10 +115,10 @@ static void fs6Dlpack(void *out, void *in, int szUnpacked) {
   }
 }
 
-void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
+void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
 
-  if (is_prach_subframe(&eNB->frame_parms, eNB->proc.frame_prach,eNB->proc.subframe_prach)<=0)
+  if (is_prach_subframe(&eNB->frame_parms, proc->frame_prach,proc->subframe_prach)<=0)
     return;
 
   RU_t *ru;
@@ -134,12 +138,13 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   }
 
   rx_prach(eNB,
+           proc,
            eNB->RU_list[0],
            header->max_preamble,
            header->max_preamble_energy,
            header->max_preamble_delay,
            header->avg_preamble_energy,
-           eNB->proc.frame_prach,
+           proc->frame_prach,
            0,
            false
           );
@@ -166,20 +171,20 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
   return;
 }
 
-void prach_eNB_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB) {
+void prach_eNB_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc) {
   fs6_ul_t *header=(fs6_ul_t *) commonUDPdata(bufferZone);
   uint16_t *max_preamble=header->max_preamble;
   uint16_t *max_preamble_energy=header->max_preamble_energy;
   uint16_t *max_preamble_delay=header->max_preamble_delay;
   uint16_t *avg_preamble_energy=header->avg_preamble_energy;
-  int subframe=eNB->proc.subframe_prach;
-  int frame=eNB->proc.frame_prach;
+  int subframe=proc->subframe_prach;
+  int frame=proc->frame_prach;
   // Fixme: not clear why we call twice with "br" and without
   int br_flag=0;
 
   if (br_flag==1) {
     int             prach_mask;
-    prach_mask = is_prach_subframe (&eNB->frame_parms, eNB->proc.frame_prach_br, eNB->proc.subframe_prach_br);
+    prach_mask = is_prach_subframe (&eNB->frame_parms, proc->frame_prach_br, proc->subframe_prach_br);
     eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list = eNB->preamble_list_br;
     int             ind = 0;
     int             ce_level = 0;
@@ -563,10 +568,10 @@ void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, ul_propagation_t *ul_propa) {
+void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, ul_propagation_t *ul_propa) {
   //LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  const int subframe = eNB->proc.subframe_rx;
-  const int frame    = eNB->proc.frame_rx;
+  const int subframe = proc->subframe_rx;
+  const int frame    = proc->frame_rx;
   uint32_t harq_pid;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
@@ -750,8 +755,8 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
                sizeof(ulsch_harq->o_ACK));
         memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
         ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
-        LOG_D(PHY,"Received ulsch data for: rnti:%x, fsf: %d/%d, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
-              ulsch->rnti, eNB->proc.frame_rx, eNB->proc.subframe_rx, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment, hULUE(bufPtr)->segLen);
+        LOG_D(PHY,"Received ulsch data for: rnti:%x, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
+              ulsch->rnti, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment, hULUE(bufPtr)->segLen);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
         fs6_ul_uespec_uci_element_t *tmp=(fs6_ul_uespec_uci_element_t *)(hULUEuci(bufPtr)+1);
@@ -783,18 +788,18 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
   }
 }
 
-void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB) {
+void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc) {
   // The configuration arrived in Dl, so we can extract the UL data
   ul_propagation_t ul_propa[NUMBER_OF_UE_MAX];
   recvFs6Ul(bufferZone, nbBlocks, eNB, ul_propa);
 
   // dirty memory allocation in OAI...
   for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
-    if ( eNB->uci_vars[i].frame == eNB->proc.frame_rx &&
-         eNB->uci_vars[i].subframe == eNB->proc.subframe_rx )
+    if ( eNB->uci_vars[i].frame == proc->frame_rx &&
+         eNB->uci_vars[i].subframe == proc->subframe_rx )
       eNB->uci_vars[i].active=0;
 
-  pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB, ul_propa);
+  pusch_procedures_fromsplit(bufferZone, nbBlocks, eNB, proc, ul_propa);
 }
 
 void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, int subframe) {
@@ -1379,6 +1384,9 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 }
 
 void DL_du_fs6(RU_t *ru) {
+  static uint64_t lastTS;
+  L1_rxtx_proc_t L1_proc;
+
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
     initStaticTime(begingWait);
@@ -1386,42 +1394,38 @@ void DL_du_fs6(RU_t *ru) {
     pickStaticTime(begingWait);
     int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
     updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
- 
-    if (nb_blocks > 0) {
-      L1_proc_t *L1_proc = &ru->eNB_list[i]->proc;
 
-      if ( L1_proc->timestamp_tx != hUDP(bufferZone)->timestamp) {
+    if (nb_blocks > 0) {
+      if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti != hUDP(bufferZone)->timestamp) {
         LOG_E(HW,"Missed a subframe: expecting: %lu, received %lu\n",
-              L1_proc->timestamp_tx,
+              lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
               hUDP(bufferZone)->timestamp);
       }
 
-      setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti);
-      phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &ru->eNB_list[i]->proc.L1_proc, 1);
+      lastTS=hUDP(bufferZone)->timestamp;
+      setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
+      phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
     } else
       LOG_E(PHY,"DL not received for subframe\n");
   }
 
-  feptx_prec(ru);
-  feptx_ofdm(ru);
-  tx_rf(ru);
+  feptx_prec(ru, &L1_proc);
+  feptx_ofdm(ru, &L1_proc);
+  tx_rf(ru, &L1_proc);
 }
 
-void UL_du_fs6(RU_t *ru, int frame, int subframe) {
-  RU_proc_t *ru_proc=&ru->proc;
+void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc, int frame, int subframe) {
   initStaticTime(begingWait);
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
-  rx_rf(ru);
+  rx_rf(ru, proc);
   updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait USRP");
-  
-  setAllfromTS(ru_proc->timestamp_rx);
+  setAllfromTS(proc->timestamp_rx, proc);
   // front end processing: convert from time domain to frequency domain
   // fills rxdataF buffer
-  fep_full(ru);
+  fep_full(ru, proc);
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  L1_proc_t *proc   = &eNB->proc;
 
   if (NFAPI_MODE==NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
@@ -1431,11 +1435,11 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 
   initBufferZone(bufferZone);
-  hUDP(bufferZone)->timestamp=ru->proc.timestamp_rx;
-  prach_eNB_tosplit(bufferZone, FS6_BUF_SIZE, eNB);
+  hUDP(bufferZone)->timestamp=proc->timestamp_rx;
+  prach_eNB_tosplit(bufferZone, FS6_BUF_SIZE, eNB, proc );
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX_tosplit(bufferZone, FS6_BUF_SIZE, eNB, &proc->L1_proc );
+    phy_procedures_eNB_uespec_RX_tosplit(bufferZone, FS6_BUF_SIZE, eNB, proc );
   }
 
   if (hUDP(bufferZone)->nbBlocks==0) {
@@ -1449,20 +1453,19 @@ void UL_du_fs6(RU_t *ru, int frame, int subframe) {
   }
 }
 
-void DL_cu_fs6(RU_t *ru) {
+void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  L1_proc_t *proc           = &eNB->proc;
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   eNB->UL_INFO.frame     = proc->frame_rx;
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   initBufferZone(bufferZone);
-  phy_procedures_eNB_TX_tosplit(bufferZone, eNB, &proc->L1_proc, 1, bufferZone, FS6_BUF_SIZE);
-  hUDP(bufferZone)->timestamp=proc->L1_proc.timestamp_tx;
+  phy_procedures_eNB_TX_tosplit(bufferZone, eNB, proc, 1, bufferZone, FS6_BUF_SIZE);
+  hUDP(bufferZone)->timestamp=proc->timestamp_tx;
 
   if (hUDP(bufferZone)->nbBlocks==0) {
     hUDP(bufferZone)->nbBlocks=1; // We have to send the signaling, even is there is no user plan data (no UE)
@@ -1473,7 +1476,7 @@ void DL_cu_fs6(RU_t *ru) {
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
 }
 
-void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
+void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS) {
   initBufferZone(bufferZone);
   initStaticTime(begingWait);
   initRefTimes(fullLoop);
@@ -1494,23 +1497,22 @@ void UL_cu_fs6(RU_t *ru, uint64_t *TS) {
     *TS=hUDP(bufferZone)->timestamp;
   }
 
-  setAllfromTS(hUDP(bufferZone)->timestamp);
+  setAllfromTS(hUDP(bufferZone)->timestamp, proc);
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
 
-  if (is_prach_subframe(&eNB->frame_parms, eNB->proc.frame_prach,eNB->proc.subframe_prach)>0)
-    prach_eNB_fromsplit(bufferZone, sizeof(bufferZone), eNB);
+  if (is_prach_subframe(&eNB->frame_parms, proc->frame_prach,proc->subframe_prach)>0)
+    prach_eNB_fromsplit(bufferZone, sizeof(bufferZone), eNB, proc);
 
   release_UE_in_freeList(eNB->Mod_id);
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
-    phy_procedures_eNB_uespec_RX_fromsplit(bufferZone, nb_blocks, eNB);
+    phy_procedures_eNB_uespec_RX_fromsplit(bufferZone, nb_blocks, eNB, proc);
   }
 }
 
 void *cu_fs6(void *arg) {
-     setbuf(stdout, NULL);
-   setbuf(stderr, NULL);
-
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
@@ -1530,27 +1532,30 @@ void *cu_fs6(void *arg) {
   initStaticTime(begingWait2);
   initRefTimes(waitDUAndProcessingUL);
   initRefTimes(makeSendDL);
-    initRefTimes(fullLoop);
+  initRefTimes(fullLoop);
+  L1_rxtx_proc_t L1proc;
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
     updateTimesReset(begingWait, &fullLoop, 1000, true, "CU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     updateTimesReset(begingWait, &waitDUAndProcessingUL, 1000,  true,"CU Time in wait Rx + Ul processing");
-    UL_cu_fs6(ru, &timeStamp);
+    UL_cu_fs6(ru, &L1proc, &timeStamp);
     pickStaticTime(begingWait2);
-    DL_cu_fs6(ru);
+    DL_cu_fs6(ru, &L1proc);
     updateTimesReset(begingWait2, &makeSendDL, 1000,  true,"CU Time in DL build+send");
-
   }
 
   return NULL;
 }
 
-void *du_fs6(void *arg) {
-     setbuf(stdout, NULL);
-   setbuf(stderr, NULL);
+void *DlDu(void *arg) {
+  return NULL;
+}
 
+void *du_fs6(void *arg) {
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
@@ -1573,17 +1578,19 @@ void *du_fs6(void *arg) {
     else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
+  //threadCreate(&t, dutxfs6, (void *)ru, "DlDu", -1, OAI_PRIORITY_RT_MAX);
   initStaticTime(begingWait);
   initStaticTime(begingWait2);
   initRefTimes(waitRxAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
-   
+  L1_rxtx_proc_t L1proc;
+
   while(1) {
-    L1_proc_t *proc = &ru->eNB_list[0]->proc;
+    L1_rxtx_proc_t *proc = &L1proc;
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
-    UL_du_fs6(ru, proc->frame_rx,proc->subframe_rx);
+    UL_du_fs6(ru, proc, proc->frame_rx,proc->subframe_rx);
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
     pickStaticTime(begingWait2);
     DL_du_fs6(ru);
