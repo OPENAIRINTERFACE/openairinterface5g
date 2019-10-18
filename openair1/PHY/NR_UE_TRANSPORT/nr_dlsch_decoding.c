@@ -409,7 +409,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = harq_process->TBS;
+  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0,harq_process->Nl);
 
   for (r=0; r<harq_process->C; r++) {
 
@@ -975,7 +975,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     Kr_bytes = Kr>>3;
     K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-    Tbslbrm = harq_process->TBS;
+    Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0,harq_process->Nl);
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -1518,7 +1518,7 @@ void *nr_dlsch_decoding_process(void *arg)
   Kr_bytes = Kr>>3;
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = harq_process->TBS;
+  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0,harq_process->Nl);
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 

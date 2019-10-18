@@ -253,7 +253,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
   
 
-  Tbslbrm = nr_compute_tbs(mod_order,R,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+  Tbslbrm = nr_compute_tbs(nr_get_Qm_ul(28,1),nr_get_code_rate_ul(28,1),nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet

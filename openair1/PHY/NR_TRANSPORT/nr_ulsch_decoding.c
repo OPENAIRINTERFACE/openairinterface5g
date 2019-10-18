@@ -438,7 +438,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = harq_process->TBS;
+  Tbslbrm = nr_compute_tbs(nr_get_Qm_ul(28,1),nr_get_code_rate_ul(28,1),nb_rb,frame_parms->symbols_per_slot,0,0,nfapi_ulsch_pdu_rel15->n_layers);
 
   for (r=0; r<harq_process->C; r++) {
     E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
