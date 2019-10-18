@@ -456,7 +456,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     }
   }
 
-  for (i=0; i<NUMBER_OF_NR_UE_MAX; i++) {
+  for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
 
@@ -488,8 +488,6 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
   gNB->rx_total_gain_dB=130;
 
-  for(i=0; i<NUMBER_OF_NR_UE_MAX; i++)
-    gNB->mu_mimo_mode[i].dl_pow_off = 2;
 
   //fp->pucch_config_common.deltaPUCCH_Shift = 1;
 }

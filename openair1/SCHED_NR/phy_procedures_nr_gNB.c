@@ -222,10 +222,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
 */
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id, uint8_t harq_pid) {
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int ULSCH_id, uint8_t harq_pid) {
   
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
-  nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
+  nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
   
   //uint8_t ret;
@@ -243,7 +243,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id,
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
 
-  nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr,
+  nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
                         G,
                         0,
                         Nid_cell,
@@ -255,8 +255,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id,
 
   //ret = nr_ulsch_decoding(gNB,
   nr_ulsch_decoding(gNB,
-                    UE_id,
-                    gNB->pusch_vars[UE_id]->llr,
+                    ULSCH_id,
+                    gNB->pusch_vars[ULSCH_id]->llr,
                     frame_parms,
                     proc->frame_rx,
                     nfapi_ulsch_pdu_rel15->number_symbols,
@@ -293,20 +293,20 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, uint8_t symbol_start, uint8_t symbol_end) {
   
-  uint8_t UE_id;
+  uint8_t ULSCH_id;
   uint8_t symbol;
   uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
                         //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
 
-  for (UE_id = 0; UE_id < NUMBER_OF_NR_UE_MAX; UE_id++) {
+  for (ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
 
-      nr_rx_pusch(gNB, UE_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
+      nr_rx_pusch(gNB, ULSCH_id, proc->frame_rx, proc->slot_rx, symbol, harq_pid);
 
     }
       
-    nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
+    nr_ulsch_procedures(gNB, proc, ULSCH_id, harq_pid);
         
   }
 
