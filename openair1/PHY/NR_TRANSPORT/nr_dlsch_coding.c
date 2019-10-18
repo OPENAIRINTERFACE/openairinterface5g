@@ -313,7 +313,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
-  Tbslbrm = nr_compute_tbs(Qm,R,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
+  Tbslbrm = nr_compute_tbs(nr_get_Qm_dl(28,1),nr_get_code_rate_dl(28,1),nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
