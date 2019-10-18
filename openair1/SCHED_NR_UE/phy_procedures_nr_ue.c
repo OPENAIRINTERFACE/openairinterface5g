@@ -4204,16 +4204,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (dci_cnt > 0) {
 
     LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n",ue->Mod_id,frame_rx,nr_tti_rx,dci_cnt);
-    
-    if (ue->no_timing_correction==0) {
-      LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
-      nr_adjust_synch_ue(&ue->frame_parms,
-    		             ue,
-						 eNB_id,
-						 nr_tti_rx,
-						 0,
-						 16384);
-    }
+
   } else {
     LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);
   }
@@ -4327,13 +4318,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config->ssb_index)&7,pbch_config->half_frame_bit);
+   	nr_pbch_channel_estimation(ue,frame_rx,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config->ssb_index)&7,pbch_config->half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       
       }
       nr_ue_pbch_procedures(eNB_id,ue,proc,0);
+
+      if (ue->no_timing_correction==0) {
+        LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+        nr_adjust_synch_ue(&ue->frame_parms,
+      		             ue,
+  						 eNB_id,
+  						 nr_tti_rx,
+  						 0,
+  						 16384);
+      }
     }
   
   // do procedures for C-RNTI
