@@ -187,6 +187,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   cset_start_symb = pdcch_params.first_symbol;
   cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
+  LOG_D(PHY, "Coreset rb_offset %d\n",pdcch_params.rb_offset);
   LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
   // DMRS length is per OFDM symbol
   uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?

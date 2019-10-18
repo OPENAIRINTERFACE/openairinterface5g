@@ -43,16 +43,13 @@
 #include "assertions.h"
 #include "T.h"
 
-//#define DEBUG_DCI_ENCODING 1
-//#define DEBUG_DCI_DECODING 1
-//#define DEBUG_PHY
+#define DEBUG_DCI_DECODING 1
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
-#define PDCCH_TEST_POLAR_TEMP_FIX
 
 
 #ifdef LOG_I
@@ -783,7 +780,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
   //uint32_t n_BWP_start = 0;
   //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset/*+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)*/;
+  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset;/*+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB);*/
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
@@ -921,7 +918,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     */
 #endif
 #ifdef DEBUG_DCI_DECODING
-    printf("demapping: nr_tti_rx %d, mi %d, tdd_config %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx),frame_parms->tdd_config);
+    printf("demapping: nr_tti_rx %d, mi %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx));
 #endif
   }
 

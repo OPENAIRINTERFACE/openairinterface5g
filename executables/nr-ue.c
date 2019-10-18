@@ -355,7 +355,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   nr_scheduled_response_t scheduled_response;
 
   // Process Rx data for one sub-frame
-  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
+  if (nr_slot_select(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
     //TODO: all of this has to be moved to the MAC!!!
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
@@ -377,7 +377,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, scheduled_response.dl_config);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif

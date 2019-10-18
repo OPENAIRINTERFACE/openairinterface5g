@@ -863,7 +863,7 @@ typedef struct {
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
 // at eNB 0, an UL scope for every UE
 //FD_phy_scope_gnb             *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-static FD_phy_scope_gnb        *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+static FD_phy_scope_gnb        *form_gnb[NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 //char                            title[255];
 unsigned char                   scope_enb_num_ue = 2;
@@ -895,7 +895,7 @@ void reset_stats_gNB(FL_OBJECT *button,
 
 
 static void *scope_thread_gNB(void *arg) {
-  int UE_id, CC_id;
+  int UE_id;
   int ue_cnt=0;
 # ifdef ENABLE_XFORMS_WRITE_STATS
   FILE *gNB_stats = fopen("gNB_stats.txt", "w");
@@ -905,13 +905,11 @@ static void *scope_thread_gNB(void *arg) {
     ue_cnt=0;
     
     for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         if ((ue_cnt<scope_enb_num_ue)) {
           //this function needs to be written
-          phy_scope_gNB(form_gnb[CC_id][ue_cnt], RC.gNB[0][CC_id], UE_id);
+          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], UE_id);
           ue_cnt++;
         }
-      }
     }
     sleep(1);
   }
@@ -961,11 +959,9 @@ void startScope(scopeParms_t * p) {
   fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
 
   for(int UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-    for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
-      sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-      fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    } // CC_id
+    form_gnb[UE_id] = create_phy_scope_gnb();
+    sprintf (title, "LTE UL SCOPE eNB for UE %d",UE_id);
+    fl_show_form (form_gnb[UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
   } // UE_id
 
   pthread_t forms_thread;

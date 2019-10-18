@@ -54,13 +54,14 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   uint16_t rnti = 0x1234;
 
   uint16_t sfn_sf = frameP << 7 | slotP;
-  int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
+  int dlBWP_carrier_bandwidth = cfg->initialBWP_config.dl_bandwidth.value;
 
   // everything here is hard-coded to 30 kHz
-  int scs = get_dlscs(cfg);
-  int slots_per_frame = get_spf(cfg);
+  int scs               = get_dlscs(cfg);
+  int slots_per_frame   = get_spf(cfg);
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    LOG_D(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
+    LOG_D(MAC, "Scheduling common search space DCI type 1 dlBWP BW.firstRB %d.%d\n",cfg->initialBWP_config.dl_bandwidth.value,cfg->initialBWP_config.dl_offset.value);
 
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
@@ -79,9 +80,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15;
 
     dlsch_pdu_rel15->start_prb = 0;
-    dlsch_pdu_rel15->n_prb = 50;
-    dlsch_pdu_rel15->start_symbol = 2;
-    dlsch_pdu_rel15->nb_symbols = 8;
+    dlsch_pdu_rel15->n_prb = 6;
+
     dlsch_pdu_rel15->rnti = rnti;
     dlsch_pdu_rel15->nb_layers =1;
     dlsch_pdu_rel15->nb_codewords = 1;
@@ -89,17 +89,27 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     dlsch_pdu_rel15->ndi = 1;
     dlsch_pdu_rel15->redundancy_version = 0;
 
+    dlsch_pdu_rel15->dmrs_TypeA_Position = cfg->pdsch_config.dmrs_TypeA_Position.value;
 
     nr_configure_css_dci_initial(params_rel15,
-				 scs, scs, nr_FR1, 0, 0, 0,
-         sfn_sf, slotP,
+				 scs, 
+				 scs, 
+				 nr_FR1, 
+				 0, 
+				 0, 
+				 0,
+				 sfn_sf, slotP,
 				 slots_per_frame,
-				 dl_carrier_bandwidth);
+				 dlBWP_carrier_bandwidth);
 
     params_rel15->first_slot = 0;
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
-    pdu_rel15->time_domain_assignment = 3; // row index used here instead of SLIV
+    pdu_rel15->time_domain_assignment = 0;
+
+        
+    dlsch_pdu_rel15->start_symbol = extract_startSymbol(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[pdu_rel15->time_domain_assignment].value);
+    dlsch_pdu_rel15->nb_symbols   = extract_length(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[pdu_rel15->time_domain_assignment].value);
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 9;
     pdu_rel15->tb_scaling = 1;
@@ -127,10 +137,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
     //params_rel15->aggregation_level = 1;
-    LOG_D(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
+    LOG_D(MAC, "DCI type 1 params: rnti %x, rnti_type %d, dci_format %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
                 ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
-                0,
                 params_rel15->rnti,
                 params_rel15->rnti_type,
                 params_rel15->dci_format,
@@ -143,7 +152,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->nb_slots,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
-  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu);
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
@@ -199,8 +208,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
 
-    nfapi_nr_coreset_t* coreset = &nr_mac->coreset[CC_id][1];
-    nfapi_nr_search_space_t* search_space = &nr_mac->search_space[CC_id][1];
+    nfapi_nr_coreset_t* coreset = &nr_mac->UE_list.coreset[0][1];
+    nfapi_nr_search_space_t* search_space = &nr_mac->UE_list.search_space[0][1];
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
     dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -277,7 +286,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->rb_offset,
                 params_rel15->first_symbol,
                 params_rel15->search_space_type);
-  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu);
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
@@ -299,11 +308,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   // HOT FIX for all zero pdu problem
   // ------------------------------------------------------------------------------------------------
   for(int i = 0; i < dlsch_pdu_rel15->transport_block_size/8; i++) {
-    ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i] = (unsigned char) rand();
+    ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) rand();
   }
   // ------------------------------------------------------------------------------------------------
 
-  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
+  TX_req->segments[0].segment_data   = nr_mac->UE_list.DLSCH_pdu[0][0].payload[0];
   TX_req->segments[0].segment_length = dlsch_pdu_rel15->transport_block_size+2;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;

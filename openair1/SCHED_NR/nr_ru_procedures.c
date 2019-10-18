@@ -123,7 +123,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   start_meas(&ru->ofdm_mod_stats);
 
-  if (nr_slot_select(cfg,slot) == SF_UL) return;
+  if (nr_slot_select(fp,frame_tx,slot) == SF_UL) return;
 
   // this copy should be done in the precoding thread (currently inactive)
   for (int aa=0;aa<ru->nb_tx;aa++)
@@ -133,7 +133,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
-  if (nr_slot_select(cfg,slot)==SF_DL) {
+  if (nr_slot_select(fp,frame_tx,slot)==SF_DL) {
     // If this is not an S-tti
     if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
       printf("[RU] ERROR pthread_mutex_lock for feptx thread (IC %d)\n", proc->instance_cnt_feptx);
@@ -232,8 +232,8 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
     memcpy((void*)ru->common.txdataF_BF[aa],
 	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
 
-  if ((nr_slot_select(cfg,slot)==SF_DL)||
-      ((nr_slot_select(cfg,slot)==SF_S))) {
+  if ((nr_slot_select(fp,frame_tx,slot)==SF_DL)||
+      ((nr_slot_select(fp,frame_tx,slot)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
     nr_feptx0(ru,slot,0,fp->symbols_per_slot);
@@ -247,4 +247,14 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_slot)),
 	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
+}
+
+void nr_feprx(RU_t *ru) {
+
+  // PRACH component
+  int frame=ru->proc.frame_rx, slot=ru->proc.tti_rx;
+ 
+  if (do_prach_rx(ru->nr_frame_parms,frame,slot)) rx_nr_prach_ru(ru,
+								 frame,
+								 slot/ru->nr_frame_parms->slots_per_subframe);
 }

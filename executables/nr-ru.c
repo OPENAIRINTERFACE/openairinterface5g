@@ -310,14 +310,6 @@ static inline void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t time
   send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
 }
 
-// southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
-{
-  if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-
-  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_MOBIPASS);
-}
-
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
@@ -325,7 +317,9 @@ static inline void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t ti
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
-  if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL) send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
+
+  if ((nr_slot_select(ru->nr_frame_parms,ru->proc.frame_tx,ru->proc.tti_tx)&NR_DOWNLINK_SLOT) > 0)
+    send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
@@ -540,10 +534,10 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   do {
     recv_IF4p5(ru, &frame_tx, &slot_tx, &packet_type, &symbol_number);
 
-    if ((nr_slot_select(cfg,slot_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    if (((nr_slot_select(ru->nr_frame_parms,frame_tx,slot_tx) & NR_DOWNLINK_SLOT) > 0) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
 
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
-          *slot,nr_slot_select(cfg,*slot),frame_tx,slot_tx,symbol_number);
+          *slot,nr_slot_select(ru->nr_frame_parms,frame_tx,*slot),frame_tx,slot_tx,symbol_number);
 
     if (proc->first_tx != 0) {
       *frame         = frame_tx;
@@ -562,7 +556,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
     } else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);
 
-  if (nr_slot_select(cfg,slot_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
+  if ((nr_slot_select(ru->nr_frame_parms,frame_tx,slot_tx) & NR_DOWNLINK_SLOT)>0) stop_meas(&ru->rx_fhaul);
 
   proc->tti_tx  = slot_tx;
   proc->frame_tx     = frame_tx;
@@ -730,11 +724,11 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
-  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
+  int slot_type     = nr_slot_select(ru->nr_frame_parms,frame,slot%fp->slots_per_frame);
   int sf_extension = 0;
 
-  if ((SF_type == SF_DL) ||
-      (SF_type == SF_S)) {
+  if ((slot_type & NR_UPLINK_SLOT) == 0) {
+
     int siglen=fp->samples_per_slot,flags=1;
     /*
         if (SF_type == SF_S) {
@@ -789,7 +783,7 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   static int ru_thread_asynch_rxtx_status;
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
-  int subframe=0, frame=0;
+  int slot=0, frame=0;
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
   wait_sync("ru_thread_asynch_rxtx");
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
@@ -800,22 +794,20 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   while (!oai_exit) {
     if (oai_exit) break;
 
-    if (subframe==9) {
-      subframe=0;
+    if (slot==ru->nr_frame_parms->slots_per_frame) {
+      slot=0;
       frame++;
       frame&=1023;
     } else {
-      subframe++;
+      slot++;
     }
 
     LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
 
-    // asynchronous receive from south (Mobipass)
-    if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
-    else if (ru->fh_north_asynch_in) {
-      if (nr_slot_select(&ru->gNB_list[0]->gNB_config,subframe)!=SF_UL)
-        ru->fh_north_asynch_in(ru,&frame,&subframe);
+    if (ru->fh_north_asynch_in) {
+      if ((nr_slot_select(ru->nr_frame_parms,frame,slot) & NR_DOWNLINK_SLOT)>0)
+        ru->fh_north_asynch_in(ru,&frame,&slot);
     } else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
   }
 
@@ -1449,12 +1441,12 @@ static void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-    LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+    LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
           proc->frame_rx,proc->tti_rx,
           proc->frame_tx,proc->tti_tx,
-          RC.gNB[0][0]->proc.frame_rx,RC.gNB[0][0]->proc.slot_rx,
-          RC.gNB[0][0]->proc.frame_tx);
+          RC.gNB[0]->proc.frame_rx,RC.gNB[0]->proc.slot_rx,
+	  RC.gNB[0]->proc.frame_tx);
     /*
           LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
               ru->do_prach,
@@ -2111,10 +2103,6 @@ void init_NR_RU(char *rf_config_file)
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
 
-  if (RC.nb_nr_CC != 0)
-    for (i=0; i<RC.nb_nr_L1_inst; i++)
-      for (CC_id=0; CC_id<RC.nb_nr_CC[i]; CC_id++) RC.gNB[i][CC_id]->num_RU=0;
-
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
 
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
@@ -2127,11 +2115,11 @@ void init_NR_RU(char *rf_config_file)
     // NOTE: multiple CC_id are not handled here yet!
 
     if (ru->num_gNB > 0) {
-      LOG_D(PHY, "%s() RC.ru[%d].num_gNB:%d ru->gNB_list[0]:%p RC.gNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_gNB, ru->gNB_list[0], RC.gNB[0][0], ru->rf_config_file);
+      LOG_D(PHY, "%s() RC.ru[%d].num_gNB:%d ru->gNB_list[0]:%p RC.gNB[0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_gNB, ru->gNB_list[0], RC.gNB[0], ru->rf_config_file);
 
       if (ru->gNB_list[0] == 0) {
         LOG_E(PHY,"%s() DJP - ru->gNB_list ru->num_gNB are not initialized - so do it manually\n", __FUNCTION__);
-        ru->gNB_list[0] = RC.gNB[0][0];
+        ru->gNB_list[0] = RC.gNB[0];
         ru->num_gNB=1;
         //
         // DJP - feptx_prec() / feptx_ofdm() parses the gNB_list (based on num_gNB) and copies the txdata_F to txdata in RU
@@ -2211,7 +2199,7 @@ void RCconfig_RU(void)
       else
         RC.ru[j]->num_gNB                           = 0;
 
-      for (i=0; i<RC.ru[j]->num_gNB; i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];
+      for (i=0; i<RC.ru[j]->num_gNB; i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]];
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
@@ -2301,12 +2289,7 @@ void RCconfig_RU(void)
           RC.ru[j]->if_south                     = REMOTE_IF4p5;
           RC.ru[j]->function                     = NGFI_RAU_IF4p5;
           RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if5_mobipass") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
-          RC.ru[j]->function                     = NGFI_RAU_IF5;
-          RC.ru[j]->if_timing                    = synch_to_other;
-          RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
-        }
+        } 
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);

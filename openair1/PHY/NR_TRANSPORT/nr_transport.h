@@ -112,4 +112,16 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
                               NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_config_request_t *config);
 
+void rx_nr_prach(PHY_VARS_gNB *gNB,
+		 int frame,
+		 int subframe,
+		 uint16_t *max_preamble,
+		 uint16_t *max_preamble_energy,
+		 uint16_t *max_preamble_delay
+		 );
+
+void rx_nr_prach_ru(RU_t *ru,
+		    int frame,
+		    int subframe);
+
 #endif /*__NR_TRANSPORT__H__*/

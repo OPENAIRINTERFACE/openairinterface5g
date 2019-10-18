@@ -261,6 +261,20 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   }
 }
 */
+
+/*
+void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
+
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+
+  // schedule PRACH for iniital BWP 
+
+  if (is_initialBWP_prach_subframe(frameP,subframeP)<0) return;
+ 
+  // fill FAPI
+}
+*/
+
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
   int CC_id;
@@ -296,7 +310,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt;
 
   int               CC_id, i = -1;
-  UE_list_t         *UE_list = &RC.nrmac[module_idP]->UE_list;
+  NR_UE_list_t      *UE_list = &RC.nrmac[module_idP]->UE_list;
   rnti_t            rnti;
 
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
@@ -319,113 +333,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
+  /*
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_list->active[i]) {
 
       nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
-
-      nfapi_nr_coreset_t coreset = RC.nrmac[module_idP]->coreset[CC_id][1];
-      nfapi_nr_search_space_t search_space = RC.nrmac[module_idP]->search_space[CC_id][1];
-
-      if (nr_is_dci_opportunity(search_space,
-                                    coreset,
-                                    frameP,
-                                    slotP,
-                                    *cfg))
-          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
-
-      rnti = UE_RNTI(module_idP, i);
-      CC_id = UE_PCCID(module_idP, i);
-      //int spf = get_spf(cfg);
-  
-      if (((frameP&127) == 0) && (slotP == 0)) {
-        LOG_I(MAC,
-        "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
-        rnti,
-        UE_list->UE_sched_ctrl[i].ul_out_of_sync ==
-        0 ? "in synch" : "out of sync",
-        UE_list->UE_template[CC_id][i].phr_info,
-        UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
-        (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id] - 128) / 2,
-        (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
-      }
       
-      RC.gNB[module_idP][CC_id]->pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)] = -63;
+      if (nr_is_dci_opportunity(UE_list->search_space[i][1],
+				UE_list->coreset[i][1],
+				frameP,
+				slotP,
+				*cfg))
+	nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
       
-      if (i == UE_list->head)
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,RC.gNB[module_idP][CC_id]->
-                                                pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)]);
       
-      // increment this, it is cleared when we receive an sdu
-      RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
-      RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
+      rnti = 0;//UE_RNTI(module_idP, i);
+      CC_id = 0;//UE_PCCID(module_idP, i);
       
-      LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", 
-            i, 
-            rnti,
-            RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer,
-            RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
-      
-      //check_nr_ul_failure(module_idP, CC_id, i, frameP, subframeP);
-      
-      if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
-        RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
-      
-        if(RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
-          RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
-          RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
-        
-          for (int ue_id_l = 0; ue_id_l < MAX_MOBILES_PER_GNB; ue_id_l++) {
-            if (reestablish_rnti_map[ue_id_l][0] == rnti) {
-            // clear currentC-RNTI from map
-            reestablish_rnti_map[ue_id_l][0] = 0;
-            reestablish_rnti_map[ue_id_l][1] = 0;
-            break;
-            }
-          }
-      
-          // Note: This should not be done in the MAC!
-          for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            NR_gNB_ULSCH_t *ulsch = RC.gNB[module_idP][CC_id]->ulsch[ii][0];       
-            if((ulsch != NULL) && (ulsch->rnti == rnti)){
-              LOG_W(MAC, "TODO: clean_eNb_ulsch UE %x \n", rnti);
-              clean_gNB_ulsch(ulsch);
-            }
-          }
-
-          for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
-            if((dlsch != NULL) && (dlsch->rnti == rnti)){
-              LOG_W(MAC, "TODO: clean_eNb_dlsch UE %x \n", rnti);
-              clean_gNB_dlsch(dlsch);
-            }
-          }
-    
-          for(int j = 0; j < 10; j++){
-            nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-            ul_req_tmp = &RC.nrmac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
-            if(ul_req_tmp){
-              int pdu_number = ul_req_tmp->number_of_pdus;
-              for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-                if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
-                  LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-                 if(pdu_index < pdu_number -1){
-                    memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-                  }
-                  ul_req_tmp->number_of_pdus--;
-                }
-              }
-            }
-          }
-          rrc_mac_remove_ue(module_idP,rnti);
-        }
-      } //END if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0)
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
-  
+  */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
   
-  pdcp_run(&ctxt);
+  //  pdcp_run(&ctxt);
 
   //rrc_rx_tx(&ctxt, CC_id);
 
@@ -440,7 +370,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
   if (slotP==1)
-  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
   /*
   // Allocate CCEs for good after scheduling is done

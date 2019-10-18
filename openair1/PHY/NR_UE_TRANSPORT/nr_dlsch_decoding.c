@@ -239,13 +239,23 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   //int16_t inv_d [68*384];
   uint8_t kc;
   uint8_t Ilbrm = 0;
-  uint32_t Tbslbrm; //= 950984;
-  uint16_t nb_rb; //= 30;
-  double Coderate; //= 0.0;
-  //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
-  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
-  uint8_t nb_re_dmrs = 6; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
-  uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
+
+  uint32_t Tbslbrm;// = 950984;
+  uint16_t nb_rb;// = 30;
+  double Coderate;// = 0.0;
+
+
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &harq_process->dl_config_pdu;
+  uint8_t dmrs_Type = dl_config_pdu->dmrs_Type;
+  AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
+  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
+  uint8_t dmrs_TypeA_Position = dl_config_pdu->dmrs_TypeA_Position;
+  AssertFatal(dmrs_TypeA_Position == 2 || dmrs_TypeA_Position == 3,"Illegal dmrs_TypeA_Position %d\n",dmrs_TypeA_Position);
+  uint16_t dmrs_maxLength = dl_config_pdu->dmrs_maxLength;
+  AssertFatal(dmrs_maxLength == 1 || dmrs_maxLength == 2,"Illegal dmrs_maxLength %d\n",dmrs_maxLength);
+  uint16_t dmrs_AdditionalPosition = dl_config_pdu->dmrs_AdditionalPosition;
+  AssertFatal(dmrs_AdditionalPosition >= 0 && dmrs_AdditionalPosition <= 4,"Illegal dmrs_additional_symbols %d\n",dmrs_AdditionalPosition);
+
 
   uint32_t i,j;
 
@@ -298,12 +308,12 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   harq_process->trials[harq_process->round]++;
 
-  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,dmrs_maxLength, harq_process->Nl);
 
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
 
-  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
+  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_maxLength, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
   LOG_I(PHY,"DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);

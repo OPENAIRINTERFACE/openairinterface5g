@@ -51,6 +51,12 @@
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_asn_constant.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
@@ -61,19 +67,239 @@ PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 double cpuf;
+
+int sf_ahead=4;
+
+// dummy functions
 int nfapi_mode=0;
+int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
+int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
+
+int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
+
+int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
+
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
+
+
+
+int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
+
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
+
+void exit_function(const char* file, const char* function, const int line,const char *s) { 
+   const char * msg= s==NULL ? "no comment": s;
+   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
+   exit(-1); 
+}
+
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
+			      const int             CC_id,
+			      const uint8_t         gNB_index,
+			      const int8_t          channel,
+			      const uint8_t*        pduP,
+			      const sdu_size_t      pdu_len)
+{
+  return 0;
+}
+
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
 int rlc_module_init (void) {return(0);}
-void pdcp_layer_init (void) {}
-int rrc_init_nr_global_param (void) {return(0);}
-void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
-                              const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
+
+void pdcp_layer_init(void) {}
+int rrc_init_nr_global_param(void){return(0);}
+
+void config_common(int Mod_idP, 
+		   NR_ServingCellConfigCommon_t *scc
+		   );
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+void prepare_scc_sim(NR_ServingCellConfigCommon_t *scc) {
+
+  NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList,*ul_frequencyBandList;
+  struct NR_SCS_SpecificCarrier                   *dl_scs_SpecificCarrierList,*ul_scs_SpecificCarrierList;
+  struct NR_PDSCH_TimeDomainResourceAllocation    *bwp_dl_timedomainresourceallocation;
+  struct NR_PUSCH_TimeDomainResourceAllocation    *pusch_configcommontimedomainresourceallocation;
+  //  struct NR_RateMatchPattern                      *ratematchpattern;
+  //  NR_RateMatchPatternId_t                         *ratematchpatternid;
+  //  NR_TCI_StateId_t                                *TCI_StateId;
+  //  struct NR_ControlResourceSet                    *bwp_dl_controlresourceset;
+  //  NR_SearchSpace_t                                *bwp_dl_searchspace;
+
+  scc->physCellId                                = CALLOC(1,sizeof(NR_PhysCellId_t));
+  scc->downlinkConfigCommon                      = CALLOC(1,sizeof(struct NR_DownlinkConfigCommon));
+  scc->downlinkConfigCommon->frequencyInfoDL     = CALLOC(1,sizeof(struct NR_FrequencyInfoDL));
+  scc->downlinkConfigCommon->initialDownlinkBWP  = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
+  scc->uplinkConfigCommon                        = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
+  scc->uplinkConfigCommon->frequencyInfoUL       = CALLOC(1,sizeof(struct NR_FrequencyInfoUL));
+  scc->uplinkConfigCommon->initialUplinkBWP      = CALLOC(1,sizeof(struct NR_BWP_UplinkCommon));
+  //scc->supplementaryUplinkConfig       = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
+  scc->ssb_PositionsInBurst                      = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
+  scc->ssb_periodicityServingCell                = CALLOC(1,sizeof(long));
+  //  scc->rateMatchPatternToAddModList              = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToAddModList));
+  //  scc->rateMatchPatternToReleaseList             = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToReleaseList));
+  scc->subcarrierSpacing                         = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
+  scc->tdd_UL_DL_ConfigurationCommon             = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
+  scc->tdd_UL_DL_ConfigurationCommon->pattern2   = CALLOC(1,sizeof(struct NR_TDD_UL_DL_Pattern));
+  
+  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB     = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
+  
+  dl_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
+  dl_scs_SpecificCarrierList        = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
+
+  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list,dl_frequencyBandList);  
+  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list,dl_scs_SpecificCarrierList);		   		   
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix    = CALLOC(1,sizeof(long));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon                = CALLOC(1,sizeof(struct NR_SetupRelease_PDCCH_ConfigCommon));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup  = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero    = CALLOC(1,sizeof(long));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero           = CALLOC(1,sizeof(long));
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet  = CALLOC(1,sizeof(struct NR_ControlResourceSet));
+
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList     = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1                    = CALLOC(1,sizeof(NR_SearchSpaceId_t));
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace                  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
+  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace                     = CALLOC(1,sizeof(NR_SearchSpaceId_t));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon                 = CALLOC(1,sizeof(struct NR_SetupRelease_PDSCH_ConfigCommon));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->present        = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PDSCH_ConfigCommon));
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = CALLOC(1,sizeof(struct NR_PDSCH_TimeDomainResourceAllocationList));
+  //
+  for (int i=0;i<NR_maxNrofDL_Allocations;i++) {
+    bwp_dl_timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+    bwp_dl_timedomainresourceallocation->k0  = CALLOC(1,sizeof(long));
+    *bwp_dl_timedomainresourceallocation->k0=0;
+    ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+		     bwp_dl_timedomainresourceallocation);
+  }
+
+  ul_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
+  scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,ul_frequencyBandList);
+
+  scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA    = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
+  //  scc->uplinkConfigCommon->frequencyInfoUL->additionalSpectrumEmission = CALLOC(1,sizeof(NR_AdditionalSpectrumEmission_t));
+  scc->uplinkConfigCommon->frequencyInfoUL->p_Max                      = CALLOC(1,sizeof(NR_P_Max_t));
+  //  scc->uplinkConfigCommon->frequencyInfoUL->frequencyShift7p5khz       = CALLOC(1,sizeof(long));
+  
+  //  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.cyclicPrefix    = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_RACH_ConfigCommon_t));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon));
+  //  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles                  = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB  = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB));
+  //  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->groupBconfigured                           = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon__groupBconfigured));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB            = CALLOC(1,sizeof(NR_RSRP_Range_t));
+  //  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL        = CALLOC(1,sizeof(NR_RSRP_Range_t));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing       = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_PUSCH_ConfigCommon_t)); 
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->present        = NR_SetupRelease_PUSCH_ConfigCommon_PR_setup;
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PUSCH_ConfigCommon));
+
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = CALLOC(1,sizeof(long));
+  
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList  = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocationList));
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble              = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant             = CALLOC(1,sizeof(long));
+  
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon                                                = CALLOC(1,sizeof(struct NR_SetupRelease_PUCCH_ConfigCommon)); 
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup                                  = CALLOC(1,sizeof(struct NR_PUCCH_ConfigCommon));
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal                      = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon            = CALLOC(1,sizeof(long));
+  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId                       = CALLOC(1,sizeof(long));
+
+  //  scc->ssb_PositionsInBurst->choice.shortBitmap.buf  = MALLOC(1);
+  //  scc->ssb_PositionsInBurst->choice.mediumBitmap.buf = MALLOC(1);
+  //  scc->ssb_PositionsInBurst->choice.longBitmap.buf   = MALLOC(8);
+  
+  ul_frequencyBandList        = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,ul_frequencyBandList);
+
+  ul_scs_SpecificCarrierList  = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list,ul_scs_SpecificCarrierList);
+
+  for (int i=0;i<NR_maxNrofUL_Allocations;i++) {
+    pusch_configcommontimedomainresourceallocation      = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
+    pusch_configcommontimedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
+    *pusch_configcommontimedomainresourceallocation->k2=0;
+    ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_configcommontimedomainresourceallocation); 
+  }
+  //ratematchpattern                              = CALLOC(1,sizeof(struct NR_RateMatchPattern));
+  //ratematchpattern->patternType.choice.bitmaps  = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
+  //ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf = MALLOC(35);
+  //ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.buf   = MALLOC(2);
+  //ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf  = MALLOC(4);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern                       = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern));
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n2.buf        = MALLOC(1);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n4.buf        = MALLOC(1);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n5.buf        = MALLOC(1);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n8.buf        = MALLOC(1);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.buf       = MALLOC(2);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.buf       = MALLOC(3);
+  //ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf       = MALLOC(5);
+  //ratematchpattern->subcarrierSpacing           = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
+  //ratematchpatternid                            = CALLOC(1,sizeof(NR_RateMatchPatternId_t));
+  
+}
+
+
+void fix_scc_sim(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
+
+
+  int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
+  AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
+  if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
+    scc->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
+    scc->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
+    scc->ssb_PositionsInBurst->choice.shortBitmap.buf = CALLOC(1,1);
+    scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = ssbmap;
+  }else if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf = CALLOC(1,1);
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = ssbmap;
+  }else {
+    scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
+    scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[1] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[2] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[3] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[4] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[5] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
+    scc->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;
+  }
+
+  // fix DL and UL Allocation lists
+  
+  for (int i=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
+    if ((int)*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0==-1) {
+      free(scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
+      asn_sequence_del(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,i,1); 
+    }
+  }
+
+  for (int i=scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
+    if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2==-1) {
+      free(scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2);
+      asn_sequence_del(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,i,1); 
+    }
+  }
+  if ((int)scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity == -1) {
+    free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
+  }
+
+  if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1)
+    free(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing);
+}
 
 int main(int argc, char **argv)
 {
@@ -138,6 +364,7 @@ int main(int argc, char **argv)
   int loglvl=OAILOG_WARNING;
 
   float target_error_rate = 0.01;
+  int css_flag=0;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -147,7 +374,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:E")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -312,6 +539,9 @@ int main(int argc, char **argv)
       loglvl = atoi(optarg);
       break;
 
+    case 'E':
+	css_flag=1;
+	break;
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -337,6 +567,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
+      printf("-E used CSS scheduler\n");
       exit (-1);
       break;
     }
@@ -351,12 +582,11 @@ int main(int argc, char **argv)
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
-  RC.gNB = (PHY_VARS_gNB***) malloc(sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  memset(RC.gNB[0][0],0,sizeof(PHY_VARS_gNB));
+  RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB ));
+  memset(RC.gNB[0],0,sizeof(PHY_VARS_gNB));
 
-  gNB = RC.gNB[0][0];
+  gNB = RC.gNB[0];
   gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
@@ -364,12 +594,58 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
+  RC.nb_nr_macrlc_inst = 1;
+  mac_top_init_gNB();
+  gNB_mac = RC.nrmac[0];
+  gNB_RRC_INST rrc;
+  NR_ServingCellConfigCommon_t scc;
+  rrc.carrier.servingcellconfigcommon = &scc;
+  prepare_scc_sim(&scc);
+  *scc.physCellId = Nid_cell;
+  *scc.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  *scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=660960;
+  *scc.downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
+  scc.downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=660000;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_DL;
+  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc.downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->present=NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=12;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero=0;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[0]->startSymbolAndLength=40;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[1]->startSymbolAndLength=53;
+  *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->k0=0;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[2]->startSymbolAndLength=54;
+  scc.ssb_PositionsInBurst->present=NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+  scc.tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc.tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5;
+  scc.tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity = -1;
+  for (int i=scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=3;i--) {
+    *scc.downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0=-1;
+  }
+
+  for (int i=scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
+    *scc.uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2=-1;
+  }
+  scc.ssb_PositionsInBurst->present = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+  scc.dmrs_TypeA_Position = NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2; 
+  fix_scc_sim(&scc,0xff);
+  AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
+  gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
+  rrc_mac_config_req_gNB(0,0,&scc);
+  phy_init_nr_gNB(gNB,0,0);
+
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
+  //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
-  phy_init_nr_gNB(gNB,0,0);
-  mac_top_init_gNB();
 
   double fs,bw;
 
@@ -463,13 +739,8 @@ int main(int argc, char **argv)
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 
-  RC.nb_nr_macrlc_inst = 1;
-  mac_top_init_gNB();
-  gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,Nid_cell,78,SSB_positions,ssb_periodicity,(uint64_t)3640000000L,N_RB_DL);
-  config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
-
+   
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
   
@@ -498,7 +769,9 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_uss_dlsch_phytest(0,frame,slot);
+    if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot);
+    else               nr_schedule_css_dlsch_phytest(0,frame,slot);
+
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
@@ -568,13 +841,12 @@ int main(int argc, char **argv)
 
 
   //Configure UE
-  rrc_gNB_carrier_data_t carrier;
   uint32_t pdcch_ConfigSIB1     = 0;
   uint32_t ssb_SubcarrierOffset = 0;
-  carrier.MIB = (uint8_t*) malloc(4);
-  carrier.sizeof_MIB = do_MIB_NR(&carrier,0,ssb_SubcarrierOffset,pdcch_ConfigSIB1,30,2);
+  rrc.carrier.MIB = (uint8_t*) malloc(4);
+  rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,carrier.mib.message.choice.mib,NULL,NULL,NULL);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,&scc,NULL,NULL,NULL);
 
   // Initial bandwidth part configuration -- full carrier bandwidth
   UE_mac->initial_bwp_dl.bwp_id = 0;
@@ -636,9 +908,6 @@ int main(int argc, char **argv)
   UE_mac->scheduled_response.frame = frame;
   UE_mac->scheduled_response.slot = slot;
 
-  UE_mac->phy_config.config_req.pbch_config.system_frame_number = frame;
-  UE_mac->phy_config.config_req.pbch_config.ssb_index = 0;
-  UE_mac->phy_config.config_req.pbch_config.half_frame_bit = 0;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
 
@@ -674,6 +943,40 @@ int main(int argc, char **argv)
       }
 
       if (UE->is_synchronized == 0) {
+
+	UE_nr_rxtx_proc_t proc={0};
+	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
+	printf("nr_initial_sync1 returns %d\n",ret);
+	if (ret<0) n_errors++;
+      }
+      else {
+	UE->rx_offset=0;
+
+	UE_proc.frame_rx = frame;
+	UE_proc.nr_tti_rx= slot;
+	UE_proc.subframe_rx = slot;
+	
+	nr_ue_scheduled_response(&UE_mac->scheduled_response);
+
+	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
+
+	phy_procedures_nrUE_RX(UE,
+			       &UE_proc,
+			       0,
+			       do_pdcch_flag,
+			       normal_txrx,
+			       &UE_mac->dl_config_request);
+
+	if (n_trials==1) {
+	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
+	  if (UE->frame_parms.nb_antennas_rx>1)
+	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
+	}
+	
+	if (UE_mac->dl_config_request.number_pdus==0) n_errors++;
+      }
+    } //noise trials
+
 
         UE_nr_rxtx_proc_t proc = {0};
         ret = nr_initial_sync(&proc, UE, normal_txrx, 1);

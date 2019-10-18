@@ -53,24 +53,9 @@
  */
 int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
 
-uint16_t get_adjacent_cell_id_NR(uint8_t Mod_id,uint8_t index);
+uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
+                  uint32_t frame);
 
-uint8_t get_adjacent_cell_mod_id_NR(uint16_t phyCellId);
-
-/**
-\brief Generate configuration for SIB1 (eNB).
-@param carrier pointer to Carrier information
-@param N_RB_DL Number of downlink PRBs
-@param phich_Resource PHICH resoure parameter
-@param phich_duration PHICH duration parameter
-@param frame radio frame number
-@return size of encoded bit stream in bytes*/
-uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier, 
-                  uint32_t frame, 
-                  uint32_t ssb_SubcarrierOffset, 
-                  uint32_t pdcch_ConfigSIB1, 
-                  uint32_t subCarrierSpacingCommon, 
-                  uint32_t dmrs_TypeA_Position);
 /**
 \brief Generate configuration for SIB1 (eNB).
 @param carrier pointer to Carrier information
@@ -83,13 +68,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 		           int Mod_id,
 				   int CC_id,
 				   gNB_RrcConfigurationReq *configuration);
-
-void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                int CC_id,
-                                #if defined(ENABLE_ITTI)
-                                gNB_RrcConfigurationReq *configuration,
-                                #endif
-                                int initial_flag);
 
 void  do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
@@ -106,6 +84,5 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
                            struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
                            physicalcellgroup_t *physicalcellgroup_config);
 
-void  do_SpCellConfig(uint8_t Mod_id,
-                      int CC_id,
+void  do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);

@@ -32,7 +32,7 @@
 
 #include "nr_dci.h"
 
-//#define DEBUG_FILL_DCI
+#define DEBUG_FILL_DCI
 
 #include "nr_dlsch.h"
 
@@ -184,32 +184,32 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
       pos=fsize;
       *dci_pdu |= ((pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_alloc->size-pos)); 
 #ifdef DEBUG_FILL_DCI
-      printf("frequency-domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,N_RB,dci_alloc->size-pos,*dci_pdu);
 #endif
       // Time domain assignment
       pos+=4;		   
       *dci_pdu |= (((uint64_t)pdu_rel15->time_domain_assignment&0xf) << (dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",pdu_rel15->time_domain_assignment,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",pdu_rel15->time_domain_assignment,dci_alloc->size-pos,*dci_pdu);
 #endif
       // VRB to PRB mapping
 
       pos++;
       *dci_pdu |= ((uint64_t)pdu_rel15->vrb_to_prb_mapping&0x1)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",pdu_rel15->vrb_to_prb_mapping,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",pdu_rel15->vrb_to_prb_mapping,dci_alloc->size-pos,*dci_pdu);
 #endif
       // MCS
       pos+=5;
       *dci_pdu |= ((uint64_t)pdu_rel15->mcs&0x1f)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("mcs %d  (5 bits)=> %d (0x%lx)\n",pdu_rel15->mcs,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"mcs %d  (5 bits)=> %d (0x%lx)\n",pdu_rel15->mcs,dci_alloc->size-pos,*dci_pdu);
 #endif
       // TB scaling
       pos+=2;
       *dci_pdu |= ((uint64_t)pdu_rel15->tb_scaling&0x3)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("tb_scaling %d  (2 bits)=> %d (0x%lx)\n",pdu_rel15->tb_scaling,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"tb_scaling %d  (2 bits)=> %d (0x%lx)\n",pdu_rel15->tb_scaling,dci_alloc->size-pos,*dci_pdu);
 #endif
       break;
 
@@ -219,7 +219,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
       pos++;
       *dci_pdu |= ((uint64_t)pdu_rel15->format_indicator&1)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("Format indicator %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->format_indicator,1,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",pdu_rel15->format_indicator,1,N_RB,dci_alloc->size-pos,*dci_pdu);
 #endif
 
       // Freq domain assignment (275rb >> fsize = 16)
@@ -228,7 +228,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
       *dci_pdu |= (((uint64_t)pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_alloc->size-pos));
 
 #ifdef DEBUG_FILL_DCI
-      printf("Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->frequency_domain_assignment,fsize,dci_alloc->size-pos,*dci_pdu);
 #endif
 
   uint16_t is_ra = 1;
@@ -264,70 +264,70 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 	pos+=4;		   
 	*dci_pdu |= ((pdu_rel15->time_domain_assignment&0xf) << (dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("Time domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->time_domain_assignment,4,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"Time domain assignment %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->time_domain_assignment,4,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// VRB to PRB mapping  1bit
 	pos++;
 	*dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("VRB to PRB %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->vrb_to_prb_mapping,1,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"VRB to PRB %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->vrb_to_prb_mapping,1,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// MCS 5bit  //bit over 32, so dci_pdu ++
 	pos+=5;
 	*dci_pdu |= (pdu_rel15->mcs&0x1f)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("MCS %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->mcs,5,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"MCS %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->mcs,5,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// New data indicator 1bit
 	pos++;
 	*dci_pdu |= (pdu_rel15->ndi&1)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("NDI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->ndi,1,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"NDI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->ndi,1,dci_alloc->size-pos,*dci_pdu);
 #endif      
 
 	// Redundancy version  2bit
 	pos+=2;
 	*dci_pdu |= (pdu_rel15->rv&0x3)<<(dci_alloc->size-pos);
 #ifdef DEBUG_FILL_DCI
-      printf("RV %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->rv,2,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"RV %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->rv,2,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// HARQ process number  4bit
 	pos+=4;
 	*dci_pdu  |= ((pdu_rel15->harq_pid&0xf)<<(dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("HARQ_PID %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->harq_pid,4,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->harq_pid,4,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// Downlink assignment index  2bit
 	pos+=2;
 	*dci_pdu |= ((pdu_rel15->dai&3)<<(dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("DAI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->dai,2,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"DAI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->dai,2,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// TPC command for scheduled PUCCH  2bit
 	pos+=2;
 	*dci_pdu |= ((pdu_rel15->tpc&3)<<(dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("TPC %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->tpc,2,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"TPC %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->tpc,2,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// PUCCH resource indicator  3bit
 	pos+=3;
 	*dci_pdu |= ((pdu_rel15->pucch_resource_indicator&0x7)<<(dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("PUCCH RI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->pucch_resource_indicator,3,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"PUCCH RI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->pucch_resource_indicator,3,dci_alloc->size-pos,*dci_pdu);
 #endif
 
 	// PDSCH-to-HARQ_feedback timing indicator 3bit
 	pos+=3;
 	*dci_pdu |= ((pdu_rel15->pdsch_to_harq_feedback_timing_indicator&0x7)<<(dci_alloc->size-pos));
 #ifdef DEBUG_FILL_DCI
-      printf("PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->pdsch_to_harq_feedback_timing_indicator,3,dci_alloc->size-pos,*dci_pdu);
+      LOG_D(PHY,"PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",pdu_rel15->pdsch_to_harq_feedback_timing_indicator,3,dci_alloc->size-pos,*dci_pdu);
 #endif
 
       } //end else

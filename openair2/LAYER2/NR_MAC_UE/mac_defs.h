@@ -69,7 +69,10 @@ typedef enum {
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
-  
+
+  NR_ServingCellConfigCommon_t    *scc;
+  NR_ServingCellConfig_t          *scd;
+  int                             servCellIndex;
   ////  MAC config
   NR_DRX_Config_t    	          *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;

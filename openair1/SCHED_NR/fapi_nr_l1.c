@@ -89,20 +89,19 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t                       CC_id        = Sched_INFO->CC_id;
   nfapi_nr_dl_config_request_t  *DL_req      = Sched_INFO->DL_req;
   nfapi_tx_request_t            *TX_req      = Sched_INFO->TX_req;
+  nfapi_nr_ul_config_request_t  *UL_req      = Sched_INFO->UL_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
-  AssertFatal(RC.gNB[Mod_id][CC_id]!=NULL,"RC.gNB[%d][%d] is null\n",Mod_id,CC_id);
 
-  gNB         = RC.gNB[Mod_id][CC_id];
+  gNB         = RC.gNB[Mod_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
+  uint8_t number_ul_pdu             = UL_req->ul_config_request_body.number_pdu;
 
-  nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
  
-  int i;
 
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d \n",
         frame,slot,
@@ -116,8 +115,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   gNB->pdcch_vars.num_dci=0;
 
-  for (i=0;i<number_dl_pdu;i++) {
-    dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
+  for (int i=0;i<number_dl_pdu;i++) {
+    nfapi_nr_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
@@ -163,4 +162,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req); // DJP - .dl_config_request_body.dl_config_pdu_list[0]); // DJP - FIXME TODO - yuk - only copes with 1 pdu
   }
 
+  for (int i=0;i<number_ul_pdu;i++) {
+    nfapi_nr_ul_config_request_pdu_t *ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
+    LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+    switch (ul_config_pdu->pdu_type) {
+      case NFAPI_NR_UL_CONFIG_ULSCH_PDU_TYPE:
+        //handle_nr_nfapi_ulsch_pdu(gNB,frame,slot,&ul_config_pdu->ulsch_pdu);
+	break;
+    }
+  }
 }

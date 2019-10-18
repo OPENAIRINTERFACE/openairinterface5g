@@ -132,16 +132,6 @@ extern uint8_t usim_test;
 
 extern RAN_CONTEXT_t RC;
 
-uint16_t two_tier_hexagonal_nr_cellIds[7] = {0,1,2,4,5,7,8};
-uint16_t two_tier_hexagonal_adjacent_nr_cellIds[7][6] = {{1,2,4,5,7,8},    // CellId 0
-  {11,18,2,0,8,15}, // CellId 1
-  {18,13,3,4,0,1},  // CellId 2
-  {2,3,14,6,5,0},   // CellId 4
-  {0,4,6,16,9,7},   // CellId 5
-  {8,0,5,9,17,12},  // CellId 7
-  {15,1,0,7,12,10}
-};// CellId 8
-
 /*
  * This is a helper function for xer_sprint, which directs all incoming data
  * into the provided string.
@@ -187,39 +177,16 @@ int xer_nr_sprint (char *string, size_t string_size, asn_TYPE_descriptor_t *td, 
   return er.encoded;
 }
 
-uint16_t get_adjacent_cell_id_NR(uint8_t Mod_id,uint8_t index)
-{
-  return(two_tier_hexagonal_adjacent_nr_cellIds[Mod_id][index]);
-}
-/* This only works for the hexagonal topology...need a more general function for other topologies */
-
-uint8_t get_adjacent_cell_mod_id_NR(uint16_t phyCellId)
-{
-  uint8_t i;
-
-  for(i=0; i<7; i++) {
-    if(two_tier_hexagonal_nr_cellIds[i] == phyCellId) {
-      return i;
-    }
-  }
-
-  LOG_E(RRC,"\nCannot get adjacent cell mod id! Fatal error!\n");
-  return 0xFF; //error!
-}
 
 //------------------------------------------------------------------------------
 
-uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier, 
-                  uint32_t frame, 
-                  uint32_t ssb_SubcarrierOffset, 
-                  uint32_t pdcch_ConfigSIB1,
-                  uint32_t subCarrierSpacingCommon, 
-                  uint32_t dmrs_TypeA_Position)
-{
+uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) { 
 
   asn_enc_rval_t enc_rval;
-
+  rrc_gNB_carrier_data_t *carrier = &rrc->carrier;  
   NR_BCCH_BCH_Message_t *mib = &carrier->mib;
+  NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
+
   memset(mib,0,sizeof(NR_BCCH_BCH_Message_t));
   mib->message.present = NR_BCCH_BCH_MessageType_PR_mib;
   
@@ -239,42 +206,47 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   mib->message.choice.mib->spare.size = 1;
   mib->message.choice.mib->spare.bits_unused = 7;  // This makes a spare of 1 bits
 
-  mib->message.choice.mib->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = (pdcch_ConfigSIB1 / 16);
-  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = (pdcch_ConfigSIB1 % 16);
-  switch (subCarrierSpacingCommon) {
-    case 15:
-      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
-      break;
-
-    case 30:
-      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
-      break;
-
-    case 60:
-      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
-      break;
-
-    case 120:
-      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
-      break;
-
-    default:
-    AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",subCarrierSpacingCommon);
+  mib->message.choice.mib->ssb_SubcarrierOffset = carrier->ssb_SubcarrierOffset;
+  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
+  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
+  AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
+  switch (*scc->ssbSubcarrierSpacing) {
+  case NR_SubcarrierSpacing_kHz15:
+    mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
+    break;
+    
+  case NR_SubcarrierSpacing_kHz30:
+    mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
+    break;
+    
+  case NR_SubcarrierSpacing_kHz60:
+    mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
+    break;
+    
+  case NR_SubcarrierSpacing_kHz120:
+    mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
+    break;
+    
+  case NR_SubcarrierSpacing_kHz240:
+    AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->ssbSubcarrierSpacing);
+    break;
+    
+  default:
+      AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",(int)*scc->ssbSubcarrierSpacing);
   }
-mib->message.choice.mib->subCarrierSpacingCommon = 1;
-    switch (dmrs_TypeA_Position) {
-    case 2:
-      mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos2;
-      break;
 
-    case 3:
-      mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos3;
-      break;
-
-    default:
-    AssertFatal(1==0,"Unknown dmrs_TypeA_Position %d\n",dmrs_TypeA_Position);
-
+  switch (scc->dmrs_TypeA_Position) {
+  case 	NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2:
+    mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos2;
+    break;
+    
+  case 	NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3:
+    mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos3;
+    break;
+    
+  default:
+    AssertFatal(1==0,"Unknown dmrs_TypeA_Position %d\n",(int)scc->dmrs_TypeA_Position);
+    
   }
 
   //  assign_enum
@@ -299,551 +271,6 @@ mib->message.choice.mib->subCarrierSpacingCommon = 1;
   }
 
   return((enc_rval.encoded+7)/8);
-}
-
-void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                int     CC_id,
-                                #if defined(ENABLE_ITTI)
-                                gNB_RrcConfigurationReq *configuration,
-                                #endif
-                                int initial_flag
-                                )
-{ 
-  NR_ServingCellConfigCommon_t    **servingcellconfigcommon  =  &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon;
-  NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList;
-  struct NR_SCS_SpecificCarrier                   *dl_scs_SpecificCarrierList;
-  NR_TCI_StateId_t                                *TCI_StateId;
-  struct NR_ControlResourceSet                    *bwp_dl_controlresourceset;
-  NR_SearchSpace_t                                *bwp_dl_searchspace;
-  struct NR_PDSCH_TimeDomainResourceAllocation    *bwp_dl_timedomainresourceallocation;
-  NR_FreqBandIndicatorNR_t                        *ul_frequencyBandList;
-  struct NR_SCS_SpecificCarrier                   *ul_scs_SpecificCarrierList;
-  struct NR_PUSCH_TimeDomainResourceAllocation    *pusch_configcommontimedomainresourceallocation;
-  struct NR_RateMatchPattern                      *ratematchpattern;
-  NR_RateMatchPatternId_t                         *ratematchpatternid;
-
-  if(initial_flag == 1){
-    (*servingcellconfigcommon)                                            = CALLOC(1,sizeof(NR_ServingCellConfigCommon_t));
-    (*servingcellconfigcommon)->physCellId                                = CALLOC(1,sizeof(NR_PhysCellId_t));
-    (*servingcellconfigcommon)->downlinkConfigCommon                      = CALLOC(1,sizeof(struct NR_DownlinkConfigCommon));
-    (*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL     = CALLOC(1,sizeof(struct NR_FrequencyInfoDL));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP  = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
-    (*servingcellconfigcommon)->uplinkConfigCommon                        = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL       = CALLOC(1,sizeof(struct NR_FrequencyInfoUL));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP      = CALLOC(1,sizeof(struct NR_BWP_UplinkCommon));
-    //(*servingcellconfigcommon)->supplementaryUplinkConfig       = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
-    (*servingcellconfigcommon)->ssb_PositionsInBurst                      = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
-    (*servingcellconfigcommon)->ssb_periodicityServingCell                = CALLOC(1,sizeof(long));
-    //(*servingcellconfigcommon)->lte_CRS_ToMatchAround           = CALLOC(1,sizeof(struct NR_SetupRelease_RateMatchPatternLTE_CRS));
-    (*servingcellconfigcommon)->rateMatchPatternToAddModList              = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToAddModList));
-    (*servingcellconfigcommon)->rateMatchPatternToReleaseList             = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToReleaseList));
-    (*servingcellconfigcommon)->ssbSubcarrierSpacing                      = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-    (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon             = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
-
-
-    (*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB     = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
-    
-    dl_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
-    dl_scs_SpecificCarrierList        = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
-
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix    = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon                = CALLOC(1,sizeof(struct NR_SetupRelease_PDCCH_ConfigCommon));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup  = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero    = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero           = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet  = CALLOC(1,sizeof(struct NR_ControlResourceSet));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList     = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1                    = CALLOC(1,sizeof(NR_SearchSpaceId_t));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace                  = CALLOC(1,sizeof(NR_SearchSpaceId_t));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace                     = CALLOC(1,sizeof(NR_SearchSpaceId_t));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon                 = CALLOC(1,sizeof(struct NR_SetupRelease_PDSCH_ConfigCommon));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PDSCH_ConfigCommon));
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = CALLOC(1,sizeof(struct NR_PDSCH_TimeDomainResourceAllocationList));
-
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA    = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->additionalSpectrumEmission = CALLOC(1,sizeof(NR_AdditionalSpectrumEmission_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->p_Max                      = CALLOC(1,sizeof(NR_P_Max_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->frequencyShift7p5khz       = CALLOC(1,sizeof(long));
-
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.cyclicPrefix    = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_RACH_ConfigCommon_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles                  = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB  = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->groupBconfigured                           = CALLOC(1,sizeof(struct NR_RACH_ConfigCommon__groupBconfigured));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB            = CALLOC(1,sizeof(NR_RSRP_Range_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL        = CALLOC(1,sizeof(NR_RSRP_Range_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing       = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder       = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon                 = CALLOC(1,sizeof(NR_SetupRelease_PUSCH_ConfigCommon_t)); 
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PUSCH_ConfigCommon));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = CALLOC(1,sizeof(long));
-
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList  = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocationList));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble              = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant             = CALLOC(1,sizeof(long));
-
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon                                                = CALLOC(1,sizeof(struct NR_SetupRelease_PUCCH_ConfigCommon)); 
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup                                  = CALLOC(1,sizeof(struct NR_PUCCH_ConfigCommon));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon            = CALLOC(1,sizeof(BIT_STRING_t));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal                      = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon            = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId                       = CALLOC(1,sizeof(long));
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf  = MALLOC(1);
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf = MALLOC(1);
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf   = MALLOC(8);
-
-    bwp_dl_controlresourceset =(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-    bwp_dl_controlresourceset->cce_REG_MappingType.choice.interleaved               = CALLOC(1,sizeof(struct NR_ControlResourceSet__cce_REG_MappingType__interleaved));
-    bwp_dl_controlresourceset->frequencyDomainResources.buf                         = MALLOC(6);
-    bwp_dl_controlresourceset->cce_REG_MappingType.choice.interleaved->shiftIndex   = CALLOC(1,sizeof(long));
-    bwp_dl_controlresourceset->tci_StatesPDCCH_ToAddList                            = CALLOC(1,sizeof(struct NR_ControlResourceSet__tci_StatesPDCCH_ToAddList));
-    bwp_dl_controlresourceset->tci_PresentInDCI                                     = CALLOC(1,sizeof(long));
-    bwp_dl_controlresourceset->pdcch_DMRS_ScramblingID                              = CALLOC(1,sizeof(long));
-    TCI_StateId                                                                     = CALLOC(1,sizeof(NR_TCI_StateId_t));
-    bwp_dl_searchspace                                                              = CALLOC(1,sizeof(NR_SearchSpace_t));
-    bwp_dl_searchspace->controlResourceSetId                                        = CALLOC(1,sizeof(NR_ControlResourceSetId_t));
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset                          = CALLOC(1,sizeof(struct NR_SearchSpace__monitoringSlotPeriodicityAndOffset));
-    bwp_dl_searchspace->duration                                                    = CALLOC(1,sizeof(long));
-    bwp_dl_searchspace->monitoringSymbolsWithinSlot                                 = CALLOC(1,sizeof(BIT_STRING_t));
-    bwp_dl_searchspace->monitoringSymbolsWithinSlot->buf                            = MALLOC(2);
-    bwp_dl_searchspace->nrofCandidates                                              = CALLOC(1,sizeof(struct NR_SearchSpace__nrofCandidates)); 
-    bwp_dl_searchspace->searchSpaceType                                             = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType));
-    bwp_dl_searchspace->searchSpaceType->choice.common                              = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common));
-    bwp_dl_searchspace->searchSpaceType->choice.ue_Specific = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__ue_Specific));
-
-    bwp_dl_timedomainresourceallocation               = CALLOC(1,sizeof(struct NR_PDSCH_TimeDomainResourceAllocation));
-    bwp_dl_timedomainresourceallocation->k0           = CALLOC(1,sizeof(long));
-    
-    ul_frequencyBandList        = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
-    ul_scs_SpecificCarrierList  = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
-
-    pusch_configcommontimedomainresourceallocation      = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
-    pusch_configcommontimedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
-
-    ratematchpattern                              = CALLOC(1,sizeof(struct NR_RateMatchPattern));
-    ratematchpattern->patternType.choice.bitmaps  = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
-    ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf = MALLOC(35);
-    ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.buf   = MALLOC(2);
-    ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf  = MALLOC(4);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern                       = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern));
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n2.buf        = MALLOC(1);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n4.buf        = MALLOC(1);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n5.buf        = MALLOC(1);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n8.buf        = MALLOC(1);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.buf       = MALLOC(2);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.buf       = MALLOC(3);
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf       = MALLOC(5);
-    ratematchpattern->subcarrierSpacing           = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
-    ratematchpatternid                            = CALLOC(1,sizeof(NR_RateMatchPatternId_t));
-  }else{
-    bwp_dl_controlresourceset =(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-  }
-
-
-  //------------------------------------Start Fill ServingCellConfigCommon------------------------------------//
-  //physCellId
-  *((*servingcellconfigcommon)->physCellId)  = configuration->Nid_cell[CC_id];
-
-    //NR_DownlinkConfigCommon
-  *((*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB)  = configuration->absoluteFrequencySSB[CC_id]; 
-
-  *(dl_frequencyBandList)   = configuration->DL_FreqBandIndicatorNR[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list,&dl_frequencyBandList);
-
-  (*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA = configuration->DL_absoluteFrequencyPointA[CC_id];
-
-  dl_scs_SpecificCarrierList->offsetToCarrier    = configuration->DL_offsetToCarrier[CC_id];
-  dl_scs_SpecificCarrierList->subcarrierSpacing  = configuration->DL_SCS_SubcarrierSpacing[CC_id];
-  dl_scs_SpecificCarrierList->carrierBandwidth   = configuration->DL_carrierBandwidth[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list,&dl_scs_SpecificCarrierList);
-
-  //initialDownlinkBWP
-  //initialDownlinkBWP  -----  genericParameters
-  (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth = configuration->DL_locationAndBandwidth[CC_id];
-  (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing    = configuration->DL_BWP_SubcarrierSpacing[CC_id];
-
-  if(configuration->DL_BWP_prefix_type[CC_id]){
-    (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix  = NR_BWP__cyclicPrefix_extended;
-  }
-
-  //initialDownlinkBWP  -----  pdcch_ConfigCommon
-  
-  (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->present       = NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
-
-  //Fill  initialDownlinkBWP  ->  pdcch_ConfigCommon  ->  ControlResourceSet list //
-
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) = configuration->controlResourceSetZero[CC_id];
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero)        = configuration->searchSpaceZero[CC_id];
-
-  bwp_dl_controlresourceset->controlResourceSetId         = configuration->PDCCH_common_controlResourceSetId[CC_id];
-  //BIT STRING (SIZE (45))
-  bwp_dl_controlresourceset->frequencyDomainResources.size          = 6;
-  bwp_dl_controlresourceset->frequencyDomainResources.bits_unused   = 3;
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[0]        = 0x1f;
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[1]        = 0xff;
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[2]        = 0xff;
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[3]        = 0xff; 
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[4]        = 0xff; 
-  bwp_dl_controlresourceset->frequencyDomainResources.buf[5]        = 0xff; 
-
-  bwp_dl_controlresourceset->duration                     = configuration->PDCCH_common_ControlResourceSet_duration[CC_id];
-  bwp_dl_controlresourceset->cce_REG_MappingType.present  = configuration->PDCCH_cce_REG_MappingType[CC_id];
-
-  if(bwp_dl_controlresourceset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ){
-    bwp_dl_controlresourceset->cce_REG_MappingType.choice.interleaved->reg_BundleSize    = configuration->PDCCH_reg_BundleSize[CC_id];
-    bwp_dl_controlresourceset->cce_REG_MappingType.choice.interleaved->interleaverSize   = configuration->PDCCH_interleaverSize[CC_id];
-    *(bwp_dl_controlresourceset->cce_REG_MappingType.choice.interleaved->shiftIndex)        = configuration->PDCCH_shiftIndex[CC_id];
-  }else if(bwp_dl_controlresourceset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved){
-    bwp_dl_controlresourceset->cce_REG_MappingType.choice.nonInterleaved = 0;
-  }
-
-  bwp_dl_controlresourceset->precoderGranularity =  configuration->PDCCH_precoderGranularity[CC_id];
-
-  *(TCI_StateId) = configuration->PDCCH_TCI_StateId[CC_id];
-  ASN_SEQUENCE_ADD(&bwp_dl_controlresourceset->tci_StatesPDCCH_ToAddList->list,&TCI_StateId);
-
-  if(configuration->tci_PresentInDCI[CC_id]){
-    bwp_dl_controlresourceset->tci_PresentInDCI  = NR_ControlResourceSet__tci_PresentInDCI_enabled;
-  }
-
-  *(bwp_dl_controlresourceset->pdcch_DMRS_ScramblingID)   = configuration->PDCCH_DMRS_ScramblingID[CC_id];;
-
-  //Fill  downlinkConfigCommon  ->  initialDownlinkBWP  ->  pdcch_ConfigCommon  ->  SearchSpace list //
-  bwp_dl_searchspace->searchSpaceId             = configuration->SearchSpaceId[CC_id];
-  *(bwp_dl_searchspace->controlResourceSetId)   = configuration->commonSearchSpaces_controlResourceSetId[CC_id];
-
-  bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_choice[CC_id];
-  
-  if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl1 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl2 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl4 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl5 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl8 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl10 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl16 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl20 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl40 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl80 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl160 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl320 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl640 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl1280 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }else if(bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->present == NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560){
-    bwp_dl_searchspace->monitoringSlotPeriodicityAndOffset->choice.sl2560 = configuration->SearchSpace_monitoringSlotPeriodicityAndOffset_value[CC_id];    
-  }
-
-  *(bwp_dl_searchspace->duration)                 = configuration->SearchSpace_duration[CC_id];
-
-  bwp_dl_searchspace->monitoringSymbolsWithinSlot->size=2;
-  bwp_dl_searchspace->monitoringSymbolsWithinSlot->bits_unused=2;  
-  bwp_dl_searchspace->monitoringSymbolsWithinSlot->buf[0]=0x3f;
-  bwp_dl_searchspace->monitoringSymbolsWithinSlot->buf[1]=0xff;
-
-  bwp_dl_searchspace->nrofCandidates->aggregationLevel1 = configuration->SearchSpace_nrofCandidates_aggregationLevel1[CC_id];
-  bwp_dl_searchspace->nrofCandidates->aggregationLevel2 = configuration->SearchSpace_nrofCandidates_aggregationLevel2[CC_id];
-  bwp_dl_searchspace->nrofCandidates->aggregationLevel4 = configuration->SearchSpace_nrofCandidates_aggregationLevel4[CC_id];
-  bwp_dl_searchspace->nrofCandidates->aggregationLevel8 = configuration->SearchSpace_nrofCandidates_aggregationLevel8[CC_id];
-  bwp_dl_searchspace->nrofCandidates->aggregationLevel16 = configuration->SearchSpace_nrofCandidates_aggregationLevel16[CC_id];
-
-  bwp_dl_searchspace->searchSpaceType->present = configuration->SearchSpace_searchSpaceType[CC_id];
-
-  if(bwp_dl_searchspace->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common){
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0               = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format2_0));
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel1   = CALLOC(1,sizeof(long)); 
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel2   = CALLOC(1,sizeof(long)); 
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel4   = CALLOC(1,sizeof(long)); 
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel8   = CALLOC(1,sizeof(long)); 
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel16  = CALLOC(1,sizeof(long));
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3                         = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format2_3));
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy1                 = CALLOC(1,sizeof(long));
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel1)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[CC_id];
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel2)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[CC_id];
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel4)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[CC_id];
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel8)  = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[CC_id];
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel16) = configuration->Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[CC_id];
-    *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy1)                = configuration->Common_dci_Format2_3_monitoringPeriodicity[CC_id];
-    bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy2                   = configuration->Common_dci_Format2_3_nrofPDCCH_Candidates[CC_id];
-  }else if (bwp_dl_searchspace->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific){
-    bwp_dl_searchspace->searchSpaceType->choice.ue_Specific->dci_Formats = configuration->ue_Specific__dci_Formats[CC_id];
-  }
-
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,&bwp_dl_searchspace);
-
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1)                    = configuration->searchSpaceSIB1[CC_id];
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation)  = configuration->searchSpaceOtherSystemInformation[CC_id];
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace)                  = configuration->pagingSearchSpace[CC_id];
-  *((*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)                     = configuration->ra_SearchSpace[CC_id];
-
-  //initialDownlinkBWP  -----  pdsch_ConfigCommon
-  (*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->present        = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
-  
-  *(bwp_dl_timedomainresourceallocation->k0)                            = configuration->PDSCH_TimeDomainResourceAllocation_k0[CC_id];
-  bwp_dl_timedomainresourceallocation->mappingType                      = configuration->PDSCH_TimeDomainResourceAllocation_mappingType[CC_id];
-  bwp_dl_timedomainresourceallocation->startSymbolAndLength             = configuration->PDSCH_TimeDomainResourceAllocation_startSymbolAndLength[CC_id];
-
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,&bwp_dl_timedomainresourceallocation);
-
-  //uplinkConfigCommon 
-  //uplinkConfigCommon  frequencyInfoUL //
-  *(ul_frequencyBandList)   = configuration->UL_FreqBandIndicatorNR[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,&ul_frequencyBandList);
-
-  *((*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA) = configuration->UL_absoluteFrequencyPointA[CC_id];
-  
-  ul_scs_SpecificCarrierList->offsetToCarrier    = configuration->UL_offsetToCarrier[CC_id];
-  ul_scs_SpecificCarrierList->subcarrierSpacing  = configuration->UL_SCS_SubcarrierSpacing[CC_id];
-  ul_scs_SpecificCarrierList->carrierBandwidth   = configuration->UL_carrierBandwidth[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list,&ul_scs_SpecificCarrierList);
-
-  *((*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->additionalSpectrumEmission) = configuration->UL_additionalSpectrumEmission[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->p_Max)                      = configuration->UL_p_Max[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->frequencyShift7p5khz)       = configuration->UL_frequencyShift7p5khz[CC_id];
-  
-  //uplinkConfigCommon  initialUplinkBWP //
-  //Fill  initialUplinkBWP -> BWP-UplinkCommon -> genericParameters//
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth = configuration->UL_locationAndBandwidth[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing    = configuration->UL_BWP_SubcarrierSpacing[CC_id];
-
-  if(configuration->UL_BWP_prefix_type[CC_id]){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.cyclicPrefix = NR_BWP__cyclicPrefix_extended;
-  } 
-
-  //Fill  initialUplinkBWP -> BWP-UplinkCommon -> rach_ConfigCommon//
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->present       = NR_SetupRelease_RACH_ConfigCommon_PR_setup;
-  
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles) = configuration->rach_totalNumberOfRA_Preambles[CC_id];
-
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[CC_id];
-  
-  if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present       == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneEighth = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneFourth = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneHalf   = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one       = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.two       = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.four      = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.eight     = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight[CC_id];
-  }else if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present == NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.sixteen   = configuration->rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen[CC_id];
-  }      
-
-  if(configuration->rach_groupBconfigured[CC_id]){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->groupBconfigured->ra_Msg3SizeGroupA            = configuration->rach_ra_Msg3SizeGroupA[CC_id];
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->groupBconfigured->messagePowerOffsetGroupB     = configuration->rach_messagePowerOffsetGroupB[CC_id];
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->groupBconfigured->numberOfRA_PreamblesGroupA   = configuration->rach_numberOfRA_PreamblesGroupA[CC_id];
-  }
-
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ra_ContentionResolutionTimer = configuration->rach_ra_ContentionResolutionTimer[CC_id];
-
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB)            = configuration->rsrp_ThresholdSSB[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB_SUL)        = configuration->rsrp_ThresholdSSB_SUL[CC_id];
-
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present   = configuration->prach_RootSequenceIndex_choice[CC_id];  
-  if((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839 = configuration->prach_RootSequenceIndex_l839[CC_id];
-  }else if ((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139 = configuration->prach_RootSequenceIndex_l139[CC_id];
-  }
-
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)    = configuration->prach_msg1_SubcarrierSpacing[CC_id]; 
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig          = configuration->restrictedSetConfig[CC_id];
-
-  if(configuration->msg3_transformPrecoding[CC_id]){
-    *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)   = NR_RACH_ConfigCommon__msg3_transformPrecoder_enabled;
-  }
-
-  //Fill  initialUplinkBWP -> BWP-UplinkCommon -> rach_ConfigCommon -> rach_ConfigGeneric//  
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex       = configuration->prach_ConfigurationIndex[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM                       = configuration->prach_msg1_FDM[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart            = configuration->prach_msg1_FrequencyStart[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig      = configuration->zeroCorrelationZoneConfig[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower    = configuration->preambleReceivedTargetPower[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleTransMax               = configuration->preambleTransMax[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.powerRampingStep               = configuration->powerRampingStep[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow              = configuration->ra_ResponseWindow[CC_id];
-
-  //Fill  initialUplinkBWP -> BWP-UplinkCommon -> pusch_ConfigCommon//
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->present        = NR_SetupRelease_PUSCH_ConfigCommon_PR_setup;
-
-  if(configuration->groupHoppingEnabledTransformPrecoding[CC_id]){
-    (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = NR_PUSCH_ConfigCommon__groupHoppingEnabledTransformPrecoding_enabled;
-  }
-
-  *(pusch_configcommontimedomainresourceallocation->k2)         = configuration->PUSCH_TimeDomainResourceAllocation_k2[CC_id];
-  pusch_configcommontimedomainresourceallocation->mappingType   = configuration->PUSCH_TimeDomainResourceAllocation_mappingType[CC_id];
-  pusch_configcommontimedomainresourceallocation->startSymbolAndLength  = configuration->PUSCH_TimeDomainResourceAllocation_startSymbolAndLength[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,&pusch_configcommontimedomainresourceallocation); 
-
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble)   = configuration->msg3_DeltaPreamble[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant)  = configuration->p0_NominalWithGrant[CC_id];
-
-  //Fill  initialUplinkBWP -> BWP-UplinkCommon -> pucch_ConfigCommon//
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->present      = NR_SetupRelease_PUCCH_ConfigCommon_PR_setup;
-  
-  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping      = configuration->pucch_GroupHopping[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal)           = configuration->p0_nominal[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon) = configuration->pucch_ResourceCommon[CC_id];
-  *((*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId)            = configuration->hoppingId[CC_id];
-  (*servingcellconfigcommon)->uplinkConfigCommon->dummy                    = configuration->UL_timeAlignmentTimerCommon[CC_id];
-  (*servingcellconfigcommon)->n_TimingAdvanceOffset = CALLOC(1,sizeof(long));
-  *((*servingcellconfigcommon)->n_TimingAdvanceOffset)=configuration->ServingCellConfigCommon_n_TimingAdvanceOffset[CC_id];
-  //ssb_PositionsInBurst
-  (*servingcellconfigcommon)->ssb_PositionsInBurst->present = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
-
-  uint64_t t_freq;
-  if(configuration->nr_band[CC_id] == 41 || (configuration->nr_band[CC_id] > 76 && configuration->nr_band[CC_id] < 80))
-	t_freq = 2400000000;
-  else
-	t_freq = 3000000000;
-
-  if(configuration->downlink_frequency[CC_id]<t_freq){
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
-  }else if(configuration->downlink_frequency[CC_id]<6000000000){
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
-  }else {
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.size = 8;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[1] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[2] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[3] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[4] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[5] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
-    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;
-  }
-
-
-  //ssb_periodicityServingCell
-  *(*servingcellconfigcommon)->ssb_periodicityServingCell  = configuration->ServingCellConfigCommon_ssb_periodicityServingCell[CC_id];
-  //dmrs_TypeA_Position
-  (*servingcellconfigcommon)->dmrs_TypeA_Position          = configuration->ServingCellConfigCommon_dmrs_TypeA_Position[CC_id];
-
-  //lte_CRS_ToMatchAround
-
-  //rateMatchPatternToAddModList
-   
-  ratematchpattern->rateMatchPatternId    = configuration->rateMatchPatternId[CC_id];
-  ratematchpattern->patternType.present   = configuration->RateMatchPattern_patternType[CC_id];
-
-  if(ratematchpattern->patternType.present == NR_RateMatchPattern__patternType_PR_bitmaps){
-
-    ratematchpattern->patternType.choice.bitmaps->resourceBlocks.size = 35;
-    ratematchpattern->patternType.choice.bitmaps->resourceBlocks.bits_unused = 5;
-    ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf[0] = 0x07;
-
-    for (int i =1;i<=34;i++ ){
-      ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf[i] =0xff;
-    }
-
-    ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.present = configuration->symbolsInResourceBlock[CC_id];
-    if(ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.present == NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_oneSlot){
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.size=2;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.bits_unused=2;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.buf[0]=0x3f;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.oneSlot.buf[1]=0xff;      
-    }else if(ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.present == NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_twoSlots){
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.size=4;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.bits_unused=4;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf[0]=0x0f;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf[1]=0xff;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf[2]=0xff;
-      ratematchpattern->patternType.choice.bitmaps->symbolsInResourceBlock.choice.twoSlots.buf[3]=0xff;      
-    }
-
-    
-    ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present = configuration->periodicityAndPattern[CC_id];
-    if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n2){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n2.size = 1;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n2.bits_unused = 6;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n2.buf[0] =0x03;
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n4){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n4.size = 1;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n4.bits_unused = 4;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n4.buf[0] = 0x0f;
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n5){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n5.size = 1;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n5.bits_unused = 3;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n5.buf[0] = 0x1f;   
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n8){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n8.size = 1;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n8.bits_unused = 0;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n8.buf[0] = 0xff;    
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n10){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.size = 2;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.bits_unused = 6;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.buf[0] = 0x03;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n10.buf[1] = 0xff;    
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n20){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.size = 3;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.bits_unused = 4;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.buf[0] = 0x0f;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.buf[1] = 0xff;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n20.buf[2] = 0xff;   
-    }else if(ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->present == NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n40){
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.size = 5;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.bits_unused = 0;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf[0] = 0xff;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf[1] = 0xff; 
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf[2] = 0xff;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf[3] = 0xff;
-      ratematchpattern->patternType.choice.bitmaps->periodicityAndPattern->choice.n40.buf[4] = 0xff;     
-    }
-
-  }else if(ratematchpattern->patternType.present == NR_RateMatchPattern__patternType_PR_controlResourceSet){
-    ratematchpattern->patternType.choice.controlResourceSet = configuration->RateMatchPattern_controlResourceSet[CC_id];
-  }
-
-  *(ratematchpattern->subcarrierSpacing) = configuration->RateMatchPattern_subcarrierSpacing[CC_id];
-  ratematchpattern->dummy = configuration->RateMatchPattern_mode[CC_id];
-
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->rateMatchPatternToAddModList->list,&ratematchpattern);
-  
-  //rateMatchPatternToReleaseList
-  *(ratematchpatternid) = configuration->rateMatchPatternId[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->rateMatchPatternToReleaseList->list,&ratematchpatternid);
-
-  //subcarrierSpacing
-  *(*servingcellconfigcommon)->ssbSubcarrierSpacing         = configuration->NIA_SubcarrierSpacing[CC_id];
-
-  //tdd_UL_DL_ConfigurationCommon
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing             = configuration->referenceSubcarrierSpacing[CC_id];
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity = configuration->dl_UL_TransmissionPeriodicity[CC_id];
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots             = configuration->nrofDownlinkSlots[CC_id];
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols           = configuration->nrofDownlinkSymbols[CC_id];
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots               = configuration->nrofUplinkSlots[CC_id];
-  (*servingcellconfigcommon)->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols             = configuration->nrofUplinkSymbols[CC_id];
-
-  //ss_PBCH_BlockPower
-  (*servingcellconfigcommon)->ss_PBCH_BlockPower           = configuration->ServingCellConfigCommon_ss_PBCH_BlockPower[CC_id];
-
 }
 
 void  do_RLC_BEARER(uint8_t Mod_id,
@@ -1090,35 +517,17 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 }
 
-void  do_SpCellConfig(uint8_t Mod_id,
-                      int CC_id,
-                      struct NR_SpCellConfig  *spconfig){
 
-  //spconfig->servCellIndex = CALLOC(1,sizeof(NR_ServCellIndex_t));
-  //*(spconfig->servCellIndex)=
+void  do_SpCellConfig(gNB_RRC_INST *rrc,
+                      struct NR_SpCellConfig  *spconfig){
 
   gNB_RrcConfigurationReq  *common_configuration;
   common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
   //Fill servingcellconfigcommon config value
-  rrc_config_servingcellconfigcommon(Mod_id,
-                                     CC_id
-                                     #if defined(ENABLE_ITTI)
-                                     ,common_configuration
-                                     #endif
-                                     );
-  //Fill common config to structure
-  do_SERVINGCELLCONFIGCOMMON(Mod_id,
-                             CC_id,
-                             #if defined(ENABLE_ITTI)
-                             common_configuration,
-                             #endif
-                             0
-                             );
 
+  //Fill common config to structure
+  //  rrc->configuration = common_configuration;
   spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));
-/*
-  memcpy( spconfig->reconfigurationWithSync, 
-          RC.nrrrc[Mod_id]->carrier[0].servingcellconfigcommon,
-          sizeof(struct NR_ServingCellConfigCommon));
-*/
+
 }
+

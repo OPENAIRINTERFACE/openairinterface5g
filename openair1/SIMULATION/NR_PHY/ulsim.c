@@ -63,6 +63,40 @@ RAN_CONTEXT_t RC;
 double cpuf;
 int nfapi_mode = 0;
 
+int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
+  return (0);
+}
+int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
+  return (0);
+}
+
+int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
+  return (0);
+}
+
+int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
+  return (0);
+}
+
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
+  return (0);
+}
+
+int32_t get_uldl_offset(int eutra_bandP) {
+  return (0);
+}
+
+NR_IF_Module_t *
+NR_IF_Module_init(int Mod_id) {
+  return (NULL);
+}
+
+void exit_function(const char *file, const char *function, const int line, const char *s) {
+  const char *msg = s == NULL ? "no comment" : s;
+  printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
+  exit(-1);
+}
+
 // dummy functions
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
@@ -321,10 +355,9 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  RC.gNB = (PHY_VARS_gNB ** *) malloc(sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  gNB = RC.gNB[0][0];
+  RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
   gNB_L1_rxtx_proc_t gNB_proc;
 
@@ -427,7 +460,7 @@ int main(int argc, char **argv)
 
   ul_config.sfn_slot = slot;
   ul_config.number_pdus = 1;
-  ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+  ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_ULSCH;
   ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
   ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;

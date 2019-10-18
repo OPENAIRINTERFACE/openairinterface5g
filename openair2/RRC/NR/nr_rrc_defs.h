@@ -46,24 +46,12 @@
 //#include "COMMON/mac_rrc_primitives.h"
 
 #include "NR_SIB1.h"
-//#include "SystemInformation.h"
-//#include "RRCConnectionReconfiguration.h"
 #include "NR_RRCReconfigurationComplete.h"
 #include "NR_RRCReconfiguration.h"
-//#include "RRCConnectionReconfigurationComplete.h"
-//#include "RRCConnectionSetup.h"
-//#include "RRCConnectionSetupComplete.h"
-//#include "RRCConnectionRequest.h"
-//#include "RRCConnectionReestablishmentRequest.h"
 #include "NR_RRCReestablishmentRequest.h"
-//#include "BCCH-DL-SCH-Message.h"
 #include "NR_BCCH-BCH-Message.h"
-//#include "MCCH-Message.h"
-//#include "MBSFNAreaConfiguration-r9.h"
-//#include "SCellToAddMod-r10.h"
-//#include "AS-Config.h"
-//#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
+#include "NR_UE-MRDC-Capability.h"
 #include "NR_MeasResults.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
@@ -92,10 +80,10 @@
 typedef unsigned int uid_nr_t;
 #define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_NR_UE_MAX/8)/sizeof(unsigned int)) + 1)
 
-/*typedef struct nr_uid_linear_allocator_s {
+typedef struct nr_uid_linear_allocator_s {
   unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
-} nr_uid_allocator_t;*/
-
+} nr_uid_allocator_t;
+    
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_CTXT_ARGS(CTXT_Pp)
@@ -275,7 +263,14 @@ typedef struct gNB_RRC_UE_s {
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
 
-  NR_UE_NR_Capability_t             *UE_Capability;
+
+  NR_UE_NR_Capability_t*             UE_Capability_nr;
+  NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;
+
+  NR_CellGroupConfig_t               *secondaryCellGroup;
+  NR_RRCReconfiguration_t            *reconfig;
+  NR_RadioBearerConfig_t             *rb_config;
+
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -377,23 +372,14 @@ typedef struct {
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
-  //implicit parameters needed
-  int                                       physCellId;
-  int                                       Ncp; //cyclic prefix for DL
-  int                                       Ncp_UL; //cyclic prefix for UL
-  int                                       p_gNB; //number of tx antenna port
-  int                                       p_rx_gNB; //number of receiving antenna ports
-  uint64_t                                  dl_CarrierFreq; //detected by the UE
-  uint64_t                                  ul_CarrierFreq; //detected by the UE
-
-  //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
-
+  int ssb_SubcarrierOffset;                  
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
-
-
+  NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
+  int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       n_physical_antenna_ports;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
@@ -403,20 +389,14 @@ typedef struct {
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
+  int                                                 module_id;
   eth_params_t                                        eth_params_s;
-  rrc_gNB_carrier_data_t                              carrier[MAX_NUM_CCs];
-  uid_allocator_t                                     uid_allocator; // for rrc_ue_head
+  rrc_gNB_carrier_data_t                              carrier;
+  nr_uid_allocator_t                                     uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
-
-  uint8_t                                             Nb_ue;
-
+  int                                                 Nb_ue;
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
-
-  //RRC configuration
-#if defined(ENABLE_ITTI)
-  gNB_RrcConfigurationReq                             configuration;//rrc_messages_types.h
-#endif
 
   // other PLMN parameters
   /// Mobile country code

@@ -157,7 +157,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   else 
     ssb_frame_periodicity = (cfg->sch_config.ssb_periodicity.value)/10 ;  // 10ms is the frame length
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_UL)) return;
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+      ((nr_slot_select(fp,frame,slot)&NR_UPLINK_SLOT) > 0)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
 
@@ -210,11 +211,19 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 }
 
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
-                         gNB_L1_rxtx_proc_t *proc,
-                         int UE_id,
-                         uint8_t harq_pid)
-{
+/*
+
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+      ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
+
+  //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
+
+
+  if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
+*/
+
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, int UE_id, uint8_t harq_pid) {
+  
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
@@ -300,5 +309,6 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc, u
     nr_ulsch_procedures(gNB, proc, UE_id, harq_pid);
         
   }
+
 
 }

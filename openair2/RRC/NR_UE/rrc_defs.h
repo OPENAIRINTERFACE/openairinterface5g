@@ -57,6 +57,11 @@
 
 typedef uint32_t channel_t;
 
+typedef enum {
+  nr_SecondaryCellGroupConfig_r15=0,
+  nr_RadioBearerConfigX_r15=1
+} nsa_message_t;
+
 typedef struct NR_UE_RRC_INST_s {
 
     NR_MeasConfig_t        *meas_config;

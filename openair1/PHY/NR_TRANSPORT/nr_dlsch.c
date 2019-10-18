@@ -175,13 +175,15 @@ for (int l=0; l<rel15->nb_layers; l++)
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
 
   /// DMRS QPSK modulation
-  uint16_t n_dmrs = (rel15->n_prb*rel15->nb_re_dmrs)<<1;
-  int16_t mod_dmrs[n_dmrs<<1];
-  uint8_t dmrs_type = config->pdsch_config.dmrs_type.value;
-  uint8_t mapping_type = config->pdsch_config.mapping_type.value;
 
-  l0 = get_l0(mapping_type, 2);//config->pdsch_config.dmrs_typeA_position.value);
-  nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+ int nb_re_dmrs = rel15->dmrs_Type==1?6:4;
+ uint16_t n_dmrs = (rel15->n_prb*nb_re_dmrs)<<1;
+ int16_t mod_dmrs[n_dmrs<<1];
+ uint8_t dmrs_type = rel15->dmrs_Type;
+ uint8_t mapping_type = rel15->mapping_type;
+ 
+ l0 = get_l0(mapping_type, 2);//config->pdsch_config.dmrs_typeA_position.value);
+ nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_type);
