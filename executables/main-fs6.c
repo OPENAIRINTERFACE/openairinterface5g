@@ -1385,7 +1385,7 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
 void DL_du_fs6(RU_t *ru) {
   static uint64_t lastTS;
-  L1_rxtx_proc_t L1_proc;
+  L1_rxtx_proc_t L1_proc={0};
 
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
@@ -1533,7 +1533,7 @@ void *cu_fs6(void *arg) {
   initRefTimes(waitDUAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
-  L1_rxtx_proc_t L1proc;
+  L1_rxtx_proc_t L1proc={0};
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
@@ -1549,7 +1549,16 @@ void *cu_fs6(void *arg) {
   return NULL;
 }
 
-void *DlDu(void *arg) {
+void *dutxfs6(void *arg) {
+  RU_t *ru = (RU_t *)arg;
+  initStaticTime(begingWait2);
+  initRefTimes(makeSendDL);
+  usleep(100);
+  while(1) {
+    pickStaticTime(begingWait2);
+    DL_du_fs6(ru);
+    updateTimesReset(begingWait2, &makeSendDL, 1000, true, "DU Time in build and send Tx");
+  }
   return NULL;
 }
 
@@ -1577,12 +1586,10 @@ void *du_fs6(void *arg) {
       LOG_E(HW,"Could not start the RF device\n");
     else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
-
-  //threadCreate(&t, dutxfs6, (void *)ru, "DlDu", -1, OAI_PRIORITY_RT_MAX);
+  pthread_t t;
+  threadCreate(&t, dutxfs6, (void *)ru, "DlDu", -1, OAI_PRIORITY_RT_MAX);
   initStaticTime(begingWait);
-  initStaticTime(begingWait2);
   initRefTimes(waitRxAndProcessingUL);
-  initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
   L1_rxtx_proc_t L1proc;
 
@@ -1592,9 +1599,7 @@ void *du_fs6(void *arg) {
     pickStaticTime(begingWait);
     UL_du_fs6(ru, proc, proc->frame_rx,proc->subframe_rx);
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
-    pickStaticTime(begingWait2);
-    DL_du_fs6(ru);
-    updateTimesReset(begingWait2, &makeSendDL, 1000, true, "DU Time in build and send Tx");
+    
   }
 
   return NULL;
