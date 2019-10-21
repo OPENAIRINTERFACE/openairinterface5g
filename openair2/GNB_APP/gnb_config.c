@@ -987,227 +987,22 @@ void NRRCConfig(void) {
 }
 
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
-  int   I, J, l;
+  int   J, l;
   char *address = NULL;
   char *cidr    = NULL;
 
-  int                    num_gnbs                                                      = 0;
-  int                    num_component_carriers                                        = 0;
+  //int                    num_gnbs                                                      = 0;
+  //int                    num_component_carriers                                        = 0;
   int                    j,k                                                           = 0;
   int32_t                gnb_id                                                        = 0;
-
-  int                    nb_cc                                                         = 0;
-  char*                  frame_type                                                    = NULL;
-  char*                  DL_prefix_type                                                = NULL;
-  char*                  UL_prefix_type                                                = NULL;
-
-  int32_t                nr_band                                                       = 0;
-  uint64_t               downlink_frequency                                            = 0;
-  int32_t                uplink_frequency_offset                                       = 0;
-  int32_t                Nid_cell                                                      = 0;
-  int32_t                N_RB_DL                                                       = 0;
-  int32_t                nb_antenna_ports                                              = 0;
-
-  ///NR
-  //MIB
-  int32_t                MIB_subCarrierSpacingCommon                                   = 0;
-  int32_t                MIB_ssb_SubcarrierOffset                                      = 0;
-  int32_t                MIB_dmrs_TypeA_Position                                       = 0;
-  int32_t                pdcch_ConfigSIB1                                              = 0;
-
-  //SIB1
-  char*                  SIB1_frequencyOffsetSSB                                       = NULL;
-  int32_t                SIB1_ssb_PeriodicityServingCell                               = 0;
-  int32_t                SIB1_ss_PBCH_BlockPower                                       = 0;
-  //DownlinkConfigCommon
-  //NR FrequencyInfoDL
-  int32_t                absoluteFrequencySSB                                          = 0;
-  int32_t                DL_FreqBandIndicatorNR                                        = 0;
-  int32_t                DL_absoluteFrequencyPointA                                    = 0;
-
-  //NR DL SCS-SpecificCarrier
-  int32_t                DL_offsetToCarrier                                            = 0;
-  char*                  DL_SCS_SubcarrierSpacing                                      = 0;
-  int32_t                DL_carrierBandwidth                                           = 0;
-
-  // NR BWP-DownlinkCommon
-  int32_t                DL_locationAndBandwidth                                       = 0;
-  char*                  DL_BWP_SubcarrierSpacing                                      = 0;
-  char*                  DL_BWP_prefix_type                                            = NULL;
-
-  //NR FrequencyInfoUL
-  int32_t                UL_FreqBandIndicatorNR                                        = 0;
-  int32_t                UL_absoluteFrequencyPointA                                    = 0;
-  int32_t                UL_additionalSpectrumEmission                                 = 0;
-  int32_t                UL_p_Max                                                      = 0;
-  char*                  UL_frequencyShift7p5khz                                       = 0;
-
-  //NR UL SCS-SpecificCarrier
-  int32_t                UL_offsetToCarrier                                            = 0;
-  char*                  UL_SCS_SubcarrierSpacing                                      = 0;
-  int32_t                UL_carrierBandwidth                                           = 0;
-
-  // NR BWP-UplinkCommon
-  int32_t                UL_locationAndBandwidth                                       = 0;
-  char*                  UL_BWP_SubcarrierSpacing                                      = 0;
-  char*                  UL_BWP_prefix_type                                            = NULL;
-  char*                  UL_timeAlignmentTimerCommon                                   = 0;
-
-  char*                  ServingCellConfigCommon_n_TimingAdvanceOffset                 = 0;
-  uint64_t               ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
-  int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
-  int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
-  char*                  NIA_SubcarrierSpacing                                         = 0;
-  int32_t                ServingCellConfigCommon_ss_PBCH_BlockPower                    = 0;
-
-  //NR TDD-UL-DL-ConfigCommon
-  char*                  referenceSubcarrierSpacing                                    = 0;
-  char*                  dl_UL_TransmissionPeriodicity                                 = 0;
-  int32_t                nrofDownlinkSlots                                             = 0;
-  int32_t                nrofDownlinkSymbols                                           = 0;
-  int32_t                nrofUplinkSlots                                               = 0;
-  int32_t                nrofUplinkSymbols                                             = 0;
-
-  //NR RACH-ConfigCommon
-  int32_t                rach_totalNumberOfRA_Preambles                                = 0;
-  char*                  rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice         = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth      = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth      = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf        = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one            = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two            = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four           = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight          = 0;
-  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen        = 0;
-  char*                  rach_groupBconfigured                                         = NULL;
-  int32_t                rach_ra_Msg3SizeGroupA                                        = 0;
-  char*                  rach_messagePowerOffsetGroupB                                 = NULL;
-  int32_t                rach_numberOfRA_PreamblesGroupA                               = 0;
-  int32_t                rach_ra_ContentionResolutionTimer                             = 0;
-  int32_t                rsrp_ThresholdSSB                                             = 0;
-  int32_t                rsrp_ThresholdSSB_SUL                                         = 0;
-  char*                  prach_RootSequenceIndex_choice                                = NULL;
-  int32_t                prach_RootSequenceIndex_l839                                  = 0;
-  int32_t                prach_RootSequenceIndex_l139                                  = 0;
-  char*                  prach_msg1_SubcarrierSpacing                                  = NULL;
-  char*                  restrictedSetConfig                                           = NULL;
-  char*                  msg3_transformPrecoding                                       = NULL;
-  //ssb-perRACH-OccasionAndCB-PreamblesPerSSB not sure
-
-  //NR RACH-ConfigGeneric
-  int32_t                prach_ConfigurationIndex                                      = 0;
-  char*                  prach_msg1_FDM                                                = NULL;
-  int32_t                prach_msg1_FrequencyStart                                     = 0;
-  int32_t                zeroCorrelationZoneConfig                                     = 0;
-  int32_t                preambleReceivedTargetPower                                   = 0;
-  int32_t                preambleTransMax                                              = 0;
-  char*                  powerRampingStep                                              = NULL;
-  int32_t                ra_ResponseWindow                                             = 0;
-
-  //PUSCH-ConfigCommon
-  char*                  groupHoppingEnabledTransformPrecoding                         = NULL;
-  int32_t                msg3_DeltaPreamble                                            = 0;
-  int32_t                p0_NominalWithGrant                                           = 0;
-
-  ///PUSCH-TimeDomainResourceAllocation
-  int32_t                PUSCH_TimeDomainResourceAllocation_k2                         = 0;
-  char*                  PUSCH_TimeDomainResourceAllocation_mappingType                = NULL;
-  int32_t                PUSCH_TimeDomainResourceAllocation_startSymbolAndLength       = 0;
-
-  //PUCCH-ConfigCommon
-  int32_t                pucch_ResourceCommon                                          = 0;
-  char*                  pucch_GroupHopping                                            = NULL;
-  int32_t                hoppingId                                                     = 0;
-  int32_t                p0_nominal                                                    = 0;
-
-  //PDSCH-ConfigCOmmon
-  //PDSCH-TimeDomainResourceAllocation
-  int32_t                PDSCH_TimeDomainResourceAllocation_k0                         = 0;
-  char*                  PDSCH_TimeDomainResourceAllocation_mappingType                = NULL;
-  int32_t                PDSCH_TimeDomainResourceAllocation_startSymbolAndLength       = 0;
-
-  //RateMatchPattern  is used to configure one rate matching pattern for PDSCH
-  int32_t                rateMatchPatternId                                            = 0;
-  char*                  RateMatchPattern_patternType                                  = NULL;
-  char*                  symbolsInResourceBlock                                        = NULL;
-  int32_t                periodicityAndPattern                                         = 0;
-  int32_t                RateMatchPattern_controlResourceSet                           = 0;
-  char*                  RateMatchPattern_subcarrierSpacing                            = NULL;
-  char*                  RateMatchPattern_mode                                         = NULL;
-
-  //PDCCH-ConfigCommon
-  int32_t                controlResourceSetZero                                        = 0;
-  int32_t                searchSpaceZero                                               = 0;
-  int32_t                searchSpaceSIB1                                               = 0;
-  int32_t                searchSpaceOtherSystemInformation                             = 0;
-  int32_t                pagingSearchSpace                                             = 0;
-  int32_t                ra_SearchSpace                                                = 0;
-
-  //NR PDCCH-ConfigCommon commonControlResourcesSets
-  int32_t                PDCCH_common_controlResourceSetId                             = 0;
-  int32_t                PDCCH_common_ControlResourceSet_duration                      = 0;
-  char*                  PDCCH_cce_REG_MappingType                                     = NULL;
-  int32_t                PDCCH_reg_BundleSize                                          = 0;
-  int32_t                PDCCH_interleaverSize                                         = 0;
-  int32_t                PDCCH_shiftIndex                                              = 0;
-  char*                  PDCCH_precoderGranularity                                     = NULL;
-  int32_t                PDCCH_TCI_StateId                                             = 0;
-  char*                  tci_PresentInDCI                                              = NULL;
-  int32_t                PDCCH_DMRS_ScramblingID                                       = 0;
-
-  //NR PDCCH-ConfigCommon commonSearchSpaces
-  int32_t                SearchSpaceId                                                 = 0;
-  int32_t                commonSearchSpaces_controlResourceSetId                       = 0;
-  char*                  SearchSpace_monitoringSlotPeriodicityAndOffset_choice         = NULL;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_value          = 0;
-  int32_t                SearchSpace_duration                                          = 0;
-  int32_t                SearchSpace_nrofCandidates_aggregationLevel1                  = 0;
-  int32_t                SearchSpace_nrofCandidates_aggregationLevel2                  = 0;
-  int32_t                SearchSpace_nrofCandidates_aggregationLevel4                  = 0;
-  int32_t                SearchSpace_nrofCandidates_aggregationLevel8                  = 0;
-  int32_t                SearchSpace_nrofCandidates_aggregationLevel16                 = 0;
-  char*                  SearchSpace_searchSpaceType                                   = NULL;
-  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1     = 0;
-  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2     = 0;
-  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4     = 0;
-  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8     = 0;
-  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16    = 0;
-  int32_t                Common_dci_Format2_3_monitoringPeriodicity                    = 0;
-  int32_t                Common_dci_Format2_3_nrofPDCCH_Candidates                     = 0;
-  char*                  ue_Specific__dci_Formats                                      = NULL;
-  //NR  RateMatchPatternLTE-CRS
-  int32_t                RateMatchPatternLTE_CRS_carrierFreqDL                         = 0;
-  int32_t                RateMatchPatternLTE_CRS_carrierBandwidthDL                    = 0;
-  int32_t                RateMatchPatternLTE_CRS_nrofCRS_Ports                         = 0;
-  int32_t                RateMatchPatternLTE_CRS_v_Shift                               = 0;
-  int32_t                RateMatchPatternLTE_CRS_radioframeAllocationPeriod            = 0;
-  int32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
-  char*                  RateMatchPatternLTE_CRS_subframeAllocation_choice             = NULL;
-
-
-
-  //temp out
-  ccparams_lte_t ccparams_lte;
-  memset((void *)&ccparams_lte,0,sizeof(ccparams_lte_t));
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   /* get global parameters, defined outside any section in the config file */
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
-  checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
 
-  //temp out
-  //paramdef_t CCsParams[] = CCPARAMS_DESC(ccparams_lte);
-
-  paramdef_t CCsParams[] = NRCCPARAMS_DESC;
-
-  paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
-
-  /* map parameter checking array instances to parameter definition array instances */
-  for (I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
-    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
-  }
+  //paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
 
   AssertFatal(i < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
               "Failed to parse config file %s, %uth attribute %s \n",
@@ -1256,13 +1051,6 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
 
             if (strcmp(*(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
               X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
-            /*} else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
-              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
-              // Temporary option to be able to parse an eNB configuration file which is treated as gNB from
-              // the X2AP layer and test the setup of an ENDC X2AP connection. To be removed when we are ready to
-              // parse an actual gNB configuration file wrt. the X2AP parameters instead.
-            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
-                X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;*/
             }else {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
@@ -1287,55 +1075,20 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
                         || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
                         "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
                         X2AP_REGISTER_ENB_REQ(msg_p).mnc);
-            /* CC params */
-            config_getlist(&CCsParamList, NULL, 0, aprefix);
-            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
 
-            if (CCsParamList.numelt > 0) {
-              for (J = 0; J < CCsParamList.numelt ; J++) {
+            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = 1;
+            J = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = 78; //ccparams_nr_x2.nr_band; //78
+            X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = 3600000000; //ccparams_nr_x2.downlink_frequency; //3600000000
+            X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = 0; //(unsigned int) ccparams_nr_x2.uplink_frequency_offset; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= 0; //ccparams_nr_x2.Nid_cell; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= 106; //ccparams_nr_x2.N_RB_DL; //106
 
-            	sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, k, GNB_CONFIG_STRING_COMPONENT_CARRIERS, J),
-                config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
 
-                X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = nr_band; //78
-                X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = downlink_frequency; //3600000000
-                X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) uplink_frequency_offset; //0
-                X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= Nid_cell; //0
-
-                /*if (Nid_cell>503) {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
-                               RC.config_file_name, k, Nid_cell);
-                }*/
-
-                X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= N_RB_DL; //106
-
-                /*if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100) && (N_RB_DL!=106)) {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
-                               RC.config_file_name, k, N_RB_DL);
-                }*/
-
-                //X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-
-                if (strcmp(frame_type, "FDD") == 0) {
-                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
-                } else  if (strcmp(frame_type, "TDD") == 0) {
-                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-                  //Don't know which are the corresponding NR parameters for the following two
-                  //X2AP_REGISTER_ENB_REQ (msg_p).subframeAssignment[J] = tdd_config;
-                  //X2AP_REGISTER_ENB_REQ (msg_p).specialSubframe[J] = ccparams_lte.tdd_config_s;
-                } else {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
-                               RC.config_file_name, k, frame_type);
-                }
-
-                //Temp out
-                /*X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
-                X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);*/
-              }
-            }
+            //Temp out
+            /*X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
+              X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);*/
 
             sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
             config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
@@ -1394,10 +1147,10 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
             // NETWORK_INTERFACES
             config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[GNB_PORT_FOR_X2C_IDX].uptr);
 
             //temp out
-            if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+            if ((NETParams[GNB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
               LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
               exit(1);
             }
