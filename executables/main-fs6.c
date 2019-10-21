@@ -17,6 +17,7 @@
 #include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
 #include <executables/split_headers.h>
 #include <openair1/PHY/CODING/coding_extern.h>
+#include <threadPool/thread-pool.h>
 #include <emmintrin.h>
 
 #define FS6_BUF_SIZE 1000*1000
@@ -1383,9 +1384,10 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   return;
 }
 
-void DL_du_fs6(RU_t *ru) {
+void DL_du_fs6(void *arg) {
+  RU_t *ru = *(RU_t **)arg;
   static uint64_t lastTS;
-  L1_rxtx_proc_t L1_proc={0};
+  L1_rxtx_proc_t L1_proc= {0};
 
   for (int i=0; i<ru->num_eNB; i++) {
     initBufferZone(bufferZone);
@@ -1474,6 +1476,7 @@ void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   }
 
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
+  return;
 }
 
 void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS) {
@@ -1533,7 +1536,7 @@ void *cu_fs6(void *arg) {
   initRefTimes(waitDUAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
-  L1_rxtx_proc_t L1proc={0};
+  L1_rxtx_proc_t L1proc= {0};
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
@@ -1546,19 +1549,6 @@ void *cu_fs6(void *arg) {
     updateTimesReset(begingWait2, &makeSendDL, 1000,  true,"CU Time in DL build+send");
   }
 
-  return NULL;
-}
-
-void *dutxfs6(void *arg) {
-  RU_t *ru = (RU_t *)arg;
-  initStaticTime(begingWait2);
-  initRefTimes(makeSendDL);
-  usleep(100);
-  while(1) {
-    pickStaticTime(begingWait2);
-    DL_du_fs6(ru);
-    updateTimesReset(begingWait2, &makeSendDL, 1000, true, "DU Time in build and send Tx");
-  }
   return NULL;
 }
 
@@ -1580,26 +1570,34 @@ void *du_fs6(void *arg) {
     remoteIP=CU_IP;
 
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
+  tpool_t pool;
+  tpool_t *Tpool = &pool;
+  char params[]="-1,-1";
+  initTpool(params, Tpool, false);
 
   if (ru->start_rf) {
     if (ru->start_rf(ru) != 0)
       LOG_E(HW,"Could not start the RF device\n");
     else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
   } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
-  pthread_t t;
-  threadCreate(&t, dutxfs6, (void *)ru, "DlDu", -1, OAI_PRIORITY_RT_MAX);
+
   initStaticTime(begingWait);
   initRefTimes(waitRxAndProcessingUL);
   initRefTimes(fullLoop);
   L1_rxtx_proc_t L1proc;
+  notifiedFIFO_t nf;
+  initNotifiedFIFO(&nf);
 
   while(1) {
     L1_rxtx_proc_t *proc = &L1proc;
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
+    notifiedFIFO_elt_t *Msg=newNotifiedFIFO_elt(sizeof(ru),0,&nf, DL_du_fs6);
+    *(RU_t **)NotifiedFifoData(Msg)=ru;
+    pushTpool(Tpool, Msg);
     UL_du_fs6(ru, proc, proc->frame_rx,proc->subframe_rx);
+    notifiedFIFO_elt_t *res=pullTpool(&nf, Tpool);
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
-    
   }
 
   return NULL;
