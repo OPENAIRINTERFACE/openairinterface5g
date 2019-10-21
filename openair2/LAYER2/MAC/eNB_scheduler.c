@@ -988,6 +988,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (flexran_agent_get_mac_xface(module_idP) && subframeP == 9) {
     flexran_agent_slice_update(module_idP);
   }
+  if (flexran_agent_get_mac_xface(module_idP))
+    flexran_agent_get_mac_xface(module_idP)->flexran_agent_notify_tick(module_idP);
 
   stop_meas(&(eNB->eNB_scheduler));
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, VCD_FUNCTION_OUT);

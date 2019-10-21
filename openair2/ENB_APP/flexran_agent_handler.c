@@ -154,39 +154,20 @@ void * flexran_agent_pack_message(Protocol__FlexranMessage *msg,
   return NULL;   
 }
 
-Protocol__FlexranMessage *flexran_agent_handle_timed_task(void *args) {
+Protocol__FlexranMessage *flexran_agent_handle_timed_task(
+      mid_t mod_id,
+      Protocol__FlexranMessage *msg) {
   err_code_t err_code;
-  flexran_agent_timer_args_t *timer_args = (flexran_agent_timer_args_t *) args;
 
-  Protocol__FlexranMessage *timed_task, *reply_message;
-  timed_task = timer_args->msg;
-  err_code = ((*agent_messages_callback[timed_task->msg_case-1][timed_task->msg_dir-1])(timer_args->mod_id, (void *) timed_task, &reply_message));
-  if ( err_code < 0 ){
-    goto error;
+  Protocol__FlexranMessage *reply_message;
+  err_code = ((*agent_messages_callback[msg->msg_case-1][msg->msg_dir-1])(
+                      mod_id, msg, &reply_message));
+  if (err_code < 0) {
+    LOG_E(FLEXRAN_AGENT, "could not handle message: errno %d occured\n", err_code);
+    return NULL;
   }
 
   return reply_message;
-  
- error:
-  LOG_E(FLEXRAN_AGENT,"errno %d occured\n",err_code);
-  return NULL;
-}
-
-Protocol__FlexranMessage* flexran_agent_process_timeout(long timer_id, void* timer_args){
-    
-  struct flexran_agent_timer_element_s *found = get_timer_entry(timer_id);
- 
-  if (found == NULL ) goto error;
-  LOG_D(FLEXRAN_AGENT, "Found the entry (%p): timer_id is 0x%lx  0x%lx\n", found, timer_id, found->timer_id);
-  
-  if (timer_args == NULL)
-    LOG_W(FLEXRAN_AGENT,"null timer args\n");
-  
-  return found->cb(timer_args);
-
- error:
-  LOG_E(FLEXRAN_AGENT, "can't get the timer element\n");
-  return NULL;
 }
 
 err_code_t flexran_agent_destroy_flexran_message(Protocol__FlexranMessage *msg) {
@@ -209,24 +190,21 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     return -1;
   }
   Protocol__FlexCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
-  flexran_agent_timer_args_t *timer_args = NULL;
 
   switch (comp_req->report_frequency) {
   case PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_OFF:
-    flexran_agent_destroy_timer_by_task_id(xid);
+    flexran_agent_destroy_timer(mod_id, xid);
     return 0;
   case PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE:
     LOG_E(FLEXRAN_AGENT, "one-shot timer not implemented yet\n");
     return -1;
   case PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_PERIODICAL:
     /* Create a one off flexran message as an argument for the periodical task */
-    timer_args = calloc(1, sizeof(flexran_agent_timer_args_t));
-    AssertFatal(timer_args, "cannot allocate memory for timer\n");
-    timer_args->mod_id = mod_id;
-    timer_args->msg = input;
+    LOG_I(FLEXRAN_AGENT, "periodical timer xid %d cell_flags %d ue_flags %d\n",
+          xid, comp_req->cell_report_flags, comp_req->ue_report_flags);
     flexran_agent_create_timer(mod_id, comp_req->sf,
                                FLEXRAN_AGENT_TIMER_TYPE_PERIODIC, xid,
-                               flexran_agent_send_stats_reply, timer_args);
+                               flexran_agent_send_stats_reply, input);
     /* return 1: do not dispose comp_req message we received, we still need it */
     return 1;
   case PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_CONTINUOUS:
@@ -241,15 +219,14 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 /*
   Top level reply 
  */
-Protocol__FlexranMessage *flexran_agent_send_stats_reply(void *args) {
-  const flexran_agent_timer_args_t *timer_args = args;
-  const mid_t enb_id = timer_args->mod_id;
-  const Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)timer_args->msg;
-  const Protocol__FlexStatsRequest *stats_req = input->stats_request_msg;
+Protocol__FlexranMessage *flexran_agent_send_stats_reply(
+      mid_t                           mod_id,
+      const Protocol__FlexranMessage *msg) {
+  const Protocol__FlexStatsRequest *stats_req = msg->stats_request_msg;
   const xid_t xid = stats_req->header->xid;
 
   Protocol__FlexranMessage *reply = NULL;
-  err_code_t rc = flexran_agent_stats_reply(enb_id, xid, stats_req, &reply);
+  err_code_t rc = flexran_agent_stats_reply(mod_id, xid, stats_req, &reply);
   if (rc < 0) {
     LOG_E(FLEXRAN_AGENT, "%s(): errno %d occured, cannot send stats_reply\n",
           __func__, rc);

@@ -150,10 +150,15 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
 						    uint32_t size);
 
 /* Function to be used to send a message to a dispatcher once the appropriate event is triggered. */
-Protocol__FlexranMessage *flexran_agent_handle_timed_task(void *args);
+Protocol__FlexranMessage *flexran_agent_handle_timed_task(
+                mid_t mod_id,
+                Protocol__FlexranMessage *msg);
 
 /*Top level Statistics hanlder*/
-Protocol__FlexranMessage *flexran_agent_send_stats_reply(void *args);
+Protocol__FlexranMessage *flexran_agent_send_stats_reply(
+                mid_t mod_id,
+                const Protocol__FlexranMessage *msg);
+
 int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
 /* Function to be used to handle reply message . */

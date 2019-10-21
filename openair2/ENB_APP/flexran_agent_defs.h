@@ -107,36 +107,6 @@ typedef uint8_t lcid_t;
 typedef int32_t  err_code_t; 
 
 
-/*---------Timer Enums --------- */
-
-typedef enum {
-  /* oneshot timer:  */
-  FLEXRAN_AGENT_TIMER_TYPE_ONESHOT = 0,
-
-  /* periodic timer  */
-  FLEXRAN_AGENT_TIMER_TYPE_PERIODIC = 1,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_TYPE_EVENT_DRIVEN = 2,
-  
-  /* Max number of states available */
-  FLEXRAN_AGENT_TIMER_TYPE_MAX,
-} flexran_agent_timer_type_t;
-
-
-typedef enum {
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_INACTIVE = 0x0,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_ACTIVE = 0x1,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_STOPPED = 0x2,
-  
-  /* Max number of states available */
-  FLEXRAN_AGENT_TIMER_STATE_MAX,
-} flexran_agent_timer_state_t;
 
 #define FLEXRAN_CAP_LOPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)) > 0)
 #define FLEXRAN_CAP_HIPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)) > 0)
