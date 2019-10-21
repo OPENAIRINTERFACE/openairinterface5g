@@ -43,7 +43,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 
     uint16_t nbp_re, nb_re;
     uint32_t nr_tbs=0;
-    uint16_t Ninfo, Np_info, C;
+    uint32_t Ninfo, Np_info, C;
     uint8_t n;
 
     nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
@@ -97,23 +97,23 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
 {
 
   uint16_t R, nb_re;
-  uint16_t nr_rb_lbrm=0;
+  uint16_t nb_rb_lbrm=0;
   uint8_t Qm;
   int i;
   uint32_t nr_tbs=0;
-  uint16_t Ninfo, Np_info;
+  uint32_t Ninfo, Np_info;
   uint8_t n;
 
   for (i=0; i<7; i++) {
       	if (NPRB_LBRM[i] >= nb_rb){
-     		nr_rb_lbrm = NPRB_LBRM[i];
+     		nb_rb_lbrm = NPRB_LBRM[i];
        		break;
        	}
   }
 
   Qm = ((table == 1)? 8 : 6);
   R = 948;
-  nb_re = 156 * nr_rb_lbrm;
+  nb_re = 156 * nb_rb_lbrm;
 
   // Intermediate number of information bits
   Ninfo = (nb_re * R * Qm * Nl)>>10;
