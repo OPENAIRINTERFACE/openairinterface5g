@@ -339,7 +339,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
-  harq_process->TBS = nr_compute_tbs(Qm, R, nb_rb, number_symbols, nb_re_dmrs, length_dmrs, n_layers);
+  harq_process->TBS = nr_compute_tbs(Qm, R, nb_rb, number_symbols, nb_re_dmrs*length_dmrs, 0, n_layers, 10);
 
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations + 1;
@@ -438,8 +438,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = nr_compute_tbs(nr_get_Qm_ul(28,1),nr_get_code_rate_ul(28,1),nb_rb,frame_parms->symbols_per_slot,0,0,nfapi_ulsch_pdu_rel15->n_layers);
-
   for (r=0; r<harq_process->C; r++) {
     E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
 
@@ -488,6 +486,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     ///////////////////////// harq_process->e =====> harq_process->d /////////////////////////
+
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,nfapi_ulsch_pdu_rel15->n_layers,harq_process->C);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,

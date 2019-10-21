@@ -145,7 +145,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->nb_slots,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
-  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+  nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
@@ -270,7 +270,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	                      params_rel15->rb_offset,
 	                      params_rel15->first_symbol,
 	                      params_rel15->search_space_type);
-	        nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+	        nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
 		    // Hardcode it for now
 		    TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
 		    LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
@@ -360,7 +360,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
       // Hardcode it for now
       TBS = 6784/8; //TBS in bytes
-      //nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+      //nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
       //TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
 
     	for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {

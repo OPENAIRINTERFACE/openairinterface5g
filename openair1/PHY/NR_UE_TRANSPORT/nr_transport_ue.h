@@ -265,6 +265,8 @@ typedef struct {
   uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
+  /// MCS table for this DLSCH
+  uint8_t mcs_table;
   /// MCS format for this DLSCH
   uint8_t mcs;
   /// Qm (modulation order) for this DLSCH

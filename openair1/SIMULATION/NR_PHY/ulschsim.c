@@ -386,10 +386,10 @@ int main(int argc, char **argv)
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
-  mod_order = nr_get_Qm_ul(Imcs, 1);
-  code_rate = nr_get_code_rate_ul(Imcs, 1);
+  mod_order = nr_get_Qm_ul(Imcs, 0);
+  code_rate = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl, 10);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 

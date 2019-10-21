@@ -586,6 +586,7 @@ typedef struct {
   uint8_t start_symbol;
   uint8_t nb_symbols;
   uint8_t mcs_idx;
+  uint8_t mcs_table;
   uint8_t ndi;
   uint8_t nb_codewords;
   uint8_t nb_layers;

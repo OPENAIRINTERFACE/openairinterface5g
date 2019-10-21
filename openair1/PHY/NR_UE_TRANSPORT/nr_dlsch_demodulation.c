@@ -176,8 +176,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
 
 
-  dlsch[0]->harq_processes[harq_pid]->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, 1);
-  dlsch[0]->harq_processes[harq_pid]->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, 1);
+  dlsch[0]->harq_processes[harq_pid]->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
+  dlsch[0]->harq_processes[harq_pid]->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
   
   //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
@@ -965,7 +965,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     break;
   }
   if (dlsch1_harq) {
-  switch (nr_get_Qm_dl(dlsch1_harq->mcs, 1)) {
+  switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
   case 2 :
     if (rx_type==rx_standard) {
         nr_dlsch_qpsk_llr(frame_parms,

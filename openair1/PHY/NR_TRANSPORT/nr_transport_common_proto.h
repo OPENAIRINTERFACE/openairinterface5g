@@ -56,9 +56,9 @@ uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
 uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
 uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
-void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                nfapi_nr_config_request_t config);
+void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
+                   nfapi_nr_config_request_t config);
 
 /** \brief Computes available bits G. */
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint16_t length_dmrs, uint8_t Qm, uint8_t Nl);

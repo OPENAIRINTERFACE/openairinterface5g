@@ -3307,7 +3307,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
 
   harq_processes_dest->B             = current_harq_processes->B             ;
   harq_processes_dest->C             = current_harq_processes->C             ;
-  harq_processes_dest->DCINdi         = current_harq_processes->DCINdi             ;
+  harq_processes_dest->DCINdi         = current_harq_processes->DCINdi       ;
   harq_processes_dest->F             = current_harq_processes->F             ;
   harq_processes_dest->G             = current_harq_processes->G             ;
   harq_processes_dest->K             = current_harq_processes->K             ;
@@ -3320,6 +3320,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   harq_processes_dest->dl_power_off   = current_harq_processes->dl_power_off   ;
   harq_processes_dest->first_tx       = current_harq_processes->first_tx       ;
   harq_processes_dest->mcs            = current_harq_processes->mcs            ;
+  harq_processes_dest->mcs_table      = current_harq_processes->mcs_table      ;
   harq_processes_dest->mimo_mode      = current_harq_processes->mimo_mode      ;
   harq_processes_dest->nb_rb          = current_harq_processes->nb_rb          ;
   harq_processes_dest->pmi_alloc      = current_harq_processes->pmi_alloc      ;

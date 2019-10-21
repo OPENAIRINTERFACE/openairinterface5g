@@ -222,8 +222,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
-  mod_order = nr_get_Qm_ul(harq_process->mcs,1);
-  R = nr_get_code_rate_ul(harq_process->mcs,1);
+  mod_order = nr_get_Qm_ul(harq_process->mcs,0);
+  R = nr_get_code_rate_ul(harq_process->mcs,0);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -251,9 +251,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  
-
-  Tbslbrm = nr_compute_tbs(nr_get_Qm_ul(28,1),nr_get_code_rate_ul(28,1),nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
@@ -393,6 +390,8 @@ opp_enabled=0;
 ///////////
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->Nl, r);
+
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->Nl,harq_process->C);
 
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,

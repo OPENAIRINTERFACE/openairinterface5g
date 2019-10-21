@@ -130,10 +130,17 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
 
-    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
-    code_rate      = nr_get_code_rate_ul(harq_process_ul_ue->mcs, 1);
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 0);
+    code_rate      = nr_get_code_rate_ul(harq_process_ul_ue->mcs, 0);
 
-    harq_process_ul_ue->TBS = nr_compute_tbs( mod_order, harq_process_ul_ue->nb_rb, code_rate, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+    harq_process_ul_ue->TBS = nr_compute_tbs(mod_order, 
+                                             code_rate,
+                                             harq_process_ul_ue->nb_rb,
+                                             harq_process_ul_ue->number_of_symbols,
+                                             ulsch_ue->nb_re_dmrs*ulsch_ue->length_dmrs,
+                                             0,
+                                             harq_process_ul_ue->Nl,
+                                             10);
 
     //-----------------------------------------------------//
     // to be removed later when MAC is ready
@@ -159,7 +166,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
 
-    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 1);
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 0);
 
     available_bits = nr_get_G(harq_process_ul_ue->nb_rb,
                               harq_process_ul_ue->number_of_symbols,

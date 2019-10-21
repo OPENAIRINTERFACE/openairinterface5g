@@ -297,6 +297,7 @@ int nr_dlsch_encoding(unsigned char *a,
   uint16_t Qm=rel15.modulation_order;
   uint16_t length_dmrs = 1;
   float Coderate = 0.0;
+  uint8_t Nl = 4;
 
   /*
   uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
@@ -312,8 +313,6 @@ int nr_dlsch_encoding(unsigned char *a,
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-
-  Tbslbrm = nr_compute_tbs(nr_get_Qm_dl(28,1),nr_get_code_rate_dl(28,1),nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -451,6 +450,12 @@ int nr_dlsch_encoding(unsigned char *a,
 #endif
 
     E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15.nb_layers, r);
+
+    // for tbslbrm calculation according to 5.4.2.1 of 38.212
+    if (rel15.nb_layers < Nl)
+      Nl = rel15.nb_layers;
+
+    Tbslbrm = nr_compute_tbslbrm(rel15.mcs_table,nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
 
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,

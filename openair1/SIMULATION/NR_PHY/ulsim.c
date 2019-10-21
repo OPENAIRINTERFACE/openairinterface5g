@@ -412,10 +412,10 @@ int main(int argc, char **argv)
   unsigned char mod_order;
   uint16_t code_rate;
 
-  mod_order      = nr_get_Qm_ul(Imcs, 1);
-  code_rate      = nr_get_code_rate_ul(Imcs, 1);
+  mod_order      = nr_get_Qm_ul(Imcs, 0);
+  code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, precod_nbr_layers);
+  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers, 10);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
