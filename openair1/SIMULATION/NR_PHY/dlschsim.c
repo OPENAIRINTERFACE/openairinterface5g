@@ -434,6 +434,7 @@ int main(int argc, char **argv)
         uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
+	uint8_t scale;
 	dlsch->rnti = 1;
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
@@ -443,7 +444,7 @@ int main(int argc, char **argv)
         rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
         scale = ((mcs_table==1)&&((Imcs==20)||(Imcs==26)))?11:10;
-	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl, scale);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;
@@ -466,11 +467,12 @@ int main(int argc, char **argv)
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
-	harq_process->mcs = mcs_table;
+	harq_process->mcs_table = mcs_table;
 	harq_process->Nl = Nl;
 	harq_process->nb_rb = nb_rb;
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
+	harq_process->R = rate;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
