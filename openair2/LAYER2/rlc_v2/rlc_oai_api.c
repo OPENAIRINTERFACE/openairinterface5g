@@ -170,13 +170,14 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   if (rb != NULL) {
     rlc_entity_buffer_status_t buf_stat;
     rb->set_time(rb, rlc_current_time);
-    buf_stat = rb->buffer_status(rb, tb_sizeP ? tb_sizeP : 1000000);
-    if (buf_stat.status_size)
-      ret.bytes_in_buffer = buf_stat.status_size;
-    else if (buf_stat.retx_size)
-      ret.bytes_in_buffer = buf_stat.retx_size;
-    else
-      ret.bytes_in_buffer = buf_stat.tx_size;
+    /* 36.321 deals with BSR values up to 3000000 bytes, after what it
+     * reports '> 3000000' (table 6.1.3.1-2). Passing 4000000 is thus
+     * more than enough.
+     */
+    buf_stat = rb->buffer_status(rb, 4000000);
+    ret.bytes_in_buffer = buf_stat.status_size
+                        + buf_stat.retx_size
+                        + buf_stat.tx_size;
     ue->saved_status_ind_tb_size[channel_idP - 1] = tb_sizeP;
   } else {
     ret.bytes_in_buffer = 0;

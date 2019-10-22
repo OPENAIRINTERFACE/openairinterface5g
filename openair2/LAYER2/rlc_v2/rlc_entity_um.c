@@ -407,6 +407,10 @@ rlc_entity_buffer_status_t rlc_entity_um_buffer_status(
 
   ret.status_size = 0;
 
+  /* todo: if an SDU has size >2047 in the tx list then processing
+   * stops and computed size will not be accurate. Change the computation
+   * to be more accurate (if needed).
+   */
   tx_size = tx_pdu_size(entity, maxsize);
   ret.tx_size = tx_size.data_size + tx_size.header_size;
 
