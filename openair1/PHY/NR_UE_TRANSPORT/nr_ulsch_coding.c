@@ -202,7 +202,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint8_t mod_order; 
   uint16_t Kr,r,r_offset,R;
   uint8_t BG;
-  uint32_t E;
+  uint32_t E,Kb;
   uint8_t Ilbrm; 
   uint32_t Tbslbrm; 
   uint8_t nb_re_dmrs; 
@@ -294,14 +294,14 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       BG = 1;
     }
 
-    nr_segmentation(harq_process->b,
-        harq_process->c,
-        harq_process->B,
-        &harq_process->C,
-        &harq_process->K,
-        pz,
-        &harq_process->F,
-        BG);
+    Kb=nr_segmentation(harq_process->b,
+                       harq_process->c,
+                       harq_process->B,
+                       &harq_process->C,
+                       &harq_process->K,
+                       pz,
+                       &harq_process->F,
+                       BG);
 
     F = harq_process->F;
 
@@ -349,7 +349,7 @@ opp_enabled=0;
       }
       printf("\n");*/
 
-    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");

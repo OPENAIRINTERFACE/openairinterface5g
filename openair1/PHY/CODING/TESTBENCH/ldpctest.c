@@ -130,9 +130,9 @@ int test_ldpc(short No_iteration,
   double *modulated_input[MAX_NUM_DLSCH_SEGMENTS];
   char *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
   unsigned int i,j,trial=0;
-  short BG=0,Zc,Kb=0,nrows=0;//,ncols;
+  short BG=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
-  int i1;
+  int i1,Zc,Kb=0;
   int R_ind = 0;
   //Table of possible lifting sizes
   //short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
@@ -308,7 +308,7 @@ int test_ldpc(short No_iteration,
 
     for(j=0;j<(n_segments%8+1);j++) {
     	start_meas(time_optim);
-    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
+    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,Zc,Kb,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
     	stop_meas(time_optim);
     }
     

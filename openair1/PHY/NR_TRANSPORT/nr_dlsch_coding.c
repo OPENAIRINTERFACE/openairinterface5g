@@ -283,8 +283,8 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
   uint8_t nb_symb_sch = rel15.nb_symbols;
-  uint32_t A, Z, F=0;
-  uint32_t *pz = &Z;
+  uint32_t A, Z, Kb, F=0;
+  uint32_t *Zc = &Z;
   uint8_t mod_order = rel15.modulation_order;
   uint16_t Kr=0,r,r_offset=0;
   //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
@@ -294,7 +294,6 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t Tbslbrm = 950984; //max tbs
   uint8_t nb_re_dmrs = rel15.nb_re_dmrs;
   uint16_t R=rel15.coding_rate;
-  uint16_t Qm=rel15.modulation_order;
   uint16_t length_dmrs = 1;
   float Coderate = 0.0;
   uint8_t Nl = 4;
@@ -368,14 +367,14 @@ int nr_dlsch_encoding(unsigned char *a,
     else
 		BG = 1;
 
-    nr_segmentation(dlsch->harq_processes[harq_pid]->b,
-		    dlsch->harq_processes[harq_pid]->c,
-		    dlsch->harq_processes[harq_pid]->B,
-		    &dlsch->harq_processes[harq_pid]->C,
-		    &dlsch->harq_processes[harq_pid]->K,
-		    pz, // [hna] pz is Zc
-		    &dlsch->harq_processes[harq_pid]->F,
-                    BG);
+    Kb = nr_segmentation(dlsch->harq_processes[harq_pid]->b,
+		         dlsch->harq_processes[harq_pid]->c,
+		         dlsch->harq_processes[harq_pid]->B,
+		         &dlsch->harq_processes[harq_pid]->C,
+		         &dlsch->harq_processes[harq_pid]->K,
+		         Zc, 
+		         &dlsch->harq_processes[harq_pid]->F,
+                         BG);
 
     F = dlsch->harq_processes[harq_pid]->F;
 
@@ -385,7 +384,7 @@ int nr_dlsch_encoding(unsigned char *a,
     Kr_bytes = Kr>>3;
 #endif
 
-    //printf("segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
+    //printf("segment Z %d k %d Kr %d BG %d\n", *Zc,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       //d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
@@ -394,14 +393,14 @@ int nr_dlsch_encoding(unsigned char *a,
       printf("Encoder: B %d F %d \n",dlsch->harq_processes[harq_pid]->B, dlsch->harq_processes[harq_pid]->F);
       printf("start ldpc encoder segment %d/%d\n",r,dlsch->harq_processes[harq_pid]->C);
       printf("input %d %d %d %d %d \n", dlsch->harq_processes[harq_pid]->c[r][0], dlsch->harq_processes[harq_pid]->c[r][1], dlsch->harq_processes[harq_pid]->c[r][2],dlsch->harq_processes[harq_pid]->c[r][3], dlsch->harq_processes[harq_pid]->c[r][4]);
-      for (int cnt =0 ; cnt < 22*(*pz)/8; cnt ++){
+      for (int cnt =0 ; cnt < 22*(*Zc)/8; cnt ++){
       printf("%d ", dlsch->harq_processes[harq_pid]->c[r][cnt]);
       }
       printf("\n");
 
 #endif
-      //ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],dlsch->harq_processes[harq_pid]->d[r],Kr,BG,0);
-      //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],Kr,BG,NULL,NULL,NULL,NULL);
+      //ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],dlsch->harq_processes[harq_pid]->d[r],*Zc,Kb,Kr,BG,0);
+      //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
     }
 
     //for (int i=0;i<68*384;i++)
@@ -410,13 +409,13 @@ int nr_dlsch_encoding(unsigned char *a,
 
 
     /*printf("output %d %d %d %d %d \n", dlsch->harq_processes[harq_pid]->d[0][0], dlsch->harq_processes[harq_pid]->d[0][1], dlsch->harq_processes[harq_pid]->d[r][2],dlsch->harq_processes[harq_pid]->d[0][3], dlsch->harq_processes[harq_pid]->d[0][4]);
-    	for (int cnt =0 ; cnt < 66*(*pz); cnt ++){
+    	for (int cnt =0 ; cnt < 66*(*Zc); cnt ++){
     	printf("%d \n",  dlsch->harq_processes[harq_pid]->d[0][cnt]);
     	}
     	printf("\n");*/
 
     //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
-    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
 
     //printf("end ldpc encoder -- output\n");
 
@@ -430,7 +429,7 @@ int nr_dlsch_encoding(unsigned char *a,
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (dlsch->harq_processes[harq_pid]->F>0) {
-      for (int k=(Kr-F-2*(*pz)); k<Kr-2*(*pz); k++) {
+      for (int k=(Kr-F-2*(*Zc)); k<Kr-2*(*Zc); k++) {
         dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
 	//if (k<(Kr-F+8))
 	//printf("r %d filler bits [%d] = %d \n", r,k, dlsch->harq_processes[harq_pid]->d[r][k]);
@@ -460,7 +459,7 @@ int nr_dlsch_encoding(unsigned char *a,
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           BG,
-                          *pz,
+                          *Zc,
                           dlsch->harq_processes[harq_pid]->d[r],
                           dlsch->harq_processes[harq_pid]->e+r_offset,
                           dlsch->harq_processes[harq_pid]->C,
