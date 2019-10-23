@@ -512,6 +512,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
      first_packet_state = false;
      last_packet_state  = true;
     }
+
     s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state; 
     s->tx_md.end_of_burst   = last_packet_state;
@@ -613,7 +614,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 	    ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 	  }
 	  else {
-	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[j],4);
+	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j],4);
 	    ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j+1],4);
 	  }
 #else
