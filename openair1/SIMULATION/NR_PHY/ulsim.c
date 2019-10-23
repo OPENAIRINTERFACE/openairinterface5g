@@ -514,7 +514,7 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-        phy_procedures_gNB_uespec_RX(gNB, frame, slot, rel15_ul->ulsch_pdu_rel15.start_symbol, rel15_ul->ulsch_pdu_rel15.start_symbol + rel15_ul->ulsch_pdu_rel15.number_symbols);
+        phy_procedures_gNB_uespec_RX(gNB, frame, slot);
         ////////////////////////////////////////////////////////////
 
         //----------------------------------------------------------
