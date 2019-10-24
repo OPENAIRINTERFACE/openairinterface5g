@@ -185,7 +185,7 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t R, TBS=0;
-  uint8_t table_idx, Qm, scale;
+  uint8_t table_idx, Qm;
 
   /*uint8_t mcs_table = config.pdsch_config.mcs_table.value;
   uint8_t ss_type = params_rel15.search_space_type;
@@ -194,7 +194,6 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   table_idx = 0;
   R = nr_get_code_rate_dl(Imcs, table_idx);
   Qm = nr_get_Qm_dl(Imcs, table_idx);
-  scale = ((table_idx==1)&&((Imcs==20)||(Imcs==26)))?11:10;
 
   TBS = nr_compute_tbs(Qm,
                        R,
@@ -202,8 +201,7 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
 		       N_sh_symb,
 		       N_PRB_DMRS,
 		       N_PRB_oh,
-		       dlsch_rel15->nb_layers,
-                       scale);
+		       dlsch_rel15->nb_layers);
 
   dlsch_rel15->coding_rate = R;
   dlsch_rel15->modulation_order = Qm;

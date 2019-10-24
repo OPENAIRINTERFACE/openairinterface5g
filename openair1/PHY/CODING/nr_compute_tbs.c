@@ -37,18 +37,19 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 			uint16_t nb_symb_sch,
 			uint16_t nb_dmrs_prb,
                         uint16_t nb_rb_oh,
-			uint8_t Nl,
-                        uint8_t scale)
+			uint8_t Nl)
 {
 
     uint16_t nbp_re, nb_re;
     uint32_t nr_tbs=0;
     uint32_t Ninfo, Np_info, C;
-    uint8_t n;
+    uint8_t n, scale;
 
     nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
 
     nb_re = min(156, nbp_re) * nb_rb;
+    
+    scale = (R>1024)?11:10;
 
     // Intermediate number of information bits
     Ninfo = (nb_re * R * Qm * Nl)>>scale;

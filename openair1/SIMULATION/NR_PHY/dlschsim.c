@@ -443,8 +443,7 @@ int main(int argc, char **argv)
 	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
         rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-        scale = ((mcs_table==1)&&((Imcs==20)||(Imcs==26)))?11:10;
-	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl, scale);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;

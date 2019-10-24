@@ -139,8 +139,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                              harq_process_ul_ue->number_of_symbols,
                                              ulsch_ue->nb_re_dmrs*ulsch_ue->length_dmrs,
                                              0,
-                                             harq_process_ul_ue->Nl,
-                                             10);
+                                             harq_process_ul_ue->Nl);
 
     //-----------------------------------------------------//
     // to be removed later when MAC is ready
