@@ -720,14 +720,14 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  //nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx];
   unsigned int txs;
   int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
   int sf_extension = 0;
-  nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
+  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
   if ((slot == 0) ||
       (slot == 1)) {

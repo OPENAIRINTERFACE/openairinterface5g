@@ -117,7 +117,7 @@ int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
-void get_band(uint32_t downlink_frequency, uint8_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+void get_band(uint32_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 

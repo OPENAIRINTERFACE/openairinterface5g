@@ -70,7 +70,7 @@ nr_bandentry_t nr_bandtable[] = {
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
 void get_band(uint32_t downlink_frequency,
-              uint8_t *current_band,
+              uint16_t *current_band,
               int32_t *current_offset,
               lte_frame_type_t *current_type)
 {
