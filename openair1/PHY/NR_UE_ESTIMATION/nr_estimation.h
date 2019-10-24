@@ -57,7 +57,6 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              NR_UE_SSB *current_ssb);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       int frame_rx,
                                uint8_t eNB_offset,
                                unsigned char Ns,
                                unsigned char symbol,

@@ -199,7 +199,6 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       int frame_rx,
 			       uint8_t eNB_offset,
 			       unsigned char Ns,
 			       unsigned char symbol,
@@ -463,17 +462,15 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       assert(0);
     }
 
-    slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, Ns, ssb_periodicity, ue->frame_parms.slots_per_frame);
-
-    if ((ue->decode_MIB == 1) && slot_pbch)
+    if( symbol == 3)
     {
         // do ifft of channel estimate
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
             for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
                 if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
                 {
-  		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns], symbol);
-  		idft((int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][0],
+  		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, ue->current_thread_id[Ns], symbol, ch_offset);
+  		idft((int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
   		     (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
                 }
             }
