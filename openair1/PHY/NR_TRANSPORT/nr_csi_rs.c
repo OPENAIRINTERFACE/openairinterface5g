@@ -551,7 +551,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
       
   }
 
-  uint16_t start_sc = frame_parms->first_carrier_offset;
+  uint16_t start_sc = frame_parms.first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
   for (n=csi_start; n<(csi_start+csi_bw); n++) {
@@ -560,7 +560,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
         p = s+j[ji]*gs; // port index
         for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
-          k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms->ofdm_symbol_size);  // frequency index of current resource element
+          k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms.ofdm_symbol_size);  // frequency index of current resource element
           // wf according to tables 7.4.5.3-2 to 7.4.5.3-5 
           if (kp == 0)
             wf = 1;
