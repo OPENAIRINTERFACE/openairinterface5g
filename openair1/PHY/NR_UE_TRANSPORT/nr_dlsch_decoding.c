@@ -238,7 +238,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   int8_t l [68*384];
   //__m128i l;
   //int16_t inv_d [68*384];
-  uint8_t kc,scale;
+  uint8_t kc;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm; //= 950984;
   uint16_t nb_rb; //= 30;
@@ -314,7 +314,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
 
-  if (scale == 10)
+  if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
   else
     Coderate = (float) (harq_process->R) /(float) 2048;
@@ -773,7 +773,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   //__m128i l;
   int16_t inv_d [68*384];
   //int16_t *p_invd =&inv_d;
-  uint8_t kb, kc, scale;
+  uint8_t kb, kc;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
@@ -854,7 +854,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   //  printf("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
 
-  if (scale == 10)
+  if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
   else
     Coderate = (float) (harq_process->R) /(float) 2048;
@@ -1425,7 +1425,7 @@ void *nr_dlsch_decoding_process(void *arg)
 
   LOG_I(PHY,"DLSCH Decoding process, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
-  if (scale == 10)
+  if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
   else
     Coderate = (float) (harq_process->R) /(float) 2048;

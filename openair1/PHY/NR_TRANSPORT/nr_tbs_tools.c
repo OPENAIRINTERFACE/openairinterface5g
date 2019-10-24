@@ -210,8 +210,8 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
   dlsch_rel15->mcs_table = table_idx;
 
-  LOG_D(MAC, "TBS %d : N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d scale %d nb_symbols %d\n",
-  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx, scale, dlsch_rel15->nb_mod_symbols);
+  LOG_D(MAC, "TBS %d : N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d nb_symbols %d\n",
+  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx, dlsch_rel15->nb_mod_symbols);
 }
 
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) {
