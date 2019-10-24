@@ -40,6 +40,7 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN=0
 XFORMS="True"
+SKIP_SHARED_LIB_FLAG="False"
 UE_EXPANSION="False"
 UESIM_EXPANSION="False"
 PRINT_STATS="False"
@@ -152,6 +153,8 @@ Options
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
+-k | --skip-shared-libraries
+   Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 -h | --help
    Print this help
 
@@ -367,6 +370,10 @@ function main() {
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
+        -k | --skip-shared-libraries)
+            SKIP_SHARED_LIB_FLAG="True"
+            echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -558,6 +565,7 @@ function main() {
     echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
+    echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
@@ -587,6 +595,9 @@ function main() {
 
 # mandatory shared libraries common to UE and (e/g)NB
 
+    if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+    echo_info "Building shared libraries common to UE and gNB"
+
     compilations \
 	  $build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
@@ -595,14 +606,16 @@ function main() {
       $build_dir coding \
       libcoding.so $dbin/libcoding.so
 
-	compilations \
-	  $build_dir nasmesh \
-	  CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+	  compilations \
+	    $build_dir nasmesh \
+	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
-	compilations \
-	  $build_dir rb_tool \
-	  rb_tool $dbin/rb_tool
-      cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+	  compilations \
+	    $build_dir rb_tool \
+	    rb_tool $dbin/rb_tool
+        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    fi
+
   fi
   
   if [ "$UE" = 1 ] ; then
@@ -848,28 +861,33 @@ function main() {
 	          echo_info "liboai_device.so is not linked to any device library"	    
 	      fi
       fi
-      
+
       #build simulators devices
-      echo_info "Compiling rfsimulator"
-      compilations \
-          $build_dir rfsimulator \
-          librfsimulator.so $dbin/librfsimulator.so.$REL
-      
-      echo_info "Compiling basicsimulator"
-      compilations \
-          $build_dir tcp_bridge_oai \
-          libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
+      if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+        echo_info "Compiling rfsimulator"
+        compilations \
+            $build_dir rfsimulator \
+            librfsimulator.so $dbin/librfsimulator.so.$REL
+
+        echo_info "Compiling basicsimulator"
+        compilations \
+            $build_dir tcp_bridge_oai \
+            libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
+      fi
 
       #build transport protocol libraries (currently only ETHERNET is available)
-      rm -f liboai_transpro.so
-	  rm -f $dbin/liboai_transpro.so
-	  compilations \
-          $build_dir oai_eth_transpro \
-		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	  ln -sf liboai_eth_transpro.so liboai_transpro.so
-	  ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-	  echo_info "liboai_transpro.so is linked to ETHERNET transport"
-  fi
+      if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+        echo_info "Building transport protocol libraries"
+        rm -f liboai_transpro.so
+        rm -f $dbin/liboai_transpro.so
+        compilations \
+            $build_dir oai_eth_transpro \
+        liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+        ln -sf liboai_eth_transpro.so liboai_transpro.so
+        ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+        echo_info "liboai_transpro.so is linked to ETHERNET transport"
+      fi
+    fi
 
   ###################
   # Doxygen Support #
