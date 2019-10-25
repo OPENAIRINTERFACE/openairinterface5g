@@ -701,8 +701,10 @@ int main(int argc, char **argv)
     //n_errors2 = 0;
     //n_alamouti = 0;
 
+    n_false_positive = 0;
     for (trial = 0; trial < n_trials; trial++) {
 
+      errors_bit = 0;
       //multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
