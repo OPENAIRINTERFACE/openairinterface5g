@@ -1098,7 +1098,6 @@ int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2
   return ret;
 }
 
-//Panos:
 int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                                x2ap_senb_addition_req_ack_t *x2ap_addition_req_ack)
 {
@@ -1119,8 +1118,6 @@ int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p
   DevAssert(instance_p != NULL);
   DevAssert(x2ap_eNB_data_p != NULL);
 
-  //Panos: The fact that we have separate IDs here is because the ID for a specific UE might be different
-  //between the 2 eNBs?
   //ue_id     = x2ap_addition_req_ack->x2_id_target; //Panos: change name to master_x2...
   //id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
   //id_target = ue_id;
@@ -1129,7 +1126,6 @@ int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_seNBAdditionPreparation;
-  //Panos: What does the criticality indicate here?
   pdu.choice.successfulOutcome.criticality = X2AP_Criticality_reject;
   pdu.choice.successfulOutcome.value.present = X2AP_SuccessfulOutcome__value_PR_SeNBAdditionRequestAcknowledge;
   out = &pdu.choice.successfulOutcome.value.choice.SeNBAdditionRequestAcknowledge;
@@ -1145,7 +1141,6 @@ int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p
   /* mandatory */
   ie = (X2AP_SeNBAdditionRequestAcknowledge_IEs_t *)calloc(1, sizeof(X2AP_SeNBAdditionRequestAcknowledge_IEs_t));
   ie->id = X2AP_ProtocolIE_ID_id_SeNB_UE_X2AP_ID;
-  //Panos: Why for the X2_HANDOVER_REQ_ACK here the criticality is ignore whereas in the specs it is reject?
   ie->criticality = X2AP_Criticality_reject;
   ie->value.present = X2AP_SeNBAdditionRequestAcknowledge_IEs__value_PR_UE_X2AP_ID_1;
   ie->value.choice.UE_X2AP_ID_1 = 0;
@@ -1499,4 +1494,153 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
 
   return ret;
 }
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id)
+{
+	X2AP_X2AP_PDU_t                     	 pdu;
+	X2AP_SgNBAdditionRequest_t               *out;
+	X2AP_SgNBAdditionRequest_IEs_t           *ie;
+	X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t 		*e_RABS_ToBeAdded_SgNBAddReq_ItemIEs;
+	X2AP_E_RABs_ToBeAdded_SgNBAddReq_Item_t         *e_RABS_ToBeAdded_SgNBAddReq_Item;
+
+	uint8_t  *buffer;
+	uint32_t  len;
+	int       ret = 0;
+
+	// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
+	// with values coming from RRC.
+	uint16_t nRencryptionAlgorithms = 0;
+	uint16_t nRintegrityProtectionAlgorithms = 0;
+	uint8_t  SgNBSecurityKey[32] = { 0 };
+
+
+	int uEaggregateMaximumBitRateDownlink = 10^8;
+	int uEaggregateMaximumBitRateUplink = 10^8;
+	int e_rabs_tobeadded = 1;
+	int e_RAB_ID = 1;
+	int drb_ID = 2;
+	long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
+	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_present;
+	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_present;
+	int qCI = 1;
+	X2AP_Pre_emptionCapability_t pre_emptionCapability = X2AP_Pre_emptionCapability_shall_not_trigger_pre_emption;
+	X2AP_Pre_emptionVulnerability_t pre_emptionVulnerability = X2AP_Pre_emptionVulnerability_not_pre_emptable;
+	e_rab_setup_t e_MCG_rabs_tobeadded;
+	e_MCG_rabs_tobeadded.gtp_teid = 0;
+	e_MCG_rabs_tobeadded.eNB_addr.length = 24;
+	uint8_t buf[20] = { 0 };
+	memcpy(e_MCG_rabs_tobeadded.eNB_addr.buffer, buf, 20*sizeof(uint8_t));
+
+	OCTET_STRING_t CG_Config_Info;
+	char buf2[4096] = { 0 };
+	memcpy(CG_Config_Info.buf, buf2, 4096);
+	CG_Config_Info.size = 4096;
+
+
+	DevAssert(instance_p != NULL);
+	DevAssert(x2ap_eNB_data_p != NULL);
+
+	x2ap_eNB_data_p->state = X2AP_ENB_STATE_WAITING;
+
+
+
+	/* Prepare the X2AP message to encode */
+	memset(&pdu, 0, sizeof(pdu));
+	pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+	pdu.choice.successfulOutcome.procedureCode = X2AP_ProcedureCode_id_sgNBAdditionPreparation;
+	pdu.choice.successfulOutcome.criticality = X2AP_Criticality_reject;
+	pdu.choice.successfulOutcome.value.present = X2AP_InitiatingMessage__value_PR_SgNBAdditionRequest;
+	out = &pdu.choice.initiatingMessage.value.choice.SgNBAdditionRequest;
+
+	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID; //Not sure about that
+	ie->criticality= X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_UE_X2AP_ID;
+	ie->value.choice.UE_X2AP_ID = ue_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities;
+	ie->criticality = X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_NRUESecurityCapabilities;
+	INT16_TO_BIT_STRING(nRencryptionAlgorithms, &ie->value.choice.NRUESecurityCapabilities.nRencryptionAlgorithms);
+	INT16_TO_BIT_STRING(nRintegrityProtectionAlgorithms, &ie->value.choice.NRUESecurityCapabilities.nRintegrityProtectionAlgorithms);
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_SgNBSecurityKey;
+	ie->criticality = X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_SgNBSecurityKey;
+	KENB_STAR_TO_BIT_STRING(SgNBSecurityKey, &ie->value.choice.SgNBSecurityKey);
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_SgNBUEAggregateMaximumBitRate;
+	ie->criticality = X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_UEAggregateMaximumBitRate;
+	INT32_TO_BUFFER(uEaggregateMaximumBitRateDownlink, &ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateDownlink.buf);
+	ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateDownlink.size = 4;
+
+	INT32_TO_BUFFER(uEaggregateMaximumBitRateUplink, &ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateUplink.buf);
+	ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateUplink.size = 4;
+
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+	//Not sure if id should be X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_List or X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList
+	ie->id = X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList;
+	ie->criticality = X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_E_RABs_ToBeAdded_SgNBAddReqList;
+
+    for (int i=0;i<e_rabs_tobeadded;i++) {
+    	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs = (X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t *)calloc(1,sizeof(X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t));
+    	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->id = X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_Item;
+    	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->criticality = X2AP_Criticality_ignore;
+    	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.present = X2AP_E_RABs_Admitted_ToBeAdded_ItemIEs__value_PR_E_RABs_Admitted_ToBeAdded_Item;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item = &e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_ToBeAdded_SgNBAddReq_Item;
+      {
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->drb_ID = drb_ID;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->e_RAB_ID = e_RAB_ID;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.pDCPatSgNB = pDCPatSgNB;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.mCGresources = mCGresources;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.sCGresources = sCGresources;
+    	if (pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.qCI = qCI;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability = pre_emptionCapability;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability = pre_emptionVulnerability;
+
+    		//Continue from filling the UL_GTPtunnelEndpointInformation inspired from how it is done for the HO case
+    		INT32_TO_OCTET_STRING(e_MCG_rabs_tobeadded.gtp_teid, &e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID);
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size = e_MCG_rabs_tobeadded.eNB_addr.length/8;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = e_MCG_rabs_tobeadded.eNB_addr.length%8;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf =
+    				calloc(1, e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+    		memcpy (e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf,
+    				e_MCG_rabs_tobeadded.eNB_addr.buffer,
+    				e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
+    	}
+
+      }
+      ASN_SEQUENCE_ADD(&ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list, e_RABS_ToBeAdded_SgNBAddReq_ItemIEs);
+    }
+
+    ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
+    memcpy(ie->value.choice.MeNBtoSgNBContainer.buf, CG_Config_Info.buf, CG_Config_Info.size);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+    if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+        X2AP_ERROR("Failed to encode ENDC X2 setup response\n");
+        return -1;
+    }
+
+    MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
+
+    x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+	return ret;
+
+}
+
 

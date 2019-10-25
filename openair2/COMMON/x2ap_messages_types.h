@@ -303,4 +303,35 @@ typedef struct x2ap_senb_addition_req_ack_s {
 
 } x2ap_senb_addition_req_ack_t;
 
+typedef struct x2ap_ENDC_sgnb_addition_req_s {
+  /* used for RRC->X2AP in source eNB */
+  int rnti;
+
+  security_capabilities_t security_capabilities;
+
+  uint8_t      kgnb[32]; // keNB or keNB*
+
+  /*next_hop_chaining_coun */
+  long int     kgnb_ncc;
+
+  /* UE aggregate maximum bitrate */
+  ambr_t ue_ambr;
+
+  uint8_t nb_e_rabs_tobesetup;
+
+ /* list of e_rab setup-ed by RRC layers */
+  e_rab_setup_t e_rabs_tobesetup[S1AP_MAX_E_RAB];
+
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
+
+  x2ap_lastvisitedcell_info_t lastvisitedcell_info;
+
+  uint8_t rrc_buffer[8192 /* arbitrary, big enough */];
+  int rrc_buffer_size;
+
+  int target_assoc_id;
+} x2ap_ENDC_sgnb_addition_req__t;
+
+
 #endif /* X2AP_MESSAGES_TYPES_H_ */

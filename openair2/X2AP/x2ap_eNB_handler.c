@@ -114,8 +114,14 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
 
-/* Handlers matrix. Only eNB related procedure present here */
+
+/* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
   { x2ap_eNB_handle_handover_cancel, 0, 0 }, /* handoverCancel */
@@ -144,6 +150,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* seNBinitiatedSeNBRelease */
   { 0, 0, 0 }, /* seNBCounterCheck */
   { 0, 0, 0 },  /* retrieveUEContext */
+  { x2ap_gNB_handle_ENDC_sGNB_addition_request, 0, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
@@ -152,8 +159,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
-  { 0, 0, 0 },
-  { x2ap_eNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 },
+  { x2ap_eNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 }, /*X2AP_ProcedureCode_id_endcX2Setup*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 }
@@ -1499,7 +1505,7 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
       /*
        * Send a x2 setup failure with protocol cause unspecified
        */
-    // Panos: Here we should be calling an ENDC specific setup_failure function instead
+    // Here we should be calling an ENDC specific setup_failure function instead
     return x2ap_eNB_generate_x2_setup_failure (instance,
                                                assoc_id,
                                                X2AP_Cause_PR_protocol,
@@ -1519,8 +1525,6 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
     return -1;
   } else {
 	  if (ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.count > 0) {
-		  //Panos: Here the container parameter in X2AP_FIND_PROTOCOLIE_BY_ID should be the x2_ENDC_SetupRequest
-		  //message or the ie to which there are more nested information elements?
 		  for (int i=0; i<ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.count;i++) {
 
 			  ie_ENB_ENDC = (X2AP_ENB_ENDCX2SetupReqAckIEs_t*) ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.array[i];
@@ -1575,7 +1579,7 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
 						   */
 						  X2AP_ERROR("Rejecting x2 setup request as eNB id %d is already associated to an active sctp association" "Previous known: %d, new one: %d\n", eNB_id, x2ap_eNB_data->assoc_id, assoc_id);
 
-						  // Panos: Here we should be calling an ENDC specific setup_failure function instead
+						  // Here we should be calling an ENDC specific setup_failure function instead
 						  x2ap_eNB_generate_x2_setup_failure (instance,
 				                                          assoc_id,
 				                                          X2AP_Cause_PR_protocol,
@@ -1619,4 +1623,146 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
     x2ap_handle_x2_setup_message(instance_p, x2ap_eNB_data, 0);
 
     return 0;
+}
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu)
+{
+
+	/*
+  X2AP_SgNBAdditionRequest_t             *x2SgNBAdditionRequest;
+  X2AP_SgNBAdditionRequest_IEs_t         *ie;
+
+  X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t 		*e_RABS_ToBeAdded_SgNBAddReq_ItemIEs;
+  X2AP_E_RABs_ToBeAdded_SgNBAddReq_Item_t         *e_RABS_ToBeAdded_SgNBAddReq_Item;
+
+  x2ap_eNB_instance_t                *instance_p;
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  MessageDef                         *msg;
+  int                                ue_id;
+
+  DevAssert (pdu != NULL);
+  x2SgNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SgNBAdditionRequest;
+
+  if (stream == 0) {
+    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+    // TODO: send a x2 failure response
+    return 0;
+  }
+
+  X2AP_DEBUG ("Received a new X2 SgNB Addition request\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+  //msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  // allocate a new X2AP UE ID
+  ue_id = x2ap_allocate_new_id(&instance_p->id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    // TODO: cancel handover: send HO preparation failure to source eNB
+    exit(1);
+  }
+  // rnti is unknown yet, must not be set to -1, 0 is fine
+  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.SgNB_UE_X2AP_ID, ue_id);
+  x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_TARGET);
+
+  X2AP_HANDOVER_REQ(msg).x2_id = ue_id;
+
+  //X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
+                                               //measResultListEUTRA.list.array[ncell_index]->physCellId;
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
+                             X2AP_ProtocolIE_ID_id_GUMMEI_ID, true);
+
+  TBCD_TO_MCC_MNC(&ie->value.choice.ECGI.pLMN_Identity, X2AP_HANDOVER_REQ(msg).ue_gummei.mcc,
+                  X2AP_HANDOVER_REQ(msg).ue_gummei.mnc, X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len);
+  OCTET_STRING_TO_INT8(&ie->value.choice.GUMMEI.mME_Code, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code);
+  OCTET_STRING_TO_INT16(&ie->value.choice.GUMMEI.gU_Group_ID.mME_Group_ID, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_group_id);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
+                             X2AP_ProtocolIE_ID_id_UE_ContextInformation, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ie->value.choice.UE_ContextInformation.mME_UE_S1AP_ID;
+
+  // TODO: properly store Target Cell ID
+
+  X2AP_HANDOVER_REQ(msg).target_assoc_id = assoc_id;
+
+  X2AP_HANDOVER_REQ(msg).security_capabilities.encryption_algorithms =
+    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.encryptionAlgorithms);
+  X2AP_HANDOVER_REQ(msg).security_capabilities.integrity_algorithms =
+    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.integrityProtectionAlgorithms);
+
+  //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
+
+  if ((ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf) &&
+          (ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.size == 32)) {
+    memcpy(X2AP_HANDOVER_REQ(msg).kenb, ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf, 32);
+    X2AP_HANDOVER_REQ(msg).kenb_ncc = ie->value.choice.UE_ContextInformation.aS_SecurityInformation.nextHopChainingCount;
+  } else {
+    X2AP_WARN ("Size of eNB key star does not match the expected value\n");
+  }
+
+  if (ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count > 0) {
+
+    X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;
+
+    for (int i=0;i<ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;i++) {
+      e_RABS_ToBeSetup_ItemIEs = (X2AP_E_RABs_ToBeSetup_ItemIEs_t *) ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.array[i];
+      e_RABs_ToBeSetup_Item = &e_RABS_ToBeSetup_ItemIEs->value.choice.E_RABs_ToBeSetup_Item;
+
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].e_rab_id = e_RABs_ToBeSetup_Item->e_RAB_ID ;
+
+      memcpy(X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.buffer,
+                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.buf,
+                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.length =
+                      e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+      OCTET_STRING_TO_INT32(&e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.gTP_TEID,
+                                                X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].gtp_teid);
+
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.qci = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.qCI;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability;
+    }
+
+  }
+  else {
+    X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
+  }
+
+  X2AP_RRC_Context_t *c = &ie->value.choice.UE_ContextInformation.rRC_Context;
+
+  if (c->size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+  memcpy(X2AP_HANDOVER_REQ(msg).rrc_buffer, c->buf, c->size);
+  X2AP_HANDOVER_REQ(msg).rrc_buffer_size = c->size;
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);*/
+
+  return 0;
 }
