@@ -287,7 +287,7 @@ int test_ldpc(short No_iteration,
   //  printf("puncture:%d\n",no_punctured_columns);
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
   if (ntrials==0)
-    ldpc_encoder_orig(test_input[0],channel_input[0], block_length, BG, 1);
+    ldpc_encoder_orig(test_input[0],channel_input[0], Zc, BG, block_length, BG, 1);
 
   for (trial=0; trial < ntrials; trial++)
   {
@@ -295,18 +295,18 @@ int test_ldpc(short No_iteration,
     //// encoder
     start_meas(&time);
     for(j=0;j<n_segments;j++) {
-      ldpc_encoder_orig(test_input[j], channel_input[j],block_length,BG,0);
+      ldpc_encoder_orig(test_input[j], channel_input[j],Zc,Kb,block_length,BG,0);
     }
     stop_meas(&time);
 
 /*    start_meas(time_optim);
-    ldpc_encoder_optim_8seg(test_input,channel_input_optim,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
+    ldpc_encoder_optim_8seg(test_input,channel_input_optim,Zc,Kb,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
     for(j=0;j<n_segments;j++) {
-      ldpc_encoder_optim(test_input[j],channel_input_optim[j],block_length,BG,&tinput,&tprep,&tparity,&toutput);
+      ldpc_encoder_optim(test_input[j],channel_input_optim[j],Zc,Kb,block_length,BG,&tinput,&tprep,&tparity,&toutput);
       }
     stop_meas(time_optim);*/
 
-    for(j=0;j<(n_segments%8+1);j++) {
+    for(j=0;j<(n_segments/8+1);j++) {
     	start_meas(time_optim);
     	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,Zc,Kb,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
     	stop_meas(time_optim);

@@ -403,21 +403,10 @@ int nr_dlsch_encoding(unsigned char *a,
       //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
     }
 
-    //for (int i=0;i<68*384;i++)
-      //        printf("channel_input[%d]=%d\n",i,channel_input[i]);
+    for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
+      ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
+    }
 
-
-
-    /*printf("output %d %d %d %d %d \n", dlsch->harq_processes[harq_pid]->d[0][0], dlsch->harq_processes[harq_pid]->d[0][1], dlsch->harq_processes[harq_pid]->d[r][2],dlsch->harq_processes[harq_pid]->d[0][3], dlsch->harq_processes[harq_pid]->d[0][4]);
-    	for (int cnt =0 ; cnt < 66*(*Zc); cnt ++){
-    	printf("%d \n",  dlsch->harq_processes[harq_pid]->d[0][cnt]);
-    	}
-    	printf("\n");*/
-
-    //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
-    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
-
-    //printf("end ldpc encoder -- output\n");
 
 #ifdef DEBUG_DLSCH_CODING
       write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);

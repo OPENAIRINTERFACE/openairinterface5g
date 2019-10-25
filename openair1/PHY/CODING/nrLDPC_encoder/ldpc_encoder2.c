@@ -469,14 +469,13 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   return 0;
 }
 
-int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
+int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb=0,nrows=0,ncols=0;
+  short nrows=0,ncols=0;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
-  short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
   char temp;
   int simd_size;
   int macro_segment, macro_segment_end;
@@ -508,38 +507,14 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   //determine number of bits in codeword
   if (BG==1)
     {
-      BG=1;
-      Kb = 22;
       nrows=46; //parity check bits
       ncols=22; //info bits
     }
     else if (BG==2)
     {
-      BG=2;
       nrows=42; //parity check bits
       ncols=10; // info bits
-
-      if (block_length>640)
-	Kb = 10;
-      else if (block_length>560)
-	Kb = 9;
-      else if (block_length>192)
-      Kb = 8;
-    else
-      Kb = 6;
-      }
-
-  //find minimum value in all sets of lifting size
-  Zc=0;
-  for (i1=0; i1 < 51; i1++)
-  {
-    if (lift_size[i1] >= (double) block_length/Kb)
-    {
-      Zc = lift_size[i1];
-      //printf("%d\n",Zc);
-      break;
     }
-  }
 
 #ifdef DEBUG_LDPC
   LOG_D(PHY,"ldpc_encoder_optim_8seg: BG %d, Zc %d, Kb %d, block_length %d, segments %d\n",BG,Zc,Kb,block_length,n_segments);
