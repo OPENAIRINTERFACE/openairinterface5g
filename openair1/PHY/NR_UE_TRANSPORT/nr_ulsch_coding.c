@@ -200,7 +200,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 
-  uint16_t Kr,r,r_offset,R;
+  uint16_t Kr,r,r_offset;
   uint8_t BG;
   uint32_t E,Kb;
   uint8_t Ilbrm; 
@@ -223,7 +223,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   A = harq_process->TBS;
   pz = &Z;
   mod_order = nr_get_Qm_ul(harq_process->mcs,0);
-  R = nr_get_code_rate_ul(harq_process->mcs,0);
   Kr=0;
   r_offset=0;
   BG = 1;

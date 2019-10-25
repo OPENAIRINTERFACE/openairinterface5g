@@ -1119,14 +1119,14 @@
       <nruns>3</nruns>
     </testCase> 
  
-     <!--<testCase id="015106">
+     <testCase id="015106">
       <class>execution</class>
       <desc>nr_dlschsim Test cases. (Test1: 106 PRB),
                                     (Test2: 217 PRB),
                                     (Test3: 273 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args>--><!--phy_simulators  -c </compile_prog_args>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlschsim.Rel15</main_exec>
@@ -1137,7 +1137,7 @@
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
-    </testCase>--> 
+    </testCase> 
 
     <testCase id="015107">
       <class>execution</class>

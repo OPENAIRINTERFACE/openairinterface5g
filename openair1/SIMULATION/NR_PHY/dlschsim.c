@@ -434,7 +434,6 @@ int main(int argc, char **argv)
         uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
-	uint8_t scale;
 	dlsch->rnti = 1;
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
@@ -452,6 +451,7 @@ int main(int argc, char **argv)
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
+  rel15->coding_rate = rate;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
