@@ -593,7 +593,7 @@ typedef struct {
   uint16_t coding_rate;
   uint8_t modulation;
   uint8_t modulation_order;
-  uint16_t transport_block_size;
+  uint32_t transport_block_size;
   uint8_t nb_re_dmrs;
   uint8_t time_alloc_list_flag;
   uint8_t time_alloc_list;
