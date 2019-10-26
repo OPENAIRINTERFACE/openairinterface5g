@@ -11,7 +11,8 @@
 #define DU_PORT "8787"
 
 #define MTU 65536
-#define UDP_TIMEOUT 1000L // in micro  second (struct timeval, NOT struct timespec)
+#define UDP_TIMEOUT 900000L // in micro  second (struct timeval, NOT struct timespec)
+// linux may timeout for a much longer time (up to 10ms)
 #define MAX_BLOCKS 16
 #define blockAlign 32 //bytes
 
@@ -236,8 +237,9 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
 void *cu_fs6(void *arg);
 void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
+int init_rf(RU_t *ru);
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
-void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
+int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 bool dlsch_procedures(PHY_VARS_eNB *eNB,

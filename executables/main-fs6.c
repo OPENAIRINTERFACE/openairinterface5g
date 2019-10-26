@@ -1384,39 +1384,43 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   return;
 }
 
-void DL_du_fs6(void *arg) {
-  RU_t *ru = *(RU_t **)arg;
+void *DL_du_fs6(void *arg) {
+  RU_t *ru=(RU_t *)arg;
   static uint64_t lastTS;
   L1_rxtx_proc_t L1_proc= {0};
 
-  for (int i=0; i<ru->num_eNB; i++) {
-    initBufferZone(bufferZone);
-    initStaticTime(begingWait);
-    initRefTimes(fullLoop);
-    pickStaticTime(begingWait);
-    int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
-    updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
+  while (1) {
+    for (int i=0; i<ru->num_eNB; i++) {
+      initBufferZone(bufferZone);
+      initStaticTime(begingWait);
+      initRefTimes(fullLoop);
+      pickStaticTime(begingWait);
+      int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
+      updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
 
-    if (nb_blocks > 0) {
-      if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti != hUDP(bufferZone)->timestamp) {
-        LOG_E(HW,"Missed a subframe: expecting: %lu, received %lu\n",
-              lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
-              hUDP(bufferZone)->timestamp);
-      }
+      if (nb_blocks > 0) {
+        if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti != hUDP(bufferZone)->timestamp) {
+          LOG_E(HW,"Missed a subframe: expecting: %lu, received %lu\n",
+                lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
+                hUDP(bufferZone)->timestamp);
+        }
 
-      lastTS=hUDP(bufferZone)->timestamp;
-      setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
-      phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
-    } else
-      LOG_E(PHY,"DL not received for subframe\n");
+        lastTS=hUDP(bufferZone)->timestamp;
+        setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
+        phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
+      } else
+        LOG_E(PHY,"DL not received for subframe\n");
+    }
+
+    feptx_prec(ru, &L1_proc);
+    feptx_ofdm(ru, &L1_proc);
+    tx_rf(ru, &L1_proc);
   }
 
-  feptx_prec(ru, &L1_proc);
-  feptx_ofdm(ru, &L1_proc);
-  tx_rf(ru, &L1_proc);
+  return NULL;
 }
 
-void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc, int frame, int subframe) {
+void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   initStaticTime(begingWait);
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
@@ -1560,7 +1564,7 @@ void *du_fs6(void *arg) {
   fill_rf_config(ru,ru->rf_config_file);
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
-  openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+  init_rf(ru);
   wait_sync("ru_thread");
   char *remoteIP;
 
@@ -1570,33 +1574,26 @@ void *du_fs6(void *arg) {
     remoteIP=CU_IP;
 
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
-  tpool_t pool;
-  tpool_t *Tpool = &pool;
-  char params[]="-1,-1";
-  initTpool(params, Tpool, false);
 
   if (ru->start_rf) {
     if (ru->start_rf(ru) != 0)
       LOG_E(HW,"Could not start the RF device\n");
-    else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
-  } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
+    else
+      LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
+  } else
+    LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
   initStaticTime(begingWait);
   initRefTimes(waitRxAndProcessingUL);
   initRefTimes(fullLoop);
-  L1_rxtx_proc_t L1proc;
-  notifiedFIFO_t nf;
-  initNotifiedFIFO(&nf);
+  pthread_t t;
+  threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
 
   while(1) {
-    L1_rxtx_proc_t *proc = &L1proc;
+    L1_rxtx_proc_t L1proc;
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
-    notifiedFIFO_elt_t *Msg=newNotifiedFIFO_elt(sizeof(ru),0,&nf, DL_du_fs6);
-    *(RU_t **)NotifiedFifoData(Msg)=ru;
-    pushTpool(Tpool, Msg);
-    UL_du_fs6(ru, proc, proc->frame_rx,proc->subframe_rx);
-    notifiedFIFO_elt_t *res=pullTpool(&nf, Tpool);
+    UL_du_fs6(ru, &L1proc);
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
   }
 

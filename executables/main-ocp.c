@@ -11,10 +11,11 @@
  * The merger of OpenAir central code to this branch
  * should check if these 3 files are modified and analyze if code code has to be copied in here
  */
+#define  _GNU_SOURCE
+#include <pthread.h>
 
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
-
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 #include <common/config/config_userapi.h>
@@ -44,7 +45,6 @@ void reset_opp_meas(void) {
 // Fixme: there are many mistakes in the datamodel and in redondant variables
 // TDD is also mode complex
 void setAllfromTS(uint64_t TS, L1_rxtx_proc_t *proc) {
-
   for (int i=0; i < RC.nb_inst; i++) {
     for (int j=0; j<RC.nb_CC[i]; j++) {
       LTE_DL_FRAME_PARMS *fp=&RC.eNB[i][j]->frame_parms;
@@ -96,7 +96,6 @@ void init_eNB_proc(int inst) {
 }
 
 void init_RU_proc(RU_t *ru) {
-
   pthread_t t;
   char *fs6=getenv("fs6");
 
@@ -104,7 +103,7 @@ void init_RU_proc(RU_t *ru) {
     if ( strncasecmp(fs6,"cu", 2) == 0 )
       threadCreate(&t, cu_fs6, (void *)ru, "MainCu", -1, OAI_PRIORITY_RT_MAX);
     else if ( strncasecmp(fs6,"du", 2) == 0 ) {
-      threadCreate(&t, du_fs6, (void *)ru, "MainDu", -1, OAI_PRIORITY_RT_MAX);
+      threadCreate(&t, du_fs6, (void *)ru, "MainDuRx", -1, OAI_PRIORITY_RT_MAX);
     } else
       AssertFatal(false, "environement variable fs6 is not cu or du");
   } else
@@ -415,7 +414,7 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
   }
 }
 
-void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int br_flag) {
+void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) {
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
   RU_t *ru;
   int aa=0;
@@ -436,7 +435,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int br_flag)
 
   // run PRACH detection for CE-level 0 only for now when br_flag is set
   rx_prach(eNB,
-	   proc,
+           proc,
            eNB->RU_list[0],
            &max_preamble[0],
            &max_preamble_energy[0],
@@ -536,7 +535,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int br_flag)
   }
 } // else br_flag
 
-void prach_eNB(PHY_VARS_eNB *eNB, L1_rxtx_proc_t * proc, int frame,int subframe) {
+void prach_eNB(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int frame,int subframe) {
   // check if we have to detect PRACH first
   if (is_prach_subframe(&eNB->frame_parms, frame,subframe)>0) {
     prach_procedures_ocp(eNB, proc, 0);
@@ -576,7 +575,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 }
 
 void eNB_top(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int dummy1, int dummy2,  char *string,RU_t *ru) {
-
   if (!oai_exit) {
     if (rxtx(eNB,proc,string) < 0)
       LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
@@ -590,7 +588,7 @@ void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   int i;
   openair0_timestamp ts=0, timestamp_rx;
   static openair0_timestamp old_ts=0;
-  
+
   for (i=0; i<ru->nb_rx; i++)
     //receive in the next slot
     rxp[i] = (void *)&ru->common.rxdata[i][((proc->subframe_rx+1)%10)*fp->samples_per_tti];
@@ -615,15 +613,17 @@ void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   }
 
   if (timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_E(HW,"impossible shift in rx stream, rx: %ld, previous rx distance: %ld, should be %d\n", timestamp_rx, proc->timestamp_rx - old_ts, fp->samples_per_tti);
-      //ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-      //proc->timestamp_rx = ts-ru->ts_offset;
+    LOG_E(HW,"impossible shift in rx stream, rx: %ld, previous rx distance: %ld, should be %d\n", timestamp_rx, proc->timestamp_rx - old_ts, fp->samples_per_tti);
+    //ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+    //proc->timestamp_rx = ts-ru->ts_offset;
   }
+
   old_ts=timestamp_rx;
   setAllfromTS(timestamp_rx, proc);
 }
 
-void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
+int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
+  int ret=0;
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   void *txp[ru->nb_tx];
   int i;
@@ -671,29 +671,31 @@ void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
 
     /* add fail safe for late command end */
     // prepare tx buffer pointers
-    ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
-                                txp,
-                                siglen+sf_extension,
-                                ru->nb_tx,
-                                flags);
+    ret=ru->rfdevice.trx_write_func(&ru->rfdevice,
+                                    proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                    txp,
+                                    siglen+sf_extension,
+                                    ru->nb_tx,
+                                    flags);
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, subframe %d\n",ru->idx,
           (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->subframe_tx);
   }
+
+  return ret;
 }
 
 static void *ru_thread( void *param ) {
-   setbuf(stdout, NULL);
-   setbuf(stderr, NULL);
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   RU_t               *ru      = (RU_t *)param;
   L1_rxtx_proc_t L1proc;
-  L1_rxtx_proc_t * proc=&L1proc;
+  L1_rxtx_proc_t *proc=&L1proc;
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(&ru->frame_parms,1);
     phy_init_RU(ru);
-    openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    init_rf(ru);
   }
 
   AssertFatal(setup_RU_buffers(ru)==0, "Exiting, cannot initialize RU Buffers\n");
@@ -714,7 +716,7 @@ static void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
     if (ru->feprx)
-      ru->feprx(ru, proc); 
+      ru->feprx(ru, proc);
 
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
@@ -750,8 +752,18 @@ static void *ru_thread( void *param ) {
   return NULL;
 }
 
+int init_rf(RU_t *ru) {
+  char name[256];
+  pthread_getname_np(pthread_self(),name, 255);
+  pthread_setname_np(pthread_self(),"UHD for OAI");
+  int ret=openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+  pthread_setname_np(pthread_self(),name);
+  return ret;
+}
+
 int start_rf(RU_t *ru) {
-  return(ru->rfdevice.trx_start_func(&ru->rfdevice));
+  int ret=ru->rfdevice.trx_start_func(&ru->rfdevice);
+  return ret;
 }
 
 int stop_rf(RU_t *ru) {

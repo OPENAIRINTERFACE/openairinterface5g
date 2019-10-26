@@ -9124,9 +9124,10 @@ rrc_enb_task(
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
 
-  while (1) {
-    (void) rrc_enb_process_itti_msg(NULL);
-  }
+  //while (1) {
+    //(void) rrc_enb_process_itti_msg(NULL);
+  //}
+  return NULL;
 }
 
 /*------------------------------------------------------------------------------*/

@@ -61,7 +61,7 @@ int create_tasks(uint32_t enb_nb) {
   rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
   AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
 
-  if (EPC_MODE_ENABLED) {
+  if (EPC_MODE_ENABLED && !fs6Du ) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
   }
