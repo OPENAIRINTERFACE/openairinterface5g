@@ -39,11 +39,11 @@
 //#define DEBUG_DLSCH_MAPPING
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out) {
+                                  uint32_t size,
+                                  uint8_t q,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  uint32_t* out) {
 
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0;
@@ -88,7 +88,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
   uint16_t nb_symbols = rel15->nb_mod_symbols;
   uint8_t Qm = rel15->modulation_order;
-  uint16_t encoded_length = nb_symbols*Qm;
+  uint32_t encoded_length = nb_symbols*Qm;
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -121,11 +121,12 @@ printf("\n");
   pdcch_params.scrambling_id : config->sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
-                         encoded_length,
-                         q,
-                         Nid,
-                         n_RNTI,
-                         scrambled_output[q]);
+                                 encoded_length,
+                                 q,
+                                 Nid,
+                                 n_RNTI,
+                                 scrambled_output[q]);
+
   stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH scrambling:\n");

@@ -130,7 +130,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
 }
 
 void nr_pdcch_scrambling(uint32_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t *out) {
@@ -187,9 +187,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   dci_idx = 0;
   LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
   // DMRS length is per OFDM symbol
-  uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
+  uint32_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
                          (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
-  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+  uint32_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
   LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
   dmrs_length += pdcch_params.rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
 

@@ -46,7 +46,7 @@
 //#define DEBUG_PUSCH_MAPPING
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out) {
@@ -90,7 +90,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                uint8_t thread_id,
                                int gNB_id) {
 
-  unsigned int available_bits;
+  uint32_t available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   uint32_t ***pusch_dmrs;
