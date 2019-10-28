@@ -630,6 +630,17 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
                                LTE_UE_EUTRA_Capability_t *UEcap)
 //-----------------------------------------------------------------------------
 {
+  // CDRX not implemented for TDD
+  if (rrc_inst->carrier[CC_id].sib1->tdd_Config != NULL) {
+    LOG_E(RRC, "[do_DrxConfig] CDRX not implemented for TDD and LTE-M\n");
+    return NULL;
+  }
+
+  if (CC_id >= MAX_NUM_CCs) {
+    LOG_E(RRC, "[do_DrxConfig] Invalid CC_id for DRX configuration\n");
+    return NULL;
+  }
+
   LTE_DRX_Config_t *drxConfig = NULL;
   BIT_STRING_t *featureGroupIndicators = NULL;
   bool ueSupportCdrxShortFlag = false;
@@ -646,6 +657,9 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
       } else LOG_W(RRC,"[do_DrxConfig] Not enough featureGroupIndicators bits\n");
     } else LOG_W(RRC,"[do_DrxConfig] No featureGroupIndicators pointer\n");
   } else LOG_W(RRC,"[do_DrxConfig] No UEcap pointer\n");
+
+  /* Check if UE support CE mode A */
+  // TODO
 
   if (configuration->radioresourceconfig[CC_id].drx_Config_present == LTE_DRX_Config_PR_NOTHING) {
     return NULL;
