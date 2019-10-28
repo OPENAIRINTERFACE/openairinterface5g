@@ -207,6 +207,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t Tbslbrm; 
   uint8_t nb_re_dmrs; 
   uint16_t length_dmrs;
+  uint16_t R;
   float Coderate;
 
 ///////////
@@ -223,6 +224,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   A = harq_process->TBS;
   pz = &Z;
   mod_order = nr_get_Qm_ul(harq_process->mcs,0);
+  R = nr_get_code_rate_ul(harq_process->mcs, 0);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -284,7 +286,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
-    Coderate = (float) A /(float) G;
+    if (R<1024)
+      Coderate = (float) R /(float) 1024;
+    else
+      Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
       BG = 2;
@@ -303,7 +308,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                        BG);
 
     F = harq_process->F;
-
     Kr = harq_process->K;
 #ifdef DEBUG_DLSCH_CODING
     uint16_t Kr_bytes;
