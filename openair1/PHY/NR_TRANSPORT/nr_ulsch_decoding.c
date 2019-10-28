@@ -353,6 +353,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
 
+    if (R<1024)
+      Coderate = (float) R /(float) 1024;
+    else
+      Coderate = (float) R /(float) 2048;
+
+    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+      p_decParams->BG = 2;
+
     // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
     nr_segmentation(NULL,
                     NULL,
@@ -372,13 +380,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   p_decParams->Z = harq_process->Z;
 
-  if (R<1024)
-    Coderate = (float) R /(float) 1024;
-  else
-    Coderate = (float) R /(float) 2048;
-
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-    p_decParams->BG = 2;
     if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
