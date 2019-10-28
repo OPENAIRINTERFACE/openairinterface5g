@@ -286,7 +286,8 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t A, Z, Kb, F=0;
   uint32_t *Zc = &Z;
   uint8_t mod_order = rel15.modulation_order;
-  uint16_t Kr=0,r,r_offset=0;
+  uint16_t Kr=0,r;
+  uint32_t r_offset=0;
   //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG=1;
   uint32_t E;
@@ -384,7 +385,7 @@ int nr_dlsch_encoding(unsigned char *a,
     Kr_bytes = Kr>>3;
 #endif
 
-    //printf("segment Z %d k %d Kr %d BG %d\n", *Zc,dlsch->harq_processes[harq_pid]->K,Kr,BG);
+    //printf("segment Z %d k %d Kr %d BG %d C %d\n", *Zc,dlsch->harq_processes[harq_pid]->K,Kr,BG,dlsch->harq_processes[harq_pid]->C);
 
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       //d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
@@ -455,7 +456,6 @@ int nr_dlsch_encoding(unsigned char *a,
                           rel15.redundancy_version,
                           E);
 
-    
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
       printf("output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
