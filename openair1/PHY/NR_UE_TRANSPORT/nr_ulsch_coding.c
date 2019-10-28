@@ -308,7 +308,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                        BG);
 
     F = harq_process->F;
-
+printf("BG %d R %f\n",BG,Coderate);
     Kr = harq_process->K;
 #ifdef DEBUG_DLSCH_CODING
     uint16_t Kr_bytes;

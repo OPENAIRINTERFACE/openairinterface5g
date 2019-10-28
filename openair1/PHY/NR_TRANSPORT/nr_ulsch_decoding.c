@@ -310,7 +310,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
   uint16_t number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
   uint8_t Qm              = nfapi_ulsch_pdu_rel15->Qm;
-  uint8_t R               = nfapi_ulsch_pdu_rel15->R;
+  uint16_t R               = nfapi_ulsch_pdu_rel15->R;
   uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
   uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
   uint8_t nb_re_dmrs      = nfapi_ulsch_pdu_rel15->nb_re_dmrs;
@@ -360,27 +360,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
       p_decParams->BG = 2;
-
-    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
-    nr_segmentation(NULL,
-                    NULL,
-                    harq_process->B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z, // [hna] Z is Zc
-                    &harq_process->F,
-                    p_decParams->BG);
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
-    if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
-#endif
-  }
-
-  p_decParams->Z = harq_process->Z;
-
-    if (Coderate < 0.3333) {
+      if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
     }
@@ -407,6 +387,25 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       kc = 27;
     }
   }
+
+    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z, // [hna] Z is Zc
+                    &harq_process->F,
+                    p_decParams->BG);
+
+#ifdef DEBUG_ULSCH_DECODING
+    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
+    if (!frame%100)
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
+#endif
+  }
+  p_decParams->Z = harq_process->Z;
+
 
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
