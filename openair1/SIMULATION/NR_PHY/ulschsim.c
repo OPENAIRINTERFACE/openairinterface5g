@@ -402,6 +402,7 @@ int main(int argc, char **argv)
   rel15_ul->n_layers       = Nl;
   rel15_ul->nb_re_dmrs     = nb_re_dmrs;
   rel15_ul->length_dmrs    = length_dmrs;
+  rel15_ul->R              = code_rate;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc

@@ -424,8 +424,8 @@ int main(int argc, char **argv)
       printf("-o CORESET offset\n");
       printf("-a Start PRB for PDSCH\n");
       printf("-b Number of PRB for PDSCH\n");
-      printf("-c Start symbol for PDSCH\n");
-      printf("-j Number of symbols for PDSCH\n");
+      printf("-c Start symbol for PDSCH (fixed for now)\n");
+      printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
       exit (-1);
       break;
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
 
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
     txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(int));
+    bzero(txdata[i],frame_length_complex_samples*sizeof(int));
   
   }
 
