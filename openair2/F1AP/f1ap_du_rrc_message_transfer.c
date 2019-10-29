@@ -405,45 +405,19 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               }
 
               if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig) {
+                LOG_I(F1AP, "MAC Main Configuration is present\n");
+
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
 
                 /* CDRX Configuration */
-                // Need to check if UE is a BR UE
-                int UE_id = find_UE_id(ctxt.module_id, ctxt.rnti);
-                
-                if (UE_id != -1) {
-                  eNB_RRC_INST *rrc_inst = RC.rrc[ctxt.module_id];
-                  uint8_t cc_id = ue_context_p->ue_context.primaryCC_id;
-                  eNB_MAC_INST *mac = RC.mac[ctxt.module_id];
-                  UE_list_t *UE_list = &(mac->UE_list);
-
-                  if (rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL && UE_list->UE_template[cc_id][UE_id].rach_resource_type == 0) {
-                    // CDRX can be only configured in case of FDD and non BR UE (27/09/19)
-
-                    LOG_D(F1AP, "Processing the DRX configuration in DU RRC Connection Reconfiguration\n");
-            
-                    /* Process the IE drx_Config */
-                    if (cc_id < MAX_NUM_CCs) {
-                      LTE_UE_EUTRA_Capability_t *UEcap = ue_context_p->ue_context.UE_Capability;
-                      mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-                      
-                      if (mac_MainConfig->drx_Config == NULL) {
-                        LOG_E(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
-                      } else {
-                        /* Set timers and thresholds values in local MAC context of UE */
-                        eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
-                        LOG_D(F1AP, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-                      }
-                    } else {
-                      LOG_E(F1AP, "Invalid CC_id for DRX configuration\n");
-                    }
-                  } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-                    LOG_I(F1AP, "CDRX not implemented for TDD and LTE-M\n");
-                  }
-                } else { // UE_id invalid
-                  LOG_E(F1AP, "Invalid UE_id found!\n");
-                }
+                if (mac_MainConfig->drx_Config == NULL) {
+                  LOG_W(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+                } else {
+                  /* Set timers and thresholds values in local MAC context of UE */
+                  eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
+                  LOG_D(F1AP, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
                 /* End of CDRX configuration */
+                }
               }
 
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;

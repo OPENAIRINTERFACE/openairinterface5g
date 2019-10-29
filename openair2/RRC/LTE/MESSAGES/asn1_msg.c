@@ -630,21 +630,26 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
                                LTE_UE_EUTRA_Capability_t *UEcap)
 //-----------------------------------------------------------------------------
 {
-  /* Need UE capabilities */  
-  if (!UEcap) {
-    LOG_E(RRC,"[do_DrxConfig] No UEcap pointer\n");
-    return NULL;
-  }
-  
   /* Check CC id */
   if (CC_id >= MAX_NUM_CCs) {
     LOG_E(RRC, "[do_DrxConfig] Invalid CC_id for DRX configuration\n");
     return NULL;
   }
 
+  /* No CDRX configuration */
+  if (configuration->radioresourceconfig[CC_id].drx_Config_present == LTE_DRX_Config_PR_NOTHING) {
+    return NULL;
+  }
+
   /* CDRX not implemented for TDD */
   if (configuration->frame_type[CC_id] == 1) {
     LOG_E(RRC, "[do_DrxConfig] CDRX not implemented for TDD\n");
+    return NULL;
+  }
+
+  /* Need UE capabilities */  
+  if (!UEcap) {
+    LOG_E(RRC,"[do_DrxConfig] No UEcap pointer\n");
     return NULL;
   }
 
@@ -732,10 +737,6 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
       LOG_I(RRC,"[do_DrxConfig] featureGroupIndicators->buf[0]: %x\n", featureGroupIndicators->buf[0]);
     } else LOG_W(RRC,"[do_DrxConfig] Not enough featureGroupIndicators bits\n");
   } else LOG_W(RRC,"[do_DrxConfig] No featureGroupIndicators pointer\n");
-
-  if (configuration->radioresourceconfig[CC_id].drx_Config_present == LTE_DRX_Config_PR_NOTHING) {
-    return NULL;
-  }
 
   drxConfig = (LTE_DRX_Config_t *) malloc(sizeof(LTE_DRX_Config_t));
   if (drxConfig == NULL) return NULL;
