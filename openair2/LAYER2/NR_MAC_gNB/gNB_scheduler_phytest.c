@@ -313,19 +313,19 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
-void nr_schedule_uss_ulsch_phytest(module_id_t   module_idP,
+void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
                                    frame_t       frameP,
                                    sub_frame_t   slotP)
 {
-  gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
-  nfapi_nr_ul_tti_request_t         *UL_tti_req;
+  //gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
+  //nfapi_nr_ul_tti_request_t         *UL_tti_req;
 
   uint16_t rnti = 0x1234;
 
   for (uint8_t CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific PUSCH for CC_id %d\n",CC_id);
   
-  UL_tti_req = &nr_mac->UL_tti_req[CC_id];
+    //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
   UL_tti_req->sfn = frameP;
   UL_tti_req->slot = slotP;
   UL_tti_req->n_pdus = 1;
@@ -378,14 +378,14 @@ void nr_schedule_uss_ulsch_phytest(module_id_t   module_idP,
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   pusch_pdu->resource_alloc = 1; //type 1
   //pusch_pdu->rb_bitmap;// for ressource alloc type 0
-  pusch_pdu->rb_start = 30;
+  pusch_pdu->rb_start = 0;
   pusch_pdu->rb_size = 50;
   pusch_pdu->vrb_to_prb_mapping = 0;
   pusch_pdu->frequency_hopping = 0;
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   //Resource Allocation in time domain
-  pusch_pdu->start_symbol_index = 1;
+  pusch_pdu->start_symbol_index = 2;
   pusch_pdu->nr_of_symbols = 12;
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;

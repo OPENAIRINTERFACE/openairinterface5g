@@ -484,29 +484,20 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     }
   }
 
-  for (i=0; i<NUMBER_OF_NR_UE_MAX; i++) {
+  for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
 
     for (j=0; j<2; j++) {
-      // ULSCH for RA
-      if(i==0) {
-        gNB->ulsch[i][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
-
-        if (!gNB->ulsch[i][j]) {
-          LOG_E(PHY,"Can't get gNB ulsch structures\n");
-          exit(-1);
-        }
-      }
-
       // ULSCH for data
-      gNB->ulsch[i+1][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
+      gNB->ulsch[i][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
 
-      if (!gNB->ulsch[i+1][j]) {
+      if (!gNB->ulsch[i][j]) {
         LOG_E(PHY,"Can't get gNB ulsch structures\n");
         exit(-1);
       }
 
+      /*
       LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d\n",i);
       // [hna] added here for RT implementation
       uint8_t harq_pid = 0;
@@ -525,8 +516,8 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
       rel15_ul->ulsch_pdu_rel15.rv             = 0;
       rel15_ul->ulsch_pdu_rel15.n_layers       = 1;
       ///////////////////////////////////////////////////
+      */
 
-      //////////////////////////////////////////////////////////////////////////
     }
 
   }

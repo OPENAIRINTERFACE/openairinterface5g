@@ -380,7 +380,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     //--------------------------Temporary configuration-----------------------------//
     n_rnti = 0x1234;
     nb_rb = 50;
-    start_rb = 30;
+    start_rb = 0;
     nb_symb_sch = 12;
     start_symbol = 2;
     precod_nbr_layers = 1;

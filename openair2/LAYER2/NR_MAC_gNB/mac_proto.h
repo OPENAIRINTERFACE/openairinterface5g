@@ -78,6 +78,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP);
 
+void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP);
+  
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                   nr_scs_e scs_common,
                                   nr_scs_e pdcch_scs,

@@ -372,6 +372,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	  nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);
 	}
+	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[UE_id]->rxdataF_comp[0],6900,1,1);
+	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[UE_id]->rxdataF_ext[0],6900,1,1);
 	nr_ulsch_procedures(gNB, frame_rx, slot_rx, UE_id, harq_pid);
 	nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);  // indicate SDU to MAC
       }

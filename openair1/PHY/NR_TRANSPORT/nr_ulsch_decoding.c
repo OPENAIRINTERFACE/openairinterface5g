@@ -375,7 +375,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
     printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
     if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
+      printf("K %d C %d Z %d F %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->F);
 #endif
   }
 
@@ -591,13 +591,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
   #ifdef PRINT_CRC_CHECK
-        if (prnt_crc_cnt % 10 == 0)
+        //if (prnt_crc_cnt % 10 == 0)
           LOG_I(PHY, "Segment %d CRC OK\n",r);
   #endif
         ret = no_iteration_ldpc;
       } else {
   #ifdef PRINT_CRC_CHECK
-        if (prnt_crc_cnt%10 == 0)
+        //if (prnt_crc_cnt%10 == 0)
           LOG_I(PHY, "CRC NOK\n");
   #endif
         ret = ulsch->max_ldpc_iterations + 1;

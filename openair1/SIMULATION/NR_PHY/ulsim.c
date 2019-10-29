@@ -54,6 +54,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
 //#define DEBUG_ULSIM
 
@@ -96,7 +97,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   int number_of_frames = 1;
-  int frame_length_complex_samples;
+  int frame_length_complex_samples, frame_length_complex_samples_no_prefix ;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
@@ -126,7 +127,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:")) != -1) {
+  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:L:")) != -1) {
     switch (c) {
 
       /*case 'd':
@@ -285,6 +286,10 @@ int main(int argc, char **argv)
         printf("Setting SNR1 to %f\n", snr1);
         break;
 
+    case 'L':
+      loglvl = atoi(optarg);
+      break;	
+
       default:
         case 'h':
           printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
@@ -355,7 +360,7 @@ int main(int argc, char **argv)
   //init_eNB_afterRU();
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
-  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
@@ -397,8 +402,9 @@ int main(int argc, char **argv)
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, precod_nbr_layers);
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
-  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
+  //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
   
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
   
@@ -428,7 +434,8 @@ int main(int argc, char **argv)
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
 
-      // --------- setting rel15_ul parameters for gNB --------
+      // --------- setting parameters for gNB --------
+      /*
       rel15_ul->rnti                           = n_rnti;
       rel15_ul->ulsch_pdu_rel15.start_rb       = start_rb;
       rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
@@ -442,8 +449,12 @@ int main(int argc, char **argv)
       rel15_ul->ulsch_pdu_rel15.ndi            = 0;
       rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
       ///////////////////////////////////////////////////
+      */
 
-      //fapi_nr_tx_request_t tx_request;
+      nr_schedule_uss_ulsch_phytest(UL_tti_req,frame,slot);
+
+      
+      // --------- setting parameters for UE --------
 
       scheduled_response.module_id = 0;
       scheduled_response.CC_id = 0;
@@ -476,6 +487,8 @@ int main(int argc, char **argv)
       ///////////
 
       phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+
+      //LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
 
       ///////////
       ////////////////////////////////////////////////////
@@ -514,6 +527,8 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
+	//LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
+
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
         ////////////////////////////////////////////////////////////
 
@@ -539,7 +554,7 @@ int main(int argc, char **argv)
         for (i = 0; i < TBS; i++) {
 
           estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-          test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+          test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
 
           if (estimated_output_bit[i] != test_input_bit[i]) {
             if(errors_decoding == 0)
@@ -563,7 +578,7 @@ int main(int argc, char **argv)
         break;
     } // frame loop
 
-    if(is_frame_in_error == 0)
+    if(is_frame_in_error == 0 || number_of_frames==1)
       break;
   } // SNR loop
 
@@ -575,31 +590,6 @@ int main(int argc, char **argv)
   }
 
   printf("\n");
-
-  for (i = 0; i < 2; i++) {
-
-    printf("----------------------\n");
-    printf("freeing codeword %d\n", i);
-    printf("----------------------\n");
-
-    printf("gNB ulsch[0][%d]\n", i); // [hna] ulsch[0] is for RA
-
-    free_gNB_ulsch(gNB->ulsch[0][i]);
-
-    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
-
-    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]); // "+1" because first element in ulsch is for RA
-
-    for (sf = 0; sf < 2; sf++) {
-
-      printf("UE  ulsch[%d][0][%d]\n", sf, i);
-
-      if (UE->ulsch[sf][0][i])
-        free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
-    }
-
-    printf("\n");
-  }
 
   free(test_input_bit);
   free(estimated_output_bit);
