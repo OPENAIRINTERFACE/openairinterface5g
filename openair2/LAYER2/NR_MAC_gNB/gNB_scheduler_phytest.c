@@ -53,7 +53,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_tx_request_pdu_t            *TX_req;
 
   nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
-  uint16_t rnti = 0x1234;
+  uint16_t rnti = 0x0;
 
   uint16_t sfn_sf = frameP << 7 | slotP;
   int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
@@ -184,7 +184,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
 	nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
 	int TBS;
-	uint16_t rnti = 0x1234;
+	uint16_t rnti = 0x0;
 	int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
 
 
@@ -312,7 +312,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
   nfapi_tx_request_pdu_t            *TX_req;
-  uint16_t rnti = 0x1234;
+  uint16_t rnti = 0x0;
 
   nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
 
