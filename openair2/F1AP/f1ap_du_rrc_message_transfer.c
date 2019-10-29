@@ -405,7 +405,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               }
 
               if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig) {
-                LOG_I(F1AP, "MAC Main Configuration is present\n");
+                LOG_D(F1AP, "MAC Main Configuration is present\n");
 
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
 
@@ -415,7 +415,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 } else {
                   /* Set timers and thresholds values in local MAC context of UE */
                   eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
-                  LOG_D(F1AP, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+                  LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
                 /* End of CDRX configuration */
                 }
               }
@@ -736,7 +736,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;
           UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
-          LOG_I(F1AP, "CDRX configuration after first RRC Connection Reconfiguration Complete reception\n");
+          LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
         }
         /* End of CDRX processing */
         

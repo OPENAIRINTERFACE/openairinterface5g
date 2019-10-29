@@ -734,7 +734,7 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
     if (featureGroupIndicators->size > 1 || (featureGroupIndicators->size == 1 && featureGroupIndicators->bits_unused < 4)) {
       ueSupportCdrxShortFlag = ((featureGroupIndicators->buf[0] & (uint8_t) 0x10) > 0);
       ueSupportCdrxLongFlag = ((featureGroupIndicators->buf[0] & (uint8_t) 0x08) > 0);
-      LOG_I(RRC,"[do_DrxConfig] featureGroupIndicators->buf[0]: %x\n", featureGroupIndicators->buf[0]);
+      LOG_D(RRC,"[do_DrxConfig] featureGroupIndicators->buf[0]: %x\n", featureGroupIndicators->buf[0]);
     } else LOG_W(RRC,"[do_DrxConfig] Not enough featureGroupIndicators bits\n");
   } else LOG_W(RRC,"[do_DrxConfig] No featureGroupIndicators pointer\n");
 
