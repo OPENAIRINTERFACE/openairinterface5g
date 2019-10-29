@@ -3213,13 +3213,12 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
 
     if (mac_MainConfig->drx_Config == NULL) {
-      LOG_E(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
-    }
-
-    /* Set timers and thresholds values in local MAC context of UE */
-    eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
-    LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-    
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Set timers and thresholds values in local MAC context of UE */
+      eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
+      LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
+    }  
     /* End of CDRX configuration */
   }
 
