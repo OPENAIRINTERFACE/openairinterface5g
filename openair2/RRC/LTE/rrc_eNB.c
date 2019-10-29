@@ -3205,7 +3205,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   rnti_t rnti = ue_context_pP->ue_id_rnti;
   module_id_t module_id = ctxt_pP->module_id;
 
-  if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
     /* CDRX Configuration */
     LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
     

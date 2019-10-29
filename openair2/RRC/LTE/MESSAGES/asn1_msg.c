@@ -643,7 +643,7 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id,
   }
 
   /* CDRX not implemented for TDD */
-  if (rrc_inst->carrier[CC_id].sib1->tdd_Config) {
+  if (configuration->frame_type[CC_id] == 1) {
     LOG_E(RRC, "[do_DrxConfig] CDRX not implemented for TDD\n");
     return NULL;
   }
