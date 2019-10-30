@@ -2967,6 +2967,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
   
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
@@ -3215,8 +3216,11 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     if (mac_MainConfig->drx_Config == NULL) {
       LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
     } else {
-      /* Set timers and thresholds values in local MAC context of UE */
-      eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
       LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
   }
@@ -3732,8 +3736,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
   int                                    measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
-  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
-  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
 
 #ifdef CBA // Contention Based Access
   uint8_t                            *cba_RNTI_buf;
@@ -3916,6 +3918,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 
   if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
     /* CDRX Configuration */
+    /*
+    uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
+    LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
     // Need to check if UE is a BR UE
     rnti_t rnti = ue_context_pP->ue_id_rnti;
     module_id_t module_id = ctxt_pP->module_id;
@@ -3931,14 +3936,14 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
         
         LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-        /* Process the IE drx_Config */
+        ///// Process the IE drx_Config /
         if (cc_id < MAX_NUM_CCs) {
           mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
 
           if (mac_MainConfig->drx_Config == NULL) {
             LOG_E(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
           } else {
-            /* Set timers and thresholds values in local MAC context of UE */
+            ////// Set timers and thresholds values in local MAC context of UE /
             eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
             LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
           }
@@ -3951,6 +3956,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     } else { // UE_id invalid
       LOG_E(RRC, "Invalid UE_id found!\n");
     }
+    */
     /* End of CDRX configuration */
   }
 

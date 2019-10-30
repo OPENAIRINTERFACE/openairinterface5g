@@ -31,6 +31,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
+#include "openair2/COMMON/mac_messages_types.h"
 
 /** \addtogroup _mac
  *  @{
@@ -1318,9 +1319,13 @@ int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 
 /* DRX Configuration */
 /* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */
-void eNB_Config_Local_DRX(module_id_t Mod_id, rnti_t rnti, LTE_DRX_Config_t *drx_Configuration);
+void eNB_Config_Local_DRX(instance_t Mod_id, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);                        
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
 #endif
 /** @}*/
+
+/* MAC ITTI messaging related functions */
+/* Main loop of MAC itti message handling */
+void *mac_enb_task(void *arg);

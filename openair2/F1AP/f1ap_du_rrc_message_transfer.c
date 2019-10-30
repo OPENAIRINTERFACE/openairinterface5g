@@ -410,14 +410,16 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
 
                 /* CDRX Configuration */
+                /*
                 if (mac_MainConfig->drx_Config == NULL) {
                   LOG_W(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
                 } else {
-                  /* Set timers and thresholds values in local MAC context of UE */
+                  //// Set timers and thresholds values in local MAC context of UE
                   eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
                   LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
-                /* End of CDRX configuration */
                 }
+                */
+                /* End of CDRX configuration */
               }
 
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;

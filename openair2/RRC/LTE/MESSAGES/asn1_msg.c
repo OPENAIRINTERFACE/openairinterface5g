@@ -621,6 +621,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   return((enc_rval.encoded+7)/8);
 }
 #endif
+
 //-----------------------------------------------------------------------------
 /*
  * Generate the configuration structure for CDRX feature

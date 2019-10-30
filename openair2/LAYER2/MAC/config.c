@@ -992,27 +992,24 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 /*
 * Configure local CDRX timers and thresholds following the drx_configuration input
 */
-void eNB_Config_Local_DRX(
-  module_id_t Mod_id,
-  rnti_t rnti,
-  LTE_DRX_Config_t *const drx_Configuration
-)
+void eNB_Config_Local_DRX(instance_t Mod_id,
+                          rrc_mac_drx_config_req_t *rrc_mac_drx_config_req)
 //-----------------------------------------------------------------------------
 {
   UE_list_t *UE_list_mac = NULL;
-  int UE_id = -1;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  int UE_id = -1;
   
+  rnti_t rnti = rrc_mac_drx_config_req->rnti;
+  LTE_DRX_Config_t *const drx_Configuration = rrc_mac_drx_config_req->drx_Configuration;
+
   UE_list_mac = &(RC.mac[Mod_id]->UE_list);
 
   UE_id = find_UE_id(Mod_id, rnti);
 
   /* Check UE_id */
   if (UE_id == -1) {
-    LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n",
-      __FILE__,
-      __LINE__,
-      __FUNCTION__);
+    LOG_E(MAC, "[eNB_Config_Local_DRX] UE_id == -1\n");
     return;
   }
 
@@ -1022,13 +1019,13 @@ void eNB_Config_Local_DRX(
 
   /* Check drx_Configuration */
   if (drx_Configuration == NULL) {
-    LOG_W(MAC, "drx_Configuration parameter is NULL, cannot configure local UE parameters for CDRX\n");
+    LOG_W(MAC, "[eNB_Config_Local_DRX] drx_Configuration parameter is NULL, cannot configure local UE parameters for CDRX\n");
     return;
   }
 
   /* Check if drx config present */
   if (drx_Configuration->present != LTE_DRX_Config_PR_setup) {
-    LOG_I(MAC, "No drx_Configuration present, don't configure local UE parameters for CDRX\n");
+    LOG_I(MAC, "[eNB_Config_Local_DRX] No drx_Configuration present, don't configure local UE parameters for CDRX\n");
     return;
   }
 
@@ -1090,7 +1087,7 @@ void eNB_Config_Local_DRX(
       UE_scheduling_control->on_duration_timer_thres = 200;
       break;
     default:
-      LOG_E(MAC, "Error in local DRX configuration, the on duration timer value specified is unknown\n");
+      LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the on duration timer value specified is unknown\n");
       break;
   }
 
@@ -1166,7 +1163,7 @@ void eNB_Config_Local_DRX(
       UE_scheduling_control->drx_inactivity_timer_thres = 0;
       break;
     default:
-      LOG_E(MAC, "Error in local DRX configuration, the drx inactivity timer value specified is unknown\n");
+      LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the drx inactivity timer value specified is unknown\n");
       break;
   }
 
@@ -1229,7 +1226,7 @@ void eNB_Config_Local_DRX(
         UE_scheduling_control->short_drx_cycle_duration = 640;
         break;
       default:
-        LOG_E(MAC, "Error in local DRX configuration, the short drx timer value specified is unknown\n");
+        LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the short drx timer value specified is unknown\n");
         break;
     }
 
@@ -1305,7 +1302,7 @@ void eNB_Config_Local_DRX(
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf2560;
       break;
     default:
-      LOG_E(MAC, "Invalid long_DRX value in DRX local configuration\n");
+      LOG_E(MAC, "[eNB_Config_Local_DRX] Invalid long_DRX value in DRX local configuration\n");
       break;
   }
 
@@ -1336,7 +1333,7 @@ void eNB_Config_Local_DRX(
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 33, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
     default:
-      LOG_E(MAC, "Error in local DRX configuration, the drx retransmission timer value specified is unknown\n");
+      LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the drx retransmission timer value specified is unknown\n");
       break;
   }
 }
