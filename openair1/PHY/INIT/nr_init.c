@@ -521,6 +521,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
       rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6;
       rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1;
       rel15_ul->ulsch_pdu_rel15.Qm             = 2;
+      rel15_ul->ulsch_pdu_rel15.R              = 679;
       rel15_ul->ulsch_pdu_rel15.mcs            = 9;
       rel15_ul->ulsch_pdu_rel15.rv             = 0;
       rel15_ul->ulsch_pdu_rel15.n_layers       = 1;

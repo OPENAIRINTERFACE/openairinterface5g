@@ -37,7 +37,7 @@
 */
 
 void nr_modulation(uint32_t *in,
-                   uint16_t length,
+                   uint32_t length,
                    uint16_t mod_order,
                    int16_t *out);
 

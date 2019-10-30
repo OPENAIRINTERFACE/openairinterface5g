@@ -140,9 +140,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     }
 
     f_reg = (f_bundle_j*reg_bundle_size_L)+(reg%reg_bundle_size_L);
-    //index_z   = 9*reg;
-    index_z   = 9*(uint16_t)floor(reg/coreset_time_dur) + (9*coreset_nbr_rb)*(reg%coreset_time_dur);
-    //index_llr = 9*(((uint16_t)floor(f_reg/reg_bundle_size_L)+(f_reg)%coreset_time_dur))*(coreset_nbr_rb);
+    index_z   = 9*reg;
     index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
 
     for (int i=0; i<9; i++) {
@@ -395,7 +393,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb - n_BWP_start) % BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN)==0) {
         bitcnt_coreset_freq_dom ++;
 
-        while ((((coreset_freq_dom & 0x1FFFFFFFFFFF) >> (CORESET_FREQ_DOMAIN_BITMAP_SIZE - bitcnt_coreset_freq_dom)) & 0x1)== 0) { // 46 -> 45 is number of bits in coreset_freq_dom
+        while ((((coreset_freq_dom & 0x1FFFFFFFFFFF) >> (CORESET_FREQ_DOMAIN_BITMAP_SIZE - (n_BWP_start/BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN) - bitcnt_coreset_freq_dom)) & 0x1)== 0) { // 46 -> 45 is number of bits in coreset_freq_dom
           // next 6 RB are not part of the CORESET within the BWP as bit in coreset_freq_dom is set to 0
           bitcnt_coreset_freq_dom ++;
           //c_rb_tmp = c_rb_tmp + 6;
