@@ -91,21 +91,21 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
                                 #endif
                                 int initial_flag);
 
-void  do_RLC_BEARER(uint8_t Mod_id,
-                    int CC_id,
-                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
-                    rlc_bearer_config_t  *rlc_config);
+void do_RLC_BEARER(uint8_t Mod_id,
+                   int CC_id,
+                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
+                   rlc_bearer_config_t *rlc_config);
 
-void  do_MAC_CELLGROUP(uint8_t Mod_id,
-                       int CC_id,
-                       struct NR_MAC_CellGroupConfig *mac_CellGroupConfig,
-                       mac_cellgroup_t  *mac_cellgroup_config);
-
-void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
-                           int CC_id,
-                           struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
-                           physicalcellgroup_t *physicalcellgroup_config);
-
-void  do_SpCellConfig(uint8_t Mod_id,
+void do_MAC_CELLGROUP(uint8_t Mod_id,
                       int CC_id,
-                      struct NR_SpCellConfig  *spconfig);
+                      NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+                      mac_cellgroup_t *mac_cellgroup_config);
+
+void do_PHYSICALCELLGROUP(uint8_t Mod_id,
+                          int CC_id,
+                          NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig,
+                          physicalcellgroup_t *physicalcellgroup_config);
+
+void do_SpCellConfig(uint8_t Mod_id,
+                     int CC_id,
+                     NR_SpCellConfig_t *spconfig);

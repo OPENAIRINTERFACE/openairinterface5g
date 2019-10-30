@@ -35,38 +35,30 @@
 #include <unistd.h>
 #include <execinfo.h>
 #include <signal.h>
-
-#include "SIMULATION/TOOLS/sim.h"
+#include "common/config/config_load_configmodule.h"
+#include "common/utils/LOG/log.h"
+#include "LAYER2/MAC/mac_vars.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_vars.h"
-
-#include "SCHED/sched_eNB.h"
-#include "SCHED/sched_common_vars.h"
-#include "LAYER2/MAC/mac_vars.h"
-
-#include "OCG_vars.h"
-#include "common/utils/LOG/log.h"
-#include "UTIL/LISTS/list.h"
-
-#include "unitary_defs.h"
-
-
-#include "PHY/TOOLS/lte_phy_scope.h"
-
-#include "dummy_functions.c"
-
+#include "PHY/INIT/phy_init.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/LTE_TRANSPORT/transport_proto.h"
-#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/TOOLS/lte_phy_scope.h"
 #include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_vars.h"
 #include "SCHED_UE/sched_UE.h"
-#include "common/config/config_load_configmodule.h"
-#include "PHY/INIT/phy_init.h"
-#include "nfapi/oai_integration/vendor_ext.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "UTIL/LISTS/list.h"
+#include "OCG_vars.h"
+#include "unitary_defs.h"
+#include "dummy_functions.c"
+#include "executables/thread-common.h"
 
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
@@ -85,30 +77,6 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-//THREAD_STRUCT thread_struct;
-static THREAD_STRUCT thread_struct;
-
-void set_parallel_conf(char *parallel_conf) {
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-}
-void set_worker_conf(char *worker_conf) {
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)	                  thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-}
-PARALLEL_CONF_t get_thread_parallel_conf(void) {
-	return thread_struct.parallel_conf;
-}
-WORKER_CONF_t get_thread_worker_conf(void) {
-	return thread_struct.worker_conf;
-}
-
-
 int emulate_rf = 0;
 
 void handler(int sig) {
@@ -121,8 +89,6 @@ void handler(int sig) {
   backtrace_symbols_fd(array, size, 2);
   exit(1);
 }
-
-
 
 //DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
 

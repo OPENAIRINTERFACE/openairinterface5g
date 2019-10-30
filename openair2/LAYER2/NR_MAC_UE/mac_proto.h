@@ -134,5 +134,7 @@ void nr_ue_process_mac_pdu(
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
+void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index);
+
 #endif
 /** @}*/

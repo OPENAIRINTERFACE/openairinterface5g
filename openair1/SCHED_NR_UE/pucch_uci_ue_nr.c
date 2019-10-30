@@ -922,7 +922,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
       /* a valid resource has already be found outside this function */
       resource_set_found = TRUE;
       ready_pucch_resource_id = TRUE;
-      pucch_resource_indicator = pucch_resource_indicator;
+      //pucch_resource_indicator = pucch_resource_indicator;
     }
 
     if (resource_set_found == TRUE) {

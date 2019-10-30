@@ -64,6 +64,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 int nfapi_mode=0;
+uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
@@ -73,6 +74,54 @@ int rrc_init_nr_global_param (void) {return(0);}
 void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
+uint64_t get_softmodem_optmask(void) {return 0;}
+mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
+					  const rnti_t            rntiP,
+					  const eNB_index_t       eNB_index,
+					  const frame_t           frameP,
+					  const sub_frame_t 	  subframeP,
+					  const eNB_flag_t        enb_flagP,
+					  const MBMS_flag_t       MBMS_flagP,
+					  const logical_chan_id_t channel_idP,
+					  const tb_size_t         tb_sizeP,
+					  const uint32_t sourceL2Id,
+					  const uint32_t destinationL2Id)
+{mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
+			      const rnti_t            rntiP,
+			      const eNB_index_t       eNB_index,
+			      const frame_t           frameP,
+			      const eNB_flag_t        enb_flagP,
+			      const MBMS_flag_t       MBMS_flagP,
+			      const logical_chan_id_t channel_idP,
+			      const tb_size_t         tb_sizeP,
+			      char             *buffer_pP,
+			      const uint32_t sourceL2Id,
+			      const uint32_t destinationL2Id )
+{return 0;}
+int generate_dlsch_header(unsigned char *mac_header,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned short timing_advance_cmd,
+                          unsigned char *ue_cont_res_id,
+                          unsigned char short_padding,
+                          unsigned short post_padding){return 0;}
+void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void mac_rlc_data_ind     (
+  const module_id_t         module_idP,
+  const rnti_t              rntiP,
+  const eNB_index_t         eNB_index,
+  const frame_t             frameP,
+  const eNB_flag_t          enb_flagP,
+  const MBMS_flag_t         MBMS_flagP,
+  const logical_chan_id_t   channel_idP,
+  char                     *buffer_pP,
+  const tb_size_t           tb_sizeP,
+  num_tb_t                  num_tbP,
+  crc_t                    *crcs_pP)
+{}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -81,7 +130,7 @@ int main(int argc, char **argv)
 {
   char c;
   int i,aa;//,l;
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
+  double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
@@ -650,8 +699,10 @@ int main(int argc, char **argv)
     //n_errors2 = 0;
     //n_alamouti = 0;
 
+    n_false_positive = 0;
     for (trial = 0; trial < n_trials; trial++) {
 
+      errors_bit = 0;
       //multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
@@ -709,7 +760,8 @@ int main(int argc, char **argv)
 
         }
 
-        if (UE_mac->dl_config_request.number_pdus == 0)
+        if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
+	    UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
           n_errors++;
 
         //----------------------------------------------------------
@@ -736,7 +788,7 @@ int main(int argc, char **argv)
         available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15.nb_layers);
         
         printf("\n");
-        printf("available_bits = %d\n",available_bits);
+        printf("available_bits = %u\n", available_bits);
   
         for (i = 0; i < available_bits; i++) {
           
@@ -775,7 +827,7 @@ int main(int argc, char **argv)
         if (errors_bit > 0) {
           n_false_positive++;
           if (n_trials == 1)
-            printf("errors_bit = %d (trial %d)\n", errors_bit, trial);
+            printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
         }
 
         printf("\n");

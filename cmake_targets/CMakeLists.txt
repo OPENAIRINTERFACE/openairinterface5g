@@ -1566,6 +1566,44 @@ set(L2_SRC_UE
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
   )
+  
+  set(LTE_NR_L2_SRC_UE
+  ${PDCP_DIR}/pdcp.c
+  ${PDCP_DIR}/pdcp_fifo.c
+  ${PDCP_DIR}/pdcp_sequence_manager.c
+  ${PDCP_DIR}/pdcp_primitives.c
+  ${PDCP_DIR}/pdcp_util.c
+  ${PDCP_DIR}/pdcp_security.c
+  ${PDCP_DIR}/pdcp_netlink.c
+  ${RLC_AM_DIR}/rlc_am.c
+  ${RLC_AM_DIR}/rlc_am_init.c
+  ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
+  ${RLC_AM_DIR}/rlc_am_timer_reordering.c
+  ${RLC_AM_DIR}/rlc_am_timer_status_prohibit.c
+  ${RLC_AM_DIR}/rlc_am_segment.c
+  ${RLC_AM_DIR}/rlc_am_segments_holes.c
+  ${RLC_AM_DIR}/rlc_am_in_sdu.c
+  ${RLC_AM_DIR}/rlc_am_receiver.c
+  ${RLC_AM_DIR}/rlc_am_retransmit.c
+  ${RLC_AM_DIR}/rlc_am_windows.c
+  ${RLC_AM_DIR}/rlc_am_rx_list.c
+  ${RLC_AM_DIR}/rlc_am_reassembly.c
+  ${RLC_AM_DIR}/rlc_am_status_report.c
+  ${RLC_TM_DIR}/rlc_tm.c
+  ${RLC_TM_DIR}/rlc_tm_init.c
+  ${RLC_UM_DIR}/rlc_um.c
+  ${RLC_UM_DIR}/rlc_um_fsm.c
+  ${RLC_UM_DIR}/rlc_um_control_primitives.c
+  ${RLC_UM_DIR}/rlc_um_segment.c
+  ${RLC_UM_DIR}/rlc_um_reassembly.c
+  ${RLC_UM_DIR}/rlc_um_receiver.c
+  ${RLC_UM_DIR}/rlc_um_dar.c
+  ${RLC_DIR}/rlc_mac.c
+  ${RLC_DIR}/rlc.c
+  ${RLC_DIR}/rlc_rrc.c
+  ${RLC_DIR}/rlc_mpls.c
+  ${RRC_DIR}/L2_interface_common.c  
+  )
 
 set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
@@ -1618,7 +1656,7 @@ set (MAC_SRC_UE
   ${MAC_DIR}/config_ue.c
   
  )
-
+ 
 set (MAC_NR_SRC_UE
   ${NR_UE_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_UE_MAC_DIR}/config_ue.c
@@ -1674,7 +1712,7 @@ endif()
 add_dependencies(L2_UE rrc_flag s1ap_flag x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
-  
+
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c )
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
@@ -2028,7 +2066,7 @@ add_library(LFDS7
 
 # Simulation library
 ##########################
-add_library(SIMU
+set (SIMUSRC 
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/random_channel.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/rangen_double.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
@@ -2039,9 +2077,13 @@ ${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
 ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
 ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
 ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+${OPENAIR_DIR}/targets/ARCH/rfsimulator/apply_channelmod.c
+#${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
 )
 
+# Simulation library
+##########################
+add_library( SIMU SHARED ${SIMUSRC} )
 
 add_library(SIMU_ETH
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2351,7 +2393,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
   ${OPENAIR_TARGETS}/RT/USER/rfsim.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2424,42 +2465,6 @@ target_link_libraries (nr-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRY
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-# nr-softmodem-nos1
-###################################################
-
-add_executable(nr-softmodem-nos1
-  ${rrc_h}
-  ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_DIR}/executables/nr-gnb.c
-  ${OPENAIR_DIR}/executables/nr-ru.c
-  ${OPENAIR_DIR}/executables/nr-softmodem.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE_NR}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-  )
-
-target_link_libraries (nr-softmodem-nos1
-  -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  -Wl,--end-group z dl)
-
-target_link_libraries (nr-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (nr-softmodem-nos1 ${LIB_LMS_LIBRARIES})
-target_link_libraries (nr-softmodem-nos1 ${T_LIB})
 
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2498,36 +2503,6 @@ target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${C
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
-# nr-uesoftmodem-nos1
-#######################################
-
-add_executable(nr-uesoftmodem-nos1
-  ${rrc_h}
-  ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_DIR}/executables/nr-ue.c
-  ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE_NR}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-  )
-
-target_link_libraries (nr-uesoftmodem-nos1
-  -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_NR_UE PHY_UE PHY_RU LFDS NR_L2_UE MAC_NR_COMMON
-  ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
-  -Wl,--end-group z dl)
-
-target_link_libraries (nr-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (nr-uesoftmodem-nos1 ${LIB_LMS_LIBRARIES})
-target_link_libraries (nr-uesoftmodem-nos1 ${T_LIB})
 
 
 # USIM process
@@ -2575,69 +2550,108 @@ target_link_libraries (dlsim_tm4
 
 add_executable(polartest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c)
-target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(polartest
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE CONFIG_LIB -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} dl
+  )
 
-
-add_executable(smallblocktest
+add_executable(smallblocktest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c)
-target_link_libraries(smallblocktest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(smallblocktest
+  -Wl,--start-group UTIL SIMU PHY_NR CONFIG_LIB -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} dl
+  )
 
 add_executable(ldpctest  
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c)
-target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(ldpctest
+  -Wl,--start-group UTIL SIMU PHY_NR CONFIG_LIB -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} dl
+  )
 
 add_executable(nr_dlschsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(nr_dlschsim 
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB}  dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(nr_pbchsim
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 
 #PUCCH ---> Prashanth
 add_executable(nr_pucchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c 
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_pucchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(nr_pucchsim
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 #PUCCH ---> Prashanth
 
 add_executable(nr_dlsim
-  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c 
-  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})   
-target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )   
+target_link_libraries(nr_dlsim
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(nr_ulschsim
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${UTIL_SRC}
-  ${T_SOURCE})
-target_link_libraries(nr_ulsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+  ${T_SOURCE}
+  ${SHLIB_LOADER_SOURCES}
+  )
+target_link_libraries(nr_ulsim
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
+  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
+  )
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
@@ -2718,10 +2732,10 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-uesoftmodem nr-softmodem nr-softmodem-nos1
-        nr-uesoftmodem nr-uesoftmodem-nos1 dlsim dlsim_tm4 dlsim_tm7 
+        lte-softmodem lte-uesoftmodem nr-softmodem 
+        nr-uesoftmodem dlsim dlsim_tm4 dlsim_tm7 
         ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim
-        syncsim ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
+        syncsim nr_ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB F1AP_LIB

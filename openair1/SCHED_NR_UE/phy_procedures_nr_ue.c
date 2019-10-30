@@ -3022,7 +3022,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 					     &format_found,
 					     crc_scrambled_values);
 #ifdef NR_PDCCH_SCHED_DEBUG
-	printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%d\n",dci_cnt);
+	printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
 #endif
 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
@@ -3536,13 +3536,18 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint8_t nb_re_dmrs = 6; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
+  nr_downlink_indication_t dl_indication;
+  fapi_nr_rx_indication_t rx_ind;
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
 
+
   harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
+
+
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -3767,6 +3772,33 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
 
       LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_tti_rx);
+
+      LOG_I(PHY, "harq_pid: %d, TBS expected dlsch0: %d, TBS expected dlsch1: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS, dlsch1->harq_processes[harq_pid]->TBS);
+      
+      if(ret<dlsch0->max_ldpc_iterations+1){
+      // fill dl_indication message
+      dl_indication.module_id = ue->Mod_id;
+      dl_indication.cc_id = ue->CC_id;
+      dl_indication.gNB_index = eNB_id;
+      dl_indication.frame = frame_rx;
+      dl_indication.slot = nr_tti_rx;
+
+      dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
+      dl_indication.proc=proc;
+
+      //dl_indication.rx_ind->number_pdus
+      rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+      rx_ind.rx_indication_body[0].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
+      rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS>>3;
+      LOG_D(PHY, "PDU length in bits: %d, in bytes: %d \n", dlsch0->harq_processes[harq_pid]->TBS, rx_ind.rx_indication_body[0].pdsch_pdu.pdu_length);
+      rx_ind.number_pdus = 1;
+
+      //ue->dl_indication.rx_ind = &dlsch1->harq_processes[harq_pid]->b; //no data, only dci for now
+      dl_indication.dci_ind = NULL; //&ue->dci_ind;
+      //  send to mac
+      if (ue->if_inst && ue->if_inst->dl_indication)
+      ue->if_inst->dl_indication(&dl_indication);
+      }
     }
 
 
@@ -4282,7 +4314,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)
     {
-      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
       for (int i=1; i<4; i++) {
 
@@ -4307,6 +4339,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     
+	  LOG_I(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
 
 #if UE_TIMING_TRACE

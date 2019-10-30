@@ -41,7 +41,7 @@ void exit_function(const char* file, const char* function, const int line, const
   exit(-1);
 }
 
-char quantize(double D, double x, unsigned char B) {
+signed char quantize(double D, double x, unsigned char B) {
   double qxd;
   short maxlev;
   qxd = floor(x / D);

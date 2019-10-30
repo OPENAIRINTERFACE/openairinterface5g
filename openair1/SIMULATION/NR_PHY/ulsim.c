@@ -65,10 +65,59 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // dummy functions
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
+void mac_rlc_data_ind ( const module_id_t         module_idP,
+			const rnti_t              rntiP,
+			const eNB_index_t         eNB_index,
+			const frame_t             frameP,
+			const eNB_flag_t          enb_flagP,
+			const MBMS_flag_t         MBMS_flagP,
+			const logical_chan_id_t   channel_idP,
+			char                     *buffer_pP,
+			const tb_size_t           tb_sizeP,
+			num_tb_t                  num_tbP,
+			crc_t                    *crcs_pP){}
+mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
+					  const rnti_t            rntiP,
+					  const eNB_index_t       eNB_index,
+					  const frame_t           frameP,
+					  const sub_frame_t 	  subframeP,
+					  const eNB_flag_t        enb_flagP,
+					  const MBMS_flag_t       MBMS_flagP,
+					  const logical_chan_id_t channel_idP,
+					  const tb_size_t         tb_sizeP,
+					  const uint32_t sourceL2Id,
+					  const uint32_t destinationL2Id)
+{mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
+			      const rnti_t            rntiP,
+			      const eNB_index_t       eNB_index,
+			      const frame_t           frameP,
+			      const eNB_flag_t        enb_flagP,
+			      const MBMS_flag_t       MBMS_flagP,
+			      const logical_chan_id_t channel_idP,
+			      const tb_size_t         tb_sizeP,
+			      char             *buffer_pP,
+			      const uint32_t sourceL2Id,
+			      const uint32_t destinationL2Id )
+{return 0;}
+int generate_dlsch_header(unsigned char *mac_header,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned short timing_advance_cmd,
+                          unsigned char *ue_cont_res_id,
+                          unsigned char short_padding,
+                          unsigned short post_padding){return 0;}
+uint64_t get_softmodem_optmask(void) {return 0;}
+int rlc_module_init (void) {return(0);}
+void pdcp_layer_init (void) {}
+void nr_ip_over_LTE_DRB_preconfiguration(void){}
 
 // needed for some functions
 uint16_t n_rnti = 0x1234;

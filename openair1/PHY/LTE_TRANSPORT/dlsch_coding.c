@@ -42,6 +42,7 @@
 #include "common/utils/LOG/log.h"
 #include "targets/RT/USER/lte-softmodem.h"
 #include <syscall.h>
+#include "executables/thread-common.h"
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -57,9 +58,8 @@
          uint64_t runtime,
          uint64_t deadline,
          uint64_t period);*/
-extern WORKER_CONF_t get_thread_worker_conf(void);
-extern volatile int oai_exit;
 
+extern volatile int oai_exit;
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   int i, r, aa, layer;
@@ -99,7 +99,14 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   }
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS *frame_parms) {
+
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,
+                               unsigned char Mdlharq,
+                               uint32_t Nsoft,
+                               unsigned char N_RB_DL,
+                               uint8_t abstraction_flag,
+                               LTE_DL_FRAME_PARMS *frame_parms)
+{
   LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r,aa,layer;
   int re;
@@ -221,6 +228,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
   return(NULL);
 }
 
+
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   unsigned char Mdlharq;
   unsigned char i,j,r;
@@ -255,8 +263,6 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch) {
     }
   }
 }
-
-
 
 
 int dlsch_encoding_2threads0(te_params *tep) {
@@ -356,7 +362,6 @@ void *te_thread(void *param) {
 
   return(NULL);
 }
-
 
 
 int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
@@ -548,6 +553,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return(0);
 }
+
+
 int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                        unsigned char *a,
                        uint8_t num_pdcch_symbols,
@@ -812,10 +819,3 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return(0);
 }
-
-
-
-
-
-
-

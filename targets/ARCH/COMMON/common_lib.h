@@ -41,9 +41,9 @@
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
 /* name of shared library implementing the basic/rf simulator */
-#define OAI_RFSIM_LIBNAME        "rfsimulator"
+#define OAI_RFSIM_LIBNAME     "rfsimulator"
 /* name of shared library implementing the basic/rf simulator */
-#define OAI_BASICSIM_LIBNAME        "tcp_bridge_oai"
+#define OAI_BASICSIM_LIBNAME  "tcp_bridge_oai"
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
@@ -420,7 +420,6 @@ typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
-#define sample_t struct complex16 // 2*16 bits complex number
 
 typedef struct {
   uint64_t magic;          // Magic value (see defines above)
@@ -445,8 +444,6 @@ typedef struct {
 #define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
-
-#define sample_t struct complex16 // 2*16 bits complex number
 
 #ifdef __cplusplus
 extern "C"
