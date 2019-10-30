@@ -329,7 +329,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
 
-  LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
+  LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
  
   
   //FK this is still a bad hack. We need to replace the L1 FAPI structures with the new scf ones as well.

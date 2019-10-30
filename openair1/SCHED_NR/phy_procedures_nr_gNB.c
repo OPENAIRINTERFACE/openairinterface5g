@@ -352,7 +352,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
   int num_pusch_pdu = UL_tti_req->n_pdus;
 
-  LOG_I(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
+  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
   
   for (int i = 0; i < num_pusch_pdu; i++) {
 
