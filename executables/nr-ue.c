@@ -732,6 +732,8 @@ void *UE_thread(void *arg) {
                                            rxp,
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
+
+if (slot_nr==18)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
@@ -741,7 +743,7 @@ void *UE_thread(void *arg) {
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     1),"");
+                     4),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
