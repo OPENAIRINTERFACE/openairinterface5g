@@ -241,8 +241,8 @@ if (logFlag){
 
 		  start_meas(&timeEncoder);
 		  if (decoder_int16==1) {
-			  polar_encoder_fast((uint64_t *)testInput, encoderOutput, 0, currentPtr);
-			  //polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0, currentPtr);
+			  polar_encoder_fast((uint64_t *)testInput, encoderOutput, 0, 0, currentPtr);
+			  //polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0,0,currentPtr);
 		  } else { //0 --> PBCH, 1 --> DCI, -1 --> UCI
 			  if (polarMessageType == 0)
 				  polar_encoder(testInput, encoderOutput, currentPtr);
