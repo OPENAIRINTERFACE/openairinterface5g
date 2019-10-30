@@ -21,7 +21,7 @@
 
 
 #include <string.h>
-
+#include "SCHED_NR_UE/defs.h"
 #include "nr_estimation.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "filt16a_32.h"
@@ -199,19 +199,23 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-                               uint8_t eNB_offset,
-                               unsigned char Ns,
-                               unsigned char symbol,
-                               int dmrss,
-                               uint8_t ssb_index,
-                               uint8_t n_hf)
+			       uint8_t eNB_offset,
+			       unsigned char Ns,
+			       unsigned char symbol,
+			       int dmrss,
+			       uint8_t ssb_index,
+			       uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned char aarx;
+  unsigned char aarx,p;
   unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
+  int slot_pbch;
+  fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
+  // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
+  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
@@ -418,6 +422,59 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     }
 
+    void (*idft)(int16_t *,int16_t *, int);
+
+    switch (ue->frame_parms.ofdm_symbol_size) {
+    case 128:
+      idft = idft128;
+      break;
+
+    case 256:
+      idft = idft256;
+      break;
+
+    case 512:
+      idft = idft512;
+      break;
+
+    case 1024:
+      idft = idft1024;
+      break;
+
+    case 1536:
+      idft = idft1536;
+      break;
+
+    case 2048:
+      idft = idft2048;
+      break;
+
+    case 3072:
+      idft = idft3072;
+      break;
+
+    case 4096:
+      idft = idft4096;
+      break;
+
+    default:
+      printf("unsupported ofdm symbol size \n");
+      assert(0);
+    }
+
+    if( symbol == 3)
+    {
+        // do ifft of channel estimate
+        for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
+            for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
+                if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
+                {
+  		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, ue->current_thread_id[Ns], symbol, ch_offset);
+  		idft((int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
+  		     (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
+                }
+            }
+    }
 
     //}
 
@@ -433,7 +490,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short nb_rb_coreset)
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned char aarx,p;
+  unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
@@ -596,60 +653,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
       //}
 
-  }
-  
-  void (*idft)(int16_t *,int16_t *, int);
-
-  switch (ue->frame_parms.ofdm_symbol_size) {
-  case 128:
-    idft = idft128;
-    break;
-
-  case 256:
-    idft = idft256;
-    break;
-
-  case 512:
-    idft = idft512;
-    break;
-
-  case 1024:
-    idft = idft1024;
-    break;
-
-  case 1536:
-    idft = idft1536;
-    break;
-
-  case 2048:
-    idft = idft2048;
-    break;
-
-  case 3072:
-    idft = idft3072;
-    break;
-
-  case 4096:
-    idft = idft4096;
-    break;
-
-  default:
-    printf("unsupported ofdm symbol size \n");
-    assert(0);
-  }
-
-  if( (Ns== 1) && (symbol == 0))
-  {
-      // do ifft of channel estimate
-      for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
-          for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
-              if (ue->pdcch_vars[ue->current_thread_id[Ns]][eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
-              {
-		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns], symbol);
-		idft((int16_t*) &ue->pdcch_vars[ue->current_thread_id[Ns]][eNB_offset]->dl_ch_estimates[(p<<1)+aarx][0],
-		     (int16_t*) ue->pdcch_vars[ue->current_thread_id[Ns]][eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
-              }
-          }
   }
 
   return(0);
