@@ -857,6 +857,54 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t *FS6bufferZone;
 } PHY_VARS_eNB;
 
+struct turboReqId {
+    uint16_t rnti;
+    uint16_t frame;
+    uint8_t  subframe;
+    uint8_t  codeblock;
+    uint16_t spare;
+} __attribute__((packed));
+
+union turboReqUnion {
+    struct turboReqId s;
+    uint64_t p;
+};
+
+typedef struct TurboDecode_s {
+     decoder_if_t *function;
+    int16_t soft_bits[3*8*6144+12+96] __attribute__((aligned(32)));
+    uint8_t decoded_bytes[3+768] __attribute__((aligned(32)));
+    int UEid;
+    int harq_pid;
+    int frame;
+    int subframe;
+    int iind;
+    int Fbits;
+    int Kr;
+    LTE_UL_eNB_HARQ_t *ulsch_harq;
+    PHY_VARS_eNB *eNB;
+    int nbSegments;
+    int segment_r;
+    int offset;
+    int maxIterations;
+    int decodeIterations;
+} turboDecode_t;
+
+#define TURBO_SIMD_SOFTBITS   96+12+3+3*6144
+typedef struct turboEncode_s {
+  uint8_t * input;
+  int Kr_bytes;
+  int filler;
+  unsigned int G;
+  int r;
+  int harq_pid;
+  int round;
+  int r_offset;
+  LTE_eNB_DLSCH_t *dlsch;
+  time_stats_t *rm_stats;
+  time_stats_t *te_stats;
+  time_stats_t *i_stats;
+} turboEncode_t;
 
 
 #endif /* __PHY_DEFS_ENB__H__ */

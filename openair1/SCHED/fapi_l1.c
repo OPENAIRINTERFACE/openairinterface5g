@@ -220,13 +220,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
-  if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
+  if (dlsch0_harq->DLround==0) {  //get pointer to SDU if this a new SDU
     if(sdu == NULL) {
       LOG_E(PHY,
             "NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
             frame,subframe,
             proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
-            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
+            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->DLround,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
       return;
     }
 
@@ -241,7 +241,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     else                     dlsch1_harq->pdu                    = sdu;
   } else {
     if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d, subframe %d]: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
-                                      frame,subframe,proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
+                                      frame,subframe,proc->frame_tx,proc->subframe_tx,dlsch0_harq->DLround,
                                       rel8->rnti,UE_id,harq_pid);
   }
 
@@ -321,7 +321,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     dlsch0_harq->Nl                 = 1;
     dlsch0_harq->mimo_mode          = (eNB->frame_parms.nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off       = 1;
-    dlsch0_harq->round              = 0;
+    dlsch0_harq->DLround              = 0;
     dlsch0_harq->status             = ACTIVE;
     dlsch0_harq->TBS                = rel8->length<<3;
     dlsch0_harq->Qm                 = rel8->modulation;
@@ -346,13 +346,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 #else
           dlsch0->i0,
 #endif
-          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status,
+          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->DLround, dlsch0_harq->status,
           dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
           rel8->length
          );
 #else
     LOG_D(PHY,"dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n",
-          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status,
+          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->DLround, dlsch0_harq->status,
           dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
           rel8->length
          );
@@ -385,7 +385,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 #endif
       dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
-    if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
+    if (dlsch0_harq->DLround==0) {  //get pointer to SDU if this a new SDU
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
                   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
@@ -397,7 +397,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
       else                     dlsch1_harq->pdu                    = sdu;
     } else {
       if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
-                                        proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
+                                        proc->frame_tx,proc->subframe_tx,dlsch0_harq->DLround,
                                         rel8->rnti,UE_id,harq_pid);
     }
   }

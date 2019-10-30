@@ -39,6 +39,7 @@
 #include "nfapi_interface.h"
 #include "platform_constants.h"
 #include "platform_types.h"
+#include <common/utils/threadPool/thread-pool.h>
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100
@@ -179,6 +180,11 @@ typedef struct {
   pthread_cond_t cond_RUs;
   /// mutex for RXn-TXnp4 processing thread
   pthread_mutex_t mutex_RUs;
+  tpool_t threadPool;
+  int nbEncode;
+  int nbDecode;
+  notifiedFIFO_t respEncode;
+  notifiedFIFO_t respDecode;
 } L1_rxtx_proc_t;
 
 typedef struct IF_Module_s{

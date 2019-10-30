@@ -71,7 +71,7 @@ typedef struct {
   /// Subframe where current HARQ round was sent
   uint32_t subframe;
   /// Index of current HARQ round for this DLSCH
-  uint8_t round;
+  uint8_t DLround;
   /// Modulation order
   uint8_t Qm;
   /// MCS
@@ -103,7 +103,7 @@ typedef struct {
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
-  uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
+  //uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
   uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
@@ -272,6 +272,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
+  //TBD
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
@@ -288,7 +289,10 @@ typedef struct {
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  //TBD
   int16_t *d[MAX_NUM_ULSCH_SEGMENTS];
+  uint32_t processedSegments;
+  uint32_t processedBadSegment;
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
   uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)

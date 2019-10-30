@@ -314,17 +314,17 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
       proc->frame_tx,proc->subframe_tx,
       dlsch0->rnti,dlsch0->harq_mask,
       rel8->rnti, rel8->rnti_type, rel8->harq_process, rel8->new_data_indicator_1,
-      dlsch0_harq->round, dlsch0->harq_mask, dlsch0_harq->ndi);
+      dlsch0_harq->DLround, dlsch0->harq_mask, dlsch0_harq->ndi);
 
   if (dlsch0->rnti != rel8->rnti) { // if rnti of dlsch is not the same as in the config, this is a new entry
-    dlsch0_harq->round=0;
+    dlsch0_harq->DLround=0;
     dlsch0->harq_mask=0;
   }
   if ((dlsch0->harq_mask & (1 << rel8->harq_process)) > 0) {
     if (rel8->new_data_indicator_1 != dlsch0_harq->ndi)
-      dlsch0_harq->round = 0;
+      dlsch0_harq->DLround = 0;
   } else {                      // process is inactive, so activate and set round to 0
-    dlsch0_harq->round = 0;
+    dlsch0_harq->DLround = 0;
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
 
@@ -335,12 +335,12 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
   dlsch0->active        = 1;
 #endif
   if (rel8->rnti_type == 2)
-      dlsch0_harq->round    = 0;
+      dlsch0_harq->DLround    = 0;
 
   LOG_D(PHY,"NFAPI: rel8[rnti %x dci_format %d harq_process %d ndi1 %d rnti type %d] dlsch0[rnti %x harq_mask %x] dlsch0_harq[round %d ndi %d]\n",
       rel8->rnti,rel8->dci_format,rel8->harq_process, rel8->new_data_indicator_1, rel8->rnti_type,
       dlsch0->rnti,dlsch0->harq_mask,
-      dlsch0_harq->round,dlsch0_harq->ndi
+      dlsch0_harq->DLround,dlsch0_harq->ndi
       );
 
   switch (rel8->dci_format) {
@@ -503,7 +503,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
       NPRB      = dlsch0_harq->nb_rb;
       I_mcs     = get_I_TBS(rel8->mcs_1);
     }
-    AssertFatal(NPRB>0,"DCI 1A: NPRB = 0 (rnti %x, rnti type %d, tpc %d, round %d, resource_block_coding %d, harq process %d)\n",rel8->rnti,rel8->rnti_type,rel8->tpc,dlsch0_harq->round,rel8->resource_block_coding,rel8->harq_process);
+    AssertFatal(NPRB>0,"DCI 1A: NPRB = 0 (rnti %x, rnti type %d, tpc %d, round %d, resource_block_coding %d, harq process %d)\n",rel8->rnti,rel8->rnti_type,rel8->tpc,dlsch0_harq->DLround,rel8->resource_block_coding,rel8->harq_process);
     dlsch0_harq->rvidx         = rel8->redundancy_version_1;
     dlsch0_harq->Nl            = 1;
     dlsch0_harq->mimo_mode     = (fp->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
@@ -523,12 +523,12 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     dlsch0->rnti                 = rel8->rnti;
     //dlsch0->harq_ids[subframe]   = rel8->harq_process;
 
-    if (dlsch0_harq->round == 0)
+    if (dlsch0_harq->DLround == 0)
       dlsch0_harq->status = ACTIVE;
 
     dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
+    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->DLround,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:
@@ -690,7 +690,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
 
 
 
-    if (dlsch0_harq->round == 0) {
+    if (dlsch0_harq->DLround == 0) {
       dlsch0_harq->status = ACTIVE;
 
       //            printf("Setting DLSCH process %d to ACTIVE\n",rel8->harq_process);
@@ -1042,16 +1042,16 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
 
     // reset HARQ process if this is the first transmission
 #ifdef PHY_TX_THREAD
-    if ((dlsch0->active[subframe]==1) && (dlsch0_harq->round == 0))
+    if ((dlsch0->active[subframe]==1) && (dlsch0_harq->DLround == 0))
 #else
-    if ((dlsch0->active==1) && (dlsch0_harq->round == 0))
+    if ((dlsch0->active==1) && (dlsch0_harq->DLround == 0))
 #endif
       dlsch0_harq->status = ACTIVE;
 
 #ifdef PHY_TX_THREAD
-    if ((dlsch1->active[subframe]==1) && (dlsch1_harq->round == 0))
+    if ((dlsch1->active[subframe]==1) && (dlsch1_harq->DLround == 0))
 #else
-    if ((dlsch1->active==1) && (dlsch1_harq->round == 0))
+    if ((dlsch1->active==1) && (dlsch1_harq->DLround == 0))
 #endif
       dlsch1_harq->status = ACTIVE;
 
@@ -1479,7 +1479,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     printf ("dlsch0 eNB: NBRB     %d\n", dlsch0_harq->nb_rb);
     printf ("dlsch0 eNB: rballoc  %x\n", dlsch0_harq->rb_alloc[0]);
     printf ("dlsch0 eNB: harq_pid %d\n", harq_pid);
-    printf ("dlsch0 eNB: round    %d\n", dlsch0_harq->round);
+    printf ("dlsch0 eNB: round    %d\n", dlsch0_harq->DLround);
     printf ("dlsch0 eNB: rvidx    %d\n", dlsch0_harq->rvidx);
     printf ("dlsch0 eNB: TBS      %d (NPRB %d)\n", dlsch0_harq->TBS, NPRB);
     printf ("dlsch0 eNB: mcs      %d\n", dlsch0_harq->mcs);
@@ -1493,7 +1493,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
     printf ("dlsch1 eNB: NBRB     %d\n", dlsch1_harq->nb_rb);
     printf ("dlsch1 eNB: rballoc  %x\n", dlsch1_harq->rb_alloc[0]);
     printf ("dlsch1 eNB: harq_pid %d\n", harq_pid);
-    printf ("dlsch1 eNB: round    %d\n", dlsch1_harq->round);
+    printf ("dlsch1 eNB: round    %d\n", dlsch1_harq->DLround);
     printf ("dlsch1 eNB: rvidx    %d\n", dlsch1_harq->rvidx);
     printf ("dlsch1 eNB: TBS      %d (NPRB %d)\n", dlsch1_harq->TBS, NPRB);
     printf ("dlsch1 eNB: mcs      %d\n", dlsch1_harq->mcs);
@@ -1748,19 +1748,19 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
 
   dlsch0->subframe_tx[subframe] = 1;
   if (dlsch0->rnti != rel13->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
-    dlsch0_harq->round = 0;
+    dlsch0_harq->DLround = 0;
     dlsch0->harq_mask =0;
     printf("*********************** rnti %x => %x, pos %d\n",rel13->rnti,dlsch0->rnti,UE_id);
   }
   if ((dlsch0->harq_mask & (1 << rel13->harq_process)) > 0) {
     if ((rel13->new_data_indicator != dlsch0_harq->ndi)||(dci_alloc->ra_flag==1))
-      dlsch0_harq->round = 0;
+      dlsch0_harq->DLround = 0;
   } else {                      // process is inactive, so activate and set round to 0
-    dlsch0_harq->round = 0;
+    dlsch0_harq->DLround = 0;
   }
   dlsch0_harq->ndi = rel13->new_data_indicator;
 
-  if (dlsch0_harq->round == 0) {
+  if (dlsch0_harq->DLround == 0) {
     dlsch0_harq->status = ACTIVE;
     dlsch0_harq->mcs = rel13->mcs;
     if (dci_alloc->ra_flag == 0) // get TBS from table using mcs and nb_rb
@@ -1782,7 +1782,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dlsch0->harq_ids[dlsch0_harq->frame%2][dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
-  LOG_D(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
+  LOG_D(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->DLround,dlsch0_harq->frame,dlsch0_harq->subframe);
 
   dlsch0->rnti = rel13->rnti;
 

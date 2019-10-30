@@ -102,6 +102,7 @@ void generate_mch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,uint8_t *a)
   
   
   AssertFatal(dlsch_encoding(eNB,
+			     proc,
 			     a,
 			     1,
 			     eNB->dlsch_MCH,

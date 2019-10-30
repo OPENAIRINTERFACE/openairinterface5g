@@ -29,6 +29,7 @@ static int DEFENBS[] = {0};
 #include <openair1/PHY/LTE_REFSIG/lte_refsig.h>
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <executables/split_headers.h>
+#include <common/utils/threadPool/thread-pool.h>
 
 extern uint16_t sf_ahead;
 
@@ -690,6 +691,13 @@ static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
   L1_rxtx_proc_t L1proc;
   L1_rxtx_proc_t *proc=&L1proc;
+
+  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 ) {
+    initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
+    initNotifiedFIFO(&L1proc.respEncode);
+    initNotifiedFIFO(&L1proc.respDecode);
+  }  else
+    initTpool("n", &L1proc.threadPool, true);
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);

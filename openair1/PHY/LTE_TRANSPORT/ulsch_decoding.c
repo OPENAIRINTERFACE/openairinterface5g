@@ -313,6 +313,14 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 
     r_offset += E;
     start_meas(&eNB->ulsch_deinterleaving_stats);
+    #if 0
+          start_meas(&eNB->ulsch_deinterleaving_stats);
+        req=createRequest(DECODE,sizeof(turboDecode_t));
+        req->startUELoop=eNB->proc.threadPool.startProcessingUE;
+        union turboReqUnion id= {.s={eNB->ulsch[UE_id]->rnti,frame,subframe,r,0}};
+        req->id= id.p;
+        turboDecode_t * rdata=(turboDecode_t *) req->data;
+    #endif
     sub_block_deinterleaving_turbo(4+Kr,
                                    &ulsch_harq->d[r][96],
                                    ulsch_harq->w[r]);
@@ -322,6 +330,58 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
+      #if 0
+           rdata->frame=frame;
+        rdata->subframe=subframe;
+        rdata->UEid=UE_id;
+        rdata->harq_pid=harq_pid;
+        rdata->Kr=Kr;
+        rdata->maxIterations=eNB->ulsch[UE_id]->max_turbo_iterations;
+        rdata->ulsch_harq=ulsch_harq;
+        rdata->eNB=eNB;
+        rdata->nbSegments=ulsch_harq->C;
+        rdata->segment_r=r;
+        rdata->Fbits=(r==0) ? ulsch_harq->F : 0;
+        rdata->offset=offset;
+        rdata->function=td;
+        int Fbytes=rdata->Fbits>>3;
+        int blockSize=Kr_bytes - Fbytes - (rdata->nbSegments>1?3:0);
+        if ( eNB->proc.threadPool.activated) {
+            add_request(req, &eNB->proc.threadPool);
+            req=NULL;
+        } else {
+            req->startProcessingTime=rdtsc();
+            rdata->decodeIterations = td( rdata->soft_bits+96,
+                                          rdata->decoded_bytes,
+                                          rdata->Kr,
+                                          f1f2mat_old[rdata->iind*2],
+                                          f1f2mat_old[(rdata->iind*2)+1],
+                                          rdata->maxIterations,
+                                          rdata->nbSegments == 1 ? CRC24_A: CRC24_B,
+                                          rdata->Fbits,
+                                          &eNB->ulsch_tc_init_stats,
+                                          &eNB->ulsch_tc_alpha_stats,
+                                          &eNB->ulsch_tc_beta_stats,
+                                          &eNB->ulsch_tc_gamma_stats,
+                                          &eNB->ulsch_tc_ext_stats,
+                                          &eNB->ulsch_tc_intl1_stats,
+                                          &eNB->ulsch_tc_intl2_stats);
+
+            stop_meas(&eNB->ulsch_turbo_decoding_stats);
+          req->returnTime=req->endProcessingTime=rdtsc();
+            req->decodeIterations=rdata->decodeIterations;
+            req->coreId=0;
+            req->processedBy[0]=0;
+            req->next=eNB->proc.threadPool.doneRequests;
+            eNB->proc.threadPool.doneRequests=req;
+
+            if (rdata->decodeIterations > eNB->ulsch[UE_id]->max_turbo_iterations )
+                // Entire TPU need retransmission
+                break;
+        }
+offset += blockSize;
+        eNB->proc.threadPool.startProcessingUE=rdtsc();
+	#endif
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     ret = tc(&ulsch_harq->d[r][96],
              NULL,

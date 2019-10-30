@@ -175,6 +175,7 @@
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define RF_CONFIG_FILE      softmodem_params.rf_config_file
+#define TP_CONFIG           softmodem_params.threadPoolConfig
 #define PHY_TEST            softmodem_params.phy_test
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
@@ -187,6 +188,7 @@
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)}, \
+    {"turbo-thread-pool",        	 NULL,			0,		  strptr:(char **)&TP_CONFIG,		defstrval:NULL, 		   TYPE_STRING,   sizeof(TP_CONFIG)}, \
     {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
     {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&PHY_TEST,                     defintval:0,                    TYPE_INT,       0},                     \
     {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&USIM_TEST,                   defintval:0,                    TYPE_UINT8,     0},                     \
@@ -253,6 +255,7 @@ typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
   char           rf_config_file[1024];
+  char           threadPoolConfig[1024];
   int            phy_test;
   uint8_t        usim_test;
   int            emulate_rf;

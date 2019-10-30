@@ -1332,8 +1332,6 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
   sprintf(fname,"/tmp/ulsch_r%d_d",round);
   sprintf(vname,"/tmp/ulsch_r%d_dseq",round);
-  LOG_UM(fname,vname,&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
-               eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
   if (eNB->common_vars.rxdata) {
     sprintf(fname,"/tmp/rxsig0_r%d.m",round);
     sprintf(vname,"rxs0_r%d",round);
