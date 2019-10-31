@@ -1064,7 +1064,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 */
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);

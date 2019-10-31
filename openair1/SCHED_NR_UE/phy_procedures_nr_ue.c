@@ -3307,7 +3307,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
 
   harq_processes_dest->B             = current_harq_processes->B             ;
   harq_processes_dest->C             = current_harq_processes->C             ;
-  harq_processes_dest->DCINdi         = current_harq_processes->DCINdi             ;
+  harq_processes_dest->DCINdi         = current_harq_processes->DCINdi       ;
   harq_processes_dest->F             = current_harq_processes->F             ;
   harq_processes_dest->G             = current_harq_processes->G             ;
   harq_processes_dest->K             = current_harq_processes->K             ;
@@ -3320,6 +3320,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   harq_processes_dest->dl_power_off   = current_harq_processes->dl_power_off   ;
   harq_processes_dest->first_tx       = current_harq_processes->first_tx       ;
   harq_processes_dest->mcs            = current_harq_processes->mcs            ;
+  harq_processes_dest->mcs_table      = current_harq_processes->mcs_table      ;
   harq_processes_dest->mimo_mode      = current_harq_processes->mimo_mode      ;
   harq_processes_dest->nb_rb          = current_harq_processes->nb_rb          ;
   harq_processes_dest->pmi_alloc      = current_harq_processes->pmi_alloc      ;
@@ -4139,6 +4140,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
   NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
+  uint16_t start_symb_sch = dlsch0_harq->start_symbol;
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   uint8_t ssb_periodicity = 10;// ue->ssb_periodicity; // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
   uint8_t dci_cnt = 0;
@@ -4165,6 +4167,43 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
   uint16_t coreset_nb_rb = 6 * coreset_count;
   uint16_t coreset_start_rb = 6 * coreset_start;
+  
+  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
+
+  // looking for pbch only in slot where it is supposed to be
+  if ((ue->decode_MIB == 1) && slot_pbch)
+    {
+      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+
+      for (int i=1; i<4; i++) {
+
+	nr_slot_fep(ue,
+		    (ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),
+		    nr_tti_rx,
+		    0,
+		    0);
+
+#if UE_TIMING_TRACE
+  	start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config->ssb_index)&7,pbch_config->half_frame_bit);
+#if UE_TIMING_TRACE
+  	stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+      
+      }
+      nr_ue_pbch_procedures(eNB_id,ue,proc,0);
+
+      if (ue->no_timing_correction==0) {
+        LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+        nr_adjust_synch_ue(&ue->frame_parms,
+      		             ue,
+  						 eNB_id,
+  						 nr_tti_rx,
+  						 0,
+  						 16384);
+      }
+    }
 
 #ifdef NR_PDCCH_SCHED
   nr_gold_pdcch(ue, 0, 2);
@@ -4204,16 +4243,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (dci_cnt > 0) {
 
     LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n",ue->Mod_id,frame_rx,nr_tti_rx,dci_cnt);
-    
-    if (ue->no_timing_correction==0) {
-      LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
-      nr_adjust_synch_ue(&ue->frame_parms,
-    		             ue,
-						 eNB_id,
-						 nr_tti_rx,
-						 0,
-						 16384);
-    }
+
   } else {
     LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);
   }
@@ -4223,11 +4253,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (dci_cnt > 0){
     LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     //to update from pdsch config
-    nr_gold_pdsch(ue,nb_symb_pdcch,0, 1);
+    start_symb_sch = dlsch0_harq->start_symbol;
+    nr_gold_pdsch(ue,start_symb_sch,0, 1);
 
     nb_symb_sch = dlsch0_harq->nb_symbols;
     
-    for (uint16_t m=nb_symb_pdcch;m<=(nb_symb_sch+nb_symb_pdcch-1) ; m++){
+    for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
       nr_slot_fep(ue,
 		  m,  //to be updated from higher layer
 		  nr_tti_rx,
@@ -4308,34 +4339,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
-
-  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
-
-  // looking for pbch only in slot where it is supposed to be
-  if ((ue->decode_MIB == 1) && slot_pbch)
-    {
-      LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-
-      for (int i=1; i<4; i++) {
-
-	nr_slot_fep(ue,
-		    (ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),
-		    nr_tti_rx,
-		    0,
-		    0);
-
-#if UE_TIMING_TRACE
-  	start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config->ssb_index)&7,pbch_config->half_frame_bit);
-#if UE_TIMING_TRACE
-  	stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-      
-      }
-      nr_ue_pbch_procedures(eNB_id,ue,proc,0);
-    }
-  
+    
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     

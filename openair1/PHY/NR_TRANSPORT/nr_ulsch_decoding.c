@@ -310,6 +310,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
   uint16_t number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
   uint8_t Qm              = nfapi_ulsch_pdu_rel15->Qm;
+  uint16_t R               = nfapi_ulsch_pdu_rel15->R;
   uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
   uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
   uint8_t nb_re_dmrs      = nfapi_ulsch_pdu_rel15->nb_re_dmrs;
@@ -338,8 +339,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
-  
-  harq_process->TBS = nr_compute_tbs(mcs, nb_rb, number_symbols, nb_re_dmrs, length_dmrs, n_layers);
+  harq_process->TBS = nr_compute_tbs(Qm, R, nb_rb, number_symbols, nb_re_dmrs*length_dmrs, 0, n_layers);
 
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations + 1;
@@ -353,29 +353,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
 
-    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
-    nr_segmentation(NULL,
-                    NULL,
-                    harq_process->B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z, // [hna] Z is Zc
-                    &harq_process->F);
+    if (R<1024)
+      Coderate = (float) R /(float) 1024;
+    else
+      Coderate = (float) R /(float) 2048;
 
-#ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
-    if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
-#endif
-  }
-
-  p_decParams->Z = harq_process->Z;
-
-  Coderate = (float) A /(float) G;
-
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-    p_decParams->BG = 2;
-    if (Coderate < 0.3333) {
+    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+      p_decParams->BG = 2;
+      if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
     }
@@ -403,7 +388,24 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     }
   }
 
-  //printf("coderate %f kc %d \n", Coderate, kc);
+    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z, // [hna] Z is Zc
+                    &harq_process->F,
+                    p_decParams->BG);
+
+#ifdef DEBUG_ULSCH_DECODING
+    printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
+    if (!frame%100)
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
+#endif
+  }
+  p_decParams->Z = harq_process->Z;
+
 
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
@@ -438,8 +440,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr_bytes = Kr>>3;
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
-
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, nfapi_ulsch_pdu_rel15->n_layers);
 
   for (r=0; r<harq_process->C; r++) {
     E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
@@ -489,6 +489,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //////////////////////////////////////////////////////////////////////////////////////////
 
     ///////////////////////// harq_process->e =====> harq_process->d /////////////////////////
+
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,nfapi_ulsch_pdu_rel15->n_layers,harq_process->C);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
