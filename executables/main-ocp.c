@@ -692,12 +692,13 @@ static void *ru_thread( void *param ) {
   L1_rxtx_proc_t L1proc;
   L1_rxtx_proc_t *proc=&L1proc;
 
-  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 ) {
+  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
     initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
-    initNotifiedFIFO(&L1proc.respEncode);
-    initNotifiedFIFO(&L1proc.respDecode);
-  }  else
+  else
     initTpool("n", &L1proc.threadPool, true);
+
+  initNotifiedFIFO(&L1proc.respEncode);
+  initNotifiedFIFO(&L1proc.respDecode);
 
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);

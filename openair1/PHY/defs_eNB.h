@@ -871,20 +871,19 @@ union turboReqUnion {
 };
 
 typedef struct TurboDecode_s {
-     decoder_if_t *function;
-    int16_t soft_bits[3*8*6144+12+96] __attribute__((aligned(32)));
-    uint8_t decoded_bytes[3+768] __attribute__((aligned(32)));
+    PHY_VARS_eNB *eNB;
+    decoder_if_t *function;
+    uint8_t decoded_bytes[3+1768] __attribute__((aligned(32)));
     int UEid;
     int harq_pid;
     int frame;
     int subframe;
-    int iind;
     int Fbits;
     int Kr;
     LTE_UL_eNB_HARQ_t *ulsch_harq;
-    PHY_VARS_eNB *eNB;
     int nbSegments;
     int segment_r;
+    int r_offset;
     int offset;
     int maxIterations;
     int decodeIterations;

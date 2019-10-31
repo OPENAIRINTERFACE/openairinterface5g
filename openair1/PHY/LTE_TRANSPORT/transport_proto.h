@@ -469,6 +469,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
 
 int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
+                        L1_rxtx_proc_t *proc,
                         int UE_id,
                         int harq_pid,
                         int llr8_flag);
@@ -513,6 +514,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
   @returns 0 on success
 */
 int ulsch_decoding_data(PHY_VARS_eNB *eNB,
+                        L1_rxtx_proc_t *proc,
                         int UE_id,
                         int harq_pid,
                         int llr8_flag);

@@ -398,6 +398,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
       proc->nbEncode++;
     } else {
       TPencode(rdata);
+      delNotifiedFIFO_elt(req);
     }
     
     int Qm=hadlsch->Qm;
