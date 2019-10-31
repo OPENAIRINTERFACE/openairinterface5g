@@ -623,8 +623,7 @@ void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   setAllfromTS(timestamp_rx, proc);
 }
 
-int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
-  int ret=0;
+void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   void *txp[ru->nb_tx];
   int i;
@@ -672,7 +671,7 @@ int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
 
     /* add fail safe for late command end */
     // prepare tx buffer pointers
-    ret=ru->rfdevice.trx_write_func(&ru->rfdevice,
+    ru->rfdevice.trx_write_func(&ru->rfdevice,
                                     proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
                                     txp,
                                     siglen+sf_extension,
@@ -682,7 +681,7 @@ int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
           (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->subframe_tx);
   }
 
-  return ret;
+  return;
 }
 
 static void *ru_thread( void *param ) {

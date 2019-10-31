@@ -615,7 +615,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
                        &ulsch_harq->Kplus,
                        &ulsch_harq->Kminus,
                        &ulsch_harq->F);
-      int ret = ulsch_decoding_data(eNB, proc, i, harq_pid,
+      ulsch_decoding_data(eNB, proc, i, harq_pid,
                                     ulsch_harq->nb_rb>20 ? 1 : 0);
       stop_meas(&eNB->ulsch_decoding_stats);
     } //     if ((ulsch) &&

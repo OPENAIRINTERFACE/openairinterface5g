@@ -184,7 +184,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
     } else {  // sduP == NULL => error
-      LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x\n",
+      LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
             enb_mod_idP,
             harq_pid,
             CC_idP,
@@ -193,7 +193,8 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_scheduling_control->round_UL[CC_idP][harq_pid],
             ul_cqi,
             UE_id,
-            current_rnti);
+            current_rnti,
+	    sdu_lenP);
 
       if (ul_cqi > 200) { // too high energy pattern
         UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;

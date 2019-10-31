@@ -1187,11 +1187,9 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
       int nb=abortTpool(&proc->threadPool, req->key);
-      printf("nb1:%d\n", nb);
       nb+=abortNotifiedFIFO(&proc->respDecode, req->key);
-      printf("nb2:%d\n", nb);
       proc->nbDecode-=nb;
-      LOG_I(PHY,"uplink segment error %d/%d, aborted %d segments",rdata->segment_r,rdata->nbSegments, nb);
+      LOG_I(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
 		  ulsch_harq->processedSegments, nb, rdata->nbSegments);
       ulsch_harq->processedSegments=rdata->nbSegments;
@@ -1253,7 +1251,7 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 }
 
 void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
-  uint32_t ret=0,i;
+  uint32_t i;
   uint32_t harq_pid;
   uint8_t nPRS;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -1262,7 +1260,6 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
   uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
-  int   rvidx_tab[4] = {0,2,3,1};
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
@@ -1316,7 +1313,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
       rx_ulsch(eNB,proc, i);
       stop_meas(&eNB->ulsch_demodulation_stats);
       start_meas(&eNB->ulsch_decoding_stats);
-      ret = ulsch_decoding(eNB,proc,
+      ulsch_decoding(eNB,proc,
                            i,
                            0, // control_only_flag
                            ulsch_harq->V_UL_DAI,

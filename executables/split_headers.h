@@ -13,10 +13,9 @@
 #define MTU 65536
 #define UDP_TIMEOUT 900000L // in micro  second (struct timeval, NOT struct timespec)
 // linux may timeout for a much longer time (up to 10ms)
-#define MAX_BLOCKS 16
-#define blockAlign 32 //bytes
+#define blockAlign 32 //bytes to align memory for SIMD copy (256 bits vectors)
 
-
+// FS6 transport configuration and handler
 typedef struct {
   char *sourceIP;
   char *sourcePort;
@@ -29,6 +28,8 @@ typedef struct {
 #define CTsentCUv0 0xA500
 #define CTsentDUv0 0x5A00
 
+// Main FS6 transport layer header
+// All packets starts with this header
 typedef struct commonUDP_s {
   uint64_t timestamp; // id of the group (subframe for LTE)
   uint16_t nbBlocks;       // total number of blocks for this timestamp
@@ -37,14 +38,8 @@ typedef struct commonUDP_s {
   uint16_t contentBytes;   // will be sent in a UDP packet, so must be < 2^16 bytes
 } commonUDP_t;
 
-typedef struct frequency_s {
-  int frame;
-  int subframe;
-  int sampleSize;
-  int nbAnt;
-  int nbSamples;
-} frequency_t;
-
+// FS6 UL common header (DU to CU)
+// gives the RACH detection data and is always sent to inform the CU that a subframe arrived
 typedef struct {
   uint16_t max_preamble[4];
   uint16_t max_preamble_energy[4];
@@ -52,6 +47,8 @@ typedef struct {
   uint16_t avg_preamble_energy[4];
 } fs6_ul_t;
 
+// FS6 DL common header (CU to DU)
+// gives the DCI configuration from each subframe
 typedef struct {
   uint8_t pbch_pdu[4];
   int num_pdcch_symbols;
@@ -62,6 +59,9 @@ typedef struct {
   LTE_eNB_PHICH phich_vars;
 } fs6_dl_t;
 
+// a value to type all sub packets,
+// to detect errors, and to be able to extend to other versions
+// the first byte of each sub structure should match one of these values
 enum pckType {
   fs6UlConfig=25,
   fs6DlConfig=26,
@@ -72,6 +72,8 @@ enum pckType {
   fs6ULindicationSr=41,
 };
 
+// CU to DU definition of a future UL subframe decode
+// defines a UE future data plane 
 typedef struct {
   enum pckType type:8;
   uint16_t UE_id;
@@ -136,6 +138,8 @@ typedef struct {
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } fs6_dl_ulsched_t;
 
+// CU to DU defintion of a DL packet for a given UE
+// The data itself is padded at the end of this structure
 typedef struct {
   enum pckType type:8;
   int UE_id;
@@ -150,24 +154,28 @@ typedef struct {
   uint8_t pdsch_start;
   uint8_t sib1_br_flag;
   uint16_t i0;
-  uint32_t rb_alloc[4];;
+  uint32_t rb_alloc[4];
   int dataLen;
 } fs6_dl_uespec_t;
 
+// CU to DU definition of CCH channel
 typedef struct {
   int16_t UE_id;
   LTE_eNB_UCI cch_vars;
 } fs6_dl_uespec_ulcch_element_t;
 
+// header to group all UE CCH channels definitions in one UDP packet
 typedef struct {
   enum pckType type:8;
   int16_t nb_active_ue;
 } fs6_dl_uespec_ulcch_t;
 
+// code internal, not transmitted as this
 typedef struct {
   int ta;
 }  ul_propagation_t;
 
+// One UE UL data, data plane, UE data appended after the header
 typedef struct {
   enum pckType type:8;
   short UE_id;
@@ -184,6 +192,7 @@ typedef struct {
   uint8_t cqi_crc_status;
 } fs6_ul_uespec_t;
 
+// UL UCI (control plane), per UE
 typedef struct {
   enum pckType type:8;
   int UEid;
@@ -198,6 +207,7 @@ typedef struct {
   int32_t stat;
 } fs6_ul_uespec_uci_element_t;
 
+// all segments UCI grouped in one UDP packet
 typedef struct {
   enum pckType type:8;
   int16_t nb_active_ue;
@@ -239,7 +249,7 @@ void *du_fs6(void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
 int init_rf(RU_t *ru);
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
-int tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
+void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 bool dlsch_procedures(PHY_VARS_eNB *eNB,
