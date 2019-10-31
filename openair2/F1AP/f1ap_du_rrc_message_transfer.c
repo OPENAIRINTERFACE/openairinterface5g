@@ -48,6 +48,7 @@
 
 #include "rrc_eNB_UE_context.h"
 #include "asn1_msg.h"
+#include "intertask_interface.h"
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -410,15 +411,18 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
 
                 /* CDRX Configuration */
-                /*
                 if (mac_MainConfig->drx_Config == NULL) {
                   LOG_W(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
                 } else {
-                  //// Set timers and thresholds values in local MAC context of UE
-                  eNB_Config_Local_DRX(ctxt.module_id, ctxt.rnti, mac_MainConfig->drx_Config);
+                  MessageDef *message_p = NULL;
+
+                  /* Send DRX configuration to MAC task to configure timers of local UE context */
+                  message_p = itti_alloc_new_message(TASK_DU_F1, RRC_MAC_DRX_CONFIG_REQ);
+                  RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rnti;
+                  RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+                  itti_send_msg_to_task(TASK_MAC_ENB, ctxt.module_id, message_p);
                   LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
                 }
-                */
                 /* End of CDRX configuration */
               }
 
