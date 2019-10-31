@@ -461,6 +461,7 @@ int main(int argc, char **argv)
       rel15_ul->ulsch_pdu_rel15.rv             = 0;
       rel15_ul->ulsch_pdu_rel15.ndi            = 0;
       rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
+      rel15_ul->ulsch_pdu_rel15.R              = code_rate; 
       ///////////////////////////////////////////////////
 
       //fapi_nr_tx_request_t tx_request;
