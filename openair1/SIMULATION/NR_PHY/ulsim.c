@@ -454,7 +454,8 @@ int main(int argc, char **argv)
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
-  
+  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
   
   unsigned char *estimated_output_bit;
@@ -500,9 +501,46 @@ int main(int argc, char **argv)
       ///////////////////////////////////////////////////
       */
 
-      nr_schedule_uss_ulsch_phytest(UL_tti_req,frame,slot);
-
+      UL_tti_req->sfn = frame;
+      UL_tti_req->slot = slot;
+      UL_tti_req->n_pdus = 1;
+      UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+      UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+      memset(pusch_pdu,0,sizeof(nfapi_nr_pusch_pdu_t));
       
+      pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;  
+      pusch_pdu->rnti = n_rnti;
+      pusch_pdu->mcs_index = Imcs;
+      pusch_pdu->mcs_table = 0; 
+      pusch_pdu->target_code_rate = nr_get_code_rate(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1); 
+      pusch_pdu->qam_mod_order = nr_get_Qm(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
+      pusch_pdu->transform_precoding = 0;
+      pusch_pdu->data_scrambling_id = 0;
+      pusch_pdu->nrOfLayers = 1;
+      pusch_pdu->ul_dmrs_symb_pos = 1;
+      pusch_pdu->dmrs_config_type = 0;
+      pusch_pdu->ul_dmrs_scrambling_id =  0;
+      pusch_pdu->scid = 0;
+      pusch_pdu->resource_alloc = 1; 
+      pusch_pdu->rb_start = start_rb;
+      pusch_pdu->rb_size = nb_rb;
+      pusch_pdu->vrb_to_prb_mapping = 0;
+      pusch_pdu->frequency_hopping = 0;
+      pusch_pdu->uplink_frequency_shift_7p5khz = 0;
+      pusch_pdu->start_symbol_index = start_symbol;
+      pusch_pdu->nr_of_symbols = nb_symb_sch;
+      pusch_pdu->pusch_data.rv_index = 0;
+      pusch_pdu->pusch_data.harq_process_id = 0;
+      pusch_pdu->pusch_data.new_data_indicator = 0;
+      pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
+						     pusch_pdu->rb_size,
+						     pusch_pdu->nr_of_symbols,
+						     nb_re_dmrs, 
+						     length_dmrs, 
+						     pusch_pdu->nrOfLayers = 1);
+      pusch_pdu->pusch_data.num_cb = 0;
+
+
       // --------- setting parameters for UE --------
 
       scheduled_response.module_id = 0;
