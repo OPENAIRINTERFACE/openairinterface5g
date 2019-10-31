@@ -247,6 +247,7 @@ bool dlsch_procedures(PHY_VARS_eNB *eNB,
                       int harq_pid,
                       LTE_eNB_DLSCH_t *dlsch,
                       LTE_eNB_UE_stats *ue_stats) ;
+void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req);
 void pdsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
                       int harq_pid,
