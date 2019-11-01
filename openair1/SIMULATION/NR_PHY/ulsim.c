@@ -446,10 +446,12 @@ int main(int argc, char **argv)
   uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
   uint8_t length_dmrs = 1;
   unsigned char mod_order;
+  uint16_t code_rate;
 
-  mod_order      = nr_get_Qm(Imcs, 1);
+  mod_order      = nr_get_Qm_ul(Imcs, 0);
+  code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, precod_nbr_layers);
+  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
@@ -498,6 +500,7 @@ int main(int argc, char **argv)
       rel15_ul->ulsch_pdu_rel15.rv             = 0;
       rel15_ul->ulsch_pdu_rel15.ndi            = 0;
       rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
+      rel15_ul->ulsch_pdu_rel15.R              = code_rate; 
       ///////////////////////////////////////////////////
       */
 
@@ -512,8 +515,8 @@ int main(int argc, char **argv)
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
       pusch_pdu->mcs_table = 0; 
-      pusch_pdu->target_code_rate = nr_get_code_rate(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1); 
-      pusch_pdu->qam_mod_order = nr_get_Qm(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
+      pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1); 
+      pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
       pusch_pdu->transform_precoding = 0;
       pusch_pdu->data_scrambling_id = 0;
       pusch_pdu->nrOfLayers = 1;
@@ -533,6 +536,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
       pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
+						     pusch_pdu->target_code_rate,
 						     pusch_pdu->rb_size,
 						     pusch_pdu->nr_of_symbols,
 						     nb_re_dmrs, 

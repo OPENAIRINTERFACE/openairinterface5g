@@ -130,9 +130,9 @@ int test_ldpc(short No_iteration,
   double *modulated_input[MAX_NUM_DLSCH_SEGMENTS];
   char *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
   unsigned int i,j,trial=0;
-  short BG=0,Zc,Kb=0,nrows=0;//,ncols;
+  short BG=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
-  int i1;
+  int i1,Zc,Kb=0;
   int R_ind = 0;
   //Table of possible lifting sizes
   //short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
@@ -287,7 +287,7 @@ int test_ldpc(short No_iteration,
   //  printf("puncture:%d\n",no_punctured_columns);
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
   if (ntrials==0)
-    ldpc_encoder_orig(test_input[0],channel_input[0], block_length, BG, 1);
+    ldpc_encoder_orig(test_input[0],channel_input[0], Zc, BG, block_length, BG, 1);
 
   for (trial=0; trial < ntrials; trial++)
   {
@@ -295,20 +295,20 @@ int test_ldpc(short No_iteration,
     //// encoder
     start_meas(&time);
     for(j=0;j<n_segments;j++) {
-      ldpc_encoder_orig(test_input[j], channel_input[j],block_length,BG,0);
+      ldpc_encoder_orig(test_input[j], channel_input[j],Zc,Kb,block_length,BG,0);
     }
     stop_meas(&time);
 
 /*    start_meas(time_optim);
-    ldpc_encoder_optim_8seg(test_input,channel_input_optim,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
+    ldpc_encoder_optim_8seg(test_input,channel_input_optim,Zc,Kb,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
     for(j=0;j<n_segments;j++) {
-      ldpc_encoder_optim(test_input[j],channel_input_optim[j],block_length,BG,&tinput,&tprep,&tparity,&toutput);
+      ldpc_encoder_optim(test_input[j],channel_input_optim[j],Zc,Kb,block_length,BG,&tinput,&tprep,&tparity,&toutput);
       }
     stop_meas(time_optim);*/
 
-    for(j=0;j<(n_segments%8+1);j++) {
+    for(j=0;j<(n_segments/8+1);j++) {
     	start_meas(time_optim);
-    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
+    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,Zc,Kb,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
     	stop_meas(time_optim);
     }
     

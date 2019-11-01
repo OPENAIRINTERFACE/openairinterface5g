@@ -145,7 +145,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->nb_slots,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
-  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+  nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,
   dlsch_pdu_rel15->n_prb,
@@ -178,7 +178,8 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 						  nfapi_nr_config_request_t *cfg,
 						  nfapi_nr_coreset_t* coreset,
 						  nfapi_nr_search_space_t* search_space,
-						  int16_t pdu_index){
+						  int16_t pdu_index,
+              nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config){
 
 	nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
 	nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
@@ -212,6 +213,14 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	          dlsch_pdu_rel15->ndi = 1;
 	          dlsch_pdu_rel15->redundancy_version = 0;
 
+            if (dlsch_config != NULL) {
+              dlsch_pdu_rel15->start_prb = dlsch_config->start_prb;
+              dlsch_pdu_rel15->n_prb = dlsch_config->n_prb;
+              dlsch_pdu_rel15->start_symbol = dlsch_config->start_symbol;
+              dlsch_pdu_rel15->nb_symbols = dlsch_config->nb_symbols;
+              dlsch_pdu_rel15->mcs_idx = dlsch_config->mcs_idx;
+            }
+
 	          nr_configure_dci_from_pdcch_config(params_rel15,
 	                                             coreset,
 	                                             search_space,
@@ -221,7 +230,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	          pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
 	          pdu_rel15->time_domain_assignment = 3; // row index used here instead of SLIV;
 	          pdu_rel15->vrb_to_prb_mapping = 1;
-	          pdu_rel15->mcs = 9;
+	          pdu_rel15->mcs = dlsch_pdu_rel15->mcs_idx;
 	          pdu_rel15->tb_scaling = 1;
 
 	          pdu_rel15->ra_preamble_index = 25;
@@ -261,7 +270,7 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 	                      params_rel15->rb_offset,
 	                      params_rel15->first_symbol,
 	                      params_rel15->search_space_type);
-	        nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+	        nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
 		    // Hardcode it for now
 		    TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
 		    LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
@@ -293,7 +302,8 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   slotP)
+                                   sub_frame_t   slotP,
+                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config)
 {
 	LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest \n");
   uint8_t  CC_id;
@@ -350,7 +360,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
       // Hardcode it for now
       TBS = 6784/8; //TBS in bytes
-      //nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+      //nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
       //TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
 
     	for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
@@ -458,7 +468,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                 nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0][offset + sdu_length_total + j] = 0;
     	}
 
-    	TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);        
+    	TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);        
 
         #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     		LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
@@ -482,7 +492,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 	    //When the --NOS1 option is not enabled, DLSCH transmissions with random data
 	    //occur every time that the current function is called (dlsch phytest mode)
 	  else{
-		  TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id]);
+		  TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);
 		  // HOT FIX for all zero pdu problem
 		  // ------------------------------------------------------------------------------------------------
 		  

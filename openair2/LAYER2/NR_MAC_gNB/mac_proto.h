@@ -34,6 +34,8 @@
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
 
+void set_cset_offset(uint16_t);
+
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
@@ -79,11 +81,13 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
 						  nfapi_nr_config_request_t *cfg,
 						  nfapi_nr_coreset_t* coreset,
 						  nfapi_nr_search_space_t* search_space,
-						  int16_t pdu_index);
+						  int16_t pdu_index,
+                          nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   slotP);
+                                   sub_frame_t   slotP,
+                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
 
 void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
                                    frame_t       frameP,

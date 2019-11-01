@@ -44,6 +44,9 @@
 
 extern RAN_CONTEXT_t RC;
 
+void set_cset_offset(uint16_t offset_bits) {
+  RC.nrmac[0]->coreset[0][1].frequency_domain_resources >>= offset_bits;
+}
 
 void nr_init_coreset(nfapi_nr_coreset_t *coreset) {
 
@@ -66,7 +69,7 @@ void nr_init_search_space(nfapi_nr_search_space_t *search_space)
   search_space->duration = 5;
   search_space->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
   search_space->slot_monitoring_offset = 1;
-  search_space->monitoring_symbols_in_slot = 0xC0000000; // first 2 ofdm symbols
+  search_space->monitoring_symbols_in_slot = 0x3000; // 14 bits field
   search_space->css_formats_0_0_and_1_0 = 1;
   search_space->uss_dci_formats = 0; // enum to be defined-- formats 0.0 and 1.0
   for (int i=0; i<NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS; i++)

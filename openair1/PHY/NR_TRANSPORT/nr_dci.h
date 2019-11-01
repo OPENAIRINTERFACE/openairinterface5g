@@ -38,7 +38,7 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             nfapi_nr_config_request_t config);
 
 void nr_pdcch_scrambling(uint32_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t *out);

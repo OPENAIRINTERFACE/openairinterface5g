@@ -46,7 +46,7 @@
 //#define DEBUG_PUSCH_MAPPING
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out) {
@@ -90,7 +90,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                uint8_t thread_id,
                                int gNB_id) {
 
-  unsigned int available_bits;
+  uint32_t available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   uint32_t ***pusch_dmrs;
@@ -98,7 +98,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-  uint16_t n_dmrs;
+  uint16_t n_dmrs,code_rate;
   uint8_t dmrs_type, length_dmrs;
   uint8_t mapping_type;
   int ap, start_symbol, Nid_cell, i;
@@ -130,7 +130,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
 
-    harq_process_ul_ue->TBS = nr_compute_tbs( harq_process_ul_ue->mcs, harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols, ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, harq_process_ul_ue->Nl);
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 0);
+    code_rate      = nr_get_code_rate_ul(harq_process_ul_ue->mcs, 0);
+
+    harq_process_ul_ue->TBS = nr_compute_tbs(mod_order, 
+                                             code_rate,
+                                             harq_process_ul_ue->nb_rb,
+                                             harq_process_ul_ue->number_of_symbols,
+                                             ulsch_ue->nb_re_dmrs*ulsch_ue->length_dmrs,
+                                             0,
+                                             harq_process_ul_ue->Nl);
 
     //-----------------------------------------------------//
     // to be removed later when MAC is ready
@@ -158,7 +167,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
 
-    mod_order      = nr_get_Qm(harq_process_ul_ue->mcs, 1);
+    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 0);
 
     available_bits = nr_get_G(harq_process_ul_ue->nb_rb,
                               harq_process_ul_ue->number_of_symbols,
