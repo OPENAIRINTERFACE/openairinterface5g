@@ -365,7 +365,7 @@ pipeline {
                         stage ("Test physical simulators") {
                             steps {
                                 script {
-                                    timeout (time: 45, unit: 'MINUTES') {
+                                    timeout (time: 90, unit: 'MINUTES') {
                                         try {
                                             gitlabCommitStatus(name: "Test phy-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"

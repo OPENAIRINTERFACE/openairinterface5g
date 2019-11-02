@@ -36,6 +36,8 @@
 
 #include "refsig_defs_ue.h"
 #include "PHY/defs_nr_UE.h"
+#include "nr_refsig.h"
+#include "PHY/defs_gNB.h"
 
 /*Table 7.4.1.1.2-1/2 from 38.211 */
 int wf1[8][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,1}};
@@ -46,6 +48,60 @@ int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1
 
 short nr_rx_mod_table[14]  = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 short nr_rx_nmod_table[14] = {0,0,-23170,23170,23170,-23170,-23170,23170,-23170,-23170,23170,23170,23170,-23170};
+
+
+int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
+                     unsigned int Ns,
+                     unsigned int *nr_gold_pusch,
+                     int32_t *output,
+                     unsigned short p,
+                     unsigned char lp,
+                     unsigned short nb_pusch_rb)
+{
+  int8_t w,config_type;
+  short *mod_table;
+  unsigned char idx=0;
+
+  typedef int array_of_w[2];
+  array_of_w *wf;
+  array_of_w *wt;
+
+  config_type = 0; //to be updated by higher layer
+
+  wf = (config_type==0) ? wf1 : wf2;
+  wt = (config_type==0) ? wt1 : wt2;
+
+  if (config_type > 1)
+    LOG_E(PHY,"Bad PUSCH DMRS config type %d\n", config_type);
+
+  if ((p>=1000) && (p<((config_type==0) ? 1008 : 1012))) {
+      if (gNB->frame_parms.Ncp == NORMAL) {
+
+        for (int i=0; i<nb_pusch_rb*((config_type==0) ? 6:4); i++) {
+
+          w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
+          mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
+
+          idx = ((((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
+        ((int16_t*)output)[i<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+        ((int16_t*)output)[(i<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+#ifdef DEBUG_PUSCH
+        printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", config_type, p, nb_pusch_rb);
+        printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
+        printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+            (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);
+#endif
+        }
+      } else {
+        LOG_E(PHY,"extended cp not supported for PUSCH DMRS yet\n");
+      }
+  } else {
+    LOG_E(PHY,"Illegal p %d PUSCH DMRS port\n",p);
+  }
+
+  return(0);
+}
+
 
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,

@@ -19,30 +19,34 @@
  *      contact@openairinterface.org
  */
 
-/*! \file fapi_nr_l1.h
- * \brief function prototypes for FAPI L1 interface
- * \author R. Knopp, WEI-TAI CHEN
- * \date 2017, 2018
- * \version 0.1
- * \company Eurecom, NTUST
- * \email: knopp@eurecom.fr, kroempa@gmail.com
- * \note
- * \warning
- */
+#ifndef __NR_UL_ESTIMATION_DEFS__H__
+#define __NR_UL_ESTIMATION_DEFS__H__
+
 
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
-#include "SCHED_NR/sched_nr.h"
-#include "nfapi_nr_interface.h"
+/** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
+ * @{
+ */
 
-void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO);
 
-void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
-                                int frame, int subframe,
-                                nfapi_nr_dl_config_dci_dl_pdu *dcl_dl_pdu);
+/*!
+\brief This function performs channel estimation including frequency interpolation
+\param gNB Pointer to gNB PHY variables
+\param Ns slot number (0..19)
+\param p
+\param symbol symbol within slot
+\param bwp_start_subcarrier, first allocated subcarrier
+\param nb_rb_pusch, number of allocated RBs for this UE
+*/
 
-void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                            nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                            uint8_t *sdu);
+ int32_t nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
+                                     uint8_t gNB_offset,
+				                     unsigned char Ns,
+				                     unsigned short p,
+				                     unsigned char symbol,
+				                     unsigned short bwp_start_subcarrier,
+				                     unsigned short nb_rb_pusch);
 
-void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t harq_pid);
+int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
+
+#endif

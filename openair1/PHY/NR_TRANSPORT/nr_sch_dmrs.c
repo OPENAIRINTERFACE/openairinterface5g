@@ -85,7 +85,7 @@ uint8_t get_delta(uint8_t ap, uint8_t config) {
   return ((config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][2]):(pdsch_dmrs_2[ap][2]));
 }
 
-uint16_t get_dmrs_freq_idx(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
+uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
   uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
   return dmrs_idx;
 }

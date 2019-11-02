@@ -361,24 +361,19 @@ short *choose_generator_matrix(short BG,short Zc)
   return Gen_shift_values;
 }
 
-int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,short block_length, short BG,unsigned char gen_code)
+int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int Zc,int Kb,short block_length, short BG,unsigned char gen_code)
 {
   unsigned char c[22*384]; //padded input, unpacked, max size
   unsigned char d[68*384]; //coded output, unpacked, max size
   unsigned char channel_temp,temp;
   short *Gen_shift_values, *no_shift_values, *pointer_shift_values;
-  short Zc;
-  //initialize for BG == 1
-  short Kb = 22;
+
   short nrows = 46;//parity check bits
   short ncols = 22;//info bits
 
 
   int i,i1,i2,i3,i4,i5,temp_prime,var;
   int no_punctured_columns,removed_bit;
-  //Table of possible lifting sizes
-  short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
-
   int nind=0;
   int indlist[1000];
   int indlist2[1000];
@@ -387,8 +382,6 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   //if (block_length>3840)
      if (BG==1)
        {
-         //BG=1;
-         Kb = 22;
          nrows=46; //parity check bits
          ncols=22; //info bits
        }
@@ -399,31 +392,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
          nrows=42; //parity check bits
          ncols=10; // info bits
 
-         if (block_length>640)
-   	Kb = 10;
-         else if (block_length>560)
-   	Kb = 9;
-         else if (block_length>192)
-         Kb = 8;
-       else
-         Kb = 6;
          }
-
-  //find minimum value in all sets of lifting size
-  Zc=0;
-  for (i1=0; i1 < 51; i1++)
-  {
-    if (lift_size[i1] >= (double) block_length/Kb)
-    {
-      Zc = lift_size[i1];
-      //printf("%d\n",Zc);
-      break;
-    }
-  }
-  if (Zc==0) {
-    printf("ldpc_encoder_orig: could not determine lifting size\n");
-    return(-1);
-  }
 
   Gen_shift_values=choose_generator_matrix(BG,Zc);
   if (Gen_shift_values==NULL) {
@@ -460,7 +429,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   {
     //c[i] = test_input[i/8]<<(i%8);
     //c[i]=c[i]>>7&1;
-    c[i]=(test_input[i/8]&(1<<(i&7)))>>(i&7);
+    c[i]=(test_input[i/8]&(128>>(i&7)))>>(7-(i&7));
   }
 
   // parity check part

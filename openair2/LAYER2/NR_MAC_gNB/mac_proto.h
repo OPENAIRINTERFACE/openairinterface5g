@@ -34,6 +34,8 @@
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
 
+void set_cset_offset(uint16_t);
+
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
@@ -72,9 +74,18 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
+int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
+		                  nfapi_tx_request_pdu_t *TX_req,
+						  nfapi_nr_config_request_t *cfg,
+						  nfapi_nr_coreset_t* coreset,
+						  nfapi_nr_search_space_t* search_space,
+						  int16_t pdu_index,
+                          nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
+
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   slotP);
+                                   sub_frame_t   slotP,
+                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                   nr_scs_e scs_common,
@@ -110,7 +121,7 @@ int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
-void get_band(uint32_t downlink_frequency, uint8_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+void get_band(uint32_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 

@@ -726,7 +726,7 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 
   ch_offset = ue->frame_parms.ofdm_symbol_size*2;
 
-printf("testing measurements\n");
+//printf("testing measurements\n");
   // signal measurements
 
   for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {

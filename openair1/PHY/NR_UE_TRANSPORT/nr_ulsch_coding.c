@@ -202,11 +202,12 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint8_t mod_order; 
   uint16_t Kr,r,r_offset;
   uint8_t BG;
-  uint32_t E;
+  uint32_t E,Kb;
   uint8_t Ilbrm; 
   uint32_t Tbslbrm; 
   uint8_t nb_re_dmrs; 
   uint16_t length_dmrs;
+  uint16_t R;
   float Coderate;
 
 ///////////
@@ -222,7 +223,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
-  mod_order = nr_get_Qm(harq_process->mcs,1);
+  mod_order = nr_get_Qm_ul(harq_process->mcs,0);
+  R = nr_get_code_rate_ul(harq_process->mcs, 0);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -250,9 +252,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  
-
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
@@ -287,16 +286,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
-    nr_segmentation(harq_process->b,
-        harq_process->c,
-        harq_process->B,
-        &harq_process->C,
-        &harq_process->K,
-        pz,
-        &harq_process->F);
-
-    F = harq_process->F;
-    Coderate = (float) A /(float) G;
+    if (R<1024)
+      Coderate = (float) R /(float) 1024;
+    else
+      Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
       BG = 2;
@@ -305,6 +298,16 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       BG = 1;
     }
 
+    Kb=nr_segmentation(harq_process->b,
+                       harq_process->c,
+                       harq_process->B,
+                       &harq_process->C,
+                       &harq_process->K,
+                       pz,
+                       &harq_process->F,
+                       BG);
+
+    F = harq_process->F;
     Kr = harq_process->K;
 #ifdef DEBUG_DLSCH_CODING
     uint16_t Kr_bytes;
@@ -314,6 +317,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////
 
+opp_enabled=0;
 
 ///////////////////////// c---->| LDCP coding |---->d /////////////////////////
 ///////////
@@ -348,7 +352,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       }
       printf("\n");*/
 
-    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
@@ -389,6 +393,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->Nl, r);
+
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->Nl,harq_process->C);
 
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,

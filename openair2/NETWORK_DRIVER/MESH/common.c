@@ -386,6 +386,9 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   pdcph.data_size  = skb->len;
   pdcph.rb_id      = (gc->rb)->rab_id;
   pdcph.inst       = inst;
+  pdcph.sourceL2Id = 0;
+  pdcph.destinationL2Id = 0;
+
 
 
 #ifdef PDCP_USE_NETLINK
