@@ -208,6 +208,7 @@
 
 /// First Amplitude for QAM16 (\f$ 2^{15} \times 2/\sqrt{10}\f$)
 #define QAM16_n1 20724
+
 /// Second Amplitude for QAM16 (\f$ 2^{15} \times 1/\sqrt{10}\f$)
 #define QAM16_n2 10362
 

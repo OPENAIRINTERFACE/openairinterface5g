@@ -54,7 +54,9 @@
 *
 *********************************************************************/
 
-int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned int scaling)
+int16_t *base_sequence_less_than_36(unsigned int M_ZC,
+                                    unsigned int u,
+                                    unsigned int scaling)
 {
   char *phi_table;
   int16_t *rv_overbar;
@@ -77,7 +79,7 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned 
     case 30:
       break;
     default:
-      printf("function base_sequence_less_than 36_: unsupported base sequence size : %d \n", M_ZC);
+      printf("function base_sequence_less_than 36_: unsupported base sequence size : %u \n", M_ZC);
       assert(0);
       break;
   }
@@ -121,7 +123,10 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned 
 *
 *********************************************************************/
 
-int16_t *base_sequence_36_or_larger(unsigned int Msc_RS, unsigned int u, unsigned int v, unsigned int scaling)
+int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
+                                    unsigned int u,
+                                    unsigned int v,
+                                    unsigned int scaling)
 {
   int16_t *rv_overbar;
   unsigned int N_ZC;

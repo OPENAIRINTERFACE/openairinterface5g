@@ -403,8 +403,10 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 
   // first symbol
   //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-  for (int i=0; i<get_symbolsperslot(&cfg); i++)
-    if ((search_space->monitoring_symbols_in_slot>>(31-i))&1) {
+  int sps = get_symbolsperslot(&cfg);
+
+  for (int i=0; i<sps; i++)
+    if ((search_space->monitoring_symbols_in_slot>>(sps-1-i))&1) {
       pdcch_params->first_symbol=i;
       break;
     }

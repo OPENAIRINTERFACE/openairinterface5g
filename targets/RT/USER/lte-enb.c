@@ -64,7 +64,7 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "../../ARCH/COMMON/common_lib.h"
+#include "targets/ARCH/COMMON/common_lib.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -72,7 +72,6 @@
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #include "PHY/phy_extern.h"
-
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -118,9 +117,9 @@ extern int oaisim_flag;
 
 //uint16_t sf_ahead=4;
 extern uint16_t sf_ahead;
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 //pthread_t                       main_eNB_thread;
 

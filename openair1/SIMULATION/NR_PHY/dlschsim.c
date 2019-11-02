@@ -53,8 +53,11 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
 	return (0);
@@ -146,6 +149,7 @@ int main(int argc, char **argv)
 	uint16_t nb_symb_sch = 12;
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
+        uint8_t mcs_table = 0;
 
 	cpuf = get_cpu_freq_GHz();
 
@@ -465,6 +469,7 @@ int main(int argc, char **argv)
 	uint8_t nb_re_dmrs = 6;
 	uint16_t length_dmrs = 1;
 	unsigned char mod_order;
+        uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
@@ -472,16 +477,18 @@ int main(int argc, char **argv)
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
-	mod_order = nr_get_Qm(Imcs, 1);
+	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
+        rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-	TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
-	printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;
 	rel15->nb_symbols = nb_symb_sch;
 	rel15->modulation_order = mod_order;
 	rel15->nb_layers = Nl;
 	rel15->transport_block_size = TBS;
+  rel15->coding_rate = rate;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
@@ -496,10 +503,12 @@ int main(int argc, char **argv)
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
+	harq_process->mcs_table = mcs_table;
 	harq_process->Nl = Nl;
 	harq_process->nb_rb = nb_rb;
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
+	harq_process->R = rate;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
@@ -510,7 +519,7 @@ int main(int argc, char **argv)
 	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
-	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
+	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
 #endif
 
 	/*for (int i=0; i<TBS/8; i++)
@@ -600,7 +609,7 @@ int main(int argc, char **argv)
 			if (errors_bit > 0) {
 				n_false_positive++;
 				if (n_trials == 1)
-					printf("errors_bit %d (trial %d)\n", errors_bit, trial);
+					printf("errors_bit %u (trial %d)\n", errors_bit, trial);
 			}
 		}
 

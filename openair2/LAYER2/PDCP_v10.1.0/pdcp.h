@@ -92,6 +92,8 @@ extern int             pdcp_instance_cnt;
 #define PROTOCOL_PDCP_CTXT_ARGS(CTXT_Pp, pDCP_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
   (pDCP_Pp->is_srb) ? "SRB" : "DRB",\
   pDCP_Pp->rb_id
+//#define ENABLE_PDCP_PAYLOAD_DEBUG 1
+
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
@@ -397,6 +399,7 @@ void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
 uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
 void pdcp_module_cleanup (void);
+void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);
 void pdcp_layer_cleanup  (void);
 #define PDCP2NW_DRIVER_FIFO 21

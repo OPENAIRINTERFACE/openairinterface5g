@@ -59,11 +59,11 @@ uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
+                                  uint32_t size,
+                                  uint8_t q,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  uint32_t* out);
 
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,

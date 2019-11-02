@@ -11,6 +11,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 //#include "PHY/NR_TRANSPORT/nr_transport.h"
 //#include "common/utils/LOG/log.h"
 
@@ -18,7 +19,12 @@
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_POLARTEST
 
-int main(int argc, char *argv[]) {
+RAN_CONTEXT_t RC;
+PHY_VARS_UE ***PHY_vars_UE_g;
+uint16_t NB_UE_INST = 1;
+
+int main(int argc, char *argv[])
+{
   //Default simulation values (Aim for iterations = 1000000.)
   int decoder_int16=0;
   int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI

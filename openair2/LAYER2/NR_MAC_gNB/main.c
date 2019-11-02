@@ -40,9 +40,13 @@
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "common/ran_context.h"
+#include "executables/nr-softmodem.h"
 
 extern RAN_CONTEXT_t RC;
 
+void set_cset_offset(uint16_t offset_bits) {
+  RC.nrmac[0]->coreset[0][1].frequency_domain_resources >>= offset_bits;
+}
 
 void mac_top_init_gNB(void)
 {
@@ -54,7 +58,7 @@ void mac_top_init_gNB(void)
   LOG_I(MAC, "[MAIN] Init function start:nb_nr_macrlc_inst=%d\n",RC.nb_nr_macrlc_inst);
 
   if (RC.nb_nr_macrlc_inst > 0) {
-    
+
     RC.nrmac = (gNB_MAC_INST **) malloc16(RC.nb_nr_macrlc_inst *sizeof(gNB_MAC_INST *));
     
     AssertFatal(RC.nrmac != NULL,"can't ALLOCATE %zu Bytes for %d gNB_MAC_INST with size %zu \n",
@@ -105,7 +109,7 @@ void mac_top_init_gNB(void)
   
   // Initialize Linked-List for Active UEs
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
-    
+
     nrmac = RC.nrmac[i];
     nrmac->if_inst = NR_IF_Module_init(i);
     

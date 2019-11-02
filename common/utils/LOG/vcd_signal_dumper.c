@@ -634,7 +634,7 @@ void *vcd_dumper_thread_rt(void *args)
   uint32_t data_ready_wait;
 
 # if defined(ENABLE_ITTI)
-  signal_mask();
+  return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
 # endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;

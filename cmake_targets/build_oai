@@ -149,7 +149,7 @@ Options
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 --build-lib <libraries>
-   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
 -h | --help
@@ -346,16 +346,21 @@ function main() {
             shift 1;;
        --build-lib) 
             BUILD_OPTLIB="" 
-            for alib in $2 ; do 
+            if [  "$2" == "all" ] ; then
+              BUILD_OPTLIB="$OPTIONAL_LIBRARIES"
+              echo_info "Enabling build of all optional shared libraries ($OPTIONAL_LIBRARIES)" 
+            else
+              for alib in $2 ; do 
                 for oklib in $OPTIONAL_LIBRARIES ; do
-                     if [ "$alib" = "$oklib" ] ; then
-                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
-                        echo_info "Enabling build of lib${alib}.so" 
-                     fi   
+                  if [ "$alib" = "$oklib" ] ; then
+                    BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                    echo_info "Enabling build of lib${alib}.so" 
+                    fi   
+                  done
                 done
-            done
-	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
-               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+	          if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+              fi
             fi
             shift 2;;		
         --usrp-recplay)
@@ -580,7 +585,8 @@ function main() {
 	      nr-uesoftmodem $dbin/nr-uesoftmodem.$REL	  
 	  fi
 
-# mandatory shared lib
+# mandatory shared libraries common to UE and (e/g)NB
+
     compilations \
 	  $build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
@@ -864,7 +870,6 @@ function main() {
 	  ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	  echo_info "liboai_transpro.so is linked to ETHERNET transport"
   fi
-  
 
   ###################
   # Doxygen Support #

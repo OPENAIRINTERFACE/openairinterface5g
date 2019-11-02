@@ -125,7 +125,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   COMMON_channels_t *cc = &eNB->common_channels[CC_id];
   uint8_t *rar = (uint8_t *)(dlsch_buffer + 1);
   uint32_t rballoc = 0;
-  uint32_t reps = 0;
   uint32_t ULdelay = 0;
   uint32_t cqireq = 0;
   uint32_t mpdcch_nb_index = 0;
@@ -151,7 +150,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     input_buffer_length = 6;
     N_NB_index = get_numnarrowbandbits(cc->mib->message.dl_Bandwidth);
     /* UL Grant */
-    reps = 0;
     ra->msg3_mcs = 7;
     TPC = 3; // no power increase
     ULdelay = 0;
@@ -161,7 +159,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     uint32_t buffer = 0;
     buffer |= ra->msg34_narrowband << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0x0F) << (12 + (4 - N_NB_index)));
-    buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));
+    buffer |= ((ra->pusch_repetition_levels & 0x03) << (10 + (4 - N_NB_index)));
     buffer |= ((ra->msg3_mcs & 0x07) << (7 + (4 - N_NB_index)));
     buffer |= ((TPC & 0x07) << (4 + (4 - N_NB_index)));
     buffer |= ((cqireq & 0x01) << (3 + (4 - N_NB_index)));

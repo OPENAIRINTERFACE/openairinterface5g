@@ -617,13 +617,14 @@ typedef struct {
   uint8_t start_symbol;
   uint8_t nb_symbols;
   uint8_t mcs_idx;
+  uint8_t mcs_table;
   uint8_t ndi;
   uint8_t nb_codewords;
   uint8_t nb_layers;
   uint16_t coding_rate;
   uint8_t modulation;
   uint8_t modulation_order;
-  uint16_t transport_block_size;
+  uint32_t transport_block_size;
   uint8_t dmrs_Type;
   uint8_t dmrs_TypeA_Position;
   uint8_t dmrs_maxLength; 
@@ -716,6 +717,7 @@ typedef struct {
     nr_pusch_freq_hopping_t pusch_freq_hopping;
     uint8_t mcs;
     uint8_t Qm;
+    uint16_t R;
     uint8_t ndi;
     uint8_t rv;
     int8_t accumulated_delta_PUSCH;

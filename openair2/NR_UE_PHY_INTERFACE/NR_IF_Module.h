@@ -52,6 +52,7 @@ typedef struct {
   int slot;
 
   fapi_nr_dl_config_request_t dl_config_req;
+  fapi_nr_ul_config_request_t ul_config_req;
 } nr_dcireq_t;
 
 typedef struct {
@@ -91,6 +92,8 @@ typedef struct {
     uint32_t slot;
     /// ssb_index, if ssb is not present in current TTI, thie value set to -1
     int ssb_index;
+    /// dci reception indication structure
+    fapi_nr_dci_indication_t *dci_ind;
 } nr_uplink_indication_t;
 
 // Downlink subframe P7

@@ -50,8 +50,11 @@ PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 openair0_config_t openair0_cfg[MAX_CARDS];
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
 double cpuf;
 int nfapi_mode=0;
+uint16_t NB_UE_INST = 1;
 
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }

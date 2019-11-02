@@ -25,7 +25,7 @@
 * \date 2011, 2018
 * \version 1.0
 * \company Eurecom, NTUST
-* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr, kroempa@gmail.com
+* \email: {raymond.knopp, navid.nikaein}@eurecom.fr and kroempa@gmail.com
 */
 
 #include <stdio.h>
@@ -246,15 +246,12 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
     
   default:
     AssertFatal(1==0,"Unknown dmrs_TypeA_Position %d\n",(int)scc->dmrs_TypeA_Position);
-    
   }
 
   //  assign_enum
   mib->message.choice.mib->cellBarred = NR_MIB__cellBarred_notBarred;
   //  assign_enum
   mib->message.choice.mib->intraFreqReselection = NR_MIB__intraFreqReselection_notAllowed;
-
-  
 
   //encode MIB to data
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
@@ -264,7 +261,6 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
                                    24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
 
   if (enc_rval.encoded==-1) {
     return(-1);
@@ -276,8 +272,8 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 void  do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
                     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
-                    rlc_bearer_config_t  *rlc_config){
-
+                    rlc_bearer_config_t  *rlc_config)
+{
   struct NR_RLC_BearerConfig *rlc_bearer;
   rlc_bearer = CALLOC(1,sizeof(struct NR_RLC_BearerConfig));
 
@@ -372,11 +368,12 @@ void  do_RLC_BEARER(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&(rlc_BearerToAddModList->list),&rlc_bearer);
 }
 
-void  do_MAC_CELLGROUP(uint8_t Mod_id,
-                       int CC_id,
-                       struct NR_MAC_CellGroupConfig *mac_CellGroupConfig,
-                       mac_cellgroup_t  *mac_cellgroup_config){
 
+void do_MAC_CELLGROUP(uint8_t Mod_id,
+                       int CC_id,
+					   NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+                       mac_cellgroup_t  *mac_cellgroup_config)
+{
   mac_CellGroupConfig->drx_Config               = CALLOC(1,sizeof(struct NR_SetupRelease_DRX_Config));
   mac_CellGroupConfig->schedulingRequestConfig  = CALLOC(1,sizeof(struct NR_SchedulingRequestConfig));
   mac_CellGroupConfig->bsr_Config               = CALLOC(1,sizeof(struct NR_BSR_Config));
@@ -486,11 +483,12 @@ void  do_MAC_CELLGROUP(uint8_t Mod_id,
 
 }
 
+
 void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
                            int CC_id,
-                           struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
-                           physicalcellgroup_t *physicalcellgroup_config){
-
+                           NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig,
+                           physicalcellgroup_t *physicalcellgroup_config)
+{
   physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH = CALLOC(1,sizeof(long));
   physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH = CALLOC(1,sizeof(long));
   physicalCellGroupConfig->p_NR_FR1                      = CALLOC(1,sizeof(NR_P_Max_t));
@@ -518,9 +516,9 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 }
 
 
-void  do_SpCellConfig(gNB_RRC_INST *rrc,
-                      struct NR_SpCellConfig  *spconfig){
 
+void do_SpCellConfig(gNB_RRC_INST *rrc,
+                      struct NR_SpCellConfig  *spconfig){
   gNB_RrcConfigurationReq  *common_configuration;
   common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
   //Fill servingcellconfigcommon config value

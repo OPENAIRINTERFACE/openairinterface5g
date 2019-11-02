@@ -59,8 +59,8 @@
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
 #include "NR_asn_constant.h"
+#include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"
@@ -78,10 +78,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(char *parallel_conf);
-extern void set_worker_conf(char *worker_conf);
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+
 extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
@@ -647,11 +644,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
-
-
     }//End for (k=0; k <num_gnbs ; k++)
-
-
   }//End if (num_gnbs>0)
 
 

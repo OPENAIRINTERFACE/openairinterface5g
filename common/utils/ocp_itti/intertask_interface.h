@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
   uint32_t      interval_sec;
   uint32_t      interval_us;
-  long     task_id;
+  long          task_id;
   int32_t       instance;
   timer_type_t  type;
   void         *timer_arg;
@@ -33,7 +33,7 @@ typedef struct {
 } timer_create_t;
 
 typedef struct {
-  long     task_id;
+  long          task_id;
   long          timer_id;
 } timer_delete_t;
 
@@ -536,6 +536,7 @@ int timer_setup(
 int timer_remove(long timer_id);
 #define timer_stop timer_remove
 int signal_handle(int *end);
+int signal_mask(void);
 
 #ifdef __cplusplus
 }

@@ -1055,18 +1055,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
                      uint8_t harq_pid);
 
-/*! \brief Fill up NR_UE_ULSCH_t and NR_UL_UE_HARQ_t structs
-  @param[in] UE, Pointer to PHY_VARS_NR_UE struct
-  @param[in] thread_id, thread id
-  @param[in] gNB_id, gNB id
-  @param[in] harq_pid, harq id
-*/
-
-int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
-                             uint8_t thread_id,
-                             int gNB_id,
-                             unsigned char harq_pid);
-
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
   @param[in] in, Pointer to input bits
   @param[in] size, of input bits
@@ -1076,7 +1064,7 @@ int generate_ue_ulsch_params(PHY_VARS_NR_UE *UE,
 */
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
@@ -1088,19 +1076,21 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
     - transform precoding
 */
 
-uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t slot,
                                uint8_t thread_id,
-                               int eNB_id);
+                               int gNB_id);
 
 
 /** \brief This function does IFFT for PUSCH
 */
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
+                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t Nl,
+                                      uint8_t thread_id,
+                                      uint8_t gNB_id,
                                       NR_DL_FRAME_PARMS *frame_parms);
 
 
