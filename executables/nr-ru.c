@@ -680,9 +680,6 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_slot*fp->slots_per_frame))&1023;
   proc->tti_rx       = (proc->timestamp_rx / fp->samples_per_slot)%fp->slots_per_frame;
   // synchronize first reception to frame 0 subframe 0
-  proc->timestamp_tx = proc->timestamp_rx+(sl_ahead*fp->samples_per_slot);
-  proc->tti_tx  = (proc->tti_rx+sl_ahead)%fp->slots_per_frame;
-  proc->frame_tx     = (proc->tti_rx>(fp->slots_per_frame-1-sl_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
         ru->idx,
         0,
@@ -781,6 +778,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
   }
 }
+
 
 
 /*!

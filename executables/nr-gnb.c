@@ -288,6 +288,8 @@ static void *gNB_L1_thread_tx(void *param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,slot_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,frame_tx);
     phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 1 );
     pthread_mutex_lock( &L1_proc_tx->mutex );
     L1_proc_tx->instance_cnt = -1;
 
@@ -299,6 +301,7 @@ static void *gNB_L1_thread_tx(void *param) {
     pthread_mutex_unlock(&L1_proc_tx->mutex);
 
     wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 0 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
   }
 

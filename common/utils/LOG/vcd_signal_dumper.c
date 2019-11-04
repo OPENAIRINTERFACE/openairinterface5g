@@ -504,6 +504,7 @@ const char* eurecomFunctionsNames[] = {
   "pdcch_interleaving",
   "pdcch_tx",
   /*NR softmodem signal*/
+  "wakeup_txfh"
   "gNB_thread_rxtx0",
   "gNB_thread_rxtx1"
 };

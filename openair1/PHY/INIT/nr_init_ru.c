@@ -157,6 +157,10 @@ void nr_phy_free_RU(RU_t *ru)
     for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdata_7_5kHz[i]);
     free_and_zero(ru->common.rxdata_7_5kHz);
 
+    // free beamforming input buffers (TX)
+    for (i = 0; i < 15; i++) free_and_zero(ru->common.txdataF[i]);
+    free_and_zero(ru->common.txdataF);
+
     // free IFFT input buffers (TX)
     for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdataF_BF[i]);
     free_and_zero(ru->common.txdataF_BF);
