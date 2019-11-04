@@ -33,7 +33,7 @@
 #include <openair1/SIMULATION/TOOLS/sim.h>
 
 #define PORT 4043 //default TCP port for this simulator
-#define CirSize 3072000 // 100ms is enough
+#define CirSize 307200 // 100ms is enough
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
@@ -106,7 +106,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ptr->headerMode=true;
   ptr->transferPtr=(char *)&ptr->th;
   ptr->remainToTransfer=sizeof(samplesBlockHeader_t);
-  int sendbuff=1000*1000*10;
+  int sendbuff=1000*1000*100;
   AssertFatal ( setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sendbuff, sizeof(sendbuff)) == 0, "");
   struct epoll_event ev= {0};
   ev.events = EPOLLIN | EPOLLRDHUP;
@@ -183,7 +183,7 @@ void setblocking(int sock, enum blocking_t active) {
   AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
 }
 
-static bool flushInput(rfsimulator_state_t *t, int timeout);
+static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps);
 
 void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
   if (t->saveIQfile != -1) {
@@ -207,7 +207,8 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
       if(errno==EAGAIN) {
         // The opposite side is saturated
         // we read incoming sockets meawhile waiting
-        flushInput(t, 5);
+        //flushInput(t, 5);
+        usleep(500);
         continue;
       } else
         return;
@@ -316,17 +317,19 @@ sin_addr:
   return 0;
 }
 
-int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
-  rfsimulator_state_t *t = device->priv;
+static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
   LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
     if (b->conn_sock >= 0 ) {
-      if ( abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
-        LOG_E(HW,"Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
+      pthread_mutex_lock(&Sockmutex);
 
+      if ( b->lastWroteTS != 0 && abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
+        LOG_E(HW,"Discontinuous TX gap too large Tx:%lu, %lu\n", b->lastWroteTS, timestamp);
+
+      AssertFatal(b->lastWroteTS <= timestamp+1, " Not supported to send Tx out of order (same in USRP) %lu, %lu\n", b->lastWroteTS, timestamp);
       samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(b->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
@@ -342,19 +345,23 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
         fullwrite(b->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
         b->lastWroteTS=timestamp+nsamps;
       }
+
+      pthread_mutex_unlock(&Sockmutex);
     }
   }
 
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
-  // Let's verify we don't have incoming data
-  // This is mandatory when the opposite side don't transmit
-  flushInput(t, 0);
-  pthread_mutex_unlock(&Sockmutex);
   return nsamps;
 }
 
-static bool flushInput(rfsimulator_state_t *t, int timeout) {
+int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
+  return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags);
+}
+
+
+
+static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initial) {
   // Process all incoming events on sockets
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {0};
@@ -375,7 +382,29 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
       AssertFatal( (conn_sock = accept(t->listen_sock,NULL,NULL)) != -1, "");
       setblocking(conn_sock, notBlocking);
       allocCirBuf(t, conn_sock);
-      LOG_I(HW,"A ue connected\n");
+      LOG_I(HW,"A ue connected, sending the current time\n");
+      struct complex16 v= {0};
+      void *samplesVoid[t->tx_num_channels];
+
+      for ( int i=0; i < t->tx_num_channels; i++)
+        samplesVoid[i]=(void *)&v;
+
+      pthread_mutex_lock(&Sockmutex);
+      openair0_timestamp timestamp=1;
+
+      for (int i=0; i<FD_SETSIZE; i++) {
+        buffer_t *b=&t->buf[i];
+
+        if (t->buf[i].circularBuf != NULL && t->buf[i].lastWroteTS > 1) {
+          timestamp=b->lastWroteTS;
+          break;
+        }
+      }
+
+      pthread_mutex_unlock(&Sockmutex);
+      rfsimulator_write_internal(t, timestamp-1,
+                                 samplesVoid, 1,
+                                 t->tx_num_channels, 1);
     } else {
       if ( events[nbEv].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP) ) {
         socketError(t,fd);
@@ -432,26 +461,34 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
           }
 
           if ( abs(b->th.timestamp-b->lastReceivedTS) > 50 )
-            LOG_W(HW,"gap of: %ld in reception\n", b->th.timestamp-b->lastReceivedTS );
+            LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
         }
 
         b->lastReceivedTS=b->th.timestamp;
-        AssertFatal(b->lastWroteTS == 0 || ( abs((double)b->lastWroteTS-b->lastReceivedTS) < (double)CirSize),
-                    "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
+        pthread_mutex_lock(&Sockmutex);
+
+        if (b->lastWroteTS != 0 && ( abs((double)b->lastWroteTS-b->lastReceivedTS) > (double)CirSize))
+          LOG_E(HW,"UEsock: %d Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, b->lastWroteTS, b->lastReceivedTS);
+
+        pthread_mutex_unlock(&Sockmutex);
         b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
       if ( b->headerMode==false ) {
-        LOG_D(HW,"Set b->lastReceivedTS %ld\n", b->lastReceivedTS);
+        LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
         b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
 
         // First block in UE, resync with the eNB current TS
-        if ( t->nextTimestamp == 0 )
-          t->nextTimestamp=b->lastReceivedTS-b->th.size;
+        if ( t->nextTimestamp == 0 && b->th.size < b->lastReceivedTS) {
+          t->nextTimestamp=b->lastReceivedTS > nsamps_for_initial ?
+                           b->lastReceivedTS - nsamps_for_initial :
+                           0;
+          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+        }
 
         if ( b->remainToTransfer==0) {
-          LOG_D(HW,"Completed block reception: %ld\n", b->lastReceivedTS);
+          LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
           b->headerMode=true;
           b->transferPtr=(char *)&b->th;
           b->remainToTransfer=sizeof(samplesBlockHeader_t);
@@ -469,7 +506,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
     LOG_W(HW, "rfsimulator: only 1 antenna tested\n");
   }
 
-  pthread_mutex_lock(&Sockmutex);
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
   // deliver data from received data
@@ -485,7 +521,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
     if ( t->nextTimestamp == 0)
       LOG_W(HW,"No connected device, generating void samples...\n");
 
-    if (!flushInput(t, 10)) {
+    if (!flushInput(t, 10,  nsamps)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
@@ -495,7 +531,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
 
       *ptimestamp = t->nextTimestamp-nsamps;
-      pthread_mutex_unlock(&Sockmutex);
       return nsamps;
     }
   } else {
@@ -506,26 +541,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
       for ( int sock=0; sock<FD_SETSIZE; sock++) {
         buffer_t *b=&t->buf[sock];
-
-        if ( b->circularBuf) {
-          LOG_D(HW,"sock: %d, lastWroteTS: %lu, lastRecvTS: %lu, TS must be avail: %lu\n",
-                sock, b->lastWroteTS,
-                b->lastReceivedTS,
-                t->nextTimestamp+nsamps);
-
-          if (  b->lastReceivedTS > b->lastWroteTS ) {
-            // The caller momdem (NB, UE, ...) must send Tx in advance, so we fill TX if Rx is in advance
-            // This occurs for example when UE is in sync mode: it doesn't transmit
-            // with USRP, it seems ok: if "tx stream" is off, we may consider it actually cuts the Tx power
-            struct complex16 v= {0};
-            void *samplesVoid[b->th.nbAnt];
-
-            for ( int i=0; i <b->th.nbAnt; i++)
-              samplesVoid[i]=(void *)&v;
-
-            rfsimulator_write(device, b->lastReceivedTS, samplesVoid, 1, b->th.nbAnt, 0);
-          }
-        }
 
         if ( b->circularBuf )
           if ( t->nextTimestamp+nsamps > b->lastReceivedTS ) {
@@ -539,7 +554,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
           ptr->lastReceivedTS,
           t->nextTimestamp+nsamps);
         */
-        flushInput(t, 3);
+        flushInput(t, 3, nsamps);
     } while (have_to_wait);
   }
 
@@ -586,7 +601,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         nsamps,
         *ptimestamp, t->nextTimestamp,
         signal_energy(samplesVoid[0], nsamps));
-  pthread_mutex_unlock(&Sockmutex);
   return nsamps;
 }
 int rfsimulator_request(openair0_device *device, void *msg, ssize_t msg_len) {

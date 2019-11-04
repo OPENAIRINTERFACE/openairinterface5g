@@ -264,7 +264,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
   AssertFatal((ret= pthread_mutex_unlock(&eNB->UL_INFO_mutex))==0,"error unlocking UL_INFO_mutex, return %d\n",ret);
 
   /* this conflict resolution may be totally wrong, to be tested */
@@ -762,7 +762,7 @@ static void *eNB_thread_prach( void *param ) {
     if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures\n");
-    prach_procedures(eNB
+    prach_procedures(eNB, &eNB->proc.L1_proc
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                      ,0
 #endif
@@ -796,7 +796,7 @@ static void *eNB_thread_prach_br( void *param ) {
     if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
-    prach_procedures(eNB,1);
+    prach_procedures(eNB, &eNB->proc.L1_proc,1);
 
     if (release_thread(&proc->mutex_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
   }
@@ -809,11 +809,6 @@ static void *eNB_thread_prach_br( void *param ) {
 #endif
 
 
-
-extern void init_td_thread(PHY_VARS_eNB *);
-extern void init_te_thread(PHY_VARS_eNB *);
-extern void kill_td_thread(PHY_VARS_eNB *);
-extern void kill_te_thread(PHY_VARS_eNB *);
 
 static void *process_stats_thread(void *param) {
   PHY_VARS_eNB     *eNB      = (PHY_VARS_eNB *)param;
@@ -919,12 +914,12 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te;
 #endif
-
+/*
     if(get_thread_worker_conf() == WORKER_ENABLE) {
       init_te_thread(eNB);
       init_td_thread(eNB);
     }
-
+*/
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {
@@ -990,12 +985,12 @@ void kill_eNB_proc(int inst) {
     proc        = &eNB->proc;
     L1_proc     = &proc->L1_proc;
     L1_proc_tx  = &proc->L1_proc_tx;
-
+/*
     if(get_thread_worker_conf() == WORKER_ENABLE) {
       kill_td_thread(eNB);
       kill_te_thread(eNB);
     }
-
+*/
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
 
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && NFAPI_MODE!=NFAPI_MODE_VNF) {

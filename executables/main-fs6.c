@@ -616,7 +616,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
                        &ulsch_harq->Kminus,
                        &ulsch_harq->F);
       ulsch_decoding_data(eNB, proc, i, harq_pid,
-                                    ulsch_harq->nb_rb>20 ? 1 : 0);
+                          ulsch_harq->nb_rb>20 ? 1 : 0);
       stop_meas(&eNB->ulsch_decoding_stats);
     } //     if ((ulsch) &&
     //         (ulsch->rnti>0) &&
@@ -634,6 +634,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
       LOG_W (PHY, "Removing stale ULSCH config for UE %x harq_pid %d (harq_mask is now 0x%2.2x)\n", ulsch->rnti, harq_pid, ulsch->harq_mask);
     }
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++)
+
   while (proc->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(&proc->respDecode, &proc->threadPool);
     postDecode(proc, req);

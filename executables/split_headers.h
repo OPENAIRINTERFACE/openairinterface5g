@@ -73,7 +73,7 @@ enum pckType {
 };
 
 // CU to DU definition of a future UL subframe decode
-// defines a UE future data plane 
+// defines a UE future data plane
 typedef struct {
   enum pckType type:8;
   uint16_t UE_id;

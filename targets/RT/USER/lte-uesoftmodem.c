@@ -597,6 +597,11 @@ void init_pdcp(void) {
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_itti_msg(void *notUsed) {
+	return NULL;
+}
+
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
@@ -657,6 +662,7 @@ int main( int argc, char **argv ) {
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
   printf("ITTI init\n");
+#define UE
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
