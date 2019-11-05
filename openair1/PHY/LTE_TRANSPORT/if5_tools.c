@@ -432,7 +432,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       }
 */
     } else if (eth->compression == NO_COMPRESS) {
-      int16_t temp_rx[spp_eth*2];
+      int16_t temp_rx[spp_eth*2] __attribute__((aligned(32))); 
       for (i=0; i < ru->nb_rx; i++)
         rxp[i] = &ru->common.rxdata[i][subframe*fp->samples_per_tti];
       int aid;

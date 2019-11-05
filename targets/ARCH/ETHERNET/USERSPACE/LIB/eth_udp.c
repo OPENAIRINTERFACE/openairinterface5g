@@ -289,12 +289,12 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   __m128i buff_tx[nsamps2+2];
   __m128i *buff_tx2=buff_tx+2;
 #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   nsamps2 = (nsamps+3)>>2;
   int16x8_t buff_tx[nsamps2+2];
   int16x8_t *buff_tx2=buff_tx+2;
 #else
-#error Unsupported CPU architecture, USRP device cannot be built
+#error Unsupported CPU architecture, ethernet device cannot be built
 #endif
 
     
@@ -403,102 +403,94 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   int rcvfrom_flag =0;
   int block_cnt=0;
   int again_cnt=0;
-  char temp0[APP_HEADER_SIZE_BYTES];
   static int packet_cnt=0;
-  
-  eth->rx_nsamps=256;
-
-    /* buff[i] points to the position in rx buffer where the payload to be received will be placed
-       buff2 points to the position in rx buffer where the packet header will be placed */
-    void *buff2 = (void*)(buff- APP_HEADER_SIZE_BYTES);
-    
-    /* we don't want to ovewrite with the header info the previous rx buffer data so we store it*/
-    memcpy((void *)temp0,(void *)buff2,APP_HEADER_SIZE_BYTES);
-    
-    bytes_received=0;
-    block_cnt=0;
-    int receive_bytes;
-    if (eth->compression == ALAW_COMPRESS) {
-      receive_bytes = UDP_PACKET_SIZE_BYTES_ALAW(nsamps);
-    } else {
-      receive_bytes = UDP_PACKET_SIZE_BYTES(nsamps);
-    }
-    
-    while(bytes_received < receive_bytes) {
-    again:
-#if DEBUG   
-	   printf("------- RX------: buff2 current position=%d remaining_bytes=%d  bytes_recv=%d \n",
-		  (void *)(buff2+bytes_received),
-		  receive_bytes - bytes_received,
-		  bytes_received);
+  int payload_size = UDP_PACKET_SIZE_BYTES(nsamps);
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+    int nsamps2 = (payload_size>>5)+1;
+  __m256i temp_rx[nsamps2];
+  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;
+#else
+    int nsamps2 = (payload_size>>4)+1;
+  __m128i temp_rx[nsamps2];
+  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
 #endif
-      bytes_received +=recvfrom(eth->sockfdd,
-				buff2,
-	                        receive_bytes,
-				rcvfrom_flag,
-				(struct sockaddr *)&eth->dest_addrd,
-				(socklen_t *)&eth->addr_len);
-      /*
-      if (packet_cnt%1000000<10) {
-        printf("[AW2S] Received ECPRI packet %d (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
-               packet_cnt,*(uint8_t *)buff2,
-               *(uint8_t *)(buff2+1),
-               (*(uint8_t *)(buff2+2)<<8)+*(uint8_t *)(buff2+3),
-               *(uint16_t *)(buff2+4),
-               *(uint64_t *)(buff2+6));
-      }*/
-      packet_cnt++;
-      if (bytes_received ==-1) {
-	eth->num_rx_errors++;
-	if (errno == EAGAIN) {
-	  again_cnt++;
-	  usleep(10);
-	  if (again_cnt == 1000) {
+#elif defined(__arm__) || defined(__aarch64__)
+  int nsamps2 = (payload_size>>4)+1
+  int16x8_t temp_rx[nsamps2];
+  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
+#else
+#error Unsupported CPU architecture, USRP device cannot be built
+#endif
+  
+  eth->rx_nsamps=nsamps;
+
+  bytes_received=0;
+  block_cnt=0;
+  int receive_bytes;
+  AssertFatal(eth->compression == NO_COMPRESS, "IF5 compression not supported for now\n");
+  
+  while(bytes_received < payload_size) {
+  again:
+    bytes_received +=recvfrom(eth->sockfdd,
+			      temp_rx0,
+			      payload_size,
+			      rcvfrom_flag,
+			      (struct sockaddr *)&eth->dest_addrd,
+			      (socklen_t *)&eth->addr_len);
+    packet_cnt++;
+    if (bytes_received ==-1) {
+      eth->num_rx_errors++;
+      if (errno == EAGAIN) {
+	again_cnt++;
+	usleep(10);
+	if (again_cnt == 1000) {
 	  perror("ETHERNET READ: ");
 	  exit(-1);
-	  } else {
-            bytes_received=0;
-	    goto again;
-	  }	  
-	} else if (errno == EWOULDBLOCK) {
-	     block_cnt++;
-	     usleep(10);	  
-	     if (block_cnt == 1000) {
-      perror("ETHERNET READ: ");
-      exit(-1);
-    } else {
-	    printf("BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK \n");
-	    goto again;
-	  }
+	} else {
+	  bytes_received=0;
+	  goto again;
+	}	  
+      } else if (errno == EWOULDBLOCK) {
+	block_cnt++;
+	usleep(10);	  
+	if (block_cnt == 1000) {
+	  perror("ETHERNET READ: ");
+	  exit(-1);
+	} else {
+	  printf("BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK BLOCK \n");
+	  goto again;
 	}
-      } else {
-#if DEBUG   
-	   printf("------- RX------: nu=%d an_id=%d ts%d bytes_recv=%d\n",
-		  *(int16_t *)buff2,
-		  *(int16_t *)(buff2 + sizeof(int16_t)),
-		  *(openair0_timestamp *)(buff2 + sizeof(int32_t)),
-		  bytes_received);
+      }
+    } else {
+      /* store the timestamp value from packet's header */
+      *timestamp =  *(openair0_timestamp *)(temp_rx0 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
+      // convert TS to samples, /3 for 30.72 Ms/s, /6 for 15.36 Ms/s, /12 for 7.68 Ms/s, etc.
+      *timestamp = *timestamp/3;
+      // handle 1.4,3,5,10,15 MHz cases
+      *cc        = *(uint16_t*)(temp_rx0 + ECPRICOMMON_BYTES);
+    }
+    eth->rx_actual_nsamps=payload_size>>2;
+    eth->rx_count++;
+  }	 
+ 
+  // populate receive buffer in lower 12-bits from 16-bit representation
+      for (int j=1; j<nsamps2; j++) {
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+//	LOG_I(PHY,"((__m256i *)buff)[%d-1] = %p, temp_rx[%d] = %p\n",
+//	      j,&((__m256i *)buff)[j-1],j,&temp_rx[j]);
+          ((__m256i *)buff)[j-1] = _mm256_srai_epi16(temp_rx[j],4);
+#else
+          ((__m128i *)buff)[j-1] = _mm_srai_epi16(temp_rx[j],4);
+#endif
+#elif defined(__arm__)
+          ((int16x8_t *)buff)[j] = vshrq_n_s16(temp_rx[i][j],4);
+#endif
+        }
 
-	   dump_packet((device->host_type == RAU_HOST)? "RAU":"RRU", buff2, UDP_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
-#endif  
-	   
-	   /* store the timestamp value from packet's header */
-	   *timestamp =  *(openair0_timestamp *)(buff2 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
-           // convert TS to samples, /3 for 30.72 Ms/s, /6 for 15.36 Ms/s, /12 for 7.68 Ms/s, etc.
-           *timestamp = *timestamp/3;
-           // handle 1.4,3,5,10,15 MHz cases
-           *cc        = *(uint16_t*)(buff2 + ECPRICOMMON_BYTES);
-	   }
-	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,eth->pck_seq_num_cur);
-	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,eth->pck_seq_num_prev);
-						    eth->rx_actual_nsamps=bytes_received>>2;
-						    eth->rx_count++;
-      }	 
-	     
-      /* tx buffer values restored */  
-  memcpy((void *)buff2,(void *)temp0,APP_HEADER_SIZE_BYTES);
-	  
-  return (bytes_received-APP_HEADER_SIZE_BYTES)>>2;
+  
+  return (payload_size>>2);
 }
 
 

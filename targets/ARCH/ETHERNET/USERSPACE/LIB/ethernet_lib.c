@@ -57,7 +57,7 @@ int trx_eth_start(openair0_device *device) {
 
     eth_state_t *eth = (eth_state_t*)device->priv;
 
-    if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
+    if (eth->flags == ETH_UDP_IF5_ECPRI_MODE) {
        AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
        AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
        device->openair0_cfg->samples_per_packet = 256;
@@ -168,7 +168,7 @@ void trx_eth_end(openair0_device *device) {
 int trx_eth_stop(openair0_device *device) {
     eth_state_t *eth = (eth_state_t*)device->priv;
 
-    if (eth->flags == ETH_UDP_IF5_ORI_MODE) {
+    if (eth->flags == ETH_UDP_IF5_ECPRI_MODE) {
        AssertFatal(device->thirdparty_cleanup != NULL, "device->thirdparty_cleanup is null\n");
        AssertFatal(device->thirdparty_cleanup(device) == 0, "third-party cleanup failed\n");
     }
@@ -377,7 +377,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     eth->flags = eth_params->transp_preference;
 
     // load third-party driver
-    if (eth->flags == ETH_UDP_IF5_ORI_MODE) load_lib(device,openair0_cfg,eth_params,RAU_REMOTE_THIRDPARTY_RADIO_HEAD);
+    if (eth->flags == ETH_UDP_IF5_ECPRI_MODE) load_lib(device,openair0_cfg,eth_params,RAU_REMOTE_THIRDPARTY_RADIO_HEAD);
 
 
     if (eth_params->if_compress == 0) {
@@ -408,7 +408,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     if  (eth->flags == ETH_RAW_MODE) {
         device->trx_write_func   = trx_eth_write_raw;
         device->trx_read_func    = trx_eth_read_raw;
-    } else if (eth->flags == ETH_UDP_MODE || eth->flags == ETH_UDP_IF5_ORI_MODE) {
+    } else if (eth->flags == ETH_UDP_MODE || eth->flags == ETH_UDP_IF5_ECPRI_MODE) {
         device->trx_write_func2   = trx_eth_write_udp;
         device->trx_read_func2    = trx_eth_read_udp;
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;

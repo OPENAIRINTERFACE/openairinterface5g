@@ -2089,10 +2089,6 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
-int start_steraming(RU_t *ru) {
-  return(ru->ifdevice.thirdparty_startstreaming);
-}
-
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
 extern void feptx_ofdm(RU_t *ru);
@@ -2556,7 +2552,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     }
-    ru->start_rf               = ru->eth_params.transp_preference == ETH_UDP_IF5_ORI_MODE ? start_streaming : NULL;                 // no local RF
+    ru->start_rf               = ru->eth_params.transp_preference == ETH_UDP_IF5_ECPRI_MODE ? start_streaming : NULL;                 // no local RF
     ru->stop_rf                = NULL;
     ru->start_if               = start_if;             // need to start if interface for IF5
     ru->ifdevice.host_type     = RAU_HOST;
@@ -2965,10 +2961,10 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->function                     = NGFI_RAU_IF5;
 	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
 	}
-	else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ori_if5") == 0) {
+	else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
 	  RC.ru[j]->if_south                     = REMOTE_IF5;
 	  RC.ru[j]->function                     = NGFI_RAU_IF5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ORI_MODE;
+	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
           RC.ru[j]->has_ctrl_prt                        = 0;
 
 	}
