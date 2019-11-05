@@ -69,7 +69,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES); //this should be MAX_NR_DLSCH_PAYLOAD_BYTES
+          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
@@ -80,7 +80,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         printf("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
 #endif
 
-        for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
 
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
@@ -260,7 +260,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         dlsch->harq_processes[i]->round  = 0;
 
 	for (j=0; j<96; j++)
-	  for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
+	  for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = NR_NULL;
 
@@ -288,7 +288,7 @@ int nr_dlsch_encoding(unsigned char *a,
   uint8_t mod_order = rel15.modulation_order;
   uint16_t Kr=0,r;
   uint32_t r_offset=0;
-  //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
+  //uint8_t *d_tmp[MAX_NUM_NR_DLSCH_SEGMENTS];
   uint8_t BG=1;
   uint32_t E;
   uint8_t Ilbrm = 1;
@@ -300,8 +300,8 @@ int nr_dlsch_encoding(unsigned char *a,
   uint8_t Nl = 4;
 
   /*
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
-  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
+  uint8_t *channel_input[MAX_NUM_NR_DLSCH_SEGMENTS]; //unsigned char
+  for(j=0;j<MAX_NUM_NR_DLSCH_SEGMENTS;j++) {
     channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
   }
   */
@@ -339,7 +339,7 @@ int nr_dlsch_encoding(unsigned char *a,
       dlsch->harq_processes[harq_pid]->B = A+24;
       //    dlsch->harq_processes[harq_pid]->b = a;
    
-      AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_DLSCH_PAYLOAD_BYTES);
 
       memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);  // why is this +4 if the CRC is only 3 bytes?
     }
@@ -354,7 +354,7 @@ int nr_dlsch_encoding(unsigned char *a,
       dlsch->harq_processes[harq_pid]->B = A+16;
       //    dlsch->harq_processes[harq_pid]->b = a;
    
-      AssertFatal((A/8)+3 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_NR_DLSCH_PAYLOAD_BYTES);
 
       memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
     }

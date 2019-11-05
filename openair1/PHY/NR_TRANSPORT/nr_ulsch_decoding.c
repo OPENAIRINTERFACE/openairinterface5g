@@ -264,7 +264,7 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
         //uint8_t h[MAX_NUM_CHANNEL_BITS];
         /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-        //int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+        //int16_t w[MAX_NUM_NR_ULSCH_SEGMENTS][3*(6144+64)];
       }
     }
   }

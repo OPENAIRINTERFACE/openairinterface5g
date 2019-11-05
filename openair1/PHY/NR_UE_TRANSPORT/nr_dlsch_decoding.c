@@ -65,7 +65,7 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
+          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES);
           dlsch->harq_processes[i]->b = NULL;
         }
 
@@ -140,10 +140,10 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
         dlsch->harq_processes[i]->first_tx=1;
-        dlsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        dlsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
 
         if (dlsch->harq_processes[i]->b)
-          memset(dlsch->harq_processes[i]->b,0,MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
+          memset(dlsch->harq_processes[i]->b,0,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
         else
           exit_flag=3;
 
@@ -752,7 +752,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  //short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
+  //short dummy_w[MAX_NUM_NR_DLSCH_SEGMENTS][3*(8448+64)];
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bytes_F;
   uint8_t crc_type;
   //UE_rxtx_proc_t *proc = &phy_vars_ue->proc;
@@ -930,8 +930,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     break;
   }
 
-  if (harq_process->C > MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_ldpc_iterations));
   }
 #ifdef DEBUG_DLSCH_DECODING
@@ -1370,7 +1370,7 @@ void *nr_dlsch_decoding_process(void *arg)
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-//  short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
+//  short dummy_w[MAX_NUM_NR_DLSCH_SEGMENTS][3*(8448+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
   uint8_t crc_type;
   uint8_t C,Cprime;
@@ -1509,8 +1509,8 @@ void *nr_dlsch_decoding_process(void *arg)
     break;
   }
 
-  if (harq_process->C > MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_ldpc_iterations));
   }*/
 #ifdef DEBUG_DLSCH_DECODING

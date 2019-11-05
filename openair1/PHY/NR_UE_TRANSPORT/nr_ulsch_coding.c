@@ -239,8 +239,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 /////////////////////////////////////////////////////////////////////////////////////////  
 
   /*
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
-  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
+  uint8_t *channel_input[MAX_NUM_NR_ULSCH_SEGMENTS]; //unsigned char
+  for(j=0;j<MAX_NUM_NR_ULSCH_SEGMENTS;j++) {
     channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
   }
   */
