@@ -278,7 +278,7 @@ if (logFlag){
       start_meas(&timeDecoder);
 
       if (decoder_int16==1) {
-    	  decoderState = polar_decoder_int16(channelOutput_int16, (uint64_t *)estimatedOutput, currentPtr);
+    	  decoderState = polar_decoder_int16(channelOutput_int16, (uint64_t *)estimatedOutput, 0, currentPtr);
       } else { //0 --> PBCH, 1 --> DCI, -1 --> UCI
     	  if (polarMessageType == 0) {
     		  decoderState = polar_decoder(channelOutput,
