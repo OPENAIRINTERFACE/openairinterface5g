@@ -65,13 +65,63 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
 */
 void nr_ulsch_extract_rbs_single(int **rxdataF,
+                                 int **ul_ch_estimates,
                                  int **rxdataF_ext,
+                                 int **ul_ch_estimates_ext,
                                  uint32_t rxdataF_ext_offset,
                                  // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
                                  unsigned char symbol,
                                  unsigned short start_rb,
                                  unsigned short nb_rb_pusch,
                                  NR_DL_FRAME_PARMS *frame_parms);
+
+void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
+                            NR_DL_FRAME_PARMS *frame_parms,
+                            NR_gNB_ULSCH_t **ulsch_gNB,
+                            uint8_t symbol,
+                            uint8_t start_symbol,
+                            uint16_t nb_rb);
+
+
+/** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
+    @param ul_ch_estimates_ext Channel estimates in allocated RBs
+    @param frame_parms Pointer to frame descriptor
+    @param avg Pointer to average signal strength
+    @param pilots_flag Flag to indicate pilots in symbol
+    @param nb_rb Number of allocated RBs
+*/
+void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
+                            NR_DL_FRAME_PARMS *frame_parms,
+                            int32_t *avg,
+                            uint8_t symbol,
+                            uint32_t len,
+                            unsigned short nb_rb);
+
+
+/** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
+    @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
+    @param ul_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
+    @param ul_ch_mag First Channel magnitudes (16QAM/64QAM)
+    @param ul_ch_magb Second weighted Channel magnitudes (64QAM)
+    @param rxdataF_comp Compensated received waveform
+    @param frame_parms Pointer to frame descriptor
+    @param symbol Symbol on which to operate
+    @param Qm Modulation order of allocation
+    @param nb_rb Number of RBs in allocation
+    @param output_shift Rescaling for compensated output (should be energy-normalizing)
+*/
+void nr_ulsch_channel_compensation(int **rxdataF_ext,
+                                int **ul_ch_estimates_ext,
+                                int **ul_ch_mag,
+                                int **ul_ch_magb,
+                                int **rxdataF_comp,
+                                int **rho,
+                                NR_DL_FRAME_PARMS *frame_parms,
+                                unsigned char symbol,
+                                uint8_t pilots,
+                                unsigned char mod_order,
+                                unsigned short nb_rb,
+                                unsigned char output_shift);
 
 /*!
 \brief This function implements the idft transform precoding in PUSCH
@@ -102,6 +152,7 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
 void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
                         int32_t **ul_ch_mag,
                         int16_t  *ulsch_llr,
+                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol);
 
@@ -118,6 +169,7 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
                         int32_t **ul_ch_mag,
                         int32_t **ul_ch_magb,
                         int16_t  *ulsch_llr,
+                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol);
 
@@ -135,6 +187,7 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           int32_t **ul_ch_mag,
                           int32_t **ul_ch_magb,
                           int16_t  *ulsch_llr,
+                          uint32_t nb_rb,
                           uint32_t nb_re,
                           uint8_t  symbol,
                           uint8_t  mod_order);

@@ -62,7 +62,7 @@ openair_rrc_on_ue(
 
 void rrc_top_cleanup(void);
 
-/** \brief Function to update eNB timers every subframe.  
+/** \brief Function to update eNB timers every subframe.
 @param ctxt_pP  running context
 @param enb_index
 @param CC_id
@@ -106,13 +106,11 @@ rrc_ue_decode_dcch(
   const uint8_t                eNB_indexP
 );
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int decode_SL_Discovery_Message(
   const protocol_ctxt_t *const ctxt_pP,
   const uint8_t                eNB_index,
   const uint8_t               *Sdu,
   const uint8_t                Sdu_len);
-#endif
 
 /** \brief Generate/Encodes RRCConnnectionRequest message at UE
     \param ctxt_pP Running context
@@ -223,7 +221,7 @@ uint8_t rrc_eNB_get_next_transaction_identifier(module_id_t module_idP);
    \param buffer Pointer to SDU
    \param buffer_length length of SDU in bytes
    \param CC_id component carrier index*/
-int rrc_eNB_decode_ccch(protocol_ctxt_t* const ctxt_pP,
+int rrc_eNB_decode_ccch(protocol_ctxt_t *const ctxt_pP,
                         const uint8_t         *buffer,
                         int                    buffer_length,
                         const int              CC_id);
@@ -312,9 +310,9 @@ void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t  *const ue_context_pP,
     uint8_t               *buffer,
-                                                 int                    *_size
-                                                 //const uint8_t        ho_state
-                                                 );
+    int                    *_size
+    //const uint8_t        ho_state
+                                                );
 void
 rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protocol_ctxt_t *const ctxt_pP);
 
@@ -339,7 +337,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(
   uint8_t                 *nas_buffer
 );
 
-void 
+void
 rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t *const ctxt_pP,
                           rrc_eNB_ue_context_t  *ue_context_pP);
 
@@ -383,8 +381,8 @@ int
 rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t           *const ue_context_pP,
-      LTE_SL_DestinationInfoList_r12_t  *destinationInfoList,
-      int n_discoveryMessages
+  LTE_SL_DestinationInfoList_r12_t  *destinationInfoList,
+  int n_discoveryMessages
 );
 
 /** \brief process the received SidelinkUEInformation message at eNB
@@ -404,7 +402,7 @@ rrc_eNB_process_SidelinkUEInformation(
 LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t *const ue_context_pP,
-      LTE_SL_DestinationInfoList_r12_t  *destinationInfoList
+  LTE_SL_DestinationInfoList_r12_t  *destinationInfoList
 );
 
 /** \brief Get a Resource Pool for Discovery
@@ -414,7 +412,7 @@ LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool(
 LTE_SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t *const ue_context_pP,
-      int n_discoveryMessages
+  int n_discoveryMessages
 );
 
 /** \brief Process request from control socket
@@ -446,10 +444,8 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t        *sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_areaP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  , const boolean_t		brOption
-#endif
+  const uint8_t         mbsfn_sync_areaP,
+  const boolean_t   brOption
 );
 
 int8_t
@@ -481,22 +477,22 @@ mac_rrc_data_ind_ue(
 void mac_sync_ind( module_id_t Mod_instP, uint8_t status);
 
 void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
-			    const int CC_id,
-			    const frame_t frameP,
-			    const sub_frame_t subframeP,
-			    const rnti_t rnti);
+                            const int CC_id,
+                            const frame_t frameP,
+                            const sub_frame_t subframeP,
+                            const rnti_t rnti);
 
 void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,
-                const int CC_id,
-                const frame_t frameP,
-                const sub_frame_t subframeP,
-                const rnti_t rnti);
+                                const int CC_id,
+                                const frame_t frameP,
+                                const sub_frame_t subframeP,
+                                const rnti_t rnti);
 
-void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
-			    const int CC_id, 
-			    const frame_t frameP,
-			    const sub_frame_t subframeP,
-			    const rnti_t rnti);
+void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP,
+                            const int CC_id,
+                            const frame_t frameP,
+                            const sub_frame_t subframeP,
+                            const rnti_t rnti);
 
 uint8_t
 rrc_data_req(
@@ -544,15 +540,13 @@ int decode_BCCH_DLSCH_Message(
   const uint8_t                rsrq,
   const uint8_t                rsrp );
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int decode_BCCH_MBMS_DLSCH_Message(
-  const protocol_ctxt_t* const ctxt_pP,
+  const protocol_ctxt_t *const ctxt_pP,
   const uint8_t                eNB_index,
-  uint8_t*               const Sdu,
+  uint8_t               *const Sdu,
   const uint8_t                Sdu_len,
   const uint8_t                rsrq,
   const uint8_t                rsrp );
-#endif
 
 int decode_PCCH_DLSCH_Message(
   const protocol_ctxt_t *const ctxt_pP,
@@ -614,9 +608,9 @@ rrc_eNB_generate_HandoverPreparationInformation(
 
 int
 flexran_rrc_eNB_trigger_handover (int mod_id,
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t  *ue_context_pP,
-  int target_cell_id);
+                                  const protocol_ctxt_t *const ctxt_pP,
+                                  rrc_eNB_ue_context_t  *ue_context_pP,
+                                  int target_cell_id);
 
 void
 check_handovers(
@@ -651,7 +645,7 @@ rrc_eNB_free_mem_UE_context(
 
 void
 rrc_eNB_free_UE(
-		const module_id_t enb_mod_idP,
+  const module_id_t enb_mod_idP,
   const struct rrc_eNB_ue_context_s         *const ue_context_pP
 );
 
@@ -662,10 +656,10 @@ long binary_search_float(float elements[], long numElem, float value);
 void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
 
 void openair_rrc_top_init_ue(
-                        int eMBMS_active,
+  int eMBMS_active,
   char *uecap_xer,
-                        uint8_t cba_group_active,
-                        uint8_t HO_active
+  uint8_t cba_group_active,
+  uint8_t HO_active
 );
 
 extern pthread_mutex_t      rrc_release_freelist;

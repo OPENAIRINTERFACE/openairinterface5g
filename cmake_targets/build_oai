@@ -47,7 +47,6 @@ VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when low-latency flag is set to False
 REL="Rel15"
-NR_REL="NR_Rel15"
 HW="None"
 TP="None"
 EPC=0
@@ -107,10 +106,6 @@ Options
     Makes test program for haw latency tests
 -a | --agent
    Enables agent for software-defined control of the eNB
--r | --3gpp-release
-   default is Rel14,
-   Rel8 limits the implementation to 3GPP Release 8 version
-   Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
    EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
@@ -154,7 +149,7 @@ Options
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 --build-lib <libraries>
-   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES
+   Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
 -h | --help
@@ -235,10 +230,6 @@ function main() {
             shift 2;;
        --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)
-            shift 2;;
-       -r | --3gpp-release)
-            REL=$2
-            echo_info "Setting release to: $REL"
             shift 2;;
        -w | --hardware)
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
@@ -355,16 +346,21 @@ function main() {
             shift 1;;
        --build-lib) 
             BUILD_OPTLIB="" 
-            for alib in $2 ; do 
+            if [  "$2" == "all" ] ; then
+              BUILD_OPTLIB="$OPTIONAL_LIBRARIES"
+              echo_info "Enabling build of all optional shared libraries ($OPTIONAL_LIBRARIES)" 
+            else
+              for alib in $2 ; do 
                 for oklib in $OPTIONAL_LIBRARIES ; do
-                     if [ "$alib" = "$oklib" ] ; then
-                        BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
-                        echo_info "Enabling build of lib${alib}.so" 
-                     fi   
+                  if [ "$alib" = "$oklib" ] ; then
+                    BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
+                    echo_info "Enabling build of lib${alib}.so" 
+                    fi   
+                  done
                 done
-            done
-	    if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
-               echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+	          if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+              fi
             fi
             shift 2;;		
         --usrp-recplay)
@@ -551,8 +547,6 @@ function main() {
 #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
     echo "set ( UESIM_EXPANSION $UESIM_EXPANSION )"                       >> $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")"                             >> $cmake_file
-    echo "set ( NR_RRC_ASN1_VERSION \"${NR_REL}\")"                       >> $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
@@ -591,7 +585,8 @@ function main() {
 	      nr-uesoftmodem $dbin/nr-uesoftmodem.$REL	  
 	  fi
 
-# mandatory shared lib
+# mandatory shared libraries common to UE and (e/g)NB
+
     compilations \
 	  $build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
@@ -875,7 +870,6 @@ function main() {
 	  ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	  echo_info "liboai_transpro.so is linked to ETHERNET transport"
   fi
-  
 
   ###################
   # Doxygen Support #

@@ -232,7 +232,7 @@ int write_file_matlab(const char *fname,
 void  log_getconfig(log_t *g_log)
 {
   char *gloglevel = NULL;
-  int consolelog ;
+  int consolelog = 0;
   paramdef_t logparams_defaults[] = LOG_GLOBALPARAMS_DESC;
   paramdef_t logparams_level[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];

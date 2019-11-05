@@ -512,6 +512,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
      first_packet_state = false;
      last_packet_state  = true;
     }
+
     s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state; 
     s->tx_md.end_of_burst   = last_packet_state;
@@ -613,7 +614,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 	    ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 	  }
 	  else {
-	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[j],4);
+	    ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j],4);
 	    ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i*)buff_tmp[i])[2*j+1],4);
 	  }
 #else
@@ -1141,6 +1142,7 @@ extern "C" {
       }
 
       s->usrp = uhd::usrp::multi_usrp::make(args);
+      device->priv = s;
 
       if (args.find("clock_source")==std::string::npos) {
 	LOG_I(HW, "Using clock_source == '%d'\n", openair0_cfg[0].clock_source);
@@ -1166,7 +1168,7 @@ extern "C" {
 
       if (s->usrp->get_clock_source(0) == "gpsdo") {
 	s->use_gps = 1;
-        if (sync_to_gps(device)) {
+        if (sync_to_gps(device)==EXIT_SUCCESS) {
           LOG_I(HW,"USRP synced with GPS!\n");
 	}
 	else {
@@ -1191,22 +1193,6 @@ extern "C" {
         LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
         switch ((int)openair0_cfg[0].sample_rate) {
-          case 153600000:
-            // from usrp_time_offset
-            //openair0_cfg[0].samples_per_packet    = 2048;
-            openair0_cfg[0].tx_sample_advance     = 15; //to be checked
-            openair0_cfg[0].tx_bw                 = 100e6;
-            openair0_cfg[0].rx_bw                 = 100e6;
-            break;
-
-          case 115200000:
-            // from usrp_time_offset
-            //openair0_cfg[0].samples_per_packet    = 2048;
-            openair0_cfg[0].tx_sample_advance     = 15; //to be checked
-            openair0_cfg[0].tx_bw                 = 100e6;
-            openair0_cfg[0].rx_bw                 = 100e6;
-            break;
-
           case 122880000:
             // from usrp_time_offset
             //openair0_cfg[0].samples_per_packet    = 2048;

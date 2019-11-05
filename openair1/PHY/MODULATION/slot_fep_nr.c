@@ -36,10 +36,10 @@
 #endif*/
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
-		unsigned char symbol,
-		unsigned char Ns,
-		int sample_offset,
-		int no_prefix)
+                unsigned char symbol,
+                unsigned char Ns,
+                int sample_offset,
+                int no_prefix)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -131,8 +131,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_FEP
       //  if (ue->frame <100)
-    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d,  sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx,Ns, symbol,
-          nb_prefix_samples,nb_prefix_samples0,slot_offset,sample_offset,rx_offset,frame_length_samples);
+    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, slot_offset %u, sample_offset %d,rx_offset %u, frame_length_samples %u\n",
+    		ue->proc.proc_rxtx[(Ns)&1].frame_rx, Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
 #endif
 
     if (symbol==0) {
@@ -192,7 +192,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     #ifdef DEBUG_FEP
         //  if (ue->frame <100)
-        printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol,rx_offset);
+        printf("slot_fep: frame %d: symbol %d rx_offset %u\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol, rx_offset);
     #endif
   }
 

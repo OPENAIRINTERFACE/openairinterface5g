@@ -5,18 +5,18 @@
 
 #include "flexran_agent.h"
 #include "PHY/defs_gNB.h"
+#include "proto_agent.h"
 
 #define DEFAULT_DLF 2680000000
-
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
    when calling config_get or config_getlist functions                                                                                 */
 
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters common to eNodeB and UE                                                                                */
-/*   optname                        helpstr             paramflags                  XXXptr                  defXXXval                      type         numelt               */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters common to eNodeB and UE                                                                           */
+/*   optname                helpstr                 paramflags        XXXptr                              defXXXval                   type         numelt               */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_GNB {  \
     {"rf-config-file",        CONFIG_HLP_RFCFGF,      0,                strptr:(char **)&rf_config_file,    defstrval:NULL,                TYPE_STRING, sizeof(rf_config_file)},\
     {"ulsch-max-errors",      CONFIG_HLP_ULMAXE,      0,                uptr:&ULSCH_max_consecutive_errors, defuintval:0,                  TYPE_UINT,   0},        \
@@ -34,8 +34,6 @@
     {"K" ,                    CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE, strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",    TYPE_STRING, 0},        \
     {"m" ,                    CONFIG_HLP_DLMCS,       0,                uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"t" ,                    CONFIG_HLP_ULMCS,       0,                uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
-    {"W" ,                    CONFIG_HLP_L2MONW,      0,                strptr:(char **)&in_ip,             defstrval:"127.0.0.1",         TYPE_STRING, sizeof(in_ip)},  \
-    {"P" ,                    CONFIG_HLP_L2MONP,      0,                strptr:(char **)&in_path,           defstrval:"/tmp/oai_opt.pcap", TYPE_STRING, sizeof(in_path)},\
     {"q" ,                    CONFIG_HLP_STMON,       PARAMFLAG_BOOL,   iptr:&opp_enabled,                  defintval:0,                   TYPE_INT,    0},        \
     {"S" ,                    CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,           defintval:1,                   TYPE_UINT8,  0},        \
     {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL,   iptr:&tddflag,                      defintval:0,                   TYPE_INT,    0},        \
@@ -44,14 +42,19 @@
     {"parallel-config",       CONFIG_HLP_PARALLEL_CMD,0,                strptr:(char **)&parallel_config,   defstrval:NULL,                TYPE_STRING, 0},        \
     {"worker-config",         CONFIG_HLP_WORKER_CMD,  0,                strptr:(char **)&worker_config,     defstrval:NULL,                TYPE_STRING, 0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
-    {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,   iptr:&nonbiotflag,                  defintval:0,                   TYPE_INT,    0}         \
+    {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,   iptr:&nonbiotflag,                  defintval:0,                   TYPE_INT,    0},        \
+    {"noS1",                  CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,   uptr:&noS1,                         defintval:0,                   TYPE_INT,    0},        \
+    {"nokrnmod",              CONFIG_HLP_NOKRNMOD,    PARAMFLAG_BOOL,   uptr:&nokrnmod,                     defintval:0,                   TYPE_INT,    0}         \
   }
 
+#define SOFTMODEM_NOS1_BIT            (1<<0)
+#define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 
-typedef struct {
-  int *argc;
-  char **argv;
-} scopeParms_t;
+#define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
+#define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
+
+extern uint64_t get_softmodem_optmask(void);
+extern void get_common_options(void);
 
 extern int T_port;
 extern int T_nowait;

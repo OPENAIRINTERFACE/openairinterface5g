@@ -159,10 +159,6 @@ typedef struct {
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// Current Number of Symbols
-  uint8_t Nsymb_pusch;
-  /// Nsc_pusch, number of allocated subcarriers for ULSCH
-  uint16_t Nsc_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
   /// DMRS length
@@ -372,6 +368,8 @@ typedef struct {
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;  
+  /// Maximum number of HARQ rounds 
+  uint8_t Mlimit;
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,

@@ -56,6 +56,7 @@ OAI_UE_PROCESS_COULD_NOT_SYNC = -21
 OAI_UE_PROCESS_ASSERTION = -22
 OAI_UE_PROCESS_FAILED = -23
 OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = -24
+OAI_UE_PROCESS_SEG_FAULT = -25
 OAI_UE_PROCESS_OK = +6
 
 UE_STATUS_DETACHED = 0
@@ -175,7 +176,6 @@ class SSHConnection():
 		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
-		self.Initialize_OAI_eNB_args = ''
 		self.clean_repository = True
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
@@ -542,8 +542,37 @@ class SSHConnection():
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
 		if self.clean_repository:
-			pass
+			self.command('ls *.txt', '\$', 5)
+			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			if result is not None:
+				mismatch = False
+				self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				result = re.search(self.ranCommitID, str(self.ssh.before))
+				if result is None:
+					mismatch = True
+				self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				if (self.ranAllowMerge):
+					result = re.search('YES', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+					self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					if self.ranTargetBranch == '':
+						result = re.search('develop', str(self.ssh.before))
+					else:
+						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				else:
+					result = re.search('NO', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				if not mismatch:
+					self.close()
+					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					return
+
 			self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
 			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
@@ -571,12 +600,23 @@ class SSHConnection():
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.close()
 		if buildStatus:
-			logging.info('\u001B[1m Building OAI ' + ue_prefix + 'UE Pass\u001B[0m')
+			# Generating a BUILD INFO file
+			self.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if (self.ranAllowMerge):
+				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				if self.ranTargetBranch == '':
+					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				else:
+					self.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			else:
+				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.close()
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 		else:
-			logging.error('\u001B[1m Building OAI ' + ue_prefix + 'UE Failed\u001B[0m')
+			self.close()
+			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
@@ -738,13 +778,13 @@ class SSHConnection():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
+			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				self.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 15)
+				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -762,13 +802,18 @@ class SSHConnection():
 		self.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('hostnamectl','\$', 5)
+		result = re.search('CentOS Linux 7', str(self.ssh.before))
+		if result is not None:
+			self.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+		else:
+			self.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
 		time.sleep(6)
 		doLoop = True
-		loopCounter = 10
+		loopCounter = 20
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
@@ -979,18 +1024,30 @@ class SSHConnection():
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
 				else:
-					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
-					tunnelInterfaceStatus = False
+					self.command('ifconfig oaitun_ue1', '\$', 4)
+					result = re.search('inet addr', str(self.ssh.before))
+					if result is not None:
+						logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
+						tunnelInterfaceStatus = True
+					else:
+						logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+						tunnelInterfaceStatus = False
 			else:
 				tunnelInterfaceStatus = True
+		else:
+			tunnelInterfaceStatus = True
 
 		self.close()
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 		else:
-			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
-			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			if self.air_interface == 'lte':
+				self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+			else:
+				self.htmlUEFailureMsg = 'nr-uesoftmodem did NOT synced'
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
 
@@ -1121,7 +1178,7 @@ class SSHConnection():
 		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
 		if attach_status:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Completed in ' + str(attach_cnt+4) + ' seconds'
+			html_cell = '<pre style="background-color:white">CAT-M module Attachment Completed in ' + str(attach_cnt+4) + ' seconds'
 			if (nRSRQ is not None) and (nRSRP is not None):
 				html_cell += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
 				html_cell += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm</pre>'
@@ -1130,9 +1187,11 @@ class SSHConnection():
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'OK', 1, html_queue)
 		else:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Failed</pre>'
+			logging.error('\u001B[1m CAT-M module Attachment Failed\u001B[0m')
+			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
+			self.AutoTerminateUEandeNB()
 
 	def PingCatM(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '':
@@ -1143,7 +1202,7 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.prematureExit = True
+			self.AutoTerminateUEandeNB()
 			return
 		try:
 			statusQueue = SimpleQueue()
@@ -1162,6 +1221,8 @@ class SSHConnection():
 				if result is not None:
 					moduleIPAddr = result.group('ipaddr')
 				else:
+					self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+					self.AutoTerminateUEandeNB()
 					return
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			device_id = 'catm'
@@ -1796,7 +1857,6 @@ class SSHConnection():
 			else:
 				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 				self.command('cd ' + self.UESourceCodePath + '/cmake_targets/', '\$', 5)
-			self.command('cd cmake_targets', '\$', 5)
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '.log', '\$', int(ping_time[0])*1.5)
 			# TIMEOUT CASE
@@ -2393,15 +2453,16 @@ class SSHConnection():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def IperfNoS1(self):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = True
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
+			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
 			iServerIPAddr = self.eNBIPAddress
@@ -2557,7 +2618,8 @@ class SSHConnection():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		# in noS1 config, no need to check status from EPC
-		result = re.search('noS1', str(self.Initialize_eNB_args))
+		# in gNB also currently no need to check
+		result = re.search('noS1|band78', str(self.Initialize_eNB_args))
 		if result is None:
 			p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
@@ -3129,6 +3191,10 @@ class SSHConnection():
 				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				self.htmlUEFailureMsg += statMsg + '\n'
+			if not frequency_found:
+				statMsg = 'NR-UE could NOT synch!'
+				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmlUEFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -3143,20 +3209,32 @@ class SSHConnection():
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
-			return ENB_PROCESS_SEG_FAULT
+			if not nrUEFlag:
+				return OAI_UE_PROCESS_SEG_FAULT
+			else:
+				if not frequency_found:
+					return OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE showed an assertion!\n'
-			if not mib_found or not frequency_found:
-				return OAI_UE_PROCESS_ASSERTION
+			if not nrUEFlag:
+				if not mib_found or not frequency_found:
+					return OAI_UE_PROCESS_ASSERTION
+			else:
+				if not frequency_found:
+					return OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
 			#return ENB_PROCESS_REALTIME_ISSUE
-		if no_cell_sync_found and not mib_found:
-			logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
-			self.htmlUEFailureMsg += 'UE could not synchronize!\n'
-			return OAI_UE_PROCESS_COULD_NOT_SYNC
+		if nrUEFlag:
+			if not frequency_found:
+				return OAI_UE_PROCESS_COULD_NOT_SYNC
+		else:
+			if no_cell_sync_found and not mib_found:
+				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
+				self.htmlUEFailureMsg += 'UE could not synchronize!\n'
+				return OAI_UE_PROCESS_COULD_NOT_SYNC
 		return 0
 
 	def TerminateeNB(self):
@@ -3379,11 +3457,14 @@ class SSHConnection():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				# for NR-UE at the moment keep running 
 				if self.air_interface == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
 					# Not an error then
 					if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
+						self.Initialize_OAI_UE_args = ''
+						self.AutoTerminateUEandeNB()
+				else:
+					if (logStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB()
 			else:
@@ -3411,6 +3492,11 @@ class SSHConnection():
 			self.ShowTestID()
 			self.eNB_instance = '0'
 			self.TerminateeNB()
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.testCase_id = 'AUTO-KILL-flexran-ctl'
+			self.desc = 'Automatic Termination of FlexRan CTL'
+			self.ShowTestID()
+			self.TerminateFlexranCtrl()
 		self.prematureExit = True
 
 	def IdleSleep(self):
@@ -3680,7 +3766,7 @@ class SSHConnection():
 			if result is not None:
 				self.UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 12)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 30)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		count = 0
 		for board in usrp_boards:
@@ -3938,7 +4024,7 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
 				elif (processesStatus == OAI_UE_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - OAI UE process not found</td>\n')
-				elif (processesStatus == ENB_PROCESS_SEG_FAULT):
+				elif (processesStatus == ENB_PROCESS_SEG_FAULT) or (processesStatus == OAI_UE_PROCESS_SEG_FAULT):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
 				elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
@@ -4528,7 +4614,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
+			if SSH.prematureExit:
+				break
 			for test in all_tests:
+				if SSH.prematureExit:
+					break
 				id = test.get('id')
 				if test_case_id != id:
 					continue
@@ -4609,10 +4699,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-				if SSH.prematureExit:
-					break
-			if SSH.prematureExit:
-				break
 		cnt += 1
 	if cnt == SSH.repeatCounts[0] and SSH.prematureExit:
 		logging.debug('Testsuite failed ' + str(cnt) + ' time(s)')

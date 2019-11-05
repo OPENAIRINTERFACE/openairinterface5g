@@ -228,7 +228,7 @@ typedef struct NR_DL_FRAME_PARMS {
   /// Total Number of Resource Block Groups SubSets: this is P
   uint8_t N_RBGS;
   /// EUTRA Band
-  uint8_t eutra_band;
+  uint16_t eutra_band;
   /// DL carrier frequency
   uint32_t dl_CarrierFreq;
   /// UL carrier frequency

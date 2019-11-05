@@ -254,7 +254,7 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
     returnValue= setInterfaceParameter(interfaceName, broadcastAddress,SIOCSIFBRDADDR);
 
   if(!returnValue)
-    bringInterfaceUp(interfaceName, 1);
+	  returnValue=bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
     LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",

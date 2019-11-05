@@ -29,6 +29,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+//#include "common/utils/threadPool/thread-pool.h"
 #include "common/utils/load_module_shlib.h"
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -77,9 +78,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include <forms.h>
 
+
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
+//extern void initTpool(char *params,tpool_t *pool, bool performanceMeas);
 
 /* Forms and Objects */
 
@@ -102,9 +105,11 @@ FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-static pthread_t                forms_thread; //xforms
+static pthread_t forms_thread; //xforms
 
 #include <executables/nr-uesoftmodem.h>
+#include "executables/softmodem-common.h"
+#include "executables/thread-common.h"
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
@@ -119,6 +124,7 @@ int                      threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+
 
 extern int16_t nr_dlsch_demod_shift;
 
@@ -146,7 +152,7 @@ double bw = 10.0e6;
 
 static int  tx_max_power[MAX_NUM_CCs] = {0};
 
-char   rf_config_file[1024];
+char rf_config_file[1024];
 
 int chain_offset=0;
 int phy_test = 0;
@@ -161,53 +167,18 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-typedef struct {
-  uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  int            phy_test;
-  uint8_t        usim_test;
-  int            emulate_rf;
-  int            wait_for_sync; //eNodeB only
-  int            single_thread_flag; //eNodeB only
-  int            chain_offset;
-  int            numerology;
-  unsigned int   start_msc;
-  uint32_t       clock_source;
-  int            hw_timing_advance;
-} softmodem_params_t;
 static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
 
-void set_parallel_conf(char *parallel_conf) {
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-}
-void set_worker_conf(char *worker_conf) {
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-}
-PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;
 
 uint32_t do_forms=0;
 int otg_enabled;
-//int                             number_of_cards =   1;
+//int number_of_cards = 1;
 
 static NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 int16_t node_synch_ref[MAX_NUM_CCs];
@@ -397,27 +368,17 @@ int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;
-  int tddflag=0, nonbiotflag;
+  int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv=0;
+  //uint32_t noS1;
+  //uint32_t nokrnmod;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-
-  if (strlen(in_path) > 0) {
-    opt_type = OPT_PCAP;
-    opt_enabled=1;
-    printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-  }
-
-  if (strlen(in_ip) > 0) {
-    opt_enabled=1;
-    opt_type = OPT_WIRESHARK;
-    printf("Enabling OPT for wireshark for local interface");
-  }
 
   config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
@@ -465,6 +426,9 @@ static void get_options(void) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
       frame_parms[CC_id]->frame_type = TDD;
   }
+
+  if (vcdflag > 0)
+    ouput_vcd = 1;
 
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
@@ -667,6 +631,27 @@ void init_openair0(void) {
   }
 }
 
+void init_pdcp(void) {
+  uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
+
+  /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+  }*/
+
+  if (IS_SOFTMODEM_NOKRNMOD)
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+
+  /*if (rlc_module_init() != 0) {
+	  LOG_I(RLC, "Problem at RLC initiation \n");
+  }
+  pdcp_layer_init();
+  nr_ip_over_LTE_DRB_preconfiguration();*/
+  pdcp_module_init(pdcp_initmask);
+  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  LOG_I(PDCP, "Before getting out from init_pdcp() \n");
+}
+
 
 int main( int argc, char **argv ) {
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
@@ -686,6 +671,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
+  get_common_options();
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -698,18 +684,23 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
-  if (opt_type != OPT_NONE) {
-    if (init_opt() == -1)
-      LOG_E(OPT,"failed to run OPT \n");
+  init_opt() ;
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
+
+  if (ouput_vcd) {
+    vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
+/*
 #ifdef PDCP_USE_NETLINK
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
 #endif
 #endif
-#ifndef PACKAGE_VERSION
+*/
+  #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
@@ -734,6 +725,7 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
     PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+
 
     if (phy_test==1)
       UE[CC_id]->mac_enabled = 0;
@@ -784,6 +776,7 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
 #if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = timing_advance;
+    PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
 #else
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
 #endif
@@ -795,6 +788,9 @@ int main( int argc, char **argv ) {
 
   while(true)
     sleep(3600);
+
+  if (ouput_vcd)
+    vcd_signal_dumper_close();
 
   return 0;
 }

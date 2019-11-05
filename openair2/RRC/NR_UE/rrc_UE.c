@@ -384,7 +384,6 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                         break;
 
                     case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                     case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
                     case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
                     case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
@@ -393,16 +392,6 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                     case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
                     case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
                     case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
-#else
-                    case NR_DL_DCCH_MessageType__c1_PR_spare15:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare14:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare13:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare12:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare11:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare10:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare9:
-                    case NR_DL_DCCH_MessageType__c1_PR_spare8:
-#endif
                     case NR_DL_DCCH_MessageType__c1_PR_spare7:
                     case NR_DL_DCCH_MessageType__c1_PR_spare6:
                     case NR_DL_DCCH_MessageType__c1_PR_spare5:

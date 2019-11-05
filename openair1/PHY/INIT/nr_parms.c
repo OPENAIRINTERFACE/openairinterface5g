@@ -79,6 +79,32 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_f
   return symbol;
 }
 
+int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot)
+{
+
+  uint8_t n_hf;
+  int rel_slot;
+
+  n_hf = cfg->sch_config.half_frame_index.value;
+
+  // if SSB periodicity is 5ms, they are transmitted in both half frames
+  if ( cfg->sch_config.ssb_periodicity.value == 5) {
+    if (slot<10)
+      n_hf=0;
+    else
+      n_hf=1;
+  }
+
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
+  rel_slot = (n_hf)? (slot-10) : slot;
+
+  if(rel_slot<10 && rel_slot>=0)
+    return 1;
+  else
+    return 0;
+
+}
+
 
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,
@@ -224,6 +250,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
   fp->nb_antenna_ports_eNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
@@ -257,7 +285,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
 {
 
   fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
-  fp->frame_type = !(config->subframe_config.duplex_mode.value);
+  fp->frame_type = config->subframe_config.duplex_mode.value;
   fp->L_ssb = config->sch_config.ssb_scg_position_in_burst.value;
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
@@ -289,6 +317,8 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->samples_per_frame_wCP=%d\n",fp->samples_per_frame_wCP);
   LOG_I(PHY,"fp->samples_per_subframe=%d\n",fp->samples_per_subframe);
   LOG_I(PHY,"fp->samples_per_frame=%d\n",fp->samples_per_frame);
+  LOG_I(PHY,"fp->dl_CarrierFreq=%u\n",fp->dl_CarrierFreq);
+  LOG_I(PHY,"fp->ul_CarrierFreq=%u\n",fp->ul_CarrierFreq);
 }
 
 

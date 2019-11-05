@@ -36,10 +36,13 @@
 #include "nfapi_nr_interface.h"
 
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO);
+
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 int frame, int subframe,
                                 nfapi_nr_dl_config_dci_dl_pdu *dcl_dl_pdu);
+
 void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                             uint8_t *sdu);
 
+void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t harq_pid);

@@ -428,14 +428,12 @@ void configure_ru(int idx,
     LOG_I(PHY,"REMOTE_IF4p5: prach_FrequOffset %d, prach_ConfigIndex %d\n",
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
       config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
       config->emtc_prach_ConfigIndex[0][i]     = ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i];
     }
-#endif
   }
 
   init_frame_parms(ru->frame_parms,1);
@@ -473,13 +471,11 @@ void configure_rru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
     ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0];
     ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     for (int i=0;i<4;i++) {
       ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];
       ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i]     = config->emtc_prach_FreqOffset[0][i];
       ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i]    = config->emtc_prach_ConfigIndex[0][i];
     }
-#endif
   }
   
   init_frame_parms(ru->frame_parms,1);

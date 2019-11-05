@@ -1,27 +1,16 @@
-#include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
-#include "SIMULATION/TOOLS/sim.h"
 #include <getopt.h>
+#include "SIMULATION/TOOLS/sim.h"
+#include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
+#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
 //#define DEBUG_SMALLBLOCKTEST
 
-signed char quantize(double D, double x, unsigned char B)
+RAN_CONTEXT_t RC;
+PHY_VARS_UE ***PHY_vars_UE_g;
+uint16_t NB_UE_INST = 1;
+
+int main(int argc, char *argv[])
 {
-	double qxd;
-	short maxlev;
-	qxd = floor(x/D);
-
-	maxlev = 1<<(B-1);//(char)(pow(2,B-1));
-
-	if (qxd <= -maxlev)
-		qxd = -maxlev;
-	else if (qxd >= maxlev)
-		qxd = maxlev-1;
-
-	return((char)qxd);
-}
-
-int main(int argc, char *argv[]) {
-
 	time_stats_t timeEncoder,timeDecoder;
 	opp_enabled=1;
 	cpu_freq_GHz = get_cpu_freq_GHz();
