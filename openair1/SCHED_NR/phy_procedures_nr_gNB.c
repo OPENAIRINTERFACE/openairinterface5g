@@ -195,14 +195,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
       if (num_pdsch_rnti) {
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
         LOG_D(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
-      /*  nr_generate_pdsch(gNB->dlsch[0][0],
+        nr_generate_pdsch(gNB->dlsch[0][0],
                           &gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
                           AMP, frame, slot, fp, cfg,
                           &gNB->dlsch_encoding_stats,
                           &gNB->dlsch_scrambling_stats,
-                          &gNB->dlsch_modulation_stats);*/
+                          &gNB->dlsch_modulation_stats);
 
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
@@ -356,11 +356,11 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, 
   uint8_t harq_pid = 0; // [hna] Previously in LTE, the harq_pid was obtained from the subframe number (Synchronous HARQ)
                         //       In NR, this should be signaled through uplink scheduling dci (i.e, DCI 0_0, 0_1) (Asynchronous HARQ)  
 
-/*  for (UE_id = 0; UE_id < 1; UE_id++) { // temporary set to 1 untill list of connected UEs is implemented
+  for (UE_id = 0; UE_id < 1; UE_id++) { // temporary set to 1 untill list of connected UEs is implemented
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
       nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);
     }
     nr_ulsch_procedures(gNB, frame_rx, slot_rx, UE_id, harq_pid);
     nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);  // indicate SDU to MAC
-  }*/
+  }
 }

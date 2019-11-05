@@ -276,8 +276,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       k = cset_start_sc + 1;
 
       while (dmrs_idx<3*pdcch_params.n_rb) {
-        ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-        ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+        ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+        ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
         printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
@@ -314,8 +314,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     for (int m=0; m<NR_NB_SC_PER_RB; m++) {
       if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
         if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
-          ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-          ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+          ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
           printf("l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
                  ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
