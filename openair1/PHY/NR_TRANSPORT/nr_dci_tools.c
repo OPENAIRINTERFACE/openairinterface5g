@@ -160,7 +160,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
   dlsch->harq_mask                |= (1<<pdu_rel15->harq_pid);
   dlsch->rnti                      = params_rel15->rnti;
 
-  dci_alloc->L = 4;
+  dci_alloc->L = 8;
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
   dci_alloc->size = nr_get_dci_size(dci_alloc->pdcch_params.dci_format,
 				    dci_alloc->pdcch_params.rnti_type,
