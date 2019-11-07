@@ -199,12 +199,12 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       uint8_t eNB_offset,
-			       unsigned char Ns,
-			       unsigned char symbol,
-			       int dmrss,
-			       uint8_t ssb_index,
-			       uint8_t n_hf)
+                               uint8_t eNB_offset,
+                               unsigned char Ns,
+                               unsigned char symbol,
+                               int dmrss,
+                               uint8_t ssb_index,
+                               uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx,p;
@@ -212,10 +212,10 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
-  int slot_pbch;
-  fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
+  //int slot_pbch;
+  //fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
   // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
-  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
+  //uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 

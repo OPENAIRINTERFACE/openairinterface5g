@@ -84,7 +84,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP, co
 										  ,const uint32_t sourceL2Id
 										  ,const uint32_t destinationL2Id
 										  #endif
-										){mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+										){mac_rlc_status_resp_t  mac_rlc_status_resp = {0}; return mac_rlc_status_resp;}
 tbs_size_t mac_rlc_data_req(
   const module_id_t       module_idP,
   const rnti_t            rntiP,
@@ -862,7 +862,7 @@ int main(int argc, char **argv)
   
         if (errors_scrambling > 0) {
           if (n_trials == 1)
-            printf("errors_scrambling = %d (trial %d)\n", errors_scrambling, trial);
+            printf("errors_scrambling = %u (trial %d)\n", errors_scrambling, trial);
         }
   
         if (errors_bit > 0) {
