@@ -895,14 +895,14 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       pil = (int16_t *)&pilot[rb_offset*((config_type==0) ? 6:4)];
       pil += (idxPil-4);
       dl_ch += (idxDC-8);
-      dl_ch = memset(dl_ch, 0, sizeof(int16_t)*16);
+      dl_ch = memset(dl_ch, 0, sizeof(int16_t)*14);
       
       re_offset = (re_offset+idxDC/2-4)&(ue->frame_parms.ofdm_symbol_size-1);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
       
-      multadd_real_vector_complex_scalar(filt8_dcma,
+      multadd_real_vector_complex_scalar(fl,
                                          ch,
                                          dl_ch,
                                          8);
@@ -913,7 +913,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
-      multadd_real_vector_complex_scalar(filt8_dcmb,
+      multadd_real_vector_complex_scalar(filt8_dcl,
                                          ch,
                                          dl_ch,
                                          8);
@@ -924,11 +924,12 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
       
-      multadd_real_vector_complex_scalar(filt8_dcmc,
+      multadd_real_vector_complex_scalar(filt8_dcr,
                                          ch,
                                          dl_ch,
                                          8);
 
+/*
       pil += 2;
       re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
@@ -939,9 +940,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          ch,
                                          dl_ch,
                                          8);
+*/                                         
     }
 
-//#ifdef DEBUG_PDSCH
+#ifdef DEBUG_PDSCH
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
     for(uint16_t idxP=0; idxP<(nb_rb_pdsch*12/8); idxP++) {
       for(uint8_t idxI=0; idxI<16; idxI+=2) {
@@ -949,7 +951,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
       printf("\n");
     }
-//#endif    
+#endif    
   }
 
   return(0);
