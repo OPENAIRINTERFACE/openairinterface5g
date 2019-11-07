@@ -1470,8 +1470,8 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
-  //return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0);
+  //return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
+  return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0);
 
 }
 
@@ -1632,7 +1632,7 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
                                           X2AP_X2AP_PDU_t *pdu)
 {
 
-	/*
+
   X2AP_SgNBAdditionRequest_t             *x2SgNBAdditionRequest;
   X2AP_SgNBAdditionRequest_IEs_t         *ie;
 
@@ -1662,14 +1662,16 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   DevAssert(instance_p != NULL);
 
   //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
-  //msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ);
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ);
 
+  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
 		  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   }
+
 
   // allocate a new X2AP UE ID
   ue_id = x2ap_allocate_new_id(&instance_p->id_manager);
@@ -1679,74 +1681,73 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     exit(1);
   }
   // rnti is unknown yet, must not be set to -1, 0 is fine
-  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.SgNB_UE_X2AP_ID, ue_id);
+  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.UE_X2AP_ID, ue_id);
   x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_TARGET);
 
-  X2AP_HANDOVER_REQ(msg).x2_id = ue_id;
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ue_id;
 
-  //X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
-                                               //measResultListEUTRA.list.array[ncell_index]->physCellId;
-  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
-                             X2AP_ProtocolIE_ID_id_GUMMEI_ID, true);
 
-  TBCD_TO_MCC_MNC(&ie->value.choice.ECGI.pLMN_Identity, X2AP_HANDOVER_REQ(msg).ue_gummei.mcc,
-                  X2AP_HANDOVER_REQ(msg).ue_gummei.mnc, X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len);
-  OCTET_STRING_TO_INT8(&ie->value.choice.GUMMEI.mME_Code, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code);
-  OCTET_STRING_TO_INT16(&ie->value.choice.GUMMEI.gU_Group_ID.mME_Group_ID, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_group_id);
+  /* X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities, true);
 
-  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
-                             X2AP_ProtocolIE_ID_id_UE_ContextInformation, true);
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.encryption_algorithms =
+		  BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRencryptionAlgorithms);
 
-  if (ie == NULL ) {
-    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
-    return -1;
-  }
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.integrity_algorithms =
+  		  BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRintegrityProtectionAlgorithms);
 
-  X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ie->value.choice.UE_ContextInformation.mME_UE_S1AP_ID;
+  /* X2AP_ProtocolIE_ID_id_SgNBSecurityKey */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_SgNBSecurityKey, true);
 
-  // TODO: properly store Target Cell ID
+  if ((ie->value.choice.SgNBSecurityKey.buf) &&
+            (ie->value.choice.SgNBSecurityKey.size == 32)) {
+      memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).kgnb, ie->value.choice.SgNBSecurityKey.buf, 32);
+    } else {
+      X2AP_WARN ("Size of eNB key star does not match the expected value\n");
+    }
 
-  X2AP_HANDOVER_REQ(msg).target_assoc_id = assoc_id;
 
-  X2AP_HANDOVER_REQ(msg).security_capabilities.encryption_algorithms =
-    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.encryptionAlgorithms);
-  X2AP_HANDOVER_REQ(msg).security_capabilities.integrity_algorithms =
-    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.integrityProtectionAlgorithms);
+  /* X2AP_ProtocolIE_ID_id_SgNBUEAggregateMaximumBitRate */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_SgNBUEAggregateMaximumBitRate, true);
 
-  //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
+  //X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_ambr.br_dl =ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateDownlink;
+  //X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_ambr.br_ul = ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateUplink;
 
-  if ((ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf) &&
-          (ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.size == 32)) {
-    memcpy(X2AP_HANDOVER_REQ(msg).kenb, ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf, 32);
-    X2AP_HANDOVER_REQ(msg).kenb_ncc = ie->value.choice.UE_ContextInformation.aS_SecurityInformation.nextHopChainingCount;
-  } else {
-    X2AP_WARN ("Size of eNB key star does not match the expected value\n");
-  }
+  /* X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList, true);
 
-  if (ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count > 0) {
 
-    X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;
+  if (ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count > 0) {
 
-    for (int i=0;i<ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;i++) {
-      e_RABS_ToBeSetup_ItemIEs = (X2AP_E_RABs_ToBeSetup_ItemIEs_t *) ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.array[i];
-      e_RABs_ToBeSetup_Item = &e_RABS_ToBeSetup_ItemIEs->value.choice.E_RABs_ToBeSetup_Item;
+	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count;
 
-      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].e_rab_id = e_RABs_ToBeSetup_Item->e_RAB_ID ;
+    for (int i=0;i<ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count;i++) {
+      e_RABS_ToBeAdded_SgNBAddReq_ItemIEs = (X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t *) ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.array[i];
+      e_RABS_ToBeAdded_SgNBAddReq_Item = &e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_ToBeAdded_SgNBAddReq_Item;
 
-      memcpy(X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.buffer,
-                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.buf,
-                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size);
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].e_rab_id = e_RABS_ToBeAdded_SgNBAddReq_Item->e_RAB_ID ;
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].drb_ID = e_RABS_ToBeAdded_SgNBAddReq_Item->drb_ID;
+      if(e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.qci = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.qCI;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
 
-      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.length =
-                      e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].eNB_addr.buffer,
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf,
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
 
-      OCTET_STRING_TO_INT32(&e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.gTP_TEID,
-                                                X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].gtp_teid);
+          X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].eNB_addr.length =
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
 
-      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.qci = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.qCI;
-      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
-      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
-      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability;
+          OCTET_STRING_TO_INT32(&e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID,
+        		  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].gtp_teid);
+      }
+
     }
 
   }
@@ -1754,15 +1755,20 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
   }
 
-  X2AP_RRC_Context_t *c = &ie->value.choice.UE_ContextInformation.rRC_Context;
+  /* X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer, true);
 
-  if (c->size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
-    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+  X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
 
-  memcpy(X2AP_HANDOVER_REQ(msg).rrc_buffer, c->buf, c->size);
-  X2AP_HANDOVER_REQ(msg).rrc_buffer_size = c->size;
+    if (ie->value.choice.MeNBtoSgNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+      { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
-  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);*/
+    memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
+    X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
+
+
+  //itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
   return 0;
 }

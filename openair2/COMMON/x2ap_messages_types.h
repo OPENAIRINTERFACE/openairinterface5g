@@ -38,6 +38,7 @@
 #define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         	(mSGpTR)->ittiMsg.x2ap_ue_context_release
 #define X2AP_HANDOVER_CANCEL(mSGpTR)            	(mSGpTR)->ittiMsg.x2ap_handover_cancel
 #define X2AP_SENB_ADDITION_REQ(mSGpTR)              (mSGpTR)->ittiMsg.x2ap_senb_addition_req
+#define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
@@ -286,7 +287,7 @@ typedef struct x2ap_senb_addition_req_ack_s {
 
   int MeNB_UE_X2_id;
 
-  int SeNB_UE_X2_id;
+  int SgNB_UE_X2_id;
 
   uint8_t nb_sCG_e_rabs_tobeadded;
 
@@ -304,12 +305,15 @@ typedef struct x2ap_senb_addition_req_ack_s {
 } x2ap_senb_addition_req_ack_t;
 
 typedef struct x2ap_ENDC_sgnb_addition_req_s {
+  int ue_x2_id;
+
   /* used for RRC->X2AP in source eNB */
   int rnti;
 
   security_capabilities_t security_capabilities;
 
-  uint8_t      kgnb[32]; // keNB or keNB*
+  /* SgNB Security Key */
+  uint8_t      kgnb[32];
 
   /*next_hop_chaining_coun */
   long int     kgnb_ncc;
@@ -317,10 +321,10 @@ typedef struct x2ap_ENDC_sgnb_addition_req_s {
   /* UE aggregate maximum bitrate */
   ambr_t ue_ambr;
 
-  uint8_t nb_e_rabs_tobesetup;
+  uint8_t nb_e_rabs_tobeadded;
 
- /* list of e_rab setup-ed by RRC layers */
-  e_rab_setup_t e_rabs_tobesetup[S1AP_MAX_E_RAB];
+ /* list of e_rab to be added by RRC layers */
+  e_rab_tobe_added_t e_rabs_tobeadded[S1AP_MAX_E_RAB];
 
   /* list of e_rab to be setup by RRC layers */
   e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
@@ -331,7 +335,13 @@ typedef struct x2ap_ENDC_sgnb_addition_req_s {
   int rrc_buffer_size;
 
   int target_assoc_id;
-} x2ap_ENDC_sgnb_addition_req__t;
+
+  	/*long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
+  	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
+  	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;*/
+
+
+} x2ap_ENDC_sgnb_addition_req_t;
 
 
 #endif /* X2AP_MESSAGES_TYPES_H_ */

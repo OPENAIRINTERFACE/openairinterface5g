@@ -1524,14 +1524,29 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	long qCI = 1;
 	X2AP_Pre_emptionCapability_t pre_emptionCapability = X2AP_Pre_emptionCapability_shall_not_trigger_pre_emption;
 	X2AP_Pre_emptionVulnerability_t pre_emptionVulnerability = X2AP_Pre_emptionVulnerability_not_pre_emptable;
+	priority_level_t priority_level = PRIORITY_LEVEL_NO_PRIORITY;
 	e_rab_setup_t e_MCG_rabs_tobeadded;
 	e_MCG_rabs_tobeadded.gtp_teid = 0;
 	e_MCG_rabs_tobeadded.eNB_addr.length = 24;
 	uint8_t buf[20] = { 0 };
 	memcpy(e_MCG_rabs_tobeadded.eNB_addr.buffer, buf, 20*sizeof(uint8_t));
-	OCTET_STRING_t CG_Config_Info;
+
+	FILE *fd;
+	fd = fopen("uecap.raw","r");
+	if (fd != NULL) {
+		OCTET_STRING_t CG_Config_Info;
+		CG_Config_Info.size = 4096;
+		CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));
+		int msg_len=fread(CG_Config_Info.buf,1,CG_Config_Info.size,fd);
+
+		/*char buffer[4096];
+		int msg_len=fread(buffer,1,4096,fd);*/
+		LOG_I(RRC,"Read in %d bytes for uecap\n",msg_len);
+
+
+	/*OCTET_STRING_t CG_Config_Info;
 	CG_Config_Info.size = 4096;
-	CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));
+	CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));*/
 
 
 	DevAssert(instance_p != NULL);
@@ -1608,7 +1623,8 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.qCI = qCI;
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability = pre_emptionCapability;
-    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability = pre_emptionVulnerability;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority. pre_emptionVulnerability = pre_emptionVulnerability;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel = priority_level;
 
     		//Continue from filling the UL_GTPtunnelEndpointInformation inspired from how it is done for the HO case
     		INT32_TO_OCTET_STRING(e_MCG_rabs_tobeadded.gtp_teid, &e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID);
@@ -1644,6 +1660,12 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
     x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+	fclose(fd);
+	}
+	else {
+		LOG_I(RRC, "uecap.raw file could not be opened... \n");
+		return -1;
+	}
 
 	return ret;
 

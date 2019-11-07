@@ -273,6 +273,22 @@ typedef struct e_rab_setup_s {
   uint32_t gtp_teid;
 } e_rab_setup_t;
 
+typedef struct e_rab_tobe_added_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+
+  /* Unique drb_ID for the UE. */
+  uint8_t drb_ID;
+
+  /* The transport layer address for the IP packets */
+  transport_layer_addr_t eNB_addr;
+
+  /* S-GW Tunnel endpoint identifier */
+  uint32_t gtp_teid;
+} e_rab_tobe_added_t;
+
+
+
 typedef struct e_rab_tobeswitched_s {
   /* Unique e_rab_id for the UE. */
   uint8_t e_rab_id;
