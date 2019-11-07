@@ -2092,7 +2092,8 @@ void ulsch_scheduler_pre_ue_select_fairRR(
       UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
       if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
-           ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
+           ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ||
+           ((UE_sched_ctl->cqi_req_timer>300)&&(UE_sched_ctl->ul_scheduled==0)) ) {
         first_ue_id[CC_id][ue_first_num[CC_id]]= UE_id;
         first_ue_total[CC_id] [ue_first_num[CC_id]] = 0;
         ue_first_num[CC_id]++;
@@ -2199,7 +2200,8 @@ void ulsch_scheduler_pre_ue_select_fairRR(
 
     if ( (bytes_to_schedule > 0) || (UE_list->UE_template[CC_id][UE_id].ul_SR > 0) ||
          ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
-         ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ) {
+         ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ||
+           ((UE_sched_ctl->cqi_req_timer>300)&&(UE_sched_ctl->ul_scheduled==0)) ) {
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id),UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],format0);
@@ -2779,19 +2781,25 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
 
       if (status < RRC_CONNECTED)
         cqi_req = 0;
-      else if (UE_sched_ctrl->cqi_req_timer>30) {
+      else if (UE_sched_ctrl->cqi_received == 1){
+        LOG_D(MAC,"Clearing CQI request timer\n");
+        UE_sched_ctrl->cqi_req_flag = 0;
+        UE_sched_ctrl->cqi_received = 0;
+        UE_sched_ctrl->cqi_req_timer = 0;
+        cqi_req = 0;
+      }else if (UE_sched_ctrl->cqi_req_timer>30) {
         cqi_req = 1;
 
         // To be safe , do not ask CQI in special SFs:36.213/7.2.3 CQI definition
         if (cc->tdd_Config) {
           switch (cc->tdd_Config->subframeAssignment) {
             case 1:
-              if( sched_subframeP == 1 || sched_subframeP == 6 ) cqi_req=0;
+              if( subframeP == 1 || subframeP == 6 ) cqi_req=0;
 
               break;
 
             case 3:
-              if( sched_subframeP == 1 ) cqi_req=0;
+              if( subframeP == 1 ) cqi_req=0;
 
               break;
 
@@ -2802,7 +2810,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         }
 
         if(cqi_req == 1) {
-          UE_sched_ctrl->cqi_req_timer=0;
           UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
         }
       } else
@@ -2881,6 +2888,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         //store for possible retransmission
         UE_template->nb_rb_ul[harq_pid]    = rb_table[rb_table_index];
         UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
+        UE_template->cqi_req[harq_pid] = cqi_req;
         UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 
         if (UE_id == UE_list->head)
@@ -3052,6 +3060,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         //store for possible retransmission
         UE_template->nb_rb_ul[harq_pid]    = ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb;
         UE_template->first_rb_ul[harq_pid] = ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb;
+        cqi_req = UE_template->cqi_req[harq_pid];
         UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
         // Cyclic shift for DM RS
         cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
