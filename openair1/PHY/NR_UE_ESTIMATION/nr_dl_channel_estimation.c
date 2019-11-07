@@ -890,7 +890,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
       uint16_t idxDC = 2*(ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
       uint16_t idxPil = idxDC/2;
-      printf("idxDC %d idxPil %d\n",idxDC,idxPil);
       re_offset = k;
       pil = (int16_t *)&pilot[rb_offset*((config_type==0) ? 6:4)];
       pil += (idxPil-4);
