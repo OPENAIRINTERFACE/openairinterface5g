@@ -91,6 +91,18 @@ extern short filt8_m0[8];
 
 extern short filt8_mm0[8];
 
+extern short filt8_dcma[8];
+
+extern short filt8_dcmb[8];
+
+extern short filt8_dcmc[8];
+
+extern short filt8_dcmd[8];
+
+extern short filt8_dcl[8];
+
+extern short filt8_dcr[8];
+
 extern short filt8_l1[8];
 
 extern short filt8_ml1[8];
