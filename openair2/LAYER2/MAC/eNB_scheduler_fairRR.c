@@ -1996,6 +1996,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
   int                            format_flag;
   nfapi_hi_dci0_request_body_t   *HI_DCI0_req;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
+  int rrc_status;
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
     //save ulsch dci number
@@ -2090,10 +2091,11 @@ void ulsch_scheduler_pre_ue_select_fairRR(
       }
 
       UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+      rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
 
       if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
-           ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ||
-           ((UE_sched_ctl->cqi_req_timer>300)&&(UE_sched_ctl->ul_scheduled==0)) ) {
+           ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(rrc_status < RRC_CONNECTED)) ||
+           ((UE_sched_ctl->cqi_req_timer>300)&&((rrc_status >= RRC_CONNECTED))) ) {
         first_ue_id[CC_id][ue_first_num[CC_id]]= UE_id;
         first_ue_total[CC_id] [ue_first_num[CC_id]] = 0;
         ue_first_num[CC_id]++;
@@ -2197,11 +2199,12 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     int bytes_to_schedule = UE_list->UE_template[CC_id][UE_id].estimated_ul_buffer - UE_list->UE_template[CC_id][UE_id].scheduled_ul_bytes;
 
     if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+    rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
 
     if ( (bytes_to_schedule > 0) || (UE_list->UE_template[CC_id][UE_id].ul_SR > 0) ||
          ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
-         ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ||
-           ((UE_sched_ctl->cqi_req_timer>300)&&(UE_sched_ctl->ul_scheduled==0)) ) {
+         ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(rrc_status < RRC_CONNECTED)) ||
+         ((UE_sched_ctl->cqi_req_timer>300)&&((rrc_status >= RRC_CONNECTED))) ) {
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id),UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],format0);
