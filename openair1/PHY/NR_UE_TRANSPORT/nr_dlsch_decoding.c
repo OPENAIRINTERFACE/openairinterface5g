@@ -531,7 +531,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
-      //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
+      printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
 
       memset(pv,0,2*harq_process->Z*sizeof(int16_t));
       //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
@@ -570,7 +570,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         ret = no_iteration_ldpc;
       }
       else {
-        printf("\x1B[33m" "CRC NOK\n\033[0m");
+        printf("\x1B[33m" "Segment %d CRC NOK\n",r);
         ret = 1 + dlsch->max_ldpc_iterations;
       }
 
@@ -943,7 +943,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   opp_enabled=1;
   if (harq_process->C>1) {
 	for (int nb_seg =1 ; nb_seg<harq_process->C; nb_seg++){
-	  if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
+	  if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
 	          pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
 	        }
 
@@ -961,7 +961,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 	  curMsg->proc.llr8_flag = llr8_flag;
 
 	  msgToPush->key=nb_seg;
-	  pushTpool(Tpool, msgToPush);
+	  pushTpool(Tpool_dl, msgToPush);
 
   /*Qm= harq_process->Qm;
     Nl=harq_process->Nl;
@@ -1112,7 +1112,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 #if UE_TIMING_TRACE
       start_meas(dlsch_turbo_decoding_stats);
 #endif
-      LOG_D(PHY,"mthread AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
+      LOG_I(PHY,"mthread AbsSubframe %d.%d Start LDPC segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
 
       /*for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
         inv_d[cnt] = (1)*harq_process->d[r][cnt];
@@ -1689,7 +1689,7 @@ void *nr_dlsch_decoding_process(void *arg)
           ret = 2;
         }
         else {
-          printf("CRC NOK\n");
+          printf("Segment %d CRC NOK\n",r);
           ret = 1+dlsch->max_ldpc_iterations;
         }
 
@@ -1757,7 +1757,7 @@ void *dlsch_thread(void *arg) {
     notifiedFIFO_elt_t *res;
 
     while (nbDlProcessing >= RX_NB_TH_DL) {
-      if ( (res=tryPullTpool(&nf, Tpool)) != NULL ) {
+      if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
         nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
         nbDlProcessing--;
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
