@@ -344,6 +344,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
   rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
   rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
+  rel15_ul->ulsch_pdu_rel15.R              = ulsch_pdu->target_code_rate;
 
 }
 

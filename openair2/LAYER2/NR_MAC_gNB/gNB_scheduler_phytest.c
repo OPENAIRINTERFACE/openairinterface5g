@@ -504,8 +504,8 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
     //this informantion seems to be redundant. with hthe mcs_index and the modulation table, the mod_order and target_code_rate can be determined.
     pusch_pdu->mcs_index = 9;
     pusch_pdu->mcs_table = 0; //0: notqam256 [TS38.214, table 5.1.3.1-1] - corresponds to nr_target_code_rate_table1 in PHY
-    pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
-    pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
+    pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
+    pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
     pusch_pdu->transform_precoding = 0;
     pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
     pusch_pdu->nrOfLayers = 1;
@@ -537,7 +537,7 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
 						   pusch_pdu->rb_size,
 						   pusch_pdu->nr_of_symbols,
 						   6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
-						   1, //length_dmrs - sum of bits in pusch_pdu->ul_dmrs_symb_pos
+						   0, //nb_rb_oh
 						   pusch_pdu->nrOfLayers = 1);
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
     //pusch_pdu->pusch_data.cb_present_and_position;
