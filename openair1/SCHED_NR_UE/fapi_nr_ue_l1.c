@@ -148,7 +148,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 	  ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
 	  ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
 	  ulsch0->harq_processes[current_harq_pid]->Nl = pusch_config_pdu->n_layers;
-	  ulsch0->harq_processes[current_harq_pid]->R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index,pusch_config_pdu->mcs_table);
 	  ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 	}
 	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUCCH){
