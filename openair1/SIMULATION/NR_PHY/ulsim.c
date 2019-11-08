@@ -515,8 +515,8 @@ int main(int argc, char **argv)
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
       pusch_pdu->mcs_table = 0; 
-      pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1); 
-      pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table+1) ;
+      pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table); 
+      pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
       pusch_pdu->transform_precoding = 0;
       pusch_pdu->data_scrambling_id = 0;
       pusch_pdu->nrOfLayers = 1;
@@ -539,8 +539,8 @@ int main(int argc, char **argv)
 						     pusch_pdu->target_code_rate,
 						     pusch_pdu->rb_size,
 						     pusch_pdu->nr_of_symbols,
-						     nb_re_dmrs, 
-						     length_dmrs, 
+						     nb_re_dmrs*length_dmrs,
+						     0,
 						     pusch_pdu->nrOfLayers = 1);
       pusch_pdu->pusch_data.num_cb = 0;
 
