@@ -260,68 +260,70 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
   return TBS/8; //Return TBS in bytes
 }
 
-
-
-
-
-
-
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
                                    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config) {
-  LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest \n");
-  uint8_t  CC_id;
-  gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
-  //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
-  nfapi_nr_dl_config_request_body_t   *dl_req;
-  nfapi_tx_request_pdu_t            *TX_req;
-  uint16_t rnti = 0x1234;
-  nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
-  uint16_t sfn_sf = frameP << 7 | slotP;
-  // everything here is hard-coded to 30 kHz
-  //int scs = get_dlscs(cfg);
-  //int slots_per_frame = get_spf(cfg);
-  int TBS;
-  int TBS_bytes;
-  int lcid;
-  int ta_len = 0;
-  int header_length_total=0;
-  int header_length_last;
-  int sdu_length_total = 0;
-  mac_rlc_status_resp_t rlc_status;
-  uint16_t sdu_lengths[NB_RB_MAX];
-  int num_sdus = 0;
-  unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  int offset;
-  int UE_id = 0;
-  unsigned char sdu_lcids[NB_RB_MAX];
-  int padding = 0, post_padding = 0;
-  UE_list_t *UE_list = &nr_mac->UE_list;
-  DLSCH_PDU DLSCH_pdu;
-  //DLSCH_PDU *DLSCH_pdu = (DLSCH_PDU*) malloc(sizeof(DLSCH_PDU));
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for CC_id %d\n",CC_id);
-    dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
-    TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
+  gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
+  UE_list_t *UE_list = &gNB_mac->UE_list;
+  nfapi_nr_dl_config_request_body_t *dl_req;
+  nfapi_tx_request_pdu_t *TX_req;
+  mac_rlc_status_resp_t rlc_status;
+  nfapi_nr_config_request_t *cfg = &gNB_mac->config[0];
+
+  // TODO not sure why NR_MAX_NB_RB was used here
+  unsigned char sdu_lcids[NB_RB_MAX] = {0};
+  uint16_t sdu_lengths[NB_RB_MAX] = {0};
+
+  int padding = 0, post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
+  int CC_id, lcid, offset, i, j=0, k=0, header_length_last, TBS_bytes;
+
+  // hardcoded parameters to 30 kHz
+  // for DMRS configuration type 1
+  unsigned char dlsch_buffer[MAX_NR_DLSCH_PAYLOAD_BYTES];
+  uint8_t Qm = 2;
+  uint16_t R = 697;
+  uint16_t nb_rb = 50;
+  uint32_t TBS = nr_compute_tbs(Qm, R, nb_rb, 12, 6, 0, 1)/8; // this is in bits TODO use nr_get_tbs
+  int UE_id = 0; // UE_list->head is -1 !
+  uint16_t rnti = 0x1234;
+  uint16_t sfn_sf = frameP << 7 | slotP;
+
+  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  //ta_update = ue_sched_ctl->ta_update;
+
+  for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP]; CC_id++) {
+
+    LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for UE_id %d CC_id %d frame %d slot %d\n", UE_id, CC_id, frameP, slotP);
+
+    dl_req = &gNB_mac->DL_req[CC_id].dl_config_request_body;
+    TX_req = &gNB_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
+    ta_len = gNB_mac->ta_len;
 
     //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
     //through the LTE stack
-    if (IS_SOFTMODEM_NOS1) {
-      memset(&DLSCH_pdu, 0, sizeof(DLSCH_pdu));
-      int ta_update = 31;
-      ta_len = 0;
+    if (IS_SOFTMODEM_NOS1){
+
+
       // Hardcode it for now
-      TBS = 6784/8; //TBS in bytes
+      //TBS = 6784/8; //TBS in bytes
       //nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
       //TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
 
+      /* TODO
+      // RLC data on DCCH
+      if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+      }*/
+
+      /* TODO
+      // RLC data on DCCH1
+      if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+      }*/
+
       for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
-        // TODO: check if the lcid is active
-        LOG_D(MAC, "[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
-              module_idP, frameP, lcid, TBS,
-              TBS - ta_len - header_length_total - sdu_length_total - 3);
+        LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
+          module_idP, frameP, lcid, TBS, TBS - ta_len - header_length_total - sdu_length_total - 3);
 
         if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
           rlc_status = mac_rlc_status_ind(module_idP,
@@ -337,103 +339,148 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                           0);
 
           if (rlc_status.bytes_in_buffer > 0) {
-            LOG_D(MAC,
-                  "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
-                  module_idP, frameP,
-                  TBS - ta_len - header_length_total - sdu_length_total - 3,
-                  lcid,
-                  header_length_total,
-                  TBS);
+            LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
+              module_idP, frameP, TBS - ta_len - header_length_total - sdu_length_total - 3,
+              lcid, header_length_total, TBS);
+
             sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                                    rnti,
-                                    module_idP,
-                                    frameP,
-                                    ENB_FLAG_YES,
-                                    MBMS_FLAG_NO,
-                                    lcid,
-                                    TBS,
-                                    (char *)&dlsch_buffer[sdu_length_total],
-                                    0,
-                                    0);
-            LOG_D(MAC,
-                  "[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
-                  module_idP, sdu_lengths[num_sdus], lcid);
+                                                     rnti,
+                                                     module_idP,
+                                                     frameP,
+                                                     ENB_FLAG_YES,
+                                                     MBMS_FLAG_NO,
+                                                     lcid,
+                                                     TBS,
+                                                     (char *)&dlsch_buffer[sdu_length_total],
+                                                     0,
+                                                     0);
+
+            LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_idP, sdu_lengths[num_sdus], lcid);
+
             sdu_lcids[num_sdus] = lcid;
             sdu_length_total += sdu_lengths[num_sdus];
+
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]++;
             UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
             UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[num_sdus];
+
             header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
             header_length_total += header_length_last;
+
             num_sdus++;
-            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+
+            ue_sched_ctl->uplane_inactivity_timer = 0;
           }
-        } else {
-          // no TBS left
+        } else { // no TBS left
+        break;
+        }
+      }
+
+      // // last header does not have length field
+      // if (header_length_total) {
+      //   header_length_total -= header_length_last;
+      //   header_length_total++;
+      // }
+
+    } //if (IS_SOFTMODEM_NOS1)
+    else {
+      //When the --NOS1 option is not enabled, DLSCH transmissions with random data
+      //occur every time that the current function is called (dlsch phytest mode)
+
+      // fill dlsch_buffer with random data
+      for (i = 0; i < MAX_NR_DLSCH_PAYLOAD_BYTES; i++){
+        dlsch_buffer[i] = (unsigned char) rand();
+      }
+
+      //Sending SDUs with size 1
+      //Initialize elements of sdu_lcids and sdu_lengths
+      //TODO this will be eventually be removed
+      while (TBS >= 3 + header_length_total + sdu_length_total + ta_len){
+        if (k < NR_MAX_NB_RB && j < NR_MAX_NB_RB){
+          sdu_lcids[j] = 0x05; // DRB
+          sdu_lengths[k] = 1;
+          header_length_total += 2;
+          sdu_length_total += 1;
+          num_sdus +=1;
+          k++, j++;
+        }
+        else {
           break;
         }
       }
+    } // else IS_SOFTMODEM_NOS1
 
-      // last header does not have length field
-      if (header_length_total) {
-        header_length_total -= header_length_last;
-        header_length_total++;
+    // there is at least one SDU or TA command
+    // if (num_sdus > 0 ){
+    if (ta_len + sdu_length_total + header_length_total > 0) {
+
+      // Check if there is data from RLC or CE
+      if (TBS >= 2 + header_length_total + sdu_length_total + ta_len) {
+        // we have to consider padding
+        // padding param currently not in use
+        padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
+        post_padding = 1;
+      } else {
+        padding = 0;
+        post_padding = 0;
       }
 
-      if (ta_len + sdu_length_total + header_length_total > 0) {
-        if (TBS - header_length_total - sdu_length_total - ta_len <= 2) {
-          padding = TBS - header_length_total - sdu_length_total - ta_len;
-          post_padding = 0;
-        } else {
-          padding = 0;
-          post_padding = 1;
-        }
 
-        TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-        LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
+      offset = nr_generate_dlsch_pdu(module_idP,
+                                     (unsigned char *) dlsch_buffer,
+                                     (unsigned char *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                                     num_sdus, //num_sdus
+                                     sdu_lengths,
+                                     sdu_lcids,
+                                     255, // no drx
+                                     NULL, // contention res id
+                                     post_padding);
 
-        for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
-          LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-        }
-
-#endif
-        //TX_req->segments[0].segment_length = 8;
-        TX_req->segments[0].segment_length = TBS_bytes +2;
-        TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
-        nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-        nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-        nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-        nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-      } //if (ta_len + sdu_length_total + header_length_total > 0)
-    } //if (IS_SOFTMODEM_NOS1)
-    //When the --NOS1 option is not enabled, DLSCH transmissions with random data
-    //occur every time that the current function is called (dlsch phytest mode)
-    else {
-      TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &nr_mac->coreset[CC_id][1], &nr_mac->search_space[CC_id][1], nr_mac->pdu_index[CC_id], dlsch_config);
-
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-
-      if (frameP%100 == 0) {
-        LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
-
-        for(int i = 0; i < 10; i++) {
-          LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-        }
+      // Padding: fill remainder of DLSCH with 0
+      if (post_padding > 0){
+        for (int j = 0; j < (TBS - offset); j++)
+          UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + j] = 0;
       }
 
-#endif
+      TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
+
       //TX_req->segments[0].segment_length = 8;
-      TX_req->segments[0].segment_length = TBS_bytes +2;
-      TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0];
+      TX_req->segments[0].segment_length = TBS_bytes + 2;
+      TX_req->segments[0].segment_data = gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0];
 
-      nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-      nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-      nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-      nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+      gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
+      gNB_mac->TX_req[CC_id].sfn_sf = sfn_sf;
+      gNB_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
+      gNB_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+
+      if(IS_SOFTMODEM_NOS1){
+        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+          LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n \n", frameP, slotP, TBS_bytes);
+          for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
+            LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0])[i]);
+          }
+        #endif
+      } else {
+        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+        if (frameP%100 == 0){
+          LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
+          for(int i = 0; i < 10; i++) {
+            LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0])[i]);
+          }
+        }
+        #endif
+      }
+      // Printing bit by bit for debugging purpose
+      /*for (int k = 0; k < TBS; k++){
+        printf("MAC PDU %u\n",((( UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][k/8]) & (1 << (k & 7))) >> (k & 7)));
+        if ((k+1)%8 == 0)
+          printf("\n");
+      }*/
     }
-  } //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
+    else {  // There is no data from RLC or MAC header, so don't schedule
+    }
+  } // CC_id loop
 }
 
 

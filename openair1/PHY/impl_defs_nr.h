@@ -120,7 +120,7 @@ SystemInformationBlockType1_nr_t;
 #define NR_TDD_SET_ALL_SYMBOLS             (0x3FFF)
 
 #define NR_DOWNLINK_SLOT                   (0x01)
-#define NR_UPLINK_SLOT                     (0x05)
+#define NR_UPLINK_SLOT                     (0x02)
 
 #define FRAME_DURATION_MICRO_SEC           (10000)  /* frame duration in microsecond */
 

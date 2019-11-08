@@ -2296,8 +2296,7 @@ void nr_ue_process_mac_pdu(
                 #endif
                 */
 
-                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n",
-                  ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
+                LOG_D(MAC, "Received TA_COMMAND %u TAGID %u CC_id %d\n", ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:

@@ -118,7 +118,7 @@ typedef struct gNB_MAC_INST_s {
   int                             ta_command;
   /// MAC CE flag indicating TA length
   int                             ta_len;
-    /// Common cell resources
+  /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];

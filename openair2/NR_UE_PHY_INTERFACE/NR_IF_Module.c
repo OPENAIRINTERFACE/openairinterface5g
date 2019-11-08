@@ -74,7 +74,8 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
 //  L2 Abstraction Layer
 int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
-  if (IS_SOFTMODEM_NOS1 || IS_SOFTMODEM_RFSIM)
+  //if (IS_SOFTMODEM_NOS1 || IS_SOFTMODEM_RFSIM)
+  // sdu should be processed even when is S1 mode because data and timing advance updates are transmitted by the UE
     nr_ue_send_sdu(module_id, cc_id, frame, slot,
                    pduP,
                    pdu_len,

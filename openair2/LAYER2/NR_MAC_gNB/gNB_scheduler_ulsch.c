@@ -118,7 +118,7 @@ nr_rx_sdu(const module_id_t gnb_mod_idP,
   // uint8_t lcgid = 0;
   // int lcgid_updated[4] = {0, 0, 0, 0};
   // rrc_eNB_ue_context_t *ue_contextP = NULL;
-  gNB_MAC_INST *gNB = NULL;
+  gNB_MAC_INST *gNB_mac = NULL;
   UE_list_t *UE_list = NULL;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
   // UE_TEMPLATE *UE_template_ptr = NULL;
@@ -126,8 +126,9 @@ nr_rx_sdu(const module_id_t gnb_mod_idP,
   /* Init */
   current_rnti = rntiP;
   UE_id = find_nrUE_id(gnb_mod_idP, current_rnti);
-  gNB = RC.nrmac[gnb_mod_idP];
-  UE_list = &gNB->UE_list;
+  gNB_mac = RC.nrmac[gnb_mod_idP];
+  UE_list = &gNB_mac->UE_list;
+
 
   // harq_pid = subframe2harqpid(&mac->common_channels[CC_idP], frameP, subframeP);
   // memset(rx_ces, 0, MAX_NUM_CE * sizeof(unsigned char));
@@ -176,6 +177,7 @@ nr_rx_sdu(const module_id_t gnb_mod_idP,
        * NR: smoothing removed
        */
       //UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
+
       UE_scheduling_control->ta_update = timing_advance;
       // printf("UE_scheduling_control->ta_update %u\n", UE_scheduling_control->ta_update);
       // UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
