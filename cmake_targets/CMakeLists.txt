@@ -1639,7 +1639,7 @@ set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
 set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 
-set(RLC_ENB_V1
+set(RLC_V1
   ${RLC_AM_DIR}/rlc_am.c
   ${RLC_AM_DIR}/rlc_am_init.c
   ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
@@ -1669,7 +1669,7 @@ set(RLC_ENB_V1
   ${RLC_DIR}/rlc_mpls.c
   )
 
-set(RLC_ENB_V2
+set(RLC_V2
   ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_oai_api.c
   ${OPENAIR2_DIR}/LAYER2/rlc_v2/asn1_utils.c
   ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_ue_manager.c
@@ -1701,7 +1701,7 @@ set(L2_SRC
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
-  ${RLC_ENB_V2}
+  ${RLC_V2}
 #  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
   ${RRC_DIR}/rrc_eNB_endc.c
@@ -1715,7 +1715,7 @@ set(L2_SRC
   )
 
 set(L2_LTE_SRC
-  ${RLC_ENB_V1}
+  ${RLC_V1}
   )
 
 set(L2_NR_SRC
@@ -1738,6 +1738,7 @@ set(L2_SRC_UE
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
+  ${RLC_V2}
   ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface_common.c
@@ -1752,7 +1753,7 @@ set(LTE_NR_L2_SRC_UE
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
-  ${RLC_ENB_V1}
+  ${RLC_V1}
   )
 
 set(NR_L2_SRC_UE

@@ -40,7 +40,9 @@ typedef struct rlc_ue_t {
 /* manager functions                                                   */
 /***********************************************************************/
 
-rlc_ue_manager_t *new_rlc_ue_manager(void);
+rlc_ue_manager_t *new_rlc_ue_manager(int enb_flag);
+
+int rlc_manager_get_enb_flag(rlc_ue_manager_t *m);
 
 void rlc_manager_lock(rlc_ue_manager_t *m);
 void rlc_manager_unlock(rlc_ue_manager_t *m);

@@ -53,7 +53,7 @@ void mac_rlc_data_ind     (
   rlc_ue_t *ue;
   rlc_entity_t *rb;
 
-  if (module_idP != 0 || eNB_index != 0 || enb_flagP != 1 || MBMS_flagP != 0) {
+  if (module_idP != 0 || eNB_index != 0 || /*enb_flagP != 1 ||*/ MBMS_flagP != 0) {
     LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -102,6 +102,8 @@ tbs_size_t mac_rlc_data_req(
   int ret;
   rlc_ue_t *ue;
   rlc_entity_t *rb;
+  int is_enb;
+  int maxsize;
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
@@ -114,7 +116,13 @@ tbs_size_t mac_rlc_data_req(
 
   if (rb != NULL) {
     rb->set_time(rb, rlc_current_time);
-    ret = rb->generate_pdu(rb, buffer_pP, ue->saved_status_ind_tb_size[channel_idP - 1]);
+    /* UE does not seem to use saved_status_ind_tb_size */
+    is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
+    if (is_enb)
+      maxsize = ue->saved_status_ind_tb_size[channel_idP - 1];
+    else
+      maxsize = tb_sizeP;
+    ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -193,6 +201,61 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   return ret;
 }
 
+rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
+  const module_id_t       module_idP,
+  const rnti_t            rntiP,
+  const eNB_index_t       eNB_index,
+  const frame_t           frameP,
+  const sub_frame_t       subframeP,
+  const eNB_flag_t        enb_flagP,
+  const logical_chan_id_t channel_idP)
+{
+  rlc_ue_t *ue;
+  rlc_buffer_occupancy_t ret;
+  rlc_entity_t *rb;
+
+  if (enb_flagP) {
+    LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
+    exit(1);
+  }
+
+  /* TODO: handle time a bit more properly */
+  if (rlc_current_time_last_frame != frameP ||
+      rlc_current_time_last_subframe != subframeP) {
+    rlc_current_time++;
+    rlc_current_time_last_frame = frameP;
+    rlc_current_time_last_subframe = subframeP;
+  }
+
+  rlc_manager_lock(rlc_ue_manager);
+  ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
+
+  switch (channel_idP) {
+  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
+  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  default:      rb = NULL;                     break;
+  }
+
+  if (rb != NULL) {
+    rlc_entity_buffer_status_t buf_stat;
+    rb->set_time(rb, rlc_current_time);
+    /* 36.321 deals with BSR values up to 3000000 bytes, after what it
+     * reports '> 3000000' (table 6.1.3.1-2). Passing 4000000 is thus
+     * more than enough.
+     */
+    buf_stat = rb->buffer_status(rb, 4000000);
+    ret = buf_stat.status_size
+        + buf_stat.retx_size
+        + buf_stat.tx_size;
+  } else {
+    ret = 0;
+  }
+
+  rlc_manager_unlock(rlc_ue_manager);
+
+  return ret;
+}
+
 int oai_emulation;
 
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
@@ -249,7 +312,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   return RLC_OP_STATUS_OK;
 }
 
-int rlc_module_init(void)
+int rlc_module_init(int enb_flag)
 {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
   static int inited = 0;
@@ -263,7 +326,7 @@ int rlc_module_init(void)
 
   inited = 1;
 
-  rlc_ue_manager = new_rlc_ue_manager();
+  rlc_ue_manager = new_rlc_ue_manager(enb_flag);
 
   if (pthread_mutex_unlock(&lock)) abort();
 
@@ -282,6 +345,7 @@ static void deliver_sdu(void *_ue, rlc_entity_t *entity, char *buf, int size)
   protocol_ctxt_t ctx;
   mem_block_t *memblock;
   int i;
+  int is_enb;
 
   /* is it SRB? */
   for (i = 0; i < 2; i++) {
@@ -327,11 +391,15 @@ rb_found:
   /* used fields? */
   ctx.module_id = 0;
   ctx.rnti = ue->rnti;
-  ctx.enb_flag = 1;
 
-  T(T_ENB_RLC_UL,
-    T_INT(0 /*ctxt_pP->module_id*/),
-    T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
+  is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
+  ctx.enb_flag = is_enb;
+
+  if (is_enb) {
+    T(T_ENB_RLC_UL,
+      T_INT(0 /*ctxt_pP->module_id*/),
+      T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
+  }
 
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
@@ -346,6 +414,7 @@ static void successful_delivery(void *_ue, rlc_entity_t *entity, int sdu_id)
   int is_srb;
   int rb_id;
   MessageDef *msg;
+  int is_enb;
 
   /* is it SRB? */
   for (i = 0; i < 2; i++) {
@@ -379,6 +448,10 @@ rb_found:
   if (is_srb == 0)
     return;
 
+  is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
+  if (!is_enb)
+    return;
+
   msg = itti_alloc_new_message(TASK_RLC_ENB, RLC_SDU_INDICATION);
   RLC_SDU_INDICATION(msg).rnti          = ue->rnti;
   RLC_SDU_INDICATION(msg).is_successful = 1;
@@ -395,6 +468,7 @@ static void max_retx_reached(void *_ue, rlc_entity_t *entity)
   int is_srb;
   int rb_id;
   MessageDef *msg;
+  int is_enb;
 
   /* is it SRB? */
   for (i = 0; i < 2; i++) {
@@ -425,6 +499,10 @@ rb_found:
 
   /* TODO: do something for DRBs? */
   if (is_srb == 0)
+    return;
+
+  is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
+  if (!is_enb)
     return;
 
   msg = itti_alloc_new_message(TASK_RLC_ENB, RLC_SDU_INDICATION);
@@ -708,7 +786,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   int rnti = ctxt_pP->rnti;
   int i;
 
-  if (ctxt_pP->enb_flag != 1 || ctxt_pP->module_id != 0 /*||
+  if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
     LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
@@ -755,10 +833,6 @@ rlc_op_status_t rrc_rlc_config_req   (
 
   if (mbms_flagP) {
     LOG_E(RLC, "%s:%d:%s: todo (mbms not supported)\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  if (!ctxt_pP->enb_flag) {
-    LOG_E(RLC, "%s:%d:%s: todo (only eNB supported, not UE)\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
   if (actionP != CONFIG_ACTION_REMOVE) {
@@ -819,4 +893,3 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 
   return RLC_OP_STATUS_OK;
 }
-
