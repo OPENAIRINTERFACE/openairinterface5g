@@ -297,9 +297,8 @@ int flexran_agent_stats_reply(mid_t enb_id,
 
   /* MAC reply split */
   if (flexran_agent_get_mac_xface(enb_id)
-      && flexran_agent_mac_stats_reply(enb_id,
-                                       ue_report, n_ue, ue_flags,
-                                       cell_report, n_cc, cell_flags) < 0) {
+      && (flexran_agent_mac_stats_reply_ue(enb_id, ue_report, n_ue, ue_flags) < 0
+         || flexran_agent_mac_stats_reply_cell(enb_id, cell_report, n_cc, cell_flags) < 0)) {
     err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
     goto error;
   }
