@@ -555,7 +555,7 @@ void init_openair0(void) {
      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
 	  openair0_cfg[card].sample_rate=46.08e6;
-	  openair0_cfg[card].samples_per_frame = 480800;
+	  openair0_cfg[card].samples_per_frame = 460800;
 	}
 	else {
 	  openair0_cfg[card].sample_rate=61.44e6;
