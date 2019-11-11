@@ -24,11 +24,11 @@
 	<htmlTabRef>test-05-tm1</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 030201 040101
+ 040101 030201
  030103 000002
- 040301 000002 040504 000001 040401
+ 040301 000002 040504 040605 040606 040645 040646 040401
  040301 000002 040505 000001 040401
  040301 000002 040506 000001 040401
  040301 000002 040507 000001 040401
@@ -114,252 +114,252 @@
 	<testCase id="040504">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040505">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040506">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040507">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040508">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040509">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040510">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040511">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040512">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040513">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040514">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040515">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040516">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040517">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040518">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040519">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040520">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040521">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040522">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040523">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040524">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040525">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040526">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040527">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040528">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040529">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040530">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040531">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040532">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040533">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040534">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040535">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040536">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040537">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040538">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="040539">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
@@ -372,8 +372,8 @@
 
 	<testCase id="040606">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - DL/12Mbps/UDP)(30 sec)</desc>
-		<iperf_args>-u -b 12M -t 30 -i 1 -fm</iperf_args>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
@@ -386,8 +386,8 @@
 
 	<testCase id="040646">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - UL/2Mbps/UDP)(30 sec)</desc>
-		<iperf_args>-u -b 2M -t 30 -i 1 -fm -R</iperf_args>
+		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 

@@ -183,7 +183,6 @@ pipeline {
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:m11 172.16.1.102 up\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:m10 192.168.10.110 up\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:sxu 172.55.55.102 up\"'"
-                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:s1u 192.168.248.159 up\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:sxc 172.55.55.101 up\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:s5c 172.58.58.102 up\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:p5c 172.58.58.101 up\"'"
@@ -194,9 +193,6 @@ pipeline {
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip route add default via 192.168.3.100 dev control table lte\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip rule add from 12.0.0.0/8 table lte\"'"
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip rule add from 12.1.1.0/8 table lte\"'"
-
-                        // Adding a route on the eNB for the S1U interface
-                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labENB0} \"echo ${fitpasswd} | sudo -S ip route add 192.168.248.0/24 via ${r2labEPC0IpAddr} dev control\"'"
 
                         // For the moment, simple way to route traffic from python executor to any UEs
                         sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"echo ${fitpasswd} | sudo -S ip route add 12.1.1.0/24 via ${r2labEPC0IpAddr} dev control\"'"
