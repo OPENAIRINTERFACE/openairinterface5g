@@ -103,6 +103,10 @@ extern short filt8_dcl[8];
 
 extern short filt8_dcr[8];
 
+extern short filt8_dcl_h[8];
+
+extern short filt8_dcr_h[8];
+
 extern short filt8_l1[8];
 
 extern short filt8_ml1[8];
