@@ -200,7 +200,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 
-  uint16_t Kr,r,r_offset;
+  uint16_t Kr,r;
+  uint32_t r_offset;
   uint8_t BG;
   uint32_t E,Kb;
   uint8_t Ilbrm; 
