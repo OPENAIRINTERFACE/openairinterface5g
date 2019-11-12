@@ -736,7 +736,7 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-if (slot_nr==18)
+if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
