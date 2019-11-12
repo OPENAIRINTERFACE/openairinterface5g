@@ -1090,7 +1090,9 @@
                                  (Test9: 217 PRB 80 PDSCH-Offset),
                                  (Test10: 217 PRB 100 PDSCH-PRBs 80 PDSCH-Offset),
                                  (Test6: 106 PRB 0 MCS),-->
-                                 (Test7: 273 PRB 28 MCS)</desc>
+                                 (Test7: 106 PRB 9 MCS)
+                                 (Test8: 217 PRB 9 MCS)
+                                 (Test9: 273 PRB 9 MCS)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1108,8 +1110,11 @@
                   -n100 -R217 -a80
                   -n100 -R217 -a80 -b100
                   -n100 -R106 -e0-->
-                  -n100 -R273 -e28</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 <!--nr_dlsim.test6  nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10-->nr_dlsim.test6 nr_dlsim.test7</tags>
+                  -n100 -R106 -b106 -e9
+                  -n100 -R217 -b217 -e9
+                  -n100 -R273 -b273 -e9</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6  nr_dlsim.test7
+      nr_dlsim.test8 nr_dlsim.test9 <!--nr_dlsim.test10nr_dlsim.test6 nr_dlsim.test7--></tags>
       <search_expr_true>"PDCCH test OK" "PDSCH test OK"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
