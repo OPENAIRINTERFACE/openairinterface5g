@@ -91,9 +91,11 @@ int create_tasks(uint32_t enb_nb) {
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
   }
 
-  LOG_I(MAC,"Creating MAC eNB Task\n");
-  rc = itti_create_task(TASK_MAC_ENB, mac_enb_task, NULL);
-  AssertFatal(rc >= 0, "Create task for MAC eNB failed\n");
+  if (!NODE_IS_CU(type)) {
+    LOG_I(MAC,"Creating MAC eNB Task\n");
+    rc = itti_create_task(TASK_MAC_ENB, mac_enb_task, NULL);
+    AssertFatal(rc >= 0, "Create task for MAC eNB failed\n");
+  }
 
   return 0;
 }

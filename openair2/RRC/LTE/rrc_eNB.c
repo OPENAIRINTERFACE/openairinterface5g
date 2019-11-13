@@ -3201,18 +3201,17 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf500; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_infinity
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
-
-  mac_MainConfig->drx_Config = NULL;
   
   /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
   rnti_t rnti = ue_context_pP->ue_id_rnti;
   module_id_t module_id = ctxt_pP->module_id;
   LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
   
   /* Process the IE drx_Config */    
-  mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-
   if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+  
     if (mac_MainConfig->drx_Config == NULL) {
       LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
     } else {
@@ -3916,49 +3915,28 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
-  if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
-    /*
-    uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
-    LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
-    // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
-    int UE_id = find_UE_id(module_id, rnti);
-
-    if (UE_id != -1) {
-      eNB_MAC_INST *mac = RC.mac[module_id];
-      UE_list_t *UE_list = &(mac->UE_list);
-
-      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) && 
-        (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-        
-        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
-
-        ///// Process the IE drx_Config /
-        if (cc_id < MAX_NUM_CCs) {
-          mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-
-          if (mac_MainConfig->drx_Config == NULL) {
-            LOG_E(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters\n");
-          } else {
-            ////// Set timers and thresholds values in local MAC context of UE /
-            eNB_Config_Local_DRX(module_id, rnti, mac_MainConfig->drx_Config);
-            LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-          }
-        } else {
-          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-        }
-      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        LOG_E(RRC, "CDRX not implemented for TDD and LTE-M\n");
-      }
-    } else { // UE_id invalid
-      LOG_E(RRC, "Invalid UE_id found!\n");
+  /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+  LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+  
+  /* Process the IE drx_Config */
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+  
+    if (mac_MainConfig->drx_Config == NULL) {
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
+      LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
-    */
-    /* End of CDRX configuration */
   }
+  /* End of CDRX configuration */
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
