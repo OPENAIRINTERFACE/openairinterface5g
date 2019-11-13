@@ -3684,6 +3684,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
 
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
@@ -3919,6 +3920,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   mac_MainConfig->drx_Config = NULL;
   rnti_t rnti = ue_context_pP->ue_id_rnti;
   module_id_t module_id = ctxt_pP->module_id;
+  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
+  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
   LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
   
   /* Process the IE drx_Config */
