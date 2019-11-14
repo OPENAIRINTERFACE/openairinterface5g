@@ -140,7 +140,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ul_ch,
                                          8);
       pil+=2;
-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       //for (int i= 0; i<8; i++)
       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
@@ -156,7 +156,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ul_ch,
                                          8);
       pil+=2;
-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       //printf("ul_ch addr %p\n",ul_ch);
       
@@ -175,7 +175,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
       
       pil+=2;
-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ul_ch+=8;
 
@@ -193,7 +193,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                            8);
 
         pil+=2;
-        re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -206,7 +206,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                            ul_ch,
                                            8);
         pil+=2;
-        re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
         ul_ch+=8;
 
@@ -227,7 +227,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
 
       pil+=2;
-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
              
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -242,7 +242,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          8);
                                          
       pil+=2;
-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ul_ch+=8;
       
@@ -267,7 +267,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       pil += (idxPil-2);
       ul_ch += (idxDC-4);
       ul_ch = memset(ul_ch, 0, sizeof(int16_t)*10);
-      re_offset = (re_offset+idxDC/2-2)&(gNB->frame_parms.ofdm_symbol_size-1);
+      re_offset = (re_offset+idxDC/2-2) % gNB->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -281,7 +281,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                            8);
         
         pil += 4;
-        re_offset = (re_offset+4)&(gNB->frame_parms.ofdm_symbol_size-1);
+        re_offset = (re_offset+4) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -298,7 +298,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                            8);
         
         pil += 4;
-        re_offset = (re_offset+4)&(gNB->frame_parms.ofdm_symbol_size-1);
+        re_offset = (re_offset+4) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
