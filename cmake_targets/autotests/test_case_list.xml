@@ -1084,35 +1084,27 @@
                                  (Test3: 273 PRB),
                                  (Test4: 106 PRB 12 CSET-Offset),
                                  (Test5: 217 PRB 48 CSET-Offset),
-                                 <!--(Test6: 106 PRB 25 PDSCH-Offset),
+                                 (Test6: 106 PRB 25 PDSCH-Offset),
                                  (Test7: 106 PRB 51 PDSCH-Offset),
                                  (Test8: 217 PRB 100 PDSCH-PRBs),
                                  (Test9: 217 PRB 80 PDSCH-Offset),
-                                 (Test10: 217 PRB 100 PDSCH-PRBs 80 PDSCH-Offset),
-                                 (Test6: 106 PRB 0 MCS),-->
-                                 (Test7: 106 PRB 9 MCS)
-                                 (Test8: 217 PRB 9 MCS)
-                                 (Test9: 273 PRB 9 MCS)</desc>
+                                 (Test10: 217 PRB 100 PDSCH-PRBs 80 PDSCH-Offset)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
-      <main_exec_args>-n100 -R106
-		              -n100 -R217
-		              -n100 -R273
+      <main_exec_args>-n100 -R106 -b106
+		              -n100 -R217 -b217
+		              -n100 -R273 -b273
                   -n100 -R106 -o12
                   -n100 -R217 -o48
-                  <!---n100 -R106 -a25
+                  -n100 -R106 -a25
                   -n100 -R106 -a51
                   -n100 -R217 -b100
                   -n100 -R217 -a80
-                  -n100 -R217 -a80 -b100
-                  -n100 -R106 -e0-->
-                  -n100 -R106 -b106 -e9
-                  -n100 -R217 -b217 -e9
-                  -n100 -R273 -b273 -e9</main_exec_args>
+                  -n100 -R217 -a80 -b100</main_exec_args>
       <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6  nr_dlsim.test7
       nr_dlsim.test8 nr_dlsim.test9 <!--nr_dlsim.test10nr_dlsim.test6 nr_dlsim.test7--></tags>
       <search_expr_true>"PDCCH test OK" "PDSCH test OK"</search_expr_true>
