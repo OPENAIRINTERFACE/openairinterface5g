@@ -41,7 +41,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
-  int16_t ch[2],*pil,*rxF,*ul_ch,*fl,*fm,*fr,*fml,*fmr,*fmm;
+  int16_t ch[2],*pil,*rxF,*ul_ch;
+  int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
   int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
   unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
   int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(16)));
@@ -82,6 +83,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
          fmm = filt8_mm0;
          fml = filt8_m0;
          fmr = filt8_mr0;
+         fdcl = filt8_dcl0;
+         fdcr = filt8_dcr0;
+         fdclh = filt8_dcl0_h;
+         fdcrh = filt8_dcr0_h;
          break;
 
    case 1:
@@ -91,6 +96,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
          fmm = filt8_mm1;
          fml = filt8_ml1;
          fmr = filt8_m1;
+         fdcl = filt8_dcl1;
+         fdcr = filt8_dcr1;
+         fdclh = filt8_dcl1_h;
+         fdcrh = filt8_dcr1_h;
          break;
 
    default:
@@ -275,7 +284,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       // for proper allignment of SIMD vectors
       if((gNB->frame_parms.N_RB_UL&1)==0) {
 
-        multadd_real_vector_complex_scalar(filt8_dcl,
+        multadd_real_vector_complex_scalar(fdcl,
                                            ch,
                                            ul_ch-4,
                                            8);
@@ -286,13 +295,13 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
         
-        multadd_real_vector_complex_scalar(filt8_dcr,
+        multadd_real_vector_complex_scalar(fdcr,
                                            ch,
                                            ul_ch-4,
                                            8);
       } else {
         
-        multadd_real_vector_complex_scalar(filt8_dcl_h,
+        multadd_real_vector_complex_scalar(fdclh,
                                            ch,
                                            ul_ch,
                                            8);
@@ -303,7 +312,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
         
-        multadd_real_vector_complex_scalar(filt8_dcr_h,
+        multadd_real_vector_complex_scalar(fdcrh,
                                            ch,
                                            ul_ch,
                                            8);
