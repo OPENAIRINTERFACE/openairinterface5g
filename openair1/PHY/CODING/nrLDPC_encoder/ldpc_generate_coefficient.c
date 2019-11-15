@@ -373,7 +373,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
 
 
   int i,i1,i2,i3,i4,i5,temp_prime,var;
-  int no_punctured_columns,removed_bit;
+  int no_punctured_columns,removed_bit,rate=3;
   int nind=0;
   int indlist[1000];
   int indlist2[1000];
@@ -384,6 +384,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
        {
          nrows=46; //parity check bits
          ncols=22; //info bits
+         rate=3;
        }
        //else if (block_length<=3840)
       else if	(BG==2)
@@ -391,7 +392,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
          //BG=2;
          nrows=42; //parity check bits
          ncols=10; // info bits
-
+         rate=5;
          }
 
   Gen_shift_values=choose_generator_matrix(BG,Zc);
@@ -417,8 +418,8 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
     AssertFatal(0,"BG %d is not supported yet\n",BG);
   }
   
-  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
-  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(block_length*3);
+  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
+  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(block_length*rate);
   //printf("%d\n",no_punctured_columns);
   //printf("%d\n",removed_bit);
   // unpack input
