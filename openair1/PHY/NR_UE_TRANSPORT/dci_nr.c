@@ -1338,6 +1338,7 @@ void nr_dci_decoding_procedure0(int s,
       const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, sizeof_bits, L2);
       decoderState = polar_decoder_int16(&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
                                          dci_estimation,
+                                         1,
                                          currentPtrDCI);
       crc = decoderState;
       //crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
