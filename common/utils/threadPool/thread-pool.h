@@ -150,8 +150,9 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
 // This function aborts all messages matching the key
 // If the queue is used in thread pools, it doesn't cancels already running processing
 // because the message has already been picked
-static inline void abortNotifiedFIFO(notifiedFIFO_t *nf, uint64_t key) {
+static inline int abortNotifiedFIFO(notifiedFIFO_t *nf, uint64_t key) {
   mutexlock(nf->lockF);
+  int nbDeleted=0;
   notifiedFIFO_elt_t **start=&nf->outF;
 
   while(*start!=NULL) {
@@ -159,13 +160,16 @@ static inline void abortNotifiedFIFO(notifiedFIFO_t *nf, uint64_t key) {
       notifiedFIFO_elt_t *request=*start;
       *start=(*start)->next;
       delNotifiedFIFO_elt(request);
-    }
-
-    if (*start != NULL)
+      nbDeleted++;
+    } else
       start=&(*start)->next;
   }
 
+  if (nf->outF == NULL)
+    nf->inF=NULL;
+
   mutexunlock(nf->lockF);
+  return nbDeleted;
 }
 
 struct one_thread {
@@ -195,7 +199,20 @@ typedef struct thread_pool {
 static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
   if (t->measurePerf) msg->creationTime=rdtsc();
 
-  pushNotifiedFIFO(&t->incomingFifo, msg);
+  if ( t->activated)
+    pushNotifiedFIFO(&t->incomingFifo, msg);
+  else {
+    if (t->measurePerf)
+      msg->startProcessingTime=rdtsc();
+
+    msg->processingFunc(NotifiedFifoData(msg));
+
+    if (t->measurePerf)
+      msg->endProcessingTime=rdtsc();
+
+    if (msg->reponseFifo)
+      pushNotifiedFIFO(msg->reponseFifo, msg);
+  }
 }
 
 static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_t *t) {
@@ -225,7 +242,8 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
   return msg;
 }
 
-static inline void abortTpool(tpool_t *t, uint64_t key) {
+static inline int abortTpool(tpool_t *t, uint64_t key) {
+  int nbRemoved=0;
   notifiedFIFO_t *nf=&t->incomingFifo;
   mutexlock(nf->lockF);
   notifiedFIFO_elt_t **start=&nf->outF;
@@ -235,22 +253,27 @@ static inline void abortTpool(tpool_t *t, uint64_t key) {
       notifiedFIFO_elt_t *request=*start;
       *start=(*start)->next;
       delNotifiedFIFO_elt(request);
-    }
-
-    if (*start != NULL)
+      nbRemoved++;
+    } else
       start=&(*start)->next;
   }
+
+  if (t->incomingFifo.outF==NULL)
+    t->incomingFifo.inF=NULL;
 
   struct one_thread *ptr=t->allthreads;
 
   while(ptr!=NULL) {
-    if (ptr->runningOnKey==key)
+    if (ptr->runningOnKey==key) {
       ptr->abortFlag=true;
+      nbRemoved++;
+    }
 
     ptr=ptr->next;
   }
 
   mutexunlock(nf->lockF);
+  return nbRemoved;
 }
 void initTpool(char *params,tpool_t *pool, bool performanceMeas);
 
