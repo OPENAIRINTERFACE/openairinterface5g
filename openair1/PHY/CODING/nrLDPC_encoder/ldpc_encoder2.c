@@ -540,8 +540,8 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   // calculate number of punctured bits
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
-   printf("%d\n",no_punctured_columns);
-   printf("%d\n",removed_bit);
+  //printf("%d\n",no_punctured_columns);
+  //printf("%d\n",removed_bit);
   // unpack input
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
