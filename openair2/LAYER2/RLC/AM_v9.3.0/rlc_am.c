@@ -672,7 +672,7 @@ rlc_am_mac_data_request (
 
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
             message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
             message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
             message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
@@ -771,7 +771,7 @@ rlc_am_mac_data_request (
 
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
             message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
             message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC AM DATA REQ: STATUS PDU\n\n");
             message_string_size += sprintf(&message_string[message_string_size], "Header      :\n");
@@ -874,7 +874,7 @@ rlc_am_mac_data_indication (
             }
 
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
-              message_string_size += sprintf(&message_string[message_string_size], "Bearer	: %u\n", l_rlc_p->rb_id);
+              message_string_size += sprintf(&message_string[message_string_size], "Bearer	: %ld\n", l_rlc_p->rb_id);
               message_string_size += sprintf(&message_string[message_string_size], "PDU size	: %u\n", tb_size_in_bytes);
               message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
               message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
@@ -971,7 +971,7 @@ rlc_am_mac_data_indication (
 
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
               message_string_size = 0;
-              message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+              message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
               message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", ((struct mac_tb_ind *) (tb_p->data))->size);
               message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC AM DATA IND: STATUS PDU\n\n");
               message_string_size += sprintf(&message_string[message_string_size], "Header      :\n");
@@ -1039,7 +1039,7 @@ rlc_am_data_req (
       mui);
 
     if (LOG_DEBUGFLAG(DEBUG_RLC)) {
-      message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+      message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
       message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", data_size);
       message_string_size += sprintf(&message_string[message_string_size], "MUI         : %u\n", mui);
       message_string_size += sprintf(&message_string[message_string_size], "CONF        : %u\n", ((struct rlc_am_data_req *) (sdu_pP->data))->conf);

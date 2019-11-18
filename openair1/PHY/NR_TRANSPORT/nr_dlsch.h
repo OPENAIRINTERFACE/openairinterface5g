@@ -87,6 +87,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
 
 int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 int nr_dlsch_encoding(unsigned char *a,int frame,
                      uint8_t slot,

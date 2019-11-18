@@ -573,8 +573,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i;
   uint16_t                j,c;
-  uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+  uint16_t                nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
+  uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
   //  uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                average_rbs_per_user[MAX_NUM_CCs] = {0};
   rnti_t             rnti;
@@ -617,7 +617,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                           frameP,
                                           subframeP,
                                           min_rb_unit,
-                                          (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
+                                          (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
                                           rballoc_sub,
                                           MIMO_mode_indicator,
                                           mbsfn_flag);
@@ -701,8 +701,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                               CC_id,
                                               N_RBG[CC_id],
                                               min_rb_unit[CC_id],
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
+                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required_remaining,
                                               rballoc_sub,
                                               slice_allocation,
                                               MIMO_mode_indicator);

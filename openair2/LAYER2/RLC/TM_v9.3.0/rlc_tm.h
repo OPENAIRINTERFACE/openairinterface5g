@@ -42,7 +42,7 @@
 #        include "mem_block.h"
 #        include "rlc_tm_init.h"
 
-#define PROTOCOL_RLC_TM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_TM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld]"
 #define PROTOCOL_RLC_TM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
           (rLC_Pp->is_data_plane) ? "DRB TM" : "SRB TM",\
           rLC_Pp->rb_id

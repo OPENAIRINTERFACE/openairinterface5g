@@ -137,7 +137,7 @@ rlc_op_status_t rlc_stat_req     (
 
   //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
   if(rb_idP >= NB_RB_MAX) {
-    LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MAX);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -332,7 +332,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      log_ch_id  = 0;
 #ifdef DEBUG_RLC_DATA_REQ
-  LOG_D(RLC,PROTOCOL_CTXT_FMT"rlc_data_req:  rb_id %u (MAX %d), muip %d, confirmP %d, sdu_sizeP %d, sdu_pP %p\n",
+  LOG_D(RLC,PROTOCOL_CTXT_FMT"rlc_data_req:  rb_id %ld (MAX %d), muip %d, confirmP %d, sdu_sizeP %d, sdu_pP %p\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         rb_idP,
         NB_RAB_MAX,
@@ -351,13 +351,13 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   if (MBMS_flagP) {
     //AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
     if(rb_idP >= NB_RB_MBMS_MAX) {
-      LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+      LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
       return RLC_OP_STATUS_BAD_PARAMETER;
     }
   } else {
     //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
     if(rb_idP >= NB_RB_MAX) {
-      LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+      LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MAX);
       return RLC_OP_STATUS_BAD_PARAMETER;
     }
   }
@@ -387,14 +387,14 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
   } else if (sourceL2Id && destinationL2Id) {
-    LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,
+    LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%ld, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,
            srb_flagP);
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
     //Thinh's line originally uncommented
     //key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
     //key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
   } else {
-    LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,
+    LOG_D (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%ld, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP,
            srb_flagP);
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
@@ -411,7 +411,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   }
 
   if (MBMS_flagP == 0) {
-    LOG_D(RLC, PROTOCOL_CTXT_FMT"[RB %u] Display of rlc_data_req:\n",
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[RB %ld] Display of rlc_data_req:\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           rb_idP);
 #if defined(TRACE_RLC_PAYLOAD)
@@ -424,7 +424,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     switch (rlc_mode) {
       case RLC_MODE_NONE:
         free_mem_block(sdu_pP, __func__);
-        LOG_E(RLC, PROTOCOL_CTXT_FMT" Received RLC_MODE_NONE as rlc_type for rb_id %u\n",
+        LOG_E(RLC, PROTOCOL_CTXT_FMT" Received RLC_MODE_NONE as rlc_type for rb_id %ld\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               rb_idP);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
@@ -558,7 +558,7 @@ void rlc_data_ind     (
   const sdu_size_t  sdu_sizeP,
   mem_block_t      *sdu_pP) {
   //-----------------------------------------------------------------------------
-  LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] Display of rlc_data_ind: size %u\n",
+  LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %ld] Display of rlc_data_ind: size %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         (srb_flagP) ? "SRB" : "DRB",
         rb_idP,

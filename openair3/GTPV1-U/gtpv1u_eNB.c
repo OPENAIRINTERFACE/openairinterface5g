@@ -831,7 +831,7 @@ int gtpv1u_delete_x2u_tunnel(
       if (hash_rc == HASH_TABLE_OK) {
         for (erab_index = 0; erab_index < ue_context_p->ue_context.nb_x2u_e_rabs; erab_index++) {
           eps_bearer_id = ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index];
-          LOG_I(GTPU, "gtpv1u_delete_x2u_tunnel user rnti %x teNB X2U teid %u eps bearer id %u\n",
+          LOG_I(GTPU, "gtpv1u_delete_x2u_tunnel user rnti %x teNB X2U teid %u eps bearer id %ld\n",
                 req_pP->rnti,
                 gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_teNB,
                 ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index]);
