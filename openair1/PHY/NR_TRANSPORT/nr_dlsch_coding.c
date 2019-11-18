@@ -118,19 +118,15 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
   NR_gNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
-  unsigned char bw_scaling =1;
   uint16_t N_RB = config->rf_config.dl_carrier_bandwidth.value;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (N_RB) {
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273;
+  }  
 
-  case 106:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
-  }
+  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   dlsch = (NR_gNB_DLSCH_t *)malloc16(sizeof(NR_gNB_DLSCH_t));
 
@@ -170,31 +166,31 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));
-      LOG_T(PHY, "Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
-    		  MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling,bw_scaling, i,dlsch->harq_processes[i]);
+      LOG_T(PHY, "Required mem size %d  dlsch->harq_processes[%d] %p\n",
+    		  dlsch_bytes, i,dlsch->harq_processes[i]);
 
       if (dlsch->harq_processes[i]) {
         bzero(dlsch->harq_processes[i],sizeof(NR_DL_gNB_HARQ_t));
         //    dlsch->harq_processes[i]->first_tx=1;
-        dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
-        dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        dlsch->harq_processes[i]->b = (unsigned char*)malloc16(dlsch_bytes);
+        dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(dlsch_bytes);
         if (dlsch->harq_processes[i]->pdu) {
-          bzero(dlsch->harq_processes[i]->pdu,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
-          nr_emulate_dlsch_payload(dlsch->harq_processes[i]->pdu, (MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling)>>3);
+          bzero(dlsch->harq_processes[i]->pdu,dlsch_bytes);
+          nr_emulate_dlsch_payload(dlsch->harq_processes[i]->pdu, (dlsch_bytes)>>3);
         } else {
           printf("Can't allocate PDU\n");
           exit_flag=1;
         }
 
         if (dlsch->harq_processes[i]->b) {
-          bzero(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(dlsch->harq_processes[i]->b,dlsch_bytes);
         } else {
           printf("Can't get b\n");
           exit_flag=1;
         }
 
         if (abstraction_flag==0) {
-          for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) {
+          for (r=0; r<a_segments; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             // [hna] 8448 is the maximum CB size in NR
             //       68*348 = 68*(maximum size of Zc)

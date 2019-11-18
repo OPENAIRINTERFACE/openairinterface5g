@@ -101,17 +101,14 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
 
   NR_gNB_ULSCH_t *ulsch;
   uint8_t exit_flag = 0,i,r;
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (N_RB_UL) {
-    case 106:
-      bw_scaling =2;
-    break;
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273;
+  }  
 
-    default:
-      bw_scaling =1;
-    break;
-  }
+  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   ulsch = (NR_gNB_ULSCH_t *)malloc16(sizeof(NR_gNB_ULSCH_t));
 
@@ -130,15 +127,15 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
 
         memset(ulsch->harq_processes[i],0,sizeof(NR_UL_gNB_HARQ_t));
 
-        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(ulsch_bytes);
 
         if (ulsch->harq_processes[i]->b)
-          memset(ulsch->harq_processes[i]->b,0,MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+          memset(ulsch->harq_processes[i]->b,0,ulsch_bytes);
         else
           exit_flag=3;
 
         if (abstraction_flag == 0) {
-          for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS/bw_scaling; r++) {
+          for (r=0; r<a_segments; r++) {
 
             ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
 
@@ -413,21 +410,15 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   err_flag = 0;
   r_offset = 0;
 
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (frame_parms->N_RB_UL) {
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273;
+  }  
 
-    case 106:
-      bw_scaling =2;
-      break;
-
-    default:
-      bw_scaling =1;
-      break;
-  }
-
-  if (harq_process->C > MAX_NUM_NR_ULSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_ULSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > a_segments) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return (ulsch->max_ldpc_iterations + 1);
   }
 #ifdef DEBUG_ULSCH_DECODING
