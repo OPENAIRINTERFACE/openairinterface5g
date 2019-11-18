@@ -121,11 +121,15 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int slot = tti_tx;
   int i    = 0;
   int j    = 0;
+  int aa   = 0;
   int ret  = 0;
-  int nb_antenna_ports = 4;
+  int nb_antenna_ports = fp->N_ssb;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
-  start_meas(&ru->ofdm_total_stats);
+  if (nr_slot_select(cfg,slot) == SF_UL) return;
+  for (aa=0; aa<fp->Lmax; aa++) {
+    memset(ru->common.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
+  }
 
   for(j=0; j<fp->symbols_per_slot; ++j){
 
@@ -134,20 +138,16 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
     if (ru->num_gNB == 1){
       gNB = ru->gNB_list[0];
       cfg = &gNB->gNB_config;
-      if (nr_slot_select(cfg,tti_tx) == SF_UL) return;
 
       for(i=0; i<nb_antenna_ports; ++i){
-        memcpy((void*)&ru->common.txdataF[i][j],
-           (void*)&gNB->common_vars.txdataF[i][j],
+        memcpy((void*)&ru->common.txdataF[i][j*fp->ofdm_symbol_size],
+           (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + ((tti_tx%2)*fp->samples_per_slot_wCP)],
            fp->ofdm_symbol_size*sizeof(int32_t));
       }
+
     }//num_gNB == 1
-    //printf("~~~~~~~~~~~memery copy index: nb_antenna_ports = %d, samples_per_slot_wCP = %d\n", nb_antenna_ports, fp->samples_per_slot_wCP);
     stop_meas(&ru->txdataF_copy_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+j , 0);
-
-
-    if (nr_slot_select(cfg,slot) == SF_UL) return;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
@@ -168,7 +168,6 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
           feptx[i].instance_cnt_feptx      = 0;
           AssertFatal(pthread_cond_signal(&feptx[i].cond_feptx) == 0,"ERROR pthread_cond_signal for feptx_ofdm_thread\n");
           AssertFatal((ret=pthread_mutex_unlock(&feptx[i].mutex_feptx))==0,"mutex_lock returns %d\n",ret);
-          //printf("~~~~~~~~~~~~waking up thread %d with physical antenna %d, slot %d, symbol %d, total logical antenna port %d \n", feptx[i].index, feptx[i].aa, feptx[i].slot, feptx[i].symbol, feptx[i].nb_antenna_ports);
         }
         else{
           while(feptx[i+ru->nb_tx].instance_cnt_feptx != -1){
@@ -244,7 +243,7 @@ static void *nr_feptx_thread(void *param) {
                         fp,
                         bw,
                         slot,
-                        l+start,
+                        l,
                         aa,
                         nb_antenna_ports);
     stop_meas(&ru->precoding_stats);

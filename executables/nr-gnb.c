@@ -425,7 +425,7 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
 
 // note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,1);
-  waitret=timedwait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh",1000000); 
+  waitret=wait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh"); 
   AssertFatal(release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")==0, "error releaseing gNB lock on RUs\n"); 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,0);
 
