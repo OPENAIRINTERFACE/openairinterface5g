@@ -371,13 +371,13 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
     scheduled_response.dl_config = &dcireq.dl_config_req;
-    scheduled_response.ul_config = &dcireq.ul_config_req;
+    scheduled_response.ul_config = NULL;
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
-
+/*
     //--------------------------Temporary configuration-----------------------------//
     n_rnti = 0x1234;
     nb_rb = 50;
@@ -403,7 +403,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
-    nr_ue_scheduled_response(&scheduled_response);
+*/  
+  nr_ue_scheduled_response(&scheduled_response);
 
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
@@ -473,7 +474,7 @@ void UE_processing(void *arg) {
 #endif
 */
 
-
+/*
   if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
 
     thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
@@ -483,6 +484,7 @@ void UE_processing(void *arg) {
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
 
   }
+*/
 
   //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 
@@ -732,7 +734,7 @@ void *UE_thread(void *arg) {
                                            rxp,
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
-
+/*
 if (slot_nr==18)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
@@ -744,7 +746,7 @@ if (slot_nr==18)
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
                      4),"");
-
+*/
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
       int first_symbols=writeBlockSize-readBlockSize;
@@ -841,4 +843,5 @@ void init_NR_UE(int nb_inst) {
 
   printf("UE threads created by %ld\n", gettid());
 }
+
 
