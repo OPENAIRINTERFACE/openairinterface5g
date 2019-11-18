@@ -105,8 +105,8 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (N_RB_DL != 273) {
+    a_segments = a_segments*N_RB_DL;
     a_segments = a_segments/273;
   }  
 
@@ -378,8 +378,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
     a_segments = a_segments/273;
   }  
 
@@ -904,8 +904,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
     a_segments = a_segments/273;
   }  
 
@@ -1478,8 +1478,8 @@ void *nr_dlsch_decoding_process(void *arg)
   /*
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
     a_segments = a_segments/273;
   }  
 

@@ -103,8 +103,8 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
   uint8_t exit_flag = 0,i,r;
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
     a_segments = a_segments/273;
   }  
 
@@ -412,8 +412,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
     a_segments = a_segments/273;
   }  
 

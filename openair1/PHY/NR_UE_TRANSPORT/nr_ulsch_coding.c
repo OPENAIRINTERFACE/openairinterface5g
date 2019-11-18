@@ -94,8 +94,8 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
   unsigned char exit_flag = 0,i,r;
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB != 273) {
-    a_segments = a_segments*N_RB;
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
     a_segments = a_segments/273;
   }  
 
