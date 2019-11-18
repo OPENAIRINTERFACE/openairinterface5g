@@ -155,7 +155,7 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
+uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -168,8 +168,6 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   nr_cce_t cce;
   nr_reg_t reg;
   nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
-  /*First iteration: single DCI*/
-  NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
 
   /*The coreset is initialised
@@ -214,7 +212,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
                  pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-  polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti,currentPtr);
+  polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti, 1, currentPtr);
 #ifdef DEBUG_CHANNEL_CODING
   printf("polar rnti %d\n",pdcch_params.rnti);
   printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",

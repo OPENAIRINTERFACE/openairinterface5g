@@ -601,6 +601,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
 uint32_t polar_decoder_int16(int16_t *input,
                              uint64_t *out,
+                             uint8_t ones_flag,
                              const t_nrPolar_params *polarParams)
 {
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
@@ -650,28 +651,42 @@ uint32_t polar_decoder_int16(int16_t *input,
   uint64_t Ar = 0;
   AssertFatal(len<65,"A must be less than 65 bits\n");
 
+  // appending 24 ones before a0 for DCI as stated in 38.212 7.3.2
+  uint8_t offset = 0;
+  if (ones_flag) offset = 3;
+
   if (len<=32) {
     Ar = (uint32_t)(B[0]>>crclen);
-    uint8_t A32_flip[4];
+    uint8_t A32_flip[4+offset];
+    if (ones_flag) {
+      A32_flip[0] = 0xff;
+      A32_flip[1] = 0xff;
+      A32_flip[2] = 0xff;
+    }
     uint32_t Aprime= (uint32_t)(Ar<<(32-len));
-    A32_flip[0]=((uint8_t *)&Aprime)[3];
-    A32_flip[1]=((uint8_t *)&Aprime)[2];
-    A32_flip[2]=((uint8_t *)&Aprime)[1];
-    A32_flip[3]=((uint8_t *)&Aprime)[0];
-    crc = (uint64_t)(crc24c(A32_flip,len)>>8);
+    A32_flip[0+offset]=((uint8_t *)&Aprime)[3];
+    A32_flip[1+offset]=((uint8_t *)&Aprime)[2];
+    A32_flip[2+offset]=((uint8_t *)&Aprime)[1];
+    A32_flip[3+offset]=((uint8_t *)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A32_flip,8*offset+len)>>8);
   } else if (len<=64) {
     Ar = (B[0]>>crclen) | (B[1]<<(64-crclen));;
-    uint8_t A64_flip[8];
-    uint64_t Aprime= (uint32_t)(Ar<<(64-len));
-    A64_flip[0]=((uint8_t *)&Aprime)[7];
-    A64_flip[1]=((uint8_t *)&Aprime)[6];
-    A64_flip[2]=((uint8_t *)&Aprime)[5];
-    A64_flip[3]=((uint8_t *)&Aprime)[4];
-    A64_flip[4]=((uint8_t *)&Aprime)[3];
-    A64_flip[5]=((uint8_t *)&Aprime)[2];
-    A64_flip[6]=((uint8_t *)&Aprime)[1];
-    A64_flip[7]=((uint8_t *)&Aprime)[0];
-    crc = (uint64_t)(crc24c(A64_flip,len)>>8);
+    uint8_t A64_flip[8+offset];
+    if (ones_flag) {
+      A64_flip[0] = 0xff;
+      A64_flip[1] = 0xff;
+      A64_flip[2] = 0xff;
+    }
+    uint64_t Aprime= (uint64_t)(Ar<<(64-len));
+    A64_flip[0+offset]=((uint8_t *)&Aprime)[7];
+    A64_flip[1+offset]=((uint8_t *)&Aprime)[6];
+    A64_flip[2+offset]=((uint8_t *)&Aprime)[5];
+    A64_flip[3+offset]=((uint8_t *)&Aprime)[4];
+    A64_flip[4+offset]=((uint8_t *)&Aprime)[3];
+    A64_flip[5+offset]=((uint8_t *)&Aprime)[2];
+    A64_flip[6+offset]=((uint8_t *)&Aprime)[1];
+    A64_flip[7+offset]=((uint8_t *)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A64_flip,8*offset+len)>>8);
   }
 
 #if 0

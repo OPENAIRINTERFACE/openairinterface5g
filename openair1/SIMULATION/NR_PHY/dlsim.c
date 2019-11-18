@@ -75,31 +75,29 @@ void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
 uint64_t get_softmodem_optmask(void) {return 0;}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP, const rnti_t            rntiP,
-										  const eNB_index_t       eNB_index,  const frame_t           frameP,
-										  const sub_frame_t 	  subframeP,  const eNB_flag_t        enb_flagP,
-										  const MBMS_flag_t       MBMS_flagP, const logical_chan_id_t channel_idP,
-										  const tb_size_t         tb_sizeP
-										  #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-										  ,const uint32_t sourceL2Id
-										  ,const uint32_t destinationL2Id
-										  #endif
-										){mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(
-  const module_id_t       module_idP,
-  const rnti_t            rntiP,
-  const eNB_index_t       eNB_index,
-  const frame_t           frameP,
-  const eNB_flag_t        enb_flagP,
-  const MBMS_flag_t       MBMS_flagP,
-  const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
-  char             *buffer_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
-   )
+mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
+					  const rnti_t            rntiP,
+					  const eNB_index_t       eNB_index,
+					  const frame_t           frameP,
+					  const sub_frame_t 	  subframeP,
+					  const eNB_flag_t        enb_flagP,
+					  const MBMS_flag_t       MBMS_flagP,
+					  const logical_chan_id_t channel_idP,
+					  const tb_size_t         tb_sizeP,
+					  const uint32_t sourceL2Id,
+					  const uint32_t destinationL2Id)
+{mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
+			      const rnti_t            rntiP,
+			      const eNB_index_t       eNB_index,
+			      const frame_t           frameP,
+			      const eNB_flag_t        enb_flagP,
+			      const MBMS_flag_t       MBMS_flagP,
+			      const logical_chan_id_t channel_idP,
+			      const tb_size_t         tb_sizeP,
+			      char             *buffer_pP,
+			      const uint32_t sourceL2Id,
+			      const uint32_t destinationL2Id )
 {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -596,7 +594,7 @@ int main(int argc, char **argv)
     Sched_INFO.frame     = frame;
     Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-    Sched_INFO.UL_req    = NULL;
+    Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
     Sched_INFO.HI_DCI0_req  = NULL;
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
