@@ -300,24 +300,21 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 
 void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x2ap_ENDC_sgnb_addition_req_t *m) {
 
-FILE *fd;
-fd = fopen("uecap.raw","r");
-if (fd != NULL) {
-      char buffer[4096];
-      int msg_len=fread(buffer,1,4096,fd);
-      fclose(fd);
-}
-      /*LOG_I(RRC,"Read in %d bytes for uecap\n",msg_len);*/
-    
-    
 
-    LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message; 
+    LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message = NULL; 
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
 						      &asn_DEF_LTE_UL_DCCH_Message,
 						      (void **)&LTE_UL_DCCH_Message,
 						      (uint8_t *)m->rrc_buffer,
 						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
+
+/*    asn_dec_rval_t dec_rval = uper_decode( NULL,
+						      &asn_DEF_LTE_UL_DCCH_Message,
+						      (void **)&LTE_UL_DCCH_Message,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size, 0, 0);//m->rrc_buffer_size);
+*/
     gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
