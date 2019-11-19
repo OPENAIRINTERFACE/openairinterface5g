@@ -70,8 +70,8 @@ typedef struct complex16 sample_t; // 2*16 bits complex number
 typedef struct buffer_s {
   int conn_sock;
   openair0_timestamp lastReceivedTS;
-  openair0_timestamp lastWroteTS;
   bool headerMode;
+  bool trashingPacket;
   samplesBlockHeader_t th;
   char *transferPtr;
   uint64_t remainToTransfer;
@@ -83,6 +83,7 @@ typedef struct buffer_s {
 typedef struct {
   int listen_sock, epollfd;
   openair0_timestamp nextTimestamp;
+  openair0_timestamp lastWroteTS;
   uint64_t typeStamp;
   char *ip;
   uint16_t port;
@@ -102,8 +103,8 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
   ptr->circularBufEnd=((char *)ptr->circularBuf)+sampleToByte(CirSize,1);
   ptr->conn_sock=sock;
   ptr->lastReceivedTS=0;
-  ptr->lastWroteTS=0;
   ptr->headerMode=true;
+  ptr->trashingPacket=false;
   ptr->transferPtr=(char *)&ptr->th;
   ptr->remainToTransfer=sizeof(samplesBlockHeader_t);
   int sendbuff=1000*1000*100;
@@ -219,8 +220,6 @@ void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t) {
   }
 }
 
-
-
 void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
   char *saveF=NULL;
   char *modelname=NULL;
@@ -317,19 +316,16 @@ sin_addr:
   return 0;
 }
 
-static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
+static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags, bool alreadyLocked) {
+  if (!alreadyLocked)
+    pthread_mutex_lock(&Sockmutex);
+
   LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
     if (b->conn_sock >= 0 ) {
-      pthread_mutex_lock(&Sockmutex);
-
-      if ( b->lastWroteTS != 0 && abs((double)b->lastWroteTS-timestamp) > (double)CirSize)
-        LOG_E(HW,"Discontinuous TX gap too large Tx:%lu, %lu\n", b->lastWroteTS, timestamp);
-
-      AssertFatal(b->lastWroteTS <= timestamp+1, " Not supported to send Tx out of order (same in USRP) %lu, %lu\n", b->lastWroteTS, timestamp);
       samplesBlockHeader_t header= {t->typeStamp, nsamps, nbAnt, timestamp};
       fullwrite(b->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
@@ -343,12 +339,19 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
 
       if (b->conn_sock >= 0 ) {
         fullwrite(b->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
-        b->lastWroteTS=timestamp+nsamps;
       }
-
-      pthread_mutex_unlock(&Sockmutex);
     }
   }
+
+  if ( t->lastWroteTS != 0 && abs((double)t->lastWroteTS-timestamp) > (double)CirSize)
+    LOG_E(HW,"Discontinuous TX gap too large Tx:%lu, %lu\n", t->lastWroteTS, timestamp);
+
+  AssertFatal(t->lastWroteTS <= timestamp+1, " Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
+              t->lastWroteTS, timestamp);
+  t->lastWroteTS=timestamp+nsamps;
+
+  if (!alreadyLocked)
+    pthread_mutex_unlock(&Sockmutex);
 
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
         nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
@@ -356,10 +359,8 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
 }
 
 int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
-  return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags);
+  return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags, false);
 }
-
-
 
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initial) {
   // Process all incoming events on sockets
@@ -389,22 +390,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       for ( int i=0; i < t->tx_num_channels; i++)
         samplesVoid[i]=(void *)&v;
 
-      pthread_mutex_lock(&Sockmutex);
-      openair0_timestamp timestamp=1;
-
-      for (int i=0; i<FD_SETSIZE; i++) {
-        buffer_t *b=&t->buf[i];
-
-        if (t->buf[i].circularBuf != NULL && t->buf[i].lastWroteTS > 1) {
-          timestamp=b->lastWroteTS;
-          break;
-        }
-      }
-
-      pthread_mutex_unlock(&Sockmutex);
-      rfsimulator_write_internal(t, timestamp-1,
+      rfsimulator_write_internal(t, t->lastWroteTS > 1 ? t->lastWroteTS-1 : 0,
                                  samplesVoid, 1,
-                                 t->tx_num_channels, 1);
+                                 t->tx_num_channels, 1, false);
     } else {
       if ( events[nbEv].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP) ) {
         socketError(t,fd);
@@ -450,25 +438,41 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
                      (t->typeStamp == ENB_MAGICDL_FDD && b->th.magic==UE_MAGICDL_FDD), "Socket Error in protocol");
         b->headerMode=false;
 
-        if ( b->lastReceivedTS != b->th.timestamp) {
+        if ( t->nextTimestamp == 0 ) { // First block in UE, resync with the eNB current TS
+	  t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
+	    b->th.timestamp -  nsamps_for_initial :
+	    0;
+	  b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
+	    b->th.timestamp :
+	    nsamps_for_initial;
+	  LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+	  b->trashingPacket=true;
+	} else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
-
+	  
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
             for (int a=0; a < nbAnt; a++) {
               b->circularBuf[(index*nbAnt+a)%CirSize].r=0;
               b->circularBuf[(index*nbAnt+a)%CirSize].i=0;
             }
           }
-
-          if ( abs(b->th.timestamp-b->lastReceivedTS) > 50 )
+          if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
-        }
+	  b->lastReceivedTS=b->th.timestamp;
+	  
+        } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
+	  LOG_W(HW,"Received Rx/Tx synchro out of order\n");
+	  b->trashingPacket=true;
+	} else if ( b->lastReceivedTS == b->th.timestamp ) {
+	  // normal case
+	} else {
+	  abort();
+	    AssertFatal(false, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);	}
 
-        b->lastReceivedTS=b->th.timestamp;
         pthread_mutex_lock(&Sockmutex);
 
-        if (b->lastWroteTS != 0 && ( abs((double)b->lastWroteTS-b->lastReceivedTS) > (double)CirSize))
-          LOG_E(HW,"UEsock: %d Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, b->lastWroteTS, b->lastReceivedTS);
+        if (t->lastWroteTS != 0 && ( abs((double)t->lastWroteTS-b->lastReceivedTS) > (double)CirSize))
+          LOG_E(HW,"UEsock: %d Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, t->lastWroteTS, b->lastReceivedTS);
 
         pthread_mutex_unlock(&Sockmutex);
         b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
@@ -477,22 +481,17 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 
       if ( b->headerMode==false ) {
         LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
-        b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
+	if ( ! b->trashingPacket ) {
+	  b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
+	}
 
-        // First block in UE, resync with the eNB current TS
-        if ( t->nextTimestamp == 0 && b->th.size < b->lastReceivedTS) {
-          t->nextTimestamp=b->lastReceivedTS > nsamps_for_initial ?
-                           b->lastReceivedTS - nsamps_for_initial :
-                           0;
-          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
-        }
-
-        if ( b->remainToTransfer==0) {
-          LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
-          b->headerMode=true;
-          b->transferPtr=(char *)&b->th;
-          b->remainToTransfer=sizeof(samplesBlockHeader_t);
-          b->th.magic=-1;
+	if ( b->remainToTransfer==0) {
+	  LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
+	  b->headerMode=true;
+	  b->transferPtr=(char *)&b->th;
+	  b->remainToTransfer=sizeof(samplesBlockHeader_t);
+	  b->th.magic=-1;
+	  b->trashingPacket=false;
         }
       }
     }
@@ -528,12 +527,43 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       t->nextTimestamp+=nsamps;
 
       if ( ((t->nextTimestamp/nsamps)%100) == 0)
-        LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
+        LOG_W(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
 
       *ptimestamp = t->nextTimestamp-nsamps;
       return nsamps;
     }
   } else {
+    pthread_mutex_lock(&Sockmutex);
+
+    if ( t->nextTimestamp > 0 && t->lastWroteTS < t->nextTimestamp) {
+      pthread_mutex_unlock(&Sockmutex);
+      usleep(10000);
+      pthread_mutex_lock(&Sockmutex);
+      if ( t->lastWroteTS < t->nextTimestamp ) {
+        // Assuming Tx is not done fully in another thread
+        // We can never write is the past from the received time
+        // So, the node perform receive but will never write these symbols
+        // let's tell this to the opposite node
+	// We send timestamp for nb samples required
+	// assuming this should have been done earlier if a Tx would exist
+        pthread_mutex_unlock(&Sockmutex);
+        struct complex16 v= {0};
+        void *samplesVoid[t->tx_num_channels];
+
+        for ( int i=0; i < t->tx_num_channels; i++)
+          samplesVoid[i]=(void *)&v;
+	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
+	      t->lastWroteTS, t->nextTimestamp);
+        rfsimulator_write_internal(t, t->nextTimestamp,
+                                   samplesVoid, 1,
+                                   t->tx_num_channels, 1, true);
+      } else {
+	pthread_mutex_unlock(&Sockmutex);
+        LOG_W(HW, "trx_write came from another thread\n");
+      }
+    } else
+      pthread_mutex_unlock(&Sockmutex);
+    
     bool have_to_wait;
 
     do {

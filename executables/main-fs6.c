@@ -1324,6 +1324,9 @@ void *DL_du_fs6(void *arg) {
     feptx_prec(ru, &L1_proc);
     feptx_ofdm(ru, &L1_proc);
     tx_rf(ru, &L1_proc);
+
+    if ( IS_SOFTMODEM_RFSIM ) 
+	    return NULL;
   }
 
   return NULL;
@@ -1443,13 +1446,22 @@ void *cu_fs6(void *arg) {
     remoteIP=DU_IP;
 
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
+
+  L1_rxtx_proc_t L1proc= {0};
+  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
+    initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
+  else
+    initTpool("n", &L1proc.threadPool, true);
+
+  initNotifiedFIFO(&L1proc.respEncode);
+  initNotifiedFIFO(&L1proc.respDecode);
+
   uint64_t timeStamp=0;
   initStaticTime(begingWait);
   initStaticTime(begingWait2);
   initRefTimes(waitDUAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
-  L1_rxtx_proc_t L1proc= {0};
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
@@ -1496,6 +1508,7 @@ void *du_fs6(void *arg) {
   initRefTimes(waitRxAndProcessingUL);
   initRefTimes(fullLoop);
   pthread_t t;
+    if ( !IS_SOFTMODEM_RFSIM ) 
   threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
 
   while(1) {
@@ -1503,6 +1516,8 @@ void *du_fs6(void *arg) {
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, &L1proc);
+    if ( IS_SOFTMODEM_RFSIM ) 
+	  DL_du_fs6((void *)ru);
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
   }
 

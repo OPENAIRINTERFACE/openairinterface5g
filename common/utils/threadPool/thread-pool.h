@@ -11,6 +11,7 @@
 #include <sys/syscall.h>
 #include <assertions.h>
 #include <LOG/log.h>
+#include <common/utils/system.h>
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
@@ -77,40 +78,59 @@ static inline void delNotifiedFIFO_elt(notifiedFIFO_elt_t *elt) {
   //LOG_W(UTIL,"delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
 }
 
+static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {
+  nf->inF=NULL;
+  nf->outF=NULL;
+}
 static inline void initNotifiedFIFO(notifiedFIFO_t *nf) {
   mutexinit(nf->lockF);
   condinit (nf->notifF);
-  nf->inF=NULL;
-  nf->outF=NULL;
+  initNotifiedFIFO_nothreadSafe(nf);
   // No delete function: the creator has only to free the memory
 }
 
-static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
-  mutexlock(nf->lockF);
+static inline void pushNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
   msg->next=NULL;
 
   if (nf->outF == NULL)
     nf->outF = msg;
 
-  if (nf->inF)
+  if (nf->inF != NULL)
     nf->inF->next = msg;
 
   nf->inF = msg;
+}
+
+static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
+  mutexlock(nf->lockF);
+  pushNotifiedFIFO_nothreadSafe(nf,msg);
   condbroadcast(nf->notifF);
   mutexunlock(nf->lockF);
 }
 
-static inline  notifiedFIFO_elt_t *pullNotifiedFIFO(notifiedFIFO_t *nf) {
-  mutexlock(nf->lockF);
-
-  while(!nf->outF)
-    condwait(nf->notifF, nf->lockF);
+static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {
+  if (nf->outF == NULL)
+    return NULL;
 
   notifiedFIFO_elt_t *ret=nf->outF;
+
+  if (nf->outF==nf->outF->next)
+    LOG_E(TMR,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+
   nf->outF=nf->outF->next;
 
   if (nf->outF==NULL)
     nf->inF=NULL;
+
+  return ret;
+}
+
+static inline  notifiedFIFO_elt_t *pullNotifiedFIFO(notifiedFIFO_t *nf) {
+  mutexlock(nf->lockF);
+  notifiedFIFO_elt_t *ret;
+
+  while((ret=pullNotifiedFIFO_nothreadSafe(nf)) == NULL)
+    condwait(nf->notifF, nf->lockF);
 
   mutexunlock(nf->lockF);
   return ret;
@@ -122,14 +142,7 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
   if (tmp != 0 )
     return NULL;
 
-  notifiedFIFO_elt_t *ret=nf->outF;
-
-  if (ret!=NULL)
-    nf->outF=nf->outF->next;
-
-  if (nf->outF==NULL)
-    nf->inF=NULL;
-
+  notifiedFIFO_elt_t *ret=pullNotifiedFIFO_nothreadSafe(nf);
   mutexunlock(nf->lockF);
   return ret;
 }
@@ -151,6 +164,7 @@ static inline int abortNotifiedFIFO(notifiedFIFO_t *nf, uint64_t key) {
     } else
       start=&(*start)->next;
   }
+
   if (nf->outF == NULL)
     nf->inF=NULL;
 
@@ -184,16 +198,20 @@ typedef struct thread_pool {
 
 static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
   if (t->measurePerf) msg->creationTime=rdtsc();
+
   if ( t->activated)
     pushNotifiedFIFO(&t->incomingFifo, msg);
   else {
-        if (t->measurePerf)
-	  msg->startProcessingTime=rdtsc();
-	msg->processingFunc(NotifiedFifoData(msg));
-	if (t->measurePerf)
-	  msg->endProcessingTime=rdtsc();
-	if (msg->reponseFifo) 
-	  pushNotifiedFIFO(msg->reponseFifo, msg);
+    if (t->measurePerf)
+      msg->startProcessingTime=rdtsc();
+
+    msg->processingFunc(NotifiedFifoData(msg));
+
+    if (t->measurePerf)
+      msg->endProcessingTime=rdtsc();
+
+    if (msg->reponseFifo)
+      pushNotifiedFIFO(msg->reponseFifo, msg);
   }
 }
 
@@ -202,10 +220,8 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
 
   if (t->measurePerf)
     msg->returnTime=rdtsc();
-
-  if (t->traceFd)
+  if (t->traceFd >= 0)
     if(write(t->traceFd, msg, sizeof(*msg)));
-
   return msg;
 }
 
@@ -217,10 +233,8 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
 
   if (t->measurePerf)
     msg->returnTime=rdtsc();
-
   if (t->traceFd)
     if(write(t->traceFd, msg, sizeof(*msg)));
-
   return msg;
 }
 
@@ -239,6 +253,7 @@ static inline int abortTpool(tpool_t *t, uint64_t key) {
     } else
       start=&(*start)->next;
   }
+
   if (t->incomingFifo.outF==NULL)
     t->incomingFifo.inF=NULL;
 
