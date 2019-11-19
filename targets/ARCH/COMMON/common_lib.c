@@ -126,7 +126,7 @@ int load_lib(openair0_device *device,
 	  libname=OAI_RFSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
   } else if (flag == RAU_LOCAL_RADIO_HEAD) {
-	  if (getenv("RFSIMULATOR") != NULL)
+	  if (IS_SOFTMODEM_RFSIM)
 		  libname="rfsimulator";
 	  else
           libname=OAI_RF_LIBNAME;

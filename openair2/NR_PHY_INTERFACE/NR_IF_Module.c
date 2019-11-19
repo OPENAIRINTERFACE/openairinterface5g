@@ -271,8 +271,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       nfapi_nr_config_request_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
-                                (UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
-                                (UL_info->slot+sf_ahead)%spf);
+				UL_info->frame,
+				UL_info->slot,
+				(UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
+				(UL_info->slot+sf_ahead)%spf);
+      
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
@@ -283,9 +286,9 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
           (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
-        sched_info->UL_req      = &mac->UL_req[CC_id];
+        sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
       else
-        sched_info->UL_req      = NULL;
+        sched_info->UL_tti_req      = NULL;
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 #ifdef DUMP_FAPI

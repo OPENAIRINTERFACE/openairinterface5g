@@ -381,7 +381,7 @@ int main(int argc, char **argv)
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
@@ -562,31 +562,6 @@ int main(int argc, char **argv)
       printf("\n");
       break;
     }
-    printf("\n");
-  }
-
-  for (i = 0; i < 2; i++) {
-
-    printf("----------------------\n");
-    printf("freeing codeword %d\n", i);
-    printf("----------------------\n");
-
-    printf("gNB ulsch[0][%d]\n", i); // [hna] ulsch[0] is for RA
-
-    free_gNB_ulsch(gNB->ulsch[0][i]);
-
-    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
-
-    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]);
-
-    for (sf = 0; sf < 2; sf++) {
-
-      printf("UE  ulsch[%d][0][%d]\n", sf, i);
-
-      if (UE->ulsch[sf][0][i])
-        free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
-    }
-
     printf("\n");
   }
 
