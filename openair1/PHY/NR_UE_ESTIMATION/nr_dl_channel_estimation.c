@@ -213,7 +213,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
   int slot_pbch;
-  fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
   // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
   uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
 

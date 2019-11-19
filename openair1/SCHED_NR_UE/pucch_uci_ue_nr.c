@@ -53,8 +53,6 @@
 
 
 
-uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
-uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
@@ -111,8 +109,9 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 
 /**************** functions **************************************/
 
-//extern uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
-//extern uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
+uint8_t is_nr_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id) { return(0); }
+uint8_t is_nr_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id) { return(0);}
+
 /*******************************************************************
 *
 * NAME :         pucch_procedures_ue_nr
@@ -227,10 +226,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                             &n_HARQ_ACK, reset_harq); // 1 to reset ACK/NACK status : 0 otherwise
 
   cqi_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0) &&
-                                                         (is_cqi_TXOp(ue,proc,gNB_id) == 1));
+                                                         (is_nr_cqi_TXOp(ue,proc,gNB_id) == 1));
 
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
-                                                         (is_ri_TXOp(ue,proc,gNB_id) == 1));
+                                                         (is_nr_ri_TXOp(ue,proc,gNB_id) == 1));
 
   csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
 

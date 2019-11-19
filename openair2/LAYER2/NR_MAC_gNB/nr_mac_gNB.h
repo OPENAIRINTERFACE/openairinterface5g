@@ -62,37 +62,38 @@
 
 /*! \brief gNB common channels */
 typedef struct {
-    int physCellId;
-    int p_gNB;
-    int Ncp;
-    int nr_band;
-    uint32_t dl_CarrierFreq;
-    NR_BCCH_BCH_Message_t *mib;
-    NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
-    NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
-    long ul_Bandwidth;
-    /// Outgoing MIB PDU for PHY
-    MIB_PDU MIB_pdu;
-    /// Outgoing BCCH pdu for PHY
-    BCCH_PDU BCCH_pdu;
-    /// Outgoing BCCH DCI allocation
-    uint32_t BCCH_alloc_pdu;
-    /// Outgoing CCCH pdu for PHY
-    CCCH_PDU CCCH_pdu;
-    /// Outgoing PCCH DCI allocation
-    uint32_t PCCH_alloc_pdu;
-    /// Outgoing PCCH pdu for PHY
-    PCCH_PDU PCCH_pdu;
-    /// Outgoing RAR pdu for PHY
-    RAR_PDU RAR_pdu;
-    /// Template for RA computations
-    RA_t ra[NB_RA_PROC_MAX];
-    /// VRB map for common channels
-    uint8_t vrb_map[100];
-    /// VRB map for common channels and retransmissions by PHICH
-    uint8_t vrb_map_UL[100];
-    /// number of subframe allocation pattern available for MBSFN sync area
-    uint8_t num_sf_allocation_pattern;
+  int physCellId;
+  int p_gNB;
+  int Ncp;
+  int nr_band;
+  uint32_t dl_CarrierFreq;
+  NR_BCCH_BCH_Message_t *mib;
+  NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
+  NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
+  long ul_Bandwidth;
+  /// Outgoing MIB PDU for PHY
+  MIB_PDU MIB_pdu;
+  /// Outgoing BCCH pdu for PHY
+  BCCH_PDU BCCH_pdu;
+  /// Outgoing BCCH DCI allocation
+  uint32_t BCCH_alloc_pdu;
+  /// Outgoing CCCH pdu for PHY
+  CCCH_PDU CCCH_pdu;
+  /// Outgoing PCCH DCI allocation
+  uint32_t PCCH_alloc_pdu;
+  /// Outgoing PCCH pdu for PHY
+  PCCH_PDU PCCH_pdu;
+  /// Outgoing RAR pdu for PHY
+  RAR_PDU RAR_pdu;
+  /// Template for RA computations
+  RA_t ra[NB_RA_PROC_MAX];
+  /// VRB map for common channels
+  uint8_t vrb_map[100];
+  /// VRB map for common channels and retransmissions by PHICH
+  uint8_t vrb_map_UL[100];
+  /// number of subframe allocation pattern available for MBSFN sync area
+  uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
 /*! \brief scheduling control information set through an API (not used)*/

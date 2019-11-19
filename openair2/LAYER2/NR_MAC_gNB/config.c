@@ -54,6 +54,7 @@ void config_common(int Mod_idP,
 		   NR_ServingCellConfigCommon_t *scc
                   ){
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[0];
+  RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
 
   int mu = 1;
 

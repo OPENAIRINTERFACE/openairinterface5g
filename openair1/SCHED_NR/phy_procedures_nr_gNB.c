@@ -200,7 +200,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           &gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
-                          AMP, frame, slot, fp, cfg,
+                          AMP, frame, slot, fp, 
+			  0, // xOverhead
+			  cfg,
                           &gNB->dlsch_encoding_stats,
                           &gNB->dlsch_scrambling_stats,
                           &gNB->dlsch_modulation_stats);
@@ -226,7 +228,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
 */
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id, uint8_t harq_pid)
+void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
   nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->ulsch_pdu;
@@ -371,7 +373,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, 
 
   for (ULSCH_id = 0; ULSCH_id < /*NUMBER_OF_NR_ULSCH_MAX*/1; ULSCH_id++) { // temporary set to 1 untill list of connected UEs is implemented
     for(symbol = symbol_start; symbol < symbol_end; symbol++) {
-      nr_rx_pusch(gNB, UE_id, frame_rx, slot_rx, symbol, harq_pid);
+      nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
     }
     nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
     nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC

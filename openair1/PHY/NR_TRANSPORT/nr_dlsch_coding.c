@@ -281,11 +281,11 @@ int nr_dlsch_encoding(unsigned char *a,
   uint8_t harq_pid = dlsch->harq_ids[frame&2][slot];
   AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
-  uint16_t nb_rb = rel15->n_prb;
-  uint8_t nb_symb_sch = rel15->nb_symbols;
+  uint16_t nb_rb = rel15->rbSize;
+  uint8_t nb_symb_sch = rel15->NrOfSymbols;
   uint32_t A, Z, Kb, F=0;
   uint32_t *Zc = &Z;
-  uint8_t mod_order = rel15->modulation_order;
+  uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
   uint32_t r_offset=0;
   //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
@@ -293,9 +293,9 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nb_re_dmrs = rel15->dmrs_Type==1 ? 6:4;
-  uint16_t length_dmrs = rel15->dmrs_maxLength;
-  uint16_t R=rel15->coding_rate;
+  uint8_t nb_re_dmrs = rel15->dmrsConfigType==1 ? 6:4;
+  uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
+  uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
@@ -308,9 +308,9 @@ int nr_dlsch_encoding(unsigned char *a,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  A = rel15->transport_block_size;
+  A = rel15->TBSize[0]<<3;
 
-  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nb_layers);
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
@@ -435,16 +435,16 @@ int nr_dlsch_encoding(unsigned char *a,
 #endif
 
 #ifdef DEBUG_DLSCH_CODING
-  LOG_D(PHY,"rvidx in encoding = %d\n", rel15->redundancy_version);
+  LOG_D(PHY,"rvidx in encoding = %d\n", rel15->rvIndex[0]);
 #endif
 
-    E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15->nb_layers, r);
+    E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15->nrOfLayers, r);
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    if (rel15.nb_layers < Nl)
-      Nl = rel15.nb_layers;
+    if (rel15->nrOfLayers < Nl)
+      Nl = rel15->nrOfLayers;
 
-    Tbslbrm = nr_compute_tbslbrm(rel15.mcs_table,nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
+    Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
 
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
@@ -453,7 +453,7 @@ int nr_dlsch_encoding(unsigned char *a,
                           dlsch->harq_processes[harq_pid]->d[r],
                           dlsch->harq_processes[harq_pid]->e+r_offset,
                           dlsch->harq_processes[harq_pid]->C,
-                          rel15->redundancy_version,
+                          rel15->rvIndex[0],
                           E);
 
 #ifdef DEBUG_DLSCH_CODING

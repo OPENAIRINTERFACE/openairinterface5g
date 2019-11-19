@@ -182,12 +182,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
       {
         nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel15;
-        uint16_t pdu_index = dlsch_pdu_rel15->pdu_index;
+        uint16_t pduIndex = dlsch_pdu_rel15->pduIndex;
         uint16_t tx_pdus = TX_req->tx_request_body.number_of_pdus;
-        uint16_t invalid_pdu = pdu_index == -1;
-        uint8_t *sdu = invalid_pdu ? NULL : pdu_index >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pdu_index].segments[0].segment_data;
+        uint16_t invalid_pdu = pduIndex == -1;
+        uint8_t *sdu = invalid_pdu ? NULL : pduIndex >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pduIndex].segments[0].segment_data;
 
-        AssertFatal(sdu!=NULL,"sdu is null, pdu_index %d, tx_pdus %d\n",pdu_index,tx_pdus);
+        AssertFatal(sdu!=NULL,"sdu is null, pduIndex %d, tx_pdus %d\n",pduIndex,tx_pdus);
         handle_nr_nfapi_dlsch_pdu(gNB,frame,slot,&dl_config_pdu->dlsch_pdu, sdu);
         do_oai=1;
       }

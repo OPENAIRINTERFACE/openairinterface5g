@@ -357,7 +357,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
   
-  //  pdcp_run(&ctxt);
+  pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
 
   // This schedules MIB
@@ -371,7 +371,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
   if (slotP==1)
-    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+    nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP, NULL);
 
   /*
   // Allocate CCEs for good after scheduling is done

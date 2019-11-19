@@ -50,13 +50,16 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   else                      return(N_RB-tmp2);
 }
 
-int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
+int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
   if (NPRB < 138)
-     return(275*(NPRB-1)+RBstart);
+    return(BWPsize*(NPRB-1)+RBstart);
   else
-     return(275*(276-NPRB) + (274-RBstart));
+    return(BWPsize*(BWPsize+1-NPRB) + (BWPsize-1-RBstart));
 }
 
+int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
+  return(PRBalloc_to_locationandbandwidth0(NPRB,RBstart,275));
+}
 /// Target code rate tables indexed by Imcs
 uint16_t nr_target_code_rate_table1[29] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679, 340, 378, 434, 490, 553, \
                                             616, 658, 438, 466, 517, 567, 616, 666, 719, 772, 822, 873, 910, 948};
@@ -127,4 +130,18 @@ int get_subband_size(int NPRB,int size) {
   if (NPRB<275) return (size==0 ? 16 : 32);
   AssertFatal(1==0,"Shouldn't get here, NPRB %d\n",NPRB);
  
+}
+
+void SLIV2SL(int SLIV,int *S,int *L) {
+
+  int SLIVdiv14 = SLIV/14;
+  int SLIVmod14 = SLIV%14;
+  // Either SLIV = 14*(L-1) + S, or SLIV = 14*(14-L+1) + (14-1-S). Condition is 0 <= L <= 14-S
+  if ((SLIVdiv14 + 1) >= 0 && (SLIVdiv14 <= 13-SLIVmod14)) {
+    *L=SLIVdiv14+1;
+    *S=SLIVmod14;
+  } else  {
+    *L=15-SLIVdiv14;
+    *S=13-SLIVmod14;
+  }
 }

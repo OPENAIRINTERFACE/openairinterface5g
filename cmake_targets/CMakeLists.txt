@@ -2638,7 +2638,7 @@ target_link_libraries (dlsim_tm4
 add_executable(polartest 
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
-  ${OPENAIR_DIR}/common/utils/nr/nr_common.c)
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}

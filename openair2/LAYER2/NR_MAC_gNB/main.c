@@ -44,9 +44,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-void set_cset_offset(uint16_t offset_bits) {
-  RC.nrmac[0]->coreset[0][1].frequency_domain_resources >>= offset_bits;
-}
 
 void mac_top_init_gNB(void)
 {

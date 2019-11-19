@@ -348,11 +348,13 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 }
 
 void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-                                            nfapi_nr_coreset_t* coreset,
-                                            nfapi_nr_search_space_t* search_space,
-                                            nfapi_nr_config_request_t cfg,
-                                            uint16_t N_RB) {
-/// coreset
+					nfapi_nr_coreset_t* coreset,
+					nfapi_nr_search_space_t* search_space,
+					NR_BWP_Downlink_t *bwp) {			
+
+  uint16_t N_RB=NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+
+  /// coreset
 
   //ControlResourceSetId
   pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
@@ -403,7 +405,7 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 
   // first symbol
   //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-  int sps = get_symbolsperslot(&cfg);
+  int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
 
   for (int i=0; i<sps; i++)
     if ((search_space->monitoring_symbols_in_slot>>(sps-1-i))&1) {
@@ -469,74 +471,6 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
 }
 
 
-extern uint16_t nr_tbs_table[93];
-
-void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                nfapi_nr_dl_config_dci_dl_pdu dci_pdu) {
-
-  LOG_D(MAC, "TBS calculation\n");
-
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
-  uint8_t rnti_type = params_rel15.rnti_type;
-  uint8_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
-  (dlsch_rel15->x_overhead);
-  uint8_t N_PRB_DMRS = (dlsch_rel15->dmrs_Type==1)?6:4; //This only works for antenna port 1000
-  uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
-  uint8_t Imcs = dlsch_rel15->mcs_idx;
-  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
-  LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
-
-  uint16_t N_RE, Ninfo, Ninfo_prime, C, TBS=0, R;
-  uint8_t table_idx, Qm, n, scale;
-
-  //uint8_t mcs_table = config.pdsch_config.mcs_table.value;
-  //uint8_t ss_type = params_rel15.search_space_type;
-  //uint8_t dci_format = params_rel15.dci_format;
-  //get_table_idx(mcs_table, dci_format, rnti_type, ss_type);
-  table_idx = 1;
-  scale = ((table_idx==2)&&((Imcs==20)||(Imcs==26)))?11:10;
-  
-  N_RE = min(156, N_RE_prime)*dlsch_rel15->n_prb;
-  R = nr_get_code_rate(Imcs, table_idx);
-  Qm = nr_get_Qm(Imcs, table_idx);
-  Ninfo = (N_RE*R*Qm*dlsch_rel15->nb_layers)>>scale;
-
-  if (Ninfo <= 3824) {
-    n = max(3, (log2(Ninfo)-6));
-    Ninfo_prime = max(24, (Ninfo>>n)<<n);
-    for (int i=0; i<93; i++)
-      if (nr_tbs_table[i] >= Ninfo_prime) {
-        TBS = nr_tbs_table[i];
-        break;
-      }
-  }
-  else {
-    n = log2(Ninfo-24)-5;
-    Ninfo_prime = max(3840, (ROUNDIDIV((Ninfo-24),(1<<n)))<<n);
-
-    if (R<256) {
-      C = CEILIDIV((Ninfo_prime+24),3816);
-      TBS = (C<<3)*CEILIDIV((Ninfo_prime+24),(C<<3)) - 24;
-    }
-    else {
-      if (Ninfo_prime>8424) {
-        C = CEILIDIV((Ninfo_prime+24),8424);
-        TBS = (C<<3)*CEILIDIV((Ninfo_prime+24),(C<<3)) - 24;
-      }
-      else
-        TBS = ((CEILIDIV((Ninfo_prime+24),8))<<3) - 24;
-    }    
-  }
-
-  dlsch_rel15->coding_rate = R;
-  dlsch_rel15->modulation_order = Qm;
-  dlsch_rel15->transport_block_size = TBS;
-  dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
-
-  LOG_D(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d nb_symbols %d\n",
-  TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale, dlsch_rel15->nb_mod_symbols);
-}
 
 int extract_startSymbol(int startSymbolAndLength) {
   int tmp = startSymbolAndLength/14;
@@ -624,7 +558,7 @@ int add_new_nr_ue(module_id_t mod_idP,
 		  rnti_t rntiP){
 
   int UE_id;
-  int i, j;
+  int i;
   NR_UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
   LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
         mod_idP,
@@ -666,7 +600,7 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 
   nfapi_nr_coreset_t *cs;
   nfapi_nr_search_space_t *ss;
-
+  NR_ServingCellConfigCommon_t *scc=cg->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   AssertFatal(cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
@@ -682,7 +616,7 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
     cs->coreset_id = coreset_i->controlResourceSetId;
     AssertFatal(coreset_i->frequencyDomainResources.size <=8 && coreset_i->frequencyDomainResources.size>0,
 		"coreset_i->frequencyDomainResources.size=%d\n",
-		coreset_i->frequencyDomainResources.size);
+		(int)coreset_i->frequencyDomainResources.size);
   
     for (int f=0;f<coreset_i->frequencyDomainResources.size;f++)
       ((uint8_t*)&cs->frequency_domain_resources)[coreset_i->frequencyDomainResources.size-1-f]=coreset_i->frequencyDomainResources.buf[f];
@@ -798,11 +732,11 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 
     AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
 		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
-		searchSpace_i->monitoringSymbolsWithinSlot->size);
+		(int)searchSpace_i->monitoringSymbolsWithinSlot->size);
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
 
-    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",searchSpace_i->searchSpaceId);
+    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",(int)searchSpace_i->searchSpaceId);
     if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
       ss->number_of_candidates[0] = 8;
     else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
@@ -820,9 +754,9 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
     else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
 
     AssertFatal(searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_common,
-		"searchspace %d is not common\n",searchSpace_i->searchSpaceId);
+		"searchspace %d is not common\n",(int)searchSpace_i->searchSpaceId);
     AssertFatal(searchSpace_i->searchSpaceType->choice.common!=NULL,
-		"searchspace %d common is null\n",searchSpace_i->searchSpaceId);
+		"searchspace %d common is null\n",(int)searchSpace_i->searchSpaceId);
     ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
     if (searchSpace_i->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0)
       ss->css_formats_0_0_and_1_0 = 1;
@@ -917,11 +851,11 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
     
     AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
 		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
-		searchSpace_i->monitoringSymbolsWithinSlot->size);
+		(int)searchSpace_i->monitoringSymbolsWithinSlot->size);
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
     ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
     
-    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",searchSpace_i->searchSpaceId);
+    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",(int)searchSpace_i->searchSpaceId);
     if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
       ss->number_of_candidates[0] = 8;
     else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
@@ -960,5 +894,87 @@ void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
       if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_3)
 	ss->css_format_2_3 = 1;
     }
+  }
+}
+
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
+
+  int mapping_Type = 0; // TypeA
+  int l0;
+  if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
+  else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
+  else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
+  if (pdsch_Config == NULL) { // Initial BWP
+    return(1<<l0);
+  }
+  else {
+    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
+	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
+      // Relative to start of slot
+      NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+      AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
+      int pos2=0;
+      if (dmrs_config->maxLength == NULL) {
+	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
+	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
+	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
+	  return(1<<l0);
+	
+	
+	switch (NrOfSymbols) {
+	case 2 :
+	case 3 :
+	case 4 :
+	case 5 :
+	case 6 :
+	case 7 :
+	  AssertFatal(1==0,"Incoompatible NrOfSymbols %d and dmrs_Additional_Position %d\n",
+		      NrOfSymbols,(int)*dmrs_config->dmrs_AdditionalPosition);
+	  break;
+	case 8 :
+	case 9:
+	  return(1<<l0 | 1<<7);
+	  break;
+	case 10:
+	case 11:
+	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	    return(1<<l0 | 1<<9);
+	  else
+	    return(1<<l0 | 1<<6 | 1<<9);
+	  break;
+	case 12:
+	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	    return(1<<l0 | 1<<9);
+	  else if (pos2==1)
+	    return(1<<l0 | 1<<6 | 1<<9);
+	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
+	  break;
+	case 13:
+	case 14:
+	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
+	    return(1<<l0 | 1<<11);
+	  else if (pos2==1)
+	    return(1<<l0 | 1<<7 | 1<<11);
+	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
+	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
+	  break;
+	}
+      }
+      else {
+	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
+	AssertFatal(NrOfSymbols>3,"Illegal NrOfSymbols %d for len2 DMRS\n",NrOfSymbols);
+	if (NrOfSymbols < 10) return(1<<l0);
+	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 || 1<<8);
+	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
+	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 || 1<<10);
+      }
+    }
+  else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
+	   pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
+    // Relative to start of PDSCH resource
+    AssertFatal(1==0,"TypeB DMRS not supported yet\n");
+  }
   }
 }

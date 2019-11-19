@@ -27,6 +27,7 @@
 * \company Eurecom
 * \email: desouza@eurecom.fr
 * \note
+
 * \warning
 */
 
@@ -46,6 +47,7 @@ uint8_t nr_pdsch_default_time_alloc_C_L[15] = {2,2,2,2,2,4,4,4,4,4,7,12,11,6,6};
 
   /// Time domain allocation routines
 
+/*
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
                                         nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu) {
@@ -73,9 +75,9 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
 
     case NFAPI_NR_RNTI_RA:
     case NFAPI_NR_RNTI_TC:
-      /*AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
-      "Invalid common search space type %d for RNTI %d, expected %d\n",dci_alloc.pdcch_params.common_search_space_type,
-      NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1, dci_alloc.rnti_type);*/
+      //AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
+      //"Invalid common search space type %d for RNTI %d, expected %d\n",dci_alloc.pdcch_params.common_search_space_type,
+      //NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1, dci_alloc.rnti_type);
       *alloc_type = (alloc_list_flag) ? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
       break;
 
@@ -94,6 +96,7 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
   }
 }
 
+
 uint16_t get_SLIV(uint8_t S, uint8_t L) {
   return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
@@ -104,7 +107,7 @@ static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {
   ((row_idx==6)||(row_idx==7)||(row_idx==15))? 1 : 0);
 }
 
-/*ideally combine the calculation of L in the same function once the right struct is defined*/
+// ideally combine the calculation of L in the same function once the right struct is defined
 uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_TypeA_Position) {
 
   uint8_t idx;
@@ -131,6 +134,7 @@ uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t d
   }
   return 0; // temp warning fix
 }
+
 
 void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg) {
 
@@ -241,6 +245,7 @@ void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t p
   LOG_I(PHY, "PRG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
   LOG_I(PHY, "P_prime %d\t start size %d\t endsize %d\t N_PRG %d\n", prg_parms->P_prime, prg_parms->start_size, prg_parms->end_size, prg_parms->N_PRG);
 }
+*/
 
   /// Payload emulation
 void nr_emulate_dlsch_payload(uint8_t* pdu, uint16_t size) {
