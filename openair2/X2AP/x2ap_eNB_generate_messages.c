@@ -1538,6 +1538,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 		CG_Config_Info.size = 4096;
 		CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));
 		int msg_len=fread(CG_Config_Info.buf,1,CG_Config_Info.size,fd);
+		CG_Config_Info.size = msg_len;
 
 		/*char buffer[4096];
 		int msg_len=fread(buffer,1,4096,fd);*/
@@ -1647,9 +1648,9 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     ie->id = X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer;
     ie->criticality = X2AP_Criticality_reject;
     ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_MeNBtoSgNBContainer;
-    ie->value.choice.MeNBtoSgNBContainer.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));
+    ie->value.choice.MeNBtoSgNBContainer.buf = (uint8_t *)calloc(CG_Config_Info.size, sizeof(uint8_t));
     memcpy(ie->value.choice.MeNBtoSgNBContainer.buf, CG_Config_Info.buf, CG_Config_Info.size);
-    ie->value.choice.MeNBtoSgNBContainer.size = 4096;
+    ie->value.choice.MeNBtoSgNBContainer.size = CG_Config_Info.size; //4096;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {

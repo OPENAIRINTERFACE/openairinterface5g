@@ -1767,7 +1767,6 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
     X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
 
-
   itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
 
   return 0;

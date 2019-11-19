@@ -347,10 +347,6 @@ if (fd != NULL) {
    
 }
 
-
-
-
-
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -451,6 +447,13 @@ void *rrc_gnb_task(void *args_p) {
         LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");
 	rrc_gNB_process_AdditionRequestInformation(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ(msg_p));
         break;
+
+        /* Messages from X2AP */
+      case X2AP_ENDC_SGNB_ADDITION_REQ:
+    	LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");
+    	rrc_gNB_process_AdditionRequestInformation(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ(msg_p));
+    	break;
+
 
       default:
         LOG_E(NR_RRC, "[gNB %d] Received unexpected message %s\n", instance, msg_name_p);
