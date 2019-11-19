@@ -2024,6 +2024,14 @@ static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
       UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
     return 1;
 
+  if (UE_list->UE_sched_ctrl[UE_id1].cqi_req_timer >
+      UE_list->UE_sched_ctrl[UE_id2].cqi_req_timer)
+    return -1;
+
+  if (UE_list->UE_sched_ctrl[UE_id1].cqi_req_timer <
+      UE_list->UE_sched_ctrl[UE_id2].cqi_req_timer)
+    return 1;
+
   return 0;
 }
 
