@@ -298,7 +298,7 @@ int connect_rau(RU_t *ru)
 /* Southbound Fronthaul functions, RCC/RAU                   */
 
 // southbound IF5 fronthaul for 16-bit OAI format
-static inline void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
+void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
@@ -306,7 +306,7 @@ static inline void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t time
 }
 
 // southbound IF4p5 fronthaul
-static inline void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
+void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
@@ -600,7 +600,7 @@ void fh_if4p5_north_out(RU_t *ru) {
   stop_meas(&ru->tx_fhaul);
 }
 
-static void *emulatedRF_thread(void *param) {
+void *emulatedRF_thread(void *param) {
   RU_proc_t *proc = (RU_proc_t *) param;
   int microsec = 500; // length of time to sleep, in miliseconds
   struct timespec req = {0};
@@ -735,48 +735,48 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       flags=3;
 
 
-  if ((slot_type & NR_UPLINK_SLOT) == 0) {
-
-    int siglen=fp->samples_per_slot,flags=1;
-    /*
+    if ((slot_type & NR_UPLINK_SLOT) == 0) {
+      
+      /*
         if (SF_type == SF_S) {
-          siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
-          flags=3; // end of burst
+	siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+	flags=3; // end of burst
         }
         if ((fp->frame_type == TDD) &&
-      (SF_type == SF_DL)&&
-      (prevSF_type == SF_UL) &&
-      (nextSF_type == SF_DL)) {
-          flags = 2; // start of burst
-          sf_extension = ru->N_TA_offset<<1;
+	(SF_type == SF_DL)&&
+	(prevSF_type == SF_UL) &&
+	(nextSF_type == SF_DL)) {
+	flags = 2; // start of burst
+	sf_extension = ru->N_TA_offset<<1;
         }
-
+	
         if ((cfg->subframe_config.duplex_mode == TDD) &&
-      (SF_type == SF_DL)&&
-      (prevSF_type == SF_UL) &&
-      (nextSF_type == SF_UL)) {
-          flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-          sf_extension = ru->N_TA_offset<<1;
+	(SF_type == SF_DL)&&
+	(prevSF_type == SF_UL) &&
+	(nextSF_type == SF_UL)) {
+	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
+	sf_extension = ru->N_TA_offset<<1;
         } */
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
-
-    for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
-
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-    // prepare tx buffer pointers
-    txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                      timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
-                                      txp,
-                                      siglen+sf_extension,
-                                      ru->nb_tx,
-                                      flags);
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
+      
+      for (i=0; i<ru->nb_tx; i++)
+	txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
+      
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+      // prepare tx buffer pointers
+      txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
+					timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+					txp,
+					siglen+sf_extension,
+					ru->nb_tx,
+					flags);
+      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
+	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+      AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
+    }
   }
 }
 
@@ -787,7 +787,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
  * \param param is a \ref gNB_L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
-static void *ru_thread_asynch_rxtx( void *param ) {
+void *ru_thread_asynch_rxtx( void *param ) {
   static int ru_thread_asynch_rxtx_status;
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
@@ -831,7 +831,7 @@ static void *ru_thread_asynch_rxtx( void *param ) {
  * \param param is a \ref RU_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
-static void *ru_thread_prach( void *param ) {
+void *ru_thread_prach( void *param ) {
   static int ru_thread_prach_status;
   RU_t *ru        = (RU_t *)param;
   RU_proc_t *proc = (RU_proc_t *)&ru->proc;
@@ -1001,7 +1001,7 @@ void wakeup_gNB_L1s(RU_t *ru) {
   }
 }
 
-static inline int wakeup_prach_ru(RU_t *ru) {
+int wakeup_prach_ru(RU_t *ru) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -1196,7 +1196,7 @@ int setup_RU_buffers(RU_t *ru) {
   return(0);
 }
 
-static void *ru_stats_thread(void *param) {
+void *ru_stats_thread(void *param) {
   RU_t               *ru      = (RU_t *)param;
   wait_sync("ru_stats_thread");
 
@@ -1221,7 +1221,7 @@ static void *ru_stats_thread(void *param) {
   return(NULL);
 }
 
-static void *ru_thread_tx( void *param ) {
+void *ru_thread_tx( void *param ) {
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
   NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
@@ -1349,7 +1349,7 @@ static void *ru_thread_tx( void *param ) {
   return 0;
 }
 
-static void *ru_thread( void *param ) {
+void *ru_thread( void *param ) {
   static int ru_thread_status;
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
@@ -1490,7 +1490,7 @@ static void *ru_thread( void *param ) {
     LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
 
     for (aa=0;aa<ru->nb_rx;aa++)
-      memcpy((void*)RC.gNB[0][0]->common_vars.rxdataF[aa],
+      memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
          (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
     // At this point, all information for subframe has been received on FH interface
@@ -2105,8 +2105,6 @@ void set_function_spec_param(RU_t *ru) {
   } // switch on interface type
 }
 
-extern void RCconfig_RU(void);
-
 void init_NR_RU(char *rf_config_file)
 {
   int ru_id;
@@ -2151,7 +2149,7 @@ void init_NR_RU(char *rf_config_file)
       }
     }
 
-    gNB_RC           = RC.gNB[0][0];
+    gNB_RC           = RC.gNB[0];
     gNB0             = ru->gNB_list[0];
     fp               = ru->nr_frame_parms;
     LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
@@ -2327,3 +2325,4 @@ void RCconfig_RU(void)
 
   return;
 }
+
