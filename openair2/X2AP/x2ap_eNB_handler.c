@@ -1647,11 +1647,11 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   DevAssert (pdu != NULL);
   x2SgNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SgNBAdditionRequest;
 
-  if (stream == 0) {
+  /*if (stream == 0) {
     X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
     // TODO: send a x2 failure response
     return 0;
-  }
+  }*/
 
   X2AP_DEBUG ("Received a new X2 SgNB Addition request\n");
 
@@ -1768,7 +1768,7 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
 
 
-  //itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+  itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
 
   return 0;
 }
