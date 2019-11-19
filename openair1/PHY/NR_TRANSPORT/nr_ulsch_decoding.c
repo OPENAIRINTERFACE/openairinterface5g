@@ -356,7 +356,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d, nb_re_dmrs %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb, nb_re_dmrs, Qm, n_layers);
 
   if (harq_process->round == 0) {
 

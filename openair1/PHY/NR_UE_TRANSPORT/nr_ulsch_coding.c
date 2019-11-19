@@ -247,7 +247,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);
+  LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d, harq_process->Nl = %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs, harq_process->Nl);
 
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);

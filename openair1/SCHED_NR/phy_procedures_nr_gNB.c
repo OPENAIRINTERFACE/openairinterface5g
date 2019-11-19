@@ -231,7 +231,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
 
   mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-  gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs = 0;
+  gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs = 0;
 
   for (l = 0; l < NR_SYMBOLS_PER_SLOT; l++)
       number_dmrs_symbols += is_dmrs_symbol(l,
@@ -245,14 +245,15 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
 
-  gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+  gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
                nfapi_ulsch_pdu_rel15->number_symbols,
-               gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->nb_re_dmrs,
+               gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs,
                nfapi_ulsch_pdu_rel15->length_dmrs,
                nfapi_ulsch_pdu_rel15->Qm,
                nfapi_ulsch_pdu_rel15->n_layers);
+
 
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
@@ -389,7 +390,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
 	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
-	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      
+	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);
 	
 	uint8_t UE_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
 	uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
