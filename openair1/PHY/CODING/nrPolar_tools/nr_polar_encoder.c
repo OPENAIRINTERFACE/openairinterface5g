@@ -410,6 +410,7 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
 void polar_encoder_fast(uint64_t *A,
                         uint32_t *out,
                         int32_t crcmask,
+                        uint8_t ones_flag,
                         t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
@@ -421,6 +422,10 @@ void polar_encoder_fast(uint64_t *A,
   AssertFatal(polarParams->crcParityBits == 24,"support for 24-bit crc only for now\n");
   //int bitlen0=bitlen;
   uint64_t tcrc=0;
+  uint8_t offset = 0;
+
+  // appending 24 ones before a0 for DCI as stated in 38.212 7.3.2
+  if (ones_flag) offset = 3;
 
   // A bit string should be stored as 0, 0, ..., 0, a'_0, a'_1, ..., a'_A-1,
   //???a'_{N-1} a'_{N-2} ... a'_{N-A} 0 .... 0, where N=64,128,192,..., N is smallest multiple of 64 greater than or equal to A
@@ -428,38 +433,53 @@ void polar_encoder_fast(uint64_t *A,
   // First flip A bitstring byte endian for CRC routines (optimized for DLSCH/ULSCH, not PBCH/PDCCH)
   // CRC reads in each byte in bit positions 7 down to 0, for PBCH/PDCCH we need to read in a_{A-1} down to a_{0}, A = length of bit string (e.g. 32 for PBCH)
   if (bitlen<=32) {
-    uint8_t A32_flip[4];
+    uint8_t A32_flip[4+offset];
+    if (ones_flag) {
+      A32_flip[0] = 0xff;
+      A32_flip[1] = 0xff;
+      A32_flip[2] = 0xff;
+    }
     uint32_t Aprime= (uint32_t)(((uint32_t)*A)<<(32-bitlen));
-    A32_flip[0]=((uint8_t *)&Aprime)[3];
-    A32_flip[1]=((uint8_t *)&Aprime)[2];
-    A32_flip[2]=((uint8_t *)&Aprime)[1];
-    A32_flip[3]=((uint8_t *)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,bitlen)>>8)));
+    A32_flip[0+offset]=((uint8_t *)&Aprime)[3];
+    A32_flip[1+offset]=((uint8_t *)&Aprime)[2];
+    A32_flip[2+offset]=((uint8_t *)&Aprime)[1];
+    A32_flip[3+offset]=((uint8_t *)&Aprime)[0];
+    tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,8*offset+bitlen)>>8)));
   } else if (bitlen<=64) {
-    uint8_t A64_flip[8];
-    uint64_t Aprime= (uint32_t)(((uint64_t)*A)<<(64-bitlen));
-    A64_flip[0]=((uint8_t *)&Aprime)[7];
-    A64_flip[1]=((uint8_t *)&Aprime)[6];
-    A64_flip[2]=((uint8_t *)&Aprime)[5];
-    A64_flip[3]=((uint8_t *)&Aprime)[4];
-    A64_flip[4]=((uint8_t *)&Aprime)[3];
-    A64_flip[5]=((uint8_t *)&Aprime)[2];
-    A64_flip[6]=((uint8_t *)&Aprime)[1];
-    A64_flip[7]=((uint8_t *)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,bitlen)>>8)));
+    uint8_t A64_flip[8+offset];
+    if (ones_flag) {
+      A64_flip[0] = 0xff;
+      A64_flip[1] = 0xff;
+      A64_flip[2] = 0xff;
+    }
+    uint64_t Aprime= (uint64_t)(((uint64_t)*A)<<(64-bitlen));
+    A64_flip[0+offset]=((uint8_t *)&Aprime)[7];
+    A64_flip[1+offset]=((uint8_t *)&Aprime)[6];
+    A64_flip[2+offset]=((uint8_t *)&Aprime)[5];
+    A64_flip[3+offset]=((uint8_t *)&Aprime)[4];
+    A64_flip[4+offset]=((uint8_t *)&Aprime)[3];
+    A64_flip[5+offset]=((uint8_t *)&Aprime)[2];
+    A64_flip[6+offset]=((uint8_t *)&Aprime)[1];
+    A64_flip[7+offset]=((uint8_t *)&Aprime)[0];
+    tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,8*offset+bitlen)>>8)));
   }
   else if (bitlen<=128) {
-    uint8_t A128_flip[16];
-    uint128_t Aprime= (uint32_t)(((uint128_t)*A)<<(128-bitlen));
-    A128_flip[0]=((uint8_t*)&Aprime)[15];	  A128_flip[1]=((uint8_t*)&Aprime)[14];
-    A128_flip[2]=((uint8_t*)&Aprime)[13];	  A128_flip[3]=((uint8_t*)&Aprime)[12];
-    A128_flip[4]=((uint8_t*)&Aprime)[11];	  A128_flip[5]=((uint8_t*)&Aprime)[10];
-    A128_flip[6] =((uint8_t*)&Aprime)[9];	  A128_flip[7] =((uint8_t*)&Aprime)[8];
-    A128_flip[8] =((uint8_t*)&Aprime)[7];	  A128_flip[9] =((uint8_t*)&Aprime)[6];
-    A128_flip[10]=((uint8_t*)&Aprime)[5];	  A128_flip[11]=((uint8_t*)&Aprime)[4];
-    A128_flip[12]=((uint8_t*)&Aprime)[3];	  A128_flip[13]=((uint8_t*)&Aprime)[2];
-    A128_flip[14]=((uint8_t*)&Aprime)[1];	  A128_flip[15]=((uint8_t*)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,bitlen)>>8)));
+    uint8_t A128_flip[16+offset];
+    if (ones_flag) {
+      A128_flip[0] = 0xff;
+      A128_flip[1] = 0xff;
+      A128_flip[2] = 0xff;
+    }
+    uint128_t Aprime= (uint128_t)(((uint128_t)*A)<<(128-bitlen));
+    A128_flip[0+offset]=((uint8_t*)&Aprime)[15];	  A128_flip[1+offset]=((uint8_t*)&Aprime)[14];
+    A128_flip[2+offset]=((uint8_t*)&Aprime)[13];	  A128_flip[3+offset]=((uint8_t*)&Aprime)[12];
+    A128_flip[4+offset]=((uint8_t*)&Aprime)[11];	  A128_flip[5+offset]=((uint8_t*)&Aprime)[10];
+    A128_flip[6+offset] =((uint8_t*)&Aprime)[9];	  A128_flip[7+offset] =((uint8_t*)&Aprime)[8];
+    A128_flip[8+offset] =((uint8_t*)&Aprime)[7];	  A128_flip[9+offset] =((uint8_t*)&Aprime)[6];
+    A128_flip[10+offset]=((uint8_t*)&Aprime)[5];	  A128_flip[11+offset]=((uint8_t*)&Aprime)[4];
+    A128_flip[12+offset]=((uint8_t*)&Aprime)[3];	  A128_flip[13+offset]=((uint8_t*)&Aprime)[2];
+    A128_flip[14+offset]=((uint8_t*)&Aprime)[1];	  A128_flip[15+offset]=((uint8_t*)&Aprime)[0];
+    tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,8*offset+bitlen)>>8)));
   }
 
   int n;
@@ -472,7 +492,6 @@ void polar_encoder_fast(uint64_t *A,
   // 0, 0, ..., 0, a'_0, a'_1, ..., a'_A-1, p_0, p_1, ..., p_{N_parity-1}
 
   //??? b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
-
 
   for (n=0; n<quadwlen; n++) if (n==0) B[n] = (A[n] << polarParams->crcParityBits) | tcrc;
                              else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));

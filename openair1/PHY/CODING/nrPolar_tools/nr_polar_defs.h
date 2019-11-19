@@ -148,6 +148,7 @@ void polar_encoder_dci(uint32_t *in,
 void polar_encoder_fast(uint64_t *A,
                         uint32_t *out,
                         int32_t crcmask,
+                        uint8_t ones_flag,
                         t_nrPolar_params *polarParams);
 
 int8_t polar_decoder(double *input,
@@ -157,6 +158,7 @@ int8_t polar_decoder(double *input,
 
 uint32_t polar_decoder_int16(int16_t *input,
                              uint64_t *out,
+                             uint8_t ones_flag,
                              const t_nrPolar_params *polarParams);
 
 int8_t polar_decoder_dci(double *input,

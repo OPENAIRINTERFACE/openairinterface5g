@@ -72,7 +72,7 @@ function build_on_vm {
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --disk 10 --unsafe-caching --template ci-scripts/template-host.xml
         echo "Waiting for VM to be started"
         uvt-kvm wait $VM_NAME --insecure
 

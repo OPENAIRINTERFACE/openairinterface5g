@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "platform_constants.h"
 #include "platform_types.h"
 
@@ -101,7 +102,7 @@ typedef struct {
   /// nFAPI DL Config Request
   nfapi_nr_dl_config_request_t *DL_req;
   /// nFAPI UL Config Request
-  nfapi_ul_config_request_t *UL_req;
+  nfapi_nr_ul_tti_request_t *UL_tti_req;
   /// nFAPI HI_DCI Request
   nfapi_hi_dci0_request_t *HI_DCI0_req;
   /// Pointers to DL SDUs

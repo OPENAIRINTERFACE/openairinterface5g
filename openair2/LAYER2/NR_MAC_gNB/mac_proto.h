@@ -66,7 +66,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+			       frame_t frame_txP, sub_frame_t slot_txP,
+			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
@@ -87,6 +89,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   slotP,
                                    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
 
+void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP);
+  
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                   nr_scs_e scs_common,
                                   nr_scs_e pdcch_scs,

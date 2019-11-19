@@ -48,9 +48,10 @@
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
 //#define DEBUG_ULSCH_DECODING
+#define gNB_DEBUG_TRACE
 
 #define OAI_UL_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX = 68*384
-#define PRINT_CRC_CHECK
+//#define PRINT_CRC_CHECK
 
 static uint64_t nb_total_decod =0;
 static uint64_t nb_error_decod =0;
@@ -270,6 +271,10 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
   }
 }
 
+#ifdef PRINT_CRC_CHECK
+  static uint32_t prnt_crc_cnt = 0;
+#endif
+
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t UE_id,
                            short *ulsch_llr,
@@ -289,7 +294,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t crc_type;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id+1][0];
+#ifdef PRINT_CRC_CHECK
+  prnt_crc_cnt++;
+#endif
+  
+
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &harq_process->ulsch_pdu.ulsch_pdu_rel15;
   
@@ -583,12 +593,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
   #ifdef PRINT_CRC_CHECK
-        LOG_I(PHY, "Segment %d CRC OK\n",r);
+        //if (prnt_crc_cnt % 10 == 0)
+          LOG_I(PHY, "Segment %d CRC OK\n",r);
   #endif
         ret = no_iteration_ldpc;
       } else {
   #ifdef PRINT_CRC_CHECK
-        LOG_I(PHY, "CRC NOK\n");
+        //if (prnt_crc_cnt%10 == 0)
+          LOG_I(PHY, "CRC NOK\n");
   #endif
         ret = ulsch->max_ldpc_iterations + 1;
       }
@@ -634,9 +646,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   if (err_flag == 1) {
 
-#if gNB_DEBUG_TRACE
-    LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
-          phy_vars_gNB->Mod_id, frame, nr_tti_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
+#ifdef gNB_DEBUG_TRACE
+    LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) Kr %d r %d\n",
+          phy_vars_gNB->Mod_id, frame, nr_tti_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,Kr,r);
 #endif
 
     // harq_process->harq_ack.ack = 0;
@@ -662,9 +674,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   } else {
 
-#if gNB_DEBUG_TRACE
-    LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
-          phy_vars_gNB->Mod_id,nr_tti_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
+#ifdef gNB_DEBUG_TRACE
+    LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
+          phy_vars_gNB->Mod_id,nr_tti_rx,harq_process->TBS);
 #endif
 
     harq_process->status = SCH_IDLE;
