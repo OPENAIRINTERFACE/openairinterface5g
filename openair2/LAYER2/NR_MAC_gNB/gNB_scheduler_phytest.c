@@ -261,14 +261,17 @@ int configure_fapi_dl_Tx(int Mod_idP,
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
   int TBS;
-  uint16_t rnti = 0x1234;
-
+  
 
   
   int bwp_id=1;
 
-  int UE_id = find_nr_UE_id(Mod_idP,rnti);
+  int UE_id = 0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+
+  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+
+  LOG_I(PHY,"UE_id %d\n",UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
 
@@ -316,7 +319,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
   AssertFatal(pdsch_length > 0 && pdsch_length < 14,
 	       "illegal pdsch_length %d\n",pdsch_length);
 
-  dlsch_pdu_rel15->rnti = rnti; 
+  dlsch_pdu_rel15->rnti = UE_list->rnti[UE_id]; 
   dlsch_pdu_rel15->rbStart = 0;
   dlsch_pdu_rel15->rbSize = 50;
   dlsch_pdu_rel15->StartSymbolIndex = pdsch_start_symbol;
@@ -363,7 +366,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
 	pdu_rel15->ndi,
 	pdu_rel15->rv);
   
-  params_rel15->rnti = rnti;
+  params_rel15->rnti = UE_list->rnti[UE_id];
   params_rel15->rnti_type = NFAPI_NR_RNTI_C;
   params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
   
