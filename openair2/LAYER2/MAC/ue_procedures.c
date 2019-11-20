@@ -2085,18 +2085,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       }
 
       //Update Buffer remain and BSR bytes after transmission
-      AssertFatal(lcid_buffer_occupancy_new <=
-                  lcid_buffer_occupancy_old,
-                  "MAC UE Tx error : Buffer Occupancy After Tx=%d greater than before=%d BO! for LCID=%d RLC PDU nb=%d Frame %d Subrame %d\n",
-                  lcid_buffer_occupancy_new,
-                  lcid_buffer_occupancy_old, lcid,
-                  lcid_rlc_pdu_count, frameP, subframe);
-      UE_mac_inst[module_idP].scheduling_info.
-      LCID_buffer_remain[lcid] = lcid_buffer_occupancy_new;
-      UE_mac_inst[module_idP].
-      scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
-                                scheduling_info.LCGID[lcid]] +=
-                                  (lcid_buffer_occupancy_new - lcid_buffer_occupancy_old);
+      UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] = lcid_buffer_occupancy_new;
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] += (lcid_buffer_occupancy_new - lcid_buffer_occupancy_old);
+      if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] < 0)
+        UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 0;
 
       //Update the number of LCGID with data as BSR shall reflect status after BSR transmission
       if ((num_lcg_id_with_data > 1)
