@@ -109,7 +109,8 @@ int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot)
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,
 			 int Ncp,
-			 int N_RB_DL)
+			 int N_RB_DL,
+                         int N_RB_UL)
 
 {
 
@@ -125,6 +126,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
+  fp->N_RB_UL = N_RB_UL;
 
   switch(mu) {
 
@@ -287,7 +289,8 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
 			      config->subframe_config.dl_cyclic_prefix_type.value,
-			      config->rf_config.dl_carrier_bandwidth.value);
+			      config->rf_config.dl_carrier_bandwidth.value,
+			      config->rf_config.ul_carrier_bandwidth.value);
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
@@ -297,8 +300,9 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
+  int N_RB_UL = N_RB_DL;
   /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
-  nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
+  nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL,N_RB_UL);
   fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset)/(1<<mu);
   return 0;
 }
