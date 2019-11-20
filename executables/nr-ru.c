@@ -81,6 +81,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "enb_config.h"
+#include <executables/nr-softmodem.h>
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -730,13 +731,15 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
   if ((slot == 0) ||
-      (slot == 1)) {
+      (slot == 1) || IS_SOFTMODEM_RFSIM ) {
     int siglen=fp->samples_per_slot;
     int flags;
     if (slot==0)
       flags = 2;
     else if (slot==1)
       flags=3;
+    else
+      flags=4;
 
     /*
         if (SF_type == SF_S) {

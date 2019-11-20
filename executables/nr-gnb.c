@@ -194,11 +194,6 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) */
 
-  if (slot_rx == NR_UPLINK_SLOT || gNB->frame_parms.frame_type == FDD) {
-    nfapi_nr_ul_config_ulsch_pdu_rel15_t *ulsch_pdu_rel15 = &gNB->ulsch[1][0]->harq_processes[0]->ulsch_pdu.ulsch_pdu_rel15;
-    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx, ulsch_pdu_rel15->start_symbol, ulsch_pdu_rel15->start_symbol + ulsch_pdu_rel15->number_symbols);
-  }
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -216,6 +211,9 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   //if (wait_CCs(proc)<0) return(-1);
 
   if (oai_exit) return(-1);
+
+  //if (slot_rx == NR_UPLINK_SLOT || gNB->frame_parms.frame_type == FDD) 
+    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
 
   if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
     phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
@@ -943,7 +941,8 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
       gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
       memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-      memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
+      memset((void *)&gNB->UL_tti_req,0,sizeof(nfapi_nr_ul_tti_request_t));
+      //memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");
       gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
       gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
@@ -951,6 +950,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;
+      
       gNB->prach_energy_counter = 0;
     }
   }

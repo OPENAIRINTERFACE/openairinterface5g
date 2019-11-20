@@ -145,8 +145,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     // to be removed later when MAC is ready
 
     if (harq_process_ul_ue != NULL){
-      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++)
+      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
         harq_process_ul_ue->a[i] = (unsigned char) rand();
+	//printf("input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+      }
     } else {
       LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
       return;
