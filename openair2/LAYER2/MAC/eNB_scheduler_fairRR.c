@@ -171,7 +171,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
   frame_t         frameP,
   sub_frame_t     subframeP,
   int            *mbsfn_flag,
-  uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+  uint16_t        nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB],
   DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]) {
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
   COMMON_channels_t              *cc       = eNB->common_channels;
@@ -631,7 +631,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required,
                       min_rb_unit);
 #else
-  memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+  memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*MAX_MOBILES_PER_ENB);
 #endif
   dlsch_scheduler_pre_ue_select_fairRR(Mod_id,frameP,subframeP, mbsfn_flag,nb_rbs_required,dlsch_ue_select);
 
