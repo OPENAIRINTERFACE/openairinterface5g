@@ -89,6 +89,12 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch,uint8_t N_RB_UL)
           }
         }
         for (r=0; r<a_segments; r++) {
+          if (ulsch->harq_processes[i]->w[r]) {
+            free16(ulsch->harq_processes[i]->w[r],(3*(6144+64))*sizeof(int16_t));
+            ulsch->harq_processes[i]->w[r] = NULL;
+          }
+        }
+        for (r=0; r<a_segments; r++) {
           if (ulsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
             nrLDPC_free_mem(ulsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
             ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
@@ -158,6 +164,13 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
 
             if (ulsch->harq_processes[i]->d[r])
               memset(ulsch->harq_processes[i]->d[r],0,(68*384)*sizeof(int16_t));
+            else
+              exit_flag=2;
+
+            ulsch->harq_processes[i]->w[r] = (int16_t*)malloc16((3*(6144+64))*sizeof(int16_t));
+
+            if (ulsch->harq_processes[i]->w[r])
+              memset(ulsch->harq_processes[i]->w[r],0,(3*(6144+64))*sizeof(int16_t));
             else
               exit_flag=2;
           }

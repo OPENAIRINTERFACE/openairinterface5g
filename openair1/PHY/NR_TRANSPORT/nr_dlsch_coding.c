@@ -440,7 +440,7 @@ int nr_dlsch_encoding(unsigned char *a,
       //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
     }
 
-    for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
+    for(int j=0;j<((dlsch->harq_processes[harq_pid]->C-1)/8+1);j++) {
       ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
     }
 

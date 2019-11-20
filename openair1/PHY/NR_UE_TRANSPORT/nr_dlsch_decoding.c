@@ -88,6 +88,12 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch,uint8_t N_RB_DL)
             dlsch->harq_processes[i]->d[r] = NULL;
           }
         
+        for (r=0; r<a_segments; r++)
+          if (dlsch->harq_processes[i]->w[r]) {
+            free16(dlsch->harq_processes[i]->w[r],(3*8448)*sizeof(short));
+            dlsch->harq_processes[i]->w[r] = NULL;
+          }
+
         for (r=0; r<a_segments; r++) {
           if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
             nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
@@ -158,6 +164,13 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
             if (dlsch->harq_processes[i]->d[r])
               memset(dlsch->harq_processes[i]->d[r],0,(3*8448)*sizeof(short));
+            else
+              exit_flag=2;
+
+            dlsch->harq_processes[i]->w[r] = (short*)malloc16((3*8448)*sizeof(short));
+
+            if (dlsch->harq_processes[i]->w[r])
+              memset(dlsch->harq_processes[i]->w[r],0,(3*8448)*sizeof(short));
             else
               exit_flag=2;
           }
