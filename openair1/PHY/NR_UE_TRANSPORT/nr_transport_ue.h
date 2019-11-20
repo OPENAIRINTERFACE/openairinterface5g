@@ -127,9 +127,9 @@ typedef struct {
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *e; 
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *f; 
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments

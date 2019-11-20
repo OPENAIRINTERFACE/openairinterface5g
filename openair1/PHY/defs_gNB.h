@@ -112,11 +112,11 @@ typedef struct {
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
   /// Concatenated sequences
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *e;
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Interleaver outputs
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *f;
   /// Number of code segments
   uint32_t C;
   /// Number of bits in "small" code segments

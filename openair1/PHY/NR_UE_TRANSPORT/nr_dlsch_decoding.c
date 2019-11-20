@@ -56,31 +56,39 @@ notifiedFIFO_elt_t *msgToPush;
 
 //extern double cpuf;
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
+void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch,uint8_t N_RB_DL)
 {
 
   int i,r;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
   if (dlsch) {
+    if (N_RB_DL != 273) {
+      a_segments = a_segments*N_RB_DL;
+      a_segments = a_segments/273;
+    }  
+ 
+    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES);
+          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
           dlsch->harq_processes[i]->b = NULL;
         }
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
           free16(dlsch->harq_processes[i]->c[r],1056);
           dlsch->harq_processes[i]->c[r] = NULL;
         }
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
+        for (r=0; r<a_segments; r++)
           if (dlsch->harq_processes[i]->d[r]) {
             free16(dlsch->harq_processes[i]->d[r],(3*8448)*sizeof(short));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
         
-        for (r=0; r<(MAX_NUM_NR_DLSCH_SEGMENTS); r++) {
+        for (r=0; r<a_segments; r++) {
           if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
             nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
             dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
@@ -164,7 +172,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
   }
 
   printf("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(NR_DL_UE_HARQ_t), exit_flag);
-  free_nr_ue_dlsch(dlsch);
+  free_nr_ue_dlsch(dlsch,N_RB_DL);
 
   return(NULL);
 }

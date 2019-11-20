@@ -57,30 +57,38 @@ static uint64_t nb_error_decod =0;
 
 //extern double cpuf;
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
+void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch,uint8_t N_RB_UL)
 {
 
   int i,r;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
   if (ulsch) {
+    if (N_RB_UL != 273) {
+      a_segments = a_segments*N_RB_UL;
+      a_segments = a_segments/273;
+    }  
+
+    uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
 
       if (ulsch->harq_processes[i]) {
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,MAX_NR_ULSCH_PAYLOAD_BYTES);
+          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
           ulsch->harq_processes[i]->b = NULL;
         }
-        for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
           free16(ulsch->harq_processes[i]->c[r],(8448)*sizeof(uint8_t));
           ulsch->harq_processes[i]->c[r] = NULL;
         }
-        for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
           if (ulsch->harq_processes[i]->d[r]) {
             free16(ulsch->harq_processes[i]->d[r],(68*384)*sizeof(int16_t));
             ulsch->harq_processes[i]->d[r] = NULL;
           }
         }
-        for (r=0; r<(MAX_NUM_NR_ULSCH_SEGMENTS); r++) {
+        for (r=0; r<a_segments; r++) {
           if (ulsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
             nrLDPC_free_mem(ulsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
             ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
@@ -164,7 +172,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
   }
 
   printf("new_gNB_ulsch with size %zu: exit_flag = %u\n",sizeof(NR_UL_gNB_HARQ_t), exit_flag);
-  free_gNB_ulsch(ulsch);
+  free_gNB_ulsch(ulsch,N_RB_UL);
   
   return(NULL);
 }

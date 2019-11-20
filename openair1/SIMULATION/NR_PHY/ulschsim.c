@@ -573,18 +573,18 @@ int main(int argc, char **argv)
 
     printf("gNB ulsch[0][%d]\n", i); // [hna] ulsch[0] is for RA
 
-    free_gNB_ulsch(gNB->ulsch[0][i]);
+    free_gNB_ulsch(gNB->ulsch[0][i],N_RB_UL);
 
     printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
 
-    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]);
+    free_gNB_ulsch(gNB->ulsch[UE_id+1][i],N_RB_UL);
 
     for (sf = 0; sf < 2; sf++) {
 
       printf("UE  ulsch[%d][0][%d]\n", sf, i);
 
       if (UE->ulsch[sf][0][i])
-        free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
+        free_nr_ue_ulsch(UE->ulsch[sf][0][i],N_RB_UL);
     }
 
     printf("\n");

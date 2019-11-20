@@ -48,12 +48,22 @@
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch,uint16_t N_RB)
 {
   int i;
   int r;
 
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   if (dlsch) {
+
+    if (N_RB != 273) {
+      a_segments = a_segments*N_RB;
+      a_segments = a_segments/273;
+    }  
+
+    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
+
 #ifdef DEBUG_DLSCH_FREE
     printf("Freeing dlsch %p\n",dlsch);
 #endif
@@ -69,10 +79,26 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES);
+          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
+#endif
+        }
+
+        if (dlsch->harq_processes[i]->e) {
+          free16(dlsch->harq_processes[i]->e,14*N_RB*12*8);
+          dlsch->harq_processes[i]->e = NULL;
+#ifdef DEBUG_DLSCH_FREE
+          printf("Freeing dlsch process %d e (%p)\n",i,dlsch->harq_processes[i]->e);
+#endif
+        }
+
+        if (dlsch->harq_processes[i]->f) {
+          free16(dlsch->harq_processes[i]->f,14*N_RB*12*8);
+          dlsch->harq_processes[i]->f = NULL;
+#ifdef DEBUG_DLSCH_FREE
+          printf("Freeing dlsch process %d f (%p)\n",i,dlsch->harq_processes[i]->f);
 #endif
         }
 
@@ -80,7 +106,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         printf("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
 #endif
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
 
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
@@ -210,6 +236,20 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
               exit_flag=2;
             }
           }
+          dlsch->harq_processes[i]->e = (uint8_t*)malloc16(14*N_RB*12*8);
+          if (dlsch->harq_processes[i]->e) {
+            bzero(dlsch->harq_processes[i]->e,14*N_RB*12*8);
+          } else {
+            printf("Can't get e\n");
+            exit_flag=1;
+          }
+          dlsch->harq_processes[i]->f = (uint8_t*)malloc16(14*N_RB*12*8);
+          if (dlsch->harq_processes[i]->f) {
+            bzero(dlsch->harq_processes[i]->f,14*N_RB*12*8);
+          } else {
+            printf("Can't get f\n");
+            exit_flag=1;
+          }
         }
       } else {
         printf("Can't get harq_p %d\n",i);
@@ -228,7 +268,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
 
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
-  free_gNB_dlsch(dlsch);
+  free_gNB_dlsch(dlsch,N_RB);
   return(NULL);
 
 
