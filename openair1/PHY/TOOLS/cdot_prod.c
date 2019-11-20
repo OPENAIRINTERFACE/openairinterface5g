@@ -171,6 +171,7 @@ int64_t dot_product64(int16_t *x,
   __m128i minus_i = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
   int64_t result;
 
+
   x128 = (__m128i*) x;
   y128 = (__m128i*) y;
 

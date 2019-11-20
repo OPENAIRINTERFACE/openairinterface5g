@@ -588,8 +588,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   time = calloc(samples_per_frame,sizeof(float));
   corr = calloc(samples_per_frame,sizeof(float));
 
-  chest_t = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time;
-  chest_f = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates;
+  chest_t = (int16_t**) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time;
+  chest_f = (int16_t**) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
 
   pbch_llr = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
@@ -696,8 +696,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
         if (chest_f[(atx<<1)+arx] != NULL) {
           for (k=0; k<frame_parms->ofdm_symbol_size; k++) {
             freq[ind] = (float)ind;
-            Re = (float)(chest_f[(atx<<1)+arx][(2*k)]);
-            Im = (float)(chest_f[(atx<<1)+arx][(2*k)+1]);
+            Re = (float)(chest_f[(atx<<1)+arx][6144+(2*k)]);
+            Im = (float)(chest_f[(atx<<1)+arx][6144+(2*k)+1]);
 
             chest_f_abs[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
             ind++;
