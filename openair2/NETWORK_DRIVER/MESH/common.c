@@ -110,13 +110,12 @@ void nas_COMMON_receive(uint16_t dlen,
 #ifdef NAS_ADDRESS_FIX
       // Make the third byte of both the source and destination equal to the fourth of the destination
 
-
       unsigned char * ifaddr, *saddr, daddr;
+      uint32_t odaddr = 0, osaddr;
       daddr = (unsigned char *)&((struct iphdr *)skb->data)->daddr;
       odaddr = ((struct iphdr *)skb->data)->daddr;
-      //    sn = addr[3];
+      //sn = addr[3];
       saddr = (unsigned char *)&((struct iphdr *)skb->data)->saddr;
-      uint32_t odaddr,osaddr;
       osaddr = ((struct iphdr *)skb->data)->saddr;
 
       if (daddr[0] == saddr[0]) {// same network
@@ -387,6 +386,9 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   pdcph.data_size  = skb->len;
   pdcph.rb_id      = (gc->rb)->rab_id;
   pdcph.inst       = inst;
+  pdcph.sourceL2Id = 0;
+  pdcph.destinationL2Id = 0;
+
 
 
 #ifdef PDCP_USE_NETLINK

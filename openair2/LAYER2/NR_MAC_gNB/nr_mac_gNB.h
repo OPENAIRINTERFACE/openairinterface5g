@@ -48,6 +48,7 @@
 #include "NR_MeasConfig.h"
 
 #include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
 #include "COMMON/platform_constants.h"
@@ -118,16 +119,10 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_config_request_t         config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
   nfapi_nr_dl_config_request_t      DL_req[NFAPI_CC_MAX];
-  /// NFAPI UL Config Request Structure, send to L1 4 subframes before processing takes place
-  nfapi_ul_config_request_t         UL_req[NFAPI_CC_MAX];
+  /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
+  nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
   /// Preallocated DL pdu list
   nfapi_nr_dl_config_request_pdu_t  dl_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_DL_PDU];
-  /// Preallocated UL pdu list
-  nfapi_ul_config_request_pdu_t     ul_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_UL_PDU];
-  /// Preallocated UL pdu list for ULSCH (n+k delay)
-  nfapi_ul_config_request_pdu_t     ul_config_pdu_list_tmp[NFAPI_CC_MAX][10][MAX_NUM_UL_PDU];
-  /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
-  nfapi_ul_config_request_t         UL_req_tmp[NFAPI_CC_MAX][10];
   /// Preallocated HI_DCI0 pdu list
   nfapi_hi_dci0_request_pdu_t       hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure

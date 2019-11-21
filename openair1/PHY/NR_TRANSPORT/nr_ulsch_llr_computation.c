@@ -30,7 +30,6 @@
  * \warning
  */
 
-
 #include "PHY/defs_nr_common.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
@@ -71,23 +70,20 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
 void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
                         int32_t **ul_ch_mag,
                         int16_t  *ulsch_llr,
+                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol)
 {
+
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)rxdataF_comp;
-  // __m128i *ch_mag; // [hna] This should be uncommented once channel estimation is implemented
+  __m128i *ch_mag;
   __m128i llr128[2];
   uint32_t *llr32;
 
-  // [hna] temp_channel and one_over_sqrt_2 are for temporary use until channel estimation is implemented
-  //       else ul_ch_mag and ul_ch_magb should be used after channel estimation has benn implemented
-  __m128i temp_channel;
-  int16_t one_over_sqrt_2 = 23170;
-  
 #elif defined(__arm__)
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp;
-  // int16x8_t *ch_mag; // [hna] This should be uncommented once channel estimation is implemented
+  int16x8_t *ch_mag;
   int16x8_t xmm0;
   int16_t *llr16;
 #endif
@@ -103,20 +99,15 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
     llr16 = (int16_t*)ulsch_llr;
 #endif
 
-// [hna] This should be uncommented once channel estimation is implemented
-// ------------------------------------------------------------
-// #if defined(__x86_64__) || defined(__i386__)
-//   ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*nb_rb*12)];
-// #elif defined(__arm__)
-//   ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
-// #endif
-// ------------------------------------------------------------
+#if defined(__x86_64__) || defined(__i386__)
+  ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+#elif defined(__arm__)
+  ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+#endif
 
   len_mod4 = nb_re&3;
   nb_re >>= 2;  // length in quad words (4 REs)
   nb_re += (len_mod4 == 0 ? 0 : 1);
-
-  temp_channel = _mm_set1_epi16((QAM16_n1 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
 
   for (i=0; i<nb_re; i++) {
 
@@ -125,7 +116,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
     xmm0 = _mm_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     
     
-    xmm0 = _mm_subs_epi16(temp_channel,xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
+    xmm0 = _mm_subs_epi16(ch_mag[i],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
 
     llr128[0] = _mm_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st and 2nd REs
     llr128[1] = _mm_unpackhi_epi32(rxF[i],xmm0); // llr128[1] contains the llrs of the 3rd and 4th REs
@@ -186,52 +177,43 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
                         int32_t **ul_ch_mag,
                         int32_t **ul_ch_magb,
                         int16_t  *ulsch_llr,
+                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol)
 {
+
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)rxdataF_comp;
-  // __m128i *ch_mag,*ch_magb; // [hna] This should be uncommented once channel estimation is implemented
-
-  // [hna] temp_channel and one_over_sqrt_2 are for temporary use until channel estimation is implemented
-  //       else ul_ch_mag and ul_ch_magb should be used after channel estimation has been implemented
-  __m128i temp_channel[2];
-  int16_t one_over_sqrt_2 = 23170;
-
+  __m128i *ch_mag,*ch_magb;
 #elif defined(__arm__)
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp;
-  // int16x8_t *ch_mag,*ch_magb; // [hna] This should be uncommented once channel estimation is implemented
+  int16x8_t *ch_mag,*ch_magb; // [hna] This should be uncommented once channel estimation is implemented
   int16x8_t xmm1,xmm2;
 #endif
 
   int i;
   unsigned char len_mod4;
 
-// [hna] This should be uncommented once channel estimation is implemented
-// -------------------------------------------------------------------------
-// #if defined(__x86_64__) || defined(__i386__)
-//   ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_UL*12)];
-//   ch_magb = (__m128i*)&ul_ch_magb[0][(symbol*frame_parms->N_RB_UL*12)];
-// #elif defined(__arm__)
-//   ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_UL*12)];
-//   ch_magb = (int16x8_t*)&ul_ch_magb[0][(symbol*frame_parms->N_RB_UL*12)];
-// #endif
-// -------------------------------------------------------------------------
+#if defined(__x86_64__) || defined(__i386__)
+  ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (__m128i*)&ul_ch_magb[0][(symbol*nb_rb*12)];
+#elif defined(__arm__)
+  ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+  ch_magb = (int16x8_t*)&ul_ch_magb[0][(symbol*nb_rb*12)];
+#endif
 
   len_mod4 = nb_re&3;
   nb_re    = nb_re>>2;  // length in quad words (4 REs)
   nb_re   += ((len_mod4 == 0) ? 0 : 1);
-  
-  temp_channel[0] = _mm_set1_epi16((QAM64_n1 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
-  temp_channel[1] = _mm_set1_epi16((QAM64_n2 * one_over_sqrt_2)>>(2*15-AMP_SHIFT));
+
 
   for (i=0; i<nb_re; i++) {
 
 #if defined(__x86_64__) || defined(__i386__)
     xmm1 = _mm_abs_epi16(rxF[i]);
-    xmm1 = _mm_subs_epi16(temp_channel[0],xmm1);
+    xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
     xmm2 = _mm_abs_epi16(xmm1);
-    xmm2 = _mm_subs_epi16(temp_channel[1],xmm2);
+    xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
 #elif defined(__arm__)
     xmm1 = vabsq_s16(rxF[i]);
     xmm1 = vsubq_s16(ch_mag[i],xmm1);
@@ -331,6 +313,7 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           int32_t **ul_ch_mag,
                           int32_t **ul_ch_magb,
                           int16_t *ulsch_llr,
+                          uint32_t nb_rb,
                           uint32_t nb_re,
                           uint8_t  symbol,
                           uint8_t  mod_order)
@@ -346,6 +329,7 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
       nr_ulsch_16qam_llr(rxdataF_comp,
                          ul_ch_mag,
                          ulsch_llr,
+                         nb_rb,
                          nb_re,
                          symbol);
       break;
@@ -354,6 +338,7 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                        ul_ch_mag,
                        ul_ch_magb,
                        ulsch_llr,
+                       nb_rb,
                        nb_re,
                        symbol);
       break;

@@ -597,7 +597,7 @@ void nas_CLASS_send(struct sk_buff *skb,int inst) {
 #ifdef NAS_DEBUG_SEND
   printk("[NAS][CLASS][SEND] Got packet from kernel:\n");
 
-  for (i=0; i<256; i++)
+  for (int i=0; i<256; i++)
     printk("%2x ",((unsigned char *)skb->data)[i]);
 
   printk("\n");

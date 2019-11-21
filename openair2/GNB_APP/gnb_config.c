@@ -59,7 +59,7 @@
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
+#include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"
@@ -77,10 +77,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(char *parallel_conf);
-extern void set_worker_conf(char *worker_conf);
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+
 extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
@@ -2030,17 +2027,9 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }            
             
             if (strcmp(RateMatchPattern_mode , "dynamic") == 0){
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__dummy_dynamic;
-#else
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__mode_dynamic;
-#endif
             }else if (strcmp(RateMatchPattern_mode , "semiStatic") == 0){
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__dummy_semiStatic;
-#else
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__mode_semiStatic;
-#endif
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPattern_mode !\n",
                            RC.config_file_name, i, RateMatchPattern_mode);
@@ -2498,86 +2487,41 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_3_monitoringPeriodicity){
               case 1:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl1;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n1;
-#endif
                 break;
               case 2:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl2;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n2;
-#endif
                 break;
               case 4:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl4;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n4;
-#endif
                 break;
               case 5:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl5;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n5;
-#endif
                 break;
               case 8:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl8;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n8;
-#endif
                 break;
               case 10:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl10;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n10;
-#endif
                 break;
               case 16:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl16;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n16;
-#endif
                 break;
               case 20:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy1_sl20;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n20;
-#endif
                 break;
               default:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_3_dummy1 choice: 1,2,4,5,8,10,16,20 !\n",
                              RC.config_file_name, i, Common_dci_Format2_3_monitoringPeriodicity);
-#else
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_3_monitoringPeriodicity choice: 1,2,4,5,8,10,16,20 !\n",
-                             RC.config_file_name, i, Common_dci_Format2_3_monitoringPeriodicity);
-#endif
                 break;
             }
 
             switch(Common_dci_Format2_3_nrofPDCCH_Candidates){
               case 1:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy2_n1;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n1;
-#endif
                 break;
               case 2:
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
                 NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__dummy2_n2;
-#else
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n2;
-#endif
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_3_nrofPDCCH_Candidates choice: 1,2 !\n",
@@ -2701,17 +2645,9 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "oneFrame") == 0){
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation1_PR_oneFrame;
-#else
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
-#endif
             }else if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "fourFrames") == 0){
-#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation1_PR_fourFrames;
-#else
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames;
-#endif
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPatternLTE_CRS_subframeAllocation_choice !\n",
                            RC.config_file_name, i, RateMatchPatternLTE_CRS_subframeAllocation_choice);

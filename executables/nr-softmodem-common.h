@@ -1,7 +1,7 @@
 #ifndef NR_SOFTMODEM_COMMON_H
 #define NR_SOFTMODEM_COMMON_H
 
-#ifndef  _GNU_SOURCE
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 
@@ -98,6 +98,8 @@
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 #define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
+#define CONFIG_HLP_NOS1          "Disable s1 interface\n"
+#define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                             */
 /*   optname         helpstr          paramflags          XXXptr                     defXXXval            type           numelt   */

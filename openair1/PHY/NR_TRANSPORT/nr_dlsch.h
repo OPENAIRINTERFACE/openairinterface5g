@@ -54,11 +54,11 @@ void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type);
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
+                                  uint32_t size,
+                                  uint8_t q,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  uint32_t* out);
 
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
@@ -74,7 +74,11 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           int frame,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS *frame_parms,
-                          nfapi_nr_config_request_t *config);
+                          nfapi_nr_config_request_t *config,
+                          time_stats_t *dlsch_encoding_stats,
+                          time_stats_t *dlsch_scrambling_stats,
+                          time_stats_t *dlsch_modulation_stats);
+
 
 void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 

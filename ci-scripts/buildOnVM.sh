@@ -44,7 +44,7 @@ function build_on_vm {
         STATUS=1
         return
     fi
-    if [ ! -f /etc/apt/apt.conf.d/01proxy ]
+    if [[ ! -f /etc/apt/apt.conf.d/01proxy ]] && [[ "$OPTIONAL_APTCACHER" != "true" ]]
     then
         echo "Missing /etc/apt/apt.conf.d/01proxy file!"
         echo "Is apt-cacher installed and configured?"
@@ -72,7 +72,7 @@ function build_on_vm {
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --disk 10 --unsafe-caching --template ci-scripts/template-host.xml
         echo "Waiting for VM to be started"
         uvt-kvm wait $VM_NAME --insecure
 
@@ -96,13 +96,14 @@ function build_on_vm {
     else
         scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
     fi
-    scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
+    [ -f /etc/apt/apt.conf.d/01proxy ] && scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
 
     echo "############################################################"
     echo "Running install and build script on VM ($VM_NAME)"
     echo "############################################################"
-    echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
+    echo "[ -f 01proxy ] && sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
     echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
+    echo "git config --global https.postBuffer 123289600" >> $VM_CMDS
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         if [ $DAEMON -eq 0 ]
@@ -179,7 +180,7 @@ function build_on_vm {
         echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
         echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
         echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
-        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel15.txt 2>&1" >> $VM_CMDS
     fi
     if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
     then

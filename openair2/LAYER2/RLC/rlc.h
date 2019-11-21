@@ -28,7 +28,7 @@
 * \bug
 * \warning
 */
-/** @defgroup _rlc_impl_ RLC 
+/** @defgroup _rlc_impl_ RLC
 * @ingroup _oai2
 * @{
 */
@@ -55,9 +55,7 @@
 #    include "LTE_SRB-ToAddModList.h"
 #    include "LTE_DRB-ToReleaseList.h"
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "LTE_PMCH-InfoList-r9.h"
-#endif
 
 typedef uint64_t hash_key_t;
 #define HASHTABLE_NOT_A_KEY_VALUE ((uint64_t)-1)
@@ -136,25 +134,25 @@ typedef struct {
 #define  RLC_MAX_LC  ((max_val_LTE_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
 
 void (*rlc_rrc_data_ind)(
-                const protocol_ctxt_t* const ctxtP,
-                const rb_id_t     rb_idP,
-                const sdu_size_t  sdu_sizeP,
-                const uint8_t   * const sduP);
-
-void (*rlc_rrc_data_conf)(
-                const protocol_ctxt_t* const ctxtP,
-                const rb_id_t         rb_idP,
-                const mui_t           muiP,
-                const rlc_tx_status_t statusP);
-
-typedef void (rrc_data_ind_cb_t)(
-  const protocol_ctxt_t* const ctxtP,
+  const protocol_ctxt_t *const ctxtP,
   const rb_id_t     rb_idP,
   const sdu_size_t  sdu_sizeP,
-  const uint8_t   * const sduP);
+  const uint8_t    *const sduP);
+
+void (*rlc_rrc_data_conf)(
+  const protocol_ctxt_t *const ctxtP,
+  const rb_id_t         rb_idP,
+  const mui_t           muiP,
+  const rlc_tx_status_t statusP);
+
+typedef void (rrc_data_ind_cb_t)(
+  const protocol_ctxt_t *const ctxtP,
+  const rb_id_t     rb_idP,
+  const sdu_size_t  sdu_sizeP,
+  const uint8_t    *const sduP);
 
 typedef void (rrc_data_conf_cb_t)(
-  const protocol_ctxt_t* const ctxtP,
+  const protocol_ctxt_t *const ctxtP,
   const rb_id_t         rb_idP,
   const mui_t           muiP,
   const rlc_tx_status_t statusP);
@@ -183,16 +181,7 @@ typedef struct rlc_mbms_id_s {
   mbms_session_id_t       session_id;
 } rlc_mbms_id_t;
 
-#if (LTE_RRC_VERSION < MAKE_VERSION(10, 0, 0))
-#    if !defined(maxServiceCount)
-//unused arrays rlc_mbms_array_ue rlc_mbms_array_eNB
-#        define maxServiceCount 1
-#    endif
-#    if !defined(maxSessionPerPMCH)
-//unused arrays rlc_mbms_array_ue rlc_mbms_array_eNB
-#        define maxSessionPerPMCH 1
-#    endif
-#endif
+
 //rlc_mbms_t           rlc_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 //rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];    // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
@@ -202,64 +191,64 @@ rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_
 ;
 
 #define rlc_mbms_enb_set_lcid_by_rb_id(Enb_mOD,rB_iD,lOG_cH_iD) do { \
-            rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD] = lOG_cH_iD; \
-        } while (0);
+    rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD] = lOG_cH_iD; \
+  } while (0);
 
 #define rlc_mbms_ue_get_lcid_by_rb_id(uE_mOD,rB_iD) rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD]
 
 #define rlc_mbms_ue_set_lcid_by_rb_id(uE_mOD,rB_iD,lOG_cH_iD) do { \
-            AssertFatal(rB_iD<NB_RB_MBMS_MAX, "INVALID RB ID %u", rB_iD); \
-            rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
-        } while (0);
+    AssertFatal(rB_iD<NB_RB_MBMS_MAX, "INVALID RB ID %u", rB_iD); \
+    rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
+  } while (0);
 
 logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 
 
 #define RLC_COLL_KEY_VALUE(eNB_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
-   ((hash_key_t)eNB_iD             | \
-    (((hash_key_t)(rNTI))   << 8)  | \
-    (((hash_key_t)(iS_eNB)) << 24) | \
-    (((hash_key_t)(rB_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33) | \
-    (((hash_key_t)(0x05))   << 34))
+  ((hash_key_t)eNB_iD             | \
+   (((hash_key_t)(rNTI))   << 8)  | \
+   (((hash_key_t)(iS_eNB)) << 24) | \
+   (((hash_key_t)(rB_iD))  << 25) | \
+   (((hash_key_t)(iS_sRB)) << 33) | \
+   (((hash_key_t)(0x05))   << 34))
 
 // index to the same RLC entity as RLC_COLL_KEY_VALUE(), but using LC_id instead
 // the hidden last key indicates if this is a hash-key with RB_id (0x05) or LC_id (0x0a)
 #define RLC_COLL_KEY_LCID_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, iS_sRB) \
-   ((hash_key_t)eNB_iD             | \
-    (((hash_key_t)(rNTI))   << 8)  | \
-    (((hash_key_t)(iS_eNB)) << 24) | \
-    (((hash_key_t)(lC_iD))  << 25) | \
-    (((hash_key_t)(iS_sRB)) << 33) | \
-    (((hash_key_t)(0x0a))   << 34))
+  ((hash_key_t)eNB_iD             | \
+   (((hash_key_t)(rNTI))   << 8)  | \
+   (((hash_key_t)(iS_eNB)) << 24) | \
+   (((hash_key_t)(lC_iD))  << 25) | \
+   (((hash_key_t)(iS_sRB)) << 33) | \
+   (((hash_key_t)(0x0a))   << 34))
 
 #define RLC_COLL_KEY_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
-   ((hash_key_t)eNB_iD             | \
-    (((hash_key_t)(rNTI))   << 8)  | \
-    (((hash_key_t)(iS_eNB)) << 24) | \
-    (((hash_key_t)(lC_iD))  << 25) | \
-    (((hash_key_t)(dEST_iD)) << 33) | \
-    (((hash_key_t)(0x05))   << 57))
+  ((hash_key_t)eNB_iD             | \
+   (((hash_key_t)(rNTI))   << 8)  | \
+   (((hash_key_t)(iS_eNB)) << 24) | \
+   (((hash_key_t)(lC_iD))  << 25) | \
+   (((hash_key_t)(dEST_iD)) << 33) | \
+   (((hash_key_t)(0x05))   << 57))
 
 #define RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
-   ((hash_key_t)eNB_iD             | \
-    (((hash_key_t)(rNTI))   << 8)  | \
-    (((hash_key_t)(iS_eNB)) << 24) | \
-    (((hash_key_t)(lC_iD))  << 25) | \
-    (((hash_key_t)(dEST_iD)) << 33) | \
-    (((hash_key_t)(0x0a))   << 57))
+  ((hash_key_t)eNB_iD             | \
+   (((hash_key_t)(rNTI))   << 8)  | \
+   (((hash_key_t)(iS_eNB)) << 24) | \
+   (((hash_key_t)(lC_iD))  << 25) | \
+   (((hash_key_t)(dEST_iD)) << 33) | \
+   (((hash_key_t)(0x0a))   << 57))
 
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 
 #define RLC_COLL_KEY_MBMS_VALUE(eNB_iD, rNTI, iS_eNB, sERVICE_ID, sESSION_ID) \
-   ((hash_key_t)eNB_iD             | \
-    (((hash_key_t)(rNTI))       << 8)  | \
-    (((hash_key_t)(iS_eNB))     << 24) | \
-    (((hash_key_t)(sERVICE_ID)) << 32) | \
-    (((hash_key_t)(sESSION_ID)) << 37) | \
-    (((hash_key_t)(0x0000000000000001))  << 63))
+  ((hash_key_t)eNB_iD             | \
+   (((hash_key_t)(rNTI))       << 8)  | \
+   (((hash_key_t)(iS_eNB))     << 24) | \
+   (((hash_key_t)(sERVICE_ID)) << 32) | \
+   (((hash_key_t)(sESSION_ID)) << 37) | \
+   (((hash_key_t)(0x0000000000000001))  << 63))
 
 hash_table_t  *rlc_coll_p;
 
@@ -269,7 +258,7 @@ hash_table_t  *rlc_coll_p;
 * \param[in]  transport_blocksP       List of transport blocks.
 * \return     The amount of bytes that have been written due to serialization.
 */
-tbs_size_t            mac_rlc_serialize_tb   (char*, list_t);
+tbs_size_t            mac_rlc_serialize_tb   (char *, list_t);
 
 /*! \fn struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcsP)
 * \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
@@ -279,13 +268,13 @@ tbs_size_t            mac_rlc_serialize_tb   (char*, list_t);
 * \param[in]  crcsP         Array of CRC for each transport block.
 * \return     A mac_data_ind structure containing a list of transport blocks.
 */
-struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t *);
+struct mac_data_ind   mac_rlc_deserialize_tb (char *, tb_size_t, num_tb_t, crc_t *);
 
 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const SRB_ToAddMod_t* const srb2addmod, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t*  const drb2release_listP, const PMCH_InfoList_r9_t * const pmch_info_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxtP              Running context.
@@ -296,28 +285,13 @@ struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t 
 * \return     A status about the processing, OK or error code.
 */
 rlc_op_status_t rrc_rlc_config_asn1_req (
-                  const protocol_ctxt_t* const,
-                  const LTE_SRB_ToAddModList_t* const ,
-                  const LTE_DRB_ToAddModList_t* const ,
-                  const LTE_DRB_ToReleaseList_t* const ,
-                  const LTE_PMCH_InfoList_r9_t * const pmch_info_listP ,
-                  const uint32_t ,
-                  const uint32_t );
-#else
-/*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const SRB_ToAddModList_t* const srb2add_listP, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t* const drb2release_listP)
-* \brief  Function for RRC to configure a Radio Bearer.
-* \param[in]  ctxtP              Running context.
-* \param[in]  srb2add_listP      SRB configuration list to be created.
-* \param[in]  drb2add_listP      DRB configuration list to be created.
-* \param[in]  drb2release_listP  DRB configuration list to be released.
-* \return     A status about the processing, OK or error code.
-*/
-rlc_op_status_t rrc_rlc_config_asn1_req (
-                  const protocol_ctxt_t* const,
-                  const LTE_SRB_ToAddModList_t* const ,
-                  const LTE_DRB_ToAddModList_t* const ,
-                  const LTE_DRB_ToReleaseList_t* const );
-#endif
+  const protocol_ctxt_t *const,
+  const LTE_SRB_ToAddModList_t *const,
+  const LTE_DRB_ToAddModList_t *const,
+  const LTE_DRB_ToReleaseList_t *const,
+  const LTE_PMCH_InfoList_r9_t *const pmch_info_listP,
+  const uint32_t,
+  const uint32_t );
 
 
 /*! \fn void rb_free_rlc_union (void *rlcu_pP)
@@ -326,7 +300,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (
  * \param[in]  rlcu_pP          Pointer on the rlc_union_t struct.
  */
 void
-               rb_free_rlc_union (void *rlcu_pP);
+rb_free_rlc_union (void *rlcu_pP);
 
 
 /*! \fn rlc_op_status_t rrc_rlc_remove_ue   (const protocol_ctxt_t* const ctxtP)
@@ -334,7 +308,7 @@ void
  * \param[in]  ctxtP              Running context.
  * \return     A status about the processing, OK or error code.
 */
-rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const);
+rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t *const);
 
 
 /*! \fn rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP)
@@ -345,7 +319,7 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const);
 * \param[in]  rb_idP             Radio bearer identifier.
 * \return     A status about the processing, OK or error code.
 */
-rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* const, const srb_flag_t, const MBMS_flag_t, const  rb_id_t );
+rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t *const, const srb_flag_t, const MBMS_flag_t, const  rb_id_t );
 
 /*! \fn rlc_union_t*  rrc_rlc_add_rlc   (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, logical_chan_id_t chan_idP, rlc_mode_t rlc_modeP)
 * \brief  Add a RLC protocol instance to a radio bearer.
@@ -357,12 +331,10 @@ rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* const, const srb_fl
 * \param[in]  rlc_modeP          Mode of RLC (AM, UM, TM).
 * \return     A status about the processing, OK or error code.
 */
-rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t  sourceL2Id,
-  const uint32_t  destinationL2Id
-#endif
-);
+rlc_union_t  *rrc_rlc_add_rlc      (const protocol_ctxt_t *const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
+                                    ,const uint32_t  sourceL2Id,
+                                    const uint32_t  destinationL2Id
+                                   );
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (
      const protocol_ctxt_t* const ctxtP,
@@ -381,12 +353,12 @@ rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag
 * \return     A status about the processing, OK or error code.
 */
 rlc_op_status_t rrc_rlc_config_req   (
-                  const protocol_ctxt_t* const,
-                  const srb_flag_t,
-                  const MBMS_flag_t,
-                  config_action_t,
-                  const  rb_id_t,
-                  rlc_info_t );
+  const protocol_ctxt_t *const,
+  const srb_flag_t,
+  const MBMS_flag_t,
+  config_action_t,
+  const  rb_id_t,
+  rlc_info_t );
 
 /*! \fn rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t* const ctxtP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
 * \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.
@@ -399,7 +371,7 @@ rlc_op_status_t rrc_rlc_config_req   (
 * \param[in]  sduP             SDU.
 * \return     A status about the processing, OK or error code.
 */
-rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t* const , const  MBMS_flag_t, const  rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
+rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t *const, const  MBMS_flag_t, const  rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
 
 /*! \fn void  rrc_rlc_register_rrc ( void (*rrc_data_indP)  (const protocol_ctxt_t* const ctxtP, const  rb_id_t rb_idP, sdu_size_t sdu_sizeP, char* sduP), void (*rrc_data_confP) (const protocol_ctxt_t* const ctxtP, const  rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 * \brief  This function is called by RRC to register its DATA-INDICATE and DATA-CONFIRM handlers to RLC layer.
@@ -423,12 +395,10 @@ void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t r
 * \param [in,out] bufferP          Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
-tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                                           ,const uint32_t sourceL2Id
-                                                           ,const uint32_t destinationL2Id
-#endif
-);
+tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char *
+    ,const uint32_t sourceL2Id
+    ,const uint32_t destinationL2Id
+                                           );
 
 /*! \fn void mac_rlc_data_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, uint32_t frameP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
@@ -443,8 +413,8 @@ tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, con
 * \param[in]  num_tbP          Number of transport blocks.
 * \param[in]  crcs             Array of CRC decoding.
 */
-void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, const eNB_index_t,const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, char*, tb_size_t, num_tb_t,
-               crc_t* );
+void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, const eNB_index_t,const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, char *, tb_size_t, num_tb_t,
+    crc_t * );
 
 /*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const sub_frame_t subframeP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, tb_size_t tb_sizeP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
@@ -459,11 +429,9 @@ void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, con
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
 mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                                           ,const uint32_t sourceL2Id
-                                                           ,const uint32_t destinationL2Id
-#endif
-  );
+    ,const uint32_t sourceL2Id
+    ,const uint32_t destinationL2Id
+                                           );
 
 /*! \fn rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t module_idP, const rnti_t rntiP, const eNB_index_t eNB_index, const frame_t frameP, const sub_frame_t subframeP,const eNB_flag_t enb_flagP, const logical_chan_id_t channel_idP)
 * \brief    Interface with MAC layer, UE only: request and get the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
@@ -487,9 +455,9 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t, const
  * @param sizeP      Number of octets in data buffer
  */
 void rlc_util_print_hex_octets(
-             const comp_name_t componentP,
-             unsigned char* const dataP,
-             const signed long sizeP);
+  const comp_name_t componentP,
+  unsigned char *const dataP,
+  const signed long sizeP);
 
 
 
@@ -506,19 +474,17 @@ void rlc_util_print_hex_octets(
 * \return     A status about the processing, OK or error code.
 */
 rlc_op_status_t rlc_data_req     (
-             const protocol_ctxt_t* const,
-             const  srb_flag_t,
-             const  MBMS_flag_t ,
-             const  rb_id_t ,
-             const  mui_t ,
-             const confirm_t ,
-             const sdu_size_t ,
-             mem_block_t * const
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-             ,const uint32_t * const
-             ,const uint32_t * const
-#endif
-             );
+  const protocol_ctxt_t *const,
+  const  srb_flag_t,
+  const  MBMS_flag_t,
+  const  rb_id_t,
+  const  mui_t,
+  const confirm_t,
+  const sdu_size_t,
+  mem_block_t *const,
+  const uint32_t *const,
+  const uint32_t *const
+);
 
 /*! \fn void rlc_data_ind     (const protocol_ctxt_t* const ctxtP, const  srb_flag_t srb_flagP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, const sdu_size_t sdu_sizeP, mem_block_t* sduP) {
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
@@ -530,12 +496,12 @@ rlc_op_status_t rlc_data_req     (
 * \param[in]  sduP             SDU.
 */
 void rlc_data_ind(
-             const protocol_ctxt_t* const,
-             const srb_flag_t,
-             const MBMS_flag_t ,
-             const rb_id_t,
-             const sdu_size_t,
-             mem_block_t* const);
+  const protocol_ctxt_t *const,
+  const srb_flag_t,
+  const MBMS_flag_t,
+  const rb_id_t,
+  const sdu_size_t,
+  mem_block_t *const);
 
 
 /*! \fn void rlc_data_conf     (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const  rb_id_t rb_idP, const mui_t muiP, const rlc_tx_status_t statusP)
@@ -547,11 +513,11 @@ void rlc_data_ind(
 * \param[in]  statusP          Status of the transmission (RLC_SDU_CONFIRM_YES, RLC_SDU_CONFIRM_NO).
 */
 void rlc_data_conf(
-             const protocol_ctxt_t* const,
-             const  srb_flag_t,
-             const  rb_id_t,
-             const mui_t,
-             const rlc_tx_status_t );
+  const protocol_ctxt_t *const,
+  const  srb_flag_t,
+  const  rb_id_t,
+  const mui_t,
+  const rlc_tx_status_t );
 
 
 /*! \fn rlc_op_status_t rlc_stat_req     (
@@ -559,7 +525,7 @@ void rlc_data_conf(
                         const  srb_flag_t    srb_flagP,
                         const  rb_id_t       rb_idP,
                         unsigned int* stat_rlc_mode,
-			unsigned int* stat_tx_pdcp_sdu,
+      unsigned int* stat_tx_pdcp_sdu,
                         unsigned int* stat_tx_pdcp_bytes,
                         unsigned int* stat_tx_pdcp_sdu_discarded,
                         unsigned int* stat_tx_pdcp_bytes_discarded,
@@ -591,7 +557,7 @@ void rlc_data_conf(
 * \param[in]  ctxtP                Running context.
 * \param[in]  srb_flagP            Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 * \param[in]  rb_idP                       .
-* \param[out] stat_rlc_mode                        RLC mode 
+* \param[out] stat_rlc_mode                        RLC mode
 * \param[out] stat_tx_pdcp_sdu                     Number of SDUs coming from upper layers.
 * \param[out] stat_tx_pdcp_bytes                   Number of bytes coming from upper layers.
 * \param[out] stat_tx_pdcp_sdu_discarded           Number of discarded SDUs coming from upper layers.
@@ -622,37 +588,37 @@ void rlc_data_conf(
 */
 
 rlc_op_status_t rlc_stat_req     (
-             const protocol_ctxt_t* const ctxtP,
-             const srb_flag_t    srb_flagP,
-             const rb_id_t       rb_idP,
-             unsigned int* const stat_rlc_mode,
-	     unsigned int* const stat_tx_pdcp_sdu,
-             unsigned int* const stat_tx_pdcp_bytes,
-             unsigned int* const stat_tx_pdcp_sdu_discarded,
-             unsigned int* const stat_tx_pdcp_bytes_discarded,
-             unsigned int* const stat_tx_data_pdu,
-             unsigned int* const stat_tx_data_bytes,
-             unsigned int* const stat_tx_retransmit_pdu_by_status,
-             unsigned int* const stat_tx_retransmit_bytes_by_status,
-             unsigned int* const stat_tx_retransmit_pdu,
-             unsigned int* const stat_tx_retransmit_bytes,
-             unsigned int* const stat_tx_control_pdu,
-             unsigned int* const stat_tx_control_bytes,
-             unsigned int* const stat_rx_pdcp_sdu,
-             unsigned int* const stat_rx_pdcp_bytes,
-             unsigned int* const stat_rx_data_pdus_duplicate,
-             unsigned int* const stat_rx_data_bytes_duplicate,
-             unsigned int* const stat_rx_data_pdu,
-             unsigned int* const stat_rx_data_bytes,
-             unsigned int* const stat_rx_data_pdu_dropped,
-             unsigned int* const stat_rx_data_bytes_dropped,
-             unsigned int* const stat_rx_data_pdu_out_of_window,
-             unsigned int* const stat_rx_data_bytes_out_of_window,
-             unsigned int* const stat_rx_control_pdu,
-             unsigned int* const stat_rx_control_bytes,
-             unsigned int* const stat_timer_reordering_timed_out,
-             unsigned int* const stat_timer_poll_retransmit_timed_out,
-             unsigned int* const stat_timer_status_prohibit_timed_out);
+  const protocol_ctxt_t *const ctxtP,
+  const srb_flag_t    srb_flagP,
+  const rb_id_t       rb_idP,
+  unsigned int *const stat_rlc_mode,
+  unsigned int *const stat_tx_pdcp_sdu,
+  unsigned int *const stat_tx_pdcp_bytes,
+  unsigned int *const stat_tx_pdcp_sdu_discarded,
+  unsigned int *const stat_tx_pdcp_bytes_discarded,
+  unsigned int *const stat_tx_data_pdu,
+  unsigned int *const stat_tx_data_bytes,
+  unsigned int *const stat_tx_retransmit_pdu_by_status,
+  unsigned int *const stat_tx_retransmit_bytes_by_status,
+  unsigned int *const stat_tx_retransmit_pdu,
+  unsigned int *const stat_tx_retransmit_bytes,
+  unsigned int *const stat_tx_control_pdu,
+  unsigned int *const stat_tx_control_bytes,
+  unsigned int *const stat_rx_pdcp_sdu,
+  unsigned int *const stat_rx_pdcp_bytes,
+  unsigned int *const stat_rx_data_pdus_duplicate,
+  unsigned int *const stat_rx_data_bytes_duplicate,
+  unsigned int *const stat_rx_data_pdu,
+  unsigned int *const stat_rx_data_bytes,
+  unsigned int *const stat_rx_data_pdu_dropped,
+  unsigned int *const stat_rx_data_bytes_dropped,
+  unsigned int *const stat_rx_data_pdu_out_of_window,
+  unsigned int *const stat_rx_data_bytes_out_of_window,
+  unsigned int *const stat_rx_control_pdu,
+  unsigned int *const stat_rx_control_bytes,
+  unsigned int *const stat_timer_reordering_timed_out,
+  unsigned int *const stat_timer_poll_retransmit_timed_out,
+  unsigned int *const stat_timer_status_prohibit_timed_out);
 
 /*! \fn int rlc_module_init(void)
 * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).

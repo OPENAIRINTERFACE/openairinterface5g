@@ -298,7 +298,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     a_reversed |= (((uint64_t)pbch->pbch_a_prime>>i)&1)<<(31-i);
 
   /// CRC, coding and rate matching
-  polar_encoder_fast (&a_reversed, (uint32_t *)pbch->pbch_e, 0,
+  polar_encoder_fast (&a_reversed, (uint32_t *)pbch->pbch_e, 0, 0,
                       nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL)
                      );
 #ifdef DEBUG_PBCH_ENCODING

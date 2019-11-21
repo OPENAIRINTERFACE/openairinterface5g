@@ -159,10 +159,6 @@ typedef struct {
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// Current Number of Symbols
-  uint8_t Nsymb_pusch;
-  /// Nsc_pusch, number of allocated subcarriers for ULSCH
-  uint16_t Nsc_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
   /// DMRS length
@@ -269,10 +265,14 @@ typedef struct {
   uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
+  /// MCS table for this DLSCH
+  uint8_t mcs_table;
   /// MCS format for this DLSCH
   uint8_t mcs;
   /// Qm (modulation order) for this DLSCH
   uint8_t Qm;
+  /// target code rate R x 1024
+  uint16_t R;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
@@ -372,6 +372,8 @@ typedef struct {
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;  
+  /// Maximum number of HARQ rounds 
+  uint8_t Mlimit;
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,

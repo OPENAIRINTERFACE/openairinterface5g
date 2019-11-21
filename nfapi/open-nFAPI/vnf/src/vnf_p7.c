@@ -376,9 +376,11 @@ int send_mac_subframe_indications(vnf_p7_t* vnf_p7)
 		if(curr->in_sync == 1)
 		{
 			// ask for subframes in the future
-			uint16_t sfn_sf_adv = increment_sfn_sf_by(curr->sfn_sf, 2);
+			//uint16_t sfn_sf_adv = increment_sfn_sf_by(curr->sfn_sf, 2);
 
-			vnf_p7->_public.subframe_indication(&(vnf_p7->_public), curr->phy_id, sfn_sf_adv);
+			//vnf_p7->_public.subframe_indication(&(vnf_p7->_public), curr->phy_id, sfn_sf_adv);
+            // suggestion fix by Haruki NAOI
+			vnf_p7->_public.subframe_indication(&(vnf_p7->_public), curr->phy_id, curr->sfn_sf);
 		}
 
 		curr = curr->next;

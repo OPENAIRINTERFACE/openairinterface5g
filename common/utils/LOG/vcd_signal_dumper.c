@@ -343,6 +343,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_nr_ue_tx_ulsch_uespec",
   "phy_procedures_ue_tx_pucch",
   "phy_procedures_ue_tx_ulsch_common",
   "phy_procedures_ue_tx_prach",
@@ -366,6 +367,11 @@ const char* eurecomFunctionsNames[] = {
   "dlsch_decoding5",
   "dlsch_decoding6",
   "dlsch_decoding7",
+  "dlsch_segmentation",
+  "dlsch_deinterleaving",
+  "dlsch_rate_matching",
+  "dlsch_ldpc",
+  "dlsch_compine_seg",
   "dlsch_pmch_decoding",
   "rx_pdcch",
   "dci_decoding",
@@ -616,6 +622,10 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
+#if defined(ENABLE_ITTI)
+int signal_mask(void);
+#endif
+
 void *vcd_dumper_thread_rt(void *args)
 {
   vcd_queue_user_data_t *data;
@@ -624,7 +634,7 @@ void *vcd_dumper_thread_rt(void *args)
   uint32_t data_ready_wait;
 
 # if defined(ENABLE_ITTI)
-  signal_mask();
+  return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
 # endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;

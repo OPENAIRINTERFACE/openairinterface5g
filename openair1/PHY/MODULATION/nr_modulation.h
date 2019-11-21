@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_gNB.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 
 #define DMRS_MOD_ORDER 2
 
@@ -36,7 +37,7 @@
 */
 
 void nr_modulation(uint32_t *in,
-                   uint16_t length,
+                   uint32_t length,
                    uint16_t mod_order,
                    int16_t *out);
 
@@ -48,6 +49,18 @@ void nr_modulation(uint32_t *in,
 */
 
 void nr_layer_mapping(int16_t **mod_symbs,
+                         uint8_t n_layers,
+                         uint16_t n_symbs,
+                         int16_t **tx_layers);
+
+/*! \brief Perform NR layer mapping. TS 38.211 V15.4.0 subclause 7.3.1.3
+  @param[in] ulsch_ue, double Pointer to NR_UE_ULSCH_t struct
+  @param[in] n_layers, number of layers
+  @param[in] n_symbs, number of modulated symbols
+  @param[out] tx_layers, modulated symbols for each layer
+*/
+
+void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
                          uint8_t n_layers,
                          uint16_t n_symbs,
                          int16_t **tx_layers);
@@ -79,7 +92,6 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 \param Msc_PUSCH number of allocated data subcarriers
 */
 void nr_dft(int32_t *z,int32_t *d, uint32_t Msc_PUSCH);
-
 
 int nr_beam_precoding(int32_t **txdataF,
 	              int32_t **txdataF_BF,

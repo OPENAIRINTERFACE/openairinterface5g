@@ -30,6 +30,7 @@
  * \warning
  */
 #include "fapi_nr_l1.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
@@ -53,6 +54,44 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 
   // adjust transmit amplitude here based on NFAPI info
 }
+
+/*void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int subframe,gNB_L1_rxtx_proc_t *proc,
+                            uint8_t codeword_index,
+                            uint8_t *sdu)
+{
+
+	int UE_id = 0; //Hardcode UE_id for now
+	int harq_pid;
+
+	NR_gNB_DLSCH_t *dlsch0=NULL, *dlsch1=NULL;
+	NR_DL_gNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
+
+    // Based on nr_fill_dci_and_dlsch only gNB->dlsch[0][0] gets filled now. So maybe we do not need dlsch1.
+	dlsch0 = gNB->dlsch[UE_id][0];
+	dlsch1 = gNB->dlsch[UE_id][1];
+
+	harq_pid        = dlsch0->harq_ids[subframe];
+	dlsch0_harq     = dlsch0->harq_processes[harq_pid];
+	dlsch1_harq     = dlsch1->harq_processes[harq_pid];
+
+
+	//if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
+    if(sdu == NULL) {
+      LOG_E(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0 \n",
+            frame,subframe,
+            proc->frame_tx,proc->slot_tx);
+      return;
+    }
+    //AssertFatal(sdu!=NULL,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
+    //            frame,subframe,
+    //            proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
+    //            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
+    if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
+    else                     dlsch1_harq->pdu                    = sdu;
+    LOG_I(PHY, "SFN/SF: %d/%d DLSCH PDU filled \n",frame, subframe);
+//  }
+
+}*/
 
 
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
@@ -89,6 +128,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t                       CC_id        = Sched_INFO->CC_id;
   nfapi_nr_dl_config_request_t  *DL_req      = Sched_INFO->DL_req;
   nfapi_tx_request_t            *TX_req      = Sched_INFO->TX_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
@@ -99,6 +139,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id][CC_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
+  uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
  
@@ -156,6 +197,22 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       }
     }
   }
+
+  memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  
+  /*
+  // this is done in phy_procedures_gNB_uespec_RX now
+  for (i=0;i<number_ul_pdu;i++) {
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,UL_tti_req->pdus_list[i].pdu_type);
+    switch (UL_tti_req->pdus_list[i].pdu_type) {
+    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+      {
+        nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+	nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
+      }
+    }
+  }
+  */
   
   if (nfapi_mode && do_oai && !dont_send) {
     oai_nfapi_tx_req(Sched_INFO->TX_req);

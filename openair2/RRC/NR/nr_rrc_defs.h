@@ -71,7 +71,7 @@
 //-------------------
 
 #if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
+  #include "intertask_interface.h"
 #endif
 
 /* TODO: be sure this include is correct.
@@ -79,11 +79,11 @@
  * issue #186.
  */
 #if !defined(ENABLE_ITTI)
-# include "as_message.h"
+  #include "as_message.h"
 #endif
 
 #if defined(ENABLE_USE_MME)
-# include "commonDef.h"
+  #include "commonDef.h"
 #endif
 
 
@@ -95,7 +95,7 @@ typedef unsigned int uid_nr_t;
 /*typedef struct nr_uid_linear_allocator_s {
   unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
 } nr_uid_allocator_t;*/
-    
+
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_CTXT_ARGS(CTXT_Pp)
@@ -158,13 +158,12 @@ typedef struct UE_RRC_INFO_NR_s {
   uint8_t                                             SIB1systemInfoValueTag;
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
-#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t                                             MCCHStatus[8];             // MAX_MBSFN_AREA
-#endif
   uint8_t                                             SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t                                             handoverTarget;
   //HO_STATE_t ho_state;
-  uint16_t                                            SIperiod;                  //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+  uint16_t
+  SIperiod;                  //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
   unsigned short                                      UE_index;
   uint32_t                                            T300_active;
   uint32_t                                            T300_cnt;
@@ -229,7 +228,7 @@ typedef struct {
 
 typedef struct RB_INFO_NR_s {
   uint16_t                                            Rb_id;  //=Lchan_id
-  NR_LCHAN_DESC Lchan_desc[2]; 
+  NR_LCHAN_DESC Lchan_desc[2];
   //MAC_MEAS_REQ_ENTRY *Meas_entry; //may not needed for NB-IoT
 } NR_RB_INFO;
 
@@ -260,25 +259,23 @@ typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-#if (NR_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   LTE_SCellToAddMod_r10_t            sCell_config[2];
-#endif
-  NR_SRB_ToAddModList_t*             SRB_configList;
-  NR_SRB_ToAddModList_t*             SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  NR_DRB_ToAddModList_t*             DRB_configList;
-  NR_DRB_ToAddModList_t*             DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  NR_DRB_ToReleaseList_t*            DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_SRB_ToAddModList_t             *SRB_configList;
+  NR_SRB_ToAddModList_t             *SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToAddModList_t             *DRB_configList;
+  NR_DRB_ToAddModList_t             *DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
   SRB_INFO                           SI;
   SRB_INFO                           Srb0;
   SRB_INFO_TABLE_ENTRY               Srb1;
   SRB_INFO_TABLE_ENTRY               Srb2;
-  NR_MeasConfig_t*                   measConfig;
-  HANDOVER_INFO*                     handover_info;
-  NR_MeasResults_t*                  measResults;
+  NR_MeasConfig_t                   *measConfig;
+  HANDOVER_INFO                     *handover_info;
+  NR_MeasResults_t                  *measResults;
 
-  NR_UE_NR_Capability_t*             UE_Capability;
+  NR_UE_NR_Capability_t             *UE_Capability;
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -340,7 +337,7 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
-//------------------------------------------------------------------------------//
+  //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
   struct NR_CellGroupConfig__sCellToAddModList          *sCellconfig;
@@ -349,7 +346,7 @@ typedef struct gNB_RRC_UE_s {
   struct NR_CellGroupConfig__rlc_BearerToReleaseList    *rlc_BearerRelease;
   struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
-  
+
 } gNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
@@ -374,8 +371,8 @@ typedef struct rrc_gNB_ue_context_s {
 typedef struct {
 
   // buffer that contains the encoded messages
-  uint8_t							                      *MIB;
-  uint8_t							                      sizeof_MIB;
+  uint8_t                                   *MIB;
+  uint8_t                                   sizeof_MIB;
 
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
@@ -383,15 +380,15 @@ typedef struct {
   //implicit parameters needed
   int                                       physCellId;
   int                                       Ncp; //cyclic prefix for DL
-  int								                        Ncp_UL; //cyclic prefix for UL
+  int                                       Ncp_UL; //cyclic prefix for UL
   int                                       p_gNB; //number of tx antenna port
-  int								                        p_rx_gNB; //number of receiving antenna ports
+  int                                       p_rx_gNB; //number of receiving antenna ports
   uint64_t                                  dl_CarrierFreq; //detected by the UE
   uint64_t                                  ul_CarrierFreq; //detected by the UE
-  
+
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
-  
+
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
 
@@ -410,7 +407,7 @@ typedef struct gNB_RRC_INST_s {
   rrc_gNB_carrier_data_t                              carrier[MAX_NUM_CCs];
   uid_allocator_t                                     uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
-  
+
   uint8_t                                             Nb_ue;
 
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t

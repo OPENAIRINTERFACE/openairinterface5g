@@ -28,6 +28,8 @@
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "T.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -51,8 +53,11 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
 double cpuf;
 int nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -105,6 +110,7 @@ int main(int argc, char **argv)
 	uint16_t nb_symb_sch = 12;
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
+        uint8_t mcs_table = 0;
 
 	cpuf = get_cpu_freq_GHz();
 
@@ -115,7 +121,7 @@ int main(int argc, char **argv)
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -188,10 +194,14 @@ int main(int argc, char **argv)
 #endif
 			break;
 
+		case 'V':
+		  ouput_vcd = 1;
+		  break;
+
 		case 'S':
 			snr1 = atof(optarg);
 			snr1set = 1;
-			msg("Setting SNR1 to %f\n", snr1);
+			printf("Setting SNR1 to %f\n", snr1);
 #ifdef DEBUG_NR_DLSCHSIM
 			printf("Setting SNR1 to %f\n", snr1);
 #endif
@@ -286,6 +296,7 @@ int main(int argc, char **argv)
 			printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
 			printf("-h This message\n");
 			printf("-p Use extended prefix mode\n");
+			printf("-V Enable VCD dumb functions\n");
 			//printf("-d Use TDD\n");
 			printf("-n Number of frames to simulate\n");
 			printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
@@ -316,6 +327,9 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
+
+	if (ouput_vcd)
+        vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
 
 	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
 				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
@@ -417,6 +431,7 @@ int main(int argc, char **argv)
 	uint8_t nb_re_dmrs = 6;
 	uint16_t length_dmrs = 1;
 	unsigned char mod_order;
+        uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
@@ -424,10 +439,11 @@ int main(int argc, char **argv)
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
-	mod_order = nr_get_Qm(Imcs, 1);
+	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
+        rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-	TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
-	printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->n_prb = nb_rb;
 	rel15->nb_symbols = nb_symb_sch;
@@ -435,6 +451,7 @@ int main(int argc, char **argv)
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
+  rel15->coding_rate = rate;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
@@ -449,10 +466,12 @@ int main(int argc, char **argv)
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
+	harq_process->mcs_table = mcs_table;
 	harq_process->Nl = Nl;
 	harq_process->nb_rb = nb_rb;
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
+	harq_process->R = rate;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
@@ -463,7 +482,7 @@ int main(int argc, char **argv)
 	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
-	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
+	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
 #endif
 
 	/*for (int i=0; i<TBS/8; i++)
@@ -525,9 +544,14 @@ int main(int argc, char **argv)
 			printf("\n");
 			exit(-1);
 #endif
+
+			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
+
 			ret = nr_dlsch_decoding(UE, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
 					slot,harq_pid, is_crnti, llr8_flag);
+
+			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_OUT);
 
 			if (ret > dlsch0_ue->max_ldpc_iterations)
 				n_errors++;
@@ -548,7 +572,7 @@ int main(int argc, char **argv)
 			if (errors_bit > 0) {
 				n_false_positive++;
 				if (n_trials == 1)
-					printf("errors_bit %d (trial %d)\n", errors_bit, trial);
+					printf("errors_bit %u (trial %d)\n", errors_bit, trial);
 			}
 		}
 
@@ -621,6 +645,9 @@ int main(int argc, char **argv)
 
 	if (input_fd)
 		fclose(input_fd);
+
+	if (ouput_vcd)
+        vcd_signal_dumper_close();
 
 	return (n_errors);
 }

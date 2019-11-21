@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "platform_constants.h"
 #include "platform_types.h"
 
@@ -50,12 +51,12 @@
 #define MAX_NUM_RACH_IND 100
 #define MAX_NUM_SRS_IND 100
 
-typedef struct{
+typedef struct {
   /// Module ID
   module_id_t module_id;
   /// CC ID
   int CC_id;
-  /// frame 
+  /// frame
   frame_t frame;
   /// slot
   slot_t slot;
@@ -75,10 +76,8 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
 
-#if (NR_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
-#endif
 
   /// SRS indication list
   nfapi_srs_indication_body_t srs_ind;
@@ -91,9 +90,9 @@ typedef struct{
 // Downlink slot P7
 
 
-typedef struct{
+typedef struct {
   /// Module ID
-  module_id_t module_id; 
+  module_id_t module_id;
   /// CC ID
   uint8_t CC_id;
   /// frame
@@ -103,7 +102,7 @@ typedef struct{
   /// nFAPI DL Config Request
   nfapi_nr_dl_config_request_t *DL_req;
   /// nFAPI UL Config Request
-  nfapi_ul_config_request_t *UL_req;
+  nfapi_nr_ul_tti_request_t *UL_tti_req;
   /// nFAPI HI_DCI Request
   nfapi_hi_dci0_request_t *HI_DCI0_req;
   /// Pointers to DL SDUs
@@ -111,16 +110,16 @@ typedef struct{
 } NR_Sched_Rsp_t;
 
 typedef struct {
-    uint8_t Mod_id;
-    int CC_id;
-    nfapi_nr_config_request_t *cfg;
+  uint8_t Mod_id;
+  int CC_id;
+  nfapi_nr_config_request_t *cfg;
 } NR_PHY_Config_t;
 
-typedef struct NR_IF_Module_s{
-//define the function pointer
+typedef struct NR_IF_Module_s {
+  //define the function pointer
   void (*NR_UL_indication)(NR_UL_IND_t *UL_INFO);
   void (*NR_Schedule_response)(NR_Sched_Rsp_t *Sched_INFO);
-  void (*NR_PHY_config_req)(NR_PHY_Config_t* config_INFO);
+  void (*NR_PHY_config_req)(NR_PHY_Config_t *config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
   uint8_t current_slot;
