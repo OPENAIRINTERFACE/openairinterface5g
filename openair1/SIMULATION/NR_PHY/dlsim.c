@@ -877,25 +877,17 @@ int main(int argc, char **argv)
 
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
-           (float) n_false_positive / (float) n_trials);
+           (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-
-    if (errors_bit == 0) {
-      printf("PDSCH test OK\n");
-      printf("\n");
-    }
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR, n_errors, n_trials);
     printf("\n");
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
-      printf("PDCCH test OK\n");
+      printf("PDSCH test OK\n");
       break;
     }
-      
-    if (n_trials == 1)
-      break;
 
   } // NSR
 
