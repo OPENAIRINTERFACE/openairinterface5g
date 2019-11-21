@@ -131,8 +131,8 @@ pipeline {
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.FlexRanRtcGitLabRepository_Credentials}", usernameVariable: 'git_username', passwordVariable: 'git_password']
                                 ]) {
                                 sh "git clone https://${git_username}:${git_password}@gitlab.eurecom.fr/flexran/flexran-rtc.git . > ../git_clone.log 2>&1"
+                                sh "git checkout develop >> ../git_clone.log 2>&1"
                             }
-                            sh "sed -i -e 's#add-apt-repository.*cleishm.*neo4j#add-apt-repository ppa:cleishm/neo4j -y#' -e 's#libneo4j-client-dev#libneo4j-client-dev -y#' tools/install_dependencies"
                             sh "zip -r -qq flexran.zip ."
                         }
                     }
