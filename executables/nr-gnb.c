@@ -527,6 +527,8 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
   int ret;
   int i;
+  struct timespec abstime;
+  int time_ns = 10000;
   
   AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
   for (i=0;i<gNB->num_RU;i++) {
@@ -547,14 +549,22 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"muex_unlock returns %d\n",ret);
   }
 
+  clock_gettime(CLOCK_REALTIME, &abstime);
+  abstime.tv_nsec = abstime.tv_nsec + time_ns;
+
+  if (abstime.tv_nsec >= 1000*1000*1000) {
+    abstime.tv_nsec -= 1000*1000*1000;
+    abstime.tv_sec  += 1;
+  }
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
-  AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex)) == 0,"mutex_lock returns %d\n", ret);
+  AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
 
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
    AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
    LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx); 
+   return(-1);
   }
  
   ++L1_proc->instance_cnt;
