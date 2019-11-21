@@ -168,8 +168,12 @@ function build_on_vm {
         echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
         echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
         echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
+        echo "echo \"mkdir build\"" >> $VM_CMDS
+        echo "mkdir build" >> $VM_CMDS
+        echo "echo \"cd build\"" >> $VM_CMDS
+        echo "cd build" >> $VM_CMDS
         echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
-        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > ../cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
     fi
     if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
     then
