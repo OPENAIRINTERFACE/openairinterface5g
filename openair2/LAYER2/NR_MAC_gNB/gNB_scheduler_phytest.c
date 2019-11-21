@@ -336,9 +336,12 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dlsch_pdu_rel15->TBSize[0]=0;
   dlsch_pdu_rel15->nrOfLayers =1;
 
+
   nr_configure_dci_from_pdcch_config(params_rel15,
-				     coreset,
-				     search_space,
+				     1, // ue specific,
+				     4,
+				     0,
+				     scc,
 				     bwp);
   
   pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(dlsch_pdu_rel15->rbStart, dlsch_pdu_rel15->rbSize, cfg->rf_config.dl_carrier_bandwidth.value);
@@ -357,21 +360,21 @@ int configure_fapi_dl_Tx(int Mod_idP,
   pdu_rel15->pucch_resource_indicator = 7;
   pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
   
-  LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+  LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	pdu_rel15->frequency_domain_assignment,
 	pdu_rel15->time_domain_assignment,
 	pdu_rel15->vrb_to_prb_mapping,
 	pdu_rel15->mcs,
 	pdu_rel15->tb_scaling,
-	pdu_rel15->ndi,
+	pdu_rel15->ndi, 
 	pdu_rel15->rv);
   
-  params_rel15->rnti = UE_list->rnti[UE_id];
-  params_rel15->rnti_type = NFAPI_NR_RNTI_C;
-  params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
-  
+  params_rel15->rnti        = UE_list->rnti[UE_id];
+  params_rel15->rnti_type   = NFAPI_NR_RNTI_C;
+  params_rel15->dci_format  = NFAPI_NR_DL_DCI_FORMAT_1_0;
+
   //params_rel15->aggregation_level = 1; 
-  LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
+  LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
 	                      coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
 	                      ss params : first symb %d, ss type %d\n",
 	params_rel15->rnti,

@@ -96,8 +96,10 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_config_request_t cfg);
 
 void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-                                        nfapi_nr_coreset_t* coreset,
-                                        nfapi_nr_search_space_t* search_space,
+					int ss_type,
+					int target_aggregation_level,
+					int cce_index,
+					NR_ServingCellConfigCommon_t *scc,
 					NR_BWP_Downlink_t *bwp);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);

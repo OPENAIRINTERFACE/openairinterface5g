@@ -568,6 +568,7 @@ typedef struct {
   uint16_t rnti;
   uint8_t rnti_type;
   uint8_t dci_format;
+  uint16_t cce_index;
   /// Number of CRB in BWP that this DCI configures 
   uint16_t n_RB_BWP;
   uint8_t config_type;

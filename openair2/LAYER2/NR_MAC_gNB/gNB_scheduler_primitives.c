@@ -59,6 +59,8 @@
 #include "NR_ControlResourceSet.h"
 #include "NR_SearchSpace.h"
 
+#include "nfapi_nr_interface.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
@@ -348,8 +350,10 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 }
 
 void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-					nfapi_nr_coreset_t* coreset,
-					nfapi_nr_search_space_t* search_space,
+					int ss_type,
+					int target_aggregation_level,
+					int cce_index,
+					NR_ServingCellConfigCommon_t *scc,
 					NR_BWP_Downlink_t *bwp) {			
 
   uint16_t N_RB=NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
@@ -358,10 +362,22 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 
   //ControlResourceSetId
   pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList!=NULL,
+	      "controlResourceSetToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count>0,
+	      "controlResourceSetToAddModList is empty\n");
+  NR_ControlResourceSet_t *coreset0 = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0];
   
   //frequencyDomainResources
   uint8_t count=0, start=0, start_set=0;
-  uint64_t bitmap = coreset->frequency_domain_resources;
+  // find coreset descriptor
+  
+  uint64_t bitmap = (((uint64_t)coreset0->frequencyDomainResources.buf[0])<<37)|
+    (((uint64_t)coreset0->frequencyDomainResources.buf[1])<<29)|
+    (((uint64_t)coreset0->frequencyDomainResources.buf[2])<<21)|
+    (((uint64_t)coreset0->frequencyDomainResources.buf[3])<<13)|
+    (((uint64_t)coreset0->frequencyDomainResources.buf[4])<<5)|
+    (((uint64_t)coreset0->frequencyDomainResources.buf[5])>>3);
 
   for (int i=0; i<45; i++)
     if ((bitmap>>(44-i))&1) {
@@ -375,30 +391,40 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
   pdcch_params->n_rb = 6*count;
 
   //duration
-  pdcch_params->n_symb = coreset->duration;
+  pdcch_params->n_symb = coreset0->duration;
 
   //cce-REG-MappingType
-  pdcch_params->cr_mapping_type = coreset->cce_reg_mapping_type;
+  pdcch_params->cr_mapping_type = coreset0->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+    NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
   if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-    pdcch_params->reg_bundle_size = coreset->reg_bundle_size;
-    pdcch_params->interleaver_size = coreset->interleaver_size;
+    pdcch_params->reg_bundle_size = (coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
+    pdcch_params->interleaver_size = (coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize);
+    AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
+    pdcch_params->shift_index = coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
   }
   else {
     pdcch_params->reg_bundle_size = 0;
     pdcch_params->interleaver_size = 0;
+    pdcch_params->shift_index = 0;
   }
 
-  //shift index
-  pdcch_params->shift_index = coreset->shift_index;
-
   //precoderGranularity
-  pdcch_params->precoder_granularity = coreset->precoder_granularity;
+  pdcch_params->precoder_granularity = coreset0->precoderGranularity;
 
   //TCI states
-  // PDCCH params does not yet include information about TCI and QCL (needed for DCI 1.1 and 0.1)
+  // 
+  /*
+  //TCI present
+  if (coreset0->tci_PresentInDCI != NULL) {
+  AssertFatal(coreset0->tci_StatesPDCCH_ToAddList != NULL,"tci_StatesPDCCH_ToAddList is null\n");
+  AssertFatal(coreset0->tci_StatesPDCCH_ToAddList->list.count>0,"TCI state list is empty\n");
+  for (int i=0;i<coreset0->tci_StatesPDCCH_ToAddList->list.count;i++) {
+  
+  }
+  */
 
   //pdcch-DMRS-ScramblingID
-  pdcch_params->scrambling_id = coreset->dmrs_scrambling_id;
+  pdcch_params->scrambling_id = coreset0->pdcch_DMRS_ScramblingID;
   
 
 /// SearchSpace
@@ -407,16 +433,90 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
   //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
   int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
 
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+	      "searchPsacesToAddModList is empty\n");
+  NR_SearchSpace_t *ss;
+  int found=0;
+  int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+  if (ss_type == 1) { 
+    target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    pdcch_params->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
+  } else pdcch_params->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
+  
+  for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+    ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+    AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+    if (*ss->controlResourceSetId == coreset0->controlResourceSetId && 
+	ss->searchSpaceType->present == target_ss) {
+      found=1;
+      break;
+    }
+  }
+  AssertFatal(found==1,"Couldn't find a searchspace corresponding to coreset0\n");
+  AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
+  AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
+
+  // for SPS=14 8 MSBs in positions 13 downto 6,  
+  uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | 
+    (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+ 
   for (int i=0; i<sps; i++)
-    if ((search_space->monitoring_symbols_in_slot>>(sps-1-i))&1) {
+    if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
       pdcch_params->first_symbol=i;
       break;
     }
 
-  //searchSpaceType
-  pdcch_params->search_space_type = search_space->search_space_type;
+  // aggregation, find closest to target
+  AssertFatal(target_aggregation_level == 1 || target_aggregation_level == 2 || target_aggregation_level == 4 || target_aggregation_level == 8 || target_aggregation_level == 16,"illegal target aggregation level %d\n",target_aggregation_level);
+  AssertFatal(ss->nrofCandidates!=NULL,"ss->nrofCandidates is null\n");
+  switch (target_aggregation_level) {
+  case 1:
+    if (ss->nrofCandidates->aggregationLevel1 > 0) pdcch_params->aggregation_level = 1;
+    else if (ss->nrofCandidates->aggregationLevel2 > 0) pdcch_params->aggregation_level = 2;  
+    else if (ss->nrofCandidates->aggregationLevel4 > 0) pdcch_params->aggregation_level = 4;  
+    else if (ss->nrofCandidates->aggregationLevel8 > 0) pdcch_params->aggregation_level = 8;  
+    else if (ss->nrofCandidates->aggregationLevel16 > 0) pdcch_params->aggregation_level = 16;  
+    else AssertFatal(1==0,"Couldn't find an aggregation level, shouldn't happen\n");
+    break;
+  case 2:
+    if (ss->nrofCandidates->aggregationLevel2 > 0) pdcch_params->aggregation_level = 2;
+    else if (ss->nrofCandidates->aggregationLevel4 > 0) pdcch_params->aggregation_level = 4;  
+    else if (ss->nrofCandidates->aggregationLevel1 > 0) pdcch_params->aggregation_level = 1;  
+    else if (ss->nrofCandidates->aggregationLevel8 > 0) pdcch_params->aggregation_level = 8;  
+    else if (ss->nrofCandidates->aggregationLevel16 > 0) pdcch_params->aggregation_level = 16;  
+    else AssertFatal(1==0,"Couldn't find an aggregation level, shouldn't happen\n");
+    break;
+  case 4:
+    if (ss->nrofCandidates->aggregationLevel4 > 0) pdcch_params->aggregation_level = 4;
+    else if (ss->nrofCandidates->aggregationLevel8 > 0) pdcch_params->aggregation_level = 8;  
+    else if (ss->nrofCandidates->aggregationLevel2 > 0) pdcch_params->aggregation_level = 2;  
+    else if (ss->nrofCandidates->aggregationLevel16 > 0) pdcch_params->aggregation_level = 16;  
+    else if (ss->nrofCandidates->aggregationLevel1 > 0) pdcch_params->aggregation_level = 1;  
+    else AssertFatal(1==0,"Couldn't find an aggregation level, shouldn't happen\n");
+    break;
+  case 8:
+    if (ss->nrofCandidates->aggregationLevel8 > 0) pdcch_params->aggregation_level = 8;
+    else if (ss->nrofCandidates->aggregationLevel16 > 0) pdcch_params->aggregation_level = 16;  
+    else if (ss->nrofCandidates->aggregationLevel4 > 0) pdcch_params->aggregation_level = 4;  
+    else if (ss->nrofCandidates->aggregationLevel2 > 0) pdcch_params->aggregation_level = 2;  
+    else if (ss->nrofCandidates->aggregationLevel1 > 0) pdcch_params->aggregation_level = 1;  
+    else AssertFatal(1==0,"Couldn't find an aggregation level, shouldn't happen\n");
+    break;
+  case 16:
+    if (ss->nrofCandidates->aggregationLevel16 > 0) pdcch_params->aggregation_level = 16;
+    else if (ss->nrofCandidates->aggregationLevel8 > 0) pdcch_params->aggregation_level = 8;  
+    else if (ss->nrofCandidates->aggregationLevel4 > 0) pdcch_params->aggregation_level = 4;  
+    else if (ss->nrofCandidates->aggregationLevel2 > 0) pdcch_params->aggregation_level = 2;  
+    else if (ss->nrofCandidates->aggregationLevel1 > 0) pdcch_params->aggregation_level = 1;  
+    else AssertFatal(1==0,"Couldn't find an aggregation level, shouldn't happen\n");
+    break;
+  }
+
 
   pdcch_params->n_RB_BWP = N_RB;
+  pdcch_params->cce_index = cce_index;
 }
 
 int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
