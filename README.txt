@@ -43,6 +43,7 @@ openairinterface5g
 
 RELEASE NOTES:
 
+v1.1.1 -> November 2019. Bug fix in the TDD Fair Round-Robin scheduler
 v1.1.0 -> July 2019. This version adds the following implemented features:
            * Experimental support of LTE-M
              - Single LTE-M UE attachment, legacy-LTE UE attachment is disabled
