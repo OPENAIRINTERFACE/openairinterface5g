@@ -19,45 +19,15 @@
  *      contact@openairinterface.org
  */
 
-/* \file main_ue_nr.c
- * \brief top init of Layer 2
- * \author R. Knopp, K.H. HSU
- * \date 2018
- * \version 0.1
- * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
- * \note
- * \warning
- */
+#ifndef _ASN1_UTILS_H_
+#define _ASN1_UTILS_H_
 
-//#include "defs.h"
-#include "mac_proto.h"
-#include "executables/nr-softmodem.h"
+int decode_t_reordering(int v);
+int decode_t_status_prohibit(int v);
+int decode_t_poll_retransmit(int v);
+int decode_poll_pdu(int v);
+int decode_poll_byte(int v);
+int decode_max_retx_threshold(int v);
+int decode_sn_field_length(int v);
 
-static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
-
-int
-nr_l2_init_ue(void)
-{
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
-
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
-    
-    if (IS_SOFTMODEM_NOS1){
-        if (rlc_module_init(0) != 0) {
-    		LOG_I(RLC, "Problem at RLC initiation \n");
-    	}
-    	pdcp_layer_init();
-    	nr_ip_over_LTE_DRB_preconfiguration();
-    }
-
-
-    return (1);
-}
-
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id){
-    return &nr_ue_mac_inst[(int)module_id];
-}
+#endif /* _ASN1_UTILS_H_ */
