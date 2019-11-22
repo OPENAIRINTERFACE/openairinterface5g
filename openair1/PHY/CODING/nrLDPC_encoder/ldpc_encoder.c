@@ -46,7 +46,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
   short *Gen_shift_values=choose_generator_matrix(BG,Zc);
   short *no_shift_values, *pointer_shift_values;
   int no_punctured_columns;
-  short nrows,ncols;
+  short nrows,ncols,rate=3;
   int i1,i2,i3,i4,i5,temp_prime;
   unsigned char channel_temp,temp;
 
@@ -56,6 +56,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
     pointer_shift_values=(short *) pointer_shift_values_BG1;
       nrows=46; //parity check bits
       ncols=22; //info bits
+      rate=3;
   }
   else if (BG==2)
   {
@@ -63,6 +64,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
     pointer_shift_values=(short *) pointer_shift_values_BG2;
       nrows=42; //parity check bits
       ncols=10; //info bits
+      rate=5;
   }
   else {
     printf("problem with BG\n");
@@ -70,7 +72,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
   }
 
 
-  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
+  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
 
   //printf("no_punctured_columns = %d\n",no_punctured_columns);
 

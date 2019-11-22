@@ -125,11 +125,14 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int ret  = 0;
   int nb_antenna_ports = fp->N_ssb;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
+  int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
   if (nr_slot_select(cfg,slot) == SF_UL) return;
   for (aa=0; aa<fp->Lmax; aa++) {
     memset(ru->common.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
+
+  start_meas(&ru->ofdm_total_stats);
 
   for(j=0; j<fp->symbols_per_slot; ++j){
 
@@ -141,7 +144,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
       for(i=0; i<nb_antenna_ports; ++i){
         memcpy((void*)&ru->common.txdataF[i][j*fp->ofdm_symbol_size],
-           (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + ((tti_tx%2)*fp->samples_per_slot_wCP)],
+           (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + txdataF_offset],
            fp->ofdm_symbol_size*sizeof(int32_t));
       }
 

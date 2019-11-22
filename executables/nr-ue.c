@@ -538,6 +538,9 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                dummy_rx,
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
+    if (IS_SOFTMODEM_RFSIM ) {
+	 usleep(1000); // slow down, as would do actuall rf to let cpu for the synchro thread
+    }
   }
 
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -695,12 +698,12 @@ void *UE_thread(void *arg) {
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
 #ifdef OAI_ADRV9371_ZC706
-    uint32_t total_gain_dB_prev = 0;
+    /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
 		total_gain_dB_prev = UE->rx_total_gain_dB;
-        openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB-20;
+        openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
-    }
+    }*/
 #endif
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -732,6 +735,8 @@ void *UE_thread(void *arg) {
                                            rxp,
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
+
+if (slot_nr==18)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
@@ -741,7 +746,7 @@ void *UE_thread(void *arg) {
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     1),"");
+                     4),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift

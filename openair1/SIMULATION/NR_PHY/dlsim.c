@@ -75,31 +75,29 @@ void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
 uint64_t get_softmodem_optmask(void) {return 0;}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP, const rnti_t            rntiP,
-										  const eNB_index_t       eNB_index,  const frame_t           frameP,
-										  const sub_frame_t 	  subframeP,  const eNB_flag_t        enb_flagP,
-										  const MBMS_flag_t       MBMS_flagP, const logical_chan_id_t channel_idP,
-										  const tb_size_t         tb_sizeP
-										  #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-										  ,const uint32_t sourceL2Id
-										  ,const uint32_t destinationL2Id
-										  #endif
-										){mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(
-  const module_id_t       module_idP,
-  const rnti_t            rntiP,
-  const eNB_index_t       eNB_index,
-  const frame_t           frameP,
-  const eNB_flag_t        enb_flagP,
-  const MBMS_flag_t       MBMS_flagP,
-  const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
-  char             *buffer_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
-   )
+mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
+					  const rnti_t            rntiP,
+					  const eNB_index_t       eNB_index,
+					  const frame_t           frameP,
+					  const sub_frame_t 	  subframeP,
+					  const eNB_flag_t        enb_flagP,
+					  const MBMS_flag_t       MBMS_flagP,
+					  const logical_chan_id_t channel_idP,
+					  const tb_size_t         tb_sizeP,
+					  const uint32_t sourceL2Id,
+					  const uint32_t destinationL2Id)
+{mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
+			      const rnti_t            rntiP,
+			      const eNB_index_t       eNB_index,
+			      const frame_t           frameP,
+			      const eNB_flag_t        enb_flagP,
+			      const MBMS_flag_t       MBMS_flagP,
+			      const logical_chan_id_t channel_idP,
+			      const tb_size_t         tb_sizeP,
+			      char             *buffer_pP,
+			      const uint32_t sourceL2Id,
+			      const uint32_t destinationL2Id )
 {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -167,6 +165,12 @@ int main(int argc, char **argv)
   //double pbch_sinr;
   //int pbch_tx_ant;
   int N_RB_DL=106,mu=1;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config;
+  dlsch_config.start_prb = 0;
+  dlsch_config.n_prb = 50;
+  dlsch_config.start_symbol = 2;
+  dlsch_config.nb_symbols = 9;
+  dlsch_config.mcs_idx = 9;
 
   uint16_t ssb_periodicity = 10;
 
@@ -188,6 +192,7 @@ int main(int argc, char **argv)
   int run_initial_sync=0;
   int do_pdcch_flag=1;
 
+  uint16_t cset_offset = 0;
   int loglvl=OAILOG_WARNING;
 
   float target_error_rate = 0.01;
@@ -200,7 +205,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:o:a:b:c:j:e:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -365,6 +370,30 @@ int main(int argc, char **argv)
       loglvl = atoi(optarg);
       break;
 
+    case 'o':
+      cset_offset = atoi(optarg);
+      break;
+
+    case 'a':
+      dlsch_config.start_prb = atoi(optarg);
+      break;
+
+    case 'b':
+      dlsch_config.n_prb = atoi(optarg);
+      break;
+
+    case 'c':
+      dlsch_config.start_symbol = atoi(optarg);
+      break;
+
+    case 'j':
+      dlsch_config.nb_symbols = atoi(optarg);
+      break;
+
+    case 'e':
+      dlsch_config.mcs_idx = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -390,6 +419,12 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       //printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
+      printf("-o CORESET offset\n");
+      printf("-a Start PRB for PDSCH\n");
+      printf("-b Number of PRB for PDSCH\n");
+      printf("-c Start symbol for PDSCH (fixed for now)\n");
+      printf("-j Number of symbols for PDSCH (fixed for now)\n");
+      printf("-e MSC index\n");
       exit (-1);
       break;
     }
@@ -482,7 +517,7 @@ int main(int argc, char **argv)
 
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
     txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(int));
+    bzero(txdata[i],frame_length_complex_samples*sizeof(int));
   
   }
 
@@ -546,18 +581,20 @@ int main(int argc, char **argv)
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   
+  uint16_t rb_offset_count = cset_offset/6;
+  set_cset_offset(rb_offset_count);
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_uss_dlsch_phytest(0,frame,slot);
+    nr_schedule_uss_dlsch_phytest(0,frame,slot,&dlsch_config);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
     Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-    Sched_INFO.UL_req    = NULL;
+    Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
     Sched_INFO.HI_DCI0_req  = NULL;
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
@@ -646,13 +683,15 @@ int main(int argc, char **argv)
   
   uint64_t mask = 0x0;
   uint16_t num_rbs=24;
-  uint16_t rb_offset=0;
+  uint16_t rb_offset=gNB->pdcch_vars.dci_alloc[0].pdcch_params.rb_offset;
   uint16_t cell_id=0;
   uint16_t num_symbols=2;
   for(i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
     mask = mask >> 1;
     mask = mask | 0x100000000000;
   }
+  uint16_t UE_rb_offset_count = rb_offset/6;
+  mask = mask >> UE_rb_offset_count;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.frequency_domain_resource = mask;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
@@ -663,8 +702,6 @@ int main(int argc, char **argv)
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
-  uint8_t gnb_start_symbol = Sched_INFO.DL_req->dl_config_request_body.dl_config_pdu_list[1].dlsch_pdu.dlsch_pdu_rel15.start_symbol;
-  dl_config->dl_config_list[0].dlsch_config_pdu.dlsch_config_rel15.start_symbol = gnb_start_symbol;
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
@@ -842,25 +879,17 @@ int main(int argc, char **argv)
 
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
-           (float) n_false_positive / (float) n_trials);
+           (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-
-    if (errors_bit == 0) {
-      printf("PDSCH test OK\n");
-      printf("\n");
-    }
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR, n_errors, n_trials);
     printf("\n");
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
-      printf("PDCCH test OK\n");
+      printf("PDSCH test OK\n");
       break;
     }
-      
-    if (n_trials == 1)
-      break;
 
   } // NSR
 

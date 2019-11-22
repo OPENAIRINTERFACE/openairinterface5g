@@ -44,6 +44,9 @@
 
 extern RAN_CONTEXT_t RC;
 
+void set_cset_offset(uint16_t offset_bits) {
+  RC.nrmac[0]->coreset[0][1].frequency_domain_resources >>= offset_bits;
+}
 
 void nr_init_coreset(nfapi_nr_coreset_t *coreset) {
 
@@ -66,7 +69,7 @@ void nr_init_search_space(nfapi_nr_search_space_t *search_space)
   search_space->duration = 5;
   search_space->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
   search_space->slot_monitoring_offset = 1;
-  search_space->monitoring_symbols_in_slot = 0xC0000000; // first 2 ofdm symbols
+  search_space->monitoring_symbols_in_slot = 0x3000; // 14 bits field
   search_space->css_formats_0_0_and_1_0 = 1;
   search_space->uss_dci_formats = 0; // enum to be defined-- formats 0.0 and 1.0
   for (int i=0; i<NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS; i++)
@@ -106,18 +109,20 @@ void mac_top_init_gNB(void)
 
         for (j = 0; j < MAX_NUM_CCs; j++) {
           RC.nrmac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list = RC.nrmac[i]->dl_config_pdu_list[j];
-          RC.nrmac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list = RC.nrmac[i]->ul_config_pdu_list[j];
 
-          for (int k = 0; k < 10; k++)
-            RC.nrmac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =RC.nrmac[i]->ul_config_pdu_list_tmp[j][k];
+	  //FK changed UL_req to UL_tti_req, which does not contain a pointer to the pdu_list
+          //RC.nrmac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list = RC.nrmac[i]->ul_config_pdu_list[j];
+          
+          //for (int k = 0; k < 10; k++)
+          //  RC.nrmac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =RC.nrmac[i]->ul_config_pdu_list_tmp[j][k];
+        
+	  RC.nrmac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list = RC.nrmac[i]->hi_dci0_pdu_list[j];
+	  RC.nrmac[i]->TX_req[j].tx_request_body.tx_pdu_list =                RC.nrmac[i]->tx_request_pdu[j];
+	  RC.nrmac[i]->ul_handle = 0;
 
-        RC.nrmac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list = RC.nrmac[i]->hi_dci0_pdu_list[j];
-        RC.nrmac[i]->TX_req[j].tx_request_body.tx_pdu_list =                RC.nrmac[i]->tx_request_pdu[j];
-        RC.nrmac[i]->ul_handle = 0;
-
-        // Init PDCCH structures
-        nr_init_coreset(&RC.nrmac[i]->coreset[j][1]);
-        nr_init_search_space(&RC.nrmac[i]->search_space[j][1]);
+	  // Init PDCCH structures
+	  nr_init_coreset(&RC.nrmac[i]->coreset[j][1]);
+	  nr_init_search_space(&RC.nrmac[i]->search_space[j][1]);
         }
 
 

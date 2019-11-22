@@ -130,7 +130,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
 }
 
 void nr_pdcch_scrambling(uint32_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t *out) {
@@ -155,23 +155,19 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
+uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config) {
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
-  uint32_t dmrs_seq[NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD];
-  uint16_t dmrs_offset=0;
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
   nr_reg_t reg;
   nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
-  /*First iteration: single DCI*/
-  NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
 
   /*The coreset is initialised
@@ -189,45 +185,20 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   dci_idx = 0;
   LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
   // DMRS length is per OFDM symbol
-  uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
+  uint32_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
                          (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
-  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+  uint32_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
   LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
+  dmrs_length += pdcch_params.rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
 
   /// DMRS QPSK modulation
-  /*There is a need to shift from which index the pregenerated DMRS sequence is used
-   * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
-  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG) {
-    for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++)
-      gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
-
-    dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
-    LOG_D(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
-  }
-
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
-    if (dmrs_offset) {
-      // a non zero offset requires the DMRS sequence to be rearranged
-      memset(dmrs_seq,0, NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-
-      for (int i=0; i<dmrs_length; i++) {
-        dmrs_seq[(i>>5)] |= ((gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]>>((i+dmrs_offset)&0x1f))&1)<<(i&0x1f);
-#ifdef DEBUG_PDCCH_DMRS
-        //printf("out 0x%08x in 0x%08x \n", dmrs_seq[(i>>5)], gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]);
-#endif
-      }
-
-      nr_modulation(dmrs_seq, dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
-    } else
-      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
+   
+    nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_PDCCH_DMRS
 
     for (int i=0; i<dmrs_length>>1; i++)
-      if (dmrs_offset)
-        printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i, dmrs_seq[i>>5],
-               mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
-      else
         printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
                gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
 
@@ -241,7 +212,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
                  pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-  polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti,currentPtr);
+  polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti, 1, currentPtr);
 #ifdef DEBUG_CHANNEL_CODING
   printf("polar rnti %d\n",pdcch_params.rnti);
   printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
@@ -278,32 +249,28 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     cset_start_sc -= frame_parms.ofdm_symbol_size;
 
   /*Reorder REG list for a freq first mapping*/
-  uint8_t symb_idx[NR_MAX_CSET_DURATION] = {0,0,0};
   uint8_t nb_regs = dci_alloc.L*NR_NB_REG_PER_CCE;
-  uint8_t regs_per_symb = nb_regs/cset_nsymb;
 
   for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++) {
     cce = dci_alloc.cce_list[cce_idx];
 
     for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
       reg = cce.reg_list[reg_idx];
-      reg_mapping_list[reg.symb_idx*regs_per_symb + symb_idx[reg.symb_idx]++] = reg;
+      reg_mapping_list[reg_idx+cce_idx*NR_NB_REG_PER_CCE] = reg;
     }
   }
 
-#ifdef DEBUG_DCI
-  printf("\n Ordered REG list:\n");
-
-  for (int i=0; i<nb_regs; i++)
-    printf("%d\t",reg_mapping_list[i].reg_idx );
-
-  printf("\n");
-#endif
 
   if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS) {
     /*in this case the DMRS are mapped on all the coreset*/
     for (l=cset_start_symb; l<cset_start_symb+ cset_nsymb; l++) {
-      dmrs_idx = 0;
+
+      // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+      if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+        dmrs_idx = 0;
+      else
+        dmrs_idx = pdcch_params.rb_offset*3;
+
       k = cset_start_sc + 1;
 
       while (dmrs_idx<3*pdcch_params.n_rb) {
@@ -333,7 +300,13 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       k -= frame_parms.ofdm_symbol_size;
 
     l = cset_start_symb + reg.symb_idx;
-    dmrs_idx = (reg.reg_idx/cset_nsymb)*3;
+
+    // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+    if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+      dmrs_idx = (reg.reg_idx/cset_nsymb)*3;
+    else
+      dmrs_idx = ((reg.reg_idx/cset_nsymb)+pdcch_params.rb_offset)*3;
+
     k_prime = 0;
 
     for (int m=0; m<NR_NB_SC_PER_RB; m++) {

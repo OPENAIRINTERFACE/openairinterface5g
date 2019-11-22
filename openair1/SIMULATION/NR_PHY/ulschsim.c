@@ -375,20 +375,21 @@ int main(int argc, char **argv)
   uint8_t nb_re_dmrs = 6;
   uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
-  uint16_t N_RE_prime;
+  uint16_t N_RE_prime,code_rate;
   unsigned char mod_order;
   uint8_t Nl = 1;
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
-  mod_order = nr_get_Qm(Imcs, 1);
+  mod_order = nr_get_Qm_ul(Imcs, 0);
+  code_rate = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 
@@ -401,6 +402,7 @@ int main(int argc, char **argv)
   rel15_ul->n_layers       = Nl;
   rel15_ul->nb_re_dmrs     = nb_re_dmrs;
   rel15_ul->length_dmrs    = length_dmrs;
+  rel15_ul->R              = code_rate;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -560,31 +562,6 @@ int main(int argc, char **argv)
       printf("\n");
       break;
     }
-    printf("\n");
-  }
-
-  for (i = 0; i < 2; i++) {
-
-    printf("----------------------\n");
-    printf("freeing codeword %d\n", i);
-    printf("----------------------\n");
-
-    printf("gNB ulsch[0][%d]\n", i); // [hna] ulsch[0] is for RA
-
-    free_gNB_ulsch(gNB->ulsch[0][i]);
-
-    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
-
-    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]);
-
-    for (sf = 0; sf < 2; sf++) {
-
-      printf("UE  ulsch[%d][0][%d]\n", sf, i);
-
-      if (UE->ulsch[sf][0][i])
-        free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
-    }
-
     printf("\n");
   }
 

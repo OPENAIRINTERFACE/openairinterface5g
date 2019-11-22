@@ -39,11 +39,11 @@
 //#define DEBUG_DLSCH_MAPPING
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out) {
+                                  uint32_t size,
+                                  uint8_t q,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  uint32_t* out) {
 
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0;
@@ -88,7 +88,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
   uint16_t nb_symbols = rel15->nb_mod_symbols;
   uint8_t Qm = rel15->modulation_order;
-  uint16_t encoded_length = nb_symbols*Qm;
+  uint32_t encoded_length = nb_symbols*Qm;
 
 
   /// CRC, coding, interleaving and rate matching
@@ -122,11 +122,12 @@ printf("\n");
   pdcch_params.scrambling_id : config->sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
-                         encoded_length,
-                         q,
-                         Nid,
-                         n_RNTI,
-                         scrambled_output[q]);
+                                 encoded_length,
+                                 q,
+                                 Nid,
+                                 n_RNTI,
+                                 scrambled_output[q]);
+
   stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
 printf("PDSCH scrambling:\n");
@@ -176,7 +177,7 @@ for (int l=0; l<rel15->nb_layers; l++)
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
 
   /// DMRS QPSK modulation
-  uint16_t n_dmrs = (rel15->n_prb*rel15->nb_re_dmrs)<<1;
+  uint16_t n_dmrs = ((rel15->n_prb+rel15->start_prb)*rel15->nb_re_dmrs)<<1;
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config->pdsch_config.dmrs_type.value;
   uint8_t mapping_type = config->pdsch_config.mapping_type.value;
@@ -221,6 +222,10 @@ ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
     uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
     int txdataF_offset = (slot%2)*frame_parms->samples_per_slot_wCP;
+    if (dmrs_type == NFAPI_NR_DMRS_TYPE1) // another if condition to be included to check pdsch config type (reference of k)
+      dmrs_idx = rel15->start_prb*6;
+    else
+      dmrs_idx = rel15->start_prb*4;
 
     for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++) {
       k = start_sc;

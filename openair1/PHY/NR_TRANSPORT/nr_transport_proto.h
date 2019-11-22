@@ -191,3 +191,18 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           uint32_t nb_re,
                           uint8_t  symbol,
                           uint8_t  mod_order);
+
+void nr_fill_ulsch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pusch_pdu_t *ulsch_pdu);
+
+uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
+
+uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
+
+uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
+
+uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
+
+uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);

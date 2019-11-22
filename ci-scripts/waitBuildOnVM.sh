@@ -76,6 +76,8 @@ function wait_on_vm_build {
         echo "echo \"ps -aux | grep build \"" >> $VM_CMDS
         echo "while [ \$(ps -aux | grep --color=never build_oai | grep -v grep | wc -l) -gt 0 ]; do sleep 3; done" >> $VM_CMDS
     fi
+    echo "echo \"df -h\"" >> $VM_CMDS
+    echo "df -h" >> $VM_CMDS
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
