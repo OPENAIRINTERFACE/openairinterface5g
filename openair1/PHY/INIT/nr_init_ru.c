@@ -105,22 +105,27 @@ int nr_phy_init_RU(RU_t *ru) {
 		RC.nb_nr_L1_inst,NUMBER_OF_gNB_MAX);
 
     LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
-
+    
+    int beam_count = 0;
+    if (ru->nb_tx>1) {
+      for (p=0;p<fp->Lmax;p++) {
+        if ((fp->L_ssb >> p) & 0x01)
+          beam_count++;
+      }
+      AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
+    }
+    
+    int l_ind = 0;
     for (i=0; i<RC.nb_nr_L1_inst; i++) {
       for (p=0;p<fp->Lmax;p++) {
         if ((fp->L_ssb >> p) & 0x01)  {
 	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	  for (j=0; j<ru->nb_tx; j++) {
 	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-	    // setting identity matrix as first step for beam weights
-	    if (p==j) {
-	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-		ru->beam_weights[i][p][j][re] = 0x00007fff; 
-	    }
-	    else {
-	      for (re=0; re<fp->ofdm_symbol_size; re++) 
-		ru->beam_weights[i][p][j][re] = 0x00000000; 
-	    }  
+            for (re=0; re<fp->ofdm_symbol_size; re++) 
+		ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
+            //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+            l_ind++; 
 	  } // for j
 	} // for p
       }
@@ -170,10 +175,8 @@ void nr_phy_free_RU(RU_t *ru)
 
     for (i = 0; i < RC.nb_nr_L1_inst; i++) {
       for (p = 0; p < 15; p++) {
-	if (p == 0 || p == 5) {
 	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
 	  free_and_zero(ru->beam_weights[i][p]);
-	}
       }
     }
   }

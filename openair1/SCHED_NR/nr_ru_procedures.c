@@ -451,4 +451,3 @@ void nr_fep_full(RU_t *ru, int slot) {
   
   
 }
->>>>>>> develop-nr

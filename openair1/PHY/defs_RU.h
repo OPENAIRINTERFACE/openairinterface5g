@@ -518,6 +518,10 @@ typedef struct RU_t_s {
   /// RX and TX buffers for precoder output
   RU_COMMON common;
   RU_CALIBRATION calibration;
+  /// beamforming weight list size
+  int nb_bfw;
+  /// beamforming weight list of values
+  int32_t *bw_list[NUMBER_OF_eNB_MAX+1];
   /// beamforming weight vectors
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
   /// received frequency-domain signal for PRACH (IF4p5 RRU)
