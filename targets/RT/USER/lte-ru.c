@@ -2713,13 +2713,8 @@ void init_RU(char *rf_config_file, clock_source_t clock_source, clock_source_t t
     else
       ru->generate_dmrs_sync = 0;
 
-    if (ru->generate_dmrs_sync == 1) {
-      generate_ul_ref_sigs();
-      ru->dmrssync = (int16_t *)malloc16_clear(ru->frame_parms->ofdm_symbol_size*2*sizeof(int16_t));
-    }
-
-    ru->wakeup_L1_sleeptime     = 2000;
-    ru->wakeup_L1_sleep_cnt_max = 3;
+    ru->wakeup_L1_sleeptime = 2000;
+    ru->wakeup_L1_sleep_cnt_max  = 3;
 
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
