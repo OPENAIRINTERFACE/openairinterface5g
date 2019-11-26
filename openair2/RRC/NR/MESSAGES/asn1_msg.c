@@ -290,6 +290,157 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
+
+  if (enc_rval.encoded==-1) {
+    return(-1);
+  }
+
+  return((enc_rval.encoded+7)/8);
+}
+
+
+uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
+#if defined(ENABLE_ITTI)
+		, gNB_RrcConfigurationReq *configuration
+#endif
+               )
+{
+  asn_enc_rval_t enc_rval;
+
+  NR_BCCH_DL_SCH_Message_t *sib1_message ;
+  struct NR_SIB1 *sib1 ;
+ 
+  int i;
+  struct NR_PLMN_IdentityInfo nr_plmn_info;
+
+#if defined(ENABLE_ITTI)
+ // TODO : Add support for more than one PLMN 
+  //int num_plmn = configuration->num_plmn;
+  int num_plmn = 1;
+#else
+  int num_plmn = 1;
+#endif
+
+  struct NR_PLMN_Identity nr_plmn[num_plmn];
+  NR_MCC_MNC_Digit_t nr_mcc_digit[num_plmn][3];
+  NR_MCC_MNC_Digit_t nr_mnc_digit[num_plmn][3];
+
+//  struct NR_UAC_BarringInfoSet nr_uac_BarringInfoSet;
+
+  sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
+  memset(sib1_message,0,sizeof(NR_BCCH_DL_SCH_Message_t));
+
+  carrier->siblock1 = sib1_message;
+
+  sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
+  sib1_message->message.choice.c1 = CALLOC(1,sizeof(struct NR_BCCH_DL_SCH_MessageType__c1));
+  memset(sib1_message->message.choice.c1,0,sizeof(struct NR_BCCH_DL_SCH_MessageType__c1));
+  sib1_message->message.choice.c1->present = NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1;
+
+  sib1_message->message.choice.c1->choice.systemInformationBlockType1 = CALLOC(1,sizeof(struct NR_SIB1));
+  sib1 = sib1_message->message.choice.c1->choice.systemInformationBlockType1;
+  memset(sib1,0,sizeof(struct NR_SIB1));
+
+
+  sib1->cellSelectionInfo = CALLOC(1,sizeof(struct NR_SIB1__cellSelectionInfo));
+  memset(sib1->cellSelectionInfo,0,sizeof(struct NR_SIB1__cellSelectionInfo));
+
+  sib1->cellSelectionInfo->q_RxLevMin = -50;
+
+
+  memset(&nr_plmn_info.plmn_IdentityList,0,sizeof(struct NR_PLMN_IdentityInfo__plmn_IdentityList));
+  asn_set_empty(&nr_plmn_info.plmn_IdentityList.list);
+
+  memset(&nr_plmn_info,0,sizeof(struct NR_PLMN_IdentityInfo));
+
+  memset(nr_plmn,0,num_plmn*sizeof(struct NR_PLMN_Identity));
+
+  for (i = 0; i < num_plmn; ++i) {
+
+      
+#ifdef ENABLE_ITTI
+      nr_mcc_digit[i][0] = (configuration->mcc[i]/100)%10;
+      nr_mcc_digit[i][1] = (configuration->mcc[i]/10)%10;
+      nr_mcc_digit[i][2] = (configuration->mcc[i])%10;
+#else
+      nr_mcc_digit[i][0] = 0;
+      nr_mcc_digit[i][1] = 0;
+      nr_mcc_digit[i][2] = 1;
+#endif
+
+      nr_plmn[i].mcc = CALLOC(1,sizeof(struct NR_MCC));
+      memset(nr_plmn[i].mcc,0,sizeof(struct NR_MCC));
+      asn_set_empty(&nr_plmn[i].mcc->list);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][0]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][1]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][2]);
+
+
+#ifdef ENABLE_ITTI
+      nr_mnc_digit[i][0] = (configuration->mnc[i]/100)%10;
+      nr_mnc_digit[i][1] = (configuration->mnc[i]/10)%10;
+      nr_mnc_digit[i][2] = (configuration->mnc[i])%10;
+#else
+      nr_mnc_digit[i][0] = 0;
+      nr_mnc_digit[i][1] = 0;
+      nr_mnc_digit[i][2] = 1;
+#endif
+
+      memset(&nr_plmn[i].mnc,0,sizeof(NR_MNC_t));
+      nr_plmn[i].mnc.list.size=0;
+      nr_plmn[i].mnc.list.count=0;
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][0]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][1]);
+      ASN_SEQUENCE_ADD(&nr_plmn[i].mnc.list, &nr_mnc_digit[i][2]);
+  
+      ASN_SEQUENCE_ADD(&nr_plmn_info.plmn_IdentityList.list, &nr_plmn[i]);
+  }//end plmn loop
+
+  nr_plmn_info.cellIdentity.buf = MALLOC(8);
+  memset(nr_plmn_info.cellIdentity.buf,0,8);
+
+#ifdef ENABLE_ITTI
+  nr_plmn_info.cellIdentity.buf[0]= (configuration->cell_identity >> 20) & 0xff;
+  nr_plmn_info.cellIdentity.buf[1]= (configuration->cell_identity >> 12) & 0xff;
+  nr_plmn_info.cellIdentity.buf[2]= (configuration->cell_identity >> 4) & 0xff;
+  nr_plmn_info.cellIdentity.buf[3]= (configuration->cell_identity << 4) & 0xff;
+#else
+  nr_plmn_info.cellIdentity.buf[0]= 0x00;
+  nr_plmn_info.cellIdentity.buf[1]= 0x00;
+  nr_plmn_info.cellIdentity.buf[2]= 0x00;
+  nr_plmn_info.cellIdentity.buf[3]= 0x10;
+#endif
+  nr_plmn_info.cellIdentity.size= 4;
+  nr_plmn_info.cellIdentity.bits_unused= 4;
+
+  nr_plmn_info.cellReservedForOperatorUse = 0;
+
+  memset(&sib1->cellAccessRelatedInfo,0,sizeof(NR_CellAccessRelatedInfo_t));
+  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list, &nr_plmn_info);
+
+#if 0
+  sib1->uac_BarringInfo = CALLOC(1, sizeof(struct NR_SIB1__uac_BarringInfo));
+  memset(sib1->uac_BarringInfo, 0, sizeof(struct NR_SIB1__uac_BarringInfo));
+
+  nr_uac_BarringInfoSet.uac_BarringFactor = NR_UAC_BarringInfoSet__uac_BarringFactor_p95;
+  nr_uac_BarringInfoSet.uac_BarringTime = NR_UAC_BarringInfoSet__uac_BarringTime_s4;
+  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.buf = MALLOC(1);
+  memset(nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.buf,0,1);
+  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.size = 1;
+  nr_uac_BarringInfoSet.uac_BarringForAccessIdentity.bits_unused = 1;
+  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, &nr_uac_BarringInfoSet);
+#endif
+
+  //encode SIB1 to data
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
+                                   NULL,
+                                   (void*)sib1_message,
+                                   carrier->SIB1,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+
   if (enc_rval.encoded==-1) {
     return(-1);
   }
@@ -421,6 +572,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
 
     bwp_dl_timedomainresourceallocation->k0 = CALLOC(1,sizeof(long));
 
+    pusch_configcommontimedomainresourceallocation      = CALLOC(1,sizeof(NR_PUSCH_TimeDomainResourceAllocation_t));
     pusch_configcommontimedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
 
     ratematchpattern->patternType.choice.bitmaps                                             = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
