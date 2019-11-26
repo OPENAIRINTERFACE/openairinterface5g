@@ -116,12 +116,6 @@ typedef struct {
   boolean_t active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
-  /// NFAPI coreset structure
-  nfapi_nr_coreset_t   coreset[MAX_MOBILES_PER_GNB][NFAPI_NR_MAX_NB_CORESETS];
-  /// NFAPI search space structure
-  nfapi_nr_search_space_t search_space[MAX_MOBILES_PER_GNB][NFAPI_NR_MAX_NB_SEARCH_SPACES];
-
-
 } NR_UE_list_t;
 
 /*! \brief top level eNB MAC structure */
@@ -192,5 +186,94 @@ typedef struct gNB_MAC_INST_s {
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
 } gNB_MAC_INST;
+
+typedef struct {
+
+
+uint8_t format_indicator; //1 bit
+uint16_t frequency_domain_assignment; //up to 16 bits
+uint8_t time_domain_assignment; // 4 bits
+uint8_t frequency_hopping_flag; //1 bit
+
+uint8_t ra_preamble_index; //6 bits
+uint8_t ss_pbch_index; //6 bits
+uint8_t prach_mask_index; //4 bits
+
+uint8_t vrb_to_prb_mapping; //0 or 1 bit
+uint8_t mcs; //5 bits
+uint8_t ndi; //1 bit
+uint8_t rv; //2 bits
+uint8_t harq_pid; //4 bits
+uint8_t dai; //0, 2 or 4 bits
+uint8_t dai1; //1 or 2 bits
+uint8_t dai2; //0 or 2 bits
+uint8_t tpc; //2 bits
+uint8_t pucch_resource_indicator; //3 bits
+uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+
+uint8_t short_messages_indicator; //2 bits
+uint8_t short_messages; //8 bits
+uint8_t tb_scaling; //2 bits
+
+uint8_t carrier_indicator; //0 or 3 bits
+uint8_t bwp_indicator; //0, 1 or 2 bits
+uint8_t prb_bundling_size_indicator; //0 or 1 bits
+uint8_t rate_matching_indicator; //0, 1 or 2 bits
+uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
+uint8_t transmission_configuration_indication; //0 or 3 bits
+uint8_t srs_request; //2 bits
+uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
+uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
+uint8_t dmrs_sequence_initialization; //0 or 1 bit
+
+uint8_t srs_resource_indicator;
+uint8_t precoding_information;
+uint8_t csi_request;
+uint8_t ptrs_dmrs_association;
+uint8_t beta_offset_indicator; //0 or 2 bits
+
+uint8_t slot_format_indicator_count;
+uint8_t *slot_format_indicators;
+
+uint8_t pre_emption_indication_count;
+uint16_t *pre_emption_indications; //14 bit
+
+uint8_t block_number_count;
+uint8_t *block_numbers;
+
+uint8_t ul_sul_indicator; //0 or 1 bit
+uint8_t antenna_ports;
+
+uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+uint16_t padding;
+
+} dci_pdu_rel15_t;
+
+typedef enum {
+  NR_DL_DCI_FORMAT_1_0 = 0,
+  NR_DL_DCI_FORMAT_1_1,
+  NR_DL_DCI_FORMAT_2_0,
+  NR_DL_DCI_FORMAT_2_1,
+  NR_DL_DCI_FORMAT_2_2,
+  NR_DL_DCI_FORMAT_2_3,
+  NR_UL_DCI_FORMAT_0_0,
+  NR_UL_DCI_FORMAT_0_1
+} nr_dci_format_t;
+
+typedef enum {
+  NR_RNTI_new = 0,
+  NR_RNTI_C,
+  NR_RNTI_RA,
+  NR_RNTI_P,
+  NR_RNTI_CS,
+  NR_RNTI_TC,
+  NR_RNTI_SP_CSI,
+  NR_RNTI_SI,
+  NR_RNTI_SFI,
+  NR_RNTI_INT,
+  NR_RNTI_TPC_PUSCH,
+  NR_RNTI_TPC_PUCCH,
+  NR_RNTI_TPC_SRS
+} nr_rnti_type_t;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

@@ -36,7 +36,7 @@
 #include "PHY/defs_gNB.h"
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
-                                        nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
+                                        nfapi_nr_dl_config_pdcch_pdu dci_pdu,
                                         nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu);
 
 void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);

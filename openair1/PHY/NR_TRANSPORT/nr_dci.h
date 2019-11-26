@@ -47,7 +47,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
                  int frame,
                  int slot,
                  NR_gNB_DCI_ALLOC_t *dci_alloc,
-                 nfapi_nr_dl_config_dci_dl_pdu *pdu);
+                 nfapi_nr_dl_config_pdcch_pdu *pdu);
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t *dci_alloc, uint16_t n_shift, uint8_t m);
 

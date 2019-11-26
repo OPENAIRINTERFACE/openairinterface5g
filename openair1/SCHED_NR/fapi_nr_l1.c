@@ -43,8 +43,8 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
                              uint8_t *sdu)
 {
 
-  AssertFatal(dl_config_pdu->bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
-              dl_config_pdu->bch_pdu_rel15.length);
+  AssertFatal(dl_config_pdu->bch_pdu.bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
+              dl_config_pdu->bch_pdu.bch_pdu_rel15.length);
 
   LOG_D(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
   gNB->pbch_pdu[0] = sdu[2];
@@ -93,16 +93,16 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 }*/
 
 
-void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
-                                int frame, int slot,
-                                nfapi_nr_dl_config_dci_dl_pdu *dci_dl_pdu) {
+void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_dl_config_pdcch_pdu *pdcch_pdu) {
   int idx                        = slot&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
 
   LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, slot, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
-  nr_fill_dci(gNB,frame,slot,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],dci_dl_pdu);
+  nr_fill_dci(gNB,frame,slot,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],pdcch_pdu);
 
 
   LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, slot, idx, pdcch_vars->num_dci);
@@ -158,22 +158,22 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
-        AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
-                    "bch_pdu_rel8.pdu_index>=TX_req->number_of_pdus (%d>%d)\n",
-                    dl_config_pdu->bch_pdu_rel15.pdu_index,
+        AssertFatal(dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
+                    "bch_pdu.bch_pdu_rel8.pdu_index>=TX_req->number_of_pdus (%d>%d)\n",
+                    dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index,
                     TX_req->tx_request_body.number_of_pdus);
         gNB->pbch_configured=1;
         do_oai=1;
 
         handle_nr_nfapi_bch_pdu(gNB,
                                 dl_config_pdu,
-                                TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu_rel15.pdu_index].segments[0].segment_data);
+                                TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index].segments[0].segment_data);
       break;
 
-      case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
-        handle_nfapi_nr_dci_dl_pdu(gNB,
-                                   frame, slot,
-                                   &dl_config_pdu->dci_dl_pdu);
+      case NFAPI_NR_DL_CONFIG_PDCCH_PDU_TYPE:
+        handle_nfapi_nr_pdcch_pdu(gNB,
+				  frame, slot,
+				  &dl_config_pdu->pdcch_pdu);
         gNB->pdcch_vars.num_dci++;
         gNB->pdcch_vars.num_pdsch_rnti++;
         do_oai=1;

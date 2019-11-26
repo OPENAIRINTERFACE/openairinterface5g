@@ -66,9 +66,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 int configure_fapi_dl_Tx(int Mod_id,
 			 nfapi_nr_dl_config_request_body_t *dl_req,
 			 nfapi_tx_request_pdu_t *TX_req,
-			 nfapi_nr_config_request_t *cfg,
-			 nfapi_nr_coreset_t* coreset,
-			 nfapi_nr_search_space_t* search_space,
 			 int16_t pdu_index);
 
 
@@ -88,20 +85,22 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
                                   uint8_t n_ssb,
                                   uint16_t nb_slots_per_frame,
                                   uint16_t N_RB);
-
+/*
 int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_coreset_t coreset,
                           uint16_t frame,
                           uint16_t slot,
                           nfapi_nr_config_request_t cfg);
-
-void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-					int ss_type,
-					int target_aggregation_level,
-					int cce_index,
-					NR_ServingCellConfigCommon_t *scc,
-					NR_BWP_Downlink_t *bwp);
-
+*/
+void nr_configure_pdcch(nfapi_nr_dl_config_pdcch_pdu_rel15_t* pdcch_pdu,
+			int ss_type,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Downlink_t *bwp);
+void fill_dci_pdu_rel15(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+			dci_pdu_rel15_t *dci_pdu_rel15,
+			int *dci_formats,
+			int *rnti_types
+			);
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
 int get_ulscs(nfapi_nr_config_request_t *cfg);
@@ -120,7 +119,6 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 
 void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                   nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
 		   int x_overhead);
 /** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);

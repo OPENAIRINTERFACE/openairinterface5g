@@ -40,7 +40,7 @@ typedef struct {
 
 // nFAPI enums
 typedef enum {
-  NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE = 0,
+  NFAPI_NR_DL_CONFIG_PDCCH_PDU_TYPE = 0,
   NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE,
   NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE,
   NFAPI_NR_DL_CONFIG_PCH_PDU_TYPE,
@@ -464,6 +464,7 @@ typedef enum {
 
 // P7 Sub Structures
 
+/*
 typedef struct {
 
 nfapi_tl_t tl;
@@ -526,9 +527,21 @@ uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16
 uint16_t padding;
 
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
-
+*/
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
+typedef struct {
+  /// Number of PRGs spanning this allocation. Value : 1->275
+  uint16_t numPRGs;
+  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
+  uint16_t prgSize;
+  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
+  uint8_t digBFInterfaces;
+  uint16_t PMIdx[275];
+  uint16_t *beamIdx[275];
+} nr_beamforming_t;
+
+/*
 typedef struct{
   nfapi_tl_t tl;
   uint8_t  coreset_id;
@@ -562,6 +575,7 @@ typedef struct{
   uint32_t  monitoring_symbols_in_slot;
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
+*/
 
 typedef struct {
   nfapi_tl_t tl;
@@ -593,6 +607,60 @@ typedef struct {
   nfapi_bf_vector_t   bf_vector;
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
+#define MAX_DCI_CORESET 8
+#define DCI_PAYLOAD_BYTE_LEN 8
+
+typedef struct {
+  ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275
+  uint16_t BWPSize;
+  ///bandwidth part start RB index from reference CRB, [TS38.213 sec 12], Value: 0->274
+  uint16_t BWPStart;
+  ///subcarrierSpacing [TS38.211 sec 4.2], Value:0->4
+  uint8_t SubcarrierSpacing;
+  ///Cyclic prefix type [TS38.211 sec 4.2], 0: Normal; 1: Extended
+  uint8_t CyclicPrefix;
+  ///Starting OFDM symbol for the CORESET, Value: 0->13
+  uint8_t StartSymbolIndex;
+///Contiguous time duration of the CORESET in number of symbols. Corresponds to L1 parameter 𝑁𝑠𝑦𝑚𝑏_𝐶𝑂𝑅𝐸𝑆𝐸𝑇 [TS38.211 sec 7.3.2.2] Value: 1,2,3
+  uint8_t DurationSymbols; 
+  ///Frequency domain resources. This is a bitmap defining non-overlapping groups of 6 PRBs in ascending order. [TS38.213 10.1]. Also, corresponds to L1 parameter CORE SET RB N [TS38.211 sec 7.3.2.2] Bitmap of uint8 array. 45 bits.
+  uint8_t FreqDomainResource[6];
+  ///CORESET-CCE-to-REG-mapping-type [TS38.211 sec 7.3.2.2] 0: non-interleaved 1: interleaved
+  uint8_t CceRegMappingType;
+  ///The number of REGs in a bundle. Must be 6 for cceRegMappingType = nonInterleaved. For cceRegMappingType = interleaved, must belong to {2,6} if duration = 1,2 and must belong to {3,6} if duration = 3. Corresponds to parameter L. [TS38.211 sec 7.3.2.2] Value: 2,3,6
+  uint8_t RegBundleSize;
+  ///The interleaver size. For interleaved mapping belongs to {2,3,6} and for non-interleaved mapping is NA. Corresponds to parameter R. [TS38.211 sec 7.3.2.2] Value: 2,3,6 CoreSetType
+  uint8_t InterleaverSize; 
+  ///[TS38.211 sec 7.3.2.2 and sec 7.4.1.3.2] 0: CORESET is configured by the PBCH or SIB1 (subcarrier 0 of CRB0 for DMRS mapping) 1: otherwise (subcarrier 0 of CORESET)
+  uint8_t CoreSetType;
+  ///[TS38.211 sec 7.3.2.2] Not applicable for non-interleaved mapping. For interleaved mapping and a PDCCH transmitted in a CORESET configured by the PBCH or SIB1 this should be set to phy cell ID. Value: 10 bits Otherwise, for interleaved mapping this is set to 0-> max num of PRBs. Value 0-> 275
+  uint16_t ShiftIndex;
+  ///Granularity of precoding [TS38.211 sec 7.3.2.2] Field Type Description 0: sameAsRegBundle 1: allContiguousRBs
+  uint8_t precoderGranularity;
+  ///Number of DCIs in this CORESET.Value: 0->MaxDciPerSlot
+  uint16_t numDlDci;
+  ///The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
+  uint16_t RNTI[MAX_DCI_CORESET];
+  ///For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured, otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
+  uint16_t ScramblingId[MAX_DCI_CORESET];
+  ///For a UE-specific search space where PDCCH-DMRSScrambling- ID is configured This param equals the CRNTI. Otherwise, it should be set to 0. [TS38.211, sec 7.3.2.3] Value: 0 -> 65535 
+  uint16_t ScramblingRNTI[MAX_DCI_CORESET];
+  ///CCE start Index used to send the DCI Value: 0->135
+  uint8_t CceIndex[MAX_DCI_CORESET];
+  ///Aggregation level used [TS38.211, sec 7.3.2.1] Value: 1,2,4,8,16
+  uint8_t AggregationLevel[MAX_DCI_CORESET];
+  ///Precoding and Beamforming structure See Table 3-43
+  nr_beamforming_t precodingAndBeamforming[MAX_DCI_CORESET];
+  ///PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI. This is ratio of SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1] Value :0->17 Report title: 5G FAPI: PHY API Specification Issue date: 29 June 2019 Version: 222.10.17 68 Field Type Description representing -8 to 8 dB in 1dB steps
+  uint8_t beta_PDCCH_1_0[MAX_DCI_CORESET];
+  ///PDCCH power value used for all other PDCCH Formats. This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB,1: 0dB,2: 3dB,3: 6dB
+  uint8_t   powerControlOffsetSS[MAX_DCI_CORESET];
+///The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BTYE_LEN*8
+  uint16_t  PayloadSizeBits[MAX_DCI_CORESET];
+  ///DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB  
+  uint8_t  Payload[MAX_DCI_CORESET][DCI_PAYLOAD_BYTE_LEN]; 
+} nfapi_nr_dl_config_pdcch_pdu_rel15_t;
+
 typedef struct {
   nfapi_tl_t tl;
   uint16_t length;
@@ -605,16 +673,7 @@ typedef struct {
   nfapi_nr_dl_config_bch_pdu_rel15_t bch_pdu_rel15;
 } nfapi_nr_dl_config_bch_pdu;
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nr_beamforming_t;
+
 
 typedef struct {
   nfapi_tl_t tl;
@@ -699,30 +758,37 @@ typedef struct {
 #define NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG
 
 typedef struct {
-	nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
 } nfapi_nr_dl_config_dlsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
-  nfapi_nr_search_space_t           pagingSearchSpace;
-  nfapi_nr_coreset_t   pagingControlResourceSets;
+  //  nfapi_nr_search_space_t           pagingSearchSpace;
+  //  nfapi_nr_coreset_t   pagingControlResourceSets;
 }nfapi_nr_dl_config_pch_pdu_rel15_t;
 
 typedef struct {
+  nfapi_nr_dl_config_pch_pdu_rel15_t pch_pdu_rel15;
+} nfapi_nr_dl_config_pch_pdu;
+
+/*typedef struct {
   nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params_rel15;
-} nfapi_nr_dl_config_dci_dl_pdu;
+  } nfapi_nr_dl_config_dci_dl_pdu;*/
 
+typedef struct {
+  nfapi_nr_dl_config_pdcch_pdu_rel15_t pdcch_pdu_rel15;
+} nfapi_nr_dl_config_pdcch_pdu;
 
 typedef struct {
   uint8_t pdu_type;
   uint8_t pdu_size;
 
   union {
-  nfapi_nr_dl_config_dci_dl_pdu             dci_dl_pdu;
-  nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-  nfapi_nr_dl_config_dlsch_pdu              dlsch_pdu;
-  nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
+  nfapi_nr_dl_config_pdcch_pdu      pdcch_pdu;
+  nfapi_nr_dl_config_bch_pdu        bch_pdu;
+  nfapi_nr_dl_config_dlsch_pdu      dlsch_pdu;
+  nfapi_nr_dl_config_pch_pdu        pch_pdu;
   };
 } nfapi_nr_dl_config_request_pdu_t;
 
