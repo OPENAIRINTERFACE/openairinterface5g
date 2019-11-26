@@ -388,9 +388,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       //When the --NOS1 option is not enabled, DLSCH transmissions with random data
       //occur every time that the current function is called (dlsch phytest mode)
 
+
       // fill dlsch_buffer with random data
-      for (i = 0; i < MAX_NR_DLSCH_PAYLOAD_BYTES; i++){
-        dlsch_buffer[i] = (unsigned char) rand();
+      for (i = 0; i < TBS/8; i++){
+        dlsch_buffer[i] = (unsigned char) rand(); //i&0xFF;
       }
 
       //Sending SDUs with size 1
