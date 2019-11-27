@@ -1211,13 +1211,11 @@ static void *ru_stats_thread(void *param) {
     sleep(1);
 
     if (opp_enabled == 1) {
-      if (ru->feptx_prec) {
-        print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
-      }
 
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
 
       if (ru->feptx_ofdm){
+        print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
         print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
         print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
@@ -1281,9 +1279,9 @@ static void *ru_thread_tx( void *param ) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    //if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
+    if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,tti_tx);
 
-    // do OFDM if needed
+    // do OFDM with/without TX front-end processing  if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,frame_tx,tti_tx);
 
     if(!emulate_rf) {
@@ -1524,9 +1522,9 @@ static void *ru_thread( void *param ) {
 
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_gNB==0) {
       // do TX front-end processing if needed (precoding and/or IDFTs)
-      //if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
+      if (ru->feptx_prec) ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
 
-      // do OFDM if needed
+      // do OFDM with/without TX front-end processing  if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru,proc->frame_tx,proc->tti_tx);
 
       if(!emulate_rf) {
@@ -1734,7 +1732,6 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feprx) nr_init_feprx_thread(ru);
 
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
-    //if (ru->feptx_prec) nr_init_feptx_prec_thread(ru);
   }
 
   if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
@@ -2047,9 +2044,9 @@ void set_function_spec_param(RU_t *ru) {
         malloc_IF4p5_buffer(ru);
       } else if (ru->function == gNodeB_3GPP) {
         ru->do_prach             = 0;                       // no prach processing in RU
-        ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;                // RX DFTs
+        ru->feprx                = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;                // RX DFTs
         ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;              // this is fep with idft and precoding
-        ru->feptx_prec           = nr_feptx_prec;           // this is fep with idft and precoding
+        ru->feptx_prec           = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;           // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface
@@ -2077,8 +2074,8 @@ void set_function_spec_param(RU_t *ru) {
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
-      ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread : nr_fep_full;     // this is frequency-shift + DFTs
-      ru->feptx_prec             = nr_feptx_prec;          // need to do transmit Precoding + IDFTs
+      ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;     // this is frequency-shift + DFTs
+      ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;          // need to do transmit Precoding + IDFTs
       ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // need to do transmit Precoding + IDFTs
       ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
       ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
@@ -2102,7 +2099,7 @@ void set_function_spec_param(RU_t *ru) {
     case REMOTE_IF4p5:
       ru->do_prach               = 0;
       ru->feprx                  = NULL;                // DFTs
-      ru->feptx_prec             = nr_feptx_prec;          // Precoding operation
+      ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL : nr_feptx_prec;          // Precoding operation
       ru->feptx_ofdm             = NULL;                // no OFDM mod
       ru->fh_south_in            = fh_if4p5_south_in;   // synchronous IF4p5 reception
       ru->fh_south_out           = fh_if4p5_south_out;  // synchronous IF4p5 transmission
