@@ -239,9 +239,22 @@ static void *nr_feptx_thread(void *param) {
     nb_antenna_ports = feptx->nb_antenna_ports;
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
-    bw  = ru->beam_weights[0];
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
     start_meas(&ru->precoding_stats);
-    nr_beam_precoding(ru->common.txdataF,
+    if (ru->nb_tx == 1) {
+      AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
+      for (int p=0; p<fp->Lmax; p++) {
+        if ((fp->L_ssb >> p) & 0x01){
+          memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
+                 (void*)&ru->common.txdataF[p][l*fp->ofdm_symbol_size],
+                 fp->ofdm_symbol_size*sizeof(int32_t));
+        }
+      }
+    }
+    else {
+      bw  = ru->beam_weights[0];
+      nr_beam_precoding(ru->common.txdataF,
                         ru->common.txdataF_BF,
                         fp,
                         bw,
@@ -249,7 +262,10 @@ static void *nr_feptx_thread(void *param) {
                         l,
                         aa,
                         nb_antenna_ports);
+    }
     stop_meas(&ru->precoding_stats);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
+
 
     start_meas(&ru->ofdm_mod_stats);
     nr_feptx0(ru,slot,start,1,aa);
@@ -268,24 +284,6 @@ static void *nr_feptx_thread(void *param) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+feptx->index+1 , 0 );
   }
   return(NULL);
-}
-
-void nr_init_feptx_thread(RU_t *ru) {
-
-  RU_proc_t  *proc  = &ru->proc;
-  RU_feptx_t *feptx = proc->feptx;
-  int i = 0;
-
-  for(i=0; i<16; i++){
-    feptx[i].instance_cnt_feptx         = -1;
-    
-    pthread_mutex_init( &feptx[i].mutex_feptx, NULL);
-    pthread_cond_init( &feptx[i].cond_feptx, NULL);
-
-    threadCreate(&feptx[i].pthread_feptx, nr_feptx_thread, (void*)&feptx[i], "feptx", -1, OAI_PRIORITY_RT);
-    LOG_I(PHY,"init feptx thread %d\n", i);
-  }
-
 }
 
 
@@ -323,6 +321,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 
 }
 
+<<<<<<< HEAD
 static void *nr_feptx_prec_thread(void *param) {
 
   RU_prec_t *prec                = (RU_prec_t *) param;
@@ -369,48 +368,27 @@ void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx) {
   int nb_antenna_ports    = fp->Lmax; // for now logical antenna ports corresponds to SSB
   RU_prec_t *prec         = ru->proc.prec;
   PHY_VARS_gNB **gNB_list = ru->gNB_list,*gNB;
+=======
 
-  gNB = gNB_list[0];
+void nr_init_feptx_thread(RU_t *ru) {
+>>>>>>> 40bda9f8d0b916f124e89a928138f0863978f307
 
-  start_meas(&ru->precoding_stats);
-  for(i=0; i<nb_antenna_ports; ++i)
-    memcpy((void*)ru->common.txdataF[i],
-           (void*)gNB->common_vars.txdataF[i],
-           fp->samples_per_slot_wCP*sizeof(int32_t));
+  RU_proc_t  *proc  = &ru->proc;
+  RU_feptx_t *feptx = proc->feptx;
+  int i = 0;
 
-  for(symbol = 0; symbol < fp->symbols_per_slot; ++symbol){
-    for(p=0; p<nb_antenna_ports; p++){
-      for(aa=0;aa<ru->nb_tx;aa++){
-        if ((fp->L_ssb >> p) & 0x01){
-          while(1){
-            if(prec[i].instance_cnt_feptx_prec == -1){
-              AssertFatal((ret=pthread_mutex_lock(&prec[i].mutex_feptx_prec))==0,"mutex_lock return %d\n",ret);
-              prec[i].instance_cnt_feptx_prec = 0;
-              prec[i].symbol                  = symbol;
-              prec[i].p                       = p;
-              prec[i].aa                      = aa;
-              prec[i].index                   = i;
-              prec[i].ru                      = ru;
-              AssertFatal(pthread_cond_signal(&prec[i].cond_feptx_prec) == 0,"ERROR pthread_cond_signal for gNB_L1_thread\n");
-              AssertFatal((ret=pthread_mutex_unlock(&prec[i].mutex_feptx_prec))==0,"mutex_lock returns %d\n",ret);
-              i = (i+1) % 16;
-              break;
-            }
-            i = (i+1) % 16;
-          }
-        }//(frame_params->Lssb >> p) & 0x01
-      }//aa
-    }//p
-  }//symbol
-  
-  i = 0;
-  while(1){
-    if(prec[i].instance_cnt_feptx_prec == -1) ++i;
-    if(i == 16) break;
+  for(i=0; i<16; i++){
+    feptx[i].instance_cnt_feptx         = -1;
+    
+    pthread_mutex_init( &feptx[i].mutex_feptx, NULL);
+    pthread_cond_init( &feptx[i].cond_feptx, NULL);
+
+    threadCreate(&feptx[i].pthread_feptx, nr_feptx_thread, (void*)&feptx[i], "feptx", -1, OAI_PRIORITY_RT);
+    LOG_I(PHY,"init feptx thread %d\n", i);
   }
 
-  stop_meas(&ru->precoding_stats);
 }
+
 
 void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
 
@@ -465,21 +443,6 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
     }// if (ru->nb_tx == 1)
   }// if (ru->num_gNB == 1)
   stop_meas(&ru->precoding_stats);
-}
-
-void nr_init_feptx_prec_thread(RU_t *ru){
-
-  RU_proc_t *proc = &ru->proc;
-  RU_prec_t *prec = proc->prec;
-  int i=0;
-
-  for(i=0; i<16; ++i){
-    prec[i].instance_cnt_feptx_prec         = -1;
-    pthread_mutex_init( &prec[i].mutex_feptx_prec, NULL);
-    pthread_cond_init( &prec[i].cond_feptx_prec, NULL);
-
-    threadCreate(&prec[i].pthread_feptx_prec, nr_feptx_prec_thread, (void*)&prec[i], "nr_feptx_prec", -1, OAI_PRIORITY_RT);
-  }
 }
 
 void nr_fep0(RU_t *ru, int first_half) {
