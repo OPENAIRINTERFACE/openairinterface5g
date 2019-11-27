@@ -113,23 +113,23 @@ int nr_phy_init_RU(RU_t *ru) {
           beam_count++;
       }
       AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
-    }
     
-    int l_ind = 0;
-    for (i=0; i<RC.nb_nr_L1_inst; i++) {
-      for (p=0;p<fp->Lmax;p++) {
-        if ((fp->L_ssb >> p) & 0x01)  {
-	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
-	  for (j=0; j<ru->nb_tx; j++) {
-	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-            for (re=0; re<fp->ofdm_symbol_size; re++) 
+      int l_ind = 0;
+      for (i=0; i<RC.nb_nr_L1_inst; i++) {
+        for (p=0;p<fp->Lmax;p++) {
+          if ((fp->L_ssb >> p) & 0x01)  {
+	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
+	    for (j=0; j<ru->nb_tx; j++) {
+	      ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+              for (re=0; re<fp->ofdm_symbol_size; re++) 
 		ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
-            //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
-            l_ind++; 
-	  } // for j
-	} // for p
-      }
-    } //for i
+              //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+              l_ind++; 
+  	    } // for j
+	  } // for p
+        }
+      } //for i
+    }
   } // !=IF5
 
   ru->common.sync_corr = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_subframe_wCP );
