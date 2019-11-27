@@ -329,33 +329,25 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dlsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
     // choose shortest PDSCH
   int startSymbolAndLength=0;
-  int StartSymbolIndex,NrOfSymbols=14,k0=0;
-  int StartSymbolIndex_tmp,NrOfSymbols_tmp=2;
-  int time_domain_assignment=0;
+  int time_domain_assignment=2;
+  int StartSymbolIndex,NrOfSymbols;
 
-  for (int i=0;
-       i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
-       i++) {
-      startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-      SLIV2SL(startSymbolAndLength,&StartSymbolIndex_tmp,&NrOfSymbols_tmp);
-      if (NrOfSymbols_tmp > NrOfSymbols) {
-	NrOfSymbols = NrOfSymbols_tmp;
-        StartSymbolIndex = StartSymbolIndex_tmp;
-	k0 = *bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-	time_domain_assignment = i;
-      }
-    }
-    dlsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
-    dlsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
-    dlsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(NULL,
-						       scc->dmrs_TypeA_Position,
-						       NrOfSymbols);
+  AssertFatal(time_domain_assignment<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
+  startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
+  dlsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
+  dlsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
+ 
+  //  k0 = *bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
+  dlsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(NULL,
+						     scc->dmrs_TypeA_Position,
+						     dlsch_pdu_rel15->NrOfSymbols);
     dci_pdu_rel15_t dci_pdu_rel15;
     
     dci_pdu_rel15.frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(dlsch_pdu_rel15->rbStart, 
 										  dlsch_pdu_rel15->rbSize, 
 										  NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
-    dci_pdu_rel15.time_domain_assignment = 3; // row index used here instead of SLIV;
+    dci_pdu_rel15.time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
     dci_pdu_rel15.vrb_to_prb_mapping = 1;
     dci_pdu_rel15.mcs = dlsch_pdu_rel15->mcsIndex[0];
     dci_pdu_rel15.tb_scaling = 1;
@@ -384,36 +376,42 @@ int configure_fapi_dl_Tx(int Mod_idP,
 		       scc,
 		       bwp);
     
-  pdcch_pdu_rel15->numDlDci = 1;
-  pdcch_pdu_rel15->AggregationLevel[0] = 4;  
-  pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
-  pdcch_pdu_rel15->CceIndex[0] = 0;
-  pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
-  pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
-  int dci_formats[pdcch_pdu_rel15->numDlDci];
-  int rnti_types[pdcch_pdu_rel15->numDlDci];
-  dci_formats[0] = NR_DL_DCI_FORMAT_1_0;
-  rnti_types[0]   = NR_RNTI_C;
+    pdcch_pdu_rel15->numDlDci = 1;
+    pdcch_pdu_rel15->AggregationLevel[0] = 4;  
+    pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
+    pdcch_pdu_rel15->CceIndex[0] = 0;
+    pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
+    pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
 
-  fill_dci_pdu_rel15(&dci_pdu_rel15,pdcch_pdu_rel15,dci_formats,rnti_types);
+    int dci_formats[pdcch_pdu_rel15->numDlDci];
+    int rnti_types[pdcch_pdu_rel15->numDlDci];
 
-  LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
-	                      coreset params: FreqDomainResource %llx, n_symb %d  \n \
-	                      ss params : first symb %d\n",
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+    rnti_types[0]   = NR_RNTI_C;
+    
+    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) 
+      pdcch_pdu_rel15->PayloadSizeBits[i]=nr_dci_size(dci_formats[i],rnti_types[i],dlsch_pdu_rel15->BWPSize);
+
+    fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15,dci_formats,rnti_types);
+    
+    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
 	pdcch_pdu_rel15->RNTI[0],
 	rnti_types[0],
 	dci_formats[0],
 	(unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
-	pdcch_pdu_rel15->StartSymbolIndex);
+	pdcch_pdu_rel15->StartSymbolIndex,
+	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
   nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, 
 		x_Overhead);
   // Hardcode it for now
   TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.TBSize[0];
-  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	dlsch_pdu_rel15->rbStart,
 	dlsch_pdu_rel15->rbSize,
+	startSymbolAndLength,
 	dlsch_pdu_rel15->StartSymbolIndex,
 	dlsch_pdu_rel15->NrOfSymbols,
 	dlsch_pdu_rel15->nrOfLayers,
@@ -599,7 +597,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       }
       
       TBS_bytes = configure_fapi_dl_Tx(module_idP,dl_req, TX_req, 
-				       nr_mac->pdu_index);        
+				       nr_mac->pdu_index[CC_id]);        
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);

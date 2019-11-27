@@ -485,6 +485,8 @@ void nr_configure_pdcch(nfapi_nr_dl_config_pdcch_pdu_rel15_t* pdcch_pdu,
   }
 }
 
+
+
 void fill_dci_pdu_rel15(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,

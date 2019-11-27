@@ -147,4 +147,8 @@ int get_num_dmrs(uint16_t dmrs_mask );
 
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
+uint16_t nr_dci_size(nr_dci_format_t format,
+                         nr_rnti_type_t rnti_type,
+                         uint16_t N_RB);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
