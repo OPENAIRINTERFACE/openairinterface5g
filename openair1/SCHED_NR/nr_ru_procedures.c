@@ -321,57 +321,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 
 }
 
-<<<<<<< HEAD
-static void *nr_feptx_prec_thread(void *param) {
-
-  RU_prec_t *prec                = (RU_prec_t *) param;
-  RU_t *ru;
-  NR_DL_FRAME_PARMS *fp;
-  int symbol;
-  int p;
-  int aa;
-  int32_t *bw;
-  int32_t **txdataF;
-  int32_t **txdataF_BF;
-
-  while(!oai_exit)
-  {
-    if (wait_on_condition(&prec->mutex_feptx_prec,&prec->cond_feptx_prec,&prec->instance_cnt_feptx_prec,"NR feptx prec thread")<0) break;
-    ru                   = prec->ru;
-    symbol               = prec->symbol;
-    p                    = prec->p;
-    aa                   = prec->aa;
-    fp                   = ru->nr_frame_parms;
-    bw                   = ru->beam_weights[0][p][aa];
-    txdataF              = ru->common.txdataF;
-    txdataF_BF           = ru->common.txdataF_BF;
-    multadd_cpx_vector((int16_t*)&txdataF[p][symbol*fp->ofdm_symbol_size],
-			 (int16_t*)bw, 
-			 (int16_t*)&txdataF_BF[aa][symbol*fp->ofdm_symbol_size], 
-			 0, 
-			 fp->ofdm_symbol_size, 
-			 15);
-
-    if (release_thread(&prec->mutex_feptx_prec,&prec->instance_cnt_feptx_prec,"NR feptx thread")<0) break;
-  }
-  return 0;
-}
-
-void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx) {
-
-  int ret    = 0;
-  int i      = 0;
-  int symbol = 0;
-  int p      = 0;
-  int aa     = 0;
-  NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
-  int nb_antenna_ports    = fp->Lmax; // for now logical antenna ports corresponds to SSB
-  RU_prec_t *prec         = ru->proc.prec;
-  PHY_VARS_gNB **gNB_list = ru->gNB_list,*gNB;
-=======
-
 void nr_init_feptx_thread(RU_t *ru) {
->>>>>>> 40bda9f8d0b916f124e89a928138f0863978f307
 
   RU_proc_t  *proc  = &ru->proc;
   RU_feptx_t *feptx = proc->feptx;
