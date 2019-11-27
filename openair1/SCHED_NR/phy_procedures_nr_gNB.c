@@ -190,10 +190,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, num_dci);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
+
     nr_generate_dci_top(gNB->pdcch_vars.dci_alloc[i],
                         gNB->nr_gold_pdcch_dmrs[slot],
                         &gNB->common_vars.txdataF[0][txdataF_offset],  // hardcoded to beam 0
                         AMP, *fp, *cfg);
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
   }
       

@@ -323,7 +323,6 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 
 }
 
-
 static void *nr_feptx_prec_thread(void *param) {
 
   RU_prec_t *prec                = (RU_prec_t *) param;
