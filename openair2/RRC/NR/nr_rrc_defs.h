@@ -378,7 +378,7 @@ typedef struct {
 
   uint8_t                                   *SIB1;
   uint8_t                                   sizeof_SIB1;
-  
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
@@ -394,7 +394,7 @@ typedef struct {
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
-  
+
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
 
