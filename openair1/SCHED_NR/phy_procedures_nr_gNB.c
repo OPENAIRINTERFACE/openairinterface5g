@@ -97,24 +97,25 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
+  uint16_t slots_per_hf = fp->slots_per_frame / 2;
 
   n_hf = cfg->sch_config.half_frame_index.value;
 
   // if SSB periodicity is 5ms, they are transmitted in both half frames
   if ( cfg->sch_config.ssb_periodicity.value == 5) {
-    if (slot<10)
+    if (slot<slots_per_hf)
       n_hf=0;
     else
       n_hf=1;
   }
 
   // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
-  rel_slot = (n_hf)? (slot-10) : slot; 
+  rel_slot = (n_hf)? (slot-slots_per_hf) : slot; 
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
-  if(rel_slot<10 && rel_slot>=0)  {
-     for (int i=0; i<2; i++)  {  // max two SSB per slot
+  if(rel_slot<slots_per_hf && rel_slot>=0)  {
+     for (int i=0; i<2; i++)  {  // max two SSB per frame
      
 	ssb_index = i + 2*rel_slot; // computing the ssb_index
 	if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
@@ -163,7 +164,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   else 
     ssb_frame_periodicity = (cfg->sch_config.ssb_periodicity.value)/10 ;  // 10ms is the frame length
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_UL)) return;
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot,frame)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
 

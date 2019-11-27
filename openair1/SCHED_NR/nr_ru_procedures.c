@@ -127,7 +127,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
   int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
-  if (nr_slot_select(cfg,slot) == SF_UL) return;
+  if (nr_slot_select(cfg,slot,frame_tx) == SF_UL) return;
   for (aa=0; aa<fp->Lmax; aa++) {
     memset(ru->common.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
@@ -154,7 +154,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
-    if (nr_slot_select(cfg,slot)==SF_DL) {
+    if (nr_slot_select(cfg,slot,frame_tx)==SF_DL) {
       // If this is not an S-tti
       for(i=0; i<ru->nb_tx; ++i){
         if(j%2 == 0){
@@ -305,8 +305,9 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
   start_meas(&ru->ofdm_mod_stats);
 
-  if ((nr_slot_select(cfg,slot)==SF_DL)||
-      ((nr_slot_select(cfg,slot)==SF_S))) {
+  if ((nr_slot_select(cfg,slot,frame_tx)==SF_DL)||
+      ((nr_slot_select(cfg,slot,frame_tx)==SF_S))) {
+
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
     nr_feptx0(ru,slot,0,fp->symbols_per_slot,aa);
@@ -425,7 +426,7 @@ void nr_feptx_prec(RU_t *ru,int frame,int tti_tx) {
   if (ru->num_gNB == 1){
     gNB = gNB_list[0];
     cfg = &gNB->gNB_config;
-    if (nr_slot_select(cfg,tti_tx) == SF_UL) return;
+    if (nr_slot_select(cfg,tti_tx,frame) == SF_UL) return;
 
     for(i=0; i<fp->Lmax; ++i)
       memcpy((void*)ru->common.txdataF[i],
