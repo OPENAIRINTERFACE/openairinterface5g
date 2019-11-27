@@ -32,6 +32,8 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
+#include "PHY/defs_common.h"
+#include "PHY/impl_defs_top.h"
 
 /*******************************************************************
 *
@@ -55,8 +57,7 @@ int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeri
 {
   TDD_UL_DL_configCommon_t  *p_tdd_ul_dl_configuration;
   int slot_number = 0;
-  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-
+  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(frame_parms->slots_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   /* allocate buffer for configuration structure */
   p_tdd_ul_dl_configuration = calloc( 1, sizeof(TDD_UL_DL_configCommon_t));
 
@@ -86,26 +87,28 @@ int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeri
   AssertFatal(nrofDownlinkSymbols + nrofUplinkSymbols < 14,"illegal symbol configuration DL %d, UL %d\n",nrofDownlinkSymbols,nrofUplinkSymbols);
 
   while(slot_number != nb_slots_to_set) {
-
     for (int number_of_slot = 0; number_of_slot < nrofDownlinkSlots; number_of_slot++) {
       frame_parms->tdd_uplink_nr[slot_number] = NR_TDD_DOWNLINK_SLOT;
+      printf("slot %d set as downlink\n",slot_number);
       slot_number++;
     }
 
-    if (p_tdd_ul_dl_configuration->nrofDownlinkSymbols != 0) {
-      LOG_E(PHY,"set_tdd_configuration_nr: downlink symbol for slot is not supported for tdd configuration \n");
-      return (-1);
+    if (p_tdd_ul_dl_configuration->nrofDownlinkSymbols != 0 || p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
+       frame_parms->tdd_uplink_nr[slot_number] = (1<<nrofUplinkSymbols) - 1;  
+       printf("slot %d set as SL\n",slot_number);
+       slot_number++;
     }
 
     for (int number_of_slot = 0; number_of_slot < nrofUplinkSlots; number_of_slot++) {
       frame_parms->tdd_uplink_nr[slot_number] = NR_TDD_UPLINK_SLOT;
+      printf("slot %d set as uplink\n",slot_number);
       slot_number++;
     }
 
-    if (p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
+    /*if (p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
       LOG_E(PHY,"set_tdd_configuration_nr: uplink symbol for slot is not supported for tdd configuration \n");
       return (-1);
-    }
+    }*/
   }
 
   if (frame_parms->p_tdd_UL_DL_ConfigurationCommon2 != NULL) {
@@ -261,16 +264,18 @@ int nr_slot_select(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
     if (frame_parms->tdd_uplink_nr[nr_tti] == NR_TDD_UPLINK_SLOT) {
       return (NR_UPLINK_SLOT);
     }
-    else {
+    else if(frame_parms->tdd_uplink_nr[nr_tti] == NR_TDD_DOWNLINK_SLOT){
       return (NR_DOWNLINK_SLOT);
     }
+    else return (NR_S_SLOT);
   }
   else if ((frame_parms->tdd_uplink_nr[(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti] == NR_TDD_UPLINK_SLOT)) {
     return (NR_UPLINK_SLOT);
   }
-  else {
+  else if ((frame_parms->tdd_uplink_nr[(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti] == NR_TDD_DOWNLINK_SLOT)) {
     return (NR_DOWNLINK_SLOT);
   }
+  else return (NR_S_SLOT);
 }
 
 /*******************************************************************

@@ -403,6 +403,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
 
 void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint8_t Mod_id                  = phy_config->Mod_id;
+  int     return_tdd;
   NR_DL_FRAME_PARMS         *fp         = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
   gNB_config->nfapi_config.rf_bands.rf_band[0]          = phy_config->cfg->nfapi_config.rf_bands.rf_band[0]; //22
@@ -415,7 +416,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20);
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
   gNB_config->sch_config.ssb_scg_position_in_burst.value= phy_config->cfg->sch_config.ssb_scg_position_in_burst.value;
-  gNB_config->sch_config.ssb_periodicity.value		    = phy_config->cfg->sch_config.ssb_periodicity.value;
+  gNB_config->sch_config.ssb_periodicity.value          = phy_config->cfg->sch_config.ssb_periodicity.value;
+  
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
     gNB_config->subframe_config.duplex_mode.value    = FDD;
@@ -424,6 +426,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   }
 
   memcpy((void*)&gNB_config->rach_config,(void*)&phy_config->cfg->rach_config,sizeof(phy_config->cfg->rach_config));
+  memcpy((void*)&gNB_config->tdd_ul_dl_config,(void*)&phy_config->cfg->tdd_ul_dl_config,sizeof(phy_config->cfg->tdd_ul_dl_config));
 
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
@@ -441,8 +444,23 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
         (unsigned long long)fp->dl_CarrierFreq,
         (unsigned long long)fp->ul_CarrierFreq);
 
-
   nr_init_frame_parms(gNB_config, fp);
+  
+  if(gNB_config->subframe_config.duplex_mode.value == TDD){
+  return_tdd = set_tdd_config_nr(fp,
+		    gNB_config->tdd_ul_dl_config.dl_ul_periodicity.value,
+		    gNB_config->tdd_ul_dl_config.nrofDownlinkSlots.value,
+		    gNB_config->tdd_ul_dl_config.nrofDownlinkSymbols.value,
+		    gNB_config->tdd_ul_dl_config.nrofUplinkSlots.value,
+		    gNB_config->tdd_ul_dl_config.nrofUplinkSymbols.value
+		  );
+
+  if (return_tdd !=0){
+     LOG_E(PHY,"TDD configuration can not be done\n");
+  }
+  else LOG_I(PHY,"TDD has been properly configurated\n");
+  }
+
 
   if (RC.gNB[Mod_id]->configured == 1) {
     LOG_E(PHY,"Already gNB already configured, do nothing\n");

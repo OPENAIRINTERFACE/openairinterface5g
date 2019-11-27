@@ -85,21 +85,27 @@ void config_common(int Mod_idP,
  
   // TDD
   cfg->subframe_config.duplex_mode.value                          = 1;
-  cfg->subframe_config.duplex_mode.tl.tag = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
+  cfg->subframe_config.duplex_mode.tl.tag                         = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
   cfg->num_tlv++;
-  
+  cfg->tdd_ul_dl_config.referenceSubcarrierSpacing.value          = scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  cfg->tdd_ul_dl_config.dl_ul_periodicity.value                   = 5000;//scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;// rakesh:need to configure properly  
+  cfg->tdd_ul_dl_config.nrofDownlinkSlots.value                   = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  cfg->tdd_ul_dl_config.nrofDownlinkSymbols.value                 = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
+  cfg->tdd_ul_dl_config.nrofUplinkSlots.value                     = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  cfg->tdd_ul_dl_config.nrofUplinkSymbols.value                   = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
+
   /// In NR DL and UL will be different band
   cfg->nfapi_config.rf_bands.number_rf_bands       = 1;
   cfg->nfapi_config.rf_bands.rf_band[0]            = *(long*)scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];  
-  cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
+  cfg->nfapi_config.rf_bands.tl.tag                = NFAPI_PHY_RF_BANDS_TAG;
   cfg->num_tlv++;
 
   cfg->nfapi_config.nrarfcn.value                  = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
 
-  cfg->nfapi_config.nrarfcn.tl.tag = NFAPI_NR_NFAPI_NRARFCN_TAG;
+  cfg->nfapi_config.nrarfcn.tl.tag                 = NFAPI_NR_NFAPI_NRARFCN_TAG;
   cfg->num_tlv++;
 
-  cfg->subframe_config.numerology_index_mu.value = mu;
+  cfg->subframe_config.numerology_index_mu.value   = mu;
   //cfg->subframe_config.tl.tag = 
   //cfg->num_tlv++;
 

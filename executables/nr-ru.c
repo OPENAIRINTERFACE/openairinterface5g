@@ -721,24 +721,45 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  int slot_type     = nr_slot_select(ru->nr_frame_parms,frame,slot%fp->slots_per_frame);
-  int sf_extension = 0;
+  int slot_type         = nr_slot_select(ru->nr_frame_parms,frame,slot%fp->slots_per_frame);
+  int prevslot_type     = nr_slot_select(ru->nr_frame_parms,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+  int sf_extension  = 0;
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
-  if ((slot == 0) ||
+  if (slot_type == NR_DOWNLINK_SLOT ||
+		  slot_type == NR_S_SLOT) {
+     int siglen=fp->samples_per_tti,flags=1;
+
+     if(slot_type == NR_S_SLOT) {
+     int txsymb = fp->p_tdd_UL_DL_Configuration->nrofDownlinkSymbols;
+     AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+     siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
+               + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+               //+ ru->end_of_burst_delay;
+     flags=3; // end of burst
+  }
+
+  if (fp->frame_type == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        prevslot_type == NR_UPLINK_SLOT) {
+      flags = 2; // start of burst
+      //sf_extension = ru->sf_extension;
+  }
+
+  /*if ((slot == 0) ||
       (slot == 1)) {
     int siglen=fp->samples_per_slot;
     int flags;
     if (slot==0)
       flags = 2;
     else if (slot==1)
-      flags=3;
+      flags=3;*/
 
 
-    if ((slot_type & NR_UPLINK_SLOT) == 0) {
+    //if ((slot_type & NR_UPLINK_SLOT) == 0) {
       
-      /*
-        if (SF_type == SF_S) {
+      
+       /* if (SF_type == SF_S) {
 	siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
 	flags=3; // end of burst
         }
@@ -756,7 +777,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 	(nextSF_type == SF_UL)) {
 	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
 	sf_extension = ru->N_TA_offset<<1;
-        } */
+        }*/ 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
       
@@ -772,12 +793,11 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 					siglen+sf_extension,
 					ru->nb_tx,
 					flags);
-      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
+      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
 	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
     }
-  }
 }
 
 
