@@ -337,6 +337,9 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, con
 {
 }
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 static void deliver_sdu(void *_ue, rlc_entity_t *entity, char *buf, int size)
 {
   rlc_ue_t *ue = _ue;
@@ -399,9 +402,23 @@ rb_found:
     T(T_ENB_RLC_UL,
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
+
+    const ngran_node_t type = RC.rrc[0 /*ctxt_pP->module_id*/]->node_type;
+    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+                "Can't be CU, bad node type %d\n", type);
+
+    if (NODE_IS_DU(type) && is_srb == 1) {
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+      F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
+      F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+      itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
+      return;
+    }
   }
 
-  if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
+  if (!get_pdcp_data_ind_func()(&ctx, is_srb, 0, rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */
   }
