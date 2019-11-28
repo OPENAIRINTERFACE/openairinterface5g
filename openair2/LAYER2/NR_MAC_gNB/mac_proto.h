@@ -70,6 +70,10 @@ int configure_fapi_dl_Tx(int Mod_id,
 			 nfapi_tx_request_pdu_t *TX_req,
 			 int16_t pdu_index);
 
+void config_uldci(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15, 
+                  dci_pdu_rel15_t *dci_pdu_rel15, 
+                  int *dci_formats, 
+                  int *rnti_types);
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
