@@ -182,16 +182,16 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 }
 
 
-void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+void nr_get_tbs_dl(nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
 		   int x_overhead) {
 
   LOG_D(MAC, "TBS calculation\n");
 
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
+  nfapi_nr_dl_config_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
   uint16_t N_PRB_oh = x_overhead;
-  uint8_t N_PRB_DMRS = (dlsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
-  uint8_t N_sh_symb = dlsch_rel15->NrOfSymbols;
-  uint8_t Imcs = dlsch_rel15->mcsIndex[0];
+  uint8_t N_PRB_DMRS = (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
+  uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
+  uint8_t Imcs = pdsch_rel15->mcsIndex[0];
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
@@ -209,20 +209,20 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
 
   TBS = nr_compute_tbs(Qm,
                        R,
-		       dlsch_rel15->rbSize,
+		       pdsch_rel15->rbSize,
 		       N_sh_symb,
 		       N_PRB_DMRS,
 		       N_PRB_oh,
-		       dlsch_rel15->nrOfLayers);
+		       pdsch_rel15->nrOfLayers);
 
-  dlsch_rel15->targetCodeRate[0] = R;
-  dlsch_rel15->qamModOrder[0] = Qm;
-  dlsch_rel15->TBSize[0] = TBS;
-  //  dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
-  dlsch_rel15->mcsTable[0] = table_idx;
+  pdsch_rel15->targetCodeRate[0] = R;
+  pdsch_rel15->qamModOrder[0] = Qm;
+  pdsch_rel15->TBSize[0] = TBS;
+  //  pdsch_rel15->nb_mod_symbols = N_RE_prime*pdsch_rel15->n_prb*pdsch_rel15->nb_codewords;
+  pdsch_rel15->mcsTable[0] = table_idx;
 
   LOG_D(MAC, "TBS %d : N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d nb_symbols %d\n",
-  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx,N_RE_prime*dlsch_rel15->rbSize*dlsch_rel15->NrOfCodewords );
+  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx,N_RE_prime*pdsch_rel15->rbSize*pdsch_rel15->NrOfCodewords );
 }
 
 //Table 5.1.3.1-1 of 38.214

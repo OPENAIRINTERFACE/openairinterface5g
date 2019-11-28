@@ -538,7 +538,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
   const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,currentPtr);
 
   if(decoderState) return(decoderState);
 

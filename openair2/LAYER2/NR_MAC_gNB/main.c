@@ -78,19 +78,12 @@ void mac_top_init_gNB(void)
       
       for (j = 0; j < MAX_NUM_CCs; j++) {
 	RC.nrmac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list = RC.nrmac[i]->dl_config_pdu_list[j];
-	RC.nrmac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list = RC.nrmac[i]->ul_config_pdu_list[j];
-        
-	for (int k = 0; k < 10; k++)
-	  RC.nrmac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =RC.nrmac[i]->ul_config_pdu_list_tmp[j][k];
-	
         RC.nrmac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list = RC.nrmac[i]->hi_dci0_pdu_list[j];
         RC.nrmac[i]->TX_req[j].tx_request_body.tx_pdu_list =                RC.nrmac[i]->tx_request_pdu[j];
         RC.nrmac[i]->ul_handle = 0;
 	
 
       }
-      
-      
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     
     AssertFatal(rlc_module_init() == 0,"Could not initialize RLC layer\n");

@@ -55,7 +55,7 @@ int pseudo_random_sequence(int M_PN, uint32_t *c, uint32_t cinit);
 void lte_gold_new(LTE_DL_FRAME_PARMS *frame_parms, uint32_t lte_gold_table[20][2][14], uint16_t Nid_cell);
 void generate_dmrs_pbch(uint32_t dmrs_pbch_bitmap[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE], uint16_t Nid_cell);
 uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
-uint16_t get_dmrs_freq_idx_ul(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type);
+uint16_t get_dmrs_freq_idx_ul(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type);
 
 #undef EXTERN
 

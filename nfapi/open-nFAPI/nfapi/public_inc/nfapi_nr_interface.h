@@ -42,17 +42,10 @@ typedef struct {
 typedef enum {
   NFAPI_NR_DL_CONFIG_PDCCH_PDU_TYPE = 0,
   NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_PDSCH_PDU_TYPE,
   NFAPI_NR_DL_CONFIG_PCH_PDU_TYPE,
 } nfapi_nr_dl_config_pdu_type_e;
 
-// nFAPI enums
-typedef enum {
-  NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE = 0,
-  NFAPI_NR_UL_CONFIG_ULSCH_PDU_TYPE,
-  NFAPI_NR_UL_CONFIG_UCI_PDU_TYPE,
-  NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE,
-} nfapi_nr_ul_config_pdu_type_e;
 
 //These TLVs are used exclusively by nFAPI
 typedef struct
@@ -754,12 +747,12 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   // Beamforming
   nr_beamforming_t precodingAndBeamforming;
-}nfapi_nr_dl_config_dlsch_pdu_rel15_t;
-#define NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG
+}nfapi_nr_dl_config_pdsch_pdu_rel15_t;
+#define NFAPI_NR_DL_CONFIG_REQUEST_PDSCH_PDU_REL15_TAG
 
 typedef struct {
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
-} nfapi_nr_dl_config_dlsch_pdu;
+  nfapi_nr_dl_config_pdsch_pdu_rel15_t pdsch_pdu_rel15;
+} nfapi_nr_dl_config_pdsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
@@ -787,7 +780,7 @@ typedef struct {
   union {
   nfapi_nr_dl_config_pdcch_pdu      pdcch_pdu;
   nfapi_nr_dl_config_bch_pdu        bch_pdu;
-  nfapi_nr_dl_config_dlsch_pdu      dlsch_pdu;
+  nfapi_nr_dl_config_pdsch_pdu      pdsch_pdu;
   nfapi_nr_dl_config_pch_pdu        pch_pdu;
   };
 } nfapi_nr_dl_config_request_pdu_t;

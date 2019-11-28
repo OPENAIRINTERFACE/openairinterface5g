@@ -67,7 +67,6 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
-                          NR_gNB_DCI_ALLOC_t *dci_alloc,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
@@ -80,14 +79,9 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           time_stats_t *dlsch_scrambling_stats,
                           time_stats_t *dlsch_modulation_stats) {
 
-  NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[dci_alloc->harq_pid];
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc->pdcch_params;
-  uint8_t rnti_type = pdcch_params.rnti_type;
-  uint16_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
-  (xOverhead);
-  uint8_t N_PRB_DMRS = (rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
-  uint8_t N_sh_symb = rel15->NrOfSymbols;
+  int harq_pid = 0;
+  NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
+  nfapi_nr_dl_config_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;
@@ -121,16 +115,12 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   start_meas(dlsch_scrambling_stats);
   for (int q=0; q<rel15->NrOfCodewords; q++)
     memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
-  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
-  ((pdcch_params.scrambling_id==0)?pdcch_params.rnti:0) : 0;
-  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
-  pdcch_params.scrambling_id : config->sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->NrOfCodewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
                                  encoded_length,
                                  q,
-                                 Nid,
-                                 n_RNTI,
+                                 rel15->dlDmrsScramblingId,
+                                 rel15->rnti,
                                  scrambled_output[q]);
 
   stop_meas(dlsch_scrambling_stats);

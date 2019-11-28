@@ -30,7 +30,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          uint16_t N_RB,
                          nfapi_nr_config_request_t *config);
 
-uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
+uint8_t nr_generate_dci_top(nfapi_nr_dl_config_pdcch_pdu *pdcch_vars,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -45,11 +45,10 @@ void nr_pdcch_scrambling(uint32_t *in,
 
 void nr_fill_dci(PHY_VARS_gNB *gNB,
                  int frame,
-                 int slot,
-                 NR_gNB_DCI_ALLOC_t *dci_alloc,
-                 nfapi_nr_dl_config_pdcch_pdu *pdu);
+                 int slot);
 
-void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t *dci_alloc, uint16_t n_shift, uint8_t m);
+void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint16_t n_shift, uint8_t m);
 
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

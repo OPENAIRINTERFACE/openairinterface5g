@@ -262,7 +262,7 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
   AssertFatal(gNB!=NULL,"gNB is null\n");
   for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
     AssertFatal(gNB->dlsch[i]!=NULL,"gNB->dlsch[%d] is null\n",i);
-    AssertFatal(gNB->dlsch[i]!=NULL,"gNB->dlsch[%d][0] is null\n",i);
+    AssertFatal(gNB->dlsch[i][0]!=NULL,"gNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : dlsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->dlsch[i][0]->harq_mask,gNB->dlsch[i][0]->rnti,first_free_index);
     if ((gNB->dlsch[i][0]->harq_mask >0) &&
         (gNB->dlsch[i][0]->rnti==rnti))       return i;
@@ -274,13 +274,33 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
   return first_free_index;
 }
 
+int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
+
+  uint16_t i;
+  int16_t first_free_index=-1;
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
+    AssertFatal(gNB->ulsch[i]!=NULL,"gNB->ulsch[%d] is null\n",i);
+    AssertFatal(gNB->ulsch[i][0]!=NULL,"gNB->ulsch[%d][0] is null\n",i);
+    LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i][0]->harq_mask,gNB->ulsch[i][0]->rnti,first_free_index);
+    if ((gNB->ulsch[i][0]->harq_mask >0) &&
+        (gNB->ulsch[i][0]->rnti==rnti))       return i;
+    else if ((gNB->ulsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+  }
+  if (type == SEARCH_EXIST) return -1;
+  if (first_free_index != -1)
+    gNB->ulsch[first_free_index][0]->rnti = 0;
+  return first_free_index;
+}
+
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
                    uint8_t *sdu) {
 
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch_pdu->dlsch_pdu_rel15;
+  nfapi_nr_dl_config_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
  
   int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
   AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
@@ -288,10 +308,49 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
   NR_DL_gNB_HARQ_t **harq  = dlsch->harq_processes;
   /// DLSCH struct
-  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
+  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_config_pdsch_pdu));
+  gNB->num_pdsch_rnti++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
   harq[dlsch->harq_ids[frame%2][slot]]->pdu = sdu;
 
+
+}
+
+void nr_fill_ulsch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pusch_pdu_t *ulsch_pdu) {
+
+ 
+  int ulsch_id = find_nr_ulsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
+  AssertFatal( (ulsch_id>=0) && (ulsch_id<NUMBER_OF_NR_ULSCH_MAX),
+              "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
+
+  NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id][0];
+  int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
+  ulsch->rnti = ulsch_pdu->rnti;
+  //ulsch->rnti_type;
+  ulsch->harq_mask |= 1<<harq_pid;
+  ulsch->harq_process_id[slot] = harq_pid;
+
+  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
+
+  LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
+ 
+  
+  //FK this is still a bad hack. We need to replace the L1 FAPI structures with the new scf ones as well.
+  rel15_ul->rnti                           = ulsch_pdu->rnti;
+  rel15_ul->ulsch_pdu_rel15.start_rb       = ulsch_pdu->rb_start;
+  rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
+  rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
+  rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
+  rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6; //where should this come from?
+  rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1; //where should this come from?
+  rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
+  rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
+  rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
+  rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
+  rel15_ul->ulsch_pdu_rel15.R              = ulsch_pdu->target_code_rate;
 
 }
 

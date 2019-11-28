@@ -256,7 +256,7 @@ typedef struct {
   /// DLSCH status flag indicating
   SCH_status_t status;
   /// Dynamic Configuration from FAPI
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t dl_config_pdu;
+  nfapi_nr_dl_config_pdsch_pdu_rel15_t dl_config_pdu;
   /// Transport block size
   uint32_t TBS;
   /// The payload + CRC size in bits

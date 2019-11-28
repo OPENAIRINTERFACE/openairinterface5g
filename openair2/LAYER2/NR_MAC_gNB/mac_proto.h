@@ -55,7 +55,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
+			       frame_t frame_txP, sub_frame_t slot_txP,
+			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
@@ -72,8 +74,12 @@ int configure_fapi_dl_Tx(int Mod_id,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
-                                   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
+                                   nfapi_nr_dl_config_pdsch_pdu_rel15_t *pdsch_config);
 
+void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
+                                   frame_t       frameP,
+                                   sub_frame_t   slotP);
+  
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                   nr_scs_e scs_common,
                                   nr_scs_e pdcch_scs,
@@ -118,7 +124,7 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 
-void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+void nr_get_tbs_dl(nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
 		   int x_overhead);
 /** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);

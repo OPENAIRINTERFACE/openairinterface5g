@@ -202,7 +202,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,in
 {
 
   short nrows=0,ncols=0;
-  int i,i1;
+  int i,i1,rate=3;
   int no_punctured_columns,removed_bit;
 
   int simd_size;
@@ -214,6 +214,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,in
        //BG=1;
        nrows=46; //parity check bits
        ncols=22; //info bits
+       rate=3;
      }
      //else if (block_length<=3840)
     else if	(BG==2)
@@ -221,6 +222,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,in
        //BG=2;
        nrows=42; //parity check bits
        ncols=10; // info bits
+       rate=5;
 
        }
 
@@ -239,8 +241,8 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,in
   unsigned char c_extension[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
 
   // calculate number of punctured bits
-  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
-  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*3);
+  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
+  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
   // printf("%d\n",no_punctured_columns);
   // printf("%d\n",removed_bit);
   // unpack input
@@ -297,7 +299,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 {
 
   short nrows=0,ncols=0;
-  int i,i1,j;
+  int i,i1,j,rate=3;
   int no_punctured_columns,removed_bit;
   char temp;
   int simd_size;
@@ -326,6 +328,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
     {
       nrows=46; //parity check bits
       ncols=22; //info bits
+      rate=3;
     }
     //else if (block_length<=3840)
    else if	(BG==2)
@@ -333,7 +336,8 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
       //BG=2;
       nrows=42; //parity check bits
       ncols=10; // info bits
-      
+      rate=5;
+
       }
 
 #ifdef DEBUG_LDPC
@@ -352,8 +356,8 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   unsigned char c_extension[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
 
   // calculate number of punctured bits
-  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
-  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*3);
+  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
+  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
   // printf("%d\n",no_punctured_columns);
   // printf("%d\n",removed_bit);
   // unpack input
@@ -473,7 +477,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
 {
 
   short nrows=0,ncols=0;
-  int i,i1,j;
+  int i,i1,j,rate=3;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
   char temp;
@@ -509,11 +513,13 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
     {
       nrows=46; //parity check bits
       ncols=22; //info bits
+      rate=3;
     }
     else if (BG==2)
     {
       nrows=42; //parity check bits
       ncols=10; // info bits
+      rate=5;
     }
 
 #ifdef DEBUG_LDPC
@@ -532,10 +538,10 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   unsigned char c_extension[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
 
   // calculate number of punctured bits
-  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
-  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*3);
-  // printf("%d\n",no_punctured_columns);
-  // printf("%d\n",removed_bit);
+  no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
+  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
+  //printf("%d\n",no_punctured_columns);
+  //printf("%d\n",removed_bit);
   // unpack input
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
