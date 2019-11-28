@@ -388,10 +388,10 @@ int configure_fapi_dl_Tx(int Mod_idP,
     rnti_types[0]   = NR_RNTI_C;
     config_uldci(pdcch_pdu_rel15, &dci_pdu_rel15[pdcch_pdu_rel15->numDlDci], dci_formats, rnti_types);
     
-    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) 
+    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
       pdcch_pdu_rel15->PayloadSizeBits[i]=nr_dci_size(dci_formats[i],rnti_types[i],pdsch_pdu_rel15->BWPSize);
-
-    fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[i],dci_formats,rnti_types);
+      fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[i],dci_formats,rnti_types);
+    }
     
     LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
@@ -431,27 +431,25 @@ int configure_fapi_dl_Tx(int Mod_idP,
 
 void config_uldci(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
 
-  dci_pdu_rel15.frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(0, 
-                    50, 
-                    NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275)); // to be changed with UL bwp
-  dci_pdu_rel15.time_domain_assignment = 2; // row index used here instead of SLIV;
-  dci_pdu_rel15.frequency_hopping_flag = 1;
-  dci_pdu_rel15.mcs = 9;
+  dci_pdu_rel15->frequency_domain_assignment = 0; // PRBalloc_to_locationandbandwidth0(0,50,NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275)); // to be changed with UL bwp
+  dci_pdu_rel15->time_domain_assignment = 2; // row index used here instead of SLIV;
+  dci_pdu_rel15->frequency_hopping_flag = 1;
+  dci_pdu_rel15->mcs = 9;
   
-  dci_pdu_rel15.format_indicator = 0;
-  dci_pdu_rel15.ndi = 1;
-  dci_pdu_rel15.rv = 0;
-  dci_pdu_rel15.harq_pid = 0;
-  dci_pdu_rel15.tpc = 2;
+  dci_pdu_rel15->format_indicator = 0;
+  dci_pdu_rel15->ndi = 1;
+  dci_pdu_rel15->rv = 0;
+  dci_pdu_rel15->harq_pid = 0;
+  dci_pdu_rel15->tpc = 2;
   
   LOG_I(MAC, "[gNB scheduler phytest] DCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
-  dci_pdu_rel15.frequency_domain_assignment,
-  dci_pdu_rel15.time_domain_assignment,
-  dci_pdu_rel15.frequency_hopping_flag,
-  dci_pdu_rel15.mcs,
-  dci_pdu_rel15.tpc,
-  dci_pdu_rel15.ndi, 
-  dci_pdu_rel15.rv);
+  dci_pdu_rel15->frequency_domain_assignment,
+  dci_pdu_rel15->time_domain_assignment,
+  dci_pdu_rel15->frequency_hopping_flag,
+  dci_pdu_rel15->mcs,
+  dci_pdu_rel15->tpc,
+  dci_pdu_rel15->ndi, 
+  dci_pdu_rel15->rv);
   
   dci_formats[pdcch_pdu_rel15->numDlDci] = NR_UL_DCI_FORMAT_0_0;
   rnti_types[pdcch_pdu_rel15->numDlDci]  = NR_RNTI_C;
