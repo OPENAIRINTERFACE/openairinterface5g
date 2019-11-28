@@ -552,6 +552,7 @@ int main(int argc, char **argv)
   nr_gold_pdcch(UE,0,2);
 
   RC.nb_nr_macrlc_inst = 1;
+  RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
