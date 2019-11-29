@@ -26,11 +26,16 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 040101 030201
+ 040101 030201 030202
  050102
- 030104 000002
- 040301 000002 040540 040615 040616 040655 040656 040401
- 040201 000002 030201
+ 030104 000002 030105 000002
+ 040301 000002
+ 040540 040615 040616 040655 040656
+ 050401 000001
+ 040541 040617 040618 040657 040658
+ 040401 000001
+ 040542
+ 040201 000002 030201 030202
  050202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -59,15 +64,32 @@
 
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes</Initialize_eNB_args>
+		<desc>Initialize eNB #0 (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 123456</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 	</testCase>
 
+	<testCase id="030105">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB #1 (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].target_enb_x2_ip_address.[0].ipv4 CI_RCC_IP_ADDR --eNBs.[0].target_enb_x2_ip_address.[0].preference ipv4 --eNBs.[0].eNB_ID 0xe01 --eNBs.[0].component_carriers.[0].Nid_cell 1 --eNBs.[0].nr_cellid 98765</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
 	<testCase id="030201">
 		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
+		<desc>Terminate eNB #0</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030202">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB #1</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 	<testCase id="050102">
@@ -97,6 +119,20 @@
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
+	<testCase id="040541">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040542">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
 	<testCase id="040615">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
@@ -105,6 +141,20 @@
 	</testCase>
 
 	<testCase id="040616">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040617">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040618">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
@@ -123,6 +173,26 @@
 		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
 		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040657">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040658">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="050401">
+		<class>Perform_X2_Handover</class>
+		<desc>Doing a Flexran-Controlled X2 Handover</desc>
+		<x2_ho_options>network</x2_ho_options>
 	</testCase>
 
 </testCaseList>
