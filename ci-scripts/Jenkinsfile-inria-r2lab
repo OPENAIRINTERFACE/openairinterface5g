@@ -59,6 +59,9 @@ def r2labEPC0IpAddr = r2labBaseIpAddr + r2labEPC0Idx
 def r2labUE0Idx = '6'
 def r2labUE0 = 'fit0' + r2labUE0Idx
 def r2labUE0IpAddr = r2labBaseIpAddr + r2labUE0Idx
+def r2labENB1Idx = '16'
+def r2labENB1 = 'fit' + r2labENB1Idx
+def r2labENB1IpAddr = r2labBaseIpAddr + r2labENB1Idx
 
 pipeline {
     agent {
@@ -144,9 +147,9 @@ pipeline {
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
 
                     echo '\u2705 \u001B[32mLoad Image for one eNB\u001B[0m'
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx} > /dev/null 2>&1'"
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx}'"
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx},${r2labENB1Idx}'"
 
                     echo '\u2705 \u001B[32mLoad Image for one OAI UE\u001B[0m'
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labUE0Idx} > /dev/null 2>&1'"
@@ -157,7 +160,7 @@ pipeline {
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-epc ${r2labEPC0Idx} > /dev/null 2>&1'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labEPC0Idx}'"
 
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'nodes ${r2labUE0Idx},${r2labPythonExeIdx},${r2labEPC0Idx},${r2labENB0Idx} && st'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'nodes ${r2labUE0Idx},${r2labPythonExeIdx},${r2labEPC0Idx},${r2labENB0Idx},${r2labENB1Idx} && st'"
                 }
             }
         }
@@ -210,7 +213,7 @@ pipeline {
                         String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                         for (xmlFile in myXmlTestSuite) {
                             try {
-                                sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=TesteNB --ranRepository=https://gitlab.eurecom.fr/oai/openairinterface5g --ranBranch=${ranRepoBranch} --ranCommitID=${GIT_COMMIT_TO_RUN} --ranAllowMerge=false --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd} --eNBSourceCodePath=/home/${fituser}/openairinterface5g --UEIPAddress=${r2labUE0IpAddr} --UEUserName=${fituser} --UEPassword=${fitpasswd} --UESourceCodePath=/home/${fituser}/openairinterface5g --EPCIPAddress=${r2labEPC0IpAddr} --EPCType=OAI-Rel14-CUPS --EPCUserName=${fituser}  --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --ADBIPAddress=${r2labEPC0IpAddr} --ADBUserName=${fituser} --ADBPassword=${fitpasswd} --ADBType=distributed --XMLTestFile=${xmlFile}\"'"
+                                sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=TesteNB --ranRepository=https://gitlab.eurecom.fr/oai/openairinterface5g --ranBranch=${ranRepoBranch} --ranCommitID=${GIT_COMMIT_TO_RUN} --ranAllowMerge=false --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd} --eNBSourceCodePath=/home/${fituser}/openairinterface5g --eNB1IPAddress=${r2labENB1IpAddr} --eNB1UserName=${fituser} --eNB1Password=${fitpasswd} --eNB1SourceCodePath=/home/${fituser}/openairinterface5g --UEIPAddress=${r2labUE0IpAddr} --UEUserName=${fituser} --UEPassword=${fitpasswd} --UESourceCodePath=/home/${fituser}/openairinterface5g --EPCIPAddress=${r2labEPC0IpAddr} --EPCType=OAI-Rel14-CUPS --EPCUserName=${fituser}  --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --ADBIPAddress=${r2labEPC0IpAddr} --ADBUserName=${fituser} --ADBPassword=${fitpasswd} --ADBType=distributed --XMLTestFile=${xmlFile}\"'"
                             } catch (Exception e) {
                                 currentBuild.result = 'FAILURE'
                                 buildStageStatus = false
