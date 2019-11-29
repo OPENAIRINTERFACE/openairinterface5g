@@ -224,6 +224,8 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   int slot = tti_tx;
   int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
 
+  if (nr_slot_select(cfg,slot) == SF_UL) return;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
   start_meas(&ru->ofdm_mod_stats);
 
@@ -232,13 +234,10 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
     memcpy((void*)ru->common.txdataF_BF[aa],
 	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
 
-  if ((nr_slot_select(cfg,slot,frame_tx)==SF_DL)||
-      ((nr_slot_select(cfg,slot,frame_tx)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
     nr_feptx0(ru,slot,0,fp->symbols_per_slot);
 
-  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
   stop_meas(&ru->ofdm_mod_stats);
