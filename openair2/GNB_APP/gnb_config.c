@@ -807,7 +807,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             NRRRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= N_RB_DL;
             //if(N_RB_DL == 217)      sf_ahead = 2;
             //else if(N_RB_DL == 106) sf_ahead = 4;
-            if ((N_RB_DL != 217) && (N_RB_DL != 106))
+            if ((N_RB_DL != 273) && (N_RB_DL != 217) && (N_RB_DL != 106))
 	      AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for N_RB_DL choice: 106, 217 !\n", RC.config_file_name, i, N_RB_DL);
             
             /*
