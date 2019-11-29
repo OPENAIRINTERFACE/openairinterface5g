@@ -56,8 +56,10 @@
 //#include "RRCConnectionRequest.h"
 //#include "RRCConnectionReestablishmentRequest.h"
 #include "NR_RRCReestablishmentRequest.h"
-//#include "BCCH-DL-SCH-Message.h"
+#include "NR_BCCH-DL-SCH-Message.h"
 #include "NR_BCCH-BCH-Message.h"
+#include "NR_PLMN-IdentityInfo.h"
+#include "NR_MCC-MNC-Digit.h"
 //#include "MCCH-Message.h"
 //#include "MBSFNAreaConfiguration-r9.h"
 //#include "SCellToAddMod-r10.h"
@@ -374,6 +376,9 @@ typedef struct {
   uint8_t                                   *MIB;
   uint8_t                                   sizeof_MIB;
 
+  uint8_t                                   *SIB1;
+  uint8_t                                   sizeof_SIB1;
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
@@ -388,6 +393,7 @@ typedef struct {
 
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
+  NR_BCCH_DL_SCH_Message_t                  *siblock1;
 
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
