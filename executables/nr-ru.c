@@ -321,7 +321,7 @@ static inline void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t ti
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
-  if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx)!=SF_UL) send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
+  if (nr_slot_select(&ru->gNB_list[0]->gNB_config,ru->proc.tti_tx,frame)!=SF_UL) send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
@@ -536,10 +536,10 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   do {
     recv_IF4p5(ru, &frame_tx, &slot_tx, &packet_type, &symbol_number);
 
-    if ((nr_slot_select(cfg,slot_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    if ((nr_slot_select(cfg,slot_tx,frame_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
 
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
-          *slot,nr_slot_select(cfg,*slot),frame_tx,slot_tx,symbol_number);
+          *slot,nr_slot_select(cfg,*slot,*frame),frame_tx,slot_tx,symbol_number);
 
     if (proc->first_tx != 0) {
       *frame         = frame_tx;
@@ -558,7 +558,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
     } else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);
 
-  if (nr_slot_select(cfg,slot_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
+  if (nr_slot_select(cfg,slot_tx,frame_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
 
   proc->tti_tx  = slot_tx;
   proc->frame_tx     = frame_tx;
@@ -728,7 +728,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
   int sf_extension = 0;
-  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
+  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame,frame);
 
   if ((slot == 0) ||
       (slot == 1) || IS_SOFTMODEM_RFSIM ) {
@@ -819,7 +819,7 @@ static void *ru_thread_asynch_rxtx( void *param ) {
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
     else if (ru->fh_north_asynch_in) {
-      if (nr_slot_select(&ru->gNB_list[0]->gNB_config,subframe)!=SF_UL)
+      if (nr_slot_select(&ru->gNB_list[0]->gNB_config,subframe,frame)!=SF_UL)
         ru->fh_north_asynch_in(ru,&frame,&subframe);
     } else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
   }

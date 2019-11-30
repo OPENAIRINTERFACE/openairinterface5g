@@ -34,7 +34,7 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
 
-nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot);
+nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot, int frame);
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_meas);
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
