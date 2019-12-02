@@ -123,12 +123,11 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   start_meas(&ru->ofdm_mod_stats);
 
-  if (nr_slot_select(fp,frame_tx,slot) == SF_UL) return;
+  if (nr_slot_select(fp,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
   // this copy should be done in the precoding thread (currently inactive)
   for (int aa=0;aa<ru->nb_tx;aa++)
     memcpy((void*)ru->common.txdataF_BF[aa],
-
 	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
@@ -346,7 +345,7 @@ void nr_fep_full_2thread(RU_t *ru, int slot) {
   // NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
   // if ((fp->frame_type == TDD) &&
-     // (subframe_select(fp,proc->tti_rx) != SF_UL)) return;
+     // (subframe_select(fp,proc->tti_rx) != NR_UPLINK_SLOT)) return;
 
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
@@ -405,7 +404,7 @@ void nr_fep_full(RU_t *ru, int slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
   // if ((fp->frame_type == TDD) && 
-     // (subframe_select(fp,proc->tti_rx) != SF_UL)) return;
+     // (subframe_select(fp,proc->tti_rx) != NR_UPLINK_SLOT)) return;
 
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
