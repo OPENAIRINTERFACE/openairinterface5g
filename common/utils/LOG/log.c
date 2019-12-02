@@ -324,8 +324,9 @@ void  log_getconfig(log_t *g_log)
 
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
   config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
-  if (config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX) > 0) 
-	  exit(1);;
+
+  if (config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX) > 0)
+    exit(1);
 
   /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {
