@@ -79,30 +79,39 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_f
   return symbol;
 }
 
-int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot)
+int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame)
 {
 
   uint8_t n_hf;
+  uint16_t p,mu,hf_slots;
+  uint64_t ssb_map;
   int rel_slot;
 
+  mu = cfg->subframe_config.numerology_index_mu.value;
+
+  ssb_map = cfg->sch_config.ssb_scg_position_in_burst.value;
+  p = cfg->sch_config.ssb_periodicity.value;
   n_hf = cfg->sch_config.half_frame_index.value;
 
-  // if SSB periodicity is 5ms, they are transmitted in both half frames
-  if ( cfg->sch_config.ssb_periodicity.value == 5) {
-    if (slot<10)
-      n_hf=0;
-    else
-      n_hf=1;
-  }
-
-  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
-  rel_slot = (n_hf)? (slot-10) : slot;
-
-  if(rel_slot<10 && rel_slot>=0)
-    return 1;
-  else
+  // checking if the ssb is transmitted in given frame according to periodicity
+  if ( (p>10) && (frame%(p/10)) )  
     return 0;
+  else {
+    hf_slots = (10<<mu)>>1; // number of slots per half frame
+    // if SSB periodicity is 5ms, they are transmitted in both half frames
+    if ( p == 5) {
+      if (slot<hf_slots) 
+        n_hf=0;
+      else
+        n_hf=1;
+    }
 
+    // to set a effective slot number between 0 to hf_slots-1 in the half frame where the SSB is supposed to be
+    rel_slot = (n_hf)? (slot-hf_slots) : slot;
+
+    // there are two potential SSB per slot
+    return ( ((ssb_map >> rel_slot*2) & 0x01) || ((ssb_map >> (1+rel_slot*2)) & 0x01) ); 
+  }
 }
 
 
