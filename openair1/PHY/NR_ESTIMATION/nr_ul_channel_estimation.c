@@ -267,8 +267,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 
     // check if PRB crosses DC and improve estimates around DC
-    uint16_t ofdm_symb_size = gNB->frame_parms.ofdm_symbol_size;
-    if ((bwp_start_subcarrier%ofdm_symb_size >= ofdm_symb_size/2) && ((bwp_start_subcarrier+nb_rb_pusch*12)%ofdm_symb_size >= ofdm_symb_size)) {
+    if ((bwp_start_subcarrier < gNB->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pusch*12 >= gNB->frame_parms.ofdm_symbol_size)) {
       ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
       uint16_t idxDC = 2*(gNB->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
       uint16_t idxPil = idxDC/2;
