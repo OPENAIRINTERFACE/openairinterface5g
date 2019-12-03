@@ -62,17 +62,16 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   uint8_t  CC_id;
   gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
   NR_COMMON_channels_t              *cc = &nr_mac->common_channels[0];
-  nfapi_nr_dl_config_request_body_t *dl_req;
-  nfapi_nr_dl_config_request_pdu_t  *dl_config_pdcch_pdu;
-  nfapi_nr_dl_config_request_pdu_t  *dl_config_pdsch_pdu;
-  nfapi_tx_request_pdu_t            *TX_req;
+  nfapi_nr_dl_tti_request_body_t    *dl_req;
+  nfapi_nr_dl_tti_request_pdu_t     *dl_tti_pdcch_pdu;
+  nfapi_nr_dl_tti_request_pdu_t     *dl_tti_pdsch_pdu;
+  nfapi_nr_pdu_t        *TX_req;
 
   uint16_t rnti = 0x1234;
   
 
   NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
 
-  uint16_t sfn_sf = frameP << 7 | slotP;
   int dlBWP_carrier_bandwidth = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
 
   // everything here is hard-coded to 30 kHz
@@ -86,20 +85,20 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275));
     
     
-    dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
-    dl_config_pdcch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-    memset((void*)dl_config_pdcch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
-    dl_config_pdcch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_PDCCH_PDU_TYPE;
-    dl_config_pdcch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_pdcch_pdu));
+    dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
+    dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+    memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+    dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
+    dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     
-    dl_config_pdsch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu+1];
-    memset((void *)dl_config_pdsch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
-    dl_config_pdsch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_PDSCH_PDU_TYPE;
-    dl_config_pdsch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_pdsch_pdu));
+    dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+    memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+    dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
+    dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
 
     
-    nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_config_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-    nfapi_nr_dl_config_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_config_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
     
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = rnti;
@@ -216,7 +215,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  params_rel15->nb_slots,
 	  params_rel15->sfn_mod2,
 	  params_rel15->first_slot);
-    nr_get_tbs_dl(&dl_config_pdsch_pdu->pdsch_pdu, dl_config_dci_pdu->dci_dl_pdu,0);
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, dl_tti_dci_pdu->dci_dl_pdu,0);
     LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
 	  pdsch_pdu_rel15->rbStart,
 	  pdsch_pdu_rel15->rbSize,
@@ -227,35 +226,31 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	  pdsch_pdu_rel15->mcsIndex[0]);
     */
     
-    dl_req->number_dci++;
-    dl_req->number_pdsch_rnti++;
-    dl_req->number_pdu+=2;
+    dl_req->nPDUs+=2;
     
-    TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
-    TX_req->pdu_length = 6;
-    TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
-    TX_req->num_segments = 1;
-    TX_req->segments[0].segment_length = 8;
-    TX_req->segments[0].segment_data   = &cc[CC_id].RAR_pdu.payload[0];
-    nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-    nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-    nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-    nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-    
+    TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
+    TX_req->PDU_length = 6;
+    TX_req->PDU_index = nr_mac->pdu_index[CC_id]++;
+    TX_req->num_TLV = 1;
+    TX_req->TLVs[0].length = 8;
+    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
+    nr_mac->TX_req[CC_id].Number_of_PDUs++;
+    nr_mac->TX_req[CC_id].SFN=frameP;
+    nr_mac->TX_req[CC_id].Slot=slotP;
   }
 }
 
 int configure_fapi_dl_Tx(int Mod_idP,
-			 nfapi_nr_dl_config_request_body_t *dl_req,
-			 nfapi_tx_request_pdu_t *TX_req,
-			 int16_t pdu_index) {
+			 nfapi_nr_dl_tti_request_body_t *dl_req,
+			 nfapi_nr_pdu_t *TX_req) {
+
 
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   
-  nfapi_nr_dl_config_request_pdu_t  *dl_config_pdcch_pdu;
-  nfapi_nr_dl_config_request_pdu_t  *dl_config_pdsch_pdu;
+  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
+  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
   int TBS;
   
 
@@ -280,18 +275,18 @@ int configure_fapi_dl_Tx(int Mod_idP,
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
 
-  dl_config_pdcch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-  memset((void*)dl_config_pdcch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
-  dl_config_pdcch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_PDCCH_PDU_TYPE;
-  dl_config_pdcch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_pdcch_pdu));
+  dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+  memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+  dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
+  dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   
-  dl_config_pdsch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu+1];
-  memset((void*)dl_config_pdsch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
-  dl_config_pdsch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_PDSCH_PDU_TYPE;
-  dl_config_pdsch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_pdsch_pdu));
+  dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+  memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+  dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
+  dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
 
-  nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_config_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nfapi_nr_dl_config_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_config_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
 
   pdsch_pdu_rel15->pduBitmap = 0;
@@ -403,10 +398,10 @@ int configure_fapi_dl_Tx(int Mod_idP,
 	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_config_pdsch_pdu->pdsch_pdu, 
+  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, 
 		x_Overhead);
   // Hardcode it for now
-  TBS = dl_config_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
+  TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
   LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	pdsch_pdu_rel15->rbStart,
 	pdsch_pdu_rel15->rbSize,
@@ -418,31 +413,32 @@ int configure_fapi_dl_Tx(int Mod_idP,
 	pdsch_pdu_rel15->mcsIndex[0],
 	TBS);
   
-  dl_req->number_dci++;
-  dl_req->number_pdsch_rnti++;
-  dl_req->number_pdu+=2;
+  dl_req->nPDUs+=2;
   
-  TX_req->pdu_length = pdsch_pdu_rel15->TBSize[0];
-  TX_req->pdu_index = pdu_index++;
-  TX_req->num_segments = 1;
-  
+
+  TX_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
+  TX_req->PDU_index  = nr_mac->pdu_index[0]++;
+
+  //  TX_req->num_TLV = 1;
+  //  TX_req->TLVs[0].length = 8;
+  //    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
+
   return TBS/8; //Return TBS in bytes
 }
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
-                                   nfapi_nr_dl_config_pdsch_pdu_rel15_t *dlsch_config)
+                                   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config)
 {
   LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest \n");
   
   gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   //NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
-  nfapi_nr_dl_config_request_body_t   *dl_req;
-  nfapi_tx_request_pdu_t            *TX_req;
+  nfapi_nr_dl_tti_request_body_t   *dl_req;
+  nfapi_nr_pdu_t            *TX_req;
   uint16_t rnti = 0x1234;
-  uint16_t sfn_sf = frameP << 7 | slotP;
 
   int TBS;
   int TBS_bytes;
@@ -468,8 +464,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   
   LOG_D(MAC, "Scheduling UE specific search space DCI type 1\n");
   int CC_id=0;
-  dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
-  TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
+  dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
+  TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
   
   //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
   //through the LTE stack
@@ -481,7 +477,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     
     // Hardcode it for now
     TBS = 6784/8; //TBS in bytes
-    //TBS = dl_config_pdsch_pdu->pdsch_pdu.dlsch_pdu_rel15.transport_block_size;
+    //TBS = dl_tti_pdsch_pdu->pdsch_pdu.dlsch_pdu_rel15.transport_block_size;
     
     for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
       // TODO: check if the lcid is active
@@ -589,8 +585,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 	nr_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + sdu_length_total + j] = 0;
       }
       
-      TBS_bytes = configure_fapi_dl_Tx(module_idP,dl_req, TX_req, 
-				       nr_mac->pdu_index[CC_id]);        
+      TBS_bytes = configure_fapi_dl_Tx(module_idP,
+				       dl_req, 
+				       TX_req); 
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
@@ -599,23 +596,21 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     }
 #endif
       
-      //TX_req->segments[0].segment_length = 8;
-      TX_req->segments[0].segment_length = TBS_bytes +2;
-      TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[0][0].payload[0];
+      TX_req->num_TLV=1;
+      TX_req->TLVs[0].length = TBS_bytes +2;
+      memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0],TBS_bytes);;
       
       
-      nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-      nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-      nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-      nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+      nr_mac->TX_req[CC_id].Number_of_PDUs++;
+      nr_mac->TX_req[CC_id].SFN = frameP;
+      nr_mac->TX_req[CC_id].Slot = slotP;
     } //if (ta_len + sdu_length_total + header_length_total > 0)
   } //if (IS_SOFTMODEM_NOS1)
   
     //When the --NOS1 option is not enabled, DLSCH transmissions with random data
     //occur every time that the current function is called (dlsch phytest mode)
   else{
-    TBS_bytes = configure_fapi_dl_Tx(module_idP,dl_req, TX_req, 
-				     nr_mac->pdu_index[CC_id]);
+    TBS_bytes = configure_fapi_dl_Tx(module_idP,dl_req, TX_req); 
     // HOT FIX for all zero pdu problem
     // ------------------------------------------------------------------------------------------------
     
@@ -633,13 +628,15 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 #endif
     
     //TX_req->segments[0].segment_length = 8;
-    TX_req->segments[0].segment_length = TBS_bytes +2;
-    TX_req->segments[0].segment_data = nr_mac->UE_list.DLSCH_pdu[0][0].payload[0];
+    TX_req->num_TLV=1;
+    TX_req->TLVs[0].length = TBS_bytes +2;
+    memcpy((void*)&TX_req->TLVs[0].value.direct[0],
+	   (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0],
+	   TBS_bytes);
     
-    nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
-    nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
-    nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
-    nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+    nr_mac->TX_req[CC_id].Number_of_PDUs++;
+    nr_mac->TX_req[CC_id].SFN = frameP;
+    nr_mac->TX_req[CC_id].Slot = slotP;
     // ------------------------------------------------------------------------------------------------
   }
 }
@@ -655,8 +652,8 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
   for (uint8_t CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific PUSCH for CC_id %d\n",CC_id);
     //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
-    UL_tti_req->sfn = frameP;
-    UL_tti_req->slot = slotP;
+    UL_tti_req->SFN = frameP;
+    UL_tti_req->Slot = slotP;
     UL_tti_req->n_pdus = 1;
     UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
     UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);

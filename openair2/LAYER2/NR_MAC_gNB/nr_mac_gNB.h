@@ -141,19 +141,13 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_t         config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
-  nfapi_nr_dl_config_request_t      DL_req[NFAPI_CC_MAX];
+  nfapi_nr_dl_tti_request_t      DL_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
   nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
-  /// Preallocated DL pdu list
-  nfapi_nr_dl_config_request_pdu_t  dl_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_DL_PDU];
-  /// Preallocated HI_DCI0 pdu list
-  nfapi_hi_dci0_request_pdu_t       hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_hi_dci0_request_t           HI_DCI0_req[NFAPI_CC_MAX];
-  /// Prealocated TX pdu list
-  nfapi_tx_request_pdu_t            tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
+  nfapi_nr_ul_dci_request_t         ul_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
-  nfapi_tx_request_t                TX_req[NFAPI_CC_MAX];
+  nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
   NR_UE_list_t UE_list;
 
   /// UL handle

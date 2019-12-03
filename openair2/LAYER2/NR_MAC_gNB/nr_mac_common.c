@@ -182,12 +182,12 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 }
 
 
-void nr_get_tbs_dl(nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
+void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead) {
 
   LOG_D(MAC, "TBS calculation\n");
 
-  nfapi_nr_dl_config_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
   uint16_t N_PRB_oh = x_overhead;
   uint8_t N_PRB_DMRS = (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;

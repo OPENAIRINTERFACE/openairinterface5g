@@ -220,7 +220,7 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
 }
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
-                     uint8_t *pbch_pdu,
+		     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
                      int32_t *txdataF,
                      int16_t amp,
@@ -243,7 +243,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   ///Payload generation
   memset((void *)pbch, 0, sizeof(NR_gNB_PBCH));
   pbch->pbch_a=0;
-
+  uint8_t *pbch_pdu = (uint8_t*)&ssb_pdu->ssb_pdu_rel15.bchPayload;
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
     pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<i;
 

@@ -85,7 +85,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 @returns 0 on success
  */
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
-                     uint8_t *pbch_pdu,
+		     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
                      int32_t *txdataF,
                      int16_t amp,

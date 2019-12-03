@@ -93,7 +93,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
-  uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
   uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
 
@@ -133,13 +132,13 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
     	  nr_generate_pbch(&gNB->pbch,
-                      pbch_pdu,
-                      gNB->nr_pbch_interleaver,
-                      txdataF[0],
-                      AMP,
-                      ssb_start_symbol,
-                      n_hf,fp->Lmax,ssb_index,
-                      frame, cfg, fp);
+			   gNB->ssb_pdu,
+			   gNB->nr_pbch_interleaver,
+			   txdataF[0],
+			   AMP,
+			   ssb_start_symbol,
+			   n_hf,fp->Lmax,ssb_index,
+			   frame, cfg, fp);
 	}
      }
   }

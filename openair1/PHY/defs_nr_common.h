@@ -36,6 +36,7 @@
 #include "PHY/impl_defs_top.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 

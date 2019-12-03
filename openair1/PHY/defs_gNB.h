@@ -71,7 +71,7 @@ typedef enum {
 
 typedef struct {
   /// Nfapi DLSCH PDU
-  nfapi_nr_dl_config_pdsch_pdu pdsch_pdu;
+  nfapi_nr_dl_tti_pdsch_pdu pdsch_pdu;
   /// pointer to pdu from MAC interface (this is "a" in 36.212)
   uint8_t *pdu;
   /// The payload + CRC size in bits, "B" from 36-212
@@ -623,7 +623,9 @@ typedef struct PHY_VARS_gNB_s {
   //Sched_Rsp_t         Sched_INFO;
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   
-  nfapi_nr_dl_config_pdcch_pdu *pdcch_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu;
+  nfapi_nr_dl_tti_ssb_pdu   *ssb_pdu;
+
   int num_pdsch_rnti;
   NR_gNB_PBCH         pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
@@ -639,7 +641,7 @@ typedef struct PHY_VARS_gNB_s {
   LTE_eNB_UE_stats   *UE_stats_ptr[NUMBER_OF_UE_MAX];
 */
   uint8_t pbch_configured;
-  uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
+  //  uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char gNB_generate_rar;
 
   /// NR synchronization sequences

@@ -155,7 +155,7 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-uint8_t nr_generate_dci_top(nfapi_nr_dl_config_pdcch_pdu *pdcch_pdu,
+uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -170,7 +170,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_config_pdcch_pdu *pdcch_pdu,
   nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
   /*First iteration: single DCI*/
 
-  nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
 
 
   // find coreset descriptor

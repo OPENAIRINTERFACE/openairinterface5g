@@ -50,16 +50,4 @@ void nr_fep_full_2thread(RU_t *ru, int slot);
 void feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
 int nr_phy_init_RU(RU_t *ru);
 
-void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-				  nr_scs_e scs_common,
-				  nr_scs_e pdcch_scs,
-				  nr_frequency_range_e freq_range,
-				  uint8_t rmsi_pdcch_config,
-				  uint8_t ssb_idx,
-                  uint8_t k_ssb,
-                  uint16_t sfn_ssb,
-                  uint8_t n_ssb,
-				  uint16_t nb_slots_per_frame,
-				  uint16_t N_RB);
-
 #endif

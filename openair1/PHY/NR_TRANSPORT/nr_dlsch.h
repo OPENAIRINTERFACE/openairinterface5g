@@ -36,10 +36,10 @@
 #include "PHY/defs_gNB.h"
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
-                                        nfapi_nr_dl_config_pdcch_pdu dci_pdu,
-                                        nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu);
+                                        nfapi_nr_dl_tti_pdcch_pdu dci_pdu,
+                                        nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu);
 
-void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_pdsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);
+void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);
 
 uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB);
 
@@ -66,7 +66,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
+                   nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    unsigned char *sdu); 
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,

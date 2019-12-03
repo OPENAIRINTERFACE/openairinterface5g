@@ -141,14 +141,14 @@ void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
   *n_rb = 6*count;
 }
 
-void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint16_t n_shift, uint8_t m) {
+void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 
   nr_cce_t* cce;
   nr_reg_t* reg;
-  nfapi_nr_dl_config_pdcch_pdu_rel15_t* pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
   int bsize = pdcch_pdu_rel15->RegBundleSize;
   int R = pdcch_pdu_rel15->InterleaverSize;
-
+  int n_shift = pdcch_pdu_rel15->ShiftIndex;
 
 
   //Max number of candidates per aggregation level -- SIB1 configured search space only
@@ -157,6 +157,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint16_t n_shift, uint8_t m) {
   int n_rb,rb_offset;
 
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
+
 
   int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
   int C;
@@ -227,7 +228,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
                  int frame,
                  int slot) {
 
-  nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
   NR_gNB_DLSCH_t *dlsch; 
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
@@ -252,7 +253,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->harq_mask                |= (1<<harq_pid);
     dlsch->rnti                      = pdcch_pdu_rel15->RNTI[i];
     
-    nr_fill_cce_list(gNB,pdcch_pdu_rel15->ShiftIndex,0);  
+    nr_fill_cce_list(gNB,0);  
     /*
     LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
     LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);

@@ -81,7 +81,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 
   int harq_pid = 0;
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
-  nfapi_nr_dl_config_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;

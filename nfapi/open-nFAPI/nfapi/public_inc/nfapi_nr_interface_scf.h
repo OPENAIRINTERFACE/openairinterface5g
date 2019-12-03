@@ -22,18 +22,18 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
-/*
-// Extension to the generic structures for single tlv values
-typedef struct {
-	nfapi_tl_t tl;
-	int32_t value;
-} nfapi_int32_tlv_t;
 
 typedef struct {
-	nfapi_tl_t tl;
-	uint32_t value;
-} nfapi_uint32_tlv_t;
-*/
+  /// Value: 0 -> 1, 0: Payload is carried directly in the value field, 1: Pointer to payload is in the value field 
+  uint16_t tag; 
+  /// Length of the actual payload in bytes, without the padding bytes Value: 0 → 65535
+  uint16_t length;
+  union { 
+    uint32_t *ptr;
+    uint32_t direct[16384];
+  } value;
+} nfapi_nr_tx_data_request_tlv_t;
+
 
 // 2019.8
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.2
@@ -573,17 +573,29 @@ typedef struct
 
 }nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t;
 
+/*
 //table 3-43
 typedef struct 
 {
-  uint16_t num_prgs;/*Number of PRGs spanning this allocation.
-Value : 1->275 */
-  uint16_t prg_size;/*Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275 */
+  uint16_t num_prgs;//Number of PRGs spanning this allocation. Value : 1->275 
+  uint16_t prg_size;//Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
   //watchout: dig_bf_interfaces here, in table 3-53 it's dig_bf_interface
   uint8_t  dig_bf_interfaces;//Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
   nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t* prgs_list;//
 
 }nfapi_nr_tx_precoding_and_beamforming_t;
+*/
+
+typedef struct {
+  /// Number of PRGs spanning this allocation. Value : 1->275
+  uint16_t numPRGs;
+  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
+  uint16_t prgSize;
+  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
+  uint8_t digBFInterfaces;
+  uint16_t PMIdx[275];
+  uint16_t *beamIdx[275];
+} nfapi_nr_tx_precoding_and_beamforming_t;
 
 //table 3-37 
 
@@ -606,33 +618,154 @@ SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1] Value :0->17 */
 
 } nfapi_nr_dl_dci_pdu_t;
 
-//table 3-36
-typedef struct
-{
-  uint16_t bwp_size;//Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP Value: 1->275
-  uint16_t bwp_start;//bandwidth part start RB index from reference CRB [TS38.213 sec 12] Value: 0->274
-  uint8_t  subcarrier_spacing;//subcarrierSpacing [TS38.211 sec 4.2] Value:0->4
-  uint8_t  cyclic_prefix;//Cyclic prefix type [TS38.211 sec 4.2] 0: Normal; 1: Extended
-  //Coreset [TS38.211 sec 7.3.2.2]
-  uint8_t start_symbol_index;//Starting OFDM symbol for the CORESET Value: 0->13
-  uint8_t duration_symbols;/* Contiguous time duration of the CORESET in number of symbols. Corresponds to L1 parameter 𝑁𝑠𝑦𝑚𝑏 𝐶𝑂𝑅𝐸𝑆𝐸𝑇 [TS38.211 sec 7.3.2.2] Value: 1,2,3*/
-  uint8_t freq_domain_resource[6];/* Frequency domain resources. This is a bitmap defining non-overlapping groups of 6 PRBs in ascending order. [TS38.213 10.1]. Also, corresponds to L1 parameter N^{CORESET}_{RB} [TS38.211 sec 7.3.2.2]
-  Bitmap of uint8 array. 45 bits.*/
-  uint8_t cce_reg_mapping_type;/*CORESET-CCE-to-REG-mapping-type [TS38.211 sec 7.3.2.2] 0: non-interleaved 1: interleaved */
-  uint8_t reg_bundle_size;/*The number of REGs in a bundle. Must be 6 for
-cceRegMappingType = nonInterleaved. For cceRegMappingType = interleaved, must belong to {2,6} if duration = 1,2 and must belong to {3,6} if
-duration = 3. Corresponds to parameter L. [TS38.211 sec 7.3.2.2] Value: 2,3,6 */
-  uint8_t interleaver_size;//The interleaver size. For interleaved mapping belongs to {2,3,6} and for non-interleaved mapping is NA. Corresponds to parameter R. [TS38.211 sec 7.3.2.2] Value: 2,3,6
-  uint8_t core_set_type;//[TS38.211 sec 7.3.2.2 and sec 7.4.1.3.2] 0: CORESET is configured by the PBCH or SIB1 (subcarrier 0 of CRB0 for DMRS mapping) 1: otherwise (subcarrier 0 of CORESET)
-  uint16_t shift_index;//[TS38.211 sec 7.3.2.2] Not applicable for non-interleaved mapping. For interleaved mapping and a PDCCH transmitted in a CORESET configured by the PBCH or SIB1 this should be set to phy cell ID. Value: 10 bits Otherwise, for interleaved mapping this is set to 0-> max num of PRBs. Value 0-> 275
-  uint8_t precoder_granularity;//Granularity of precoding [TS38.211 sec 7.3.2.2] 0: sameAsRegBundle 1: allContiguousRBs
-  uint16_t num_dl_dci;//Number of DCIs in this CORESET. Value: 0->MaxDciPerSlot
-  nfapi_nr_dl_dci_pdu_t* dl_dci_list;
+typedef struct {
+  /// Number of PRGs spanning this allocation. Value : 1->275
+  uint16_t numPRGs;
+  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
+  uint16_t prgSize;
+  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
+  uint8_t digBFInterfaces;
+  uint16_t PMIdx[275];
+  uint16_t *beamIdx[275];
+} nr_beamforming_t;
 
-} nfapi_nr_pdcch_pdu_t;
+#define MAX_DCI_CORESET 8
+#define DCI_PAYLOAD_BYTE_LEN 8
+
+typedef struct {
+  ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275
+  uint16_t BWPSize;
+  ///bandwidth part start RB index from reference CRB, [TS38.213 sec 12], Value: 0->274
+  uint16_t BWPStart;
+  ///subcarrierSpacing [TS38.211 sec 4.2], Value:0->4
+  uint8_t SubcarrierSpacing;
+  ///Cyclic prefix type [TS38.211 sec 4.2], 0: Normal; 1: Extended
+  uint8_t CyclicPrefix;
+  ///Starting OFDM symbol for the CORESET, Value: 0->13
+  uint8_t StartSymbolIndex;
+///Contiguous time duration of the CORESET in number of symbols. Corresponds to L1 parameter 𝑁𝑠𝑦𝑚𝑏_𝐶𝑂𝑅𝐸𝑆𝐸𝑇 [TS38.211 sec 7.3.2.2] Value: 1,2,3
+  uint8_t DurationSymbols; 
+  ///Frequency domain resources. This is a bitmap defining non-overlapping groups of 6 PRBs in ascending order. [TS38.213 10.1]. Also, corresponds to L1 parameter CORE SET RB N [TS38.211 sec 7.3.2.2] Bitmap of uint8 array. 45 bits.
+  uint8_t FreqDomainResource[6];
+  ///CORESET-CCE-to-REG-mapping-type [TS38.211 sec 7.3.2.2] 0: non-interleaved 1: interleaved
+  uint8_t CceRegMappingType;
+  ///The number of REGs in a bundle. Must be 6 for cceRegMappingType = nonInterleaved. For cceRegMappingType = interleaved, must belong to {2,6} if duration = 1,2 and must belong to {3,6} if duration = 3. Corresponds to parameter L. [TS38.211 sec 7.3.2.2] Value: 2,3,6
+  uint8_t RegBundleSize;
+  ///The interleaver size. For interleaved mapping belongs to {2,3,6} and for non-interleaved mapping is NA. Corresponds to parameter R. [TS38.211 sec 7.3.2.2] Value: 2,3,6 CoreSetType
+  uint8_t InterleaverSize; 
+  ///[TS38.211 sec 7.3.2.2 and sec 7.4.1.3.2] 0: CORESET is configured by the PBCH or SIB1 (subcarrier 0 of CRB0 for DMRS mapping) 1: otherwise (subcarrier 0 of CORESET)
+  uint8_t CoreSetType;
+  ///[TS38.211 sec 7.3.2.2] Not applicable for non-interleaved mapping. For interleaved mapping and a PDCCH transmitted in a CORESET configured by the PBCH or SIB1 this should be set to phy cell ID. Value: 10 bits Otherwise, for interleaved mapping this is set to 0-> max num of PRBs. Value 0-> 275
+  uint16_t ShiftIndex;
+  ///Granularity of precoding [TS38.211 sec 7.3.2.2] Field Type Description 0: sameAsRegBundle 1: allContiguousRBs
+  uint8_t precoderGranularity;
+  ///Number of DCIs in this CORESET.Value: 0->MaxDciPerSlot
+  uint16_t numDlDci;
+  ///The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
+  uint16_t RNTI[MAX_DCI_CORESET];
+  ///For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured, otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
+  uint16_t ScramblingId[MAX_DCI_CORESET];
+  ///For a UE-specific search space where PDCCH-DMRSScrambling- ID is configured This param equals the CRNTI. Otherwise, it should be set to 0. [TS38.211, sec 7.3.2.3] Value: 0 -> 65535 
+  uint16_t ScramblingRNTI[MAX_DCI_CORESET];
+  ///CCE start Index used to send the DCI Value: 0->135
+  uint8_t CceIndex[MAX_DCI_CORESET];
+  ///Aggregation level used [TS38.211, sec 7.3.2.1] Value: 1,2,4,8,16
+  uint8_t AggregationLevel[MAX_DCI_CORESET];
+  ///Precoding and Beamforming structure See Table 3-43
+  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming[MAX_DCI_CORESET];
+  ///PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI. This is ratio of SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1] Value :0->17 Report title: 5G FAPI: PHY API Specification Issue date: 29 June 2019 Version: 222.10.17 68 Field Type Description representing -8 to 8 dB in 1dB steps
+  uint8_t beta_PDCCH_1_0[MAX_DCI_CORESET];
+  ///PDCCH power value used for all other PDCCH Formats. This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB,1: 0dB,2: 3dB,3: 6dB
+  uint8_t   powerControlOffsetSS[MAX_DCI_CORESET];
+///The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BTYE_LEN*8
+  uint16_t  PayloadSizeBits[MAX_DCI_CORESET];
+  ///DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB  
+  uint8_t  Payload[MAX_DCI_CORESET][DCI_PAYLOAD_BYTE_LEN]; 
+}  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
+
+typedef struct {
+  uint16_t pduBitmap;
+  uint16_t rnti;
+  uint16_t pduIndex;
+  // BWP  [TS38.213 sec 12]
+  /// Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP, Value: 1->275
+  uint16_t BWPSize;
+  /// bandwidth part start RB index from reference CRB [TS38.213 sec 12],Value: 0->274
+  uint16_t BWPStart;
+  /// subcarrierSpacing [TS38.211 sec 4.2], Value:0->4
+  uint8_t SubcarrierSpacing;
+  /// Cyclic prefix type [TS38.211 sec 4.2], 0: Normal; 1: Extended
+  uint8_t CyclicPrefix;
+  // Codeword information
+  /// Number of code words for this RNTI (UE), Value: 1 -> 2
+  uint8_t NrOfCodewords;
+  /// Target coding rate [TS38.212 sec 5.4.2.1 and 38.214 sec 5.1.3.1]. This is the number of information bits per 1024 coded bits expressed in 0.1 bit units
+  uint16_t targetCodeRate[2]; 
+  /// QAM modulation [TS38.212 sec 5.4.2.1 and 38.214 sec 5.1.3.1], Value: 2,4,6,8
+  uint8_t qamModOrder[2];
+  ///  MCS index [TS38.214, sec 5.1.3.1], should match value sent in DCI Value : 0->31
+  uint8_t mcsIndex[2];
+  /// MCS-Table-PDSCH [TS38.214, sec 5.1.3.1] 0: notqam256, 1: qam256, 2: qam64LowSE
+  uint8_t mcsTable[2];   
+  /// Redundancy version index [TS38.212, Table 5.4.2.1-2 and 38.214, Table 5.1.2.1-2], should match value sent in DCI Value : 0->3
+  uint8_t rvIndex[2];
+  /// Transmit block size (in bytes) [TS38.214 sec 5.1.3.2], Value: 0->65535
+  uint32_t TBSize[2];
+  /// dataScramblingIdentityPdsch [TS38.211, sec 7.3.1.1], It equals the higher-layer parameter Datascrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id. Value: 0->65535
+  uint16_t dataScramblingId;
+  /// Number of layers [TS38.211, sec 7.3.1.3]. Value : 1->8
+  uint8_t nrOfLayers;
+  /// PDSCH transmission schemes [TS38.214, sec5.1.1] 0: Up to 8 transmission layers
+  uint8_t transmissionScheme;
+  /// Reference point for PDSCH DMRS "k" - used for tone mapping [TS38.211, sec 7.4.1.1.2] Resource block bundles [TS38.211, sec 7.3.1.6] Value: 0 -> 1 If 0, the 0 reference point for PDSCH DMRS is at Point A [TS38.211 sec 4.4.4.2]. Resource block bundles generated per sub-bullets 2 and 3 in [TS38.211, sec 7.3.1.6]. For sub-bullet 2, the start of bandwidth part must be set to the start of actual bandwidth part +NstartCORESET and the bandwidth of the bandwidth part must be set to the bandwidth of the initial bandwidth part. If 1, the DMRS reference point is at the lowest VRB/PRB of the allocation. Resource block bundles generated per sub-bullets 1 [TS38.211, sec 7.3.1.6]
+  uint8_t refPoint;
+  // DMRS  [TS38.211 sec 7.4.1.1]
+  /// DMRS symbol positions [TS38.211, sec 7.4.1.1.2 and Tables 7.4.1.1.2-3 and 7.4.1.1.2-4] Bitmap occupying the 14 LSBs with: bit 0: first symbol and for each bit 0: no DMRS 1: DMRS
+  uint16_t dlDmrsSymbPos;  
+  /// DL DMRS config type [TS38.211, sec 7.4.1.1.2] 0: type 1,  1: type 2
+  uint8_t dmrsConfigType;
+  /// DL-DMRS-Scrambling-ID [TS38.211, sec 7.4.1.1.2 ] If provided by the higher-layer and the PDSCH is scheduled by PDCCH with CRC scrambled by CRNTI or CS-RNTI, otherwise, L2 should set this to physical cell id. Value: 0->65535
+  uint16_t dlDmrsScramblingId;
+  /// DMRS sequence initialization [TS38.211, sec 7.4.1.1.2]. Should match what is sent in DCI 1_1, otherwise set to 0. Value : 0->1
+  uint8_t SCID;
+  /// Number of DM-RS CDM groups without data [TS38.212 sec 7.3.1.2.2] [TS38.214 Table 4.1-1] it determines the ratio of PDSCH EPRE to DM-RS EPRE. Value: 1->3
+  uint8_t numDmrsCdmGrpsNoData;
+  /// DMRS ports. [TS38.212 7.3.1.2.2] provides description between DCI 1-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
+  uint16_t dmrsPorts;
+  // Pdsch Allocation in frequency domain [TS38.214, sec 5.1.2.2]
+  /// Resource Allocation Type [TS38.214, sec 5.1.2.2] 0: Type 0, 1: Type 1
+  uint8_t resourceAlloc;
+  /// For resource alloc type 0. TS 38.212 V15.0.x, 7.3.1.2.2 bitmap of RBs, 273 rounded up to multiple of 32. This bitmap is in units of VRBs. LSB of byte 0 of the bitmap represents the first RB of the bwp 
+  uint8_t rbBitmap[36];
+  /// For resource allocation type 1. [TS38.214, sec 5.1.2.2.2] The starting resource block within the BWP for this PDSCH. Value: 0->274
+  uint16_t rbStart;
+  /// For resource allocation type 1. [TS38.214, sec 5.1.2.2.2] The number of resource block within for this PDSCH. Value: 1->275
+  uint16_t rbSize;
+  /// VRB-to-PRB-mapping [TS38.211, sec 7.3.1.6] 0: non-interleaved 1: interleaved with RB size 2 2: Interleaved with RB size 4
+  uint8_t VRBtoPRBMapping;
+  // Resource Allocation in time domain [TS38.214, sec 5.1.2.1]
+  /// Start symbol index of PDSCH mapping from the start of the slot, S. [TS38.214, Table 5.1.2.1-1] Value: 0->13
+  uint8_t StartSymbolIndex;
+  /// PDSCH duration in symbols, L [TS38.214, Table 5.1.2.1-1] Value: 1->14
+  uint8_t NrOfSymbols;
+  // PTRS [TS38.214, sec 5.1.6.3]
+  /// PT-RS antenna ports [TS38.214, sec 5.1.6.3] [TS38.211, table 7.4.1.2.2-1] Bitmap occupying the 6 LSBs with: bit 0: antenna port 1000 bit 5: antenna port 1005 and for each bit 0: PTRS port not used 1: PTRS port used
+  uint8_t PTRSPortIndex ;
+  /// PT-RS time density [TS38.214, table 5.1.6.3-1] 0: 1 1: 2 2: 4
+  uint8_t PTRSTimeDensity;
+  /// PT-RS frequency density [TS38.214, table 5.1.6.3-2] 0: 2 1: 4
+  uint8_t PTRSFreqDensity;
+  /// PT-RS resource element offset [TS38.211, table 7.4.1.2.2-1] Value: 0->3
+  uint8_t PTRSReOffset;
+  ///  PT-RS-to-PDSCH EPRE ratio [TS38.214, table 4.1-2] Value :0->3
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  // Beamforming
+  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming;
+}nfapi_nr_dl_tti_pdsch_pdu_rel15_t;
+
 
 //for pdsch_pdu:
-
+/*
 typedef struct
 {
   uint16_t target_code_rate;//
@@ -692,31 +825,32 @@ typedef struct
   uint32_t dl_tb_crc;//TB CRC: to be used in the last CB, applicable only if last CB is present
 
 } nfapi_nr_dlsch_pdu_t;
+*/
 
 //for csi-rs_pdu:
 
 //table 3-39
 typedef struct
 {
-uint16_t bwp_size;//
-uint16_t bwp_start;//
-uint8_t  subcarrier_spacing;//
-uint8_t  cyclic_prefix;//
-uint16_t start_rb;
-uint16_t nr_of_rbs;
-uint8_t  csi_type;//Value: 0:TRS 1:CSI-RS NZP 2:CSI-RS ZP
-uint8_t  row;//Row entry into the CSI Resource location table. [TS38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1] Value: 1-18
-uint16_t freq_domain;//Value: Up to the 12 LSBs, actual size is determined by the Row parameter
-uint8_t  symb_l0;//The time domain location l0 and firstOFDMSymbolInTimeDomain Value: 0->13
-uint8_t  symb_l1;//
-uint8_t  cdm_type;
-uint8_t  freq_density;//The density field, p and comb offset (for dot5).0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three
-uint16_t scramb_id;//ScramblingID of the CSI-RS [TS38.214, sec 5.2.2.3.1] Value: 0->1023
-//tx power info
-uint8_t  power_control_offset;//Ratio of PDSCH EPRE to NZP CSI-RSEPRE Value :0->23 representing -8 to 15 dB in 1dB steps
-uint8_t  power_control_offset_ss;//Ratio of SSB/PBCH block EPRE to NZP CSI-RS EPRES 0: -3dB, 1: 0dB, 2: 3dB, 3: 6dB
+  uint16_t bwp_size;//
+  uint16_t bwp_start;//
+  uint8_t  subcarrier_spacing;//
+  uint8_t  cyclic_prefix;//
+  uint16_t start_rb;
+  uint16_t nr_of_rbs;
+  uint8_t  csi_type;//Value: 0:TRS 1:CSI-RS NZP 2:CSI-RS ZP
+  uint8_t  row;//Row entry into the CSI Resource location table. [TS38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1] Value: 1-18
+  uint16_t freq_domain;//Value: Up to the 12 LSBs, actual size is determined by the Row parameter
+  uint8_t  symb_l0;//The time domain location l0 and firstOFDMSymbolInTimeDomain Value: 0->13
+  uint8_t  symb_l1;//
+  uint8_t  cdm_type;
+  uint8_t  freq_density;//The density field, p and comb offset (for dot5).0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three
+  uint16_t scramb_id;//ScramblingID of the CSI-RS [TS38.214, sec 5.2.2.3.1] Value: 0->1023
+  //tx power info
+  uint8_t  power_control_offset;//Ratio of PDSCH EPRE to NZP CSI-RSEPRE Value :0->23 representing -8 to 15 dB in 1dB steps
+  uint8_t  power_control_offset_ss;//Ratio of SSB/PBCH block EPRE to NZP CSI-RS EPRES 0: -3dB, 1: 0dB, 2: 3dB, 3: 6dB
 
-} nfapi_nr_csi_rs_pdu_t;
+} nfapi_nr_dl_tti_csi_rs_pdu_rel15_t;
 
 //for ssb_pdu: 
 
@@ -743,27 +877,85 @@ typedef struct
 
 } nfapi_nr_bch_payload_t;
 
-typedef struct
-{
-  uint16_t phys_cell_id;//0~1007
-  uint8_t  beta_pss;//PSS EPRE to SSS EPRE in a SS/PBCH block 0 = 0dB 1 = 3dB
-  uint8_t  ssb_block_index;//SS/PBCH block index within a SSB burst set. Required for PBCH DMRS scrambling. Value: 0->63 (Lmax)
-  uint8_t  ssb_subcarrier_offset;//
-  uint16_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Value: 0->2199
-  uint8_t  bch_payload_flag;//A value indicating how the BCH payload is generated. This should match the PARAM/CONFIG TLVs. Value: 0: MAC generates the full PBCH payload, see Table 3-41, where bchPayload has 31 bits 1: PHY generates the timing PBCH bits, see Table 3-41, where the bchPayload has 24 bits 2: PHY generates the full PBCH payload
-  nfapi_nr_bch_payload_t bch_payload;
+typedef struct {
+  /// Physical Cell ID Value 0~>1007
+  uint16_t PhysCellId;
+  ///PSS EPRE to SSS EPRE in a SS/PBCH block 0 = 0dB 1 = 3dB
+  uint8_t  BetaPss;
+  ///SS/PBCH block index within a SSB burst set. Required for PBCH DMRS scrambling. Value: 0->63 (Lmax)
+  uint8_t  SsbBlockIndex;
+  /// ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (TS38.211, section 7.4.3.1) Value: 0->31
+  uint8_t  SsbSubcarrierOffset;
+  ///Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Value: 0->2199
+  uint16_t ssbOffsetPointA;
+  /// A value indicating how the BCH payload is generated. This should match the PARAM/CONFIG TLVs. Value: 0: MAC generates the full PBCH payload, see Table 3-41, where bchPayload has 31 bits 1: PHY generates the timing PBCH bits, see Table 3-41, where the bchPayload has 24 bits 2: PHY generates the full PBCH payload
+  uint8_t  bchPayloadFlag;
+  uint32_t bchPayload;
   nfapi_nr_tx_precoding_and_beamforming_t precoding_and_beamforming;
+} nfapi_nr_dl_tti_ssb_pdu_rel15_t;
 
-} nfapi_nr_ssb_pdu_t;
+typedef struct {
+  nfapi_nr_dl_tti_ssb_pdu_rel15_t ssb_pdu_rel15;
+} nfapi_nr_dl_tti_ssb_pdu;
 
+typedef struct {
+  nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_rs_pdu_rel15;
+} nfapi_nr_dl_tti_csi_rs_pdu;
+
+typedef struct {
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t pdsch_pdu_rel15;
+} nfapi_nr_dl_tti_pdsch_pdu;
+
+typedef struct {
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t pdcch_pdu_rel15;
+} nfapi_nr_dl_tti_pdcch_pdu;
+
+typedef struct {
+  uint16_t PDUType;
+  uint16_t PDUSize;
+
+  union {
+  nfapi_nr_dl_tti_pdcch_pdu      pdcch_pdu;
+  nfapi_nr_dl_tti_pdsch_pdu      pdsch_pdu;
+  nfapi_nr_dl_tti_csi_rs_pdu     csi_rs_pdu;
+  nfapi_nr_dl_tti_ssb_pdu        ssb_pdu;
+  };
+} nfapi_nr_dl_tti_request_pdu_t;
+
+#define NFAPI_NR_MAX_DL_TTI_PDUS 32 
+typedef struct {
+  /// Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
+  uint8_t nPDUs;
+  /// Number of UEs in the Group included in this message. Value 0 -> 255
+  uint8_t nGroup;
+  /// List containing PDUs
+  nfapi_nr_dl_tti_request_pdu_t dl_tti_pdu_list[NFAPI_NR_MAX_DL_TTI_PDUS];
+  /// Number of UE in this group. For SU-MIMO, one group includes one UE only. For MU-MIMO, one group includes up to 12 UEs. Value 1 -> 12
+  uint8_t nUe[256];
+  /// This value is an index for number of PDU identified by nPDU in this message Value: 0 -> 255
+  uint8_t PduIdx[256][12];
+} nfapi_nr_dl_tti_request_body_t;
+
+typedef struct {
+  nfapi_p7_message_header_t header;
+  /// System Frame Number (0-1023)
+  uint16_t SFN;
+  /// Slot number (0-319)
+  uint16_t Slot;
+  nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
+  nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_dl_tti_request_t;
+
+/*
 typedef struct
 {
-  nfapi_nr_pdcch_pdu_t* pdcch_pdu;
-  nfapi_nr_dlsch_pdu_t* dlsch_pdu;//pdsch_pdu;
-  nfapi_nr_csi_rs_pdu_t* csi_rs_pdu;
-  nfapi_nr_ssb_pdu_t* ssb_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu* pdcch_pdu;
+  nfapi_nr_dl_tti_pdsch_pdu* pdsch_pdu;
+  nfapi_nr_dl_tti_csi_rs_pdu_t* csi_rs_pdu;
+  nfapi_nr_dl_tti_ssb_pdu_t* ssb_pdu;
 } nfapi_nr_dl_pdu_configuration_t;
-
+*/
+  /*
 typedef struct 
 {
   uint16_t pdu_type;//0: PDCCH PDU 1: PDSCH PDU 2: CSI-RS PDU 3: SSB PDU, 
@@ -771,6 +963,7 @@ typedef struct
   nfapi_nr_dl_pdu_configuration_t* dl_pdu_configuration;
 
 } nfapi_nr_dl_tti_request_number_of_pdus_t;
+  
 
 typedef struct 
 {
@@ -795,9 +988,10 @@ typedef struct {
   nfapi_nr_dl_tti_request_number_of_groups_t* groups_list;
 
 } nfapi_nr_dl_tti_request_t;
+*/
 
 // Section 3.4.3 ul_tti_request
-
+  
 //for prach_pdu:
 typedef struct
 {
@@ -1016,6 +1210,13 @@ typedef struct
 //
 
 typedef enum {
+  NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE  = 0,
+  NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE  = 1,
+  NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE = 2,
+  NFAPI_NR_DL_TTI_SSB_PDU_TYPE    = 3,
+} nfapi_nr_dl_tti_pdu_type_e;
+
+typedef enum {
   NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE=0,
   NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE,
   NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE,
@@ -1050,8 +1251,8 @@ typedef struct
 } nfapi_nr_ul_tti_request_number_of_groups_t;
 
 typedef struct {
-	uint16_t sfn; //0->1023   
-  uint16_t slot;//0->319
+  uint16_t SFN; //0->1023   
+  uint16_t Slot;//0->319
   uint8_t n_pdus;//Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255
   uint8_t  rach_present;//Indicates if a RACH PDU will be included in this message. 0: no RACH in this slot 1: RACH in this slot
   uint8_t  n_ulsch;//Number of ULSCH PDUs that are included in this message.
@@ -1059,13 +1260,13 @@ typedef struct {
   uint8_t n_group;//Number of UE Groups included in this message. Value 0 -> 8
   nfapi_nr_ul_tti_request_number_of_pdus_t pdus_list[NFAPI_MAX_NUM_UL_PDU];
   nfapi_nr_ul_tti_request_number_of_groups_t groups_list[NFAPI_MAX_NUM_GROUPS];
-
 } nfapi_nr_ul_tti_request_t;
 
 //3.4.4 ul_dci_request
 
 //table 3-54
 
+/*
 typedef struct 
 {
   uint16_t pdu_type;//0: PDCCH PDU 
@@ -1081,6 +1282,25 @@ typedef struct
   uint8_t  num_pdus;
   nfapi_nr_ul_dci_request_number_of_pdus_t* pdu_list;
 
+} nfapi_nr_ul_dci_request_t;
+*/
+
+  // normally one PDU per coreset per BWP
+#define NFAPI_NR_MAX_UL_DCI_PDUS 4
+
+typedef struct {
+  /// only possible value 0: PDCCH PDU
+  uint16_t PDUType;
+  ///Size of the PDU control information (in bytes). This length value includes the 4 bytes required for the PDU type and PDU size parameters. Value 0 -> 65535
+  uint16_t PDUSize;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
+} nfapi_nr_ul_dci_request_pdus_t;
+
+typedef struct {
+  uint16_t SFN;
+  uint16_t Slot;
+  uint8_t  numPdus;
+  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_UL_DCI_PDUS];
 } nfapi_nr_ul_dci_request_t;
 
 //3.4.5 slot_errors
@@ -1098,6 +1318,7 @@ typedef enum {
 
 } nfapi_nr_slot_errors_dl_tti_e;
 
+
 typedef enum {
 	NFAPI_NR_SLOT_UL_DCI_MSG_INVALID_STATE,
   NFAPI_NR_SLOT_UL_DCI_MSG_INVALID_SFN,
@@ -1108,23 +1329,23 @@ typedef enum {
 //3.4.6 tx_data_request
 
 //table 3-58
-
+#define NFAPI_NR_MAX_TX_REQUEST_TLV 2
 typedef struct
 {
-  uint16_t pdu_length;
-  uint16_t pdu_index;
-  uint32_t num_tlv;
-  //! fixme
-  nfapi_int32_tlv_t* tlvs; //nfapi_int32_tlv_t tlvs[num_tlv]
+  uint16_t PDU_length;
+  uint16_t PDU_index;
+  uint32_t num_TLV;
+  nfapi_nr_tx_data_request_tlv_t TLVs[NFAPI_NR_MAX_TX_REQUEST_TLV]; 
 
 } nfapi_nr_pdu_t;
 
+#define NFAPI_NR_MAX_TX_REQUEST_PDUS 16
 typedef struct
 {
-  uint16_t sfn;
-  uint16_t slot;
-  uint16_t number_of_pdus;
-  nfapi_nr_pdu_t* pdu_list;
+  uint16_t SFN;
+  uint16_t Slot;
+  uint16_t Number_of_PDUs;
+  nfapi_nr_pdu_t pdu_list[NFAPI_NR_MAX_TX_REQUEST_PDUS];
 
 } nfapi_nr_tx_data_request_t;
 

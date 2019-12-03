@@ -100,13 +100,13 @@ typedef struct {
   /// slot
   slot_t slot;
   /// nFAPI DL Config Request
-  nfapi_nr_dl_config_request_t *DL_req;
+  nfapi_nr_dl_tti_request_t *DL_req;
   /// nFAPI UL Config Request
   nfapi_nr_ul_tti_request_t *UL_tti_req;
-  /// nFAPI HI_DCI Request
-  nfapi_hi_dci0_request_t *HI_DCI0_req;
+  /// nFAPI UL_DCI Request
+  nfapi_nr_ul_dci_request_t *UL_dci_req;
   /// Pointers to DL SDUs
-  nfapi_tx_request_t *TX_req;
+  nfapi_nr_tx_data_request_t *TX_req;
 } NR_Sched_Rsp_t;
 
 typedef struct {

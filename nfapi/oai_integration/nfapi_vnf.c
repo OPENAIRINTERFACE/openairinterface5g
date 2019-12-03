@@ -1169,7 +1169,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   return retval;
 }
 
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
@@ -1177,9 +1177,9 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
 
-  dl_config_req->dl_config_request_body.number_dci                          = 0;
-  dl_config_req->dl_config_request_body.number_pdu                          = 0;
-  dl_config_req->dl_config_request_body.number_pdsch_rnti                   = 0;
+  dl_config_req->dl_tti_request_body.nPDUs                          = 0;
+  dl_config_req->dl_tti_request_body.nGroup                       = 0;
+
 
   if (retval!=0) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);

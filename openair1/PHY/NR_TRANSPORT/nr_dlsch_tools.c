@@ -297,10 +297,10 @@ int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_dl_config_pdsch_pdu *pdsch_pdu,
+                   nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    uint8_t *sdu) {
 
-  nfapi_nr_dl_config_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
  
   int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
   AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
@@ -308,7 +308,7 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
   NR_DL_gNB_HARQ_t **harq  = dlsch->harq_processes;
   /// DLSCH struct
-  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_config_pdsch_pdu));
+  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
   gNB->num_pdsch_rnti++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
   harq[dlsch->harq_ids[frame%2][slot]]->pdu = sdu;
