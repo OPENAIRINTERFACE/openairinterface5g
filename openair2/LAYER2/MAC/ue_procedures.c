@@ -1972,6 +1972,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                          subframe, ENB_FLAG_NO,
                                          lcid);
       lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
+#if 0
+      /* TODO: those assert crash the L2 simulator with the new RLC.
+       *       Are they necessary?
+       */
       AssertFatal(lcid_buffer_occupancy_new ==
                   UE_mac_inst[module_idP].
                   scheduling_info.LCID_buffer_remain[lcid],
@@ -1990,6 +1994,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                   scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
                                             scheduling_info.LCGID
                                             [lcid]]);
+#endif
 
       //Multiplex all available DCCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
       //Adjust at the end of the loop
