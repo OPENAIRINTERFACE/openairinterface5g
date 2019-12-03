@@ -1217,9 +1217,9 @@ extern "C" {
             openair0_cfg[0].rx_bw                 = 40e6;
             break;
 
- 	  case 46080000:
-            //openair0_cfg[0].samples_per_packet    = 1024;
-            openair0_cfg[0].tx_sample_advance     = 115;
+          case 46080000:
+            //openair0_cfg[0].samples_per_packet    = 2048;
+            openair0_cfg[0].tx_sample_advance     = 15;
             openair0_cfg[0].tx_bw                 = 40e6;
             openair0_cfg[0].rx_bw                 = 40e6;
             break;
