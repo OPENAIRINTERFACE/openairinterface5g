@@ -53,7 +53,13 @@ void mac_rlc_data_ind     (
   rlc_ue_t *ue;
   rlc_entity_t *rb;
 
-  if (module_idP != 0 || eNB_index != 0 || /*enb_flagP != 1 ||*/ MBMS_flagP != 0) {
+  if (enb_flagP == 1 && module_idP != 0) {
+    LOG_E(RLC, "%s:%d:%s: fatal, module_id must be 0 for eNB\n",
+          __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  if (/*module_idP != 0 ||*/ eNB_index != 0 || /*enb_flagP != 1 ||*/ MBMS_flagP != 0) {
     LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -384,7 +390,7 @@ rb_found:
   memcpy(memblock->data, buf, size);
 
   /* unused fields? */
-  ctx.instance = 0;
+  ctx.instance = ue->module_id;
   ctx.frame = 0;
   ctx.subframe = 0;
   ctx.eNB_index = 0;
@@ -392,7 +398,7 @@ rb_found:
   ctx.brOption = 0;
 
   /* used fields? */
-  ctx.module_id = 0;
+  ctx.module_id = ue->module_id;
   ctx.rnti = ue->rnti;
 
   is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
@@ -531,7 +537,7 @@ rb_found:
   itti_send_msg_to_task(TASK_RRC_ENB, 0, msg);
 }
 
-static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
+static void add_srb(int rnti, int module_id, struct LTE_SRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_am;
   rlc_ue_t                *ue;
@@ -606,6 +612,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->srb[srb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
@@ -626,7 +633,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb_am(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_am;
   rlc_ue_t                *ue;
@@ -683,6 +690,7 @@ static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->drb[drb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -703,7 +711,7 @@ static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb_um(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   rlc_entity_t            *rlc_um;
   rlc_ue_t                *ue;
@@ -756,6 +764,7 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
 
   rlc_manager_lock(rlc_ue_manager);
   ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+  ue->module_id = module_id;
   if (ue->drb[drb_id-1] != NULL) {
     LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -773,14 +782,14 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
   rlc_manager_unlock(rlc_ue_manager);
 }
 
-static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 {
   switch (s->rlc_Config->present) {
   case LTE_RLC_Config_PR_am:
-    add_drb_am(rnti, s);
+    add_drb_am(rnti, module_id, s);
     break;
   case LTE_RLC_Config_PR_um_Bi_Directional:
-    add_drb_um(rnti, s);
+    add_drb_um(rnti, module_id, s);
     break;
   default:
     LOG_E(RLC, "%s:%d:%s: fatal: unhandled DRB type\n",
@@ -801,9 +810,17 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                                         )
 {
   int rnti = ctxt_pP->rnti;
+  int module_id = ctxt_pP->module_id;
   int i;
 
-  if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
+  if (ctxt_pP->enb_flag == 1 &&
+      (ctxt_pP->module_id != 0 || ctxt_pP->instance != 0)) {
+    LOG_E(RLC, "%s: module_id != 0 or instance != 0 not handled for eNB\n",
+          __FUNCTION__);
+    exit(1);
+  }
+
+  if (0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
       ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
     LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
@@ -824,13 +841,13 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
-      add_srb(rnti, srb2add_listP->list.array[i]);
+      add_srb(rnti, module_id, srb2add_listP->list.array[i]);
     }
   }
 
   if (drb2add_listP != NULL) {
     for (i = 0; i < drb2add_listP->list.count; i++) {
-      add_drb(rnti, drb2add_listP->list.array[i]);
+      add_drb(rnti, module_id, drb2add_listP->list.array[i]);
     }
   }
 
