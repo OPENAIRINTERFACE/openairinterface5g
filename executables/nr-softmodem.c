@@ -211,7 +211,7 @@ char uecap_xer_in=0;
 uint8_t abstraction_flag=0;
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -525,18 +525,18 @@ static void get_options(void) {
 
 
 
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
-		                     NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
+		             NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
 {
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
-    config[CC_id] = (nfapi_nr_config_request_t *) malloc(sizeof(nfapi_nr_config_request_t));
-    config[CC_id]->subframe_config.numerology_index_mu.value =1;
-    config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
-    config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-    config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
-    config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
-    config[CC_id]->sch_config.physical_cell_id.value = 0;
+    config[CC_id] = (nfapi_nr_config_request_scf_t *) malloc(sizeof(nfapi_nr_config_request_scf_t));
+    config[CC_id]->ssb_config.scs_common.value = 1;
+    config[CC_id]->cell_config.frame_duplex_type.value = 1; //FDD
+    //config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+    config[CC_id]->carrier_config.dl_grid_size[1].value = 106;
+    config[CC_id]->carrier_config.ul_grid_size[1].value = 106;
+    config[CC_id]->cell_config.phy_cell_id.value = 0;
     ///dl frequency to be filled in
     /*  //Set some default values that may be overwritten while reading options
         frame_parms[CC_id]->frame_type          = FDD;

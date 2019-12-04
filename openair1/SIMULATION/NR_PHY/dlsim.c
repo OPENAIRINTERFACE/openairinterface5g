@@ -207,12 +207,11 @@ int main(int argc, char **argv)
   int frame_length_complex_samples_no_prefix;
   int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  nfapi_nr_config_request_t *gNB_config;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
   NR_UE_MAC_INST_t *UE_mac;
-
+  int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int ret;
   int run_initial_sync=0;
   int do_pdcch_flag=1;
@@ -478,7 +477,6 @@ int main(int argc, char **argv)
   memset(RC.gNB[0],0,sizeof(PHY_VARS_gNB));
 
   gNB = RC.gNB[0];
-  gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -692,7 +690,7 @@ int main(int argc, char **argv)
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+      if (cyclic_prefix_type == 1) {
 	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
 		     &txdata[aa][tx_offset],
 		     frame_parms->ofdm_symbol_size,

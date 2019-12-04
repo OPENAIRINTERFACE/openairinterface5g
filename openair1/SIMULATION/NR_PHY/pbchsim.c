@@ -113,7 +113,6 @@ int main(int argc, char **argv)
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  nfapi_nr_config_request_t *gNB_config;
 
   int ret, payload_ret=0;
   int run_initial_sync=0;
@@ -348,7 +347,6 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
-  gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -361,7 +359,8 @@ int main(int argc, char **argv)
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
-  uint8_t n_hf = gNB_config->sch_config.half_frame_index.value;
+  uint8_t n_hf = 0;
+  int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
   double fs,bw,scs,eps;
   
@@ -479,7 +478,7 @@ int main(int argc, char **argv)
     	nr_common_signal_procedures (gNB,frame,slot);
       
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    		if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+    		if (cyclic_prefix_type == 1) {
     			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
     					&txdata[aa][slot*frame_parms->samples_per_slot],
 						frame_parms->ofdm_symbol_size,
@@ -589,7 +588,7 @@ int main(int argc, char **argv)
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
-	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index);
         int ssb_slot = (ssb_index/2)+(n_hf*frame_parms->slots_per_frame);
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
 	  nr_slot_fep(UE,

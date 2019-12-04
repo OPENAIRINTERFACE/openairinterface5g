@@ -113,7 +113,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols) {
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
   int slot = tti_tx;
@@ -215,11 +214,11 @@ void nr_init_feptx_thread(RU_t *ru) {
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
      
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
   unsigned int aa=0;
   int slot_sizeF = (fp->ofdm_symbol_size)*
-                   ((cfg->subframe_config.dl_cyclic_prefix_type.value == 1) ? 12 : 14);
+                   ((cyclic_prefix_type == 1) ? 12 : 14);
   int slot = tti_tx;
   int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
 

@@ -241,9 +241,9 @@ typedef struct NR_DL_FRAME_PARMS {
   /// EUTRA Band
   uint16_t eutra_band;
   /// DL carrier frequency
-  uint32_t dl_CarrierFreq;
+  uint64_t dl_CarrierFreq;
   /// UL carrier frequency
-  uint32_t ul_CarrierFreq;
+  uint64_t ul_CarrierFreq;
   /// TX attenuation
   uint32_t att_tx;
   /// RX attenuation
@@ -320,6 +320,8 @@ typedef struct NR_DL_FRAME_PARMS {
 
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
+
+  uint8_t half_frame_bit;
 
   //SSB related params
   /// Start in Subcarrier index of the SSB block

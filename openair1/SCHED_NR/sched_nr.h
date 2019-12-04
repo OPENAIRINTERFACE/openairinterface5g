@@ -35,7 +35,7 @@
 #include "phy_frame_config_nr.h"
 
 
-void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
+void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp);
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_meas);
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);

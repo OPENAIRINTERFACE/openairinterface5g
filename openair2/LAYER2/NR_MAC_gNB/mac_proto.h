@@ -100,7 +100,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_coreset_t coreset,
                           uint16_t frame,
                           uint16_t slot,
-                          nfapi_nr_config_request_t cfg);
+                          nfapi_nr_config_request_scf_t cfg);
 */
 void nr_configure_pdcch(nfapi_nr_dl_config_pdcch_pdu_rel15_t* pdcch_pdu,
 			int ss_type,
@@ -111,17 +111,12 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			int *dci_formats,
 			int *rnti_types
 			);
-int get_dlscs(nfapi_nr_config_request_t *cfg);
 
-int get_ulscs(nfapi_nr_config_request_t *cfg);
+int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
-int get_spf(nfapi_nr_config_request_t *cfg);
+int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
 
-int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
-
-int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
-
-void get_band(uint32_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 

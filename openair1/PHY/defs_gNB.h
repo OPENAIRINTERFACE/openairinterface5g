@@ -598,7 +598,7 @@ typedef struct PHY_VARS_gNB_s {
   int                  rx_total_gain_dB;
   int                  (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
   uint8_t              local_flag;
-  nfapi_nr_config_request_t  gNB_config;
+  nfapi_nr_config_request_scf_t  gNB_config;
   NR_DL_FRAME_PARMS    frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
   NR_IF_Module_t       *if_inst;

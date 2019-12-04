@@ -74,7 +74,6 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS *frame_parms,
 			  int xOverhead,
-                          nfapi_nr_config_request_t *config,
                           time_stats_t *dlsch_encoding_stats,
                           time_stats_t *dlsch_scrambling_stats,
                           time_stats_t *dlsch_modulation_stats) {

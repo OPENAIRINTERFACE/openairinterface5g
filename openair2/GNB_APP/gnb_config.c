@@ -639,7 +639,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         // Parse optional physical parameters
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
 
-
+        printf("SSB SCO %d\n",ssb_SubcarrierOffset);
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
