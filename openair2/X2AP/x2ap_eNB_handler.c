@@ -1470,7 +1470,7 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  //return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
+  x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
   return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0);
 
 }
@@ -1657,6 +1657,8 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
 
   x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
   DevAssert(x2ap_eNB_data != NULL);
+
+  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);

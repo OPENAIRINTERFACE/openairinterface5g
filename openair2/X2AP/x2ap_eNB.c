@@ -447,6 +447,47 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
 }
 
 static
+void x2ap_eNB_handle_sgNB_add_req_ack(instance_t instance,
+		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_ENDC_sgnb_addition_req_ACK)
+{
+  /* TODO: remove this hack (the goal is to find the correct
+   * eNodeB structure for the other end) - we need a proper way for RRC
+   * and X2AP to identify eNodeBs
+   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
+   * the configuration file)
+   * as far as I understand.. CROUX
+   */
+
+
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  /*int source_assoc_id = x2ap_ENDC_sgnb_addition_req_ACK->source_assoc_id;
+  int                 ue_id;
+  int                 id_source;
+  int                 id_target;*/
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  /*target = x2ap_get_eNB(NULL, source_assoc_id, 0);
+  DevAssert(target != NULL);*/
+
+  // rnti is a new information, save it
+
+  /*ue_id     = x2ap_handover_req_ack->x2_id_target;
+  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  id_target = ue_id;
+  x2ap_set_ids(&instance_p->id_manager, ue_id, x2ap_handover_req_ack->rnti, id_source, id_target);*/
+
+
+  //target = x2ap_get_eNB(NULL, 17, 0);
+  target = x2ap_is_eNB_id_in_list (3585); //Currently hardcoded. Need to extract it differently
+  DevAssert(target != NULL);
+  x2ap_eNB_generate_ENDC_x2_SgNB_addition_request_ACK(instance_p, target, x2ap_ENDC_sgnb_addition_req_ACK, 0);
+}
+
+
+static
 void x2ap_eNB_ue_context_release(instance_t instance,
                                  x2ap_ue_context_release_t *x2ap_ue_context_release)
 {
@@ -510,6 +551,13 @@ void *x2ap_task(void *arg) {
         x2ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                 &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
+
+      case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
+    	  x2ap_eNB_handle_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
+    	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
+
+    	break;
 
       case SCTP_INIT_MSG_MULTI_CNF:
         x2ap_eNB_handle_sctp_init_msg_multi_cnf(ITTI_MESSAGE_GET_INSTANCE(received_msg),

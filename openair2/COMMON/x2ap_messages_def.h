@@ -53,3 +53,4 @@ MESSAGE_DEF(X2AP_SENB_ADDITION_REQ              , MESSAGE_PRIORITY_MED, x2ap_sen
 
 /*SGnb bearer addition messages X2AP <-> RRC */
 MESSAGE_DEF(X2AP_ENDC_SGNB_ADDITION_REQ              , MESSAGE_PRIORITY_MED, x2ap_ENDC_sgnb_addition_req_t         , x2ap_ENDC_sgnb_addition_req)
+MESSAGE_DEF(X2AP_ENDC_SGNB_ADDITION_REQ_ACK              , MESSAGE_PRIORITY_MED, x2ap_ENDC_sgnb_addition_req_ACK_t         , x2ap_ENDC_sgnb_addition_req_ACK)

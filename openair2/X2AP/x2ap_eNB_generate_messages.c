@@ -1673,3 +1673,12 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 }
 
 
+int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_sgnb_addition_req_ACK, int ue_id)
+{
+        
+	return 0;
+
+}
+
+
