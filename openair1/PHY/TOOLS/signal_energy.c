@@ -364,3 +364,66 @@ main(int argc,char **argv)
 }
 #endif
 
+#define SHRT_MIN -32768
+int32_t signal_power(int32_t *input, uint32_t length)
+{
+
+	uint32_t i;
+	int32_t temp;
+
+	__m128i in, in_clp, i16_min;
+	__m128  num0, num1;
+	__m128  recp1;
+
+	//init
+	num0 = _mm_setzero_ps();
+	i16_min = _mm_set1_epi16(SHRT_MIN);
+	recp1 = _mm_rcp_ps(_mm_cvtepi32_ps(_mm_set1_epi32(length)));
+	//Acc
+	for (i = 0; i < (length >> 2); i++) {
+		in = _mm_loadu_si128((__m128i *)input);
+		in_clp = _mm_subs_epi16(in, _mm_cmpeq_epi16(in, i16_min));//if in=SHRT_MIN in+1, else in
+		num0 = _mm_add_ps(num0, _mm_cvtepi32_ps(_mm_madd_epi16(in_clp, in_clp)));
+		input += 4;
+	}
+	//Ave
+	num1 = _mm_dp_ps(num0, recp1, 0xFF);
+	temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num1));
+
+	return temp;
+}
+
+int32_t interference_power(int32_t *input, uint32_t length)
+{
+
+	uint32_t i;
+	int32_t temp;
+
+	__m128i in, in_clp, i16_min;
+	__m128i num0, num1, num2, num3;
+	__m128  num4, num5, num6;
+	__m128  recp1;
+
+	//init
+	i16_min = _mm_set1_epi16(SHRT_MIN);
+	num5 = _mm_setzero_ps();
+	recp1 = _mm_rcp_ps(_mm_cvtepi32_ps(_mm_set1_epi32(length>>2)));// 1/n, n= length/4
+	//Acc
+	for (i = 0; i < (length >> 2); i++) {
+		in = _mm_loadu_si128((__m128i *)input);
+		in_clp = _mm_subs_epi16(in, _mm_cmpeq_epi16(in, i16_min));           //if in=SHRT_MIN, in+1, else in
+		num0 = _mm_cvtepi16_epi32(in_clp);                                   //lower 2 complex [0], [1]
+		num1 = _mm_cvtepi16_epi32(_mm_shuffle_epi32(in_clp, 0x4E));          //upper 2 complex [2], [3]
+		num2 = _mm_srai_epi32(_mm_add_epi32(num0, num1), 0x01);              //average A=complex( [0] + [2] ) / 2, B=complex( [1] + [3] ) / 2 
+		num3 = _mm_sub_epi32(num2, _mm_shuffle_epi32(num2, 0x4E));           //complexA-complexB, B-A
+		num4 = _mm_dp_ps(_mm_cvtepi32_ps(num3), _mm_cvtepi32_ps(num3), 0x3F);//C = num3 lower complex power, C, C, C
+		num5 = _mm_add_ps(num5, num4);                                       //Acc Cn, Cn, Cn, Cn, 
+		input += 4;
+	}
+	//Interference ve
+	num6 = _mm_mul_ps(num5, recp1); //Cn / n
+	temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num6));
+
+	return temp;
+}
+

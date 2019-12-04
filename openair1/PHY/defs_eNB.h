@@ -166,6 +166,8 @@ typedef struct {
   int32_t **ul_ch_magb;
   /// measured RX power based on DRS
   int ulsch_power[2];
+  /// measured Interference power based on DRS
+  int ulsch_interference_power[2];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;

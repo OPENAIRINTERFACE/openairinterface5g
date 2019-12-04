@@ -1072,10 +1072,22 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   }
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[i],
-                                 ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
-    LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid,
-          ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i]));
+    
+
+    pusch_vars->ulsch_interference_power[i] = interference_power(pusch_vars->drs_ch_estimates[i],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
+    pusch_vars->ulsch_power[i] = signal_power(pusch_vars->drs_ch_estimates[i],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
+
+    if(pusch_vars->ulsch_power[i]>0x20000000){
+      pusch_vars->ulsch_power[i] = 0x20000000;
+      pusch_vars->ulsch_interference_power[i] = 1;
+    }else{
+      pusch_vars->ulsch_power[i] -=  pusch_vars->ulsch_interference_power[i];
+      if(pusch_vars->ulsch_power[i]<1) pusch_vars->ulsch_power[i] = 1;
+      if(pusch_vars->ulsch_interference_power[i]<1)pusch_vars->ulsch_interference_power[i] = 1;
+    }
+
+    LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i])); 
+     
   }
 
   ulsch_channel_level(pusch_vars->drs_ch_estimates,

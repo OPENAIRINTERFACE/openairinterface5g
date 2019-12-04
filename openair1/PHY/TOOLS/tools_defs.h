@@ -431,6 +431,9 @@ int32_t subcarrier_energy(int32_t *,uint32_t, int32_t* subcarrier_energy, uint16
 */
 int32_t signal_energy_nodc(int32_t *,uint32_t);
 
+int32_t signal_power(int32_t *,uint32_t);
+int32_t interference_power(int32_t *,uint32_t);
+
 /*!\fn double signal_energy_fp(double *s_re[2], double *s_im[2],uint32_t, uint32_t,uint32_t);
 \brief Computes the signal energy per subcarrier
 */
