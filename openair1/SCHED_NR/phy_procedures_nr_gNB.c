@@ -85,7 +85,7 @@ int return_ssb_type(nfapi_config_request_t *cfg)
 
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
-  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + cfg->ssb_table.ssb_subcarrier_offset.value)/(1<<cfg->ssb_config.scs_common.value);
+  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + cfg->ssb_table.ssb_subcarrier_offset.value);
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,cfg->ssb_table.ssb_subcarrier_offset.value);
 }
 
