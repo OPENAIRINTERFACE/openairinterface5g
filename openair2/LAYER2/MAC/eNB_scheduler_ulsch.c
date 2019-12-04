@@ -166,7 +166,14 @@ rx_sdu(const module_id_t enb_mod_idP,
        * maybe it's even not correct at all?
        */
       UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
-      UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      
+      if(UE_scheduling_control->pusch_snr[CC_idP] == 0) {
+        UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      }
+      else {
+        UE_scheduling_control->pusch_snr[CC_idP] = (UE_scheduling_control->pusch_snr[CC_idP] * 3 + ul_cqi) / 4;
+      }
+      
       UE_scheduling_control->ul_consecutive_errors = 0;
       first_rb = UE_template_ptr->first_rb_ul[harq_pid];
 
