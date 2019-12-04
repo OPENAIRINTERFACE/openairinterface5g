@@ -436,10 +436,10 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = (gNB_config->carrier_config.dl_frequency.value)*1e3 + (gNB_config->carrier_config.dl_bandwidth.value)*5e5;
 
-  int32_t *dlul_offset = 0;
-  lte_frame_type_t *frame_type = 0;
+  int32_t dlul_offset = 0;
+  lte_frame_type_t frame_type = 0;
   
-  get_band(fp->dl_CarrierFreq,&fp->eutra_band,dlul_offset,frame_type);
+  get_band(fp->dl_CarrierFreq,&fp->eutra_band,&dlul_offset,&frame_type);
 
   fp->ul_CarrierFreq = (gNB_config->carrier_config.uplink_frequency.value)*1e3 + (gNB_config->carrier_config.uplink_bandwidth.value)*5e5;
 
