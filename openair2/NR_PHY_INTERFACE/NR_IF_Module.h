@@ -112,7 +112,7 @@ typedef struct {
 typedef struct {
   uint8_t Mod_id;
   int CC_id;
-  nfapi_nr_config_request_t *cfg;
+  nfapi_nr_config_request_scf_t *cfg;
 } NR_PHY_Config_t;
 
 typedef struct NR_IF_Module_s {

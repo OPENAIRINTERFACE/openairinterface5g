@@ -67,7 +67,7 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
-  uint32_t dl_CarrierFreq;
+  uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
@@ -139,7 +139,7 @@ typedef struct gNB_MAC_INST_s {
   uint16_t pdu_index[NFAPI_CC_MAX];
 
   /// NFAPI Config Request Structure
-  nfapi_nr_config_request_t         config[NFAPI_CC_MAX];
+  nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
   nfapi_nr_dl_tti_request_t      DL_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure (this is from the new SCF specs)

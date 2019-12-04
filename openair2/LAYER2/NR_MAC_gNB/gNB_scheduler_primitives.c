@@ -856,7 +856,7 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
       nfapi_nr_coreset_t coreset,
       uint16_t frame,
       uint16_t slot,
-      nfapi_nr_config_request_t cfg) {
+      nfapi_nr_config_request_scf_t cfg) {
       
       AssertFatal(search_space.coreset_id==coreset.coreset_id, "Invalid association of coreset(%d) and search space(%d)\n",
       search_space.search_space_id, coreset.coreset_id);
@@ -873,37 +873,19 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 }
 */
 
-int get_dlscs(nfapi_nr_config_request_t *cfg) {
+int get_spf(nfapi_nr_config_request_scf_t *cfg) {
 
-  return(cfg->rf_config.dl_subcarrierspacing.value);
-}
-
-
-int get_ulscs(nfapi_nr_config_request_t *cfg) {
-
-  return(cfg->rf_config.ul_subcarrierspacing.value);
-} 
-
-int get_spf(nfapi_nr_config_request_t *cfg) {
-
-  int mu = cfg->rf_config.dl_subcarrierspacing.value;
+  int mu = cfg->ssb_config.scs_common.value;
   AssertFatal(mu>=0&&mu<4,"Illegal scs %d\n",mu);
 
   return(10 * (1<<mu));
 } 
 
-int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot) {
+int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot) {
 
   return(get_spf(cfg)*frame) + slot; 
 
 }
-
-int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
-
-  return ((cfg->subframe_config.dl_cyclic_prefix_type.value==NFAPI_CP_EXTENDED)?12:14);
-
-}
-
 
 
 int extract_startSymbol(int startSymbolAndLength) {

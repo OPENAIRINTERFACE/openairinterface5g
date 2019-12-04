@@ -283,7 +283,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
           (UL_info->frame+((UL_info->slot>(9-sf_ahead))?1:0)) % 1024,
           (UL_info->slot+sf_ahead)%10);
       */
-      nfapi_nr_config_request_t *cfg = &mac->config[CC_id];
+      nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
 				UL_info->frame,

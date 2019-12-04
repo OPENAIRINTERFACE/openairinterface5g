@@ -136,7 +136,6 @@ int main(int argc, char **argv)
 	int frame_length_complex_samples;
 	//int frame_length_complex_samples_no_prefix;
 	NR_DL_FRAME_PARMS *frame_parms;
-	//nfapi_nr_config_request_t *gNB_config;
 	uint8_t Kmimo = 0;
 	uint32_t Nsoft = 0;
 	double sigma;

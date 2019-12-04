@@ -27,7 +27,7 @@ int nr_generate_sss(  int16_t *d_sss,
                       int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
-                      nfapi_nr_config_request_t* config,
+                      nfapi_nr_config_request_scf_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
   int i,k,l;
@@ -39,7 +39,7 @@ int nr_generate_sss(  int16_t *d_sss,
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
 
   /// Sequence generation
-  Nid = config->sch_config.physical_cell_id.value;
+  Nid = config->cell_config.phy_cell_id.value;
   Nid2 = Nid % 3;
   Nid1 = (Nid - Nid2)/3;
 

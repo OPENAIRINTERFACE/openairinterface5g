@@ -84,22 +84,22 @@ int return_ssb_type(nfapi_config_request_t *cfg)
 
 
 
-void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp) {
-  fp->ssb_start_subcarrier = (12 * cfg->sch_config.n_ssb_crb.value + cfg->sch_config.ssb_subcarrier_offset.value)/(1<<cfg->subframe_config.numerology_index_mu.value);
-  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->sch_config.n_ssb_crb.value,cfg->sch_config.ssb_subcarrier_offset.value);
+void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
+  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + cfg->ssb_table.ssb_subcarrier_offset.value);
+  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,cfg->ssb_table.ssb_subcarrier_offset.value);
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
 
-  n_hf = cfg->sch_config.half_frame_index.value;
+  n_hf = fp->half_frame_bit;
 
   // if SSB periodicity is 5ms, they are transmitted in both half frames
-  if ( cfg->sch_config.ssb_periodicity.value == 5) {
+  if ( cfg->ssb_table.ssb_period.value == 0) {
     if (slot<10)
       n_hf=0;
     else
@@ -117,7 +117,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	ssb_index = i + 2*rel_slot; // computing the ssb_index
 	if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	
-	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index, n_hf); // computing the starting symbol for current ssb
+	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
 	  ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
 
 	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
@@ -149,16 +149,16 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int do_meas) {
   int aa;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
-  uint8_t ssb_frame_periodicity;  // every how many frames SSB are generated
+  uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
 
-  if (cfg->sch_config.ssb_periodicity.value < 20)
-    ssb_frame_periodicity = 1;
-  else 
-    ssb_frame_periodicity = (cfg->sch_config.ssb_periodicity.value)/10 ;  // 10ms is the frame length
+  
+  
+  if (cfg->ssb_table.ssb_period.value > 1) 
+    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ;  // 10ms is the frame length
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
+  if ((cfg->cell_config.frame_duplex_type.value == TDD) && 
       ((nr_slot_select(fp,frame,slot)&NR_UPLINK_SLOT) > 0)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -186,7 +186,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (gNB->pdcch_pdu) nr_generate_dci_top(gNB->pdcch_pdu,
 					  gNB->nr_gold_pdcch_dmrs[slot],
 					  gNB->common_vars.txdataF[0],
-					  AMP, *fp, *cfg);
+					  AMP, *fp);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
  
   LOG_D(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);
@@ -195,7 +195,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     nr_generate_pdsch(gNB->dlsch[i][0],
 		      gNB->nr_gold_pdsch_dmrs[slot],
 		      gNB->common_vars.txdataF,
-		      AMP, frame, slot, fp, 0,cfg,
+		      AMP, frame, slot, fp, 0,
 		      &gNB->dlsch_encoding_stats,
 		      &gNB->dlsch_scrambling_stats,
 		      &gNB->dlsch_modulation_stats);

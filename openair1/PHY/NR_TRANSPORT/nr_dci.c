@@ -42,8 +42,7 @@
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
-                         uint16_t N_RB,
-                         nfapi_nr_config_request_t *config) {
+                         uint16_t N_RB) {
   uint16_t size = 0;
 
   switch(format) {
@@ -52,7 +51,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, config) - size; // Padding to match 1_0 size
+      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB) - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
       break;
 
@@ -159,8 +158,8 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms,
-                            nfapi_nr_config_request_t config) {
+                            NR_DL_FRAME_PARMS frame_parms) {
+
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;

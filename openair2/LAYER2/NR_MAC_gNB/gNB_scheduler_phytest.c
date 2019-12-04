@@ -252,7 +252,6 @@ int configure_fapi_dl_Tx(int Mod_idP,
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
   int TBS;
-  
 
   
   int bwp_id=1;
@@ -336,34 +335,34 @@ int configure_fapi_dl_Tx(int Mod_idP,
   pdsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(NULL,
 						     scc->dmrs_TypeA_Position,
 						     pdsch_pdu_rel15->NrOfSymbols);
-    dci_pdu_rel15_t dci_pdu_rel15;
+    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
     
-    dci_pdu_rel15.frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
+    dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
 										  pdsch_pdu_rel15->rbSize, 
 										  NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
-    dci_pdu_rel15.time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
-    dci_pdu_rel15.vrb_to_prb_mapping = 1;
-    dci_pdu_rel15.mcs = pdsch_pdu_rel15->mcsIndex[0];
-    dci_pdu_rel15.tb_scaling = 1;
+    dci_pdu_rel15[0].time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
+    dci_pdu_rel15[0].vrb_to_prb_mapping = 1;
+    dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
+    dci_pdu_rel15[0].tb_scaling = 1;
     
-    dci_pdu_rel15.ra_preamble_index = 25;
-    dci_pdu_rel15.format_indicator = 1;
-    dci_pdu_rel15.ndi = 1;
-    dci_pdu_rel15.rv = 0;
-    dci_pdu_rel15.harq_pid = 0;
-    dci_pdu_rel15.dai = 2;
-    dci_pdu_rel15.tpc = 2;
-    dci_pdu_rel15.pucch_resource_indicator = 7;
-    dci_pdu_rel15.pdsch_to_harq_feedback_timing_indicator = 7;
+    dci_pdu_rel15[0].ra_preamble_index = 25;
+    dci_pdu_rel15[0].format_indicator = 1;
+    dci_pdu_rel15[0].ndi = 1;
+    dci_pdu_rel15[0].rv = 0;
+    dci_pdu_rel15[0].harq_pid = 0;
+    dci_pdu_rel15[0].dai = 2;
+    dci_pdu_rel15[0].tpc = 2;
+    dci_pdu_rel15[0].pucch_resource_indicator = 7;
+    dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
     
     LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
-	  dci_pdu_rel15.frequency_domain_assignment,
-	  dci_pdu_rel15.time_domain_assignment,
-	  dci_pdu_rel15.vrb_to_prb_mapping,
-	  dci_pdu_rel15.mcs,
-	  dci_pdu_rel15.tb_scaling,
-	  dci_pdu_rel15.ndi, 
-	  dci_pdu_rel15.rv);
+	  dci_pdu_rel15[0].frequency_domain_assignment,
+	  dci_pdu_rel15[0].time_domain_assignment,
+	  dci_pdu_rel15[0].vrb_to_prb_mapping,
+	  dci_pdu_rel15[0].mcs,
+	  dci_pdu_rel15[0].tb_scaling,
+	  dci_pdu_rel15[0].ndi, 
+	  dci_pdu_rel15[0].rv);
     
     nr_configure_pdcch(pdcch_pdu_rel15,
 		       1, // ue-specific
@@ -382,11 +381,12 @@ int configure_fapi_dl_Tx(int Mod_idP,
 
     dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
     rnti_types[0]   = NR_RNTI_C;
+    config_uldci(pdcch_pdu_rel15, &dci_pdu_rel15[pdcch_pdu_rel15->numDlDci], dci_formats, rnti_types);
     
-    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) 
+    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
       pdcch_pdu_rel15->PayloadSizeBits[i]=nr_dci_size(dci_formats[i],rnti_types[i],pdsch_pdu_rel15->BWPSize);
-
-    fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15,dci_formats,rnti_types);
+      fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[i],dci_formats,rnti_types);
+    }
     
     LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
@@ -425,6 +425,36 @@ int configure_fapi_dl_Tx(int Mod_idP,
 
   return TBS/8; //Return TBS in bytes
 }
+
+void config_uldci(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
+
+  dci_pdu_rel15->frequency_domain_assignment = 0; // PRBalloc_to_locationandbandwidth0(0,50,NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275)); // to be changed with UL bwp
+  dci_pdu_rel15->time_domain_assignment = 2; // row index used here instead of SLIV;
+  dci_pdu_rel15->frequency_hopping_flag = 1;
+  dci_pdu_rel15->mcs = 9;
+  
+  dci_pdu_rel15->format_indicator = 0;
+  dci_pdu_rel15->ndi = 1;
+  dci_pdu_rel15->rv = 0;
+  dci_pdu_rel15->harq_pid = 0;
+  dci_pdu_rel15->tpc = 2;
+  
+  LOG_I(MAC, "[gNB scheduler phytest] DCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+  dci_pdu_rel15->frequency_domain_assignment,
+  dci_pdu_rel15->time_domain_assignment,
+  dci_pdu_rel15->frequency_hopping_flag,
+  dci_pdu_rel15->mcs,
+  dci_pdu_rel15->tpc,
+  dci_pdu_rel15->ndi, 
+  dci_pdu_rel15->rv);
+  
+  dci_formats[pdcch_pdu_rel15->numDlDci] = NR_UL_DCI_FORMAT_0_0;
+  rnti_types[pdcch_pdu_rel15->numDlDci]  = NR_RNTI_C;
+  pdcch_pdu_rel15->numDlDci++;
+
+}
+    
+
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,

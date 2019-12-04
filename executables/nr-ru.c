@@ -1039,10 +1039,10 @@ int wakeup_prach_ru(RU_t *ru) {
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
-  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
+  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
-  int N_RB = gNB_config->rf_config.dl_carrier_bandwidth.value;
-  int mu = gNB_config->subframe_config.numerology_index_mu.value;
+  int mu = gNB_config->ssb_config.scs_common.value;
+  int N_RB = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
 
   if (mu == NR_MU_0) { //or if LTE
     if(N_RB == 100) {
@@ -1115,7 +1115,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
   }
 
-  if (gNB_config->subframe_config.duplex_mode.value==TDD)
+  if (gNB_config->cell_config.frame_duplex_type.value==TDD)
     cfg->duplex_mode = duplex_mode_TDD;
   else //FDD
     cfg->duplex_mode = duplex_mode_FDD;
@@ -1862,7 +1862,7 @@ void configure_ru(int idx,
   RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t *)arg;
-  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config;
   int ret;
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -1885,8 +1885,8 @@ void configure_ru(int idx,
   //config->tdd_config_S[0]        = ru->nr_frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = gNB_config->rf_config.dl_carrier_bandwidth.value;
-  config->N_RB_UL[0]             = gNB_config->rf_config.ul_carrier_bandwidth.value;
+  config->N_RB_DL[0]             = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
+  config->N_RB_UL[0]             = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
   config->threequarter_fs[0]     = ru->nr_frame_parms->threequarter_fs;
   /*  if (ru->if_south==REMOTE_IF4p5) {
       config->prach_FreqOffset[0]  = ru->nr_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;

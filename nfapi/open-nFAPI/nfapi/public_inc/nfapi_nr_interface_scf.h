@@ -22,7 +22,6 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
-
 typedef struct {
   /// Value: 0 -> 1, 0: Payload is carried directly in the value field, 1: Pointer to payload is in the value field 
   uint16_t tag; 
@@ -67,12 +66,6 @@ typedef enum {
 
 //3.3.1 PARAM
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint16_t value;
-
-} nfapi_nr_param_tlv_t;
-
 //same with nfapi_param_request_t
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
@@ -85,12 +78,12 @@ typedef enum {
 
 } nfapi_nr_param_errors_e;
 
-typedef struct {
+/*typedef struct {
   nfapi_nr_param_errors_e error_code;
   //Number of TLVs contained in the message body.
   uint8_t number_of_tlvs;
   nfapi_nr_param_tlv_t TLV;
-} nfapi_nr_param_response_t;
+} nfapi_nr_param_response_t;*/
 
 
 //PARAM and CONFIG TLVs are used in the PARAM and CONFIG message exchanges, respectively
@@ -100,7 +93,7 @@ typedef struct {
 
 //table 3-9
 
-#define NFAPI_NR_PARAM_TLV_RELEASE_CAPABILITY_TAG 0x0001
+#define  NFAPI_NR_PARAM_TLV_RELEASE_CAPABILITY_TAG 0x0001
 #define  NFAPI_NR_PARAM_TLV_PHY_STATE_TAG         0x0002
 #define  NFAPI_NR_PARAM_TLV_SKIP_BLANK_DL_CONFIG_TAG 0x0003
 #define  NFAPI_NR_PARAM_TLV_SKIP_BLANK_UL_CONFIG_TAG 0x0004
@@ -157,123 +150,113 @@ typedef struct {
 
 typedef struct 
 {
-  uint16_t release_capability; //TAG 0x0001
-  uint16_t phy_state;
-  uint8_t  skip_blank_dl_config;
-  uint8_t  skip_blank_ul_config;
-  uint16_t num_config_tlvs_to_report;
-  nfapi_nr_param_tlv_t* config_tlvs_to_report_list;
+  nfapi_uint16_tlv_t release_capability; //TAG 0x0001
+  nfapi_uint16_tlv_t phy_state;
+  nfapi_uint8_tlv_t  skip_blank_dl_config;
+  nfapi_uint8_tlv_t  skip_blank_ul_config;
+  nfapi_uint16_tlv_t num_config_tlvs_to_report;
+  nfapi_uint8_tlv_t* config_tlvs_to_report_list;
 } nfapi_nr_cell_param_t;
 
 //table 3-10 Carrier parameters
 typedef struct 
 {
-  uint8_t  cyclic_prefix;//TAG 0x0006
-  uint8_t  supported_subcarrier_spacings_dl;
-  uint16_t supported_bandwidth_dl;
-  uint8_t  supported_subcarrier_spacings_ul;
-  uint16_t supported_bandwidth_ul;
+  nfapi_uint8_tlv_t  cyclic_prefix;//TAG 0x0006
+  nfapi_uint16_tlv_t  supported_subcarrier_spacings_dl;
+  nfapi_uint16_tlv_t supported_bandwidth_dl;
+  nfapi_uint8_tlv_t  supported_subcarrier_spacings_ul;
+  nfapi_uint16_tlv_t supported_bandwidth_ul;
   
 } nfapi_nr_carrier_param_t;
 
 //table 3-11 PDCCH parameters
 typedef struct 
 {
-  uint8_t  cce_mapping_type;
-  uint8_t  coreset_outside_first_3_of_ofdm_syms_of_slot;
-  uint8_t  coreset_precoder_granularity_coreset;
-  uint8_t  pdcch_mu_mimo;
-  uint8_t  pdcch_precoder_cycling;
-  uint8_t  max_pdcch_per_slot;//TAG 0x0010
+  nfapi_uint8_tlv_t  cce_mapping_type;
+  nfapi_uint8_tlv_t  coreset_outside_first_3_of_ofdm_syms_of_slot;
+  nfapi_uint8_tlv_t  coreset_precoder_granularity_coreset;
+  nfapi_uint8_tlv_t  pdcch_mu_mimo;
+  nfapi_uint8_tlv_t  pdcch_precoder_cycling;
+  nfapi_uint8_tlv_t  max_pdcch_per_slot;//TAG 0x0010
 
 } nfapi_nr_pdcch_param_t;
 
 //table 3-12 PUCCH parameters
 typedef struct 
 {
-  uint8_t pucch_formats;
-  uint8_t max_pucchs_per_slot;
+  nfapi_uint8_tlv_t pucch_formats;
+  nfapi_uint8_tlv_t max_pucchs_per_slot;
 
 } nfapi_nr_pucch_param_t;
 
 //table 3-13 PDSCH parameters
 typedef struct 
 {
-  uint8_t pdsch_mapping_type;
-  uint8_t pdsch_allocation_types;
-  uint8_t pdsch_vrb_to_prb_mapping;
-  uint8_t pdsch_cbg;
-  uint8_t pdsch_dmrs_config_types;
-  uint8_t pdsch_dmrs_max_length;
-  uint8_t pdsch_dmrs_additional_pos;
-  uint8_t max_pdsch_tbs_per_slot;
-  uint8_t max_number_mimo_layers_pdsch;
-  uint8_t supported_max_modulation_order_dl;
-  uint8_t max_mu_mimo_users_dl;
-  uint8_t pdsch_data_in_dmrs_symbols;
-  uint8_t premption_support;//TAG 0x001F
-  uint8_t pdsch_non_slot_support;
+  nfapi_uint8_tlv_t pdsch_mapping_type;
+  nfapi_uint8_tlv_t pdsch_allocation_types;
+  nfapi_uint8_tlv_t pdsch_vrb_to_prb_mapping;
+  nfapi_uint8_tlv_t pdsch_cbg;
+  nfapi_uint8_tlv_t pdsch_dmrs_config_types;
+  nfapi_uint8_tlv_t pdsch_dmrs_max_length;
+  nfapi_uint8_tlv_t pdsch_dmrs_additional_pos;
+  nfapi_uint8_tlv_t max_pdsch_tbs_per_slot;
+  nfapi_uint8_tlv_t max_number_mimo_layers_pdsch;
+  nfapi_uint8_tlv_t supported_max_modulation_order_dl;
+  nfapi_uint8_tlv_t max_mu_mimo_users_dl;
+  nfapi_uint8_tlv_t pdsch_data_in_dmrs_symbols;
+  nfapi_uint8_tlv_t premption_support;//TAG 0x001F
+  nfapi_uint8_tlv_t pdsch_non_slot_support;
 
 } nfapi_nr_pdsch_param_t;
 
 //table 3-14
 typedef struct 
 {
-  uint8_t uci_mux_ulsch_in_pusch;
-  uint8_t uci_only_pusch;
-  uint8_t pusch_frequency_hopping;
-  uint8_t pusch_dmrs_config_types;
-  uint8_t pusch_dmrs_max_len;
-  uint8_t pusch_dmrs_additional_pos;
-  uint8_t pusch_cbg;
-  uint8_t pusch_mapping_type;
-  uint8_t pusch_allocation_types;
-  uint8_t pusch_vrb_to_prb_mapping;
-  //uint8 ? ↓ see table 3-14
-  uint8_t pusch_max_ptrs_ports;
-  uint8_t max_pduschs_tbs_per_slot;
-  uint8_t max_number_mimo_layers_non_cb_pusch;
-  uint8_t supported_modulation_order_ul;
-  uint8_t max_mu_mimo_users_ul;
-  uint8_t dfts_ofdm_support;
-  uint8_t pusch_aggregation_factor;//TAG 0x0031
+  nfapi_uint8_tlv_t uci_mux_ulsch_in_pusch;
+  nfapi_uint8_tlv_t uci_only_pusch;
+  nfapi_uint8_tlv_t pusch_frequency_hopping;
+  nfapi_uint8_tlv_t pusch_dmrs_config_types;
+  nfapi_uint8_tlv_t pusch_dmrs_max_len;
+  nfapi_uint8_tlv_t pusch_dmrs_additional_pos;
+  nfapi_uint8_tlv_t pusch_cbg;
+  nfapi_uint8_tlv_t pusch_mapping_type;
+  nfapi_uint8_tlv_t pusch_allocation_types;
+  nfapi_uint8_tlv_t pusch_vrb_to_prb_mapping;
+  nfapi_uint8_tlv_t pusch_max_ptrs_ports;
+  nfapi_uint8_tlv_t max_pduschs_tbs_per_slot;
+  nfapi_uint8_tlv_t max_number_mimo_layers_non_cb_pusch;
+  nfapi_uint8_tlv_t supported_modulation_order_ul;
+  nfapi_uint8_tlv_t max_mu_mimo_users_ul;
+  nfapi_uint8_tlv_t dfts_ofdm_support;
+  nfapi_uint8_tlv_t pusch_aggregation_factor;//TAG 0x0031
 
 } nfapi_nr_pusch_param_t;
 
 //table 3-15
 typedef struct 
 {
-  uint8_t prach_long_formats;
-  uint8_t prach_short_formats;
-  uint8_t prach_restricted_sets;
-  uint8_t max_prach_fd_occasions_in_a_slot;
-
+  nfapi_uint8_tlv_t prach_long_formats;
+  nfapi_uint8_tlv_t prach_short_formats;
+  nfapi_uint8_tlv_t prach_restricted_sets;
+  nfapi_uint8_tlv_t max_prach_fd_occasions_in_a_slot;
 } nfapi_nr_prach_param_t;
 
 //table 3-16
 typedef struct 
 {
-  uint8_t rssi_measurement_support;
+  nfapi_uint8_tlv_t rssi_measurement_support;
 } nfapi_nr_measurement_param_t;
 
 //-------------------------------------------//
 //3.3.2 CONFIG
-typedef struct {
-	nfapi_tl_t tl;
-	uint16_t value;
-} nfapi_nr_config_tlv_t;
 
-typedef struct {
-	uint8_t number_of_tlvs;
-	nfapi_nr_config_tlv_t tlv;
-} nfapi_nr_config_request_scf_t;
 
 typedef enum {
   NFAPI_NR_CONFIG_MSG_OK = 0,
-	NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
+  NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
 } nfapi_nr_config_errors_e;
 
-typedef struct {
+/*typedef struct {
 	nfapi_nr_config_errors_e error_code;
   uint8_t number_of_invalid_tlvs_that_can_only_be_configured_in_idle;
   uint8_t unmber_of_missing_tlvs;
@@ -283,7 +266,7 @@ typedef struct {
   nfapi_nr_config_tlv_t* tlv_invalid_running_list;
   nfapi_nr_config_tlv_t* tlv_missing_list;
 
-} nfapi_nr_config_response_t;
+} nfapi_nr_config_response_t;*/
 
 //nfapi_nr_config_tlv_format_t carrier config ~ precoding config:
 
@@ -336,34 +319,34 @@ typedef struct {
 //table 3-21
 typedef struct 
 {
-  uint16_t dl_bandwidth;//Carrier bandwidth for DL in MHz [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
-  uint32_t dl_frequency; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
-  uint16_t dl_k0[5];//𝑘_{0}^{𝜇} for each of the numerologies [38.211, sec 5.3.1] Value: 0 ->23699
-  uint16_t dl_grid_size[5];//Grid size 𝑁_{𝑔𝑟𝑖𝑑}^{𝑠𝑖𝑧𝑒,𝜇} for each of the numerologies [38.211, sec 4.4.2] Value: 0->275 0 = this numerology not used
-  uint16_t num_tx_ant;//Number of Tx antennas
-  uint16_t uplink_bandwidth;//Carrier bandwidth for UL in MHz. [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
-  uint32_t uplink_frequency;//Absolute frequency of UL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
-  uint16_t ul_k0[5];//𝑘0 𝜇 for each of the numerologies [38.211, sec 5.3.1] Value: : 0 ->23699
-  uint16_t ul_grid_size[5];//Grid size 𝑁𝑔𝑟𝑖𝑑 𝑠𝑖𝑧𝑒,𝜇 for each of the numerologies [38.211, sec 4.4.2]. Value: 0->275 0 = this numerology not used
-  uint16_t num_rx_ant;//
-  uint8_t  frequency_shift_7p5khz;//Indicates presence of 7.5KHz frequency shift. Value: 0 = false 1 = true
+  nfapi_uint16_tlv_t dl_bandwidth;//Carrier bandwidth for DL in MHz [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  nfapi_uint32_tlv_t dl_frequency; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  nfapi_uint16_tlv_t dl_k0[5];//𝑘_{0}^{𝜇} for each of the numerologies [38.211, sec 5.3.1] Value: 0 ->23699
+  nfapi_uint16_tlv_t dl_grid_size[5];//Grid size 𝑁_{𝑔𝑟𝑖𝑑}^{𝑠𝑖𝑧𝑒,𝜇} for each of the numerologies [38.211, sec 4.4.2] Value: 0->275 0 = this numerology not used
+  nfapi_uint16_tlv_t num_tx_ant;//Number of Tx antennas
+  nfapi_uint16_tlv_t uplink_bandwidth;//Carrier bandwidth for UL in MHz. [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  nfapi_uint32_tlv_t uplink_frequency;//Absolute frequency of UL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  nfapi_uint16_tlv_t ul_k0[5];//𝑘0 𝜇 for each of the numerologies [38.211, sec 5.3.1] Value: : 0 ->23699
+  nfapi_uint16_tlv_t ul_grid_size[5];//Grid size 𝑁𝑔𝑟𝑖𝑑 𝑠𝑖𝑧𝑒,𝜇 for each of the numerologies [38.211, sec 4.4.2]. Value: 0->275 0 = this numerology not used
+  nfapi_uint16_tlv_t num_rx_ant;//
+  nfapi_uint8_tlv_t  frequency_shift_7p5khz;//Indicates presence of 7.5KHz frequency shift. Value: 0 = false 1 = true
 
 } nfapi_nr_carrier_config_t; 
 
 //table 3-22
 typedef struct 
 {
-  uint8_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
-  uint8_t frame_duplex_type;//Frame duplex type Value: 0 = FDD 1 = TDD
+  nfapi_uint8_tlv_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
+  nfapi_uint8_tlv_t frame_duplex_type;//Frame duplex type Value: 0 = FDD 1 = TDD
 
 } nfapi_nr_cell_config_t;
 
 //table 3-23
 typedef struct 
 {
-  uint32_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
-  uint8_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
-  uint8_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
+  nfapi_uint32_tlv_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  nfapi_uint8_tlv_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
+  nfapi_uint8_tlv_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
 
 } nfapi_nr_ssb_config_t;
 
@@ -375,51 +358,51 @@ typedef struct
 typedef struct 
 {
   uint8_t  num_prach_fd_occasions;
-  uint16_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
-  uint8_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
-  uint16_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
-  uint8_t  prach_zero_corr_conf;//PRACH Zero CorrelationZone Config which is used to dervive 𝑁𝑐𝑠 [38.211, sec 6.3.3.1] Value: from 0 to 15
-  uint8_t  num_unused_root_sequences;//Number of unused sequences available for noise estimation per FD occasion. At least one unused root sequence is required per FD occasion.
-  uint8_t* unused_root_sequences_list;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
+  nfapi_uint16_tlv_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
+  nfapi_uint8_tlv_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
+  nfapi_uint16_tlv_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
+  nfapi_uint8_tlv_t  prach_zero_corr_conf;//PRACH Zero CorrelationZone Config which is used to dervive 𝑁𝑐𝑠 [38.211, sec 6.3.3.1] Value: from 0 to 15
+  nfapi_uint8_tlv_t  num_unused_root_sequences;//Number of unused sequences available for noise estimation per FD occasion. At least one unused root sequence is required per FD occasion.
+  nfapi_uint8_tlv_t* unused_root_sequences_list;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
 
 } nfapi_nr_num_prach_fd_occasions_t;
 
 typedef struct 
 {
-  uint8_t prach_sequence_length;//RACH sequence length. Long or Short sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
-  uint8_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
-  uint8_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
-  uint8_t num_prach_fd_occasions;//Number of RACH frequency domain occasions. Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  nfapi_uint8_tlv_t prach_sequence_length;//RACH sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
+  nfapi_uint8_tlv_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
+  nfapi_uint8_tlv_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
+  nfapi_uint8_tlv_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
   nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
-  uint8_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
-  uint8_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+  nfapi_uint8_tlv_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
+  nfapi_uint8_tlv_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
 
 } nfapi_nr_prach_config_t;
 
 //table 3-25
 typedef struct 
 {
-  uint32_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
+  nfapi_uint32_tlv_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
 
 } nfapi_nr_ssb_mask_size_2_t;
 
 typedef struct 
 {
-  uint8_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+  nfapi_uint8_tlv_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
 
 } nfapi_nr_ssb_mask_size_64_t;
 
 typedef struct 
 {
-  uint16_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Given in PRB [38.211, section 4.4.4.2] Value: 0->2199
-  uint8_t  beta_pss;//PSS EPRE to SSS EPRE in a SS/PBCH block [38.213, sec 4.1] Values: 0 = 0dB
-  uint8_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
-  uint8_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
-  uint32_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
-  nfapi_nr_ssb_mask_size_2_t* ssb_mask_size_2_list;//2
-  nfapi_nr_ssb_mask_size_64_t* ssb_mask_size_64_list;//64
-  uint8_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
-  uint8_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
+  nfapi_uint16_tlv_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Given in PRB [38.211, section 4.4.4.2] Value: 0->2199
+  nfapi_uint8_tlv_t  beta_pss;//PSS EPRE to SSS EPRE in a SS/PBCH block [38.213, sec 4.1] Values: 0 = 0dB
+  nfapi_uint8_tlv_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
+  nfapi_uint8_tlv_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
+  nfapi_uint32_tlv_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
+  nfapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
+  nfapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  nfapi_uint8_tlv_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+  nfapi_uint8_tlv_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
 
 } nfapi_nr_ssb_table_t;
 
@@ -428,7 +411,7 @@ typedef struct
 //? 
 typedef struct 
 {
-  uint8_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
+  nfapi_uint8_tlv_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
 
 } nfapi_nr_max_num_of_symbol_per_slot_t;
 
@@ -440,7 +423,7 @@ typedef struct
 
 typedef struct 
 {
-  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 
+  nfapi_uint8_tlv_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 
   nfapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
 
 } nfapi_nr_tdd_table_t;
@@ -448,9 +431,22 @@ typedef struct
 //table 3-27
 typedef struct 
 {
-  uint8_t rssi_measurement;//RSSI measurement unit. See Table 3-16 for RSSI definition. Value: 0: Do not report RSSI 1: dBm 2: dBFS
+  nfapi_uint8_tlv_t rssi_measurement;//RSSI measurement unit. See Table 3-16 for RSSI definition. Value: 0: Do not report RSSI 1: dBm 2: dBFS
 
 } nfapi_nr_measurement_config_t;
+
+
+typedef struct {
+  uint8_t num_tlv;
+  nfapi_nr_carrier_config_t     carrier_config;
+  nfapi_nr_cell_config_t        cell_config;
+  nfapi_nr_ssb_config_t         ssb_config;
+  nfapi_nr_prach_config_t       prach_config;
+  nfapi_nr_ssb_table_t          ssb_table;
+  nfapi_nr_tdd_table_t          tdd_table;
+  nfapi_nr_measurement_config_t measurement_config;
+} nfapi_nr_config_request_scf_t;
+
 
 //------------------------------//
 //3.3.3 START

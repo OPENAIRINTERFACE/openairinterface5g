@@ -37,14 +37,14 @@
 
 extern uint8_t nfapi_mode;
 
-void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,
+void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                              nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu)
 {
 
   AssertFatal(dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag== 1, "bchPayloadFlat %d != 1\n",
               dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag);
 
-  LOG_D(PHY,"pbch_pdu: %x\n",dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
+  LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex);
   gNB->ssb_pdu = &dl_tti_pdu->ssb_pdu;
 }
 
@@ -144,16 +144,18 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   int pdcch_received=0;
   gNB->num_pdsch_rnti=0;
   gNB->pdcch_pdu = NULL;
+  gNB->pbch_configured=0;
+  gNB->ssb_pdu=NULL;
 
   for (int i=0;i<number_dl_pdu;i++) {
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
     LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
-         gNB->pbch_configured=1;
+	gNB->pbch_configured=1;
         do_oai=1;
 
-        handle_nr_nfapi_ssb_pdu(gNB,
+        handle_nr_nfapi_ssb_pdu(gNB,frame,slot,
                                 dl_tti_pdu);
 
       break;
@@ -173,7 +175,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
         uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
         uint16_t tx_pdus = TX_req->Number_of_PDUs;
-	AssertFatal(tx_pdus < pduIndex, "tx_pdus %d < pduIndex %d\n",tx_pdus, pduIndex);
 	AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
 		    pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
         uint8_t *sdu = TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
