@@ -112,35 +112,35 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
   if(rel_slot<10 && rel_slot>=0)  {
-     for (int i=0; i<2; i++)  {  // max two SSB per frame
-     
-	ssb_index = i + 2*rel_slot; // computing the ssb_index
-	if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+    for (int i=0; i<2; i++)  {  // max two SSB per frame
+      
+      ssb_index = i + 2*rel_slot; // computing the ssb_index
+      if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	
-	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
-	  ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
-
-	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
-	  
-    	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-    	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-    	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-
-	  if (fp->Lmax == 4)
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-	  else
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-
-    	  nr_generate_pbch(&gNB->pbch,
-			   gNB->ssb_pdu,
-			   gNB->nr_pbch_interleaver,
-			   txdataF[0],
-			   AMP,
-			   ssb_start_symbol,
-			   n_hf,fp->Lmax,ssb_index,
-			   frame, cfg, fp);
-	}
-     }
+	int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
+	ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
+	
+	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
+	
+	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+	nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	
+	if (fp->Lmax == 4)
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	else
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	
+	nr_generate_pbch(&gNB->pbch,
+			 gNB->ssb_pdu,
+			 gNB->nr_pbch_interleaver,
+			 txdataF[0],
+			 AMP,
+			 ssb_start_symbol,
+			 n_hf,fp->Lmax,ssb_index,
+			 frame, cfg, fp);
+      }
+    }
   }
 }
 
@@ -172,7 +172,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,1);
   if (nfapi_mode == 0 || nfapi_mode == 1) { 
-    if (!(frame%ssb_frame_periodicity))  // generate SSB only for given frames according to SSB periodicity
+    if ((!(frame%ssb_frame_periodicity)) && (gNB->ssb_pdu))  // generate SSB only for given frames according to SSB periodicity
       nr_common_signal_procedures(gNB,frame, slot);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,0);
@@ -183,10 +183,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
 
-  if (gNB->pdcch_pdu) nr_generate_dci_top(gNB->pdcch_pdu,
-					  gNB->nr_gold_pdcch_dmrs[slot],
-					  gNB->common_vars.txdataF[0],
-					  AMP, *fp);
+  if (gNB->pdcch_pdu || gNB->ul_dci_pdu) nr_generate_dci_top(gNB->pdcch_pdu,
+							     gNB->ul_dci_pdu,
+							     gNB->nr_gold_pdcch_dmrs[slot],
+							     gNB->common_vars.txdataF[0],
+							     AMP, *fp);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
  
   LOG_D(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);

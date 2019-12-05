@@ -155,6 +155,7 @@ void nr_pdcch_scrambling(uint32_t *in,
 }
 
 uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_ul_dci_request_pdus_t    *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -169,14 +170,19 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
   /*First iteration: single DCI*/
 
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15; 
 
 
   // find coreset descriptor
     
   int rb_offset;
   int n_rb;
-    
+
+  AssertFatal(pdcch_pdu==NULL || ul_dci_pdu==NULL,"Can't handle both DL and UL DCI in same slot\n");
+
+  if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
+  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
+
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
   // compute rb_offset and n_prb based on frequency allocation

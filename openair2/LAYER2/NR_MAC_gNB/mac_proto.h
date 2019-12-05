@@ -69,7 +69,7 @@ int configure_fapi_dl_Tx(int Mod_id,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req);
 
-void config_uldci(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15, 
+void config_uldci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, 
                   dci_pdu_rel15_t *dci_pdu_rel15, 
                   int *dci_formats, 
                   int *rnti_types);
@@ -79,7 +79,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   slotP,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
-void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
+void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP);
   

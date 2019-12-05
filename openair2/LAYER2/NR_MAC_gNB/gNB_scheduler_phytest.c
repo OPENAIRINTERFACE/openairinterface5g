@@ -335,60 +335,61 @@ int configure_fapi_dl_Tx(int Mod_idP,
   pdsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(NULL,
 						     scc->dmrs_TypeA_Position,
 						     pdsch_pdu_rel15->NrOfSymbols);
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    
-    dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
-										  pdsch_pdu_rel15->rbSize, 
-										  NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
-    dci_pdu_rel15[0].time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
-    dci_pdu_rel15[0].vrb_to_prb_mapping = 1;
-    dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
-    dci_pdu_rel15[0].tb_scaling = 1;
-    
-    dci_pdu_rel15[0].ra_preamble_index = 25;
-    dci_pdu_rel15[0].format_indicator = 1;
-    dci_pdu_rel15[0].ndi = 1;
-    dci_pdu_rel15[0].rv = 0;
-    dci_pdu_rel15[0].harq_pid = 0;
-    dci_pdu_rel15[0].dai = 2;
-    dci_pdu_rel15[0].tpc = 2;
-    dci_pdu_rel15[0].pucch_resource_indicator = 7;
-    dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
-    
-    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
-	  dci_pdu_rel15[0].frequency_domain_assignment,
-	  dci_pdu_rel15[0].time_domain_assignment,
-	  dci_pdu_rel15[0].vrb_to_prb_mapping,
-	  dci_pdu_rel15[0].mcs,
-	  dci_pdu_rel15[0].tb_scaling,
-	  dci_pdu_rel15[0].ndi, 
-	  dci_pdu_rel15[0].rv);
-    
-    nr_configure_pdcch(pdcch_pdu_rel15,
-		       1, // ue-specific
-		       scc,
-		       bwp);
-    
-    pdcch_pdu_rel15->numDlDci = 1;
-    pdcch_pdu_rel15->AggregationLevel[0] = 4;  
-    pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
-    pdcch_pdu_rel15->CceIndex[0] = 0;
-    pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
-    pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
 
-    int dci_formats[pdcch_pdu_rel15->numDlDci];
-    int rnti_types[pdcch_pdu_rel15->numDlDci];
+  dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
+  
+  dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
+										   pdsch_pdu_rel15->rbSize, 
+										   NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
+  dci_pdu_rel15[0].time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
+  dci_pdu_rel15[0].vrb_to_prb_mapping = 1;
+  dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
+  dci_pdu_rel15[0].tb_scaling = 1;
+  
+  dci_pdu_rel15[0].ra_preamble_index = 25;
+  dci_pdu_rel15[0].format_indicator = 1;
+  dci_pdu_rel15[0].ndi = 1;
+  dci_pdu_rel15[0].rv = 0;
+  dci_pdu_rel15[0].harq_pid = 0;
+  dci_pdu_rel15[0].dai = 2;
+  dci_pdu_rel15[0].tpc = 2;
+  dci_pdu_rel15[0].pucch_resource_indicator = 7;
+  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
+  
+  LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+	dci_pdu_rel15[0].frequency_domain_assignment,
+	dci_pdu_rel15[0].time_domain_assignment,
+	dci_pdu_rel15[0].vrb_to_prb_mapping,
+	dci_pdu_rel15[0].mcs,
+	dci_pdu_rel15[0].tb_scaling,
+	dci_pdu_rel15[0].ndi, 
+	dci_pdu_rel15[0].rv);
+  
+  nr_configure_pdcch(pdcch_pdu_rel15,
+		     1, // ue-specific
+		     scc,
+		     bwp);
 
-    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
-    rnti_types[0]   = NR_RNTI_C;
-    config_uldci(pdcch_pdu_rel15, &dci_pdu_rel15[pdcch_pdu_rel15->numDlDci], dci_formats, rnti_types);
-    
-    for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
-      pdcch_pdu_rel15->PayloadSizeBits[i]=nr_dci_size(dci_formats[i],rnti_types[i],pdsch_pdu_rel15->BWPSize);
-      fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[i],dci_formats,rnti_types);
-    }
-    
-    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+  pdcch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  pdcch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  pdcch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+  
+  pdcch_pdu_rel15->numDlDci = 1;
+  pdcch_pdu_rel15->AggregationLevel[0] = 4;  
+  pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
+  pdcch_pdu_rel15->CceIndex[0] = 0;
+  pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
+  pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
+  
+  int dci_formats[2];
+  int rnti_types[2];
+  
+  dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+  rnti_types[0]   = NR_RNTI_C;
+
+  pdcch_pdu_rel15->PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
+  
+  LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
 	pdcch_pdu_rel15->RNTI[0],
 	rnti_types[0],
@@ -426,7 +427,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
   return TBS/8; //Return TBS in bytes
 }
 
-void config_uldci(nfapi_nr_dl_config_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
+void config_uldci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
 
   dci_pdu_rel15->frequency_domain_assignment = 0; // PRBalloc_to_locationandbandwidth0(0,50,NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275)); // to be changed with UL bwp
   dci_pdu_rel15->time_domain_assignment = 2; // row index used here instead of SLIV;
@@ -672,12 +673,32 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 }
 
 
-void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
+void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP) {
-  //gNB_MAC_INST                      *nr_mac      = RC.nrmac[module_idP];
-  //nfapi_nr_ul_tti_request_t         *UL_tti_req;
-  uint16_t rnti = 0x1234;
+
+  gNB_MAC_INST                      *nr_mac      = RC.nrmac[Mod_idP];
+  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
+  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
+
+  int bwp_id=1;
+
+  int UE_id = 0;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+	      "downlinkBWP_ToAddModList has %d BWP!\n",
+	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+  nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
+
+
+  uint16_t rnti = UE_list->rnti[UE_id];
+  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_request_pdu;
 
   for (uint8_t CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "Scheduling UE specific PUSCH for CC_id %d\n",CC_id);
@@ -758,4 +779,29 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
     //beamforming
     //pusch_pdu->beamforming; //not used for now
   }
+
+  ul_dci_request_pdu = &UL_dci_req->ul_dci_pdu_list[UL_dci_req->numPdus];
+  memset((void*)ul_dci_request_pdu,0,sizeof(nfapi_nr_ul_dci_request_pdus_t));
+  ul_dci_request_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
+  ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
+
+  int dci_formats[2];
+  int rnti_types[2];
+
+  dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
+  rnti_types[0]   = NR_RNTI_C;
+
+  nr_configure_pdcch(pdcch_pdu_rel15,
+		     1, // ue-specific,
+		     scc,
+		     bwp);
+
+  dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
+
+  config_uldci(pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
+  
+  pdcch_pdu_rel15->PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
+  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
+  
 }

@@ -31,7 +31,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "nfapi_vnf_interface.h"
 #include "nfapi.h"
 #include "vendor_ext.h"

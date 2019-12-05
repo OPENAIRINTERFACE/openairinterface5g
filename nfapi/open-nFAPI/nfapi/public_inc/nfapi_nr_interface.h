@@ -16,26 +16,7 @@
 #define NFAPI_NR_MAX_NB_CORESETS 12
 #define NFAPI_NR_MAX_NB_SEARCH_SPACES 40
 
-// Extension to the generic structures for single tlv values
-typedef struct {
-	nfapi_tl_t tl;
-	int32_t value;
-} nfapi_int32_tlv_t;
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint32_t value;
-} nfapi_uint32_tlv_t;
-
-/*typedef struct {
-	nfapi_tl_t tl;
-	int64_t value;
-} nfapi_int64_tlv_t;*/
-
-typedef struct {
-	nfapi_tl_t tl;
-	uint64_t value;
-} nfapi_uint64_tlv_t;
 
 // nFAPI enums
 
@@ -412,11 +393,6 @@ typedef enum {
   NFAPI_NR_MCS_TABLE_QAM64_LOW_SE=0,
   NFAPI_NR_MCS_TABLE_QAM256
 } nfapi_nr_pdsch_mcs_table_e;
-
-typedef enum {
-  NFAPI_NR_DMRS_TYPE1=0,
-  NFAPI_NR_DMRS_TYPE2
-} nfapi_nr_dmrs_type_e;
 
 // P7 Sub Structures
 

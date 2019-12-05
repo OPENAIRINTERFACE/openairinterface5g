@@ -33,7 +33,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "fapi_nr_l1.h"
 #include "nfapi_pnf.h"
 #include "common/utils/LOG/log.h"

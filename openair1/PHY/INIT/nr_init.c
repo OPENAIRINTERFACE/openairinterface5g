@@ -238,49 +238,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   gNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
   return (0);
 }
-/*
-void phy_config_request(PHY_Config_t *phy_config) {
-
-  uint8_t Mod_id              = phy_config->Mod_id;
-  int CC_id                   = phy_config->CC_id;
-  nfapi_nr_config_request_t *cfg = phy_config->cfg;
-
-  NR_DL_FRAME_PARMS *fp;
-  PHICH_RESOURCE_t phich_resource_table[4]={oneSixth,half,one,two};
-  int                 eutra_band     = cfg->nfapi_config.rf_bands.rf_band[0];
-  int                 dl_Bandwidth   = cfg->rf_config.dl_carrier_bandwidth.value;
-  int                 ul_Bandwidth   = cfg->rf_config.ul_carrier_bandwidth.value;
-  int                 Nid_cell       = cfg->sch_config.physical_cell_id.value;
-  int                 Ncp            = cfg->subframe_config.dl_cyclic_prefix_type.value;
-  int                 p_eNB          = cfg->rf_config.tx_antenna_ports.value;
-  uint32_t            dl_CarrierFreq = cfg->nfapi_config.earfcn.value;
-
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,gNB_tx_antenna_ports %d,Ncp %d,DL freq %u)\n",
-  Mod_id, CC_id, eutra_band, dl_Bandwidth, ul_Bandwidth, Nid_cell, p_eNB,Ncp,dl_CarrierFreq );
-
-  AssertFatal(RC.gNB != NULL, "PHY instance pointer doesn't exist\n");
-  AssertFatal(RC.gNB[Mod_id] != NULL, "PHY instance %d doesn't exist\n",Mod_id);
-  AssertFatal(RC.gNB[Mod_id][CC_id] != NULL, "PHY instance %d, CCid %d doesn't exist\n",Mod_id,CC_id);
-
-
-  if (RC.gNB[Mod_id][CC_id]->configured == 1)
-  {
-    LOG_E(PHY,"Already eNB already configured, do nothing\n");
-    return;
-  }
-
-  RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
-
-  fp = &RC.gNB[Mod_id][CC_id]->frame_parms;
-
-  fp->threequarter_fs                    = 0;
-
-  nr_init_frame_parms(fp,1);
-
-  RC.gNB[Mod_id][CC_id]->configured                                   = 1;
-  LOG_I(PHY,"gNB %d/%d configured\n",Mod_id,CC_id);
-}*/
-
 
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 {

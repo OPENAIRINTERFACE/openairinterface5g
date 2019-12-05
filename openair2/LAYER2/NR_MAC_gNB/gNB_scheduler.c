@@ -77,7 +77,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_nr_ul_tti_request_t    *UL_tti_req = &gNB->UL_tti_req[0];
-  nfapi_nr_ul_dci_request_t    *ul_dci_req = &gNB->ul_dci_req[0];
+  nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
   gNB->pdu_index[CC_idP] = 0;
@@ -90,9 +90,9 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
     //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
 
-    ul_dci_req[CC_idP].SFN                         = frameP;
-    ul_dci_req[CC_idP].Slot                        = slotP;
-    ul_dci_req[CC_idP].numPdus                     = 0;
+    UL_dci_req[CC_idP].SFN                         = frameP;
+    UL_dci_req[CC_idP].Slot                        = slotP;
+    UL_dci_req[CC_idP].numPdus                     = 0;
 
     UL_tti_req[CC_idP].SFN                         = frameP;
     UL_tti_req[CC_idP].Slot                        = slotP;
@@ -368,7 +368,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // Phytest scheduling
  
   if (slot_rxP==2){
-    nr_schedule_uss_ulsch_phytest(&RC.nrmac[module_idP]->UL_tti_req[0], frame_rxP, slot_rxP);
+    nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
   }
   
   if (slot_txP==1){

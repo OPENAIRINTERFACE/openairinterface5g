@@ -22,6 +22,33 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
+// Extension to the generic structures for single tlv values
+typedef struct {
+	nfapi_tl_t tl;
+	int32_t value;
+} nfapi_int32_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint32_t value;
+} nfapi_uint32_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	int64_t value;
+} nfapi_int64_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint64_t value;
+} nfapi_uint64_tlv_t;
+
+typedef enum {
+  NFAPI_NR_DMRS_TYPE1=0,
+  NFAPI_NR_DMRS_TYPE2
+} nfapi_nr_dmrs_type_e;
+
+
 typedef struct {
   /// Value: 0 -> 1, 0: Payload is carried directly in the value field, 1: Pointer to payload is in the value field 
   uint16_t tag; 

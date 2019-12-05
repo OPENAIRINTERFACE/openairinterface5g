@@ -35,7 +35,6 @@
 
 #include "PHY/impl_defs_top.h"
 #include "defs_common.h"
-#include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
@@ -227,10 +226,10 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
-  /// Placeholder to replace overlapping fields below
-  nfapi_nr_rf_config_t rf_config;
+  //  /// Placeholder to replace overlapping fields below
+  //  nfapi_nr_rf_config_t rf_config;
   /// Placeholder to replace SSB overlapping fields below
-  nfapi_nr_sch_config_t sch_config;
+  //  nfapi_nr_sch_config_t sch_config;
   /// Number of resource blocks (RB) in DL
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL

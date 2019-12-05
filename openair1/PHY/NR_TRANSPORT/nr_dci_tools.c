@@ -234,7 +234,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
     uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
-    memset((void*)dci_pdu,0,2*sizeof(uint64_t));
+
 
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
     if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
@@ -254,6 +254,27 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->rnti                      = pdcch_pdu_rel15->RNTI[i];
     
     nr_fill_cce_list(gNB,0);  
+    /*
+    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
+    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
+    */
+
+  }
+
+}
+void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
+		    int frame,
+		    int slot) {
+
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
+
+
+  for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
+
+    uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
+
+    // if there's no DL DCI then generate CCE list
+    if (gNB->pdcch_pdu) nr_fill_cce_list(gNB,0);  
     /*
     LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
     LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);

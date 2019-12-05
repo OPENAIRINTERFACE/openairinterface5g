@@ -102,6 +102,20 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
 
 }
 
+void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu) {
+
+  LOG_D(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
+
+  // copy dci configuration into gNB structure
+  gNB->ul_dci_pdu = ul_dci_request_pdu;
+
+  nr_fill_ul_dci(gNB,frame,slot);
+
+
+
+}
 
 void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
@@ -122,6 +136,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
   nfapi_nr_tx_data_request_t    *TX_req      = Sched_INFO->TX_req;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
+  nfapi_nr_ul_dci_request_t     *UL_dci_req  = Sched_INFO->UL_dci_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
@@ -132,6 +147,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
+  uint8_t number_ul_dci_pdu         = UL_dci_req->numPdus;
 
  
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d \n",
@@ -186,17 +202,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
-  /*
-  // this is done in phy_procedures_gNB_uespec_RX now
-  for (i=0;i<number_ul_pdu;i++) {
-    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,UL_tti_req->pdus_list[i].PDUType);
-    switch (UL_tti_req->pdus_list[i].PDUType) {
-    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
-      {
-        nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
-	nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
-      }
-    }
+  for (int i=0;i<number_ul_dci_pdu;i++) {
+    handle_nfapi_nr_ul_dci_pdu(gNB,
+			      frame, slot,
+			      &UL_dci_req->ul_dci_pdu_list[i]);
   }
-  */
+
+
 }

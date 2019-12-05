@@ -623,8 +623,9 @@ typedef struct PHY_VARS_gNB_s {
   //Sched_Rsp_t         Sched_INFO;
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   
-  nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu;
-  nfapi_nr_dl_tti_ssb_pdu   *ssb_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
+  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
+  nfapi_nr_dl_tti_ssb_pdu      *ssb_pdu;
 
   int num_pdsch_rnti;
   NR_gNB_PBCH         pbch;

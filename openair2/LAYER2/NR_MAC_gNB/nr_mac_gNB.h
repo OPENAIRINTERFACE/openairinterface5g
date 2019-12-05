@@ -47,7 +47,6 @@
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MeasConfig.h"
 
-#include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
@@ -145,7 +144,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
   nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_nr_ul_dci_request_t         ul_dci_req[NFAPI_CC_MAX];
+  nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
   NR_UE_list_t UE_list;

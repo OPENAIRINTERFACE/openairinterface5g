@@ -273,7 +273,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   handle_nr_cqi(UL_info);
   handle_nr_harq(UL_info);
   // clear HI prior to handling ULSCH
-  mac->ul_dci_req[CC_id].numPdus = 0;
+  mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
 
   if (nfapi_mode != 1) {
@@ -297,7 +297,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sf_ahead)) ? 1 : 0)) % 1024;
       sched_info->slot        = (UL_info->slot+sf_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
-      sched_info->UL_dci_req  = &mac->ul_dci_req[CC_id];
+      sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
           (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
