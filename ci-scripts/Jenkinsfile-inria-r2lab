@@ -134,7 +134,7 @@ pipeline {
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_Credentials}", usernameVariable: 'r2labuser', passwordVariable: 'r2labpassword']
                         ]) {
                         sh "python3 /home/eurecom/inria-scripts/booking-lease.py --book-lease --from ${BOOK_TIMESTAMP}T${r2labStartTime} --duration ${r2labDuration} --slice inria_oaici ${r2labuser} ${r2labpassword}"
-                        sh "python3 /home/eurecom/inria-scripts/booking-lease.py --get-leases ${r2labuser} ${r2labpassword}"
+                        sh "python3 /home/eurecom/inria-scripts/booking-lease.py --get-leases ${r2labuser} ${r2labpassword} | grep -v nightly"
                     }
                 }
             }
@@ -146,14 +146,18 @@ pipeline {
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
 
-                    echo '\u2705 \u001B[32mLoad Image for one eNB\u001B[0m'
+                    echo '\u2705 \u001B[32mLoad Image for two (2) eNBs\u001B[0m'
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx},${r2labENB1Idx}'"
+                    sh "sleep 5"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx},${r2labENB1Idx}'"
 
                     echo '\u2705 \u001B[32mLoad Image for one OAI UE\u001B[0m'
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labUE0Idx} > /dev/null 2>&1'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labUE0Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labUE0Idx}'"
+                    sh "sleep 5"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labUE0Idx}'"
 
                     echo '\u2705 \u001B[32mLoad Image for one EPC\u001B[0m'
