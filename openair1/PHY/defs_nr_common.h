@@ -35,7 +35,7 @@
 
 #include "PHY/impl_defs_top.h"
 #include "defs_common.h"
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
@@ -226,10 +226,10 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
-  /// Placeholder to replace overlapping fields below
-  nfapi_nr_rf_config_t rf_config;
+  //  /// Placeholder to replace overlapping fields below
+  //  nfapi_nr_rf_config_t rf_config;
   /// Placeholder to replace SSB overlapping fields below
-  nfapi_nr_sch_config_t sch_config;
+  //  nfapi_nr_sch_config_t sch_config;
   /// Number of resource blocks (RB) in DL
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -241,9 +241,9 @@ typedef struct NR_DL_FRAME_PARMS {
   /// EUTRA Band
   uint16_t eutra_band;
   /// DL carrier frequency
-  uint32_t dl_CarrierFreq;
+  uint64_t dl_CarrierFreq;
   /// UL carrier frequency
-  uint32_t ul_CarrierFreq;
+  uint64_t ul_CarrierFreq;
   /// TX attenuation
   uint32_t att_tx;
   /// RX attenuation
@@ -320,6 +320,8 @@ typedef struct NR_DL_FRAME_PARMS {
 
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
+
+  uint8_t half_frame_bit;
 
   //SSB related params
   /// Start in Subcarrier index of the SSB block

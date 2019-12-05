@@ -107,19 +107,18 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 
 }
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
+NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
+                              unsigned char Kmimo,
                               unsigned char Mdlharq,
                               uint32_t Nsoft,
-                              uint8_t abstraction_flag,
-                              NR_DL_FRAME_PARMS *frame_parms,
-                              nfapi_nr_config_request_t *config)
+                              uint8_t  abstraction_flag,
+                              uint16_t N_RB)
 {
 
   NR_gNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
-  uint16_t N_RB = config->rf_config.dl_carrier_bandwidth.value;
 
   switch (N_RB) {
 
@@ -144,12 +143,12 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
     for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
       dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
 
-       for (aa=0; aa<64; aa++) {
+      for (aa=0; aa<64; aa++) {
          dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
          for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
            dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
          }
-       }
+      }
 
       dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
     }
@@ -280,7 +279,7 @@ int nr_dlsch_encoding(unsigned char *a,
   unsigned int crc=1;
   uint8_t harq_pid = dlsch->harq_ids[frame&2][slot];
   AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
   uint32_t A, Z, Kb, F=0;

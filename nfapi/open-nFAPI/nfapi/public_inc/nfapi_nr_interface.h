@@ -11,48 +11,16 @@
 
 #include "nfapi_interface.h"
 
-
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
 #define NFAPI_NR_MAX_NB_CORESETS 12
 #define NFAPI_NR_MAX_NB_SEARCH_SPACES 40
 
-// Extension to the generic structures for single tlv values
-typedef struct {
-	nfapi_tl_t tl;
-	int32_t value;
-} nfapi_int32_tlv_t;
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint32_t value;
-} nfapi_uint32_tlv_t;
-
-/*typedef struct {
-	nfapi_tl_t tl;
-	int64_t value;
-} nfapi_int64_tlv_t;*/
-
-typedef struct {
-	nfapi_tl_t tl;
-	uint64_t value;
-} nfapi_uint64_tlv_t;
 
 // nFAPI enums
-typedef enum {
-  NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE = 0,
-  NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE,
-  NFAPI_NR_DL_CONFIG_PCH_PDU_TYPE,
-} nfapi_nr_dl_config_pdu_type_e;
 
-// nFAPI enums
-typedef enum {
-  NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE = 0,
-  NFAPI_NR_UL_CONFIG_ULSCH_PDU_TYPE,
-  NFAPI_NR_UL_CONFIG_UCI_PDU_TYPE,
-  NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE,
-} nfapi_nr_ul_config_pdu_type_e;
+
 
 //These TLVs are used exclusively by nFAPI
 typedef struct
@@ -110,37 +78,6 @@ typedef struct
 #define NFAPI_NR_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG 0x5133
 
 // P5 Message Structures
-
-typedef struct{
-  nfapi_tl_t tl;
-  uint16_t  corset_ID;                           ///// L1 parameter 'CORESET-ID'
-  uint16_t  freq_dom;                       ///// L1 parameter 'CORESET-freq-dom'
-  uint16_t  duration;                                       ///// L1 parameter 'CORESET-time-duration'
-  uint16_t  reg_type;                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
-  uint16_t  reg_bundlesize;                                 ///// L1 parameter 'CORESET-REG-bundle-size'
-  uint16_t  interleaversize;                                ///// L1 parameter 'CORESET-interleaver-size'
-  uint16_t  shiftindex;                                     ///// L1 parameter 'CORESET-shift-index'
-  uint16_t  precodergranularity;                            ///// L1 parameter 'CORESET-precoder-granuality'
-  uint16_t  tci_stateId;                                    ///// L1 parameter 'TCI-StatesPDCCH'
-  uint16_t  tci_present;                               ///// L1 parameter 'TCI-PresentInDCI'
-  uint16_t  dmrs_scramblingID;                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
-} nfapi_nr_ControlResourcesSet_t;
-
-typedef struct{
-  nfapi_tl_t tl;
-  nfapi_nr_ControlResourcesSet_t coreset;
-  uint16_t  monitoringSlotPeriodicityAndOffset;             ///// L1 parameters 'Montoring-periodicity-PDCCH-slot'
-  uint16_t  monitoringSymbolsWithinSlot;                    ///// L1 parameter 'Montoring-symbols-PDCCH-within-slot'
-  uint16_t  nrofCand_aggLevel1;                             ///// L1 parameter 'Aggregation-level-1'
-  uint16_t  nrofCand_aggLevel2;                             ///// L1 parameter 'Aggregation-level-2'
-  uint16_t  nrofCand_aggLevel4;                             ///// L1 parameter 'Aggregation-level-4'
-  uint16_t  nrofCand_aggLevel8;                             ///// L1 parameter 'Aggregation-level-8'
-  uint16_t  nrofCand_aggLevel16;                            ///// L1 parameter 'Aggregation-level-16'
-  uint16_t  sfi_agg_fmt2_0;    ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
-  uint16_t  monitoringperiodicity_fmt2_3;        ///// L1 parameter 'SRS-monitoring-periodicity'
-  uint16_t  nrof_candidates_fmt_2_3;         ///// L1 parameter 'SRS-Num-PDCCH-cand'
-} nfapi_nr_SearchSpace_t;
-
 
 typedef struct {
   nfapi_uint16_tlv_t  numerology_index_mu;
@@ -457,13 +394,9 @@ typedef enum {
   NFAPI_NR_MCS_TABLE_QAM256
 } nfapi_nr_pdsch_mcs_table_e;
 
-typedef enum {
-  NFAPI_NR_DMRS_TYPE1=0,
-  NFAPI_NR_DMRS_TYPE2
-} nfapi_nr_dmrs_type_e;
-
 // P7 Sub Structures
 
+/*
 typedef struct {
 
 nfapi_tl_t tl;
@@ -526,9 +459,12 @@ uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16
 uint16_t padding;
 
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
-
+*/
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
+
+
+/*
 typedef struct{
   nfapi_tl_t tl;
   uint8_t  coreset_id;
@@ -563,6 +499,7 @@ typedef struct{
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
 
+
 typedef struct {
   nfapi_tl_t tl;
   uint16_t rnti;
@@ -593,154 +530,7 @@ typedef struct {
   nfapi_bf_vector_t   bf_vector;
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
-typedef struct {
-  nfapi_tl_t tl;
-  uint16_t length;
-  int16_t  pdu_index;
-  uint16_t transmission_power;
-} nfapi_nr_dl_config_bch_pdu_rel15_t;
-#define NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG 0x5025
-
-typedef struct {
-  nfapi_nr_dl_config_bch_pdu_rel15_t bch_pdu_rel15;
-} nfapi_nr_dl_config_bch_pdu;
-
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nr_beamforming_t;
-
-typedef struct {
-  nfapi_tl_t tl;
-  uint16_t pduBitmap;
-  uint16_t rnti;
-  uint16_t pduIndex;
-  // BWP  [TS38.213 sec 12]
-  /// Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP, Value: 1->275
-  uint16_t BWPSize;
-  /// bandwidth part start RB index from reference CRB [TS38.213 sec 12],Value: 0->274
-  uint16_t BWPStart;
-  /// subcarrierSpacing [TS38.211 sec 4.2], Value:0->4
-  uint8_t SubcarrierSpacing;
-  /// Cyclic prefix type [TS38.211 sec 4.2], 0: Normal; 1: Extended
-  uint8_t CyclicPrefix;
-  // Codeword information
-  /// Number of code words for this RNTI (UE), Value: 1 -> 2
-  uint8_t NrOfCodewords;
-  /// Target coding rate [TS38.212 sec 5.4.2.1 and 38.214 sec 5.1.3.1]. This is the number of information bits per 1024 coded bits expressed in 0.1 bit units
-  uint16_t targetCodeRate[2]; 
-  /// QAM modulation [TS38.212 sec 5.4.2.1 and 38.214 sec 5.1.3.1], Value: 2,4,6,8
-  uint8_t qamModOrder[2];
-  ///  MCS index [TS38.214, sec 5.1.3.1], should match value sent in DCI Value : 0->31
-  uint8_t mcsIndex[2];
-  /// MCS-Table-PDSCH [TS38.214, sec 5.1.3.1] 0: notqam256, 1: qam256, 2: qam64LowSE
-  uint8_t mcsTable[2];   
-  /// Redundancy version index [TS38.212, Table 5.4.2.1-2 and 38.214, Table 5.1.2.1-2], should match value sent in DCI Value : 0->3
-  uint8_t rvIndex[2];
-  /// Transmit block size (in bytes) [TS38.214 sec 5.1.3.2], Value: 0->65535
-  uint32_t TBSize[2];
-  /// dataScramblingIdentityPdsch [TS38.211, sec 7.3.1.1], It equals the higher-layer parameter Datascrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id. Value: 0->65535
-  uint16_t dataScramblingId;
-  /// Number of layers [TS38.211, sec 7.3.1.3]. Value : 1->8
-  uint8_t nrOfLayers;
-  /// PDSCH transmission schemes [TS38.214, sec5.1.1] 0: Up to 8 transmission layers
-  uint8_t transmissionScheme;
-  /// Reference point for PDSCH DMRS "k" - used for tone mapping [TS38.211, sec 7.4.1.1.2] Resource block bundles [TS38.211, sec 7.3.1.6] Value: 0 -> 1 If 0, the 0 reference point for PDSCH DMRS is at Point A [TS38.211 sec 4.4.4.2]. Resource block bundles generated per sub-bullets 2 and 3 in [TS38.211, sec 7.3.1.6]. For sub-bullet 2, the start of bandwidth part must be set to the start of actual bandwidth part +NstartCORESET and the bandwidth of the bandwidth part must be set to the bandwidth of the initial bandwidth part. If 1, the DMRS reference point is at the lowest VRB/PRB of the allocation. Resource block bundles generated per sub-bullets 1 [TS38.211, sec 7.3.1.6]
-  uint8_t refPoint;
-  // DMRS  [TS38.211 sec 7.4.1.1]
-  /// DMRS symbol positions [TS38.211, sec 7.4.1.1.2 and Tables 7.4.1.1.2-3 and 7.4.1.1.2-4] Bitmap occupying the 14 LSBs with: bit 0: first symbol and for each bit 0: no DMRS 1: DMRS
-  uint16_t dlDmrsSymbPos;  
-  /// DL DMRS config type [TS38.211, sec 7.4.1.1.2] 0: type 1,  1: type 2
-  uint8_t dmrsConfigType;
-  /// DL-DMRS-Scrambling-ID [TS38.211, sec 7.4.1.1.2 ] If provided by the higher-layer and the PDSCH is scheduled by PDCCH with CRC scrambled by CRNTI or CS-RNTI, otherwise, L2 should set this to physical cell id. Value: 0->65535
-  uint16_t dlDmrsScramblingId;
-  /// DMRS sequence initialization [TS38.211, sec 7.4.1.1.2]. Should match what is sent in DCI 1_1, otherwise set to 0. Value : 0->1
-  uint8_t SCID;
-  /// Number of DM-RS CDM groups without data [TS38.212 sec 7.3.1.2.2] [TS38.214 Table 4.1-1] it determines the ratio of PDSCH EPRE to DM-RS EPRE. Value: 1->3
-  uint8_t numDmrsCdmGrpsNoData;
-  /// DMRS ports. [TS38.212 7.3.1.2.2] provides description between DCI 1-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
-  uint16_t dmrsPorts;
-  // Pdsch Allocation in frequency domain [TS38.214, sec 5.1.2.2]
-  /// Resource Allocation Type [TS38.214, sec 5.1.2.2] 0: Type 0, 1: Type 1
-  uint8_t resourceAlloc;
-  /// For resource alloc type 0. TS 38.212 V15.0.x, 7.3.1.2.2 bitmap of RBs, 273 rounded up to multiple of 32. This bitmap is in units of VRBs. LSB of byte 0 of the bitmap represents the first RB of the bwp 
-  uint8_t rbBitmap[36];
-  /// For resource allocation type 1. [TS38.214, sec 5.1.2.2.2] The starting resource block within the BWP for this PDSCH. Value: 0->274
-  uint16_t rbStart;
-  /// For resource allocation type 1. [TS38.214, sec 5.1.2.2.2] The number of resource block within for this PDSCH. Value: 1->275
-  uint16_t rbSize;
-  /// VRB-to-PRB-mapping [TS38.211, sec 7.3.1.6] 0: non-interleaved 1: interleaved with RB size 2 2: Interleaved with RB size 4
-  uint8_t VRBtoPRBMapping;
-  // Resource Allocation in time domain [TS38.214, sec 5.1.2.1]
-  /// Start symbol index of PDSCH mapping from the start of the slot, S. [TS38.214, Table 5.1.2.1-1] Value: 0->13
-  uint8_t StartSymbolIndex;
-  /// PDSCH duration in symbols, L [TS38.214, Table 5.1.2.1-1] Value: 1->14
-  uint8_t NrOfSymbols;
-  // PTRS [TS38.214, sec 5.1.6.3]
-  /// PT-RS antenna ports [TS38.214, sec 5.1.6.3] [TS38.211, table 7.4.1.2.2-1] Bitmap occupying the 6 LSBs with: bit 0: antenna port 1000 bit 5: antenna port 1005 and for each bit 0: PTRS port not used 1: PTRS port used
-  uint8_t PTRSPortIndex ;
-  /// PT-RS time density [TS38.214, table 5.1.6.3-1] 0: 1 1: 2 2: 4
-  uint8_t PTRSTimeDensity;
-  /// PT-RS frequency density [TS38.214, table 5.1.6.3-2] 0: 2 1: 4
-  uint8_t PTRSFreqDensity;
-  /// PT-RS resource element offset [TS38.211, table 7.4.1.2.2-1] Value: 0->3
-  uint8_t PTRSReOffset;
-  ///  PT-RS-to-PDSCH EPRE ratio [TS38.214, table 4.1-2] Value :0->3
-  uint8_t nEpreRatioOfPDSCHToPTRS;
-  // Beamforming
-  nr_beamforming_t precodingAndBeamforming;
-}nfapi_nr_dl_config_dlsch_pdu_rel15_t;
-#define NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG
-
-typedef struct {
-	nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
-} nfapi_nr_dl_config_dlsch_pdu;
-
-typedef struct {
-  nfapi_tl_t tl;
-  nfapi_nr_search_space_t           pagingSearchSpace;
-  nfapi_nr_coreset_t   pagingControlResourceSets;
-}nfapi_nr_dl_config_pch_pdu_rel15_t;
-
-typedef struct {
-  nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params_rel15;
-} nfapi_nr_dl_config_dci_dl_pdu;
-
-
-typedef struct {
-  uint8_t pdu_type;
-  uint8_t pdu_size;
-
-  union {
-  nfapi_nr_dl_config_dci_dl_pdu             dci_dl_pdu;
-  nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-  nfapi_nr_dl_config_dlsch_pdu              dlsch_pdu;
-  nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
-  };
-} nfapi_nr_dl_config_request_pdu_t;
-
- 
-typedef struct {
-  nfapi_tl_t tl;
-  uint8_t   number_dci;
-  uint8_t   number_pdu;
-  uint8_t   number_pdsch_rnti;
-  nfapi_nr_dl_config_request_pdu_t *dl_config_pdu_list;
-} nfapi_nr_dl_config_request_body_t;
-
-typedef struct {
-  nfapi_p7_message_header_t header;
-  uint16_t sfn_sf;
-  nfapi_nr_dl_config_request_body_t dl_config_request_body;
-  nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_nr_dl_config_request_t;
+*/
 
 
 typedef enum {nr_pusch_freq_hopping_disabled = 0 , 

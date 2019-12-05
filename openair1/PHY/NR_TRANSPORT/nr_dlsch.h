@@ -36,10 +36,10 @@
 #include "PHY/defs_gNB.h"
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
-                                        nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                                        nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu);
+                                        nfapi_nr_dl_tti_pdcch_pdu dci_pdu,
+                                        nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu);
 
-void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);
+void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);
 
 uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB);
 
@@ -50,8 +50,6 @@ uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t d
 void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
 
 void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
-
-void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type);
 
 
 uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
@@ -68,11 +66,10 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    unsigned char *sdu); 
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
-                          NR_gNB_DCI_ALLOC_t *dci_alloc,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
@@ -80,7 +77,6 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           uint8_t slot,
                           NR_DL_FRAME_PARMS *frame_parms,
 			  int xOverhead,
-                          nfapi_nr_config_request_t *config,
                           time_stats_t *dlsch_encoding_stats,
                           time_stats_t *dlsch_scrambling_stats,
                           time_stats_t *dlsch_modulation_stats);

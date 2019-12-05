@@ -69,7 +69,7 @@ nr_bandentry_t nr_bandtable[] = {
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
-void get_band(uint32_t downlink_frequency,
+void get_band(uint64_t downlink_frequency,
               uint16_t *current_band,
               int32_t *current_offset,
               lte_frame_type_t *current_type)
@@ -91,26 +91,24 @@ void get_band(uint32_t downlink_frequency,
       if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
 
         center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-
         if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-
           *current_band = nr_bandtable[ind].band;
-	        *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
+	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
           center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
 
-	        if (*current_offset == 0)
-	          *current_type = TDD;
-	        else
-	          *current_type = FDD;
+	  if (*current_offset == 0)
+	    *current_type = TDD;
+	  else
+	    *current_type = FDD;
         }
       }
     }
 
-    LOG_I( PHY, "DL frequency %"PRIu32": band %d, frame_type %d, UL frequency %"PRIu32"\n",
+    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
          downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
 
     AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %u\n", downlink_frequency);
+	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
 }
 
 uint32_t to_nrarfcn(int nr_bandP,
@@ -182,20 +180,16 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 }
 
 
-void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                   nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
+void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead) {
 
   LOG_D(MAC, "TBS calculation\n");
 
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
-  uint8_t rnti_type = params_rel15.rnti_type;
-  uint16_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
-  (x_overhead);
-  uint8_t N_PRB_DMRS = (dlsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
-  uint8_t N_sh_symb = dlsch_rel15->NrOfSymbols;
-  uint8_t Imcs = dlsch_rel15->mcsIndex[0];
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
+  uint16_t N_PRB_oh = x_overhead;
+  uint8_t N_PRB_DMRS = (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
+  uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
+  uint8_t Imcs = pdsch_rel15->mcsIndex[0];
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
@@ -213,20 +207,20 @@ void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
 
   TBS = nr_compute_tbs(Qm,
                        R,
-		       dlsch_rel15->rbSize,
+		       pdsch_rel15->rbSize,
 		       N_sh_symb,
 		       N_PRB_DMRS,
 		       N_PRB_oh,
-		       dlsch_rel15->nrOfLayers);
+		       pdsch_rel15->nrOfLayers);
 
-  dlsch_rel15->targetCodeRate[0] = R;
-  dlsch_rel15->qamModOrder[0] = Qm;
-  dlsch_rel15->TBSize[0] = TBS;
-  //  dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
-  dlsch_rel15->mcsTable[0] = table_idx;
+  pdsch_rel15->targetCodeRate[0] = R;
+  pdsch_rel15->qamModOrder[0] = Qm;
+  pdsch_rel15->TBSize[0] = TBS;
+  //  pdsch_rel15->nb_mod_symbols = N_RE_prime*pdsch_rel15->n_prb*pdsch_rel15->nb_codewords;
+  pdsch_rel15->mcsTable[0] = table_idx;
 
   LOG_D(MAC, "TBS %d : N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d nb_symbols %d\n",
-  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx,N_RE_prime*dlsch_rel15->rbSize*dlsch_rel15->NrOfCodewords );
+  TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx,N_RE_prime*pdsch_rel15->rbSize*pdsch_rel15->NrOfCodewords );
 }
 
 //Table 5.1.3.1-1 of 38.214
@@ -366,9 +360,98 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
 
 int get_num_dmrs(uint16_t dmrs_mask ) {
 
-  int num_dmrs;
+  int num_dmrs=0;
 
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
+}
+
+uint16_t nr_dci_size(nr_dci_format_t format,
+		     nr_rnti_type_t rnti_type,
+		     uint16_t N_RB) {
+
+  uint16_t size = 0;
+
+  switch(format) {
+    /*Only sizes for 0_0 and 1_0 are correct at the moment*/
+    case NR_UL_DCI_FORMAT_0_0:
+      /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
+      size += 20;
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
+      size += nr_dci_size(NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB) - size; // Padding to match 1_0 size
+      // UL/SUL indicator assumed to be 0
+      break;
+
+    case NR_UL_DCI_FORMAT_0_1:
+      /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, SRS request 2 --17
+      size += 17;
+      // Carrier indicator
+      // UL/SUL indicator
+      // BWP Indicator
+      // Freq domain assignment
+      // Time domain assignment
+      // VRB to PRB mapping
+      // Frequency Hopping flag
+      // 1st DAI
+      // 2nd DAI
+      // SRS resource indicator
+      // Precoding info and number of layers
+      // Antenna ports
+      // CSI request
+      // CBGTI
+      // PTRS - DMRS association
+      // beta offset indicator
+      // DMRS sequence init
+      break;
+
+    case NR_DL_DCI_FORMAT_1_0:
+      /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
+      size += 28;
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
+      break;
+
+    case NR_DL_DCI_FORMAT_1_1:
+      // Carrier indicator
+      size += 1; // Format identifier
+      // BWP Indicator
+      // Freq domain assignment
+      // Time domain assignment
+      // VRB to PRB mapping
+      // PRB bundling size indicator
+      // Rate matching indicator
+      // ZP CSI-RS trigger
+      /// TB1- MCS 5, NDI 1, RV 2
+      size += 8;
+      // TB2
+      size += 4 ;  // HARQ PID
+      // DAI
+      size += 2; // TPC PUCCH
+      size += 3; // PUCCH resource indicator
+      size += 3; // PDSCH to HARQ timing indicator
+      // Antenna ports
+      // Tx Config Indication
+      size += 2; // SRS request
+      // CBGTI
+      // CBGFI
+      size += 1; // DMRS sequence init
+      break;
+
+    case NR_DL_DCI_FORMAT_2_0:
+      break;
+
+    case NR_DL_DCI_FORMAT_2_1:
+      break;
+
+    case NR_DL_DCI_FORMAT_2_2:
+      break;
+
+    case NR_DL_DCI_FORMAT_2_3:
+      break;
+
+    default:
+      AssertFatal(1==0, "Invalid NR DCI format %d\n", format);
+  }
+
+  return size;
 }
 

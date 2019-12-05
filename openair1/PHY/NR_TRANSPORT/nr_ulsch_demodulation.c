@@ -973,7 +973,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   uint8_t first_symbol_flag, aarx, aatx, pilots; // pilots, a flag to indicate DMRS REs in current symbol
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
+  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs;
   int avg[4];
@@ -986,7 +986,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     first_symbol_flag = 1;
   }
 
-  if (symbol == 2){  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
+  if (symbol == rel15_ul->start_symbol){  // [hna] here it is assumed that first carries 6 DMRS REs (dmrs-type 1)
     nb_re_pusch = rel15_ul->number_rbs * 6;
     pilots = 1;
   } else {
@@ -1026,7 +1026,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                          frame_parms,
-                         gNB->ulsch[UE_id+1],
+                         gNB->ulsch[UE_id],
                          symbol,
                          pilots,
                          rel15_ul->number_rbs);

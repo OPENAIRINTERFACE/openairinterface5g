@@ -104,31 +104,29 @@ void config_common(int Mod_idP,
 		   );
 
 uint64_t get_softmodem_optmask(void) {return 0;}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP, const rnti_t            rntiP,
-										  const eNB_index_t       eNB_index,  const frame_t           frameP,
-										  const sub_frame_t 	  subframeP,  const eNB_flag_t        enb_flagP,
-										  const MBMS_flag_t       MBMS_flagP, const logical_chan_id_t channel_idP,
-										  const tb_size_t         tb_sizeP
-										  #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-										  ,const uint32_t sourceL2Id
-										  ,const uint32_t destinationL2Id
-										  #endif
-										){mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(
-  const module_id_t       module_idP,
-  const rnti_t            rntiP,
-  const eNB_index_t       eNB_index,
-  const frame_t           frameP,
-  const eNB_flag_t        enb_flagP,
-  const MBMS_flag_t       MBMS_flagP,
-  const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
-  char             *buffer_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
-   )
+mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
+					  const rnti_t            rntiP,
+					  const eNB_index_t       eNB_index,
+					  const frame_t           frameP,
+					  const sub_frame_t 	  subframeP,
+					  const eNB_flag_t        enb_flagP,
+					  const MBMS_flag_t       MBMS_flagP,
+					  const logical_chan_id_t channel_idP,
+					  const tb_size_t         tb_sizeP,
+					  const uint32_t sourceL2Id,
+					  const uint32_t destinationL2Id)
+{mac_rlc_status_resp_t  mac_rlc_status_resp; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
+			      const rnti_t            rntiP,
+			      const eNB_index_t       eNB_index,
+			      const frame_t           frameP,
+			      const eNB_flag_t        enb_flagP,
+			      const MBMS_flag_t       MBMS_flagP,
+			      const logical_chan_id_t channel_idP,
+			      const tb_size_t         tb_sizeP,
+			      char             *buffer_pP,
+			      const uint32_t sourceL2Id,
+			      const uint32_t destinationL2Id )
 {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -209,12 +207,11 @@ int main(int argc, char **argv)
   int frame_length_complex_samples_no_prefix;
   int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  nfapi_nr_config_request_t *gNB_config;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
   NR_UE_MAC_INST_t *UE_mac;
-
+  int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int ret;
   int run_initial_sync=0;
   int do_pdcch_flag=1;
@@ -480,7 +477,6 @@ int main(int argc, char **argv)
   memset(RC.gNB[0],0,sizeof(PHY_VARS_gNB));
 
   gNB = RC.gNB[0];
-  gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -677,7 +673,7 @@ int main(int argc, char **argv)
     Sched_INFO.frame     = frame;
     Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-    Sched_INFO.UL_req    = NULL;
+    Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
     Sched_INFO.HI_DCI0_req  = NULL;
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
@@ -694,7 +690,7 @@ int main(int argc, char **argv)
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+      if (cyclic_prefix_type == 1) {
 	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
 		     &txdata[aa][tx_offset],
 		     frame_parms->ofdm_symbol_size,
@@ -956,25 +952,16 @@ int main(int argc, char **argv)
 
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
-           (float) n_false_positive / (float) n_trials);
+           (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-    
-    if (errors_bit == 0) {
-      printf("PDSCH test OK\n");
-      printf("\n");
-    }
-    
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR, n_errors, n_trials);
     printf("\n");
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
-      printf("PDCCH test OK\n");
+      printf("PDSCH test OK\n");
       break;
     }
-      
-    if (n_trials == 1)
-      break;
 
   } // NSR
 

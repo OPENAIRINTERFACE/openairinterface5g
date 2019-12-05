@@ -434,6 +434,10 @@ int logInit (void)
   register_log_component("ASN","log",ASN);
   register_log_component("NFAPI_VNF","log",NFAPI_VNF);
   register_log_component("NFAPI_PNF","log",NFAPI_PNF);
+  register_log_component("GNB_APP","log",GNB_APP);
+  register_log_component("NR_RRC","log",NR_RRC);
+  register_log_component("NR_MAC","log",NR_MAC);
+  register_log_component("NR_PHY","log",NR_PHY);
 
   for (int i=0 ; log_level_names[i].name != NULL ; i++)
     g_log->level2string[i]           = toupper(log_level_names[i].name[0]); // uppercased first letter of level name
