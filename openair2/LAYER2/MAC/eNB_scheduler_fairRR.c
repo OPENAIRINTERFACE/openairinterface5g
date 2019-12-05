@@ -2003,9 +2003,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           // this assumes accumulated tpc
           // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
           int32_t framex10psubframe = UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame*10+UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
+          int pucch_tpc_interval=10;
 
-          if (((framex10psubframe+10)<=(frameP*10+subframeP)) || //normal case
-              ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=10)))) //frame wrap-around
+          if (((framex10psubframe+pucch_tpc_interval)<=(frameP*10+subframeP)) || //normal case
+              ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=pucch_tpc_interval)))) //frame wrap-around
             if (ue_sched_ctl->pucch1_cqi_update[CC_id] == 1) {
               ue_sched_ctl->pucch1_cqi_update[CC_id] = 0;
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
@@ -3087,9 +3088,10 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
       // this assumes accumulated tpc
       // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
       int32_t framex10psubframe = UE_template->pusch_tpc_tx_frame*10+UE_template->pusch_tpc_tx_subframe;
+      int pusch_tpc_interval=10;
 
-      if (((framex10psubframe+10)<=(frameP*10+subframeP)) || //normal case
-          ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=10)))) { //frame wrap-around
+      if (((framex10psubframe+pusch_tpc_interval)<=(frameP*10+subframeP)) || //normal case
+          ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=pusch_tpc_interval)))) { //frame wrap-around
         UE_template->pusch_tpc_tx_frame=frameP;
         UE_template->pusch_tpc_tx_subframe=subframeP;
 
