@@ -121,8 +121,6 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
   fclose(fd);
   total_size = total_size + ((enc_rval.encoded+7)>>3);
 
-  LOG_I(RRC, "Total size in generate_CG_Config(): %d \n", total_size);
-
   return(total_size);
 }
 

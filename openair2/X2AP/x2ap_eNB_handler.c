@@ -120,6 +120,12 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
                                           uint32_t stream,
                                           X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
+
 
 /* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
@@ -150,7 +156,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* seNBinitiatedSeNBRelease */
   { 0, 0, 0 }, /* seNBCounterCheck */
   { 0, 0, 0 },  /* retrieveUEContext */
-  { x2ap_gNB_handle_ENDC_sGNB_addition_request, 0, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
+  { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_gNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
@@ -1773,3 +1779,131 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
 
   return 0;
 }
+
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu)
+{
+
+	  X2AP_SgNBAdditionRequestAcknowledge_t             *x2SgNBAdditionRequest_ack;
+	  X2AP_SgNBAdditionRequestAcknowledge_IEs_t         *ie;
+
+	  X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs_t 		*e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs;
+	  X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item_t           *e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item;
+
+	  x2ap_eNB_instance_t                *instance_p;
+	  x2ap_eNB_data_t                    *x2ap_eNB_data;
+	  MessageDef                         *msg;
+	  int                                ue_id;
+
+	  DevAssert (pdu != NULL);
+	  x2SgNBAdditionRequest_ack = &pdu->choice.successfulOutcome.value.choice.SgNBAdditionRequestAcknowledge;
+
+	  /*if (stream == 0) {
+	    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+	    // TODO: send a x2 failure response
+	    return 0;
+	  }*/
+
+	  X2AP_DEBUG ("Received a new X2 SgNB Addition request\n");
+
+	  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+	  DevAssert(x2ap_eNB_data != NULL);
+
+	  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
+
+	  instance_p = x2ap_eNB_get_instance(instance);
+	  DevAssert(instance_p != NULL);
+
+	  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+	  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+
+	  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+	  if (ie == NULL ) {
+	    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+	    return -1;
+	  }
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = ie->value.choice.UE_X2AP_ID;
+
+
+	  /* X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID, true);
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ie->value.choice.SgNB_UE_X2AP_ID;
+
+	  /* X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList, true);
+
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+
+	  if (ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count > 0) {
+
+		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count;
+
+	    for (int i=0;i<ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count;i++) {
+
+	    	e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs = (X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs_t *) ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.array[i];
+	    	e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item = &e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item;
+
+	    	X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->e_RAB_ID ;
+	    	if(e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->en_DC_ResourceConfiguration.pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
+
+	          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].eNB_addr.buffer,
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf,
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
+	          X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].eNB_addr.length =
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+	          OCTET_STRING_TO_INT32(&e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.gTP_TEID,
+	        		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid);
+	      }
+
+	    }
+
+	  }
+	  else {
+	    X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
+	  }
+
+	  /* X2AP_ProtocolIE_ID_id_SgNBtoMeNBContainer */
+
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_SgNBtoMeNBContainer, true);
+
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+	  //X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
+
+	    if (ie->value.choice.SgNBtoMeNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+	      { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+	    memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer, ie->value.choice.SgNBtoMeNBContainer.buf, ie->value.choice.SgNBtoMeNBContainer.size);
+	    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = ie->value.choice.SgNBtoMeNBContainer.size;
+
+	  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+	  return 0;
+
+}
+
+
+

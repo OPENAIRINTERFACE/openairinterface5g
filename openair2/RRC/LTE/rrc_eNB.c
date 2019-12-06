@@ -8525,6 +8525,13 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
     }
 
+    case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
+
+    	LOG_I(RRC, "RRC processing of SgNB addition response information to be added... \n");
+    	break;
+    }
+
+
     /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
       LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));

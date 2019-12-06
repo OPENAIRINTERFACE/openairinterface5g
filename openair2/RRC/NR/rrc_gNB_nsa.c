@@ -143,8 +143,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 												  1024);
 
   X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
-  LOG_I(RRC, "Total size in rrc_add_nsa_user(): %d \n", (enc_rval.encoded+7)>>3);
-
 
   itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
 
