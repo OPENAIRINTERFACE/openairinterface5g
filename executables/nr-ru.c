@@ -532,7 +532,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
     if (((nr_slot_select(ru->nr_frame_parms,frame_tx,slot_tx) & NR_DOWNLINK_SLOT) > 0) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
 
-    LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
+    LOG_D(PHY,"slot %d (%d): frame %d, slot %d, symbol %d\n",
           *slot,nr_slot_select(ru->nr_frame_parms,frame_tx,*slot),frame_tx,slot_tx,symbol_number);
 
     if (proc->first_tx != 0) {
@@ -724,7 +724,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
   int slot_type     = nr_slot_select(ru->nr_frame_parms,frame,slot%fp->slots_per_frame);
   int sf_extension = 0;
-  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
 
   if ((slot == 0) ||
       (slot == 1) || IS_SOFTMODEM_RFSIM ) {
