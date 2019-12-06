@@ -688,7 +688,7 @@ static void *ru_thread( void *param ) {
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
   RU_t               *ru      = (RU_t *)param;
-  L1_rxtx_proc_t L1proc={0};
+  L1_rxtx_proc_t L1proc= {0};
   L1_rxtx_proc_t *proc=&L1proc;
 
   if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )

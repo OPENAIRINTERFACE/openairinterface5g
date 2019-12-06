@@ -86,7 +86,6 @@ static inline void measTransportTime(uint64_t DuSend, uint64_t CuMicroSec, Meas 
   if (DuSend!=0) {
     uint64_t end=rdtsc();
     long long diff=(end-DuSend)/(cpuf*1000)-CuMicroSec;
-    LOG_E(HW, "total: %f, cu time %lu\n", (end-DuSend)/(cpuf*1000), CuMicroSec);
     M->maxArray[0]=diff;
     M->sum+=diff;
     M->iterations++;
@@ -1344,24 +1343,26 @@ void *DL_du_fs6(void *arg) {
                 lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
                 hUDP(bufferZone)->timestamp);
         }
-	pickStaticTime(begingProcessing);
+
+        pickStaticTime(begingProcessing);
         lastTS=hUDP(bufferZone)->timestamp;
         setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
-	measTransportTime(hDL(bufferZone)->DuClock, hDL(bufferZone)->CuSpentMicroSec,
-			  &transportTime, 1000, false, "Transport time, to CU + from CU for one subframe");
+        measTransportTime(hDL(bufferZone)->DuClock, hDL(bufferZone)->CuSpentMicroSec,
+                          &transportTime, 1000, false, "Transport time, to CU + from CU for one subframe");
         phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
-	updateTimesReset(begingProcessing, &DuHigh, 1000, false, "DU high layer1 processing for DL");
+        updateTimesReset(begingProcessing, &DuHigh, 1000, false, "DU high layer1 processing for DL");
       } else
         LOG_E(PHY,"DL not received for subframe\n");
     }
+
     pickStaticTime(begingProcessing);
     feptx_prec(ru, &L1_proc);
     feptx_ofdm(ru, &L1_proc);
     tx_rf(ru, &L1_proc);
     updateTimesReset(begingProcessing, &DuLow, 1000, false, "DU low layer1 processing for DL");
-	
-    if ( IS_SOFTMODEM_RFSIM ) 
-	    return NULL;
+
+    if ( IS_SOFTMODEM_RFSIM )
+      return NULL;
   }
 
   return NULL;
@@ -1425,21 +1426,21 @@ void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t  DuClock, uint64_t start
     hUDP(bufferZone)->blockID=0;
     hUDP(bufferZone)->contentBytes=sizeof(fs6_dl_t);
   }
+
   hDL(bufferZone)->DuClock=DuClock;
   hDL(bufferZone)->CuSpentMicroSec=(rdtsc()-startCycle)/(cpuf*1000);
-  
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
   return;
 }
 
-void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS, uint64_t * DuClock, uint64_t * startProcessing) {
+void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS, uint64_t *DuClock, uint64_t *startProcessing) {
   initBufferZone(bufferZone);
   initStaticTime(begingWait);
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
   int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
   * DuClock=hUDP(bufferZone)->senderClock;
-  * startProcessing=rdtsc(); 
+  * startProcessing=rdtsc();
   updateTimesReset(begingWait, &fullLoop, 1000, false, "CU wait DU");
 
   if (nb_blocks ==0) {
@@ -1485,8 +1486,8 @@ void *cu_fs6(void *arg) {
     remoteIP=DU_IP;
 
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
-
   L1_rxtx_proc_t L1proc= {0};
+
   if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
     initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
   else
@@ -1494,7 +1495,6 @@ void *cu_fs6(void *arg) {
 
   initNotifiedFIFO(&L1proc.respEncode);
   initNotifiedFIFO(&L1proc.respDecode);
-
   uint64_t timeStamp=0;
   initStaticTime(begingWait);
   initStaticTime(begingWait2);
@@ -1548,16 +1548,19 @@ void *du_fs6(void *arg) {
   initRefTimes(waitRxAndProcessingUL);
   initRefTimes(fullLoop);
   pthread_t t;
-    if ( !IS_SOFTMODEM_RFSIM ) 
-  threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
+
+  if ( !IS_SOFTMODEM_RFSIM )
+    threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
 
   while(1) {
     L1_rxtx_proc_t L1proc;
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, &L1proc);
-    if ( IS_SOFTMODEM_RFSIM ) 
-	  DL_du_fs6((void *)ru);
+
+    if ( IS_SOFTMODEM_RFSIM )
+      DL_du_fs6((void *)ru);
+
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
   }
 

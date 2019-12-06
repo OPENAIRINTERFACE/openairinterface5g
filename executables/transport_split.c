@@ -58,8 +58,10 @@ bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPo
   int enable=1;
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))==0,"");
   struct timeval tv= {0,UDP_TIMEOUT};
+
   if (IS_SOFTMODEM_RFSIM)
     tv.tv_sec=2; //debug: wait 2 seconds for human understanding
+
   AssertFatal(setsockopt(result->sockHandler, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) ==0,"");
   // Make a send/recv buffer larger than a a couple of subframe
   // so the kernel will store for us in and out paquets
@@ -118,9 +120,9 @@ int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t
       rcved++;
       bufferZone+=ret;
     }
-    LOG_D(HW,"Received: blocks: %d/%d, size %d, TS: %lu\n",
-	  rcved, bufOrigin->nbBlocks, ret, bufOrigin->timestamp);
 
+    LOG_D(HW,"Received: blocks: %d/%d, size %d, TS: %lu\n",
+          rcved, bufOrigin->nbBlocks, ret, bufOrigin->timestamp);
   } while ( rcved == 0 || rcved < bufOrigin->nbBlocks );
 
   return rcved;
@@ -159,11 +161,10 @@ int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, ui
             sz, ret, errno, strerror(errno));
 
     LOG_D(HW,"Sent: TS: %lu, blocks %d/%d, block size : %d \n",
-	  UDPheader->timestamp, UDPheader->nbBlocks-nbBlocks, UDPheader->nbBlocks, sz);
-
+          UDPheader->timestamp, UDPheader->nbBlocks-nbBlocks, UDPheader->nbBlocks, sz);
     bufferZone+=sz;
     nbBlocks--;
   } while (nbBlocks);
 
-    return 0;
+  return 0;
 }
