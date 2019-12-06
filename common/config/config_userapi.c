@@ -81,7 +81,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length);
+    *ptr = malloc(length>40?length:40); // LTS: dummy fix, waiting Francois full fix in 4G branch
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);

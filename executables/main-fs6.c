@@ -82,7 +82,34 @@ static inline void updateTimesReset(uint64_t start, Meas *M, int period, bool Ma
   }
 }
 
+static inline void measTransportTime(uint64_t DuSend, uint64_t CuMicroSec, Meas *M, int period, bool MaxMin, char *txt) {
+  if (DuSend!=0) {
+    uint64_t end=rdtsc();
+    long long diff=(end-DuSend)/(cpuf*1000)-CuMicroSec;
+    LOG_E(HW, "total: %f, cu time %lu\n", (end-DuSend)/(cpuf*1000), CuMicroSec);
+    M->maxArray[0]=diff;
+    M->sum+=diff;
+    M->iterations++;
+
+    if ( MaxMin)
+      qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+    else
+      qsort(M->maxArray, 11, sizeof(uint64_t), cmpintRev);
+
+    printMeas2(txt,M,period, MaxMin);
+
+    if (M->iterations%period == 0 ) {
+      bzero(M,sizeof(*M));
+
+      if (!MaxMin)
+        for (int i=0; i<11; i++)
+          M->maxArray[i]=INT_MAX;
+    }
+  }
+}
+
 #define ceil16_bytes(a) ((((a+15)/16)*16)/8)
+
 static void fs6Dlunpack(void *out, void *in, int szUnpacked) {
   static uint64_t *lut=NULL;
 
@@ -1297,12 +1324,16 @@ void *DL_du_fs6(void *arg) {
   RU_t *ru=(RU_t *)arg;
   static uint64_t lastTS;
   L1_rxtx_proc_t L1_proc= {0};
+  initStaticTime(begingWait);
+  initStaticTime(begingProcessing);
+  initRefTimes(fullLoop);
+  initRefTimes(DuHigh);
+  initRefTimes(DuLow);
+  initRefTimes(transportTime);
 
   while (1) {
     for (int i=0; i<ru->num_eNB; i++) {
       initBufferZone(bufferZone);
-      initStaticTime(begingWait);
-      initRefTimes(fullLoop);
       pickStaticTime(begingWait);
       int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentCUv0 );
       updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
@@ -1313,18 +1344,22 @@ void *DL_du_fs6(void *arg) {
                 lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
                 hUDP(bufferZone)->timestamp);
         }
-
+	pickStaticTime(begingProcessing);
         lastTS=hUDP(bufferZone)->timestamp;
         setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
+	measTransportTime(hDL(bufferZone)->DuClock, hDL(bufferZone)->CuSpentMicroSec,
+			  &transportTime, 1000, false, "Transport time, to CU + from CU for one subframe");
         phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
+	updateTimesReset(begingProcessing, &DuHigh, 1000, false, "DU high layer1 processing for DL");
       } else
         LOG_E(PHY,"DL not received for subframe\n");
     }
-
+    pickStaticTime(begingProcessing);
     feptx_prec(ru, &L1_proc);
     feptx_ofdm(ru, &L1_proc);
     tx_rf(ru, &L1_proc);
-
+    updateTimesReset(begingProcessing, &DuLow, 1000, false, "DU low layer1 processing for DL");
+	
     if ( IS_SOFTMODEM_RFSIM ) 
 	    return NULL;
   }
@@ -1371,7 +1406,7 @@ void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   }
 }
 
-void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
+void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t  DuClock, uint64_t startCycle) {
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
@@ -1390,17 +1425,21 @@ void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
     hUDP(bufferZone)->blockID=0;
     hUDP(bufferZone)->contentBytes=sizeof(fs6_dl_t);
   }
-
+  hDL(bufferZone)->DuClock=DuClock;
+  hDL(bufferZone)->CuSpentMicroSec=(rdtsc()-startCycle)/(cpuf*1000);
+  
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
   return;
 }
 
-void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS) {
+void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS, uint64_t * DuClock, uint64_t * startProcessing) {
   initBufferZone(bufferZone);
   initStaticTime(begingWait);
   initRefTimes(fullLoop);
   pickStaticTime(begingWait);
   int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
+  * DuClock=hUDP(bufferZone)->senderClock;
+  * startProcessing=rdtsc(); 
   updateTimesReset(begingWait, &fullLoop, 1000, false, "CU wait DU");
 
   if (nb_blocks ==0) {
@@ -1462,15 +1501,16 @@ void *cu_fs6(void *arg) {
   initRefTimes(waitDUAndProcessingUL);
   initRefTimes(makeSendDL);
   initRefTimes(fullLoop);
+  uint64_t DuClock=0, startProcessing=0;
 
   while(1) {
     timeStamp+=ru->frame_parms.samples_per_tti;
     updateTimesReset(begingWait, &fullLoop, 1000, true, "CU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
+    UL_cu_fs6(ru, &L1proc, &timeStamp, &DuClock, &startProcessing);
     updateTimesReset(begingWait, &waitDUAndProcessingUL, 1000,  true,"CU Time in wait Rx + Ul processing");
-    UL_cu_fs6(ru, &L1proc, &timeStamp);
     pickStaticTime(begingWait2);
-    DL_cu_fs6(ru, &L1proc);
+    DL_cu_fs6(ru, &L1proc, DuClock, startProcessing);
     updateTimesReset(begingWait2, &makeSendDL, 1000,  true,"CU Time in DL build+send");
   }
 

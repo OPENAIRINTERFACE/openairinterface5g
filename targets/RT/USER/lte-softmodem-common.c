@@ -54,16 +54,16 @@ softmodem_params_t *get_softmodem_params(void) {
 }
 
 void get_common_options(void) {
-  uint32_t online_log_messages;
-  uint32_t glog_level ;
-  uint32_t start_telnetsrv;
-  uint32_t noS1;
-  uint32_t nokrnmod;
-  uint32_t nonbiot;
-  uint32_t rfsim;
-  uint32_t basicsim;
+  uint32_t online_log_messages=0;
+  uint32_t glog_level =0;
+  uint32_t start_telnetsrv=0;
+  uint32_t noS1=0;
+  uint32_t nokrnmod=0;
+  uint32_t nonbiot=0;
+  uint32_t rfsim=0;
+  uint32_t basicsim=0;
   char *logmem_filename = NULL;
-  uint32_t do_forms;
+  uint32_t do_forms=0;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;

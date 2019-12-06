@@ -36,6 +36,7 @@ typedef struct commonUDP_s {
   uint16_t blockID;        // id: 0..nbBocks-1
   uint16_t contentType;    // defines the content format
   uint16_t contentBytes;   // will be sent in a UDP packet, so must be < 2^16 bytes
+  uint64_t senderClock;
 } commonUDP_t;
 
 // FS6 UL common header (DU to CU)
@@ -57,6 +58,8 @@ typedef struct {
   int num_mdci;
   int amp;
   LTE_eNB_PHICH phich_vars;
+  uint64_t DuClock;
+  uint64_t CuSpentMicroSec;
 } fs6_dl_t;
 
 // a value to type all sub packets,
