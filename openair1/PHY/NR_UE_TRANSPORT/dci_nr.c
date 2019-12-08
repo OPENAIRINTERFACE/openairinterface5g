@@ -49,11 +49,11 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #ifdef NR_PDCCH_DCI_DEBUG
-#define LOG_DNL(a...) printf("\n\t\t<-NR_PDCCH_DCI_DEBUG" a)
-#define LOG_DD(a...) printf("\t<-NR_PDCCH_DCI_DEBUG" a)
-#define LOG_DDD(a...) printf("\t\t<-NR_PDCCH_DCI_DEBUG" a)
+#define LOG_DNL(a, ...) printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
+#define LOG_DD(a, ...) printf("\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
+#define LOG_DDD(a, ...) printf("\t\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
 #else
 #define LOG_DNL(a...)
 #define LOG_DD(a...)
@@ -143,7 +143,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
       if (coreset_interleaved==0) f_bundle_j=bundle_j;
 
-      LOG_DNL("(nr_pdcch_demapping_deinterleaving)-> [r=%d,c=%d] bundle_j(%d) interleaved at f_bundle_j(%d)\n",r,c,bundle_j,f_bundle_j);
+      LOG_DNL("[r=%d,c=%d] bundle_j(%d) interleaved at f_bundle_j(%d)\n",r,c,bundle_j,f_bundle_j);
     }
 
     f_reg = (f_bundle_j*reg_bundle_size_L)+(reg%reg_bundle_size_L);
@@ -152,7 +152,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
     for (int i=0; i<9; i++) {
       z[index_z + i] = llr[index_llr + i];
-      LOG_DDD("(nr_pdcch_demapping_deinterleaving)-> [reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
+      LOG_DDD("[reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
              reg,bundle_j,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
              f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
     }
@@ -176,7 +176,7 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
     return (-1);
   }
 
-  LOG_DDD("(nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %ld\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llrp-pdcch_llr);
+  LOG_DDD("llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %ld\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llrp-pdcch_llr);
 
   //for (i = 0; i < (frame_parms->N_RB_DL * ((symbol == 0) ? 16 : 24)); i++) {
   for (i = 0; i < (coreset_nbr_rb * ((symbol == 0) ? 18 : 18)); i++) {
@@ -187,7 +187,7 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
     else
       *pdcch_llrp = (*rxF);
 
-    LOG_DDD("(nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llrp:%d\n",i/18,i,*rxF,*pdcch_llrp);
+    LOG_DDD("llr logs: rb=%d i=%d *rxF:%d => *pdcch_llrp:%d\n",i/18,i,*rxF,*pdcch_llrp);
     rxF++;
     pdcch_llrp++;
   }
@@ -341,20 +341,20 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     if (high_speed_flag == 1) {
       dl_ch0 = &dl_ch_estimates[aarx][(symbol * (frame_parms->ofdm_symbol_size))];
-      LOG_DDD("(nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][ (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
+      LOG_DDD("dl_ch0 = &dl_ch_estimates[aarx = (%d)][ (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
              aarx,frame_parms->ofdm_symbol_size,(symbol * (frame_parms->ofdm_symbol_size)));
     } else {
       dl_ch0 = &dl_ch_estimates[aarx][0];
-      LOG_DDD("(nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
+      LOG_DDD("dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
     }
 
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS)];
-    LOG_DDD("(nr_pdcch_extract_rbs_single)-> dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
+    LOG_DDD("dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
            aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS));
     rxF_ext = &rxdataF_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS)];
-    LOG_DDD("(nr_pdcch_extract_rbs_single)-> rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
+    LOG_DDD("rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
            aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS));
-    LOG_DDD("(nr_pdcch_extract_rbs_single)-> (for symbol=%d, aarx=%d), symbol_mod=%d, nushiftmod3=%d \n",
+    LOG_DDD("(for symbol=%d, aarx=%d), symbol_mod=%d, nushiftmod3=%d \n",
     symbol,aarx,
     (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol,
     frame_parms->nushift % 3);
@@ -375,7 +375,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
      * then the IQ symbol is going to be found at the position 0+c_rb-N_RB_DL/2 in rxdataF and
      * we have to point the pointer at (1+c_rb-N_RB_DL/2) in rxdataF
      */
-    LOG_DDD("(nr_pdcch_extract_rbs_single)-> n_BWP_start=%d, coreset_nbr_rb=%d\n",n_BWP_start,coreset_nbr_rb);
+    LOG_DDD("n_BWP_start=%d, coreset_nbr_rb=%d\n",n_BWP_start,coreset_nbr_rb);
 
     for (c_rb = n_BWP_start; c_rb < (n_BWP_start + coreset_nbr_rb + (BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN * offset_discontiguous)); c_rb++) {
       //c_rb_tmp = 0;
@@ -388,20 +388,20 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
           //c_rb_tmp = c_rb_tmp + 6;
           c_rb = c_rb + BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN;
           offset_discontiguous ++;
-          LOG_DDD("(nr_pdcch_extract_rbs_single)-> we entered here as coreset_freq_dom=%lx (bit %d) is 0, coreset_freq_domain is discontiguous\n",coreset_freq_dom,
+          LOG_DDD("we entered here as coreset_freq_dom=%lx (bit %d) is 0, coreset_freq_domain is discontiguous\n",coreset_freq_dom,
                  (46 - bitcnt_coreset_freq_dom));
         }
       }
 
       //c_rb = c_rb + c_rb_tmp;
-      LOG_DDD("(nr_pdcch_extract_rbs_single)-> c_rb=%d\n",c_rb);
+      LOG_DDD("c_rb=%d\n",c_rb);
       rxF=NULL;
 
       // first we set initial conditions for pointer to rxdataF depending on the situation of the first RB within the CORESET (c_rb = n_BWP_start)
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        LOG_DDD("in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
       }
 
@@ -409,11 +409,11 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
         //rxF = &rxdataF[aarx][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
         //#ifdef NR_PDCCH_DCI_DEBUG
-        //  LOG_DDD("(nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        //  LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
         //         c_rb,aarx,(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
         //#endif
       }
@@ -421,7 +421,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        LOG_DDD("in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
       }
 
@@ -429,7 +429,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        LOG_DDD("in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size))));
       }
 
@@ -437,7 +437,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
+        LOG_DDD("in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
         /*if (symbol_mod > 300) { // this if is going to be removed as DM-RS signals are present in all symbols of PDCCH
           for (i = 0; i < 6; i++) {
@@ -446,7 +446,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
           }
           rxF = &rxdataF[aarx][(symbol * (frame_parms->ofdm_symbol_size))]; // we point at the 1st part of the rxdataF in symbol
           #ifdef NR_PDCCH_DCI_DEBUG
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
+        LOG_DDD("in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
         c_rb,aarx,(symbol * (frame_parms->ofdm_symbol_size)));
           #endif
           for (; i < 12; i++) {
@@ -472,7 +472,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
         // then we point at the begining of the symbol part of rxdataF do process second part of RB
         rxF = &rxdataF[aarx][((symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        LOG_DDD("(nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
+        LOG_DDD("in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
                c_rb,aarx,(symbol * (frame_parms->ofdm_symbol_size)));
 
         for (; i < 12; i++) {
@@ -508,15 +508,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         for (i = 0; i < 12; i++) {
           if ((i != 1) && (i != 5) && (i != 9)) {
             rxF_ext[j] = rxF[i];
-            LOG_DDD("(nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
                    c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short *) &rxF_ext[j]), i,
                    *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
             dl_ch0_ext[j] = dl_ch0[i];
-            //LOG_DDD("(nr_pdcch_extract_rbs_single)-> ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
+            //LOG_DDD("ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
             //printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,j, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
             j++;
           } else {
-            LOG_DDD("(nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
                    c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short *) &rxF_ext[j]), i,
                    *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
           }
@@ -629,7 +629,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
       //print_shorts("pack:",rxdataF_comp128+2);
 
       for (int i=0; i<12 ; i++)
-        LOG_DDD("(nr_pdcch_channel_compensation)-> rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
+        LOG_DDD("rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
                (rb*12)+i, ((short *)rxdataF128)[i<<1],((short *)rxdataF128)[1+(i<<1)],
                (rb*12)+i, ((short *)dl_ch128)[i<<1],((short *)dl_ch128)[1+(i<<1)],
                (rb*12)+i, ((short *)rxdataF_comp128)[i<<1],((short *)rxdataF_comp128)[1+(i<<1)]);
@@ -762,8 +762,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     }
   }
 
-  LOG_DD("(nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
-  LOG_DD("(nr_rx_pdcch)-> coreset_freq_dom=(%ld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
+  LOG_DD("symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
+  LOG_DD("coreset_freq_dom=(%ld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
          coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R,pdcch_DMRS_scrambling_id);
   //
   // according to 38.213 v15.1.0: a PDCCH monitoring pattern within a slot,
@@ -780,7 +780,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // for (int j=0; j < coreset_nbr_act; j++) {
   // for each active CORESET (max number of active CORESETs in a BWP is 3),
   // we calculate the number of RB for each CORESET bitmap
-  LOG_DD("(nr_rx_pdcch)-> coreset_freq_dom=(%ld)\n",coreset_freq_dom);
+  LOG_DD("coreset_freq_dom=(%ld)\n",coreset_freq_dom);
   int i; //for each bit in the coreset_freq_dom bitmap
 
   for (i = 0; i < 45; i++) {
@@ -789,8 +789,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   }
 
   coreset_nbr_rb = 6 * coreset_nbr_rb; // coreset_nbr_rb has to be multiplied by 6 to indicate the number of PRB or REG(=12 RE) within the CORESET
-  LOG_DD("(nr_rx_pdcch)-> coreset_freq_dom=(%ld,%lx), coreset_nbr_rb=%d\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
-  LOG_DD("(nr_rx_pdcch)-> coreset_nbr_rb=%d, coreset_nbr_reg=%d, coreset_C=(%d/(%d*%d))=%d\n",
+  LOG_DD("coreset_freq_dom=(%ld,%lx), coreset_nbr_rb=%d\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
+  LOG_DD("coreset_nbr_rb=%d, coreset_nbr_reg=%d, coreset_C=(%d/(%d*%d))=%d\n",
          coreset_nbr_rb, 
 	 coreset_time_dur * coreset_nbr_rb,
 	 coreset_time_dur * coreset_nbr_rb,
@@ -798,9 +798,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 	(uint32_t)((coreset_time_dur * coreset_nbr_rb) / (reg_bundle_size_L * coreset_interleaver_size_R)) );
 
   for (int s = start_symbol; s < (start_symbol + coreset_time_dur); s++) {
-    LOG_DD("(nr_rx_pdcch)-> we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
+    LOG_DD("we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
            is_secondary_ue);
-    LOG_DD("(nr_rx_pdcch)-> in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
+    LOG_DD("in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
     nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                 pdcch_vars[eNB_id]->dl_ch_estimates,
                                 pdcch_vars[eNB_id]->rxdataF_ext,
@@ -811,8 +811,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                 coreset_freq_dom,
                                 coreset_nbr_rb,
                                 n_rb_offset);
-    LOG_DD("(nr_rx_pdcch)-> we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
-    LOG_DD("(nr_rx_pdcch)-> in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
+    LOG_DD("we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
+    LOG_DD("in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
     // compute channel level based on ofdm symbol 0
     pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
@@ -831,8 +831,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tti_rx),
       T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
 #endif
-    LOG_DD("(nr_rx_pdcch)-> we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
-    LOG_DD("(nr_rx_pdcch)-> in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
+    LOG_DD("we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
+    LOG_DD("in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
     // compute LLRs for ofdm symbol 0 only
     nr_pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
                                   pdcch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -850,13 +850,13 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
 
     if (frame_parms->nb_antennas_rx > 1) {
-      LOG_DD("(nr_rx_pdcch)-> we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
+      LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
              frame_parms->nb_antennas_rx);
       pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     }
 
-    LOG_DD("(nr_rx_pdcch)-> we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
-    LOG_DD("(nr_rx_pdcch)-> in nr_pdcch_llr(rxdataF_comp -> llr)\n");
+    LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
+    LOG_DD("in nr_pdcch_llr(rxdataF_comp -> llr)\n");
     nr_pdcch_llr(frame_parms,
                  pdcch_vars[eNB_id]->rxdataF_comp,
                  pdcch_vars[eNB_id]->llr,
@@ -874,7 +874,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
   }
 
-  LOG_DD("(nr_rx_pdcch)-> we enter nr_pdcch_demapping_deinterleaving()\n");
+  LOG_DD("we enter nr_pdcch_demapping_deinterleaving()\n");
   nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars[eNB_id]->llr,
                                     (uint32_t *) pdcch_vars[eNB_id]->e_rx,
                                     frame_parms,
@@ -891,8 +891,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                         // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
                         pdcch_DMRS_scrambling_id,
                         do_common);
-  LOG_DD("(nr_rx_pdcch)-> we end nr_pdcch_unscrambling()\n");
-  LOG_DD("(nr_rx_pdcch)-> Ending nr_rx_pdcch() function\n");
+  LOG_DD("we end nr_pdcch_unscrambling()\n");
+  LOG_DD("Ending nr_rx_pdcch() function\n");
   return (0);
 }
 #endif
@@ -951,20 +951,20 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
   //uint32_t calc_x2=puissance_2_16%puissance_2_31;
   x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
   //  x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
-  //LOG_DDD("(nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
+  //LOG_DDD(" (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
 
   for (i = 0; i < length; i++) {
     if ((i & 0x1f) == 0) {
       s = lte_gold_generic(&x1, &x2, reset);
-      //LOG_DDD("(nr_pdcch_unscrambling)-> lte_gold[%d]=%x\n",i,s);
+      //LOG_DDD("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
 
     /*
     #ifdef NR_PDCCH_DCI_DEBUG
-    if (i%2 == 0) LOG_DDD("(nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+    if (i%2 == 0) LOG_DDD(" unscrambling %d : scrambled_z=%d, => ",
        i,*(char*) &z[(int)floor(i/2)]);
-    if (i%2 == 1) LOG_DDD("(nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+    if (i%2 == 1) LOG_DDD(" unscrambling %d : scrambled_z=%d, => ",
        i,*(1 + (char*) &z[(int)floor(i/2)]));
     #endif
     if (((s >> (i % 32)) & 1) == 1){
@@ -978,7 +978,7 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
     if (i%2 == 1) printf("unscrambled_z=%d\n",*(1 + (char*) &z[(int)floor(i/2)]));
     #endif
     */
-    LOG_DDD("(nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+    LOG_DDD(" unscrambling %d : scrambled_z=%d, => ",
            i,z[i]);
 
     if (((s >> (i % 32)) & 1) == 1) z[i] = -z[i];
@@ -1029,14 +1029,14 @@ void nr_dci_decoding_procedure0(int s,
   //Table 10.1-3: Maximum number of non-overlapped CCEs per slot and per serving cell as a function of the subcarrier spacing value 2^mu*15 KHz, mu {0,1,2,3}
   //uint8_t cce_max_slot_pdcch_Table10_1_3 [4] = {56,56,48,32};
   int coreset_nbr_cce_per_symbol=0;
-  LOG_DDD("(nr_dci_decoding_procedure0)-> format_found is %d \n", *format_found);
+  LOG_DDD("format_found is %d \n", *format_found);
   //if (mode == NO_DCI) {
   //  #ifdef NR_PDCCH_DCI_DEBUG
-  //    LOG_DDD("(nr_dci_decoding_procedure0)-> skip DCI decoding: expect no DCIs at nr_tti_rx %d in current searchSpace\n", nr_tti_rx);
+  //    LOG_DDD("skip DCI decoding: expect no DCIs at nr_tti_rx %d in current searchSpace\n", nr_tti_rx);
   //  #endif
   //  return;
   //}
-  LOG_DDD("(nr_dci_decoding_procedure0)-> frequencyDomainResources=%lx, duration=%d\n",
+  LOG_DDD("frequencyDomainResources=%lx, duration=%d\n",
          pdcch_vars[eNB_id]->coreset[p].frequencyDomainResources, pdcch_vars[eNB_id]->coreset[p].duration);
 
   // nCCE = get_nCCE(pdcch_vars[eNB_id]->num_pdcch_symbols, frame_parms, mi);
@@ -1051,7 +1051,7 @@ void nr_dci_decoding_procedure0(int s,
   //   the number of symbols in the CORESET (pdcch_vars[eNB_id]->coreset[p].duration)
   //   multiplied by the number of bits set to '1' in the frequencyDomainResources bitmap
   //   (1 bit set to '1' corresponds to 6 RB and 1 CCE = 6 RB)
-  LOG_DDD("(nr_dci_decoding_procedure0)-> nCCE[%d]=%d\n",p,nCCE[p]);
+  LOG_DDD("nCCE[%d]=%d\n",p,nCCE[p]);
 
   /*  if (nCCE > get_nCCE(3, frame_parms, 1)) {
   LOG_D(PHY,
@@ -1105,7 +1105,7 @@ void nr_dci_decoding_procedure0(int s,
       nb_candidates = pdcch_vars[eNB_id]->searchSpace[s].searchSpaceType.srs_nrofCandidates;
     } else {
       nb_candidates = (L2 == 4) ? 4 : ((L2 == 8)? 2 : 1); // according to Table 10.1-1 (38.213 section 10.1)
-      LOG_DDD("(nr_dci_decoding_procedure0)-> we are in common searchSpace and nb_candidates=%u for L2=%d\n", nb_candidates, L2);
+      LOG_DDD("we are in common searchSpace and nb_candidates=%u for L2=%d\n", nb_candidates, L2);
     }
   } else {
     switch (L2) {
@@ -1142,7 +1142,7 @@ void nr_dci_decoding_procedure0(int s,
       Yk = (Yk * A[p%3]) % 65537;
   }
 
-  LOG_DDD("(nr_dci_decoding_procedure0)-> L2(%d) | nCCE[%d](%d) | Yk(%u) | nb_candidates(%u)\n", L2, p, nCCE[p], Yk, nb_candidates);
+  LOG_DDD("L2(%d) | nCCE[%d](%d) | Yk(%u) | nb_candidates(%u)\n", L2, p, nCCE[p], Yk, nb_candidates);
   /*  for (CCEind=0;
       CCEind<nCCE2;
       CCEind+=(1<<L)) {*/
@@ -1153,19 +1153,19 @@ void nr_dci_decoding_procedure0(int s,
 
   if (L==4) m_p_s_L_max=1; // Table 10.1-2 is not defined for L=4
 
-  if(0 <= L && L < 4) LOG_DDD("(nr_dci_decoding_procedure0)-> m_max_slot_pdcch_Table10_1_2(%d)=%d\n",L,m_max_slot_pdcch_Table10_1_2[L]);
+  if(0 <= L && L < 4) LOG_DDD("m_max_slot_pdcch_Table10_1_2(%d)=%d\n",L,m_max_slot_pdcch_Table10_1_2[L]);
 
   for (m = 0; m < nb_candidates; m++) {
     int n_ci = 0;
 
     if (nCCE[p] < L2) return;
 
-  LOG_DDD("(nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",nCCE[p] / L2,p,nCCE[p],L2);
-  LOG_DDD("(nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",L2*m_p_s_L_max,L2,m_p_s_L_max);
+  LOG_DDD("debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",nCCE[p] / L2,p,nCCE[p],L2);
+  LOG_DDD("debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",L2*m_p_s_L_max,L2,m_p_s_L_max);
   CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
-  LOG_DDD("(nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%u) + ((m(%u)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) %% (nCCE[p] / L2)) * L2)\n",
+  LOG_DDD("CCEind(%d) = (((Yk(%u) + ((m(%u)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) %% (nCCE[p] / L2)) * L2)\n",
             CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);
-  LOG_DDD("(nr_dci_decoding_procedure0)-> n_candidate(m)=%u | CCEind=%d |",m,CCEind);
+  LOG_DDD("n_candidate(m)=%u | CCEind=%d |",m,CCEind);
 
     if (CCEind < 32)
       CCEmap = CCEmap0;
@@ -1204,7 +1204,7 @@ void nr_dci_decoding_procedure0(int s,
 
     CCEmap_cand = (*CCEmap) & CCEmap_mask;
     // CCE is not allocated yet
-    LOG_DDD(" (nr_dci_decoding_procedure0)-> CCEmap_cand=%u \n",CCEmap_cand);
+    LOG_DDD("CCEmap_cand=%u \n",CCEmap_cand);
 
     if (CCEmap_cand == 0) {
 #ifdef DEBUG_DCI_DECODING
@@ -1217,10 +1217,10 @@ void nr_dci_decoding_procedure0(int s,
               pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_uss);
 
 #endif
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
+      LOG_DDD("... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
+      LOG_DDD("... we have to replace this part of the code by polar decoding\n");
       //      for (int m=0; m < (nCCE[p]*6*9*2); m++)
-      LOG_DDD("(nr_dci_decoding_procedure0: polar decoding)-> polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%d): \n",
+      LOG_DDD("(polar decoding)-> polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%d): \n",
              coreset_time_dur,coreset_nbr_rb,p,CCEind);
       /*
       int reg_p=0,reg_e=0;
@@ -1246,7 +1246,7 @@ void nr_dci_decoding_procedure0(int s,
       //polar_hex[j] = (polar_hex[j]<<1) + ((polar_input[i]==-1)? 1:0);
       polar_hex[j] = polar_hex[j] + (((polar_input[i]==((-1)/sqrt(2)))?1:0)<<(i%32));
       }
-      for (j=0;j<27;j++) LOG_DDD("(nr_dci_decoding_procedure0: polar decoding input)-> polar_hex[%d]=%x\n",j,polar_hex[j]);
+      for (j=0;j<27;j++) LOG_DDD("polar_hex[%d]=%x\n",j,polar_hex[j]);
       #endif
       */
       uint64_t dci_estimation[2]= {0};
@@ -1257,13 +1257,13 @@ void nr_dci_decoding_procedure0(int s,
                                          currentPtrDCI);
       crc = decoderState;
       //crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
+      LOG_DDD("... we end function dci_decoding() with crc=%x\n",crc);
+      LOG_DDD("... we have to replace this part of the code by polar decoding\n");
 #ifdef DEBUG_DCI_DECODING
       LOG_DDD("(nr_dci_decoding_procedure0: crc =>%d\n",crc);
 #endif //uint16_t tc_rnti, uint16_t int_rnti, uint16_t sfi_rnti, uint16_t tpc_pusch_rnti, uint16_t tpc_pucch_rnti, uint16_t tpc_srs__rnti
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+      LOG_DDD("format_found=%d\n",*format_found);
+      LOG_DDD("crc_scrambled=%d\n",*crc_scrambled);
 
       if (crc == crc_scrambled_values[_C_RNTI_])  {
         *crc_scrambled =_c_rnti;
@@ -1331,8 +1331,8 @@ void nr_dci_decoding_procedure0(int s,
       }
 
 
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
-      LOG_DDD(" (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+      LOG_DDD("format_found=%d\n",*format_found);
+      LOG_DDD("crc_scrambled=%d\n",*crc_scrambled);
 
       if (*format_found!=255) {
         dci_alloc[*dci_cnt].dci_length = sizeof_bits;
@@ -1341,29 +1341,29 @@ void nr_dci_decoding_procedure0(int s,
         dci_alloc[*dci_cnt].firstCCE = CCEind;
         memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_estimation,8);
 
-        LOG_DDD(" (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>0x%x, sizeof_bits %d, sizeof_bytes %d \n",
+        LOG_DDD("rnti matches -> DCI FOUND !!! crc =>0x%x, sizeof_bits %d, sizeof_bytes %d \n",
                 dci_alloc[*dci_cnt].rnti, dci_alloc[*dci_cnt].dci_length, sizeof_bytes);
-        LOG_DDD(" (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] 0x%lx pdu[1] 0x%lx \n",
+        LOG_DDD("dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] 0x%lx pdu[1] 0x%lx \n",
                 *dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1]);
         if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)) {
           if ((*crc_scrambled == _p_rnti) || (*crc_scrambled == _si_rnti) || (*crc_scrambled == _ra_rnti)) {
             dci_alloc[*dci_cnt].format = format1_0;
             *dci_cnt = *dci_cnt + 1;
             *format_found=_format_1_0_found;
-            //      LOG_DDD("(nr_dci_decoding_procedure0)-> a format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+            //      LOG_DDD("a format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
           } else {
             if ((dci_estimation[0]&1) == 0) {
               dci_alloc[*dci_cnt].format = format0_0;
               *dci_cnt = *dci_cnt + 1;
               *format_found=_format_0_0_found;
-              //        LOG_DDD("(nr_dci_decoding_procedure0)-> b format0_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+              //        LOG_DDD("b format0_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
             }
 
             if ((dci_estimation[0]&1) == 1) {
               dci_alloc[*dci_cnt].format = format1_0;
               *dci_cnt = *dci_cnt + 1;
               *format_found=_format_1_0_found;
-              //        LOG_DDD("(nr_dci_decoding_procedure0)-> c format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+              //        LOG_DDD("c format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
             }
           }
         }
@@ -1491,7 +1491,7 @@ void nr_dci_decoding_procedure0(int s,
     */
   } // candidate loop
 
-  LOG_DDD("(nr_dci_decoding_procedure0)-> end candidate loop\n");
+  LOG_DDD("end candidate loop\n");
 }
 
 #endif
@@ -1533,7 +1533,7 @@ void nr_dci_decoding_procedure0(int s,
   unsigned int Yk,nb_candidates = 0,i,m;
   unsigned int CCEmap_cand;
   #ifdef NR_PDCCH_DCI_DEBUG
-  LOG_DDD("(dci_decoding_procedure0)-> \n");
+  LOG_DDD("\n");
   #endif
   nCCE = get_nCCE(pdcch_vars[eNB_id]->num_pdcch_symbols,frame_parms,mi);
 
@@ -1958,7 +1958,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
                              uint16_t n_RB_DLBWP,
                              uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
                              uint8_t format) {
-  LOG_DDD("(nr_dci_format_size)-> crc_scrambled=%d, n_RB_ULBWP=%d, n_RB_DLBWP=%d\n",crc_scrambled,n_RB_ULBWP,n_RB_DLBWP);
+  LOG_DDD("crc_scrambled=%d, n_RB_ULBWP=%d, n_RB_DLBWP=%d\n",crc_scrambled,n_RB_ULBWP,n_RB_DLBWP);
   /*
    * function nr_dci_format_size calculates and returns the size in bits of a determined format
    * it also returns an bi-dimensional array 'dci_fields_sizes' with x rows and y columns, where:
@@ -2427,7 +2427,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
 
   for (int i=0 ; i<NBR_NR_FORMATS ; i++) {
     //#ifdef NR_PDCCH_DCI_DEBUG
-    //  LOG_DDD("(nr_dci_format_size)-> i=%d, j=%d\n", i, j);
+    //  LOG_DDD("i=%d, j=%d\n", i, j);
     //#endif
     for (int j=0; j<NBR_NR_DCI_FIELDS; j++) {
       dci_size [i] = dci_size [i] + dci_field_size_table[j][i]; // dci_size[i] contains the size in bits of the dci pdu format i
@@ -2594,8 +2594,8 @@ uint8_t nr_dci_decoding_procedure(int s,
    * This can be implemented by setting variable 'mode = NO_DCI' when overlap occurs
    */
   //dci_detect_mode_t mode = 3; //dci_detect_mode_select(&ue->frame_parms, nr_tti_rx);
-  LOG_DD("(nr_dci_decoding_procedure)-> searSpaceType=%d\n",do_common);
-  LOG_DD("(nr_dci_decoding_procedure)-> %s_dci_format=%d\n",do_common?"uss":"css",css_dci_format);
+  LOG_DD("searSpaceType=%d\n",do_common);
+  LOG_DD("%s_dci_format=%d\n",do_common?"uss":"css",css_dci_format);
 
 
   // A set of PDCCH candidates for a UE to monitor is defined in terms of PDCCH search spaces
@@ -2625,13 +2625,13 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format0_0 and format1_0, first we calculate dci pdu size
       format_0_0_1_0_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_c_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,0);
       format_0_0_1_0_size_bytes = (format_0_0_1_0_size_bits%8 == 0) ? (uint8_t)floor(format_0_0_1_0_size_bits/8) : (uint8_t)(floor(format_0_0_1_0_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for common searchSpaces with format css_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
              css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
         //for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
         // for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         old_dci_cnt = dci_cnt;
         nr_dci_decoding_procedure0(s,p,coreset_time_dur,coreset_nbr_rb,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,
@@ -2660,11 +2660,11 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format2_0, first we calculate dci pdu size
       format_2_0_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_sfi_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,4);
       format_2_0_size_bytes = (format_2_0_size_bits%8 == 0) ? (uint8_t)floor(format_2_0_size_bits/8) : (uint8_t)(floor(format_2_0_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_0_size_bits=%d, format2_0_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_0_size_bits=%d, format2_0_size_bytes=%d\n",
              css_dci_format,format_2_0_size_bits,format_2_0_size_bytes);
 
       for (int aggregationLevelSFI = 0; aggregationLevelSFI<5 ; aggregationLevelSFI++) {
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevelSFI));
         // for aggregation level 'aggregationLevelSFI'. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
         old_dci_cnt = dci_cnt;
@@ -2690,11 +2690,11 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format2_1, first we calculate dci pdu size
       format_2_1_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_int_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,5);
       format_2_1_size_bytes = (format_2_1_size_bits%8 == 0) ? (uint8_t)floor(format_2_1_size_bits/8) : (uint8_t)(floor(format_2_1_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_1_size_bits=%d, format2_1_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_1_size_bits=%d, format2_1_size_bytes=%d\n",
              css_dci_format,format_2_1_size_bits,format_2_1_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) {
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         // for aggregation level 'aggregationLevelSFI'. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
         old_dci_cnt = dci_cnt;
@@ -2720,11 +2720,11 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format2_2, first we calculate dci pdu size
       format_2_2_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_tpc_pucch_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,6);
       format_2_2_size_bytes = (format_2_2_size_bits%8 == 0) ? (uint8_t)floor(format_2_2_size_bits/8) : (uint8_t)(floor(format_2_2_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_2_size_bits=%d, format2_2_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_2_size_bits=%d, format2_2_size_bytes=%d\n",
              css_dci_format,format_2_2_size_bits,format_2_2_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) {
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         // for aggregation level 'aggregationLevelSFI'. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
         old_dci_cnt = dci_cnt;
@@ -2750,11 +2750,11 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format2_1, first we calculate dci pdu size
       format_2_3_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_tpc_srs_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,7);
       format_2_3_size_bytes = (format_2_3_size_bits%8 == 0) ? (uint8_t)floor(format_2_3_size_bits/8) : (uint8_t)(floor(format_2_3_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_3_size_bits=%d, format2_3_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_3_size_bits=%d, format2_3_size_bytes=%d\n",
              css_dci_format,format_2_3_size_bits,format_2_3_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) {
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         // for aggregation level 'aggregationLevelSFI'. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
         old_dci_cnt = dci_cnt;
@@ -2781,13 +2781,13 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format0_0 and format1_0, first we calculate dci pdu size
       format_0_0_1_0_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_c_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,0);
       format_0_0_1_0_size_bytes = (format_0_0_1_0_size_bits%8 == 0) ? (uint8_t)floor(format_0_0_1_0_size_bits/8) : (uint8_t)(floor(format_0_0_1_0_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
              css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
         //for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
         // for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         old_dci_cnt = dci_cnt;
         nr_dci_decoding_procedure0(s,p,coreset_time_dur,coreset_nbr_rb,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,
@@ -2812,13 +2812,13 @@ uint8_t nr_dci_decoding_procedure(int s,
       // for format0_0 and format1_0, first we calculate dci pdu size
       format_0_1_1_1_size_bits = nr_dci_format_size(ue,eNB_id,nr_tti_rx,p,_c_rnti,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes,1);
       format_0_1_1_1_size_bytes = (format_0_1_1_1_size_bits%8 == 0) ? (uint8_t)floor(format_0_1_1_1_size_bits/8) : (uint8_t)(floor(format_0_1_1_1_size_bits/8) + 1);
-      LOG_DD("(nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_1_1_1_size_bits=%d, format_0_1_1_1_size_bytes=%d\n",
+      LOG_DD("calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_1_1_1_size_bits=%d, format_0_1_1_1_size_bytes=%d\n",
              css_dci_format,format_0_1_1_1_size_bits,format_0_1_1_1_size_bytes);
 
       for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
         //for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
         // for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
-        LOG_DD("(nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
+        LOG_DD("common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                css_dci_format,(1<<aggregationLevel));
         old_dci_cnt = dci_cnt;
         nr_dci_decoding_procedure0(s,p,coreset_time_dur,coreset_nbr_rb,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,
@@ -2842,8 +2842,8 @@ uint8_t nr_dci_decoding_procedure(int s,
 
   *crc_scrambled = crc_scrambled_;
   *format_found  = format_found_;
-  LOG_DD("(nr_dci_decoding_procedure)-> at the end crc_scrambled=%d and format_found=%d\n",*crc_scrambled,*format_found);
-  LOG_DD("(nr_dci_decoding_procedure)-> at the end dci_cnt=%d \n",dci_cnt);
+  LOG_DD("at the end crc_scrambled=%d and format_found=%d\n",*crc_scrambled,*format_found);
+  LOG_DD("at the end dci_cnt=%d \n",dci_cnt);
   return(dci_cnt);
 }
 
