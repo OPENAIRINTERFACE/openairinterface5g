@@ -4816,10 +4816,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	SSH.CreateHtmlTabHeader()
 
-	self.cnt = 0
+	SSH.cnt = 0
 	SSH.prematureExit = True
 	SSH.startTime = int(round(time.time() * 1000))
-	while self.cnt < SSH.repeatCounts[0] and SSH.prematureExit:
+	while SSH.cnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
 			if SSH.prematureExit:
@@ -4907,13 +4907,13 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-		self.cnt += 1
-	if self.cnt == SSH.repeatCounts[0] and SSH.prematureExit:
-		logging.debug('Testsuite failed ' + str(self.cnt) + ' time(s)')
+		SSH.cnt += 1
+	if  SSH.cnt == SSH.repeatCounts[0] and SSH.prematureExit:
+		logging.debug('Testsuite failed ' + str(SSH.cnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(self.cnt) + ' time(s)')
+		logging.info('Testsuite passed after ' + str(SSH.cnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(True)
 else:
 	Usage()
