@@ -338,7 +338,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->cell_config.phy_cell_id.value             = Nid_cell;
   gNB_config->ssb_config.scs_common.value               = mu;
   gNB_config->ssb_table.ssb_subcarrier_offset.value     = 0;
-  gNB_config->ssb_table.ssb_offset_point_a.value        = (N_RB_DL-20);
+  gNB_config->ssb_table.ssb_offset_point_a.value        = (N_RB_DL-20)>>1;
   gNB_config->ssb_table.ssb_mask_list[0].ssb_mask.value = position_in_burst;
   gNB_config->ssb_table.ssb_mask_list[1].ssb_mask.value = position_in_burst>>32;
   gNB_config->cell_config.frame_duplex_type.value       = TDD;
