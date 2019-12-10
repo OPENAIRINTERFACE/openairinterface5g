@@ -319,8 +319,11 @@ static int trx_usrp_start(openair0_device *device) {
     s->usrp->set_gpio_attr("FP0", "DDR", 0x7f, 0x7f);
     //set control register to ATR
     s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0x7f);
-    //set ATR register
+    //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
     s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
+    // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
+    // (we use full duplex here, because our RX is on all the time - this might need to change later)
+    s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     LOG_I(HW,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
