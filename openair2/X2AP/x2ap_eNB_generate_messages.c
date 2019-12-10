@@ -1532,7 +1532,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	memcpy(e_MCG_rabs_tobeadded.eNB_addr.buffer, buf, 20*sizeof(uint8_t));
 
 	FILE *fd;
-	fd = fopen("uecap.raw","r");
+	fd = fopen("../../../executables/uecap.raw","r");
 	if (fd != NULL) {
 		OCTET_STRING_t CG_Config_Info;
 		CG_Config_Info.size = 4096;

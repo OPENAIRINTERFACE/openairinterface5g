@@ -38,7 +38,9 @@ extern mui_t rrc_eNB_mui;
 int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
                                                        rrc_eNB_ue_context_t *ue_context,
                                                        unsigned char *buffer,
-                                                       int buffer_size)
+                                                       int buffer_size,
+                                                       OCTET_STRING_t *scg_group_config,
+                                                       OCTET_STRING_t *scg_RB_config)
 {
   asn_enc_rval_t                                          enc_rval;
   LTE_DL_DCCH_Message_t                                   dl_dcch_msg;
@@ -152,20 +154,30 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   nr.present = LTE_RRCConnectionReconfiguration_v1510_IEs__nr_Config_r15_PR_setup;
   nr.choice.setup.endc_ReleaseAndAdd_r15 = 0;  /* FALSE */
 
-  OCTET_STRING_t scg_conf;
+  OCTET_STRING_t dummy_scg_conf;
   unsigned char scg_conf_buf[4] = { 0, 0, 0, 0 };
-  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = &scg_conf;
-  scg_conf.buf = scg_conf_buf;
-  scg_conf.size = 4;
+  if (scg_group_config!=NULL)
+	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = scg_group_config; //&scg_conf;
+  else{
+	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = &dummy_scg_conf;
+	  dummy_scg_conf.buf = scg_conf_buf;
+	  dummy_scg_conf.size = 4;
+  }
+
 
   long sk_counter = 0;
   cr_1510.sk_Counter_r15 = &sk_counter;
 
-  OCTET_STRING_t nr1_conf;
+  OCTET_STRING_t dummy_nr1_conf;
   unsigned char nr1_buf[4] = { 0, 0, 0, 0 };
-  cr_1510.nr_RadioBearerConfig1_r15 = &nr1_conf;
-  nr1_conf.buf = nr1_buf;
-  nr1_conf.size = 4;
+
+  if(scg_RB_config!=NULL)
+	  cr_1510.nr_RadioBearerConfig1_r15 = scg_RB_config;
+  else{
+	  cr_1510.nr_RadioBearerConfig1_r15 = &dummy_nr1_conf;
+	  dummy_nr1_conf.buf = nr1_buf;
+	  dummy_nr1_conf.size = 4;
+  }
 
   OCTET_STRING_t nr2_conf;
   unsigned char nr2_buf[4] = { 0, 0, 0, 0 };
@@ -221,7 +233,7 @@ void rrc_go_nr(void)
                                 ue_context->ue_context.rnti,
                                 0, 0);
 
-  size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192);
+  size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, NULL, NULL);
 
   rrc_data_req(&ctxt,
                DCCH,

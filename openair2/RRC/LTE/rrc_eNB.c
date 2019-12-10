@@ -8247,6 +8247,129 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
 }
 
+void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
+
+
+	NR_CG_Config_t *CG_Config = NULL;
+
+	{
+		int i;
+		printf("%d: ", m->rrc_buffer_size);
+		for (i=0; i<m->rrc_buffer_size; i++) printf("%2.2x", (unsigned char)m->rrc_buffer[i]);
+		printf("\n");
+
+	}
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+						      &asn_DEF_NR_CG_Config,
+						      (void **)&CG_Config,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
+
+/*    asn_dec_rval_t dec_rval = uper_decode( NULL,
+						      &asn_DEF_LTE_UL_DCCH_Message,
+						      (void **)&LTE_UL_DCCH_Message,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size, 0, 0);//m->rrc_buffer_size);
+
+    eNB_RRC_INST         *rrc=RC.rrc[enb_mod_idP];*/
+
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
+	// free the memory
+	SEQUENCE_free( &asn_DEF_NR_CG_Config, CG_Config, 1 );
+	return;
+    }
+    xer_fprint(stdout,&asn_DEF_NR_CG_Config, CG_Config);
+    // recreate enough of X2 EN-DC Container
+
+    AssertFatal(CG_Config->criticalExtensions.choice.c1->present == NR_CG_Config__criticalExtensions__c1_PR_cg_Config,
+		  "CG_Config not present\n");
+
+    OCTET_STRING_t *scg_CellGroupConfig = NULL;
+    OCTET_STRING_t *nr1_conf = NULL;
+
+    if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig){
+    	scg_CellGroupConfig = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig;
+
+    	{
+    		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size;
+    		int i;
+    		LOG_I(RRC, "Dumping scg_CellGroupConfig:", size_s);
+    		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->buf[i]);
+    		printf("\n");
+
+    	}
+    	/*scg_conf = calloc(1, sizeof(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig));
+    	memcpy(scg_conf.buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size);
+    	scg_conf->size =  CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size;*/
+    }
+    else{
+    	LOG_W(RRC, "SCG Cell group configuration is not present in the Addition Response message \n");
+    	return;
+    }
+    if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config){
+    	nr1_conf = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config;
+
+    	{
+    		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size;
+    		int i;
+    		LOG_I(RRC, "Dumping scg_RB_Config:", size_s);
+    		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->buf[i]);
+    		printf("\n");
+
+    	}
+    	/*nr1_conf = calloc(1, sizeof(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config));
+    	memcpy(nr1_conf->buf,CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size);
+    	nr1_conf->size = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size;*/
+    }
+    else{
+    	LOG_W(RRC, "SCG RB configuration is not present in the Addition Response message \n");
+    	return;
+    }
+
+    protocol_ctxt_t ctxt;
+    rrc_eNB_ue_context_t *ue_context;
+    unsigned char buffer[8192];
+    int size;
+
+    ue_context = get_first_ue_context(RC.rrc[enb_mod_idP]);
+
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                    0,
+                                    ENB_FLAG_YES,
+                                    4660,//ue_context->ue_context.rnti,
+                                    0, 0);
+
+    size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);
+
+    rrc_data_req(&ctxt,
+                   DCCH,
+                   rrc_eNB_mui++,
+                   SDU_CONFIRM_NO,
+                   size,
+                   buffer,
+                   PDCP_TRANSMISSION_MODE_CONTROL);
+
+
+    /*NR_CG_ConfigInfo_t *CG_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo));
+    CG_ConfigInfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
+    CG_ConfigInfo->criticalExtensions.choice.c1 = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1));
+    CG_ConfigInfo->criticalExtensions.choice.c1->present = NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo;
+    CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo));
+    NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
+    cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof(*cg_ConfigInfo->ue_CapabilityInfo));
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,(void*)&LTE_UL_DCCH_Message->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList,m->rrc_buffer,m->rrc_buffer_size);
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		   enc_rval.failed_type->name, enc_rval.encoded);
+    OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
+			   (const char *)m->rrc_buffer,
+			   (enc_rval.encoded+7)>>3);
+    parse_CG_ConfigInfo(rrc,CG_ConfigInfo);*/
+
+}
+
+
 //-----------------------------------------------------------------------------
 void *rrc_enb_process_itti_msg(void *notUsed) {
   MessageDef                         *msg_p;
@@ -8526,8 +8649,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     }
 
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
-
-    	LOG_I(RRC, "RRC processing of SgNB addition response information to be added... \n");
+    	rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
     	break;
     }
 
@@ -8585,7 +8707,7 @@ rrc_endc_hack_init();
 {
   extern volatile int go_nr;
   void rrc_go_nr(void);
-  if (go_nr) rrc_go_nr();
+  //if (go_nr) rrc_go_nr();
 }
   }
 }
