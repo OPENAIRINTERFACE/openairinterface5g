@@ -299,7 +299,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 {
   /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
   nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
-  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset)/(1<<mu);
+  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset);
   return 0;
 }
 

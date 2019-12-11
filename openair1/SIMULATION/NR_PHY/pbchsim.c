@@ -469,7 +469,9 @@ int main(int argc, char **argv)
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
-    for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
+ 
+    gNB->ssb_pdu = (nfapi_nr_dl_tti_ssb_pdu *) malloc(sizeof(nfapi_nr_dl_tti_ssb_pdu));
+    gNB->ssb_pdu->ssb_pdu_rel15.bchPayload = 0;
 
     for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
@@ -480,16 +482,16 @@ int main(int argc, char **argv)
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     		if (cyclic_prefix_type == 1) {
     			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-    					&txdata[aa][slot*frame_parms->samples_per_slot],
-						frame_parms->ofdm_symbol_size,
-						12,
-						frame_parms->nb_prefix_samples,
-						CYCLIC_PREFIX);
+    			             &txdata[aa][slot*frame_parms->samples_per_slot],
+				     frame_parms->ofdm_symbol_size,
+				     12,
+				     frame_parms->nb_prefix_samples,
+				     CYCLIC_PREFIX);
     		} else {
     			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-    					&txdata[aa][slot*frame_parms->samples_per_slot],
-						14,
-						frame_parms);
+    			                     &txdata[aa][slot*frame_parms->samples_per_slot],
+			                     14,
+			                     frame_parms);
     		}
     	}
     }
@@ -620,8 +622,7 @@ int main(int argc, char **argv)
 
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == gNB->pbch_pdu[2-i]);
-	    //printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,gNB->pbch_pdu[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]); 
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu->ssb_pdu_rel15.bchPayload>>(8*i)));
 	  } 
 	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
 	  //printf("ret %d\n", payload_ret);

@@ -429,7 +429,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
-  uint8_t nushift,n_hf,ssb_index;
+  uint8_t nushift,ssb_index;
   uint16_t M;
   uint8_t Lmax=frame_parms->Lmax; 
   //uint16_t crc;
@@ -577,7 +577,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  n_hf = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+  frame_parms->half_frame_bit = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
 
   ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
@@ -585,7 +585,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index);
 
 #ifdef DEBUG_PBCH
   printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);

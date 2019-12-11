@@ -3545,7 +3545,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   uint16_t nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
 
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &dlsch0->harq_processes[harq_pid]->dl_config_pdu;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dl_config_pdu = &dlsch0->harq_processes[harq_pid]->dl_config_pdu;
   uint8_t dmrs_Type = dl_config_pdu->dmrsConfigType;
   AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
   uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
