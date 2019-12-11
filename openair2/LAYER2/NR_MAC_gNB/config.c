@@ -409,7 +409,6 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
   if(cfg->cell_config.frame_duplex_type.value == TDD){
   int return_tdd = set_tdd_config_nr(cfg,
 		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                    5000,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,

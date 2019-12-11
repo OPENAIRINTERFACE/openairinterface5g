@@ -47,7 +47,7 @@
  *  @param nrofUplinkSymbols number of uplink symbols
     @returns 0 if tdd dedicated configuration has been properly set or -1 on error with message */
 
-int set_tdd_config_nr(nfapi_nr_config_request_scf_t *cfg, int mu,int dl_UL_TransmissionPeriodicity,
+int set_tdd_config_nr(nfapi_nr_config_request_scf_t *cfg, int mu,
                        int nrofDownlinkSlots, int nrofDownlinkSymbols,
                        int nrofUplinkSlots,   int nrofUplinkSymbols);
 

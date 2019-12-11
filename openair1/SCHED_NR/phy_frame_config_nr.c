@@ -52,14 +52,41 @@
 *********************************************************************/
 
 int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
-	               int mu,	int dl_UL_TransmissionPeriodicity,
+	               int mu,
                        int nrofDownlinkSlots, int nrofDownlinkSymbols,
                        int nrofUplinkSlots,   int nrofUplinkSymbols)
 {
-  int slot_number = 0;
+  int slot_number = 0,nb_periods_per_frame;
   int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
-
-  int nb_periods_per_frame = (FRAME_DURATION_MICRO_SEC/dl_UL_TransmissionPeriodicity);
+  
+  switch(cfg->tdd_table.tdd_period.value) {
+      case 0:
+	nb_periods_per_frame = 20; // 10ms/0p5ms
+	break;
+      case 1:
+	nb_periods_per_frame = 16; // 10ms/0p625ms
+        break;
+      case 2:
+	nb_periods_per_frame = 10; // 10ms/1ms
+        break;
+      case 3:
+        nb_periods_per_frame = 8; // 10ms/1p25ms
+        break;
+      case 4:
+        nb_periods_per_frame = 5; // 10ms/2ms
+        break;
+      case 5:
+        nb_periods_per_frame = 4; // 10ms/2p5ms
+        break;
+      case 6:
+        nb_periods_per_frame = 2; // 10ms/5ms
+        break;
+      case 7:
+        nb_periods_per_frame = 1; // 10ms/10ms
+        break;
+	default:
+        AssertFatal(1==0,"Undefined tdd period %d\n", cfg->tdd_table.tdd_period.value);
+  }
 
   int nb_slots_per_period = ((1<<mu) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
   AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots + 1),
