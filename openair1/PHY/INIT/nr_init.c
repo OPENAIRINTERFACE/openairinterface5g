@@ -390,7 +390,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   }
 
   memcpy((void*)&gNB_config->prach_config,(void*)&phy_config->cfg->prach_config,sizeof(phy_config->cfg->prach_config));
-  memcpy((void*)&gNB_config->tdd_ul_dl_config,(void*)&phy_config->cfg->tdd_ul_dl_config,sizeof(phy_config->cfg->tdd_ul_dl_config));
+  memcpy((void*)&gNB_config->tdd_table,(void*)&phy_config->cfg->tdd_table,sizeof(phy_config->cfg->tdd_table));
 
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = (gNB_config->carrier_config.dl_frequency.value)*1e3 + (gNB_config->carrier_config.dl_bandwidth.value)*5e5;
@@ -411,21 +411,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 
   nr_init_frame_parms(gNB_config, fp);
   
-  if(gNB_config->subframe_config.duplex_mode.value == TDD){
-  return_tdd = set_tdd_config_nr(fp,
-		    gNB_config->tdd_ul_dl_config.dl_ul_periodicity.value,
-		    gNB_config->tdd_ul_dl_config.nrofDownlinkSlots.value,
-		    gNB_config->tdd_ul_dl_config.nrofDownlinkSymbols.value,
-		    gNB_config->tdd_ul_dl_config.nrofUplinkSlots.value,
-		    gNB_config->tdd_ul_dl_config.nrofUplinkSymbols.value
-		  );
-
-  if (return_tdd !=0){
-     LOG_E(PHY,"TDD configuration can not be done\n");
-  }
-  else LOG_I(PHY,"TDD has been properly configurated\n");
-  }
-
 
   if (RC.gNB[Mod_id]->configured == 1) {
     LOG_E(PHY,"Already gNB already configured, do nothing\n");

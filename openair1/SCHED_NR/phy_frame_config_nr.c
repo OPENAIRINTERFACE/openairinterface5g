@@ -51,41 +51,62 @@
 *
 *********************************************************************/
 
-int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeriodicity,
+int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
+	               int mu,	int dl_UL_TransmissionPeriodicity,
                        int nrofDownlinkSlots, int nrofDownlinkSymbols,
                        int nrofUplinkSlots,   int nrofUplinkSymbols)
 {
-  TDD_UL_DL_configCommon_t  *p_tdd_ul_dl_configuration;
   int slot_number = 0;
-  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(frame_parms->slots_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-  /* allocate buffer for configuration structure */
-  p_tdd_ul_dl_configuration = calloc( 1, sizeof(TDD_UL_DL_configCommon_t));
-
-  if (p_tdd_ul_dl_configuration == NULL) {
-    printf("Error test_frame_configuration: memory allocation problem \n");
-    assert(0);
-  }
-  else {
-    frame_parms->frame_type = TDD;
-  }
-
-  p_tdd_ul_dl_configuration->dl_UL_TransmissionPeriodicity = dl_UL_TransmissionPeriodicity;
-  p_tdd_ul_dl_configuration->nrofDownlinkSlots   = nrofDownlinkSlots;
-  p_tdd_ul_dl_configuration->nrofDownlinkSymbols = nrofDownlinkSymbols;
-  p_tdd_ul_dl_configuration->nrofUplinkSlots     = nrofUplinkSlots;
-  p_tdd_ul_dl_configuration->nrofUplinkSymbols   = nrofUplinkSymbols;
-
-  frame_parms->p_tdd_UL_DL_Configuration = p_tdd_ul_dl_configuration;
+  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
 
   int nb_periods_per_frame = (FRAME_DURATION_MICRO_SEC/dl_UL_TransmissionPeriodicity);
 
-  int nb_slots_per_period = ((1<<frame_parms->numerology_index) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
-
+  int nb_slots_per_period = ((1<<mu) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
   AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots + 1),
 	      "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d \n",
 	      nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
   AssertFatal(nrofDownlinkSymbols + nrofUplinkSymbols < 14,"illegal symbol configuration DL %d, UL %d\n",nrofDownlinkSymbols,nrofUplinkSymbols);
+  
+  cfg->tdd_table.max_tdd_periodicity_list = (nfapi_nr_max_tdd_periodicity_t *) malloc(nb_slots_to_set*sizeof(nfapi_nr_max_tdd_periodicity_t));
+ for(int memory_alloc =0 ; memory_alloc<nb_slots_to_set;memory_alloc++) {
+  cfg->tdd_table.max_tdd_periodicity_list[memory_alloc].max_num_of_symbol_per_slot_list = (nfapi_nr_max_num_of_symbol_per_slot_t *) malloc(NR_NUMBER_OF_SYMBOLS_PER_SLOT*sizeof(nfapi_nr_max_num_of_symbol_per_slot_t)); 
+ }
 
+  while(slot_number != nb_slots_to_set) {
+          if(nrofDownlinkSlots != 0) {
+	    for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+            cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 0;
+      	    if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0) {
+	    slot_number++;
+	    }
+	    }
+	  }
+
+          if (nrofDownlinkSymbols != 0 || nrofUplinkSymbols != 0) {
+            for(int number_of_symbol =0; number_of_symbol < nrofDownlinkSymbols; number_of_symbol++){
+            cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 0;
+	    }
+	    for(int number_of_symbol = nrofDownlinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol++){
+            cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 2;
+            }
+	    for(int number_of_symbol = NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++){
+            cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config.value= 1;
+            }
+            slot_number++;
+          }
+
+          if(nrofUplinkSlots != 0) {
+            for (int number_of_symbol = 0; number_of_symbol < nrofUplinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+            cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 1;
+            if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0) {
+            slot_number++;
+            }
+            }  
+	  }
+  }
+
+
+  /*
   while(slot_number != nb_slots_to_set) {
     for (int number_of_slot = 0; number_of_slot < nrofDownlinkSlots; number_of_slot++) {
       frame_parms->tdd_uplink_nr[slot_number] = NR_TDD_DOWNLINK_SLOT;
@@ -93,7 +114,7 @@ int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeri
       slot_number++;
     }
 
-    if (p_tdd_ul_dl_configuration->nrofDownlinkSymbols != 0 || p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
+    if (nrofDownlinkSymbols != 0 || nrofUplinkSymbols != 0) {
        frame_parms->tdd_uplink_nr[slot_number] = (1<<nrofUplinkSymbols) - 1;  
        printf("slot %d set as SL\n",slot_number);
        slot_number++;
@@ -105,16 +126,16 @@ int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeri
       slot_number++;
     }
 
-    /*if (p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
+    if (p_tdd_ul_dl_configuration->nrofUplinkSymbols != 0) {
       LOG_E(PHY,"set_tdd_configuration_nr: uplink symbol for slot is not supported for tdd configuration \n");
       return (-1);
-    }*/
+    }
   }
 
   if (frame_parms->p_tdd_UL_DL_ConfigurationCommon2 != NULL) {
     LOG_E(PHY,"set_tdd_configuration_nr: additionnal tdd configuration 2 is not supported for tdd configuration \n");
     return (-1);
-  }
+  }*/
 
   return (0);
 }
@@ -253,29 +274,58 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms)
 *
 *********************************************************************/
 
-int nr_slot_select(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
+int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
 {
   /* for FFD all slot can be considered as an uplink */
-  if (frame_parms->frame_type == FDD) {
+  int mu = cfg->ssb_config.scs_common.value,check_slot=0;
+
+    if (cfg->cell_config.frame_duplex_type.value == FDD) {
     return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT );
   }
 
   if (nr_frame%2 == 0) {
-    if (frame_parms->tdd_uplink_nr[nr_tti] == NR_TDD_UPLINK_SLOT) {
+    for(int symbol_count=0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
+		check_slot++;
+	}
+    }
+    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
       return (NR_UPLINK_SLOT);
     }
-    else if(frame_parms->tdd_uplink_nr[nr_tti] == NR_TDD_DOWNLINK_SLOT){
+	  check_slot = 0;
+    for(int symbol_count=0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
+                check_slot++;
+        }
+    }
+    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
       return (NR_DOWNLINK_SLOT);
     }
-    else return (NR_S_SLOT);
+    else {
+	    return (NR_MIXED_SLOT);
+    }
+  } else {
+    for(int symbol_count=0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[((1<<mu) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
+                check_slot++;
+        }
+    }
+    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
+      return (NR_UPLINK_SLOT);
+    }
+            check_slot = 0;
+    for(int symbol_count=0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[((1<<mu) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
+                check_slot++;
+        }
+    }
+    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
+      return (NR_DOWNLINK_SLOT);
+    }
+    else {
+	    return (NR_MIXED_SLOT);
+    }
   }
-  else if ((frame_parms->tdd_uplink_nr[(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti] == NR_TDD_UPLINK_SLOT)) {
-    return (NR_UPLINK_SLOT);
-  }
-  else if ((frame_parms->tdd_uplink_nr[(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti] == NR_TDD_DOWNLINK_SLOT)) {
-    return (NR_DOWNLINK_SLOT);
-  }
-  else return (NR_S_SLOT);
 }
 
 /*******************************************************************

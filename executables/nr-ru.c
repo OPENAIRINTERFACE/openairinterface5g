@@ -309,12 +309,13 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 // southbound IF4p5 fronthaul
 void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
 
 
-  if ((nr_slot_select(ru->nr_frame_parms,ru->proc.frame_tx,ru->proc.tti_tx)&NR_DOWNLINK_SLOT) > 0)
+  if ((nr_slot_select(cfg,ru->proc.frame_tx,ru->proc.tti_tx)&NR_DOWNLINK_SLOT) > 0)
     send_IF4p5(ru,frame, slot, IF4p5_PDLFFT);
 }
 
@@ -517,7 +518,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc        = &ru->proc;
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
@@ -530,10 +531,10 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   do {
     recv_IF4p5(ru, &frame_tx, &slot_tx, &packet_type, &symbol_number);
 
-    if (((nr_slot_select(ru->nr_frame_parms,frame_tx,slot_tx) & NR_DOWNLINK_SLOT) > 0) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    if (((nr_slot_select(cfg,frame_tx,slot_tx) & NR_DOWNLINK_SLOT) > 0) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
 
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
-          *slot,nr_slot_select(ru->nr_frame_parms,frame_tx,*slot),frame_tx,slot_tx,symbol_number);
+          *slot,nr_slot_select(cfg,frame_tx,*slot),frame_tx,slot_tx,symbol_number);
 
     if (proc->first_tx != 0) {
       *frame         = frame_tx;
@@ -552,7 +553,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
     } else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);
 
-  if ((nr_slot_select(ru->nr_frame_parms,frame_tx,slot_tx) & NR_DOWNLINK_SLOT)>0) stop_meas(&ru->rx_fhaul);
+  if ((nr_slot_select(cfg,frame_tx,slot_tx) & NR_DOWNLINK_SLOT)>0) stop_meas(&ru->rx_fhaul);
 
   proc->tti_tx  = slot_tx;
   proc->frame_tx     = frame_tx;
@@ -715,24 +716,28 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  //nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx];
   unsigned int txs;
-  int i;
+  int i,txsymb;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  int slot_type         = nr_slot_select(ru->nr_frame_parms,frame,slot%fp->slots_per_frame);
-  int prevslot_type     = nr_slot_select(ru->nr_frame_parms,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+  int slot_type         = nr_slot_select(cfg,frame,slot%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
+  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)-1))%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
   int sf_extension  = 0;
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-
   if (slot_type == NR_DOWNLINK_SLOT ||
-		  slot_type == NR_S_SLOT) {
+		  slot_type == NR_MIXED_SLOT) {
      int siglen=fp->samples_per_tti,flags=1;
 
-     if(slot_type == NR_S_SLOT) {
-     int txsymb = fp->p_tdd_UL_DL_Configuration->nrofDownlinkSymbols;
+     if(slot_type == NR_MIXED_SLOT) {
+     txsymb = 0;
+     for(int symbol_count =0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+     if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
+          txsymb++;
+        }
+     }
      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
                + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
@@ -740,7 +745,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
      flags=3; // end of burst
   }
 
-  if (fp->frame_type == TDD &&
+  if (cfg->cell_config.frame_duplex_type.value == TDD &&
         slot_type == NR_DOWNLINK_SLOT &&
         prevslot_type == NR_UPLINK_SLOT) {
       flags = 2; // start of burst
@@ -812,6 +817,7 @@ void *ru_thread_asynch_rxtx( void *param ) {
   static int ru_thread_asynch_rxtx_status;
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   int slot=0, frame=0;
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
   wait_sync("ru_thread_asynch_rxtx");
@@ -835,7 +841,7 @@ void *ru_thread_asynch_rxtx( void *param ) {
 
     // asynchronous receive from north (RRU IF4/IF5)
     if (ru->fh_north_asynch_in) {
-      if ((nr_slot_select(ru->nr_frame_parms,frame,slot) & NR_DOWNLINK_SLOT)>0)
+      if ((nr_slot_select(cfg,frame,slot) & NR_DOWNLINK_SLOT)>0)
         ru->fh_north_asynch_in(ru,&frame,&slot);
     } else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
   }

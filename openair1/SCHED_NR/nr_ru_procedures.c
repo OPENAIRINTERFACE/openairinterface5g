@@ -114,6 +114,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   struct timespec wait;
   int slot = tti_tx;
 
@@ -122,7 +123,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   start_meas(&ru->ofdm_mod_stats);
 
-  if (nr_slot_select(fp,frame_tx,slot) == NR_UPLINK_SLOT) return;
+  if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
   // this copy should be done in the precoding thread (currently inactive)
   for (int aa=0;aa<ru->nb_tx;aa++)
@@ -131,7 +132,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
-  if (nr_slot_select(fp,frame_tx,slot)==SF_DL) {
+  if (nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT) {
     // If this is not an S-tti
     if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
       printf("[RU] ERROR pthread_mutex_lock for feptx thread (IC %d)\n", proc->instance_cnt_feptx);
@@ -161,7 +162,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   }
 
   // call first half-slot in this thread
-  nr_feptx0(ru,slot,0,fp->symbols_per_slot>>1);
+  nr_feptx0(ru,slot,0,NR_NUMBER_OF_SYMBOLS_PER_SLOT>>1);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"NR feptx thread");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
@@ -213,6 +214,7 @@ void nr_init_feptx_thread(RU_t *ru) {
 // seems to be hardcoded to numerology 1 (2 slots=1 subframe)
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
      
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
@@ -230,11 +232,11 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
     memcpy((void*)ru->common.txdataF_BF[aa],
 	   (void*)ru->gNB_list[0]->common_vars.txdataF[aa], fp->samples_per_slot_wCP*sizeof(int32_t));
 
-  if ((nr_slot_select(fp,frame_tx,slot)==SF_DL)||
-      ((nr_slot_select(fp,frame_tx,slot)==SF_S))) {
+  if ((nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT)||
+      ((nr_slot_select(cfg,frame_tx,slot)==NR_MIXED_SLOT))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
-    nr_feptx0(ru,slot,0,fp->symbols_per_slot);
+    nr_feptx0(ru,slot,0,NR_NUMBER_OF_SYMBOLS_PER_SLOT);
 
   }
 
@@ -270,7 +272,7 @@ void nr_fep0(RU_t *ru, int first_half) {
     end_symbol = NR_SYMBOLS_PER_SLOT;
   }
 
-  LOG_I(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d\n", proc->tti_rx, first_half, start_symbol, end_symbol);
+  LOG_D(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d\n", proc->tti_rx, first_half, start_symbol, end_symbol);
   //  printf("fep0: slot %d\n",slot);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 1);

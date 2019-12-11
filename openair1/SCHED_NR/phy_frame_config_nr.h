@@ -47,7 +47,7 @@
  *  @param nrofUplinkSymbols number of uplink symbols
     @returns 0 if tdd dedicated configuration has been properly set or -1 on error with message */
 
-int set_tdd_config_nr(NR_DL_FRAME_PARMS *frame_parms, int dl_UL_TransmissionPeriodicity,
+int set_tdd_config_nr(nfapi_nr_config_request_scf_t *cfg, int mu,int dl_UL_TransmissionPeriodicity,
                        int nrofDownlinkSlots, int nrofDownlinkSymbols,
                        int nrofUplinkSlots,   int nrofUplinkSymbols);
 
@@ -78,7 +78,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
  *  @param nr_tti   : slot number
     @returns nr_slot_t : downlink or uplink */
 
-nr_slot_t nr_slot_select(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti);
+nr_slot_t nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters
