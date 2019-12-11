@@ -52,7 +52,7 @@ function variant_usage {
         if [ "$1" = "full" ]
         then        
             printf  "               VM_NAME=%-15s          ARCHIVES_LOC=%-15s\n" "$VM_NAME" "$ARCHIVES_LOC"
-            printf  "               VM_MEMORY=%-15s        VM_CPU=%-15s\n" "$VM_MEMORY" "$VM_CPU"       
+            printf  "               VM_MEMORY=%-15s        VM_CPU=%-15s           VM_DISK=%-15s\n" "$VM_MEMORY" "$VM_CPU" "$VM_DISK"
             printf  "               NB_PATTERN_FILES=%-15s BUILD_OPTIONS=%-15s\n" "$NB_PATTERN_FILES" "\"$BUILD_OPTIONS\""
             printf  "               LOG_PATTERN=%-15s      EXPERIMENTAL=%-15s\n\n\n" "$LOG_PATTERN"  "$EXPERIMENTAL"
         fi
@@ -185,6 +185,7 @@ function variant__v3__phy_sim {
     NB_PATTERN_FILES=12
     BUILD_OPTIONS="--phy_simulators"
     VM_MEMORY=8192
+    VM_DISK=20
     RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111\" -q -np -b"
 }
 
@@ -272,6 +273,7 @@ function check_set_variant {
             ARCHIVES_LOC=${VARIANTS_LONG[$i]//"-"/"_"}  
             VM_MEMORY=2048
             VM_CPU=4
+            VM_DISK=10
             EXPERIMENTAL=""
             NBARGS=$[$NBARGS+$VARIANT_OPTID]   
             variant__${VARIANTS_SHORT[$i]}__${VARIANTS_LONG[$i]//"-"/"_"}
@@ -494,6 +496,7 @@ AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL OPTIONAL_APTCACHER TESTPLATFORM_OWNER
 # -V<xx> option.
 VM_NAME=""
 VM_MEMORY=0
+VM_DISK=0
 VM_CPU=0
 ARCHIVES_LOC=""
 LOG_PATTERN=""
