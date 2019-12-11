@@ -93,7 +93,7 @@ logging.basicConfig(
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
-		self.cnt = 0                    # cnt from index to object of a class
+		self.FailReportCnt = 0                    # FailReportCnt was an index inside the SSH instantiation (called "cnt"), now it becomes an object
 		self.prematureExit = False
 		self.ranRepository = ''
 		self.ranBranch = ''
@@ -1433,11 +1433,11 @@ class SSHConnection():
 				html_queue.put(html_cell)
 			if (attach_status):
  # cnt from index to object of a class
-				self.cnt = 0
-				while self.cnt < len(self.UEDevices):
-					if self.UEDevicesStatus[self.cnt] == UE_STATUS_ATTACHING:
-						self.UEDevicesStatus[self.cnt] = UE_STATUS_ATTACHED
-					self.cnt += 1
+				cnt = 0
+				while cnt < len(self.UEDevices):
+					if self.UEDevicesStatus[cnt] == UE_STATUS_ATTACHING:
+						self.UEDevicesStatus[cnt] = UE_STATUS_ATTACHED
+					cnt += 1
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -1474,14 +1474,14 @@ class SSHConnection():
 			self.AutoTerminateUEandeNB()
 			return
 		multi_jobs = []
-		self.cnt = 0
+		cnt = 0
 		for device_id in self.UEDevices:
-			self.UEDevicesStatus[self.cnt] = UE_STATUS_DETACHING
-			p = Process(target = self.DetachUE_common, args = (device_id,self.cnt,))
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
+			p = Process(target = self.DetachUE_common, args = (device_id,cnt,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
-			self.cnt += 1
+			cnt += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1489,10 +1489,10 @@ class SSHConnection():
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
-		self.cnt = 0
-		while self.cnt < len(self.UEDevices):
-			self.UEDevicesStatus[self.cnt] = UE_STATUS_DETACHED
-			self.cnt += 1
+		cnt = 0
+		while cnt < len(self.UEDevices):
+			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHED
+			cnt += 1
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -1650,10 +1650,10 @@ class SSHConnection():
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
 				sys.exit(1)
 		if len(self.UEDevicesStatus) == 0:
-			self.cnt = 0
-			while self.cnt < len(self.UEDevices):
+			cnt = 0
+			while cnt < len(self.UEDevices):
 				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
-				self.cnt += 1
+				cnt += 1
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -3735,38 +3735,38 @@ class SSHConnection():
 			cmd = "jq '.mac_stats | length' " + fileName
 			strNbEnbs = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 			self.x2NbENBs = int(strNbEnbs.strip())
-		self.cnt = 0
-		while self.cnt < self.x2NbENBs:
-			cmd = "jq '.mac_stats[" + str(self.cnt) + "].bs_id' " + fileName
+		cnt = 0
+		while cnt < self.x2NbENBs:
+			cmd = "jq '.mac_stats[" + str(cnt) + "].bs_id' " + fileName
 			bs_id = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 			self.x2ENBBsIds[idx].append(bs_id.strip())
-			cmd = "jq '.mac_stats[" + str(self.cnt) + "].ue_mac_stats | length' " + fileName
+			cmd = "jq '.mac_stats[" + str(cnt) + "].ue_mac_stats | length' " + fileName
 			stNbUEs = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 			nbUEs = int(stNbUEs.strip())
 			ueIdx = 0
 			self.x2ENBConnectedUEs[idx].append([])
 			while ueIdx < nbUEs:
-				cmd = "jq '.mac_stats[" + str(self.cnt) + "].ue_mac_stats[" + str(ueIdx) + "].rnti' " + fileName
+				cmd = "jq '.mac_stats[" + str(cnt) + "].ue_mac_stats[" + str(ueIdx) + "].rnti' " + fileName
 				rnti = subprocess.check_output(cmd, shell=True, universal_newlines=True)
-				self.x2ENBConnectedUEs[idx][self.cnt].append(rnti.strip())
+				self.x2ENBConnectedUEs[idx][cnt].append(rnti.strip())
 				ueIdx += 1
-			self.cnt += 1
+			cnt += 1
 
 		msg = "FlexRan Controller is connected to " + str(self.x2NbENBs) + " eNB(s)"
 		logging.debug(msg)
 		message += msg + '\n'
-		self.cnt = 0
-		while self.cnt < self.x2NbENBs:
-			msg = "   -- eNB: " + str(self.x2ENBBsIds[idx][self.cnt]) + " is connected to " + str(len(self.x2ENBConnectedUEs[idx][self.cnt])) + " UE(s)"
+		cnt = 0
+		while cnt < self.x2NbENBs:
+			msg = "   -- eNB: " + str(self.x2ENBBsIds[idx][cnt]) + " is connected to " + str(len(self.x2ENBConnectedUEs[idx][self.cnt])) + " UE(s)"
 			logging.debug(msg)
 			message += msg + '\n'
 			ueIdx = 0
-			while ueIdx < len(self.x2ENBConnectedUEs[idx][self.cnt]):
-				msg = "      -- UE rnti: " + str(self.x2ENBConnectedUEs[idx][self.cnt][ueIdx])
+			while ueIdx < len(self.x2ENBConnectedUEs[idx][cnt]):
+				msg = "      -- UE rnti: " + str(self.x2ENBConnectedUEs[idx][cnt][ueIdx])
 				logging.debug(msg)
 				message += msg + '\n'
 				ueIdx += 1
-			self.cnt += 1
+			cnt += 1
 		return message
 
 	def Perform_X2_Handover(self):
@@ -3789,38 +3789,38 @@ class SSHConnection():
 				logging.debug(msg)
 				fullMessage += msg + '\n'
 				eNB_cnt = self.x2NbENBs
-				self.cnt = 0
-				while self.cnt < eNB_cnt:
-					cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][self.cnt]) + "/1"
+				cnt = 0
+				while cnt < eNB_cnt:
+					cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
 					logging.debug(cmd)
 					fullMessage += cmd + '\n'
 					subprocess.run(cmd, shell=True)
-					self.cnt += 1
+					cnt += 1
 				# Waiting for the activation to be active
 				time.sleep(10)
 				msg = "Switching UE(s) from eNB to eNB"
 				logging.debug(msg)
 				fullMessage += msg + '\n'
-				self.cnt = 0
-				while self.cnt < eNB_cnt:
+				cnt = 0
+				while cnt < eNB_cnt:
 					ueIdx = 0
-					while ueIdx < len(self.x2ENBConnectedUEs[0][self.cnt]):
-						cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][self.cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
+					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
+						cmd = "curl -XPOST http://" + self.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
 						logging.debug(cmd)
 						fullMessage += cmd + '\n'
 						subprocess.run(cmd, shell=True)
 						ueIdx += 1
-					self.cnt += 1
+					cnt += 1
 				time.sleep(10)
 				# check
 				logging.debug("Checking the Status after X2 Handover")
 				fullMessage += self.X2_Status(1, self.testCase_id + '_post_ho.json') 
-				self.cnt = 0
+				cnt = 0
 				x2Status = True
-				while self.cnt < eNB_cnt:
-					if len(self.x2ENBConnectedUEs[0][self.cnt]) == len(self.x2ENBConnectedUEs[1][cnt]):
+				while cnt < eNB_cnt:
+					if len(self.x2ENBConnectedUEs[0][cnt]) == len(self.x2ENBConnectedUEs[1][cnt]):
 						x2Status = False
-					self.cnt += 1
+					cnt += 1
 				if x2Status:
 					msg = "X2 Handover was successful"
 					logging.debug(msg)
@@ -4816,10 +4816,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	SSH.CreateHtmlTabHeader()
 
-	SSH.cnt = 0
+	SSH.FailReportCnt = 0
 	SSH.prematureExit = True
 	SSH.startTime = int(round(time.time() * 1000))
-	while SSH.cnt < SSH.repeatCounts[0] and SSH.prematureExit:
+	while SSH.FailReportCnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
 			if SSH.prematureExit:
@@ -4907,13 +4907,13 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-		SSH.cnt += 1
-	if  SSH.cnt == SSH.repeatCounts[0] and SSH.prematureExit:
-		logging.debug('Testsuite failed ' + str(SSH.cnt) + ' time(s)')
+		SSH.FailReportCnt += 1
+	if  SSH.FailReportCnt == SSH.repeatCounts[0] and SSH.prematureExit:
+		logging.debug('Testsuite failed ' + str(SSH.FailReportCnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(SSH.cnt) + ' time(s)')
+		logging.info('Testsuite passed after ' + str(SSH.FailReportCnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(True)
 else:
 	Usage()
