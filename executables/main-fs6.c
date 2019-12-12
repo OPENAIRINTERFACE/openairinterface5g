@@ -1408,6 +1408,7 @@ void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
 }
 
 void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t  DuClock, uint64_t startCycle) {
+  initRefTimes(CUprocessing);
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
@@ -1429,6 +1430,7 @@ void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t  DuClock, uint64_t start
 
   hDL(bufferZone)->DuClock=DuClock;
   hDL(bufferZone)->CuSpentMicroSec=(rdtsc()-startCycle)/(cpuf*1000);
+  updateTimesReset(startCycle, &CUprocessing, 1000,  true,"CU entire processing from recv to send");
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
   return;
 }
