@@ -371,7 +371,7 @@ class SSHConnection():
 		self.open(lIpAddr, lUserName, lPassWord)
 		self.command('mkdir -p ' + lSourcePath, '\$', 5)
 		self.command('cd ' + lSourcePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -524,7 +524,7 @@ class SSHConnection():
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)

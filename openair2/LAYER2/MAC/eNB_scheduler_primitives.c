@@ -2523,6 +2523,7 @@ UE_is_to_be_scheduled(module_id_t module_idP,
 {
   UE_TEMPLATE *UE_template = &RC.mac[module_idP]->UE_list.UE_template[CC_id][UE_id];
   UE_sched_ctrl_t *UE_sched_ctl = &RC.mac[module_idP]->UE_list.UE_sched_ctrl[UE_id];
+  int rrc_status;
 
   // do not schedule UE if UL is not working
   if (UE_sched_ctl->ul_failure_timer > 0 || UE_sched_ctl->ul_out_of_sync > 0)
@@ -2535,13 +2536,14 @@ UE_is_to_be_scheduled(module_id_t module_idP,
         UE_id,
         ue_rnti);
 
+  rrc_status = mac_eNB_get_rrc_status(module_idP, ue_rnti);
+
   if (UE_template->scheduled_ul_bytes < UE_template->estimated_ul_buffer ||
       UE_template->ul_SR > 0 || // uplink scheduling request
       (UE_sched_ctl->ul_inactivity_timer > 19 && UE_sched_ctl->ul_scheduled == 0) ||  // every 2 frames when RRC_CONNECTED
       (UE_sched_ctl->ul_inactivity_timer > 10 &&
-       UE_sched_ctl->ul_scheduled == 0 &&
-       mac_eNB_get_rrc_status(module_idP,
-                              ue_rnti) < RRC_CONNECTED)) { // every Frame when not RRC_CONNECTED
+       UE_sched_ctl->ul_scheduled == 0 && rrc_status < RRC_CONNECTED) || // every Frame when not RRC_CONNECTED
+      (UE_sched_ctl->cqi_req_timer > 300 && rrc_status >= RRC_CONNECTED)) { // cqi req timer expired long ago (do not put too low value)
     LOG_D(MAC, "[eNB %d][PUSCH] UE %d/%x should be scheduled (BSR0 estimated size %d, SR %d)\n",
           module_idP,
           UE_id,
