@@ -93,7 +93,7 @@ int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame)
   p = cfg->sch_config.ssb_periodicity.value;
   n_hf = cfg->sch_config.half_frame_index.value;
 
-  // checking if the ssb is transmitted in given frame according to periodicity
+  // if SSB periodicity is 5ms, they are transmitted in both half frames
   if ( (p>10) && (frame%(p/10)) )  
     return 0;
   else {
@@ -101,15 +101,15 @@ int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame)
     // if SSB periodicity is 5ms, they are transmitted in both half frames
     if ( p == 5) {
       if (slot<hf_slots) 
-        n_hf=0;
-      else
-        n_hf=1;
-    }
+      n_hf=0;
+    else
+      n_hf=1;
+  }
 
-    // to set a effective slot number between 0 to hf_slots-1 in the half frame where the SSB is supposed to be
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
     rel_slot = (n_hf)? (slot-hf_slots) : slot;
 
-    // there are two potential SSB per slot
+
     return ( ((ssb_map >> rel_slot*2) & 0x01) || ((ssb_map >> (1+rel_slot*2)) & 0x01) ); 
   }
 }
