@@ -273,15 +273,18 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9){
-	if(fp->frame_type && (fp->ssb_type==2))
-		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-	else
-		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  }  
-  else
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
     fp->Lmax = 64;
+  }
 
+  fp->N_ssb = 0;
+  for (int p=0; p<fp->Lmax; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
 }
