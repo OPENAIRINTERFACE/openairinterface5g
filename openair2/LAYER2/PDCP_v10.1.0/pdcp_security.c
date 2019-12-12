@@ -128,7 +128,7 @@ pdcp_apply_security(
     /* SRBs */
     uint8_t *mac_i;
 
-    LOG_D(PDCP, "[OSA][RB %d] %s Applying control-plane security %d \n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Applying control-plane security %d \n",
           rb_id, (pdcp_pP->is_ue != 0) ? "UE -> eNB" : "eNB -> UE", pdcp_pP->integrityProtAlgorithm);
 
     encrypt_params.message    = pdcp_pdu_buffer;
@@ -145,7 +145,7 @@ pdcp_apply_security(
 
     encrypt_params.key = pdcp_pP->kRRCenc;  // + 128  // bit key
   } else {
-    LOG_D(PDCP, "[OSA][RB %d] %s Applying user-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Applying user-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "UE -> eNB" : "eNB -> UE");
 
     encrypt_params.key = pdcp_pP->kUPenc;//  + 128;
@@ -200,11 +200,11 @@ pdcp_validate_security(
   decrypt_params.key_length = 16;
 
   if (srb_flagP) {
-    LOG_D(PDCP, "[OSA][RB %d] %s Validating control-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Validating control-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "eNB -> UE" : "UE -> eNB");
     decrypt_params.key = pdcp_pP->kRRCenc;// + 128;
   } else {
-    LOG_D(PDCP, "[OSA][RB %d] %s Validating user-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Validating user-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "eNB -> UE" : "UE -> eNB");
     decrypt_params.key = pdcp_pP->kUPenc;// + 128;
   }
@@ -228,7 +228,7 @@ pdcp_validate_security(
     	  " Security: failed MAC-I Algo %X UE %"PRIx16" ",
     	  pdcp_pP->integrityProtAlgorithm,
     	  ctxt_pP->rnti);
-      LOG_E(PDCP, "[OSA][RB %d] %s failed to validate MAC-I (key %llx) of incoming PDU\n",
+      LOG_E(PDCP, "[OSA][RB %ld] %s failed to validate MAC-I (key %llx) of incoming PDU\n",
             rb_id, (pdcp_pP->is_ue != 0) ? "UE" : "eNB",((long long unsigned int*)decrypt_params.key)[0]);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
       return -1;

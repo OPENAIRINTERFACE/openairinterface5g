@@ -133,7 +133,7 @@ typedef struct gtpv1u_enb_data_forwarding_req_s {
 typedef struct gtpv1u_enb_data_forwarding_ind_s {
   uint32_t 				 frame;
   uint8_t 				 enb_flag;
-  uint32_t 				 rb_id;
+  rb_id_t 				 rb_id;
   uint32_t 				 muip;
   uint32_t 				 confirmp;
   uint32_t 				 sdu_size;
@@ -155,7 +155,7 @@ typedef struct gtpv1u_enb_end_marker_req_s {
 typedef struct gtpv1u_enb_end_marker_ind_s {
   uint32_t 			 frame;
   uint8_t 			 enb_flag;
-  uint32_t 			 rb_id;
+  rb_id_t 			 rb_id;
   uint32_t 			 muip;
   uint32_t 			 confirmp;
   uint32_t 			 sdu_size;

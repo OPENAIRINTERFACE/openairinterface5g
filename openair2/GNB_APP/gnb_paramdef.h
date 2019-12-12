@@ -67,83 +67,9 @@ typedef enum {
 
 #define CONFIG_STRING_ACTIVE_RUS                  "Active_RUs"
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*    RUs  configuration section name */
-#define CONFIG_STRING_RU_LIST                     "RUs"
-#define CONFIG_STRING_RU_CONFIG                   "ru_config"
 
-/*    RUs configuration parameters name   */
-#define CONFIG_STRING_RU_LOCAL_IF_NAME            "local_if_name"
-#define CONFIG_STRING_RU_LOCAL_ADDRESS            "local_address"
-#define CONFIG_STRING_RU_REMOTE_ADDRESS           "remote_address"
-#define CONFIG_STRING_RU_LOCAL_PORTC              "local_portc"
-#define CONFIG_STRING_RU_REMOTE_PORTC             "remote_portc"
-#define CONFIG_STRING_RU_LOCAL_PORTD              "local_portd"
-#define CONFIG_STRING_RU_REMOTE_PORTD             "remote_portd"
-#define CONFIG_STRING_RU_LOCAL_RF                 "local_rf"
-#define CONFIG_STRING_RU_TRANSPORT_PREFERENCE     "tr_preference"
-#define CONFIG_STRING_RU_BAND_LIST                "bands"
-#define CONFIG_STRING_RU_GNB_LIST                 "gNB_instances"
-#define CONFIG_STRING_RU_NB_TX                    "nb_tx"
-#define CONFIG_STRING_RU_NB_RX                    "nb_rx"
-#define CONFIG_STRING_RU_ATT_TX                   "att_tx"
-#define CONFIG_STRING_RU_ATT_RX                   "att_rx"
-#define CONFIG_STRING_RU_MAX_RS_EPRE              "max_pdschReferenceSignalPower"
-#define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
-#define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
-#define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
-#define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
-#define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
-
-#define RU_LOCAL_IF_NAME_IDX          0
-#define RU_LOCAL_ADDRESS_IDX          1
-#define RU_REMOTE_ADDRESS_IDX         2
-#define RU_LOCAL_PORTC_IDX            3
-#define RU_REMOTE_PORTC_IDX           4
-#define RU_LOCAL_PORTD_IDX            5
-#define RU_REMOTE_PORTD_IDX           6
-#define RU_TRANSPORT_PREFERENCE_IDX   7
-#define RU_LOCAL_RF_IDX               8
-#define RU_NB_TX_IDX                  9
-#define RU_NB_RX_IDX                  10
-#define RU_MAX_RS_EPRE_IDX            11
-#define RU_MAX_RXGAIN_IDX             12
-#define RU_BAND_LIST_IDX              13
-#define RU_GNB_LIST_IDX               14
-#define RU_ATT_TX_IDX                 15
-#define RU_ATT_RX_IDX                 16
-#define RU_IS_SLAVE_IDX               17
-#define RU_NBIOTRRC_LIST_IDX          18
-#define RU_SDR_ADDRS                  19
-#define RU_SDR_CLK_SRC                20
-#define RU_SF_EXTENSION_IDX           21
-#define RU_END_OF_BURST_DELAY_IDX     22
-
-
-
-/*-----------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            RU configuration parameters                                                                  */
-/*   optname                                   helpstr   paramflags    XXXptr          defXXXval                 type           numelt     */
-/*-----------------------------------------------------------------------------------------------------------------------------------------*/
-#define GNBRUPARAMS_DESC { \
-{CONFIG_STRING_RU_LOCAL_IF_NAME,            	 NULL,       0,       strptr:NULL,     defstrval:"lo",  	      TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_LOCAL_ADDRESS,            	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",     TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_REMOTE_ADDRESS,           	 NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",	  TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_LOCAL_PORTC,              	 NULL,       0,       uptr:NULL,       defuintval:50000,          TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_REMOTE_PORTC,             	 NULL,       0,       uptr:NULL,       defuintval:50000,          TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_LOCAL_PORTD,              	 NULL,       0,       uptr:NULL,       defuintval:50001,          TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_REMOTE_PORTD,             	 NULL,       0,       uptr:NULL,       defuintval:50001,          TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_TRANSPORT_PREFERENCE,     	 NULL,       0,       strptr:NULL,     defstrval:"udp_if5",       TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_LOCAL_RF,                 	 NULL,       0,       strptr:NULL,     defstrval:"yes",           TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_NB_TX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,              TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_NB_RX,                    	 NULL,       0,       uptr:NULL,       defuintval:1,              TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_MAX_RS_EPRE,              	 NULL,       0,       iptr:NULL,       defintval:-29,             TYPE_INT,         0}, \
-{CONFIG_STRING_RU_MAX_RXGAIN,               	 NULL,       0,       iptr:NULL,       defintval:120,             TYPE_INT,         0}, \
-{CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFNRBANDS, TYPE_INTARRAY,    1}, \
-{CONFIG_STRING_RU_GNB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,    TYPE_INTARRAY,    1}, \
-{CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,               TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,               TYPE_UINT,        0}, \
-{CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFGNBS,    TYPE_INTARRAY,    1}, \
-}
+/*    RUs  configuration for gNB is the same for eNB */
+/*    Check file enb_paramdef.h */
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

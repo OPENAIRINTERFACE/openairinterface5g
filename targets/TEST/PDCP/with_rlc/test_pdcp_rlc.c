@@ -226,7 +226,7 @@ int main(int argc, char **argv)
   mac_xface = malloc(sizeof(MAC_xface));
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
 
-  rlc_module_init ();
+  rlc_module_init (1);
   pdcp_module_init();
   logInit();
 

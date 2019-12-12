@@ -93,6 +93,7 @@ typedef enum {
 #define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
 #define CONFIG_STRING_RU_END_OF_BURST_DELAY       "end_of_burst_delay"
 #define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
+#define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -118,23 +119,22 @@ typedef enum {
 #define RU_SF_EXTENSION_IDX           21
 #define RU_END_OF_BURST_DELAY_IDX     22
 #define RU_OTA_SYNC_ENABLE_IDX        23
-
-
+#define RU_BF_WEIGHTS_LIST_IDX        24
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 #define RUPARAMS_DESC { \
-    {CONFIG_STRING_RU_LOCAL_IF_NAME,               NULL,       0,       strptr:NULL,     defstrval:"lo",          TYPE_STRING,    0}, \
-    {CONFIG_STRING_RU_LOCAL_ADDRESS,               NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",   TYPE_STRING,    0}, \
-    {CONFIG_STRING_RU_REMOTE_ADDRESS,              NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",   TYPE_STRING,    0}, \
+    {CONFIG_STRING_RU_LOCAL_IF_NAME,               NULL,       0,       strptr:NULL,     defstrval:"lo",          TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_LOCAL_ADDRESS,               NULL,       0,       strptr:NULL,     defstrval:"127.0.0.2",   TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_REMOTE_ADDRESS,              NULL,       0,       strptr:NULL,     defstrval:"127.0.0.1",   TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_LOCAL_PORTC,                 NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_REMOTE_PORTC,                NULL,       0,       uptr:NULL,       defuintval:50000,        TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_LOCAL_PORTD,                 NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_REMOTE_PORTD,                NULL,       0,       uptr:NULL,       defuintval:50001,        TYPE_UINT,        0}, \
-    {CONFIG_STRING_RU_TRANSPORT_PREFERENCE,        NULL,       0,       strptr:NULL,     defstrval:"udp_if5",     TYPE_STRING,    0}, \
-    {CONFIG_STRING_RU_LOCAL_RF,                    NULL,       0,       strptr:NULL,     defstrval:"yes",         TYPE_STRING,    0}, \
+    {CONFIG_STRING_RU_TRANSPORT_PREFERENCE,        NULL,       0,       strptr:NULL,     defstrval:"udp_if5",     TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_LOCAL_RF,                    NULL,       0,       strptr:NULL,     defstrval:"yes",         TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_NB_TX,                       NULL,       0,       uptr:NULL,       defuintval:1,            TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_NB_RX,                       NULL,       0,       uptr:NULL,       defuintval:1,            TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_MAX_RS_EPRE,                 NULL,       0,       iptr:NULL,       defintval:-29,           TYPE_INT,         0}, \
@@ -143,13 +143,14 @@ typedef enum {
     {CONFIG_STRING_RU_ENB_LIST,                    NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
     {CONFIG_STRING_RU_ATT_TX,                      NULL,       0,       uptr:NULL,       defintval:0,             TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_ATT_RX,                      NULL,       0,       uptr:NULL,       defintval:0,             TYPE_UINT,        0}, \
-    {CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
-    {CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
+    {CONFIG_STRING_RU_IS_SLAVE,                    NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_NBIOTRRC_LIST,               NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
     {CONFIG_STRING_RU_SDR_ADDRS,                   NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_SDR_CLK_SRC,                 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
-    {CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
-    {CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
-    {CONFIG_STRING_RU_OTA_SYNC_ENABLE,               NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_SF_EXTENSION,                NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
+    {CONFIG_STRING_RU_END_OF_BURST_DELAY,          NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
+    {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

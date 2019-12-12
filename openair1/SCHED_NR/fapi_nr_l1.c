@@ -139,7 +139,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id][CC_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
-  uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
+  //uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
  

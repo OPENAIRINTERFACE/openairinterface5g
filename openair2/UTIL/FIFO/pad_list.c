@@ -591,7 +591,7 @@ void pkt_list_display (Packet_OTG_List_t *listP) {
 
     if (cursor) {
       while (cursor != NULL) {
-        printf ("Pkt (DST %d, RB %d)\n", (cursor->otg_pkt).dst_id, (cursor->otg_pkt).rb_id);
+        printf ("Pkt (DST %d, RB %ld)\n", (cursor->otg_pkt).dst_id, (cursor->otg_pkt).rb_id);
         //msg ("From (%d,%d) To (%d,%d)\n", (cursor->job).node1, (cursor->job).master1, (cursor->job).node2, (cursor->job).master2);
         cursor = cursor->next;
         nb_elements++;
