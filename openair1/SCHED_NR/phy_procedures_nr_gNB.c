@@ -366,7 +366,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     switch (UL_tti_req->pdus_list[i].pdu_type) {
     case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
       {
-	LOG_I(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
 	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      

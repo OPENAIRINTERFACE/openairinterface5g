@@ -49,7 +49,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #ifdef NR_PDCCH_DCI_DEBUG
 #define LOG_DNL(a, ...) printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
 #define LOG_DD(a, ...) printf("\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
