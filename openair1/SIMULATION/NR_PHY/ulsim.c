@@ -115,7 +115,7 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 uint64_t get_softmodem_optmask(void) {return 0;}
-int rlc_module_init (void) {return(0);}
+int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
 

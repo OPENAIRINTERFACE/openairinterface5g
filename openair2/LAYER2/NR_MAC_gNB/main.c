@@ -128,7 +128,7 @@ void mac_top_init_gNB(void)
 
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
-  AssertFatal(rlc_module_init() == 0,"Could not initialize RLC layer\n");
+  AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
 
   // These should be out of here later
   pdcp_layer_init();

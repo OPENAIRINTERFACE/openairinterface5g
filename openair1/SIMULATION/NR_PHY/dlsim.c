@@ -68,7 +68,7 @@ uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
-int rlc_module_init (void) {return(0);}
+int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 int rrc_init_nr_global_param (void) {return(0);}
 void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);

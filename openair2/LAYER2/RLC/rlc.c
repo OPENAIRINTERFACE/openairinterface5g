@@ -601,7 +601,8 @@ void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
 }
 //-----------------------------------------------------------------------------
 int
-rlc_module_init (void) {
+rlc_module_init (int enb_flag) { /* enb_flag is unused, but needed for binary
+                                  * compatibility with rlc_v2 */
   //-----------------------------------------------------------------------------
   int          k;
   module_id_t  module_id1;
