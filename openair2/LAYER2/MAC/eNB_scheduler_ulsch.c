@@ -171,7 +171,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
       }
       else {
-        UE_scheduling_control->pusch_snr[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr[CC_idP] * tpc_foggot_filter + (double)ul_cqi * (1-tpc_foggot_filter));
+        UE_scheduling_control->pusch_snr[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr[CC_idP] * tpc_forgetting_filter + (double)ul_cqi * (1-tpc_forgetting_filter));
       }
       
       UE_scheduling_control->ul_consecutive_errors = 0;
