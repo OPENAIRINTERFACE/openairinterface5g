@@ -66,6 +66,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   subframeP);
 
 int configure_fapi_dl_Tx(int Mod_id,
+			 int *CCEIndeces,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req);
 
@@ -154,5 +155,14 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 uint16_t nr_dci_size(nr_dci_format_t format,
                          nr_rnti_type_t rnti_type,
                          uint16_t N_RB);
+
+int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
+		     int bwp_id,
+		     int coreset_id,
+		     int aggregation,
+		     int search_space, // 0 common, 1 ue-specific
+		     int UE_id,
+		     int m
+		     );
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

@@ -64,6 +64,8 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
+#define CEILIDIV(a,b) ((a+b-1)/b)
+
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -132,6 +134,67 @@ static inline uint8_t get_max_cces(uint8_t scs) {
 int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
 
     return (0);
+}
+
+int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
+		     int bwp_id,
+		     int coreset_id,
+		     int aggregation,
+		     int search_space, // 0 common, 1 ue-specific
+		     int UE_id,
+		     int m
+		     ) {
+
+  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
+  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
+  NR_UE_list_t *UE_list = &nr_mac->UE_list;
+
+  NR_BWP_Downlink_t *bwp;
+  NR_CellGroupConfig_t *secondaryCellGroup;
+
+  NR_ControlResourceSet_t *coreset;
+
+  if (search_space == 1) {
+    AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+    coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[coreset_id];
+  }
+  else {
+    AssertFatal(1==0,"Add code for common search space\n");
+  }
+
+  int *cce_list = nr_mac->cce_list[bwp_id][coreset_id];
+
+
+  int n_rb=0;
+  for (int i=0;i<6;i++)
+    for (int j=0;j<8;j++) {
+      n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+    }
+  n_rb*=6;
+
+  uint16_t N_reg = n_rb * coreset->duration;
+  uint16_t Y=0, N_cce, M_s_max, n_CI=0, tmp, C=0;
+  uint16_t n_RNTI = search_space == 1 ? UE_list->rnti[UE_id]:0;
+  uint32_t A[3]={39827,39829,39839};
+
+  N_cce = N_reg / NR_NB_REG_PER_CCE;
+
+  M_s_max = (aggregation==4)?4:(aggregation==8)?2:1;
+
+  if (search_space == 1) {
+    Y = (A[0]*n_RNTI)%65537; // Candidate 0, antenna port 0
+  }
+  int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
+
+  for (int i=0;i<aggregation;i++) 
+    if (cce_list[first_cce+i] != 0) return(-1);
+  
+  for (int i=0;i<aggregation;i++) cce_list[first_cce+i] = 1;
+
+  return(first_cce);
+
 }
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,

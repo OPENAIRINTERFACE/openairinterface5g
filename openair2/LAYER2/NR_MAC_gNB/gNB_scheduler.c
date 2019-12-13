@@ -339,6 +339,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
   }
+  memset(RC.nrmac[module_idP]->cce_list[0][0],0,sizeof(int)*MAX_NUM_CCE);
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
   /*

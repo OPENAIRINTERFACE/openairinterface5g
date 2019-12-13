@@ -59,6 +59,9 @@
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#define MAX_NUM_BWP 2
+#define MAX_NUM_CORESET 2
+#define MAX_NUM_CCE 90
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -173,6 +176,8 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t rx_ulsch_sdu;  // include rlc_data_ind
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
+  /// CCE lists
+  int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
 
 typedef struct {
