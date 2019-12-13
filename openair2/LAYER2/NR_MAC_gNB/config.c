@@ -367,11 +367,14 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
  
   // SSB Table Configuration
   int scs_scaling = 1<<(cfg->ssb_config.scs_common.value);
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
+    scs_scaling = scs_scaling*3;
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
+    scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling);
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
-
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;

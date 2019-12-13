@@ -44,7 +44,7 @@ void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
   AssertFatal(dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag== 1, "bchPayloadFlat %d != 1\n",
               dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag);
 
-  LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex);
+  LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
   gNB->ssb_pdu = &dl_tti_pdu->ssb_pdu;
 }
 
