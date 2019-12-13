@@ -69,7 +69,6 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   int mib_sdu_length;
   int CC_id;
 
-
   AssertFatal(slotP == 0, "Subframe must be 0\n");
   AssertFatal((frameP & 7) == 0, "Frame must be a multiple of 8\n");
 
@@ -107,34 +106,36 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       AssertFatal(cc->ServingCellConfigCommon->ssbSubcarrierSpacing,"ssbSubcarrierSpacing is null\n");
       AssertFatal(cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],"band is null\n");
       long band = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-      uint32_t ssb_offset0 = cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+      uint32_t ssb_offset0 = *cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - cc->ServingCellConfigCommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
       int ratio;
       switch (*cc->ServingCellConfigCommon->ssbSubcarrierSpacing) {
       case NR_SubcarrierSpacing_kHz15:
-	AssertFatal(band <= 79, "Band %d is not possible for SSB with 15 kHz SCS\n",band);
+	AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
 	if (band<77) // below 3GHz
 	  ratio=3; // NRARFCN step is 5 kHz
 	else
 	  ratio=1; // NRARFCN step is 15 kHz
 	break;
       case NR_SubcarrierSpacing_kHz30:
-	AssertFatal(band <= 79, "Band %d is not possible for SSB with 15 kHz SCS\n",band);
+	AssertFatal(band <= 79, "Band %ld is not possible for SSB with 15 kHz SCS\n",band);
 	if (band<77) // below 3GHz
 	  ratio=6; // NRARFCN step is 5 kHz
 	else
 	  ratio=2; // NRARFCN step is 15 kHz
 	break;
       case NR_SubcarrierSpacing_kHz120:
-	AssertFatal(band >= 257, "Band %d is not possible for SSB with 120 kHz SCS\n",band);
-	ratio=8; // NRARFCN step is 15 kHz
+	AssertFatal(band >= 257, "Band %ld is not possible for SSB with 120 kHz SCS\n",band);
+	ratio=2; // NRARFCN step is 15 kHz
 	break;
       case NR_SubcarrierSpacing_kHz240:
-	AssertFatal(band >= 257, "Band %d is not possible for SSB with 240 kHz SCS\n",band);
-	ratio=16; // NRARFCN step is 15 kHz
+	AssertFatal(band >= 257, "Band %ld is not possible for SSB with 240 kHz SCS\n",band);
+	ratio=4; // NRARFCN step is 15 kHz
 	break;
+      default:
+        AssertFatal(1==0,"SCS %ld not allowed for SSB \n", *cc->ServingCellConfigCommon->ssbSubcarrierSpacing);
       }
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = 0; //kSSB
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/ratio;
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12);
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = ((uint32_t)cc->MIB_pdu.payload[0]) & ((1<<24)-1);
       dl_req->nPDUs++;

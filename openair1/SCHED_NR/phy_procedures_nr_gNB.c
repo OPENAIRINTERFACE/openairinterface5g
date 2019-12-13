@@ -117,6 +117,8 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
       ssb_index = i + 2*rel_slot; // computing the ssb_index
       if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	
+        gNB->ssb_pdu->ssb_pdu_rel15.SsbBlockIndex = ssb_index;
+ 
 	int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
 	ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
 	
@@ -137,7 +139,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			 txdataF[0],
 			 AMP,
 			 ssb_start_symbol,
-			 n_hf,fp->Lmax,ssb_index,
+			 n_hf,fp->Lmax,
 			 frame, cfg, fp);
       }
     }

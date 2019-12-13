@@ -46,6 +46,10 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
                  int frame,
                  int slot);
 
+void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
+		    int frame,
+		    int slot);
+
 void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m);
 
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
