@@ -93,4 +93,14 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 */
 void nr_dft(int32_t *z,int32_t *d, uint32_t Msc_PUSCH);
 
+int nr_beam_precoding(int32_t **txdataF,
+	              int32_t **txdataF_BF,
+                      NR_DL_FRAME_PARMS *frame_parms,
+	              int32_t ***beam_weights,
+                      int slot,
+                      int symbol,
+                      int aa,
+                      int nb_antenna_ports
+);
+
 #endif

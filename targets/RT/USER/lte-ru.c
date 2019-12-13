@@ -81,6 +81,7 @@
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
+static int DEFBFW[] = {0x00007fff};
 
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"

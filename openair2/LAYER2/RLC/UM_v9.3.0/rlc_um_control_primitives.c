@@ -50,7 +50,7 @@ void config_req_rlc_um (
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_p = &rlc_union_p->rlc.um;
-    LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d RB %u\n",
+    LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" CONFIG_REQ timer_reordering=%d sn_field_length=%d is_mXch=%d RB %ld\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
           config_um_pP->timer_reordering,
           config_um_pP->sn_field_length,
@@ -69,7 +69,7 @@ void config_req_rlc_um (
         config_um_pP->is_mXch);
     }
   } else {
-    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ RB %u  RLC UM NOT FOUND\n",
+    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ RB %ld  RLC UM NOT FOUND\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
           rb_idP);
   }
@@ -143,14 +143,14 @@ void config_req_rlc_um_asn1 (
   //             rb_idP,
   //             srb_flagP);
   if(h_rc != HASH_TABLE_OK) {
-    LOG_E(RLC, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u\n",
+    LOG_E(RLC, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %ld, srb flag %u\n",
           ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
     return;
   }
 
   rlc_p = &rlc_union_p->rlc.um;
   //-----------------------------------------------------------------------------
-  LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %u \n",
+  LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %ld \n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
         (dl_rlc_pP && dl_rlc_pP->t_Reordering<31)?t_Reordering_tab[dl_rlc_pP->t_Reordering]:-1,
         rb_idP);
@@ -170,7 +170,7 @@ void config_req_rlc_um_asn1 (
           break;
 
         default:
-          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
+          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %ld INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
                 rlc_p->rb_id,
                 ul_rlc_pP->sn_FieldLength);
@@ -198,7 +198,7 @@ void config_req_rlc_um_asn1 (
           break;
 
         default:
-          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
+          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %ld INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
                 rlc_p->rb_id,
                 dl_rlc_pP->sn_FieldLength);
@@ -217,7 +217,7 @@ void config_req_rlc_um_asn1 (
       if (dl_rlc_pP->t_Reordering<32) {
         t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
       } else {
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
+        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %ld INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->t_Reordering);
@@ -382,7 +382,7 @@ void rlc_um_configure(
     rlc_pP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
     rlc_pP->rx_header_min_length_in_bytes = 1;
   } else if (rx_sn_field_lengthP != 0) {
-    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n",
+    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %ld INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->rb_id,
           rx_sn_field_lengthP);
@@ -400,7 +400,7 @@ void rlc_um_configure(
     rlc_pP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
     rlc_pP->tx_header_min_length_in_bytes = 1;
   } else if (tx_sn_field_lengthP != 0) {
-    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n",
+    LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %ld INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->rb_id,
           tx_sn_field_lengthP);
@@ -428,7 +428,7 @@ void rlc_um_set_debug_infos(
   const srb_flag_t        srb_flagP,
   const rb_id_t           rb_idP,
   const logical_chan_id_t chan_idP) {
-  LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %d srb_flag %d\n",
+  LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %ld srb_flag %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
         rb_idP,
         srb_flagP);

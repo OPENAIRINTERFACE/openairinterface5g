@@ -664,7 +664,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
-  //get_common_options();
+  get_common_options();
 #if T_TRACER
   T_Config_Init();
 #endif

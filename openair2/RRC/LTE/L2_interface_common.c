@@ -123,10 +123,10 @@ rrc_data_ind(
   rb_id_t    DCCH_index = Srb_id;
 
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+    LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   } else {
-    LOG_D(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
+    LOG_D(RRC, "[eNB %d] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           DCCH_index,

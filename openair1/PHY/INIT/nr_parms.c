@@ -93,7 +93,7 @@ int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame)
   p = cfg->sch_config.ssb_periodicity.value;
   n_hf = cfg->sch_config.half_frame_index.value;
 
-  // checking if the ssb is transmitted in given frame according to periodicity
+  // if SSB periodicity is 5ms, they are transmitted in both half frames
   if ( (p>10) && (frame%(p/10)) )  
     return 0;
   else {
@@ -101,15 +101,15 @@ int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame)
     // if SSB periodicity is 5ms, they are transmitted in both half frames
     if ( p == 5) {
       if (slot<hf_slots) 
-        n_hf=0;
-      else
-        n_hf=1;
-    }
+      n_hf=0;
+    else
+      n_hf=1;
+  }
 
-    // to set a effective slot number between 0 to hf_slots-1 in the half frame where the SSB is supposed to be
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
     rel_slot = (n_hf)? (slot-hf_slots) : slot;
 
-    // there are two potential SSB per slot
+
     return ( ((ssb_map >> rel_slot*2) & 0x01) || ((ssb_map >> (1+rel_slot*2)) & 0x01) ); 
   }
 }
@@ -273,15 +273,18 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9){
-	if(fp->frame_type && (fp->ssb_type==2))
-		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-	else
-		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  }  
-  else
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
     fp->Lmax = 64;
+  }
 
+  fp->N_ssb = 0;
+  for (int p=0; p<fp->Lmax; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
 }

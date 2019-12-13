@@ -110,7 +110,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
 int rlcmac_init_global_param_ue(void) {
   LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-  if (rlc_module_init() != 0) {
+  if (rlc_module_init(0) != 0) {
     return (-1);
   }
 
