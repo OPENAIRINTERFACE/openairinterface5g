@@ -39,6 +39,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "SCHED_NR/sched_nr.h"
 #include "defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

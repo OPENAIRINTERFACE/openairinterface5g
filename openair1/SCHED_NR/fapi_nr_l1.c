@@ -161,7 +161,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB->num_pdsch_rnti=0;
   gNB->pdcch_pdu = NULL;
   gNB->pbch_configured=0;
-  gNB->ssb_pdu=NULL;
 
   for (int i=0;i<number_dl_pdu;i++) {
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
