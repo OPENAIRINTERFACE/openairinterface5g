@@ -48,10 +48,10 @@
 #include "assertions.h"
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface.h"
+  #include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/sim.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h" // for taus
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -62,24 +62,23 @@ extern RAN_CONTEXT_t RC;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 int8_t
 get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
-		       uint8_t mbsfn_sync_area)
-{
-    // currently there is one-to-one mapping between sf allocation pattern and sync area
-    if (mbsfn_sync_area > MAX_MBSFN_AREA) {
-	LOG_W(MAC,
-	      "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
-	      module_idP, CC_id, mbsfn_sync_area);
-	return -1;
-    } else if (RC.mac[module_idP]->
-	       common_channels[CC_id].mbsfn_SubframeConfig[mbsfn_sync_area]
-	       != NULL) {
-	return mbsfn_sync_area;
-    } else {
-	LOG_W(MAC,
-	      "[eNB %d] CC_id %d MBSFN Subframe Config pattern %d not found \n ",
-	      module_idP, CC_id, mbsfn_sync_area);
-	return -1;
-    }
+                       uint8_t mbsfn_sync_area) {
+  // currently there is one-to-one mapping between sf allocation pattern and sync area
+  if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
+    LOG_W(MAC,
+          "[eNB %d] CC_id %d MBSFN synchronization area %d out of range\n ",
+          module_idP, CC_id, mbsfn_sync_area);
+    return -1;
+  } else if (RC.mac[module_idP]->
+             common_channels[CC_id].mbsfn_SubframeConfig[mbsfn_sync_area]
+             != NULL) {
+    return mbsfn_sync_area;
+  } else {
+    LOG_W(MAC,
+          "[eNB %d] CC_id %d MBSFN Subframe Config pattern %d not found \n ",
+          module_idP, CC_id, mbsfn_sync_area);
+    return -1;
+  }
 }
 
 uint32_t bytes_in_buffer=0;
@@ -93,6 +92,7 @@ uint8_t msi_sfs=0;
 
 
 //MSI_ELEMENT * ptr =NULL;
+
 
 int
 schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
@@ -906,13 +906,13 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
      */
 }
 
+
 MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-		     sub_frame_t subframeP)
-{
-    //  RC.mac[module_idP]->MCH_pdu.mcs=0;
-    //LOG_D(MAC," MCH_pdu.mcs is %d\n", RC.mac[module_idP]->MCH_pdu.mcs);
-//#warning "MCH pdu should take the CC_id index"
-    return (&RC.mac[module_idP]->common_channels[CC_id].MCH_pdu);
+                     sub_frame_t subframeP) {
+  //  RC.mac[module_idP]->MCH_pdu.mcs=0;
+  //LOG_D(MAC," MCH_pdu.mcs is %d\n", RC.mac[module_idP]->MCH_pdu.mcs);
+  //#warning "MCH pdu should take the CC_id index"
+  return (&RC.mac[module_idP]->common_channels[CC_id].MCH_pdu);
 }
 
 #endif

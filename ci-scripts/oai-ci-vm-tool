@@ -210,7 +210,7 @@ function variant__v8__ue_ethernet {
 function variant__v10__flexran_rtc {
     ARCHIVES_LOC=flexran
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="cmake . && make -j2"
+    BUILD_OPTIONS="cmake .. && make -j2"
     VARIANT_INFO="non-OSA"
 }
 function variant__v20__l1_sim {
