@@ -299,7 +299,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
-      if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
+      if ((mac->common_channels[CC_id].ServingCellConfigCommon->tdd_UL_DL_ConfigurationCommon==NULL) ||
           (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
         sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
       else

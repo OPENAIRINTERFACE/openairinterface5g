@@ -920,6 +920,9 @@ init_opt();
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
+
 
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
@@ -939,9 +942,6 @@ init_opt();
     flexran_agent_start(i);
   }
 */
-
-  if(IS_SOFTMODEM_NOS1)
-    init_pdcp();
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);

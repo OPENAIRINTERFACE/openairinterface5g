@@ -72,7 +72,6 @@ typedef struct {
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
   NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
   long ul_Bandwidth;
   /// Outgoing MIB PDU for PHY

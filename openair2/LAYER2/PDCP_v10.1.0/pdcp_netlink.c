@@ -221,7 +221,7 @@ void *pdcp_netlink_thread_fct(void *arg)
             pdcp_thread_read_state = 1;
             memcpy((void *)&new_data_p->pdcp_read_header, (void *)NLMSG_DATA(nas_nlh_rx), sizeof(pdcp_data_req_header_t));
             LOG_I(PDCP, "[NETLINK_THREAD] RX pdcp_data_req_header_t inst %u, "
-                  "rb_id %u data_size %d\n",
+                  "rb_id %ld data_size %d\n",
                   new_data_p->pdcp_read_header.inst,
                   new_data_p->pdcp_read_header.rb_id,
                   new_data_p->pdcp_read_header.data_size);

@@ -87,7 +87,7 @@ extern pthread_mutex_t pdcp_mutex;
 extern pthread_cond_t  pdcp_cond;
 extern int             pdcp_instance_cnt;
 
-#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] "
+#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld] "
 
 #define PROTOCOL_PDCP_CTXT_ARGS(CTXT_Pp, pDCP_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
   (pDCP_Pp->is_srb) ? "SRB" : "DRB",\

@@ -332,6 +332,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t Lmax;
   /// SS block pattern (max 64 ssb, each bit is on/off ssb)
   uint64_t L_ssb;
+  /// Total number of SSB transmitted
+  uint8_t N_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 

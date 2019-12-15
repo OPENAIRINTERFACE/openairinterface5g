@@ -71,8 +71,8 @@ typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
 typedef int16_t               smodule_id_t;
-typedef uint16_t              rb_id_t;
-typedef uint16_t              srb_id_t;
+typedef long              rb_id_t;
+typedef long              srb_id_t;
 
 typedef boolean_t             MBMS_flag_t;
 #define  MBMS_FLAG_NO         FALSE

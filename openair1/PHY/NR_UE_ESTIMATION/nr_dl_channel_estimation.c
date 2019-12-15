@@ -205,9 +205,10 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
-  int slot_pbch;
+  //int slot_pbch;
+  //fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
   // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
-  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
+  //uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
@@ -873,7 +874,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     //}
     
     // check if PRB crosses DC and improve estimates around DC
-    if ((bwp_start_subcarrier >= ue->frame_parms.ofdm_symbol_size/2) && (bwp_start_subcarrier+nb_rb_pdsch*12 >= ue->frame_parms.ofdm_symbol_size)) {
+    if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pdsch*12 >= ue->frame_parms.ofdm_symbol_size)) {
       dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
       uint16_t idxDC = 2*(ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
       uint16_t idxPil = idxDC/2;
