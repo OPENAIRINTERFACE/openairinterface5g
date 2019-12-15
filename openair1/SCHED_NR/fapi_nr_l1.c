@@ -200,7 +200,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     }
   }
 
-  memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  if (UL_tti_req) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB,
