@@ -247,13 +247,13 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
     pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<i;
 
-#ifdef DEBUG_PBCH_ENCODING
+  //#ifdef DEBUG_PBCH_ENCODING
 
   for (int i=0; i<3; i++)
     printf("pbch_pdu[%d]: 0x%02x\n", i, pbch_pdu[i]);
 
   printf("PBCH payload = 0x%08x\n",pbch->pbch_a);
-#endif
+  //#endif
 
   // Extra byte generation
   for (int i=0; i<4; i++)

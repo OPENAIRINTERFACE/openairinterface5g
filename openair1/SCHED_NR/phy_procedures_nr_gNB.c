@@ -119,7 +119,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
       ssb_index = i + 2*rel_slot; // computing the ssb_index
       if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	
-        gNB->ssb_pdu->ssb_pdu_rel15.SsbBlockIndex = ssb_index;
+        gNB->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = ssb_index;
  
 	int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
 	ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
@@ -136,7 +136,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 	
 	nr_generate_pbch(&gNB->pbch,
-			 gNB->ssb_pdu,
+			 &gNB->ssb_pdu,
 			 gNB->nr_pbch_interleaver,
 			 txdataF[0],
 			 AMP,
@@ -177,7 +177,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,1);
   if (nfapi_mode == 0 || nfapi_mode == 1) { 
-    if ((!(frame%ssb_frame_periodicity)) && (gNB->ssb_pdu))  // generate SSB only for given frames according to SSB periodicity
+    if ((!(frame%ssb_frame_periodicity)))  // generate SSB only for given frames according to SSB periodicity
       nr_common_signal_procedures(gNB,frame, slot);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,0);

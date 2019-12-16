@@ -45,7 +45,7 @@ void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
               dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag);
 
   LOG_I(PHY,"%d.%d : pbch_pdu: %x\n",frame,slot,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
-  gNB->ssb_pdu = &dl_tti_pdu->ssb_pdu;
+  memcpy((void*)&gNB->ssb_pdu,&dl_tti_pdu->ssb_pdu,sizeof(dl_tti_pdu->ssb_pdu));
 }
 
 /*void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int subframe,gNB_L1_rxtx_proc_t *proc,
@@ -151,7 +151,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
 
-  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d \n",
+  LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
         frame,slot,
         DL_req->SFN,DL_req->Slot,number_dl_pdu,
         TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs);
