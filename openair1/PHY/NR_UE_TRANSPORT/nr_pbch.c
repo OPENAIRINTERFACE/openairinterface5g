@@ -71,7 +71,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
-    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
+    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %u\n",frame_parms->nushift,
            (rx_offset + ((symbol+s_offset)*(frame_parms->ofdm_symbol_size))),symbol);
     int16_t *p = (int16_t *)rxF;
 
@@ -425,7 +425,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int max_h=0;
   int symbol;
   //uint8_t pbch_a[64];
-  uint8_t *pbch_a = malloc(sizeof(uint8_t) * 32);
+//FT ?? cppcheck doesn't like pbch_a allocation because of line 525..and i don't get what this variable is for..
+//uint8_t *pbch_a = malloc(sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
@@ -438,7 +439,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint8_t decoderListSize = 8, pathMetricAppr = 0;
   //time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
   //time_stats_t path_metric,sorting,update_LLR;
-  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
+// FT ?? cppcheck fix  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
@@ -522,7 +523,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
   pbch_e_rx = nr_ue_pbch_vars->llr;
   //demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
-  pbch_a = nr_ue_pbch_vars->pbch_a;
+// FT?? cppcheck fix -  pbch_a = nr_ue_pbch_vars->pbch_a;
 #ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
   short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][20*12]);
