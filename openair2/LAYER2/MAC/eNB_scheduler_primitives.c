@@ -2217,6 +2217,7 @@ add_new_ue(module_id_t mod_idP,
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = 0;
 
     for (j = 0; j < 8; j++) {
       UE_info->UE_template[cc_idP][UE_id].oldNDI[j] = 0;

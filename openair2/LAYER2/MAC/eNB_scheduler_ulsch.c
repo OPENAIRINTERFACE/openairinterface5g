@@ -166,14 +166,16 @@ rx_sdu(const module_id_t enb_mod_idP,
        * maybe it's even not correct at all?
        */
       UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
+      UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      
       double tpc_forgetting_filter=0.75;
-      if(UE_scheduling_control->pusch_snr[CC_idP] == 0) {
-        UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      if(UE_scheduling_control->pusch_snr_avg[CC_idP] == 0) {
+        UE_scheduling_control->pusch_snr_avg[CC_idP] = ul_cqi;
       }
       else {
-        UE_scheduling_control->pusch_snr[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr[CC_idP] * tpc_forgetting_filter + (double)ul_cqi * (1-tpc_forgetting_filter));
+        UE_scheduling_control->pusch_snr_avg[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_avg[CC_idP] * tpc_forgetting_filter + (double)ul_cqi * (1-tpc_forgetting_filter));
       }
-      
+
       UE_scheduling_control->ul_consecutive_errors = 0;
       first_rb = UE_template_ptr->first_rb_ul[harq_pid];
 
@@ -1992,7 +1994,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           cqi_req = 0;
           /* Power control: compute the expected ULSCH RX snr (for the stats) */
           /* This is the normalized snr and this should be constant (regardless of mcs) */
-          snr = (5 * UE_sched_ctrl->pusch_snr[CC_id] - 640) / 10;
+          snr = (5 * UE_sched_ctrl->pusch_snr_avg[CC_id] - 640) / 10;
           target_snr = eNB->puSch10xSnr / 10; /* TODO: target_rx_power was 178, what to put? */
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */

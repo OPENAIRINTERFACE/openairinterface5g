@@ -601,7 +601,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10,
+              (5 * UE_scheduling_control->pusch_snr_avg[CC_id] - 640) / 10,
               (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10);
       }
 
