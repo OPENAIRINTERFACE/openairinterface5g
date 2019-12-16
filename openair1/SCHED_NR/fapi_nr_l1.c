@@ -146,10 +146,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
-  uint8_t number_ul_pdu             = UL_tti_req->n_pdus;
+  uint8_t number_ul_pdu             = 0;
   uint8_t number_ul_dci_pdu         = UL_dci_req->numPdus;
 
- 
+  if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
+
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d \n",
         frame,slot,
         DL_req->SFN,DL_req->Slot,number_dl_pdu,
@@ -199,7 +200,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     }
   }
 
-  if (UL_tti_req) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB,

@@ -517,7 +517,6 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc        = &ru->proc;
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
@@ -1916,22 +1915,23 @@ void configure_rru(int idx,
                    void *arg) {
   RRU_config_t *config     = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
-  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config;
   ru->nr_frame_parms->eutra_band                                          = config->band_list[0];
   ru->nr_frame_parms->dl_CarrierFreq                                      = config->tx_freq[0];
   ru->nr_frame_parms->ul_CarrierFreq                                      = config->rx_freq[0];
 
   if (ru->nr_frame_parms->dl_CarrierFreq == ru->nr_frame_parms->ul_CarrierFreq) {
-    gNB_config->subframe_config.duplex_mode.value                         = TDD;
+    gNB_config->cell_config.frame_duplex_type.value                       = TDD;
     //ru->nr_frame_parms->tdd_config                                        = config->tdd_config[0];
     //ru->nr_frame_parms->tdd_config_S                                      = config->tdd_config_S[0];
   } else
-    gNB_config->subframe_config.duplex_mode.value                         = FDD;
+    gNB_config->cell_config.frame_duplex_type.value                       = FDD;
 
   ru->att_tx                                                              = config->att_tx[0];
   ru->att_rx                                                              = config->att_rx[0];
-  gNB_config->rf_config.dl_carrier_bandwidth.value                        = config->N_RB_DL[0];
-  gNB_config->rf_config.ul_carrier_bandwidth.value                        = config->N_RB_UL[0];
+  int mu = gNB_config->ssb_config.scs_common.value;
+  gNB_config->carrier_config.dl_grid_size[mu].value                       = config->N_RB_DL[0];
+  gNB_config->carrier_config.dl_grid_size[mu].value                       = config->N_RB_UL[0];
   ru->nr_frame_parms->threequarter_fs                                     = config->threequarter_fs[0];
 
   //ru->nr_frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
