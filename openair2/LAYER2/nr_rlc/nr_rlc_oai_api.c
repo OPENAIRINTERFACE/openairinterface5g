@@ -178,11 +178,11 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   if (rb != NULL) {
     nr_rlc_entity_buffer_status_t buf_stat;
     rb->set_time(rb, nr_rlc_current_time);
-    /* 36.321 deals with BSR values up to 3000000 bytes, after what it
-     * reports '> 3000000' (table 6.1.3.1-2). Passing 4000000 is thus
+    /* 38.321 deals with BSR values up to 81338368 bytes, after what it
+     * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 4000000);
+    buf_stat = rb->buffer_status(rb, 100000000);
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
@@ -198,6 +198,61 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   ret.head_sdu_creation_time = 0;
   ret.head_sdu_remaining_size_to_send = 0;
   ret.head_sdu_is_segmented = 0;
+  return ret;
+}
+
+rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
+  const module_id_t       module_idP,
+  const rnti_t            rntiP,
+  const eNB_index_t       eNB_index,
+  const frame_t           frameP,
+  const sub_frame_t       subframeP,
+  const eNB_flag_t        enb_flagP,
+  const logical_chan_id_t channel_idP)
+{
+  nr_rlc_ue_t *ue;
+  rlc_buffer_occupancy_t ret;
+  nr_rlc_entity_t *rb;
+
+  if (enb_flagP) {
+    LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
+    exit(1);
+  }
+
+  /* TODO: handle time a bit more properly */
+  if (nr_rlc_current_time_last_frame != frameP ||
+      nr_rlc_current_time_last_subframe != subframeP) {
+    nr_rlc_current_time++;
+    nr_rlc_current_time_last_frame = frameP;
+    nr_rlc_current_time_last_subframe = subframeP;
+  }
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
+
+  switch (channel_idP) {
+  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
+  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  default:      rb = NULL;                     break;
+  }
+
+  if (rb != NULL) {
+    nr_rlc_entity_buffer_status_t buf_stat;
+    rb->set_time(rb, nr_rlc_current_time);
+    /* 38.321 deals with BSR values up to 81338368 bytes, after what it
+     * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
+     * more than enough.
+     */
+    buf_stat = rb->buffer_status(rb, 100000000);
+    ret = buf_stat.status_size
+        + buf_stat.retx_size
+        + buf_stat.tx_size;
+  } else {
+    ret = 0;
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+
   return ret;
 }
 
