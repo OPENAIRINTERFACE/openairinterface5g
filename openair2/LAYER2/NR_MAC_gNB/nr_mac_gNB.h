@@ -59,6 +59,9 @@
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#define MAX_NUM_BWP 2
+#define MAX_NUM_CORESET 2
+#define MAX_NUM_CCE 90
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -69,7 +72,6 @@ typedef struct {
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_Config;
   NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
   long ul_Bandwidth;
   /// Outgoing MIB PDU for PHY
@@ -173,6 +175,8 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t rx_ulsch_sdu;  // include rlc_data_ind
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
+  /// CCE lists
+  int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
 
 typedef struct {

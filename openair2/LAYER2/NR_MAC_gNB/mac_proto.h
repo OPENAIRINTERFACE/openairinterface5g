@@ -48,7 +48,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 			   uint32_t rnti,
 			   NR_CellGroupConfig_t *secondaryCellGroup
                            );
-int  is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slotP);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
@@ -66,14 +65,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   subframeP);
 
 int configure_fapi_dl_Tx(int Mod_id,
+			 int *CCEIndeces,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req);
 
-void config_uldci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, 
-                  dci_pdu_rel15_t *dci_pdu_rel15, 
-                  int *dci_formats, 
-                  int *rnti_types);
-
+void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
@@ -154,5 +150,17 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 uint16_t nr_dci_size(nr_dci_format_t format,
                          nr_rnti_type_t rnti_type,
                          uint16_t N_RB);
+
+int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
+		     int bwp_id,
+		     int coreset_id,
+		     int aggregation,
+		     int search_space, // 0 common, 1 ue-specific
+		     int UE_id,
+		     int m
+		     );
+
+int is_nr_DL_slot(NR_COMMON_channels_t *cc,slot_t slotP);
+int is_nr_UL_slot(NR_COMMON_channels_t *cc,slot_t slotP);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

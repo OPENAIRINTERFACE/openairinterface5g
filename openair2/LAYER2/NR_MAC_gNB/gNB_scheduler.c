@@ -326,10 +326,15 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
+
+  // Check if there are downlink symbols in the slot, if not return, no scheduling opportunities
+  if (is_nr_DL_slot(cc,slot_txP)==0) return;
+
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
 
+  memset(RC.nrmac[module_idP]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
@@ -366,7 +371,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Phytest scheduling/ option not activated because of pending bug
   // Phytest scheduling
- 
+
+
   if (slot_rxP==2){
     nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
   }

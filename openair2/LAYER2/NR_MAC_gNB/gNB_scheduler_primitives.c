@@ -64,6 +64,8 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
+#define CEILIDIV(a,b) ((a+b-1)/b)
+
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -129,9 +131,66 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 } 
 
-int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
+int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
+		     int bwp_id,
+		     int coreset_id,
+		     int aggregation,
+		     int search_space, // 0 common, 1 ue-specific
+		     int UE_id,
+		     int m
+		     ) {
+  // uncomment these when we allocate for common search space
+  //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
+  //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-    return (0);
+  NR_UE_list_t *UE_list = &nr_mac->UE_list;
+
+  NR_BWP_Downlink_t *bwp;
+  NR_CellGroupConfig_t *secondaryCellGroup;
+
+  NR_ControlResourceSet_t *coreset;
+
+  if (search_space == 1) {
+    AssertFatal(UE_list->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
+    secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[coreset_id];
+  }
+  else {
+    AssertFatal(1==0,"Add code for common search space\n");
+  }
+
+  int *cce_list = nr_mac->cce_list[bwp_id][coreset_id];
+
+
+  int n_rb=0;
+  for (int i=0;i<6;i++)
+    for (int j=0;j<8;j++) {
+      n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+    }
+  n_rb*=6;
+
+  uint16_t N_reg = n_rb * coreset->duration;
+  uint16_t Y=0, N_cce, M_s_max, n_CI=0;
+  uint16_t n_RNTI = search_space == 1 ? UE_list->rnti[UE_id]:0;
+  uint32_t A[3]={39827,39829,39839};
+
+  N_cce = N_reg / NR_NB_REG_PER_CCE;
+
+  M_s_max = (aggregation==4)?4:(aggregation==8)?2:1;
+
+  if (search_space == 1) {
+    Y = (A[0]*n_RNTI)%65537; // Candidate 0, antenna port 0
+  }
+  int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
+
+  for (int i=0;i<aggregation;i++) 
+    if (cce_list[first_cce+i] != 0) return(-1);
+  
+  for (int i=0;i<aggregation;i++) cce_list[first_cce+i] = 1;
+
+  return(first_cce);
+
 }
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
@@ -146,11 +205,11 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 				  uint16_t nb_slots_per_frame,
 				  uint16_t N_RB)
 {
-  uint8_t O, M;
-  uint8_t ss_idx = rmsi_pdcch_config&0xf;
-  uint8_t cset_idx = (rmsi_pdcch_config>>4)&0xf;
-  uint8_t mu = scs_common;
-  uint8_t O_scale=0, M_scale=0; // used to decide if the values of O and M need to be divided by 2
+  //  uint8_t O, M;
+  //  uint8_t ss_idx = rmsi_pdcch_config&0xf;
+  //  uint8_t cset_idx = (rmsi_pdcch_config>>4)&0xf;
+  //  uint8_t mu = scs_common;
+  //  uint8_t O_scale=0, M_scale=0; // used to decide if the values of O and M need to be divided by 2
 
   AssertFatal(1==0,"todo\n");
   /*
@@ -355,10 +414,8 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 			int ss_type,
 			NR_ServingCellConfigCommon_t *scc,
-			NR_BWP_Downlink_t *bwp) {			
+			NR_BWP_Downlink_t *bwp){
   
-  uint16_t N_RB=NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-
   if (bwp) { // This is not the InitialBWP
     /// coreset
     
@@ -374,7 +431,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-    pdcch_pdu->CyclicPrefix = bwp->bwp_Common->genericParameters.cyclicPrefix;
+    pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
     
     pdcch_pdu->DurationSymbols  = coreset0->duration;
     
@@ -439,8 +496,9 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     
     for (int i=0;i<pdcch_pdu->numDlDci;i++) {
       //pdcch-DMRS-ScramblingID
-      pdcch_pdu->ScramblingId[i] = coreset0->pdcch_DMRS_ScramblingID;
-    
+      AssertFatal(coreset0->pdcch_DMRS_ScramblingID != NULL,"coreset0->pdcch_DMRS_ScramblingID is null\n");
+      pdcch_pdu->ScramblingId[i] = *coreset0->pdcch_DMRS_ScramblingID;
+    }    
     
     /// SearchSpace
     
@@ -481,8 +539,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 	pdcch_pdu->StartSymbolIndex=i;
 	break;
       }
-    }
   }
+
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
   }
@@ -497,17 +555,13 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			) {
   
   uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
-  uint8_t fsize=0, pos=0, cand_idx=0;
+  uint8_t fsize=0, pos=0;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
     uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->Payload[d];
     AssertFatal(pdcch_pdu_rel15->PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
-    /*
-      n_shift = (dci_alloc->pdcch_pdu.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1)?
-      cfg->sch_config.physical_cell_id.value : dci_alloc->pdcch_pdu.shift_index;
-      nr_fill_cce_list(dci_alloc, n_shift, cand_idx);
-    */
+
     int dci_size = pdcch_pdu_rel15->PayloadSizeBits[d];
     
     /// Payload generation
@@ -1315,7 +1369,6 @@ int add_new_nr_ue(module_id_t mod_idP,
 */
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
 
-  int mapping_Type = 0; // TypeA
   int l0;
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
@@ -1387,13 +1440,73 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
 	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 || 1<<10);
       }
     }
-  else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
-	   pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-    // Relative to start of PDSCH resource
-    AssertFatal(1==0,"TypeB DMRS not supported yet\n");
+    else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
+	     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
+      // Relative to start of PDSCH resource
+      AssertFatal(1==0,"TypeB DMRS not supported yet\n");
+    }
   }
-  }
+  AssertFatal(1==0,"Shouldn't get here\n");
+  return(-1);
 }
 
+int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
 
+int is_nr_DL_slot(NR_COMMON_channels_t *cc,slot_t slot) {
+
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  int period,period1,period2=0;
+
+  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
+      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
+    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  else
+    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
+			       
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
+	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+    else
+      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
+  }    
+  period = period1+period2;
+  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int slots=period*(1<<scs)/1000;
+  int slots1=period1*(1<<scs)/1000;
+  int slot_in_period = slot % slots;
+  if (slot_in_period < slots1) return(slot_in_period <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
+  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+}
+
+int is_nr_UL_slot(NR_COMMON_channels_t *cc,slot_t slot) {
+
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  int period,period1,period2=0;
+
+  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
+      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
+    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  else
+    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
+			       
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
+	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+    else
+      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
+  }    
+  period = period1+period2;
+  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int slots=period*(1<<scs)/1000;
+  int slots1=period1*(1<<scs)/1000;
+  int slot_in_period = slot % slots;
+  if (slot_in_period < slots1) return(slot_in_period >= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
+  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+}
 

@@ -75,11 +75,14 @@ void mac_top_init_gNB(void)
       
       RC.nrmac[i]->Mod_id = i;
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
-    
-    AssertFatal(rlc_module_init() == 0,"Could not initialize RLC layer\n");
-    
+
+    AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
+
     // These should be out of here later
     pdcp_layer_init();
+    
+    if(IS_SOFTMODEM_NOS1)
+      nr_ip_over_LTE_DRB_preconfiguration();
     
     rrc_init_nr_global_param();
     

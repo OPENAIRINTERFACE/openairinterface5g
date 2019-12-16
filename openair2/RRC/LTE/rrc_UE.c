@@ -1307,7 +1307,7 @@ rrc_ue_process_radioResourceConfigDedicated(
       // configure the first DRB ID as the default DRB ID
       UE_rrc_inst[ctxt_pP->module_id].defaultDRB = malloc(sizeof(rb_id_t));
       *UE_rrc_inst[ctxt_pP->module_id].defaultDRB = radioResourceConfigDedicated->drb_ToAddModList->list.array[0]->drb_Identity;
-      LOG_I(RRC,"[UE %d] default DRB = %d\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
+      LOG_I(RRC,"[UE %d] default DRB = %ld\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
     }
 
     uint8_t *kUPenc = NULL;
@@ -1889,7 +1889,7 @@ rrc_ue_decode_dcch(
   MessageDef *msg_p;
 
   if (Srb_id != 1) {
-    LOG_E(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%d), should not have ...\n",
+    LOG_E(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
           ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
     return;
   }

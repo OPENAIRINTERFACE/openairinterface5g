@@ -80,31 +80,6 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
   return symbol;
 }
 
-int nr_is_ssb_slot(uint8_t n_hf, uint8_t period, int slot)
-{
-
-
-  int rel_slot;
-
-  // if SSB periodicity is 5ms, they are transmitted in both half frames
-  if ( period == 0) {
-    if (slot<10)
-      n_hf=0;
-    else
-      n_hf=1;
-  }
-
-  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
-  rel_slot = (n_hf)? (slot-10) : slot;
-
-  if(rel_slot<10 && rel_slot>=0)
-    return 1;
-  else
-    return 0;
-
-}
-
-
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,
 			 int Ncp,
@@ -264,15 +239,18 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9){
-	if(fp->frame_type && (fp->ssb_type==2))
-		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-	else
-		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  }  
-  else
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
     fp->Lmax = 64;
+  }
 
+  fp->N_ssb = 0;
+  for (int p=0; p<fp->Lmax; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
 }

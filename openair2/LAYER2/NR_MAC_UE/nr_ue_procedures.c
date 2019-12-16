@@ -362,6 +362,7 @@ int8_t nr_ue_decode_mib(
   AssertFatal(num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
   AssertFatal(rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
         
+
   //uint32_t cell_id = 0;   //  obtain from L1 later
 
   //mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
@@ -462,7 +463,6 @@ int8_t nr_ue_decode_mib(
 	break;
       default: break; 
       }
-                
     }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
       //  38.213 Table 13-14
       AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");

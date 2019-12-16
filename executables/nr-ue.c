@@ -419,7 +419,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
                                    0x1234, proc->frame_rx,
                                    proc->nr_tti_rx, 0);
-	  //pdcp_run(&ctxt);
+	  pdcp_run(&ctxt);
           pdcp_fifo_flush_sdus(&ctxt);
   }
   }

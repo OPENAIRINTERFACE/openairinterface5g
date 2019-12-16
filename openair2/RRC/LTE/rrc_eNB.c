@@ -4774,7 +4774,7 @@ check_handovers(
                 GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).frame,
                 0,
                 GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).eNB_index);
-              LOG_D(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+              LOG_D(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                     PROTOCOL_CTXT_ARGS(&ctxt),
                     ITTI_MSG_NAME (msg_p),
                     ITTI_MSG_ORIGIN_NAME(msg_p),
@@ -4783,7 +4783,7 @@ check_handovers(
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).mode);
-              LOG_I(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %d \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
+              LOG_I(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %ld \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
               result = pdcp_data_req (&ctxt,
                                       SRB_FLAG_NO,
                                       GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id,
@@ -4842,7 +4842,7 @@ check_handovers(
                 GTPV1U_ENB_END_MARKER_IND (msg_p).frame,
                 0,
                 GTPV1U_ENB_END_MARKER_IND (msg_p).eNB_index);
-              LOG_I(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+              LOG_I(RRC, PROTOCOL_CTXT_FMT"[check_handovers]Received %s from %s: instance %d, rb_id %ld, muiP %d, confirmP %d, mode %d\n",
                     PROTOCOL_CTXT_ARGS(&ctxt),
                     ITTI_MSG_NAME (msg_p),
                     ITTI_MSG_ORIGIN_NAME(msg_p),
@@ -4851,7 +4851,7 @@ check_handovers(
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).muip,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).confirmp,
                     GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).mode);
-              LOG_D(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %d \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
+              LOG_D(RRC, "Before calling pdcp_data_req from check_handovers! GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id: %ld \n", GTPV1U_ENB_DATA_FORWARDING_IND (msg_p).rb_id);
               result = pdcp_data_req (&ctxt,
                                       SRB_FLAG_NO,
                                       GTPV1U_ENB_END_MARKER_IND (msg_p).rb_id,
@@ -7144,11 +7144,11 @@ rrc_eNB_decode_dcch(
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   if ((Srb_id != 1) && (Srb_id != 2)) {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%d, should not have ...\n",
+    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%ld, should not have ...\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
           Srb_id);
   } else {
-    LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%d\n",
+    LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%ld\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
           Srb_id);
   }

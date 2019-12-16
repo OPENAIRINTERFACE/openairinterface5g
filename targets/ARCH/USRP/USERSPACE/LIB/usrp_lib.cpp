@@ -455,14 +455,14 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 #if defined(__x86_64) || defined(__i386__)
   #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[2][nsamps2];
+      __m256i buff_tx[8][nsamps2];
   #else
     nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[2][nsamps2];
+    __m128i buff_tx[8][nsamps2];
   #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[2][nsamps2];
+    int16x8_t buff_tx[8][nsamps2];
 #else
     #error Unsupported CPU architecture, USRP device cannot be built
 #endif
@@ -566,14 +566,14 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
     nsamps2 = (nsamps+7)>>3;
-    __m256i buff_tmp[2][nsamps2];
+    __m256i buff_tmp[8][nsamps2];
 #else
     nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tmp[2][nsamps2];
+    __m128i buff_tmp[8][nsamps2];
 #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tmp[2][nsamps2];
+    int16x8_t buff_tmp[8][nsamps2];
 #endif
 
     if (device->type == USRP_B200_DEV) {
@@ -1217,9 +1217,9 @@ extern "C" {
             openair0_cfg[0].rx_bw                 = 40e6;
             break;
 
- 	  case 46080000:
-            //openair0_cfg[0].samples_per_packet    = 1024;
-            openair0_cfg[0].tx_sample_advance     = 115;
+          case 46080000:
+            //openair0_cfg[0].samples_per_packet    = 2048;
+            openair0_cfg[0].tx_sample_advance     = 15;
             openair0_cfg[0].tx_bw                 = 40e6;
             openair0_cfg[0].rx_bw                 = 40e6;
             break;

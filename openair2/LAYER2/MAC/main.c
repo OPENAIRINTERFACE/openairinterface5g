@@ -146,7 +146,7 @@ void mac_top_init_eNB(void)
 
   RC.mac = mac;
 
-  AssertFatal(rlc_module_init() == 0,
+  AssertFatal(rlc_module_init(1) == 0,
       "Could not initialize RLC layer\n");
 
   // These should be out of here later
@@ -184,7 +184,7 @@ int rlcmac_init_global_param(void)
 
     LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-    if (rlc_module_init() != 0) {
+    if (rlc_module_init(1) != 0) {
 	return (-1);
     }
 

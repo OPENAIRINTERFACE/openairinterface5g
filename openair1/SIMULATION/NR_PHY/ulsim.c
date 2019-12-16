@@ -149,7 +149,7 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 uint64_t get_softmodem_optmask(void) {return 0;}
-int rlc_module_init (void) {return(0);}
+int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
 
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   int number_of_frames = 1;
-  int frame_length_complex_samples, frame_length_complex_samples_no_prefix ;
+  int frame_length_complex_samples;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
@@ -442,7 +442,7 @@ int main(int argc, char **argv)
   //init_eNB_afterRU();
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
   unsigned char harq_pid = 0;
   unsigned int TBS;
   unsigned int available_bits;
-  uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+  uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1?6:4);
   uint8_t length_dmrs = 1;
   unsigned char mod_order;
   uint16_t code_rate;
