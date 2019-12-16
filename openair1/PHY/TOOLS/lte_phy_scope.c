@@ -325,12 +325,18 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   // PUSCH I/Q of MF Output
   if (pusch_comp!=NULL) {
     ind=0;
+    int range=80*1000*1000;
 
     for (k=0; k<frame_parms->symbols_per_tti; k++) {
       for (i=0; i<12*frame_parms->N_RB_UL; i++) {
-        I[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i];
-        Q[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1];
-        ind++;
+        if ( pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i] > -range &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i] < range  &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1] > -range &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1] < range ) {
+           I[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i];
+           Q[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1];
+           ind++;
+        }
       }
     }
 
