@@ -93,6 +93,7 @@ logging.basicConfig(
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
+		self.FailReportCnt = 0
 		self.prematureExit = False
 		self.ranRepository = ''
 		self.ranBranch = ''
@@ -4213,6 +4214,12 @@ class SSHConnection():
 			self.htmlFile.write('</html>\n')
 			self.htmlFile.close()
 
+	def CreateHtmlRetrySeparator(self):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '>Try Run #' + str(self.FailReportCnt) + '</td>\n')
+			self.htmlFile.write('      </tr>\n')
+
 	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			currentTime = int(round(time.time() * 1000)) - self.startTime
@@ -4814,11 +4821,13 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	SSH.CreateHtmlTabHeader()
 
-	cnt = 0
+	SSH.FailReportCnt = 0
 	SSH.prematureExit = True
 	SSH.startTime = int(round(time.time() * 1000))
-	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
+	while SSH.FailReportCnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
+		# At every iteratin of the retry loop, a separator will be added
+		SSH.CreateHtmlRetrySeparator()
 		for test_case_id in todo_tests:
 			if SSH.prematureExit:
 				break
@@ -4905,13 +4914,13 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-		cnt += 1
-	if cnt == SSH.repeatCounts[0] and SSH.prematureExit:
-		logging.debug('Testsuite failed ' + str(cnt) + ' time(s)')
+		SSH.FailReportCnt += 1
+	if SSH.FailReportCnt == SSH.repeatCounts[0] and SSH.prematureExit:
+		logging.debug('Testsuite failed ' + str(SSH.FailReportCnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(cnt) + ' time(s)')
+		logging.info('Testsuite passed after ' + str(SSH.FailReportCnt) + ' time(s)')
 		SSH.CreateHtmlTabFooter(True)
 else:
 	Usage()
