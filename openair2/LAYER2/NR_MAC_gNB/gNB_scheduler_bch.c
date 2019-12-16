@@ -137,7 +137,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = 0; //kSSB
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA     = ssb_offset0/(ratio*12);
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
-      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = ((uint32_t)cc->MIB_pdu.payload[0]) & ((1<<24)-1);
+      dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
       dl_req->nPDUs++;
     }
   }
