@@ -727,28 +727,28 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
   if (slot_type == NR_DOWNLINK_SLOT ||
 		  slot_type == NR_MIXED_SLOT) {
-     int siglen=fp->samples_per_tti,flags=1;
+     int siglen=fp->samples_per_slot,flags=1;
 
      if(slot_type == NR_MIXED_SLOT) {
-     txsymb = 0;
-     for(int symbol_count =0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
-     if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
-          txsymb++;
-        }
-     }
-     AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
-     siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
-               + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+         txsymb = 0;
+         for(int symbol_count =0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+            if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
+               txsymb++;
+            }
+         }
+         AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+         siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
+                   + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
                //+ ru->end_of_burst_delay;
      flags=3; // end of burst
-  }
+     }
 
-  if (cfg->cell_config.frame_duplex_type.value == TDD &&
-        slot_type == NR_DOWNLINK_SLOT &&
-        prevslot_type == NR_UPLINK_SLOT) {
-      flags = 2; // start of burst
-      //sf_extension = ru->sf_extension;
-  }
+     if (cfg->cell_config.frame_duplex_type.value == TDD &&
+          slot_type == NR_DOWNLINK_SLOT &&
+          prevslot_type == NR_UPLINK_SLOT) {
+         flags = 2; // start of burst
+          //sf_extension = ru->sf_extension;
+     }
 
   /*if ((slot == 0) ||
       (slot == 1)) {
