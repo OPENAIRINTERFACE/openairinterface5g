@@ -301,7 +301,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   int slot = tti_tx;
   int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
 
-  if (nr_slot_select(fp,frame_tx,slot) == NR_UPLINK_SLOT) return;
+  if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
   start_meas(&ru->ofdm_mod_stats);
@@ -344,6 +344,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
   int l,aa;
   PHY_VARS_gNB **gNB_list = ru->gNB_list,*gNB;
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   int32_t ***bw;
   int i=0;
   int slot_tx = tti_tx;
@@ -352,7 +353,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
   if (ru->num_gNB == 1){
     gNB = gNB_list[0];
 
-    if (nr_slot_select(fp,frame_tx,slot_tx) == NR_UPLINK_SLOT) return;
+    if (nr_slot_select(cfg,frame_tx,slot_tx) == NR_UPLINK_SLOT) return;
 
     for(i=0; i<fp->Lmax; ++i)
       memcpy((void*)ru->common.txdataF[i],
