@@ -42,9 +42,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac) {
 
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
-
+/*
   mac->if_module->phy_config_request(&mac->phy_config);
-
   cfg->sch_config.physical_cell_id = *scc->physCellId;
   cfg->sch_config.ssb_scg_position_in_burst = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
 
@@ -127,6 +126,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac) {
   for (int i=0;i<cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations;i++) {
     cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i]=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
   }
+*/
 }
 
 int nr_rrc_mac_config_req_ue(

@@ -58,43 +58,6 @@ double cpuf;
 int nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-  return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-  return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-  return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
-  return (0);
-}
-int32_t get_nr_uldl_offset(int eutra_bandP) {
-  return (0);
-}
-
-NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-  return (NULL);
-}
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
-  const char *msg = s == NULL ? "no comment" : s;
-  printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
-  exit(-1);
-}
-
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;

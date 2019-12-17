@@ -136,54 +136,55 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
     if(scheduled_response->ul_config != NULL){
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
       for(i=0; i<ul_config->number_pdus; ++i){
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_ULSCH){
+	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH){
 	  // pusch config pdu
-	  fapi_nr_ul_config_ulsch_pdu_rel15_t *ulsch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
-	  uint8_t current_harq_pid = ulsch_config_pdu->harq_process_nbr;
-	  ulsch0->harq_processes[current_harq_pid]->nb_rb = ulsch_config_pdu->number_rbs;
-	  ulsch0->harq_processes[current_harq_pid]->first_rb = ulsch_config_pdu->start_rb;
-	  ulsch0->harq_processes[current_harq_pid]->number_of_symbols = ulsch_config_pdu->number_symbols;
-	  ulsch0->harq_processes[current_harq_pid]->start_symbol = ulsch_config_pdu->start_symbol;
-	  ulsch0->harq_processes[current_harq_pid]->mcs = ulsch_config_pdu->mcs;
-	  ulsch0->harq_processes[current_harq_pid]->DCINdi = ulsch_config_pdu->ndi;
-	  ulsch0->harq_processes[current_harq_pid]->rvidx = ulsch_config_pdu->rv;
-	  ulsch0->f_pusch = ulsch_config_pdu->absolute_delta_PUSCH;
+	  fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
+	  uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;
+	  ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
+	  ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
+	  ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
+	  ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
+	  ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
+	  ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
+	  ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
+	  ulsch0->harq_processes[current_harq_pid]->Nl = pusch_config_pdu->n_layers;
+	  ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 	}
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_UCI){
+	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUCCH){
 	  // pucch config pdu
-	  fapi_nr_ul_config_uci_pdu *uci_config_pdu = &ul_config->ul_config_list[i].uci_config_pdu;
+	  fapi_nr_ul_config_pucch_pdu *pucch_config_pdu = &ul_config->ul_config_list[i].pucch_config_pdu;
 	  uint8_t pucch_resource_id = 0; //FIXME!!!
 	  uint8_t format = 1; // FIXME!!!
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = uci_config_pdu->initialCyclicShift;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = uci_config_pdu->nrofSymbols;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = uci_config_pdu->startingSymbolIndex;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = uci_config_pdu->nrofPRBs;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->startingPRB = uci_config_pdu->startingPRB;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = uci_config_pdu->timeDomainOCC;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = uci_config_pdu->occ_length;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = uci_config_pdu->occ_Index;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = uci_config_pdu->intraSlotFrequencyHopping;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->secondHopPRB = uci_config_pdu->secondHopPRB; // Not sure this parameter is used
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->additionalDMRS = uci_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->pi2PBSK = uci_config_pdu->pi2PBSK;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].pucch_GroupHopping = uci_config_pdu->pucch_GroupHopping;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].hoppingId = uci_config_pdu->hoppingId;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].p0_nominal = uci_config_pdu->p0_nominal;
-	  /*                     pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = uci_config_pdu->initialCyclicShift;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = uci_config_pdu->nrofSymbols;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = uci_config_pdu->startingSymbolIndex;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = uci_config_pdu->nrofPRBs;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->startingPRB = uci_config_pdu->startingPRB;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = uci_config_pdu->timeDomainOCC;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = uci_config_pdu->occ_length;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = uci_config_pdu->occ_Index;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = uci_config_pdu->intraSlotFrequencyHopping;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->secondHopPRB = uci_config_pdu->secondHopPRB; // Not sure this parameter is used
-				 pucch_config_dedicated->formatConfig[format-1]->additionalDMRS = uci_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
-				 pucch_config_dedicated->formatConfig[format-1]->pi2PBSK = uci_config_pdu->pi2PBSK;
-				 pucch_config_common->pucch_GroupHopping = uci_config_pdu->pucch_GroupHopping;
-				 pucch_config_common->hoppingId = uci_config_pdu->hoppingId;
-				 pucch_config_common->p0_nominal = uci_config_pdu->p0_nominal;*/
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = pucch_config_pdu->initialCyclicShift;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = pucch_config_pdu->nrofSymbols;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = pucch_config_pdu->startingSymbolIndex;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = pucch_config_pdu->nrofPRBs;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->startingPRB = pucch_config_pdu->startingPRB;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = pucch_config_pdu->timeDomainOCC;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = pucch_config_pdu->occ_length;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = pucch_config_pdu->occ_Index;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = pucch_config_pdu->intraSlotFrequencyHopping;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->secondHopPRB = pucch_config_pdu->secondHopPRB; // Not sure this parameter is used
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->additionalDMRS = pucch_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->pi2PBSK = pucch_config_pdu->pi2PBSK;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].pucch_GroupHopping = pucch_config_pdu->pucch_GroupHopping;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].hoppingId = pucch_config_pdu->hoppingId;
+	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].p0_nominal = pucch_config_pdu->p0_nominal;
+	  /*                     pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = pucch_config_pdu->initialCyclicShift;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = pucch_config_pdu->nrofSymbols;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = pucch_config_pdu->startingSymbolIndex;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = pucch_config_pdu->nrofPRBs;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->startingPRB = pucch_config_pdu->startingPRB;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = pucch_config_pdu->timeDomainOCC;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = pucch_config_pdu->occ_length;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = pucch_config_pdu->occ_Index;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = pucch_config_pdu->intraSlotFrequencyHopping;
+				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->secondHopPRB = pucch_config_pdu->secondHopPRB; // Not sure this parameter is used
+				 pucch_config_dedicated->formatConfig[format-1]->additionalDMRS = pucch_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
+				 pucch_config_dedicated->formatConfig[format-1]->pi2PBSK = pucch_config_pdu->pi2PBSK;
+				 pucch_config_common->pucch_GroupHopping = pucch_config_pdu->pucch_GroupHopping;
+				 pucch_config_common->hoppingId = pucch_config_pdu->hoppingId;
+				 pucch_config_common->p0_nominal = pucch_config_pdu->p0_nominal;*/
 	}
 	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH){
 	  // prach config pdu
@@ -254,4 +255,5 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   return 0;
 }
+
 

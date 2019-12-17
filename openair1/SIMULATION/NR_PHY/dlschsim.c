@@ -59,43 +59,6 @@ double cpuf;
 int nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-	return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-	return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-	return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-	return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-	return (0);
-}
-
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
-	return (0);
-}
-int32_t get_nr_uldl_offset(int eutra_bandP) {
-	return (0);
-}
-
-NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-	return (NULL);
-}
-
-void exit_function(const char *file, const char *function, const int line,
-		const char *s) {
-	const char *msg = s == NULL ? "no comment" : s;
-	printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
-	exit(-1);
-}
 
 
 // needed for some functions
@@ -460,7 +423,7 @@ int main(int argc, char **argv)
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
 	NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
-	nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
 	unsigned int TBS = 8424;
@@ -482,12 +445,13 @@ int main(int argc, char **argv)
 	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
-	rel15->n_prb = nb_rb;
-	rel15->nb_symbols = nb_symb_sch;
-	rel15->modulation_order = mod_order;
-	rel15->nb_layers = Nl;
-	rel15->transport_block_size = TBS;
-  rel15->coding_rate = rate;
+	rel15->rbSize         = nb_rb;
+	rel15->NrOfSymbols    = nb_symb_sch;
+	rel15->qamModOrder[0] = mod_order;
+	rel15->nrOfLayers     = Nl;
+	rel15->TBSize[0]      = TBS;
+        rel15->targetCodeRate[0] = rate;
+        rel15->NrOfCodewords = 1;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);

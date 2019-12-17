@@ -92,8 +92,8 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
-int rlc_module_init (void) {return(0);}
+//lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
+int rlc_module_init (int eNB_id) {return(0);}
 
 
 void pdcp_layer_init(void) {}
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
   //double pbch_sinr;
   //int pbch_tx_ant;
   int N_RB_DL=106,mu=1;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t dlsch_config;
 
   uint16_t ssb_periodicity = 10;
 
@@ -662,7 +662,7 @@ int main(int argc, char **argv)
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
-    for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
+    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
 
     if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&dlsch_config);
     else               nr_schedule_css_dlsch_phytest(0,frame,slot);
@@ -674,7 +674,7 @@ int main(int argc, char **argv)
     Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
     Sched_INFO.UL_tti_req    = &gNB_mac->UL_tti_req[0];
-    Sched_INFO.HI_DCI0_req  = NULL;
+    Sched_INFO.UL_dci_req  = NULL;
     Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
     nr_schedule_response(&Sched_INFO);
 
@@ -761,8 +761,10 @@ int main(int argc, char **argv)
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	
   
   uint64_t mask = 0x0;
-  uint16_t num_rbs=24;
-  uint16_t rb_offset=gNB->pdcch_vars.dci_alloc[0].pdcch_params.rb_offset;
+  uint16_t num_rbs;
+  uint16_t rb_offset;
+	
+  get_coreset_rballoc(gNB->pdcch_pdu->pdcch_pdu_rel15.FreqDomainResource,&num_rbs,&rb_offset);
   uint16_t cell_id=0;
   uint16_t num_symbols=2;
   for(i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
@@ -859,23 +861,17 @@ int main(int argc, char **argv)
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
 	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
-
-	phy_procedures_nrUE_RX(UE,
-			       &UE_proc,
-			       0,
-			       do_pdcch_flag,
-			       normal_txrx,
-			       &UE_mac->dl_config_request);
+        phy_procedures_nrUE_RX(UE,
+                               &UE_proc,
+                               0,
+                               do_pdcch_flag,
+                               normal_txrx);
 
 	if (n_trials==1) {
 	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
 	  if (UE->frame_parms.nb_antennas_rx>1)
 	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
 	}
-	
-	if (UE_mac->dl_config_request.number_pdus==0) n_errors++;
-      
-      
 	
 	if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
 	    UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
@@ -894,7 +890,7 @@ int main(int argc, char **argv)
 	NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
 	int16_t *UE_llr = pdsch_vars[0]->llr[0];
 	
-	nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = gNB_dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+	nfapi_nr_dl_tti_pdsch_pdu_rel15_t rel15 = gNB_dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
 	uint32_t TBS         = rel15.TBSize[0];
 	uint16_t length_dmrs = 1;
 	uint16_t nb_rb       = rel15.rbSize;

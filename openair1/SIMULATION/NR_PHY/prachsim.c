@@ -50,13 +50,16 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
-RU_t *RU;
+RU_t *ru;
 
 double cpuf;
 
 extern uint16_t prach_root_sequence_map0_3[838];
 
 void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
+uint16_t NB_UE_INST=1;
+volatile int oai_exit=0;
 
 void exit_function(const char* file, const char* function, const int line,const char *s) { 
    const char * msg= s==NULL ? "no comment": s;
@@ -70,8 +73,6 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
   return 0;
 }
 
-int32_t get_nr_uldl_offset(int nr_bandP) {return(0);}
-
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
 
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -79,9 +80,6 @@ int nfapi_mode=0;
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
 
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
-uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
 
 int main(int argc, char **argv)
 {
@@ -132,7 +130,7 @@ int main(int argc, char **argv)
   cpuf = get_cpu_freq_GHz();
 
 
-  if ( load_configmodule(argc,argv) == 0) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -358,7 +356,7 @@ int main(int argc, char **argv)
   RC.nb_RU = 1;
 
   gNB = RC.gNB[0];
-  RU = RC.ru[0];
+  ru = RC.ru[0];
 
 
   if (ue_speed1set==0) {
@@ -397,10 +395,10 @@ int main(int argc, char **argv)
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d,Frame type %s, Frequency Range %s\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_slot<<1,frame_parms->frame_type == FDD ? "FDD" : "TDD", frame_parms->freq_range == nr_FR1 ? "FR1" : "FR2");
 
-  RU->nr_frame_parms=frame_parms;
-  RU->if_south = LOCAL_RF;
-  RU->nb_tx = n_tx;
-  RU->nb_rx = n_rx;
+  ru->nr_frame_parms=frame_parms;
+  ru->if_south = LOCAL_RF;
+  ru->nb_tx = n_tx;
+  ru->nb_rx = n_rx;
 
   RC.nb_nr_L1_inst=1;
   phy_init_nr_gNB(gNB,0,0);
@@ -480,7 +478,7 @@ int main(int argc, char **argv)
 
   gNB->proc.slot_rx    = subframe<<1;
 
-  gNB->common_vars.rxdata = RU->common.rxdata;
+  gNB->common_vars.rxdata = ru->common.rxdata;
 
 
   compute_nr_prach_seq(gNB->frame_parms.prach_config_common.rootSequenceIndex,
@@ -595,7 +593,7 @@ nr_ue_prach_procedures(UE,&proc,0,0,0);
         rx_nr_prach_ru(RU,
 		       0,
 		       subframe);
-	gNB->prach_vars.rxsigF = RU->prach_rxsigF;
+	gNB->prach_vars.rxsigF = ru->prach_rxsigF;
 
         rx_nr_prach(gNB,
 		    0,

@@ -67,41 +67,6 @@ double cpuf;
 int nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-  return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-  return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-  return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-int32_t get_uldl_offset(int eutra_bandP) {
-  return (0);
-}
-
-NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-  return (NULL);
-}
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
-  const char *msg = s == NULL ? "no comment" : s;
-  printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
-  exit(-1);
-}
-
-// dummy functions
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
 void mac_rlc_data_ind ( const module_id_t         module_idP,
@@ -537,8 +502,8 @@ int main(int argc, char **argv)
       ///////////////////////////////////////////////////
       */
 
-      UL_tti_req->sfn = frame;
-      UL_tti_req->slot = slot;
+      UL_tti_req->SFN = frame;
+      UL_tti_req->Slot = slot;
       UL_tti_req->n_pdus = 1;
       UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
       UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);

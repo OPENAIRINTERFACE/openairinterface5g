@@ -103,7 +103,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
 
   int P_O_PUCCH = P_O_NOMINAL_PUCCH + P_O_UE_PUCCH;
 
-  int16_t PL = get_nr_PL(ue,gNB_id); /* LTE function because NR path loss not yet implemented FFS TODO NR */
+  int16_t PL = 100;//get_PL(ue->Mod_id, ue->CC_id, gNB_id); /* LTE function because NR path loss not yet implemented FFS TODO NR */
 
   int16_t delta_F_PUCCH =  power_config->deltaF_PUCCH_f[pucch_format];
 
@@ -214,3 +214,4 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
 
   return (pucch_power);
 }
+
