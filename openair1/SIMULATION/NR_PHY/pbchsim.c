@@ -470,8 +470,7 @@ int main(int argc, char **argv)
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
  
-    gNB->ssb_pdu = (nfapi_nr_dl_tti_ssb_pdu *) malloc(sizeof(nfapi_nr_dl_tti_ssb_pdu));
-    gNB->ssb_pdu->ssb_pdu_rel15.bchPayload = 0;
+    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0;
 
     for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
@@ -622,7 +621,7 @@ int main(int argc, char **argv)
 
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu->ssb_pdu_rel15.bchPayload>>(8*i)));
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)));
 	  } 
 	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
 	  //printf("ret %d\n", payload_ret);
