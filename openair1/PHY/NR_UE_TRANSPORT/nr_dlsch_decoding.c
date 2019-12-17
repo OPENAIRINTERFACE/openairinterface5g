@@ -775,16 +775,16 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
-  int16_t inv_d [68*384];
+  //int16_t inv_d [68*384];
   //int16_t *p_invd =&inv_d;
   uint8_t kb, kc;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
-  uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
-  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
+  //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
+  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+  uint8_t nb_re_dmrs = 6; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
 
   uint32_t i,j;
@@ -1034,7 +1034,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     if (harq_process->Nl < Nl)
       Nl = harq_process->Nl;
 
-    Tbslbrm = nr_compute_tbslbrm(rel15.mcs_table,nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
+    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl,harq_process->C);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
@@ -1323,7 +1323,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
 
 #ifdef UE_DLSCH_PARALLELISATION
-void *nr_dlsch_decoding_process(void *arg)
+void nr_dlsch_decoding_process(void *arg)
 {
 	nr_rxtx_thread_data_t *rxtxD= (nr_rxtx_thread_data_t *)arg;
     UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
@@ -1340,8 +1340,8 @@ void *nr_dlsch_decoding_process(void *arg)
     int16_t z [68*384];
     int8_t l [68*384];
     //__m128i l;
-    int16_t inv_d [68*384];
-    int16_t *p_invd =&inv_d;
+    //int16_t inv_d [68*384];
+    //int16_t *p_invd =&inv_d;
     uint8_t kb, kc;
     uint8_t Ilbrm = 1;
     uint32_t Tbslbrm = 950984;
@@ -1463,6 +1463,7 @@ void *nr_dlsch_decoding_process(void *arg)
     }
   }    
 
+  harq_process->round  =0;
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
 	if (A > 3824)
@@ -1482,8 +1483,9 @@ void *nr_dlsch_decoding_process(void *arg)
     p_decParams->Z = harq_process->Z;
 
     }
+    
+    //printf("round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
 
-  
 
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
@@ -1654,9 +1656,9 @@ void *nr_dlsch_decoding_process(void *arg)
 #endif
 //      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
 
-        for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
+        /*for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
               inv_d[cnt] = (1)*harq_process->d[r][cnt];
-              }
+              }*/
 
         memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
@@ -1746,11 +1748,9 @@ void *dlsch_thread(void *arg) {
   int nbDlProcessing=0;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
 
-  for (int i=0; i<RX_NB_TH_DL+1; i++)
+  for (int i=0; i<RX_NB_TH_DL+1; i++){
     pushNotifiedFIFO_nothreadSafe(&freeBlocks,
-                                  newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&nf,nr_dlsch_decoding_process));
-    printf("dlsch_thread\n");
-    displayList(&freeBlocks);
+                                  newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&nf,nr_dlsch_decoding_process));}
 
   while (!oai_exit) {
 
@@ -1772,6 +1772,7 @@ void *dlsch_thread(void *arg) {
 
   } // while !oai_exit
 
+  return NULL;
 }
 
 #endif
