@@ -382,7 +382,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     n_rnti = 0x1234;
     nb_rb = 50;
     start_rb = 0;
-    nb_symb_sch = 14;
+    nb_symb_sch = 12;
     start_symbol = 0;
     precod_nbr_layers = 1;
     mcs = 9;
@@ -736,6 +736,18 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
+if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX - 1)%20)
+    AssertFatal( writeBlockSize ==
+                 UE->rfdevice.trx_write_func(&UE->rfdevice,
+                     timestamp+
+                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                     openair0_cfg[0].tx_sample_advance,
+                     txp,
+                     writeBlockSize,
+                     UE->frame_parms.nb_antennas_tx,
+                     2),"");
+
 if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
@@ -746,7 +758,7 @@ if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     4),"");
+                     3),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift

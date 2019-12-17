@@ -527,7 +527,7 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
     pusch_pdu->uplink_frequency_shift_7p5khz = 0;
     //Resource Allocation in time domain
     pusch_pdu->start_symbol_index = 0;
-    pusch_pdu->nr_of_symbols = 14;
+    pusch_pdu->nr_of_symbols = 12;
     //Optional Data only included if indicated in pduBitmap
     pusch_pdu->pusch_data.rv_index = 0;
     pusch_pdu->pusch_data.harq_process_id = 0;
