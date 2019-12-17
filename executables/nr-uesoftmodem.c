@@ -521,14 +521,23 @@ void init_openair0(void) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=92.16e6;
           openair0_cfg[card].samples_per_frame = 921600;
-          openair0_cfg[card].tx_bw = 40e6;
-          openair0_cfg[card].rx_bw = 40e6;
         }
         else {
           openair0_cfg[card].sample_rate=122.88e6;
           openair0_cfg[card].samples_per_frame = 1228800;
-          openair0_cfg[card].tx_bw = 40e6;
-          openair0_cfg[card].rx_bw = 40e6;
+        } 
+      } else {
+        LOG_E(PHY,"Unsupported numerology!\n");
+        exit(-1);
+      }
+     }else if(frame_parms[0]->N_RB_DL == 273) {
+      if (numerology==1) {
+        if (frame_parms[0]->threequarter_fs) {
+          AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
+        }
+        else {
+          openair0_cfg[card].sample_rate=122.88e6;
+          openair0_cfg[card].samples_per_frame = 1228800;
         } 
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
@@ -539,32 +548,22 @@ void init_openair0(void) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=23.04e6;
           openair0_cfg[card].samples_per_frame = 230400;
-          openair0_cfg[card].tx_bw = 10e6;
-          openair0_cfg[card].rx_bw = 10e6;
         } else {
           openair0_cfg[card].sample_rate=30.72e6;
           openair0_cfg[card].samples_per_frame = 307200;
-          openair0_cfg[card].tx_bw = 10e6;
-          openair0_cfg[card].rx_bw = 10e6;
         }
      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
 	  openair0_cfg[card].sample_rate=46.08e6;
 	  openair0_cfg[card].samples_per_frame = 480800;
-	  openair0_cfg[card].tx_bw = 20e6;
-	  openair0_cfg[card].rx_bw = 20e6;
 	}
 	else {
 	  openair0_cfg[card].sample_rate=61.44e6;
 	  openair0_cfg[card].samples_per_frame = 614400;
-	  openair0_cfg[card].tx_bw = 20e6;
-	  openair0_cfg[card].rx_bw = 20e6;
 	}
       } else if (numerology==2) {
         openair0_cfg[card].sample_rate=122.88e6;
         openair0_cfg[card].samples_per_frame = 1228800;
-        openair0_cfg[card].tx_bw = 40e6;
-        openair0_cfg[card].rx_bw = 40e6;
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
         exit(-1);
@@ -572,18 +571,12 @@ void init_openair0(void) {
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
-      openair0_cfg[card].tx_bw = 5e6;
-      openair0_cfg[card].rx_bw = 5e6;
     } else if (frame_parms[0]->N_RB_DL == 25) {
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 2.5e6;
-      openair0_cfg[card].rx_bw = 2.5e6;
     } else if (frame_parms[0]->N_RB_DL == 6) {
       openair0_cfg[card].sample_rate=1.92e6;
       openair0_cfg[card].samples_per_frame = 19200;
-      openair0_cfg[card].tx_bw = 1.5e6;
-      openair0_cfg[card].rx_bw = 1.5e6;
     }
     else {
       LOG_E(PHY,"Unknown NB_RB %d!\n",frame_parms[0]->N_RB_DL);
@@ -671,7 +664,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
-  //get_common_options();
+  get_common_options();
 #if T_TRACER
   T_Config_Init();
 #endif

@@ -45,7 +45,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
   int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
   unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
-  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(16)));
+  int32_t temp_in_ifft_0[8192*2] __attribute__((aligned(32)));
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
 
 #ifdef DEBUG_CH
@@ -267,7 +267,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 
     // check if PRB crosses DC and improve estimates around DC
-    if ((bwp_start_subcarrier >= gNB->frame_parms.ofdm_symbol_size/2) && (bwp_start_subcarrier+nb_rb_pusch*12 >= gNB->frame_parms.ofdm_symbol_size)) {
+    if ((bwp_start_subcarrier < gNB->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pusch*12 >= gNB->frame_parms.ofdm_symbol_size)) {
       ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
       uint16_t idxDC = 2*(gNB->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
       uint16_t idxPil = idxDC/2;

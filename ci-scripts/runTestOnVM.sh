@@ -1149,6 +1149,11 @@ function run_test_on_vm {
         echo "cp /home/ubuntu/bc-install.txt log" >> $VM_CMDS
         echo "cd log" >> $VM_CMDS
         echo "zip -r -qq tmp.zip *.* 0*" >> $VM_CMDS
+        echo "echo \"############################################################\"" >> $VM_CMDS
+        echo "echo \"Evaluating remaining memory on disk!\"" >> $VM_CMDS
+        echo "echo \"############################################################\"" >> $VM_CMDS
+        echo "echo \"df -h\"" >> $VM_CMDS
+        echo "df -h" >> $VM_CMDS
 
         ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
 

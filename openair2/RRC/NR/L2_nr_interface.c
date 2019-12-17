@@ -58,7 +58,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   uint8_t sfn_msb                     = (uint8_t)((frameP>>4)&0x3f);
   
 #ifdef DEBUG_RRC
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
+  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
 #endif
 
   gNB_RRC_INST *rrc;

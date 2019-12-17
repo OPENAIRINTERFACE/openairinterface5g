@@ -48,7 +48,7 @@
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
 //#define DEBUG_ULSCH_DECODING
-#define gNB_DEBUG_TRACE
+//#define gNB_DEBUG_TRACE
 
 #define OAI_UL_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX = 68*384
 //#define PRINT_CRC_CHECK
@@ -310,7 +310,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   int16_t  z [68*384];
   int8_t   l [68*384];
-  uint8_t  kc       = 0;
+  uint8_t  kc       = 255;
   uint8_t  Ilbrm    = 0;
   uint32_t Tbslbrm  = 950984;
   double   Coderate = 0.0;
@@ -567,6 +567,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
 
+      AssertFatal(kc!=255,"");
       for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }

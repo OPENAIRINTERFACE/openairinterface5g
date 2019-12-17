@@ -81,7 +81,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
     for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
       rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
       lc_id = rb_id;
-      LOG_D(RLC, "Adding SRB %ld, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+      LOG_D(RLC, "Adding SRB %ld, rb_id %ld\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
       srb_toaddmod_p = srb2add_listP->list.array[cnt];
 
       if (srb_toaddmod_p->rlc_Config) {
@@ -102,7 +102,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                     &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
                     rb_id, lc_id);
                 } else {
-                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                         PROTOCOL_CTXT_ARGS(ctxt_pP),
                         rb_id);
                 }
@@ -122,7 +122,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                     rb_id, lc_id,0, 0
                   );
                 } else {
-                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                         PROTOCOL_CTXT_ARGS(ctxt_pP),
                         rb_id);
                 }
@@ -142,7 +142,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                     rb_id, lc_id,0, 0
                   );
                 } else {
-                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                         PROTOCOL_CTXT_ARGS(ctxt_pP),
                         rb_id);
                 }
@@ -162,7 +162,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                     rb_id, lc_id,0, 0
                   );
                 } else {
-                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                         PROTOCOL_CTXT_ARGS(ctxt_pP),
                         rb_id);
                 }
@@ -196,7 +196,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
                 rb_id,lc_id);
             } else {
-              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                     PROTOCOL_CTXT_ARGS(ctxt_pP),
                     rb_id);
             }
@@ -213,7 +213,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
                           NULL, // TO DO DEFAULT CONFIG
                           rb_id, lc_id);
                       } else {
-                        LOG_D(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                        LOG_D(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %ld \n",
                               PROTOCOL_CTXT_ARGS(ctxt_pP),
                               rb_id);
                       }
@@ -379,7 +379,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
           }
         }
 
-        LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
+        LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %ld SESSION ID %u SERVICE ID %u\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               lc_id,
               rb_id,
@@ -502,7 +502,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
 
   //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
   if(rb_idP >= NB_RB_MAX) {
-    LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MAX);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -524,7 +524,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
         break;
 
       default:
-        LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] RLC mode is unknown!\n",
+        LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %ld] RLC mode is unknown!\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               (srb_flagP) ? "SRB" : "DRB",
               rb_idP);
@@ -539,20 +539,20 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
     h_lcid_rc = hashtable_remove(rlc_coll_p, key_lcid);
     h_rc = hashtable_remove(rlc_coll_p, key);
-    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASED %s\n",
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %ld LCID %d] RELEASED %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP, lcid,
           (srb_flagP) ? "SRB" : "DRB");
   } else if ((h_rc == HASH_TABLE_KEY_NOT_EXISTS) || (h_lcid_rc == HASH_TABLE_KEY_NOT_EXISTS)) {
-    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASE : RLC NOT FOUND %s, by RB-ID=%d, by LC-ID=%d\n",
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %ld LCID %d] RELEASE : RLC NOT FOUND %s, by RB-ID=%d, by LC-ID=%d\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP, lcid,
           (srb_flagP) ? "SRB" : "DRB",
           h_rc, h_lcid_rc);
   } else {
-    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u LCID %d] RELEASE : INTERNAL ERROR %s\n",
+    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %ld LCID %d] RELEASE : INTERNAL ERROR %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP, lcid,
@@ -585,7 +585,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
     //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
     //AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
     if(rb_idP >= NB_RB_MAX) {
-      LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+      LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MAX);
       return NULL;
     }
 
@@ -624,7 +624,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
   h_rc = hashtable_get(rlc_coll_p, key, (void **)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
-    LOG_W(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc , already exist %s\n",
+    LOG_W(RLC, PROTOCOL_CTXT_FMT"[%s %ld] rrc_rlc_add_rlc , already exist %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP,
@@ -649,7 +649,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
               mbms_id_p->service_id,
               mbms_id_p->session_id);
       } else {
-        LOG_I(RLC, PROTOCOL_CTXT_FMT" [%s %u] rrc_rlc_add_rlc  %s\n",
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" [%s %ld] rrc_rlc_add_rlc  %s\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               (srb_flagP) ? "SRB" : "DRB",
               rb_idP,
@@ -659,7 +659,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
       rlc_union_p->mode = rlc_modeP;
       return rlc_union_p;
     } else {
-      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc FAILED %s (add by RB_id=%d; add by LC_id=%d)\n",
+      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %ld] rrc_rlc_add_rlc FAILED %s (add by RB_id=%d; add by LC_id=%d)\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             (srb_flagP) ? "SRB" : "DRB",
             rb_idP,
@@ -670,7 +670,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
       return NULL;
     }
   } else {
-    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc , INTERNAL ERROR %s\n",
+    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %ld] rrc_rlc_add_rlc , INTERNAL ERROR %s\n",
           PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP,
@@ -689,13 +689,13 @@ rlc_op_status_t rrc_rlc_config_req   (
   const rlc_info_t      rlc_infoP) {
   //-----------------------------------------------------------------------------
   //rlc_op_status_t status;
-  LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG_REQ for RAB %u\n",
+  LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG_REQ for RAB %ld\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         rb_idP);
 
   //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
   if(rb_idP >= NB_RB_MAX) {
-    LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    LOG_E(RLC, "RB id is too high (%ld/%d)!\n", rb_idP, NB_RB_MAX);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -709,7 +709,7 @@ rlc_op_status_t rrc_rlc_config_req   (
     case CONFIG_ACTION_MODIFY:
       switch (rlc_infoP.rlc_mode) {
         case RLC_MODE_AM:
-          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB AM\n",
+          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %ld] MODIFY RB AM\n",
                 PROTOCOL_CTXT_ARGS(ctxt_pP),
                 rb_idP);
           config_req_rlc_am(
@@ -720,7 +720,7 @@ rlc_op_status_t rrc_rlc_config_req   (
           break;
 
         case RLC_MODE_UM:
-          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB UM\n",
+          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %ld] MODIFY RB UM\n",
                 PROTOCOL_CTXT_ARGS(ctxt_pP),
                 rb_idP);
           config_req_rlc_um(
@@ -731,7 +731,7 @@ rlc_op_status_t rrc_rlc_config_req   (
           break;
 
         case RLC_MODE_TM:
-          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB TM\n",
+          LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %ld] MODIFY RB TM\n",
                 PROTOCOL_CTXT_ARGS(ctxt_pP),
                 rb_idP);
           config_req_rlc_tm(

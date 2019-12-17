@@ -276,7 +276,7 @@ sin_addr:
   };
   bind(t->listen_sock, (struct sockaddr *)&addr, sizeof(addr));
   AssertFatal(listen(t->listen_sock, 5) == 0, "");
-  struct epoll_event ev;
+  struct epoll_event ev={0};
   ev.events = EPOLLIN;
   ev.data.fd = t->listen_sock;
   AssertFatal(epoll_ctl(t->epollfd, EPOLL_CTL_ADD,  t->listen_sock, &ev) != -1, "");

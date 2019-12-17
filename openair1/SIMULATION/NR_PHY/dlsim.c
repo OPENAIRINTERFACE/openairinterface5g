@@ -68,7 +68,7 @@ uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
-int rlc_module_init (void) {return(0);}
+int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 int rrc_init_nr_global_param (void) {return(0);}
 void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB_positions,uint16_t ssb_periodicity,uint64_t dl_CarrierFreqP,uint32_t dl_BandwidthP);
@@ -600,24 +600,26 @@ int main(int argc, char **argv)
     phy_procedures_gNB_TX(gNB,frame,slot,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
+    int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
 
     LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
     if (gNB->frame_parms.nb_antennas_tx>1)
       LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
 
     int tx_offset = slot*frame_parms->samples_per_slot;
+    printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
       if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+	PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
 		     &txdata[aa][tx_offset],
 		     frame_parms->ofdm_symbol_size,
 		     12,
 		     frame_parms->nb_prefix_samples,
 		     CYCLIC_PREFIX);
       } else {
-	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+	nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
 			     &txdata[aa][tx_offset],
 			     14,
 			     frame_parms);
