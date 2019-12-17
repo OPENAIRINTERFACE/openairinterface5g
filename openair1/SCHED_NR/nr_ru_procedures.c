@@ -111,7 +111,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
-
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t  *proc  = &ru->proc;
   RU_feptx_t *feptx = proc->feptx;
 
@@ -128,7 +128,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
   int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
-  if (nr_slot_select(fp,frame_tx,slot) == NR_UPLINK_SLOT) return;
+  if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
   for (aa=0; aa<fp->Lmax; aa++) {
     memset(ru->common.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
@@ -155,7 +155,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
 
-    if (nr_slot_select(fp,frame_tx,slot)==NR_DOWNLINK_SLOT) {
+    if (nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT) {
       // If this is not an S-tti
       for(i=0; i<ru->nb_tx; ++i){
         if(j%2 == 0){
@@ -291,6 +291,7 @@ static void *nr_feptx_thread(void *param) {
 // seems to be hardcoded to numerology 1 (2 slots=1 subframe)
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
      
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
@@ -308,7 +309,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
-  nr_feptx0(ru,slot,0,fp->symbols_per_slot,aa);
+  nr_feptx0(ru,slot,0,NR_NUMBER_OF_SYMBOLS_PER_SLOT,aa);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
   stop_meas(&ru->ofdm_mod_stats);

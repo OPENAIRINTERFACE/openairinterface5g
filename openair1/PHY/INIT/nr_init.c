@@ -390,6 +390,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   }
 
   memcpy((void*)&gNB_config->prach_config,(void*)&phy_config->cfg->prach_config,sizeof(phy_config->cfg->prach_config));
+  memcpy((void*)&gNB_config->tdd_table,(void*)&phy_config->cfg->tdd_table,sizeof(phy_config->cfg->tdd_table));
 
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = (gNB_config->carrier_config.dl_frequency.value)*1e3 + (gNB_config->carrier_config.dl_bandwidth.value)*5e5;
@@ -408,8 +409,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
         (unsigned long long)fp->dl_CarrierFreq,
         (unsigned long long)fp->ul_CarrierFreq);
 
-
   nr_init_frame_parms(gNB_config, fp);
+  
 
   if (RC.gNB[Mod_id]->configured == 1) {
     LOG_E(PHY,"Already gNB already configured, do nothing\n");
