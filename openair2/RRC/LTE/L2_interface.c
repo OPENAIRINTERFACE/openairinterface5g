@@ -312,10 +312,8 @@ mac_rrc_data_ind(
       if (ue_context_p->ue_context.Status != RRC_RECONFIGURED) {
         LOG_E(RRC,"[eNB %d] Received C-RNTI ,but UE %x status(%d) not RRC_RECONFIGURED\n",module_idP,rntiP,ue_context_p->ue_context.Status);
         return (-1);
-      } else {
-        rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
-        ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-      }
+      } 
+      rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
     }
   }
 
