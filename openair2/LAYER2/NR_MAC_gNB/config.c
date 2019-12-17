@@ -41,6 +41,7 @@
 #include "NR_ServingCellConfigCommon.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "SCHED_NR/phy_frame_config_nr.h"
 
 #include "NR_MIB.h"
 
@@ -403,9 +404,25 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
   cfg->num_tlv++;
 
   // TDD Table Configuration
-  cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+  //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
   cfg->num_tlv++;
+  cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+  
+  if(cfg->cell_config.frame_duplex_type.value == TDD){
+  int return_tdd = set_tdd_config_nr(cfg,
+		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
+                  );
+
+  if (return_tdd !=0){
+     LOG_E(PHY,"TDD configuration can not be done\n");
+  }
+  else LOG_I(PHY,"TDD has been properly configurated\n");
+  }
 
 
 /*
