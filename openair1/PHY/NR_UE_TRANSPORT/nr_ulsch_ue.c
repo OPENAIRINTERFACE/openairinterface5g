@@ -123,7 +123,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
-    for (i = 0; i < NR_SYMBOLS_PER_SLOT; i++)
+    start_symbol = harq_process_ul_ue->start_symbol;
+
+    for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++)
       number_dmrs_symbols += is_dmrs_symbol(i,
                                             0,
                                             0,
@@ -218,8 +220,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
 
   }
-
-  start_symbol = 14 - harq_process_ul_ue->number_of_symbols;
 
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
