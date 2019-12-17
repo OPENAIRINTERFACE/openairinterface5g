@@ -134,6 +134,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   start_meas(&ru->ofdm_total_stats);
   if(ru->num_gNB != 0){//L1 RU on same machine
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
     for(j=0; j<2; ++j){//half slot 
       for(i=0; i<ru->nb_tx; ++i){
         if(j == 0){
@@ -153,7 +154,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
           feptx[i+ru->nb_tx].aa                      = i;
           feptx[i+ru->nb_tx].index                   = i+ru->nb_tx;
           feptx[i+ru->nb_tx].ru                      = ru;
-          feptx[i+ru->nb_tx].symbol                  = fp->symbols_per_tti>>1;
+          feptx[i+ru->nb_tx].symbol                  = fp->symbols_per_slot>>1;
           feptx[i+ru->nb_tx].slot                    = slot;
           feptx[i+ru->nb_tx].nb_antenna_ports        = nb_antenna_ports;
           feptx[i+ru->nb_tx].instance_cnt_feptx      = 0;
@@ -239,7 +240,6 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RU_TX_OFDM_MASK, proc->feptx_mask );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
-  //write_output
 
   stop_meas(&ru->ofdm_total_stats);
 
@@ -274,9 +274,9 @@ static void *nr_feptx_thread(void *param) {
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
     if(ru->num_gNB != 0){
-      half_slot = feptx->half_slot;
       txdataF_offset = ((slot%2)*fp->samples_per_slot_wCP);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+      ////////////precoding////////////
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 1);
       start_meas(&ru->precoding_stats);
       if (ru->nb_tx == 1) {
         AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
@@ -284,14 +284,14 @@ static void *nr_feptx_thread(void *param) {
           if ((fp->L_ssb >> p) & 0x01){
             memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
                  (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
-                 (fp->symbols_per_tti>>1)*fp->ofdm_symbol_size*sizeof(int32_t));
+                 (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
           }
         }
       }
       else {
         bw  = ru->beam_weights[0];
         txdataF = &ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset];
-        for(i=0; i<fp->symbols_per_tti>>1; ++i){
+        for(i=0; i<fp->symbols_per_slot>>1; ++i){
           nr_beam_precoding(&txdataF,
                         ru->common.txdataF_BF,
                         fp,
@@ -303,15 +303,16 @@ static void *nr_feptx_thread(void *param) {
         }
       }
       stop_meas(&ru->precoding_stats);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
 
-
+      ////////////FEPTX////////////
       start_meas(&ru->ofdm_mod_stats);
-      nr_feptx0(ru,slot,start,fp->symbols_per_tti>>1,aa);
+      nr_feptx0(ru,slot,start,fp->symbols_per_slot>>1,aa);
       stop_meas(&ru->ofdm_mod_stats);
 
+      if (release_thread(&feptx->mutex_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
+
       AssertFatal((ret=pthread_mutex_lock(&ru->proc.mutex_feptx))==0,"mutex_lock return %d\n",ret);
-      feptx->instance_cnt_feptx = -1;
       ru->proc.feptx_mask |= 1<<(feptx->index);
       if(ru->proc.feptx_mask == ofdm_mask_full)
         AssertFatal(pthread_cond_signal(&ru->proc.cond_feptx) == 0,"ERROR pthread_cond_signal for precoding and ofdm finish\n");
@@ -321,7 +322,7 @@ static void *nr_feptx_thread(void *param) {
     }// if L1 RU on same machine
 
     else{
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 1);
       start_meas(&ru->precoding_stats);
       if (ru->nb_tx == 1) {
         AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
@@ -345,7 +346,7 @@ static void *nr_feptx_thread(void *param) {
                         nb_antenna_ports);
       }
       stop_meas(&ru->precoding_stats);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
 
 
       start_meas(&ru->ofdm_mod_stats);
@@ -406,7 +407,7 @@ void nr_init_feptx_thread(RU_t *ru) {
   RU_feptx_t *feptx = proc->feptx;
   int i = 0;
 
-  for(i=0; i<16; i++){
+  for(i=0; i<(ru->nb_tx*2); i++){
     feptx[i].instance_cnt_feptx         = -1;
     
     pthread_mutex_init( &feptx[i].mutex_feptx, NULL);
