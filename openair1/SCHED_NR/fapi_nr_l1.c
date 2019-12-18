@@ -151,7 +151,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
 
-  LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
+  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
         frame,slot,
         DL_req->SFN,DL_req->Slot,number_dl_pdu,
         TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs);

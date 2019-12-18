@@ -724,31 +724,30 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   int slot_type         = nr_slot_select(cfg,frame,slot%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)-1))%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
   int sf_extension  = 0;
+  int siglen=fp->samples_per_slot;
+  int flags=1;
+
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-  if (slot_type == NR_DOWNLINK_SLOT ||
-		  slot_type == NR_MIXED_SLOT) {
-     int siglen=fp->samples_per_slot,flags=1;
+  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
-     if(slot_type == NR_MIXED_SLOT) {
-         txsymb = 0;
-         for(int symbol_count =0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
-            if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0) {
-               txsymb++;
-            }
-         }
-         AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
-         siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
-                   + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+    if(slot_type == NR_MIXED_SLOT) {
+      txsymb = 0;
+      for(int symbol_count =0;symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT;symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0)
+          txsymb++;
+      }
+      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
                //+ ru->end_of_burst_delay;
-     flags=3; // end of burst
-     }
+      flags=3; // end of burst
+    }
 
-     if (cfg->cell_config.frame_duplex_type.value == TDD &&
-          slot_type == NR_DOWNLINK_SLOT &&
-          prevslot_type == NR_UPLINK_SLOT) {
-         flags = 2; // start of burst
-          //sf_extension = ru->sf_extension;
-     }
+    if (cfg->cell_config.frame_duplex_type.value == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        prevslot_type == NR_UPLINK_SLOT)
+         
+      flags = 2; // start of burst
+                //sf_extension = ru->sf_extension;
 
   /*if ((slot == 0) ||
       (slot == 1)) {
@@ -785,7 +784,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
-      
       for (i=0; i<ru->nb_tx; i++)
 	txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
       

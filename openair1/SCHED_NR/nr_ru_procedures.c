@@ -224,9 +224,7 @@ static void *nr_feptx_thread(void *param) {
   NR_DL_FRAME_PARMS *fp;
   int ofdm_mask_full;
 
-
   while (!oai_exit) {
-
     ret = 0;
     if (wait_on_condition(&feptx->mutex_feptx,&feptx->cond_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+feptx->index+1 , 1 );

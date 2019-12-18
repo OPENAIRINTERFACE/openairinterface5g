@@ -36,6 +36,7 @@
 //#include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
 
@@ -64,7 +65,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerL
 					ueCapabilityRAT_Container_nr->size, 0, 0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes) container size %d\n", dec_rval.consumed,ueCapabilityRAT_Container_nr->size);
+    LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes) container size %lu\n", dec_rval.consumed,ueCapabilityRAT_Container_nr->size);
       ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,
                       ue_context_p->ue_context.UE_Capability_nr);
       ue_context_p->ue_context.UE_Capability_nr = 0;
