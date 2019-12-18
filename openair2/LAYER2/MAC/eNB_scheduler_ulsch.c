@@ -168,12 +168,20 @@ rx_sdu(const module_id_t enb_mod_idP,
       UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
       UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
       
-      double tpc_forgetting_filter=0.75;
+      double snr_filter_tpc=0.75;
       if(UE_scheduling_control->pusch_snr_avg[CC_idP] == 0) {
         UE_scheduling_control->pusch_snr_avg[CC_idP] = ul_cqi;
       }
       else {
-        UE_scheduling_control->pusch_snr_avg[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_avg[CC_idP] * tpc_forgetting_filter + (double)ul_cqi * (1-tpc_forgetting_filter));
+        UE_scheduling_control->pusch_snr_avg[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_avg[CC_idP] * snr_filter_tpc + (double)ul_cqi * (1-snr_filter_tpc));
+      }
+
+      double snr_filter_amc=0.5;
+      if(UE_scheduling_control->pusch_snr_amc[CC_idP] == 0) {
+        UE_scheduling_control->pusch_snr_amc[CC_idP] = ul_cqi;
+      }
+      else {
+        UE_scheduling_control->pusch_snr_amc[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_amc[CC_idP] * snr_filter_amc + (double)ul_cqi * (1-snr_filter_amc));
       }
 
       UE_scheduling_control->ul_consecutive_errors = 0;

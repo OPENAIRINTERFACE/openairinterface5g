@@ -2572,7 +2572,7 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
   uint16_t           first_rb[MAX_NUM_CCs];
   uint8_t            mcs;
   uint8_t            snr;
-  uint8_t            snr2mcs_offset = 4;
+  uint8_t            snr2mcs_offset = 0;
   uint8_t            rb_table_index;
   uint8_t            num_pucch_rb;
   uint32_t           tbs;
@@ -2667,9 +2667,12 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
         UE_template = &UE_info->UE_template[CC_id][UE_id];
 
         if ( UE_info->UE_sched_ctrl[UE_id].phr_received == 1 ) {
-          snr = (5 * UE_info->UE_sched_ctrl[UE_id].pusch_snr[CC_id] - 640) / 10;
+          snr = (5 * UE_info->UE_sched_ctrl[UE_id].pusch_snr_amc[CC_id] - 640) / 10;
           if((snr + snr2mcs_offset) >= 20) {
             mcs = 20;
+          }
+          else if((snr + snr2mcs_offset) < 3) {
+            mcs = 3;
           }
           else {
             mcs = snr + snr2mcs_offset;
@@ -3204,8 +3207,8 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         nfapi_hi_dci0_request_t        *nfapi_hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP];
         nfapi_hi_dci0_req->sfn_sf = frameP<<4|subframeP; // sfnsf_add_subframe(sched_frame, sched_subframeP, 0); // sunday!
         nfapi_hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
-        LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
-              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
+        LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d mcs %d first_rb %d num_rb %d round %d\n",
+              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,UE_template->mcs_UL[harq_pid],first_rb[CC_id],rb_table[rb_table_index],0);
         ul_req_index = 0;
         dlsch_flag = 0;
 
@@ -3355,8 +3358,8 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
         hi_dci0_req->number_of_dci++;
         // Add UL_config PDUs
-        LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
-              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
+        LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d mcs %d first_rb %d num_rb %d round %d\n",
+              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,mcs_rv,ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb,ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb,UE_sched_ctrl->round_UL[CC_id][harq_pid]);
         ul_req_index = 0;
         dlsch_flag = 0;
 

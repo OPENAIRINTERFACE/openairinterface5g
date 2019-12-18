@@ -962,6 +962,7 @@ typedef struct {
   uint8_t pucch3_snr[NFAPI_CC_MAX];
   uint8_t pusch_snr[NFAPI_CC_MAX];
   uint8_t pusch_snr_avg[NFAPI_CC_MAX];
+  uint8_t pusch_snr_amc[NFAPI_CC_MAX];
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;
