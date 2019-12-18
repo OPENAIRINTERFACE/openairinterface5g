@@ -123,7 +123,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int j    = 0;//symbol
   int aa   = 0;//logical antenna number
   int ret  = 0;
-  int nb_antenna_ports = fp->N_ssb;
+  int nb_antenna_ports = fp->L_ssb;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
   int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
@@ -283,7 +283,7 @@ static void *nr_feptx_thread(void *param) {
         for (int p=0; p<fp->Lmax; p++) {
           if ((fp->L_ssb >> p) & 0x01){
             memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
-                 (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
+                 (void*)&ru->gNB_list[0]->common_vars.txdataF[p][txdataF_offset + l*fp->ofdm_symbol_size],
                  (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
           }
         }
