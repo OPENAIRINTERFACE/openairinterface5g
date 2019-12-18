@@ -37,6 +37,8 @@
 extern RAN_CONTEXT_t RC;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
+uint8_t mac_payload[MAX_NR_DLSCH_PAYLOAD_BYTES];
+
 /*Scheduling of DLSCH with associated DCI in common search space
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
@@ -266,7 +268,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
-  UE_list_t *UE_list = &gNB_mac->UE_list;
   nfapi_nr_dl_config_request_body_t *dl_req;
   nfapi_tx_request_pdu_t *TX_req;
   mac_rlc_status_resp_t rlc_status;
@@ -286,12 +287,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   uint16_t R = 697;
   uint16_t nb_rb = 50;
   uint32_t TBS = nr_compute_tbs(Qm, R, nb_rb, 12, 6, 0, 1)/8; // this is in bits TODO use nr_get_tbs
-  int UE_id = 0; // UE_list->head is -1 !
+  int UE_id = 0; 
   uint16_t rnti = 0x1234;
   uint16_t sfn_sf = frameP << 7 | slotP;
 
-  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-  //ta_update = ue_sched_ctl->ta_update;
+  printf("TBS=%d\n",TBS);
 
   for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP]; CC_id++) {
 
@@ -360,17 +360,19 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
             sdu_lcids[num_sdus] = lcid;
             sdu_length_total += sdu_lengths[num_sdus];
 
+	    /*
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]++;
             UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
             UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[num_sdus];
-
+	    */
+	    
             header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
             header_length_total += header_length_last;
 
             num_sdus++;
 
-            ue_sched_ctl->uplane_inactivity_timer = 0;
+            //ue_sched_ctl->uplane_inactivity_timer = 0;
           }
         } else { // no TBS left
         break;
@@ -430,7 +432,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
       offset = nr_generate_dlsch_pdu(module_idP,
                                      (unsigned char *) dlsch_buffer,
-                                     (unsigned char *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                                     (unsigned char *) mac_payload,
                                      num_sdus, //num_sdus
                                      sdu_lengths,
                                      sdu_lcids,
@@ -441,14 +443,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       // Padding: fill remainder of DLSCH with 0
       if (post_padding > 0){
         for (int j = 0; j < (TBS - offset); j++)
-          UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + j] = 0;
+          mac_payload[offset + j] = 0;
       }
 
       TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
 
       //TX_req->segments[0].segment_length = 8;
       TX_req->segments[0].segment_length = TBS_bytes + 2;
-      TX_req->segments[0].segment_data = gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0];
+      TX_req->segments[0].segment_data = mac_payload;
 
       gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
       gNB_mac->TX_req[CC_id].sfn_sf = sfn_sf;
@@ -459,7 +461,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
           LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n \n", frameP, slotP, TBS_bytes);
           for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
-            LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0])[i]);
+            LOG_I(MAC, "%x. ", mac_payload[i]);
           }
         #endif
       } else {
@@ -467,14 +469,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         if (frameP%100 == 0){
           LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
           for(int i = 0; i < 10; i++) {
-            LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0])[i]);
+            LOG_I(MAC, "%x. ", mac_payload[i]);
           }
         }
         #endif
       }
       // Printing bit by bit for debugging purpose
       /*for (int k = 0; k < TBS; k++){
-        printf("MAC PDU %u\n",((( UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][k/8]) & (1 << (k & 7))) >> (k & 7)));
+        printf("MAC PDU %u\n",((( mac_payload[k/8]) & (1 << (k & 7))) >> (k & 7)));
         if ((k+1)%8 == 0)
           printf("\n");
       }*/

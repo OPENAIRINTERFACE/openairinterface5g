@@ -144,6 +144,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI search space structure
   nfapi_nr_search_space_t           search_space[NFAPI_CC_MAX][NFAPI_NR_MAX_NB_SEARCH_SPACES];
 
+  /// this is an LTE structure and needs to be urgenly updated
   UE_list_t UE_list;
 
   /// UL handle
