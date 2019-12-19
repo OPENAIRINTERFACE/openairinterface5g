@@ -164,13 +164,13 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_PADDING;
     mac_pdu_ptr++;
 
- 	// compute final offset
-    offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
-    
   } else {            
     // no MAC subPDU with padding
   }
 
+  // compute final offset
+  offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
+    
   //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
 
   return offset;

@@ -37,7 +37,7 @@
 extern RAN_CONTEXT_t RC;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
-uint8_t mac_payload[MAX_NR_DLSCH_PAYLOAD_BYTES];
+uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
 
 /*Scheduling of DLSCH with associated DCI in common search space
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
@@ -280,18 +280,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   int padding = 0, post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int CC_id, lcid, offset, i, j=0, k=0, header_length_last, TBS_bytes;
 
-  // hardcoded parameters to 30 kHz
-  // for DMRS configuration type 1
-  unsigned char dlsch_buffer[MAX_NR_DLSCH_PAYLOAD_BYTES];
-  uint8_t Qm = 2;
-  uint16_t R = 697;
-  uint16_t nb_rb = 50;
-  uint32_t TBS = nr_compute_tbs(Qm, R, nb_rb, 12, 6, 0, 1)/8; // this is in bits TODO use nr_get_tbs
   int UE_id = 0; 
   uint16_t rnti = 0x1234;
   uint16_t sfn_sf = frameP << 7 | slotP;
 
-  printf("TBS=%d\n",TBS);
+  uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
 
   for (CC_id = 0; CC_id < RC.nb_nr_mac_CC[module_idP]; CC_id++) {
 
@@ -301,31 +294,28 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     TX_req = &gNB_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
     ta_len = gNB_mac->ta_len;
 
+    TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
+    //printf("TBS_bytes=%d (bytes)\n",TBS_bytes);
+
     //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
     //through the LTE stack
     if (IS_SOFTMODEM_NOS1){
 
-
-      // Hardcode it for now
-      //TBS = 6784/8; //TBS in bytes
-      //nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-      //TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
-
       /* TODO
       // RLC data on DCCH
-      if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
       }*/
 
       /* TODO
       // RLC data on DCCH1
-      if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
       }*/
 
       for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
         LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
-          module_idP, frameP, lcid, TBS, TBS - ta_len - header_length_total - sdu_length_total - 3);
+          module_idP, frameP, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
 
-        if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+        if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
           rlc_status = mac_rlc_status_ind(module_idP,
                                           rnti,
                                           module_idP,
@@ -334,14 +324,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           lcid,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3,
+                                          TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
                                           0,
                                           0);
 
           if (rlc_status.bytes_in_buffer > 0) {
-            LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
-              module_idP, frameP, TBS - ta_len - header_length_total - sdu_length_total - 3,
-              lcid, header_length_total, TBS);
+            LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
+              module_idP, frameP, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
+              lcid, header_length_total, TBS_bytes);
 
             sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                                      rnti,
@@ -350,8 +340,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                                      ENB_FLAG_YES,
                                                      MBMS_FLAG_NO,
                                                      lcid,
-                                                     TBS,
-                                                     (char *)&dlsch_buffer[sdu_length_total],
+                                                     TBS_bytes,
+                                                     (char *)&mac_sdus[sdu_length_total],
                                                      0,
                                                      0);
 
@@ -374,7 +364,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
             //ue_sched_ctl->uplane_inactivity_timer = 0;
           }
-        } else { // no TBS left
+        } else { // no TBS_bytes left
         break;
         }
       }
@@ -392,26 +382,17 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 
       // fill dlsch_buffer with random data
-      for (i = 0; i < TBS/8; i++){
-        dlsch_buffer[i] = (unsigned char) rand(); //i&0xFF;
+      for (i = 0; i < TBS_bytes; i++){
+        mac_sdus[i] = (unsigned char) rand(); //i&0xFF;
       }
 
       //Sending SDUs with size 1
       //Initialize elements of sdu_lcids and sdu_lengths
-      //TODO this will be eventually be removed
-      while (TBS >= 3 + header_length_total + sdu_length_total + ta_len){
-        if (k < NR_MAX_NB_RB && j < NR_MAX_NB_RB){
-          sdu_lcids[j] = 0x05; // DRB
-          sdu_lengths[k] = 1;
-          header_length_total += 2;
-          sdu_length_total += 1;
-          num_sdus +=1;
-          k++, j++;
-        }
-        else {
-          break;
-        }
-      }
+      sdu_lcids[0] = 0x05; // DRB
+      sdu_lengths[0] = TBS_bytes-3;
+      header_length_total += 2;
+      sdu_length_total += sdu_lengths[0];
+      num_sdus +=1;
     } // else IS_SOFTMODEM_NOS1
 
     // there is at least one SDU or TA command
@@ -419,10 +400,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     if (ta_len + sdu_length_total + header_length_total > 0) {
 
       // Check if there is data from RLC or CE
-      if (TBS >= 2 + header_length_total + sdu_length_total + ta_len) {
+      if (TBS_bytes >= 2 + header_length_total + sdu_length_total + ta_len) {
         // we have to consider padding
         // padding param currently not in use
-        padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
+        padding = TBS_bytes - header_length_total - sdu_length_total - ta_len - 1;
         post_padding = 1;
       } else {
         padding = 0;
@@ -431,8 +412,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 
       offset = nr_generate_dlsch_pdu(module_idP,
-                                     (unsigned char *) dlsch_buffer,
-                                     (unsigned char *) mac_payload,
+                                     (unsigned char *) mac_sdus,
+                                     (unsigned char *) mac_pdu,
                                      num_sdus, //num_sdus
                                      sdu_lengths,
                                      sdu_lcids,
@@ -442,15 +423,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
       // Padding: fill remainder of DLSCH with 0
       if (post_padding > 0){
-        for (int j = 0; j < (TBS - offset); j++)
-          mac_payload[offset + j] = 0;
+        for (int j = 0; j < (TBS_bytes - offset); j++)
+          mac_pdu[offset + j] = 0;
       }
 
-      TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
 
       //TX_req->segments[0].segment_length = 8;
       TX_req->segments[0].segment_length = TBS_bytes + 2;
-      TX_req->segments[0].segment_data = mac_payload;
+      TX_req->segments[0].segment_data = mac_pdu;
 
       gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
       gNB_mac->TX_req[CC_id].sfn_sf = sfn_sf;
