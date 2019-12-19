@@ -279,13 +279,16 @@ static int trx_usrp_start(openair0_device *device) {
   s->usrp->set_gpio_attr("FP0", "DDR", 0x7f, 0x7f);
   //set control register to ATR
   s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0x7f);
-  //set ATR register
+  //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
   s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
+  // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
+  // (we use full duplex here, because our RX is on all the time - this might need to change later)
+  s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
   // init recv and send streaming
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
   LOG_I(HW,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
   LOG_I(HW,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
-
+  
   if (s->use_gps == 1 || device->openair0_cfg[0].time_source == external) {
     s->wait_for_first_pps = 1;
     cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);
@@ -1007,25 +1010,34 @@ extern "C" {
       s->usrp = uhd::usrp::multi_usrp::make(args);
 
       if (args.find("clock_source")==std::string::npos) {
-        LOG_I(HW, "Using clock_source == '%d'\n", openair0_cfg[0].clock_source);
-
-        if (openair0_cfg[0].clock_source == internal) {
-          //in UHD 3.14 we could use
-          //s->usrp->set_sync_source("clock_source=internal","time_source=internal");
-          s->usrp->set_time_source("internal");
-          s->usrp->set_clock_source("internal");
-        } else if (openair0_cfg[0].clock_source == external ) {
-          //s->usrp->set_sync_source("clock_source=external","time_source=external");
-          s->usrp->set_time_source("external");
-          s->usrp->set_clock_source("external");
-        } else if (openair0_cfg[0].clock_source==gpsdo) {
-          s->usrp->set_clock_source("gpsdo");
-          s->usrp->set_time_source("gpsdo");
-        }
-      } else {
-        LOG_W(HW, "clock_source already specified in device arguments! Ignoring command line parameter\n");
+	if (openair0_cfg[0].clock_source == internal) {
+	  //in UHD 3.14 we could use
+	  //s->usrp->set_sync_source("clock_source=internal","time_source=internal");
+	  s->usrp->set_time_source("internal");
+	  s->usrp->set_clock_source("internal");
+	  LOG_D(HW,"Setting time and clock source to internal\n");
+	}
+	else if (openair0_cfg[0].clock_source == external ) {
+	  //s->usrp->set_sync_source("clock_source=external","time_source=external");
+	  s->usrp->set_time_source("external");
+	  s->usrp->set_clock_source("external");
+	  LOG_D(HW,"Setting time and clock source to external\n");
+	}
+	else if (openair0_cfg[0].clock_source==gpsdo) {
+	  s->usrp->set_clock_source("gpsdo");
+	  s->usrp->set_time_source("gpsdo");
+	  LOG_D(HW,"Setting time and clock source to gpsdo\n");
+	}
+	else { 
+	  LOG_W(HW,"Clock source set neither in usrp_args nor on command line, using default!\n");
+	}
       }
-
+      else {
+	if (openair0_cfg[0].clock_source != unset) {
+	  LOG_W(HW,"Clock source set in both usrp_args and in clock_source, ingnoring the latter!\n");
+	}
+      }
+      
       if (s->usrp->get_clock_source(0) == "gpsdo") {
         s->use_gps = 1;
 
