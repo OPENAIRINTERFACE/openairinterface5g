@@ -386,13 +386,12 @@ int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
     status=1;
 
     if (cfgoptions->numelt == 0 ) {
-      config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
       config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
       sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
       printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
     } else {
-      sprintf((char *)*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)*(cfgoptions->strptr));
+      sprintf((char *)(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)(cfgoptions->strptr));
     }
   }
 

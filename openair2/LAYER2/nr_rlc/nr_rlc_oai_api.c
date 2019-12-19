@@ -221,7 +221,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   nr_rlc_ue_t *ue;
   nr_rlc_entity_t *rb;
 
-  LOG_D(RLC, "%s rnti %d srb_flag %d rb_id %d mui %d confirm %d sdu_size %d MBMS_flag %d\n",
+  LOG_D(RLC, "%s rnti %d srb_flag %d rb_id %ld mui %d confirm %d sdu_size %d MBMS_flag %d\n",
         __FUNCTION__, rnti, srb_flagP, rb_idP, muiP, confirmP, sdu_sizeP,
         MBMS_flagP);
 
@@ -824,24 +824,24 @@ rlc_op_status_t rrc_rlc_config_req   (
   }
   if ((srb_flagP && !(rb_idP >= 1 && rb_idP <= 2)) ||
       (!srb_flagP && !(rb_idP >= 1 && rb_idP <= 5))) {
-    LOG_E(RLC, "%s:%d:%s: bad rb_id (%d) (is_srb %d)\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP);
+    LOG_E(RLC, "%s:%d:%s: bad rb_id (%ld) (is_srb %d)\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP);
     exit(1);
   }
   nr_rlc_manager_lock(nr_rlc_ue_manager);
-  LOG_D(RLC, "%s:%d:%s: remove rb %d (is_srb %d) for UE %d\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP, ctxt_pP->rnti);
+  LOG_D(RLC, "%s:%d:%s: remove rb %ld (is_srb %d) for UE %d\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP, ctxt_pP->rnti);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, ctxt_pP->rnti);
   if (srb_flagP) {
     if (ue->srb[rb_idP-1] != NULL) {
       ue->srb[rb_idP-1]->delete(ue->srb[rb_idP-1]);
       ue->srb[rb_idP-1] = NULL;
     } else
-      LOG_W(RLC, "removing non allocated SRB %d, do nothing\n", rb_idP);
+      LOG_W(RLC, "removing non allocated SRB %ld, do nothing\n", rb_idP);
   } else {
     if (ue->drb[rb_idP-1] != NULL) {
       ue->drb[rb_idP-1]->delete(ue->drb[rb_idP-1]);
       ue->drb[rb_idP-1] = NULL;
     } else
-      LOG_W(RLC, "removing non allocated DRB %d, do nothing\n", rb_idP);
+      LOG_W(RLC, "removing non allocated DRB %ld, do nothing\n", rb_idP);
   }
   /* remove UE if it has no more RB configured */
   for (i = 0; i < 2; i++)
