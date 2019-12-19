@@ -247,7 +247,8 @@ const char* eurecomVariablesNames[] = {
   "slot_number_TX0_gNB",
   "slot_number_TX1_gNB",
   "slot_number_RX0_gNB",
-  "slot_number_RX1_gNB"
+  "slot_number_RX1_gNB",
+  "ru_tx_ofdm_mask"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -328,6 +329,13 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_ru_feptx_ofdm7",
   "phy_procedures_ru_feptx_ofdm8",
   "phy_procedures_ru_feptx_ofdm9",
+  "phy_procedures_ru_feptx_ofdm10",
+  "phy_procedures_ru_feptx_ofdm11",
+  "phy_procedures_ru_feptx_ofdm12",
+  "phy_procedures_ru_feptx_ofdm13",
+  "phy_procedures_ru_feptx_ofdm14",
+  "phy_procedures_ru_feptx_ofdm15",
+  "phy_procedures_ru_feptx_ofdm16",
   "phy_procedures_ru_feptx_prec0",
   "phy_procedures_ru_feptx_prec1",
   "phy_procedures_ru_feptx_prec2",
@@ -502,6 +510,7 @@ const char* eurecomFunctionsNames[] = {
   "pdcch_interleaving",
   "pdcch_tx",
   /*NR softmodem signal*/
+  "wakeup_txfh",
   "gNB_thread_rxtx0",
   "gNB_thread_rxtx1"
 };

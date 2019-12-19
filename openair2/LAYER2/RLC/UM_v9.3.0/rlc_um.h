@@ -50,13 +50,13 @@
 #        include "rlc_um_segment.h"
 #        include "rlc_um_test.h"
 
-#define PROTOCOL_RLC_UM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] %s()"
+#define PROTOCOL_RLC_UM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld] %s()"
 #define PROTOCOL_RLC_UM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
           (rLC_Pp->is_data_plane) ? "DRB UM" : "SRB UM",\
           rLC_Pp->rb_id,\
           __FUNCTION__
 
-#define PROTOCOL_RLC_UM_MSC_FMT "[RNTI %" PRIx16 " %s %02u]"
+#define PROTOCOL_RLC_UM_MSC_FMT "[RNTI %" PRIx16 " %s %02ld]"
 #define PROTOCOL_RLC_UM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
         CTXT_Pp->rnti,\
           (rLC_Pp->is_data_plane) ? "DRB UM" : "SRB UM",\

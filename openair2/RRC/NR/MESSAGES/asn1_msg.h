@@ -74,7 +74,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
 /**
 \brief Generate configuration for SIB1 (gNB).
 @param carrier pointer to Carrier information
-@param configuration Pointer Configuration Request structure
+@param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
 uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
 #if defined(ENABLE_ITTI)

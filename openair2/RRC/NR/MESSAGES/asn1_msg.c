@@ -519,8 +519,6 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     bwp_dl_searchspace->monitoringSymbolsWithinSlot->buf                            = MALLOC(2);
     bwp_dl_searchspace->nrofCandidates                                              = CALLOC(1,sizeof(struct NR_SearchSpace__nrofCandidates));
     bwp_dl_searchspace->searchSpaceType                                             = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType));
-    bwp_dl_searchspace->searchSpaceType->choice.common                              = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common));
-    bwp_dl_searchspace->searchSpaceType->choice.ue_Specific                         = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__ue_Specific));
     bwp_dl_timedomainresourceallocation->k0 = CALLOC(1,sizeof(long));
     pusch_configcommontimedomainresourceallocation      = CALLOC(1,sizeof(NR_PUSCH_TimeDomainResourceAllocation_t));
     pusch_configcommontimedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
@@ -647,6 +645,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   bwp_dl_searchspace->searchSpaceType->present = configuration->SearchSpace_searchSpaceType[CC_id];
 
   if(bwp_dl_searchspace->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common) {
+    bwp_dl_searchspace->searchSpaceType->choice.common                              = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common));
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0                                           = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format2_0));
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel1     = CALLOC(1,sizeof(long));
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_0->nrofCandidates_SFI.aggregationLevel2     = CALLOC(1,sizeof(long));
@@ -663,6 +662,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
     *(bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy1)                                = configuration->Common_dci_Format2_3_monitoringPeriodicity[CC_id];
     bwp_dl_searchspace->searchSpaceType->choice.common->dci_Format2_3->dummy2                                   = configuration->Common_dci_Format2_3_nrofPDCCH_Candidates[CC_id];
   } else if (bwp_dl_searchspace->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+    bwp_dl_searchspace->searchSpaceType->choice.ue_Specific                         = CALLOC(1,sizeof(struct NR_SearchSpace__searchSpaceType__ue_Specific));
     bwp_dl_searchspace->searchSpaceType->choice.ue_Specific->dci_Formats = configuration->ue_Specific__dci_Formats[CC_id];
   }
 

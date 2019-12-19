@@ -124,7 +124,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ulsch_ue->length_dmrs = length_dmrs;
     ulsch_ue->rnti        = n_rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
+    ulsch_ue->nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1?6:4);
 
     N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs - N_PRB_oh;
 

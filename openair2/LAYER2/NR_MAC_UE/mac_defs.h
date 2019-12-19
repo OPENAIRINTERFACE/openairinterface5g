@@ -63,7 +63,8 @@
 
 typedef enum {
     SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1
+    SFN_C_MOD_2_EQ_1,
+    SFN_C_IMPOSSIBLE
 } SFN_C_TYPE;
 
 
