@@ -910,12 +910,14 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
           && enb_config->cell_config[0]->has_ul_freq
           && enb_config->cell_config[0]->has_dl_bandwidth) {
     initiate_soft_restart(mod_id, enb_config->cell_config[0]);
-  }
-
-  if (flexran_agent_get_rrc_xface(mod_id) && enb_config->cell_config[0]->has_x2_ho_net_control) {
-    if (flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control) < 0) {
+  } else if (flexran_agent_get_rrc_xface(mod_id)
+          && enb_config->cell_config[0]->has_x2_ho_net_control) {
+    LOG_I(FLEXRAN_AGENT,
+          "setting X2 HO NetControl to %d\n",
+          enb_config->cell_config[0]->x2_ho_net_control);
+    const int rc = flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control);
+    if (rc < 0)
       LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
-    }
   }
 
   *msg = NULL;
