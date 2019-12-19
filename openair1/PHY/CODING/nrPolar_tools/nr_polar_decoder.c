@@ -252,6 +252,7 @@ int8_t polar_decoder(double *input,
         nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
         nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
         nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+        free(tempECGM);
         return(-1);
       }
 
@@ -522,6 +523,7 @@ int8_t polar_decoder_dci(double *input,
         nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
         nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
         nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+        free(tempECGM);
         return(-1);
       }
 

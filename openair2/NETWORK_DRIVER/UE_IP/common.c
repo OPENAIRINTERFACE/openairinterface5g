@@ -193,7 +193,7 @@ ue_ip_common_class_wireless2ip(
       break;
 
     default:
-      printk("[UE_IP_DRV][%s] begin RB %d Inst %d Length %d bytes\n",__FUNCTION__,rb_idP,instP,data_lenP);
+      printk("[UE_IP_DRV][%s] begin RB %ld Inst %d Length %d bytes\n",__FUNCTION__,rb_idP,instP,data_lenP);
       printk("[UE_IP_DRV][%s] Inst %d: receive unknown message (version=%d)\n",__FUNCTION__,instP,ipv_p->version);
   }
 
@@ -326,7 +326,7 @@ ue_ip_common_ip2wireless(
   bytes_wrote += ue_ip_netlink_send((char *)skb_pP->data,skb_pP->len);
 
   if (bytes_wrote != skb_pP->len+UE_IP_PDCPH_SIZE) {
-    printk("[UE_IP_DRV][%s] Inst %d, RB_ID %d: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
+    printk("[UE_IP_DRV][%s] Inst %d, RB_ID %ld: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
            __FUNCTION__,
            instP,
            pdcph.rb_id,
