@@ -677,7 +677,7 @@ int main(int argc, char **argv)
         break;
     } // frame loop
 
-    if(is_frame_in_error == 0 || number_of_frames==1)
+    if(is_frame_in_error == 0)
       break;
   } // SNR loop
 
