@@ -59,7 +59,7 @@
 uint32_t *pseudo_random_gold_sequence(length M_PN, uint32_t cinit)
 {
   int size = M_PN * sizeof(uint32_t);
-  int size_x = (sizeof(int)*M_PN + size;
+  int size_x = sizeof(int)*M_PN + size;
   int *x1 = malloc(size_x);
   int *x2 = malloc(size_x);
 
