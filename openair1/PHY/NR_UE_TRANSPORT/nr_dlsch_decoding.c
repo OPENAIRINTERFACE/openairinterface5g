@@ -51,8 +51,9 @@
 static uint64_t nb_total_decod =0;
 static uint64_t nb_error_decod =0;
 
-notifiedFIFO_t freeBlocks;
-notifiedFIFO_elt_t *msgToPush;
+notifiedFIFO_t freeBlocks_dl;
+notifiedFIFO_elt_t *msgToPush_dl;
+int nbDlProcessing =0;
 
 //extern double cpuf;
 
@@ -787,6 +788,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
 
   uint32_t i,j;
+//  int nbDlProcessing =0;
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
@@ -939,17 +941,20 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
 
-  notifiedFIFO_elt_t *res;
+  notifiedFIFO_elt_t *res_dl;
   opp_enabled=1;
   if (harq_process->C>1) {
 	for (int nb_seg =1 ; nb_seg<harq_process->C; nb_seg++){
-	  if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
-	          pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
+	  if ( (res_dl=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
+	          pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res_dl);
 	        }
 
-	  AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
-	  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
+	  AssertFatal((msgToPush_dl=pullNotifiedFIFO_nothreadSafe(&freeBlocks_dl)) != NULL,"chained list failure");
+          nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush_dl);
 	  curMsg->UE=phy_vars_ue;
+	  
+	  nbDlProcessing++;
+
 
 	  memset(&curMsg->proc, 0, sizeof(curMsg->proc));
 	  curMsg->proc.frame_rx  = proc->frame_rx;
@@ -960,8 +965,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 	  curMsg->proc.harq_pid=harq_pid;
 	  curMsg->proc.llr8_flag = llr8_flag;
 
-	  msgToPush->key=nb_seg;
-	  pushTpool(Tpool_dl, msgToPush);
+	  msgToPush_dl->key= (nr_tti_rx%2) ? (nb_seg+30): nb_seg;
+	  pushTpool(Tpool_dl, msgToPush_dl);
 
   /*Qm= harq_process->Qm;
     Nl=harq_process->Nl;
@@ -1741,11 +1746,11 @@ void *dlsch_thread(void *arg) {
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
-  int nbDlProcessing=0;
-  initNotifiedFIFO_nothreadSafe(&freeBlocks);
+  notifiedFIFO_elt_t *res_dl;
+  initNotifiedFIFO_nothreadSafe(&freeBlocks_dl);
 
   for (int i=0; i<RX_NB_TH_DL+1; i++){
-    pushNotifiedFIFO_nothreadSafe(&freeBlocks,
+    pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,
                                   newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), 0,&nf,nr_dlsch_decoding_process));}
 
   while (!oai_exit) {
@@ -1755,14 +1760,18 @@ void *dlsch_thread(void *arg) {
     while (nbDlProcessing >= RX_NB_TH_DL) {
       if ( (res=tryPullTpool(&nf, Tpool_dl)) != NULL ) {
         nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
-        nbDlProcessing--;
-        pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
+        //nbDlProcessing--;
+        pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res);
       }
 
       usleep(200);
     }
+    
+    res_dl=pullTpool(&nf, Tpool_dl);
+    nbDlProcessing--;
+	pushNotifiedFIFO_nothreadSafe(&freeBlocks_dl,res_dl);
+    
 
-    nbDlProcessing++;
     //msgToPush->key=0;
     //pushTpool(Tpool, msgToPush);
 
