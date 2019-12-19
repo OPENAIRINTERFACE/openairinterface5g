@@ -693,8 +693,7 @@ int flexran_agent_mac_stats_reply_cell(mid_t mod_id,
       // TODO: Fill in the actual noise and interference report for this cell
       Protocol__FlexNoiseInterferenceReport *ni_report;
       ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
-      if(ni_report == NULL)
-        goto error;
+      AssertFatal(ni_report, "cannot malloc() ni_report\n");
       protocol__flex_noise_interference_report__init(ni_report);
       ni_report->sfn_sf = flexran_get_sfn_sf(mod_id);
       ni_report->has_sfn_sf = 1;
@@ -709,21 +708,6 @@ int flexran_agent_mac_stats_reply_cell(mid_t mod_id,
     }
   }
   return 0;
-
- error:
-  if (cell_report != NULL) {
-    if (n_cc > 0) {
-      for (int i = 0; i < n_cc; i++) {
-        if (cell_report[i]->noise_inter_report != NULL) {
-          free(cell_report[i]->noise_inter_report);
-          cell_report[i]->noise_inter_report = NULL;
-        }
-      }
-    }
-    free(cell_report);
-    cell_report = NULL;
-  }
-  return -1;
 }
 
 int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
