@@ -135,7 +135,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
   start_meas(&ru->ofdm_total_stats);
 
-  if (nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT) {
+  //if (nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT) {
 
     if(ru->num_gNB != 0){//L1 RU on same machine
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
@@ -229,7 +229,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
         }
       }//j<fp->symbols_per_slot
     }//else (RU only machine)
-  }
+  //}
   // wait all process to finish
   AssertFatal((ret=pthread_mutex_lock(&proc->mutex_feptx))==0,"mutex_lock return %d\n",ret);
   while (proc->feptx_mask != ofdm_mask_full) {
@@ -432,6 +432,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
   int32_t ***bw;
   int i=0;
   int slot_tx = tti_tx;
+  int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
   start_meas(&ru->precoding_stats);
   if (ru->num_gNB == 1){
@@ -441,7 +442,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
 
     for(i=0; i<fp->Lmax; ++i)
       memcpy((void*)ru->common.txdataF[i],
-           (void*)gNB->common_vars.txdataF[i],
+           (void*)&gNB->common_vars.txdataF[i][txdataF_offset],
            fp->samples_per_slot_wCP*sizeof(int32_t));
 
     if (ru->nb_tx == 1) {
