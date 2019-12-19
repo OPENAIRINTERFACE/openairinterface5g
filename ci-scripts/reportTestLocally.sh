@@ -97,14 +97,20 @@ function analyzeIperfFiles {
         FILE_COMPLETE=`egrep -c "Server Report" $IPERF_CASE`
         if [ $FILE_COMPLETE -eq 0 ]
         then
-            echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
             SERVER_FILE=`echo $IPERF_CASE | sed -e "s#client#server#"`
             FLOAT_EFF_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; printf "%.0f", br}'`
-            EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}}'`
+            EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}else{printf "%.2f KBits/sec", br/1000}}'`
             PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
+            PERF_INT=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.0f", $0}'`
             JITTER=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*/sec *##" -e "s# *ms.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{jitter=s/n; printf "%.3f ms", jitter}'`
             PACKETLOSS_NOSIGN=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*(##" -e "s#%.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{per=s/n; printf "%.1f", per}'`
             PACKETLOSS=`echo "${PACKETLOSS_NOSIGN}%"`
+            if [[ $PERF_INT -lt 80 ]]
+            then
+                echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+            else
+                echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+            fi
         else
             EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
             if [[ $EFFECTIVE_BITRATE =~ .*Kbits/sec.* ]]
@@ -390,6 +396,126 @@ function report_test {
             echo "        </code></pre></td>" >> ./test_simulator_results.html
             echo "      </tr>" >> ./test_simulator_results.html
         done
+        echo "   </table>" >> ./test_simulator_results.html
+        echo "   </div>" >> ./test_simulator_results.html
+    fi
+
+    ARCHIVES_LOC=archives/rf_sim/test
+    if [ -d $ARCHIVES_LOC ]
+    then
+        echo "   <h3>5G NR RF Simulator Check</h3>" >> ./test_simulator_results.html
+
+        if [ -f $ARCHIVES_LOC/test_final_status.log ]
+        then
+            if [ `grep -c TEST_OK $ARCHIVES_LOC/test_final_status.log` -eq 1 ]
+            then
+                echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            else
+                echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            fi
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+            echo "      <strong>COULD NOT DETERMINE TEST FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+            echo "   </div>" >> ./test_simulator_results.html
+        fi
+
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-rf-sim-test-details\">More details on 5G RF Simulator test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-rf-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
+        echo "   <table border = \"1\">" >> ./test_simulator_results.html
+        echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
+        echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
+        echo "        <th>Command</th>" >> ./test_simulator_results.html
+        echo "        <th>Status</th>" >> ./test_simulator_results.html
+        echo "        <th>Statistics</th>" >> ./test_simulator_results.html
+        echo "      </tr>" >> ./test_simulator_results.html
+
+        EPC_CONFIGS=("noS1")
+        TRANS_MODES=("tdd")
+        BW_CASES=(106)
+        for CN_CONFIG in ${EPC_CONFIGS[@]}
+        do
+          for TMODE in ${TRANS_MODES[@]}
+          do
+            for BW in ${BW_CASES[@]}
+            do
+                echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+                if [[ $CN_CONFIG =~ .*wS1.* ]]
+                then
+                    echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
+                else
+                    echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
+                fi
+                echo "      </tr>" >> ./test_simulator_results.html
+                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
+                UE_LOG=`echo $ENB_LOG | sed -e "s#gnb#ue#"`
+                if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
+                then
+                    NAME_ENB=`echo $ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>N/A</td>" >> ./test_simulator_results.html
+                    NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
+                    NB_ENB_TUNNEL_UP=`egrep -c "Interface oaitun_enb1 successfuly configured" $ENB_LOG`
+                    NB_UE_GOT_SYNC=`egrep -c "rfsimulator: Success" $UE_LOG`
+                    NB_ENB_SYNCED_WITH_UE=`egrep -c "Initial sync: starting PBCH detection" $UE_LOG`
+                    NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfuly configured" $UE_LOG`
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB --> got sync</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB NEVER got sync</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_ENB_TUNNEL_UP -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB mounted oaitun_enb1 interface</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB NEVER mounted oaitun_enb1 interface</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_UE_GOT_SYNC -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE --> got sync</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE NEVER got sync</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE attached to gNB</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE NEVER attached to eNB</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_UE_TUNNEL_UP -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE mounted oaitun_ue1 interface</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE NEVER mounted oaitun_ue1 interface</b></font>" >> ./test_simulator_results.html
+                    fi
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+                #PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping*.log 2> /dev/null`
+                #analyzePingFiles
+
+                IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_iperf_dl*client*txt 2> /dev/null`
+                analyzeIperfFiles
+
+                #IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_ul*client*txt 2> /dev/null`
+                #analyzeIperfFiles
+            done
+          done
+        done
+
         echo "   </table>" >> ./test_simulator_results.html
         echo "   </div>" >> ./test_simulator_results.html
     fi
