@@ -127,18 +127,18 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
 	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-	nr_generate_pss(gNB->d_pss, txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
-	nr_generate_sss(gNB->d_sss, txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
+	nr_generate_pss(gNB->d_pss, &txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	nr_generate_sss(gNB->d_sss, &txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
 	if (fp->Lmax == 4)
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],&txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	else
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[ssb_index], AMP, ssb_start_symbol, cfg, fp);
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],&txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
 	nr_generate_pbch(&gNB->pbch,
 			 &gNB->ssb_pdu,
 			 gNB->nr_pbch_interleaver,
-			 txdataF[ssb_index],
+			 &txdataF[ssb_index][txdataF_offset],
 			 AMP,
 			 ssb_start_symbol,
 			 n_hf,fp->Lmax,
@@ -192,7 +192,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (gNB->pdcch_pdu || gNB->ul_dci_pdu) nr_generate_dci_top(gNB->pdcch_pdu,
 							     gNB->ul_dci_pdu,
 							     gNB->nr_gold_pdcch_dmrs[slot],
-							     gNB->common_vars.txdataF[0],
+							     &gNB->common_vars.txdataF[0][txdataF_offset],
 							     AMP, *fp);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
