@@ -135,6 +135,8 @@ typedef struct {
 
 /*! \brief Clock source types */
 typedef enum {
+  //! this means the paramter has not been set
+  unset=-1,
   //! This tells the underlying hardware to use the internal reference
   internal=0,
   //! This tells the underlying hardware to use the external reference

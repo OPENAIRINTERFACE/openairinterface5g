@@ -530,6 +530,7 @@ set (SHLIB_LOADER_SOURCES
 include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
 set(HWLIB_USRP_SOURCE
   ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp
+  ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib_config.c
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
 target_link_libraries(oai_usrpdevif uhd)

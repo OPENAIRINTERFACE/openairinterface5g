@@ -146,7 +146,7 @@
     {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,      0},   \
     {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
-    {"clock",             CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
+    {"clock-source",      CONFIG_HLP_CLK,         0,               iptr:&clock_source,                 defintval:0,          TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
     {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }

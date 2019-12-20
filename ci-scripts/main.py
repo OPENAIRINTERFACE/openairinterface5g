@@ -128,6 +128,7 @@ class SSHConnection():
 		self.Build_eNB_args = ''
 		self.backgroundBuild = False
 		self.backgroundBuildTestId = ['', '', '']
+		self.Build_eNB_forced_workspace_cleanup = False
 		self.Initialize_eNB_args = ''
 		self.air_interface = 'lte'
 		self.eNB_instance = ''
@@ -370,9 +371,16 @@ class SSHConnection():
 			self.air_interface = 'nr'
 		else:
 			self.air_interface = 'lte'
+		if self.Build_eNB_forced_workspace_cleanup:
+			self.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
 		self.command('mkdir -p ' + lSourcePath, '\$', 5)
 		self.command('cd ' + lSourcePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -4158,6 +4166,14 @@ def CheckClassValidity(action,id):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
+		if (forced_workspace_cleanup is None):
+			SSH.Build_eNB_forced_workspace_cleanup = False
+		else:
+			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+				SSH.Build_eNB_forced_workspace_cleanup = True
+			else:
+				SSH.Build_eNB_forced_workspace_cleanup = False
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
