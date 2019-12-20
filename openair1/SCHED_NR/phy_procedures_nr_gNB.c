@@ -229,10 +229,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   uint8_t mapping_type;
   uint32_t G;
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
-  uint16_t start_symbol, number_symbols;
+  uint16_t start_symbol, number_symbols, nb_re_dmrs;
 
   mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-  gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs = 0;
 
   start_symbol = nfapi_ulsch_pdu_rel15->start_symbol;
   number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
@@ -249,11 +248,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
 
-  gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+  nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
                number_symbols,
-               gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->nb_re_dmrs,
+               nb_re_dmrs,
                nfapi_ulsch_pdu_rel15->length_dmrs,
                nfapi_ulsch_pdu_rel15->Qm,
                nfapi_ulsch_pdu_rel15->n_layers);
@@ -279,6 +278,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
                     frame_parms,
                     frame_rx,
                     number_symbols,
+                    nb_re_dmrs,
                     slot_rx,
                     harq_pid,
                     0);

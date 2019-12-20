@@ -281,6 +281,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            NR_DL_FRAME_PARMS *frame_parms,
                            uint32_t frame,
                            uint16_t nb_symb_sch,
+                           uint16_t nb_re_dmrs,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
                            uint8_t is_crnti)
@@ -323,7 +324,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint16_t R               = nfapi_ulsch_pdu_rel15->R;
   uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
   uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
-  uint16_t nb_re_dmrs     = harq_process->nb_re_dmrs;
   uint8_t length_dmrs     = nfapi_ulsch_pdu_rel15->length_dmrs;
   // ------------------------------------------------------------------
 

@@ -246,8 +246,6 @@ typedef struct {
   /// This is needed for PHICH generation which
   /// is done after a new scheduling
   uint8_t previous_n_DMRS;
-  /// number of DMRS resource elements in one RB
-  uint16_t nb_re_dmrs;
   //////////////////////////////////////////////////////////////
 
 
