@@ -61,7 +61,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 #include "NR_RRCReconfiguration.h"
 
@@ -75,6 +75,10 @@ double cpuf;
 int sf_ahead=4;
 
 // dummy functions
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
+
+void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
+
 int nfapi_mode=0;
 
 
@@ -470,7 +474,6 @@ int main(int argc, char **argv)
   if (snr1set==0)
     snr1 = snr0+10;
 
-  printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB ));
@@ -487,7 +490,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
-
+  memset((void*)&rrc,0,sizeof(rrc));
   // read in SCGroupConfig
   FILE *scg_fd = fopen("reconfig.hex","r");
   AssertFatal(scg_fd != NULL,"no reconfig.hex file\n");
@@ -495,6 +498,7 @@ int main(int argc, char **argv)
   int msg_len=fread(buffer,1,1024,scg_fd);
   NR_RRCReconfiguration_t *NR_RRCReconfiguration;
 
+  printf("Decoding NR_RRCReconfiguration (%d bytes)\n",msg_len);
   asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
 						  &asn_DEF_NR_RRCReconfiguration,
 						  (void **)&NR_RRCReconfiguration,
@@ -508,6 +512,8 @@ int main(int argc, char **argv)
     exit(-1);
   }      
   fclose(scg_fd);
+
+  AssertFatal(NR_RRCReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration,"wrong NR_RRCReconfiguration->criticalExstions.present type\n");
 
   NR_RRCReconfiguration_IEs_t *reconfig_ies = NR_RRCReconfiguration->criticalExtensions.choice.rrcReconfiguration;
   NR_CellGroupConfig_t *secondaryCellGroup;
@@ -527,7 +533,10 @@ int main(int argc, char **argv)
   NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   
 
-  rrc.carrier.servingcellconfigcommon = scc;
+  rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+  printf("%p,%p\n",
+	 secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon,
+	 rrc.carrier.servingcellconfigcommon);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;

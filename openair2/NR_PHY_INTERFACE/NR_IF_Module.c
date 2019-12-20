@@ -328,7 +328,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {
   AssertFatal(Mod_id<MAX_MODULES,"Asking for Module %d > %d\n",Mod_id,MAX_IF_MODULES);
-  LOG_D(PHY,"Installing callbacks for IF_Module - UL_indication\n");
+  LOG_I(PHY,"Installing callbacks for IF_Module - UL_indication\n");
 
   if (if_inst[Mod_id]==NULL) {
     if_inst[Mod_id] = (NR_IF_Module_t*)malloc(sizeof(NR_IF_Module_t));

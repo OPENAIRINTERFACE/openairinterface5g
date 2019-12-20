@@ -90,8 +90,8 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
 
   int nb_slots_per_period = ((1<<mu) * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
   AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots + 1),
-	      "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d \n",
-	      nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
+	      "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d (tdd_period %d,mu %d) \n",
+	      nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period,cfg->tdd_table.tdd_period.value,mu); 
   AssertFatal(nrofDownlinkSymbols + nrofUplinkSymbols < 14,"illegal symbol configuration DL %d, UL %d\n",nrofDownlinkSymbols,nrofUplinkSymbols);
   
   cfg->tdd_table.max_tdd_periodicity_list = (nfapi_nr_max_tdd_periodicity_t *) malloc(nb_slots_to_set*sizeof(nfapi_nr_max_tdd_periodicity_t));
