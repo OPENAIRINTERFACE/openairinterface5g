@@ -164,7 +164,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ;  // 10ms is the frame length
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
-      ((nr_slot_select(cfg,frame,slot)&NR_UPLINK_SLOT) > 0)) return;
+      (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
 
