@@ -56,11 +56,11 @@ notifiedFIFO_elt_t *msgToPush;
 
 //extern double cpuf;
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr)
 {
 
   int i,r;
-
+  NR_UE_DLSCH_t *dlsch=*dlschptr;
   if (dlsch) {
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
@@ -175,7 +175,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
   }
 
   printf("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(NR_DL_UE_HARQ_t), exit_flag);
-  free_nr_ue_dlsch(dlsch);
+  free_nr_ue_dlsch(&dlsch);
 
   return(NULL);
 }
@@ -232,6 +232,11 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
+  
+  if (!harq_process) {
+    printf("dlsch_decoding.c: NULL harq_process pointer\n");
+    return(dlsch->max_ldpc_iterations + 1);
+  }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
     
   int16_t z [68*384];
@@ -262,11 +267,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
-    return(dlsch->max_ldpc_iterations + 1);
-  }
-
-  if (!harq_process) {
-    printf("dlsch_decoding.c: NULL harq_process pointer\n");
     return(dlsch->max_ldpc_iterations + 1);
   }
 
@@ -503,7 +503,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %d) :",r);
+    printf("decoder input(segment %u) :",r);
     int i;
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
@@ -569,7 +569,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("\x1B[34m" "Segment %d CRC OK\n\033[0m",r);
+        printf("\x1B[34m" "Segment %u CRC OK\n\033[0m",r);
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
@@ -599,7 +599,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int k=0;k<A>>3;k++)
         printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-      printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
+      printf("no_iterations_ldpc %d (ret %u)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
 #endif
 
@@ -701,7 +701,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
 #ifdef DEBUG_DLSCH_DECODING
-    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+    printf("Segment %u : Kr= %u bytes\n",r,Kr_bytes);
     printf("copied %d bytes to b sequence (harq_pid %d)\n",
               (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
               printf("b[0] = %x,c[%d] = %x\n",
@@ -771,6 +771,10 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
   int8_t llrProcBuf[OAI_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+    if (!harq_process) {
+    printf("dlsch_decoding.c: NULL harq_process pointer\n");
+    return(dlsch->max_ldpc_iterations);
+  }
   t_nrLDPC_procBuf* p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[0];
   uint8_t Nl=4;
   int16_t z [68*384];
@@ -801,10 +805,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     return(dlsch->max_ldpc_iterations);
   }
 
-  if (!harq_process) {
-    printf("dlsch_decoding.c: NULL harq_process pointer\n");
-    return(dlsch->max_ldpc_iterations);
-  }
+
 
   if (!frame_parms) {
     printf("dlsch_decoding.c: NULL frame_parms pointer\n");
@@ -1011,7 +1012,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
 #ifdef DEBUG_DLSCH_DECODING
         for (int i =0; i<16; i++)
-              printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+              printf("rx output deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
 #endif
 
 #if UE_TIMING_TRACE
@@ -1070,7 +1071,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
  
 #ifdef DEBUG_DLSCH_DECODING   
     for (int i =0; i<16; i++)
-      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+      printf("rx output ratematching d[%d]= %d r_offset %u\n", i,harq_process->d[r][i], r_offset);
 #endif
 
 #ifdef DEBUG_DLSCH_DECODING
@@ -1080,7 +1081,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %d) :",r);
+    printf("decoder input(segment %u) :",r);
     for (int i=0;i<(3*8*Kr_bytes);i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
     printf("\n");
@@ -1158,7 +1159,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       }
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        printf("Segment %d CRC OK\n",r);
+        printf("Segment %u CRC OK\n",r);
         ret = 2;
       }
       else {
@@ -1167,7 +1168,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       }
 
     //if (!nb_total_decod%10000){
-        printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
+        printf("Error number of iteration LPDC %d %lu/%lu \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
     //}
 
     //else
@@ -1308,7 +1309,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
 #ifdef DEBUG_DLSCH_DECODING
-      printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+      printf("Segment %u : Kr= %u bytes\n",r,Kr_bytes);
       printf("copied %d bytes to b sequence (harq_pid %d)\n",
                 (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
                 printf("b[0] = %x,c[%d] = %x\n",
@@ -1396,7 +1397,7 @@ void *nr_dlsch_decoding_process(void *arg)
   //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
   p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[r];
   nb_symb_sch = harq_process->nb_symbols;
-  printf("dlsch decoding process frame %d slot %d segment %d r %d nb symb %d \n", frame, proc->nr_tti_rx, proc->num_seg, r, harq_process->nb_symbols);
+  printf("dlsch decoding process frame %d slot %d segment %d r %u nb symb %d \n", frame, proc->nr_tti_rx, proc->num_seg, r, harq_process->nb_symbols);
 
 
   /*
@@ -1559,7 +1560,7 @@ void *nr_dlsch_decoding_process(void *arg)
 
 #ifdef DEBUG_DLSCH_DECODING
     for (int i =0; i<16; i++)
-              printf("rx output thread 0 deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+              printf("rx output thread 0 deinterleaving w[%d]= %d r_offset %u\n", i,harq_process->w[r][i], r_offset);
 #endif
 
 #if UE_TIMING_TRACE
@@ -1620,7 +1621,7 @@ void *nr_dlsch_decoding_process(void *arg)
               write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %d) :",r);
+    printf("decoder input(segment %u) :",r);
     int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
       printf("\n");
@@ -1689,7 +1690,7 @@ void *nr_dlsch_decoding_process(void *arg)
 
         // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
         if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-          printf("Segment %d CRC OK\n",r);
+          printf("Segment %u CRC OK\n",r);
           ret = 2;
         }
         else {
