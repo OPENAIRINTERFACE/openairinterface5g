@@ -318,7 +318,7 @@ ue_ip_common_ip2wireless(
 
   if (bytes_wrote != UE_IP_PDCPH_SIZE) {
     printk("[UE_IP_DRV][%s] problem while writing PDCP's header (bytes wrote = %d)\n",__FUNCTION__,bytes_wrote);
-    printk("rb_id %d, Wrote %d, Header Size %d \n", pdcph.rb_id, bytes_wrote, UE_IP_PDCPH_SIZE);
+    printk("rb_id %ld, Wrote %d, Header Size %d \n", pdcph.rb_id, bytes_wrote, UE_IP_PDCPH_SIZE);
     priv_p->stats.tx_dropped ++;
     return;
   }
