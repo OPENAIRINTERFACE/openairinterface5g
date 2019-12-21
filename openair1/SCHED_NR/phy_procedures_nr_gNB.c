@@ -126,11 +126,12 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	
 	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
+	AssertFatal(txdataF[ssb_index]!=NULL,"txdataF[%d] is null\n",ssb_index,txdataF[ssb_index]);
 	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
 	nr_generate_pss(gNB->d_pss, &txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	nr_generate_sss(gNB->d_sss, &txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
-	if (fp->Lmax == 4)
+	if (cfg->carrier_config.num_tx_ant.value <= 4)
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],&txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	else
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],&txdataF[ssb_index][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
@@ -141,7 +142,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			 &txdataF[ssb_index][txdataF_offset],
 			 AMP,
 			 ssb_start_symbol,
-			 n_hf,fp->Lmax,
+			 n_hf,cfg->carrier_config.num_tx_ant.value,
 			 frame, cfg, fp);
       }
     }
@@ -171,7 +172,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
   // clear the transmit data array for the current subframe
-  for (aa=0; aa<fp->Lmax; aa++) {
+  for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
     memset(&gNB->common_vars.txdataF[aa][txdataF_offset],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
 

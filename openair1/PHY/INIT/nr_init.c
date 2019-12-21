@@ -86,7 +86,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
   int i;
+  int P=cfg->carrier_config.num_tx_ant.value;
 
+  AssertFatal(P>0 && P<9,"P %d is not supported\n",P);
   LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
   gNB->total_dlsch_bitrate = 0;
   gNB->total_transmitted_bits = 0;
@@ -157,11 +159,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   gNB->first_run_I0_measurements =
     1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
-  common_vars->rxdata  = (int32_t **)malloc16(15*sizeof(int32_t*));
-  common_vars->txdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
-  common_vars->rxdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
+  common_vars->rxdata  = (int32_t **)malloc16(P*sizeof(int32_t*));
+  common_vars->txdataF = (int32_t **)malloc16(P*sizeof(int32_t*));
+  common_vars->rxdataF = (int32_t **)malloc16(P*sizeof(int32_t*));
 
-  for (i=0;i<15;i++){
+  for (i=0;i<P;i++){
       common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
       common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
       common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
@@ -247,8 +249,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
+  int P=gNB->gNB_config.carrier_config.num_tx_ant.value;
 
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < P; i++) {
     free_and_zero(common_vars->txdataF[i]);
     /* rxdataF[i] is not allocated -> don't free */
   }
@@ -364,6 +367,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   NR_DL_FRAME_PARMS *fp = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
 
+  /*
   gNB_config->cell_config.phy_cell_id.value             = phy_config->cfg->cell_config.phy_cell_id.value;
   gNB_config->carrier_config.dl_frequency.value         = phy_config->cfg->carrier_config.dl_frequency.value;
   gNB_config->carrier_config.uplink_frequency.value     = phy_config->cfg->carrier_config.uplink_frequency.value;
@@ -391,7 +395,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 
   memcpy((void*)&gNB_config->prach_config,(void*)&phy_config->cfg->prach_config,sizeof(phy_config->cfg->prach_config));
   memcpy((void*)&gNB_config->tdd_table,(void*)&phy_config->cfg->tdd_table,sizeof(phy_config->cfg->tdd_table));
-
+  */
+  memcpy((void*)gNB_config,phy_config->cfg,sizeof(*phy_config->cfg));
   RC.gNB[Mod_id]->mac_enabled     = 1;
   fp->dl_CarrierFreq = (gNB_config->carrier_config.dl_frequency.value)*1e3 + (gNB_config->carrier_config.dl_bandwidth.value)*5e5;
 

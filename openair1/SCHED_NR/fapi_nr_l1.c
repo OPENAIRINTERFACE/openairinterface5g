@@ -147,7 +147,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_pdu             = 0;
-  uint8_t number_ul_dci_pdu         = UL_dci_req->numPdus;
+  uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
 
   if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
 

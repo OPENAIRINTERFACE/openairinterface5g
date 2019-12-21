@@ -41,6 +41,13 @@ int nr_phy_init_RU(RU_t *ru) {
 
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
+  nfapi_nr_config_request_scf_t *cfg;
+  ru->nb_log_antennas=0;
+  for (int n=0;n<RC.nb_L1_inst;n++) {
+    cfg = &RC.gNB[n]->gNB_config;
+    if (cfg->carrier_config.num_tx_ant.value > ru->nb_log_antennas) ru->nb_log_antennas = cfg->carrier_config.num_tx_ant.value;   
+  }
+
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
     // Time-domain signals
     ru->common.txdata        = (int32_t**)malloc16(ru->nb_tx*sizeof(int32_t*));
@@ -75,8 +82,8 @@ int nr_phy_init_RU(RU_t *ru) {
   
 
     // allocate precoding input buffers (TX)
-    ru->common.txdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
-    for(i=0; i< 15; ++i)  ru->common.txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
+    ru->common.txdataF = (int32_t **)malloc16(ru->nb_tx**sizeof(int32_t*));
+    for(i=0; i< ru->nb_tx; ++i)  ru->common.txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
 
     // allocate IFFT input buffers (TX)
     ru->common.txdataF_BF = (int32_t **)malloc16(ru->nb_tx*sizeof(int32_t*));
@@ -110,8 +117,8 @@ int nr_phy_init_RU(RU_t *ru) {
     LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
     
     int beam_count = 0;
-    if (ru->nb_tx>1) {
-      for (p=0;p<fp->Lmax;p++) {
+    if (ru->nb_log_antennas>1) {
+      for (p=0;p<ru->nb_log_antennas;p++) {
         if ((fp->L_ssb >> p) & 0x01)
           beam_count++;
       }
@@ -119,7 +126,7 @@ int nr_phy_init_RU(RU_t *ru) {
     
       int l_ind = 0;
       for (i=0; i<RC.nb_nr_L1_inst; i++) {
-        for (p=0;p<fp->Lmax;p++) {
+        for (p=0;p<nb_logical_antennas;p++) {
           if ((fp->L_ssb >> p) & 0x01)  {
 	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	    for (j=0; j<ru->nb_tx; j++) {

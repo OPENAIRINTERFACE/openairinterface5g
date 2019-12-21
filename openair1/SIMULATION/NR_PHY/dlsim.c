@@ -221,7 +221,7 @@ int main(int argc, char **argv)
   int do_pdcch_flag=1;
 
   uint16_t cset_offset = 0;
-  int loglvl=OAILOG_WARNING;
+  int loglvl=OAILOG_INFO;
 
   float target_error_rate = 0.01;
   int css_flag=0;
@@ -492,8 +492,8 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
   // read in SCGroupConfig
-  FILE *scg_fd = fopen("reconfig.hex","r");
-  AssertFatal(scg_fd != NULL,"no reconfig.hex file\n");
+  FILE *scg_fd = fopen("reconfig.raw","r");
+  AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
   char buffer[1024];
   int msg_len=fread(buffer,1,1024,scg_fd);
   NR_RRCReconfiguration_t *NR_RRCReconfiguration;
@@ -532,6 +532,7 @@ int main(int argc, char **argv)
 
   NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   printf("%p,%p\n",

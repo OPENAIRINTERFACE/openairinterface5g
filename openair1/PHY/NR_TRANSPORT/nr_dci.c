@@ -233,7 +233,8 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
 						   pdcch_pdu_rel15->PayloadSizeBits[d], 
-						   pdcch_pdu_rel15->AggregationLevel[d]);
+						   pdcch_pdu_rel15->AggregationLevel[d],
+						   0);
     polar_encoder_fast((uint64_t*)pdcch_pdu_rel15->Payload[d], encoder_output, pdcch_pdu_rel15->RNTI[d],1,currentPtr);
 #ifdef DEBUG_CHANNEL_CODING
     printf("polar rnti %d\n",pdcch_pdu_rel15->RNTI[d]);

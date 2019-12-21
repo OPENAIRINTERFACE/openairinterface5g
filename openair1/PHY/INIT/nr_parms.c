@@ -81,11 +81,14 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
 }
 
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
-			 int mu,
+			 nfapi_nr_config_request_scf_t* cfg,
+			 int mu0,
 			 int Ncp,
 			 int N_RB_DL)
 
 {
+
+  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : mu0;
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
@@ -234,7 +237,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
   fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
   fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
-                                      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
+			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
@@ -249,7 +252,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   }
 
   fp->N_ssb = 0;
-  for (int p=0; p<fp->Lmax; p++)
+  int num_tx_ant = (cfg == NULL) ? fp->Lmax : cfg->carrier_config.num_tx_ant.value;
+
+  for (int p=0; p<num_tx_ant; p++)
     fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
@@ -263,7 +268,8 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* config,
   fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask.value ;
   int N_RB_DL = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
   return nr_init_frame_parms0(fp,
-			      config->ssb_config.scs_common.value,
+			      config,
+			      0,
 			      NFAPI_CP_NORMAL,
 			      N_RB_DL);
 }
@@ -276,7 +282,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int ssb_subcarrier_offset) 
 {
   /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
-  nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
+  nr_init_frame_parms0(fp,NULL,mu,Ncp,N_RB_DL);
   fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset);
   return 0;
 }

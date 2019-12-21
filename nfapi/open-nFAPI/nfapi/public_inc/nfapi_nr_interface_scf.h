@@ -450,7 +450,7 @@ typedef struct
 
 typedef struct 
 {
-  nfapi_uint8_tlv_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 
+  nfapi_uint8_tlv_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 8: ms3 9: ms4
   nfapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
 
 } nfapi_nr_tdd_table_t;

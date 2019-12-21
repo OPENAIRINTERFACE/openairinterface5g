@@ -289,6 +289,8 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
     }
   }
 
+  // set tx and rx antennas to number of SSB
+
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
   cfg->cell_config.phy_cell_id.tl.tag = NFAPI_NR_CONFIG_PHY_CELL_ID_TAG;
@@ -403,12 +405,31 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->num_tlv++;
 
+  cfg->carrier_config.num_tx_ant.value = 0;
+  cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
+  for (int i=0;i<32;i++) {
+    cfg->carrier_config.num_tx_ant.value += (cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1;
+    cfg->carrier_config.num_tx_ant.value += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
+  } 
+
+  cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;
+  cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
+  LOG_I(MAC,"Set TX/RX antenna number to %d (ssb: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
+  cfg->num_tlv++;
+  cfg->num_tlv++;
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-  
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
+    cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+  else {
+    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+    cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  }
+  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
   if(cfg->cell_config.frame_duplex_type.value == TDD){
   int return_tdd = set_tdd_config_nr(cfg,
 		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
@@ -451,9 +472,6 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
 
 }
 
-/*void config_servingcellconfigcommon(){
-
-}*/
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,

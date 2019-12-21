@@ -1247,7 +1247,7 @@ void nr_dci_decoding_procedure0(int s,
       #endif
       */
       uint64_t dci_estimation[2]= {0};
-      const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, sizeof_bits, L2);
+      const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, sizeof_bits, L2,1);
       decoderState = polar_decoder_int16(&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
                                          dci_estimation,
                                          1,
