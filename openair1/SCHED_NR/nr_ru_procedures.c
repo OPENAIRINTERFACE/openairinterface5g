@@ -124,7 +124,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int j    = 0;//symbol
   int aa   = 0;//logical antenna number
   int ret  = 0;
-  int nb_antenna_ports = fp->L_ssb;
+  int nb_antenna_ports = fp->Lmax;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
   int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
 
@@ -136,7 +136,6 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   start_meas(&ru->ofdm_total_stats);
 
   //if (nr_slot_select(cfg,frame_tx,slot)==NR_DOWNLINK_SLOT) {
-
     if(ru->num_gNB != 0){//L1 RU on same machine
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
       for(j=0; j<2; ++j){//half slot 
@@ -281,7 +280,7 @@ static void *nr_feptx_thread(void *param) {
       start_meas(&ru->precoding_stats);
       if (ru->nb_tx == 1) {
         AssertFatal(fp->N_ssb==ru->nb_tx,"Attempting to transmit %d SSB while Nb_tx = %d",fp->N_ssb,ru->nb_tx);
-        for (int p=0; p<fp->Lmax; p++) {
+        for (int p=0; p<nb_antenna_ports; p++) {
           if ((fp->L_ssb >> p) & 0x01){
             memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
                  (void*)&ru->gNB_list[0]->common_vars.txdataF[p][txdataF_offset + l*fp->ofdm_symbol_size],
