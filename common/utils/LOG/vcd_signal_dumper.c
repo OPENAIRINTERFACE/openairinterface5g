@@ -452,6 +452,8 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_fifo_read_buffer",
   "pdcp_fifo_flush",
   "pdcp_fifo_flush_buffer",
+  "pdcp_mbms_fifo_read",
+  "pdcp_mbms_fifo_read_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",

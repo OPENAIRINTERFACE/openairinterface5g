@@ -162,7 +162,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     phy_config_sib2_ue(Mod_idP, 0, eNB_index,
                        radioResourceConfigCommon, ul_CarrierFreq,
                        ul_Bandwidth, additionalSpectrumEmission,
-                       mbsfn_SubframeConfigList);
+                       NULL/*mbsfn_SubframeConfigList*/);
   }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
@@ -513,6 +513,9 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   }
 
   if (mbsfn_SubframeConfigList != NULL) {
+    phy_config_mbsfn_list_ue(Mod_idP, 0,
+                       mbsfn_SubframeConfigList);
+
     LOG_I(MAC,
           "[UE %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n",
           Mod_idP, mbsfn_SubframeConfigList->list.count);

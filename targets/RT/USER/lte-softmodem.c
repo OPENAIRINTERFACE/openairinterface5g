@@ -496,6 +496,8 @@ void init_pdcp(void) {
     if (IS_SOFTMODEM_NOS1)
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
 
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
+
     pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
@@ -708,7 +710,7 @@ int main( int argc, char **argv ) {
     pthread_mutex_unlock(&sync_mutex);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
-
+  create_tasks_mbms(1);
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
   fflush(stdout);

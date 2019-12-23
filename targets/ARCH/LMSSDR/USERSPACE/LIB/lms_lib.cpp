@@ -178,7 +178,7 @@ int trx_lms_start(openair0_device *device){
     }
 
     LMS_Init(lms_device);
-    LMS_EnableCalibCache(lms_device,false);
+    LMS_EnableCache(lms_device,false);
 
     if (LMS_LoadConfig(lms_device,device->openair0_cfg[0].configFilename) != 0)
     {
