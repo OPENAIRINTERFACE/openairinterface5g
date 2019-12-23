@@ -47,6 +47,8 @@
 #include "common/ran_context.h"
 
 #include "rrc_eNB_UE_context.h"
+#include "asn1_msg.h"
+#include "intertask_interface.h"
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -398,11 +400,32 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               LTE_SRB_ToAddModList_t  *SRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
               LTE_DRB_ToReleaseList_t *DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
               LTE_MAC_MainConfig_t    *mac_MainConfig  = NULL;
+              
               for (i = 0; i< 8; i++){
                 DRB2LCHAN[i] = 0;
               }
-              if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig)
+
+              if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig) {
+                LOG_D(F1AP, "MAC Main Configuration is present\n");
+
                 mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
+
+                /* CDRX Configuration */
+                if (mac_MainConfig->drx_Config == NULL) {
+                  LOG_W(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+                } else {
+                  MessageDef *message_p = NULL;
+
+                  /* Send DRX configuration to MAC task to configure timers of local UE context */
+                  message_p = itti_alloc_new_message(TASK_DU_F1, RRC_MAC_DRX_CONFIG_REQ);
+                  RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rnti;
+                  RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+                  itti_send_msg_to_task(TASK_MAC_ENB, ctxt.module_id, message_p);
+                  LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
+                }
+                /* End of CDRX configuration */
+              }
+
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;
               struct LTE_PhysicalConfigDedicated* physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
               rrc_rlc_config_asn1_req(
@@ -602,7 +625,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
 }
 
-int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, 
+                                    const f1ap_ul_rrc_message_t *msg) {
   const rnti_t rnti = msg->rnti;
 
   F1AP_F1AP_PDU_t                pdu;
@@ -703,6 +727,25 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
+        LOG_I(F1AP, "[MSG] RRC UL rrcConnectionReconfigurationComplete\n");
+        
+        /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
+        int UE_id_mac = find_UE_id(instance, rnti);
+        
+        if (UE_id_mac == -1) {
+          LOG_E(F1AP, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
+          break;
+        }
+        
+        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
+        
+        if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
+          UE_scheduling_control->cdrx_waiting_ack = FALSE;
+          UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
+          LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+        }
+        /* End of CDRX processing */
+        
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
@@ -710,14 +753,16 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
 
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcConnectionSetupComplete \n");
-       if(!ue_context_p){
+        
+        if(!ue_context_p){
           LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
-        }else {
+
+        } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
           ue_context_p->ue_context.Status = RRC_CONNECTED;
         }
-
         break;
+
       case LTE_UL_DCCH_MessageType__c1_PR_securityModeComplete:
         LOG_I(F1AP, "[MSG] RRC securityModeComplete \n");
         break;

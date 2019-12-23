@@ -2607,6 +2607,8 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
     (*caps)[6] = PROTOCOL__FLEX_BS_CAPABILITY__SDAP;
     (*caps)[7] = PROTOCOL__FLEX_BS_CAPABILITY__RRC;
     break;
+  case ngran_eNB_MBMS_STA:
+   break;
   }
   return n_caps;
 }
@@ -2643,6 +2645,8 @@ uint16_t flexran_get_capabilities_mask(mid_t mod_id)
          | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
          | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
     break;
+  case ngran_eNB_MBMS_STA:
+   break;
   }
   return mask;
 }

@@ -493,6 +493,27 @@ void configure_rru(int idx,
 
 }
 
+static int send_update_rru(RU_t * ru, LTE_DL_FRAME_PARMS * fp){
+  //ssize_t      msg_len/*,len*/;
+  int i;
+  //LTE_DL_FRAME_PARMS *fp = &RC.eNB[0][0]->frame_parms;
+  RRU_CONFIG_msg_t rru_config_msg;
+  memset((void *)&rru_config_msg,0,sizeof(rru_config_msg));
+  rru_config_msg.type = RRU_config_update;
+  rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_config_t);
+  LOG_I(PHY,"Sending RAU tick to RRU %d %lu bytes\n",ru->idx,rru_config_msg.len);
+
+  RRU_config_t       *config       = (RRU_config_t *)&rru_config_msg.msg[0];
+  config->num_MBSFN_config=fp->num_MBSFN_config;
+  for(i=0; i < fp->num_MBSFN_config; i++){
+       config->MBSFN_config[i] = fp->MBSFN_config[i];
+       LOG_W(PHY,"Configuration send to RAU (num MBSFN %d, MBSFN_SubframeConfig[%d] pattern is %x )\n",config->num_MBSFN_config,i,config->MBSFN_config[i].mbsfn_SubframeConfig);
+
+  }
+  AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
+                "RU %d cannot access remote radio\n",ru->idx);
+  return 0;
+}
 
 void* ru_thread_control( void* param ) {
 
@@ -502,6 +523,7 @@ void* ru_thread_control( void* param ) {
   RRU_CONFIG_msg_t   rru_config_msg;
   ssize_t	     msg_len;
   int                len;
+  int 		     ru_sf_update=0; // SF config update flag (MBSFN)
 
   // Start IF device if any
   if (ru->start_if) {
@@ -522,6 +544,16 @@ void* ru_thread_control( void* param ) {
 
       if (ru->state == RU_IDLE && ru->if_south != LOCAL_RF)
 	send_tick(ru);
+
+      if (ru->state == RU_RUN && ru->if_south != LOCAL_RF){
+	LTE_DL_FRAME_PARMS *fp = &RC.eNB[0][0]->frame_parms;	
+	LOG_D(PHY,"Check MBSFN SF changes\n");
+	if(fp->num_MBSFN_config != ru_sf_update){
+		ru_sf_update = fp->num_MBSFN_config;
+		LOG_W(PHY,"RU SF should be updated ... calling send_update_rru(ru)\n");
+		send_update_rru(ru,fp);
+	}
+      }
 
 	
       if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
@@ -654,6 +686,30 @@ void* ru_thread_control( void* param ) {
 		  exit_fun( "ERROR pthread_cond_signal" );
 		  break;
 		}
+	      }		
+	      break;
+	    case RRU_config_update: //RRU
+	      if (ru->if_south == LOCAL_RF){
+		LOG_W(PHY,"Configuration update received from RAU \n");
+
+	    	msg_len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_config_t);
+
+		LOG_W(PHY,"New MBSFN config received from RAU --- num_MBSFN_config %d\n",((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config);
+	        ru->frame_parms.num_MBSFN_config = ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config;
+	        for(int i=0; i < ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config; i++){
+		 ru->frame_parms.MBSFN_config[i].mbsfn_SubframeConfig=((RRU_config_t *)&rru_config_msg.msg[0])->MBSFN_config[i].mbsfn_SubframeConfig;
+		  LOG_W(PHY,"Configuration received from RAU (num MBSFN %d, MBSFN_SubframeConfig[%d] pattern is %x )\n",
+		       ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config,
+		       i,
+		       ((RRU_config_t *)&rru_config_msg.msg[0])->MBSFN_config[i].mbsfn_SubframeConfig
+		       );
+		}
+	      } else LOG_E(PHY,"Received RRU_config msg...Ignoring\n");
+		break;
+	    case RRU_config_update_ok: //RAU
+	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_config_update_ok msg...Ignoring\n");
+	      else{
+			LOG_W(PHY,"Received RRU_config_update_ok msg...\n");
 	      }		
 	      break;
 

@@ -93,3 +93,4 @@ v0.4 -> Merge of feature-131-new-license. It closes issue#131 and changes the li
 v0.3 -> Last stable commit on develop branch before the merge of feature-131-new-license. This is the last commit with GPL License
 v0.2 -> Merge of enhancement-10-harmony to include NGFI RRH + New Interface for RF/BBU
 v0.1 -> Last stable commit on develop branch before enhancement-10-harmony
+
