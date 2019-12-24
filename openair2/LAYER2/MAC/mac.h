@@ -906,6 +906,11 @@ typedef struct {
   uint32_t pucch_tpc_tx_frame;
   uint32_t pucch_tpc_tx_subframe;
 
+  /// stores the frame where the last bler was calculated
+  uint32_t pusch_bler_calc_frame;
+  uint32_t pusch_bler_calc_subframe;
+
+
   uint8_t rach_resource_type;
   uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
@@ -963,6 +968,12 @@ typedef struct {
   uint8_t pusch_snr[NFAPI_CC_MAX];
   uint8_t pusch_snr_avg[NFAPI_CC_MAX];
   uint8_t pusch_snr_amc[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num_old[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num_old[NFAPI_CC_MAX];
+  double  pusch_bler[NFAPI_CC_MAX];
+  uint8_t  mcs_offset[NFAPI_CC_MAX];
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;

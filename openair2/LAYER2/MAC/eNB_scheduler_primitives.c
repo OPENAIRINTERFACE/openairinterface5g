@@ -2219,6 +2219,13 @@ add_new_ue(module_id_t mod_idP,
     UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_snr_amc[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_bler[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].mcs_offset[cc_idP] = 0;
+
     for (j = 0; j < 8; j++) {
       UE_info->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
       UE_info->UE_template[cc_idP][UE_id].oldNDI_UL[j] = 0;

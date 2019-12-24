@@ -160,6 +160,8 @@ rx_sdu(const module_id_t enb_mod_idP,
       UE_scheduling_control->ul_inactivity_timer = 0;
       UE_scheduling_control->ul_failure_timer = 0;
       UE_scheduling_control->ul_scheduled &= (~(1 << harq_pid));
+      UE_scheduling_control->pusch_rx_num[CC_idP]++;
+      
       /* Update with smoothing: 3/4 of old value and 1/4 of new.
        * This is the logic that was done in the function
        * lte_est_timing_advance_pusch, maybe it's not necessary?
@@ -199,6 +201,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
     } else {  // sduP == NULL => error
+      UE_scheduling_control->pusch_rx_error_num[CC_idP]++;
       LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
             enb_mod_idP,
             harq_pid,
