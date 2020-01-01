@@ -37,8 +37,8 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
 
-  if (tmp <= (N_RB-tmp2+1)) return(tmp);
-  else                      return(N_RB-tmp);
+  if (tmp <= ((N_RB>>1)-tmp2+1)) return(tmp+1);
+  else                      return(N_RB+1-tmp);
 
 }
 
@@ -46,15 +46,14 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
   
-  if (tmp <= (N_RB-tmp2+1)) return(tmp2);
-  else                      return(N_RB-tmp2);
+  if (tmp <= ((N_RB>>1)-tmp2+1)) return(tmp2);
+  else                      return(N_RB-1-tmp2);
 }
 
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
-  if (NPRB < 138)
-    return(BWPsize*(NPRB-1)+RBstart);
-  else
-    return(BWPsize*(BWPsize+1-NPRB) + (BWPsize-1-RBstart));
+  AssertFatal(NPRB>0 && (NPRB + RBstart <= BWPsize),"Illegal NPRB/RBstart Configuration (%d,%d)\n",NPRB,RBstart);
+  if (NPRB <= 1+(BWPsize>>1)) return(BWPsize*(NPRB-1)+RBstart);
+  else                        return(BWPsize*(BWPsize+1-NPRB) + (BWPsize-1-RBstart));
 }
 
 int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {

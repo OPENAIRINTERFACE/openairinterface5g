@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,33 +19,44 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_transport_common_proto.h
-* \brief Some support routines
-* \author
-* \date 2019
+/*! \file mac.h
+* \brief MAC data structures, constant, and function prototype
+* \author Navid Nikaein and Raymond Knopp, WIE-TAI CHEN
+* \date Dec. 2019
 * \version 0.1
 * \company Eurecom
-* \email:
-* \note
-* \warning
+* \email raymond.knopp@eurecom.fr
+
 */
 
-#ifndef __NR_TRANSPORT_COMMON_PROTO__H__
-#define __NR_TRANSPORT_COMMON_PROTO__H__
+#ifndef __LAYER2_NR_MAC_COMMON_H__
+#define __LAYER2_NR_MAC_COMMON_H__
 
-#include "PHY/defs_nr_common.h"
+typedef enum {
+  NR_DL_DCI_FORMAT_1_0 = 0,
+  NR_DL_DCI_FORMAT_1_1,
+  NR_DL_DCI_FORMAT_2_0,
+  NR_DL_DCI_FORMAT_2_1,
+  NR_DL_DCI_FORMAT_2_2,
+  NR_DL_DCI_FORMAT_2_3,
+  NR_UL_DCI_FORMAT_0_0,
+  NR_UL_DCI_FORMAT_0_1
+} nr_dci_format_t;
 
-
-#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
-#define NR_PUSCH_y 3 // UCI placeholder bit 
-
-
-
-
-
-/** \brief Computes available bits G. */
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint16_t length_dmrs, uint8_t Qm, uint8_t Nl);
-
-uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
+typedef enum {
+  NR_RNTI_new = 0,
+  NR_RNTI_C,
+  NR_RNTI_RA,
+  NR_RNTI_P,
+  NR_RNTI_CS,
+  NR_RNTI_TC,
+  NR_RNTI_SP_CSI,
+  NR_RNTI_SI,
+  NR_RNTI_SFI,
+  NR_RNTI_INT,
+  NR_RNTI_TPC_PUSCH,
+  NR_RNTI_TPC_PUCCH,
+  NR_RNTI_TPC_SRS
+} nr_rnti_type_t;
 
 #endif

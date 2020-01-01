@@ -207,7 +207,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 		      AMP, frame, slot, fp, 0,
 		      &gNB->dlsch_encoding_stats,
 		      &gNB->dlsch_scrambling_stats,
-		      &gNB->dlsch_modulation_stats);
+		      &gNB->dlsch_modulation_stats,
+		      &gNB->tinput,
+		      &gNB->tprep,
+		      &gNB->tparity,
+		      &gNB->toutput,
+		      &gNB->dlsch_rate_matching_stats,
+		      &gNB->dlsch_interleaving_stats,
+		      &gNB->dlsch_segmentation_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 

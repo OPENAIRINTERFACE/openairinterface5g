@@ -86,14 +86,12 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
   int i;
-  int P=cfg->carrier_config.num_tx_ant.value;
+  int Ptx=cfg->carrier_config.num_tx_ant.value;
+  int Prx=cfg->carrier_config.num_rx_ant.value;
 
-  AssertFatal(P>0 && P<9,"P %d is not supported\n",P);
+  AssertFatal(Ptx>0 && Ptx<9,"Ptx %d is not supported\n",Ptx);
+  AssertFatal(Prx>0 && Prx<9,"Prx %d is not supported\n",Prx);
   LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
-  gNB->total_dlsch_bitrate = 0;
-  gNB->total_transmitted_bits = 0;
-  gNB->total_system_throughput = 0;
-  gNB->check_for_MUMIMO_transmissions=0;
 
   while(gNB->configured == 0) usleep(10000);
 
@@ -157,21 +155,24 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
-  gNB->first_run_I0_measurements =
-    1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
-  common_vars->rxdata  = (int32_t **)malloc16(P*sizeof(int32_t*));
-  common_vars->txdataF = (int32_t **)malloc16(P*sizeof(int32_t*));
-  common_vars->rxdataF = (int32_t **)malloc16(P*sizeof(int32_t*));
+  gNB->first_run_I0_measurements = 1;
 
-  for (i=0;i<P;i++){
+  common_vars->rxdata  = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+  common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
+  common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+
+  for (i=0;i<Ptx;i++){
       common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
-      common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
-      common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
-
       LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
-            i,common_vars->txdataF[i],
-            fp->samples_per_frame_wCP*sizeof(int32_t));
+	    i,common_vars->txdataF[i],
+	    fp->samples_per_frame_wCP*sizeof(int32_t));
+      
   }
+  for (i=0;i<Prx;i++){
+    common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
+    common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+  }
+
 
   // Channel estimates for SRS
 /*
@@ -202,22 +203,24 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
+  printf("Before ULSCH init : %p\n",gNB->dlsch[0][0]->harq_processes[0]);
   for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
-
+    printf("ULSCH_id %d : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]);
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
-    pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_mag0             = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_magb0            = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_mag             = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_magb            = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->rho                   = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
+    pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_mag0             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_magb0            = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_mag             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_magb            = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->rho                   = (int32_t **)malloc16_clear(Prx*sizeof(int32_t*) );
 
-    for (i=0; i<fp->nb_antennas_rx; i++) {
+    printf("ULSCH_id %d (before rx antenna alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]);
+    for (i=0; i<Prx; i++) {
       pusch_vars[ULSCH_id]->rxdataF_ext[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->rxdataF_ext2[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
@@ -230,14 +233,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       pusch_vars[ULSCH_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->rho[i]                   = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->N_RB_UL*12*7*2) );
     }
-
-    pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear 
+    printf("ULSCH_id %d (before llr alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]);
+    pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear
+    printf("ULSCH_id %d (after llr alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]); 
   } //ulsch_id
 /*
   for (ulsch_id=0; ulsch_id<NUMBER_OF_UE_MAX; ulsch_id++)
     gNB->UE_stats_ptr[ulsch_id] = &gNB->UE_stats[ulsch_id];
 */
-  gNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
+  printf("After ULSCH init : %p\n",gNB->dlsch[0][0]->harq_processes[0]);
   return (0);
 }
 
@@ -249,9 +253,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
-  int P=gNB->gNB_config.carrier_config.num_tx_ant.value;
+  int Ptx=gNB->gNB_config.carrier_config.num_tx_ant.value;
 
-  for (int i = 0; i < P; i++) {
+  for (int i = 0; i < Ptx; i++) {
     free_and_zero(common_vars->txdataF[i]);
     /* rxdataF[i] is not allocated -> don't free */
   }
@@ -440,14 +444,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
     for (j=0; j<2; j++) {
       gNB->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
-
-      if (!gNB->dlsch[i][j]) {
-        LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
-        exit(-1);
-      }/* else {
-        gNB->dlsch[i][j]->rnti=0;
-        LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
-      }*/
+      AssertFatal(gNB->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
     }
   }
 

@@ -23,8 +23,9 @@
    purpose: Compute NR TBS
    author: Hongzhi WANG (TCL)
 */
-#include "PHY/defs_nr_UE.h"
 #define INDEX_MAX_TBS_TABLE (93)
+
+#include "common/utils/nr/nr_common.h"
 
 //Table 5.1.2.2-2
 uint16_t Tbstable_nr[INDEX_MAX_TBS_TABLE] = {24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,208,224,240,256,272,288,304,320,336,352,368,384,408,432,456,480,504,528,552,576,608,640,672,704,736,768,808,848,888,928,984,1032,1064,1128,1160,1192,1224,1256,1288,1320,1352,1416,1480,1544,1608,1672,1736,1800,1864,1928,2024,2088,2152,2216,2280,2408,2472,2536,2600,2664,2728,2792,2856,2976,3104,3240,3368,3496,3624,3752,3824};
@@ -45,7 +46,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
     uint32_t Ninfo, Np_info, C;
     uint8_t n, scale;
 
-    nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
+    nbp_re = 12 * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
 
     nb_re = min(156, nbp_re) * nb_rb;
     

@@ -70,7 +70,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES); //this should be MAX_NR_DLSCH_PAYLOAD_BYTES
+          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES); //this should be MAX_NR_DLSCH_PAYLOAD_BYTES
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
@@ -81,7 +81,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         LOG_D(PHY,"Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
 #endif
 
-        for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
 
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
@@ -121,17 +121,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   int re;
   unsigned char bw_scaling =1;
 
-  switch (N_RB) {
-
-  case 106:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
-  }
-
+  if (N_RB <= 107) bw_scaling =2;
+  
   dlsch = (NR_gNB_DLSCH_t *)malloc16(sizeof(NR_gNB_DLSCH_t));
 
   if (dlsch) {
@@ -260,7 +251,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         dlsch->harq_processes[i]->round  = 0;
 
 	for (j=0; j<96; j++)
-	  for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
+	  for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
 	    if (dlsch->harq_processes[i]->d[r])
 	      dlsch->harq_processes[i]->d[r][j] = NR_NULL;
 
@@ -273,7 +264,10 @@ int nr_dlsch_encoding(unsigned char *a,
                       int frame,
                       uint8_t slot,
                       NR_gNB_DLSCH_t *dlsch,
-                      NR_DL_FRAME_PARMS* frame_parms)
+                      NR_DL_FRAME_PARMS* frame_parms,
+		      time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
+		      time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
+		      time_stats_t *dlsch_segmentation_stats)
 {
 
   unsigned int G;
@@ -293,7 +287,7 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nb_re_dmrs = rel15->dmrsConfigType==1 ? 6:4;
+  uint8_t nb_re_dmrs = rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1 ? 6:4;
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
@@ -339,7 +333,7 @@ int nr_dlsch_encoding(unsigned char *a,
       dlsch->harq_processes[harq_pid]->B = A+24;
       //    dlsch->harq_processes[harq_pid]->b = a;
    
-      AssertFatal((A/8)+4 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_DLSCH_PAYLOAD_BYTES);
 
       memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);  // why is this +4 if the CRC is only 3 bytes?
     }
@@ -354,7 +348,7 @@ int nr_dlsch_encoding(unsigned char *a,
       dlsch->harq_processes[harq_pid]->B = A+16;
       //    dlsch->harq_processes[harq_pid]->b = a;
    
-      AssertFatal((A/8)+3 <= MAX_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_NR_DLSCH_PAYLOAD_BYTES);
 
       memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
     }
@@ -368,6 +362,7 @@ int nr_dlsch_encoding(unsigned char *a,
     else
 		BG = 1;
 
+    start_meas(dlsch_segmentation_stats);
     Kb = nr_segmentation(dlsch->harq_processes[harq_pid]->b,
 		         dlsch->harq_processes[harq_pid]->c,
 		         dlsch->harq_processes[harq_pid]->B,
@@ -376,7 +371,7 @@ int nr_dlsch_encoding(unsigned char *a,
 		         Zc, 
 		         &dlsch->harq_processes[harq_pid]->F,
                          BG);
-
+    stop_meas(dlsch_segmentation_stats);
     F = dlsch->harq_processes[harq_pid]->F;
 
     Kr = dlsch->harq_processes[harq_pid]->K;
@@ -405,7 +400,9 @@ int nr_dlsch_encoding(unsigned char *a,
     }
 
     for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
-      ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,dlsch->harq_processes[harq_pid]->C,j,NULL,NULL,NULL,NULL);
+      ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,
+				    dlsch->harq_processes[harq_pid]->C,j,
+				    tinput,tprep,tparity,toutput);
     }
 
 
@@ -446,6 +443,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
     Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl,dlsch->harq_processes[harq_pid]->C);
 
+    start_meas(dlsch_rate_matching_stats);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           BG,
@@ -455,17 +453,18 @@ int nr_dlsch_encoding(unsigned char *a,
                           dlsch->harq_processes[harq_pid]->C,
                           rel15->rvIndex[0],
                           E);
-
+    stop_meas(dlsch_rate_matching_stats);
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
       LOG_D(PHY,"output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
 #endif
 
-	nr_interleaving_ldpc(E,
-			     mod_order,
-			     dlsch->harq_processes[harq_pid]->e+r_offset,
-			     dlsch->harq_processes[harq_pid]->f+r_offset);
-
+    start_meas(dlsch_interleaving_stats);
+    nr_interleaving_ldpc(E,
+			 mod_order,
+			 dlsch->harq_processes[harq_pid]->e+r_offset,
+			 dlsch->harq_processes[harq_pid]->f+r_offset);
+    stop_meas(dlsch_interleaving_stats);
 
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)

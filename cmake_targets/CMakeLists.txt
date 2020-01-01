@@ -1205,7 +1205,6 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_ul_ref.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_segmentation.c
-  ${OPENAIR1_DIR}/PHY/CODING/nr_compute_tbs.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
@@ -1646,6 +1645,7 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/mac_vars.c
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
+  ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
 )
 
 set (ENB_APP_SRC
@@ -1700,7 +1700,7 @@ add_dependencies(L2_UE rrc_flag s1ap_flag x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 
-add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c )
+add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_compute_tbs_common.c)
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
 include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")

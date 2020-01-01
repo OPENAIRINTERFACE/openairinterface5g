@@ -32,7 +32,7 @@
 
 #include "nr_dci.h"
 
-#define DEBUG_FILL_DCI
+//#define DEBUG_FILL_DCI
 
 #include "nr_dlsch.h"
 

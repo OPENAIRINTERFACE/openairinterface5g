@@ -101,16 +101,16 @@ static void nr_dlsch_layer_demapping(int16_t **llr_cw,
 				     int16_t **llr_layers);
 
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
-             PDSCH_t type,
-             unsigned char eNB_id,
-             unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
-             uint32_t frame,
-             uint8_t nr_tti_rx,
-             unsigned char symbol,
-             unsigned char first_symbol_flag,
-             RX_type_t rx_type,
-             unsigned char i_mod,
-             unsigned char harq_pid)
+		PDSCH_t type,
+		unsigned char eNB_id,
+		unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
+		uint32_t frame,
+		uint8_t nr_tti_rx,
+		unsigned char symbol,
+		unsigned char first_symbol_flag,
+		RX_type_t rx_type,
+		unsigned char i_mod,
+		unsigned char harq_pid)
 {
 
   NR_UE_COMMON *common_vars  = &ue->common_vars;
@@ -151,7 +151,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //int16_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
   //uint16_t bundle_L = 2;
-  uint8_t l0 =2, pilots=0;
+  uint8_t pilots=0;
   uint16_t n_tx=1, n_rx=1;
   int32_t median[16];
   uint32_t len;
@@ -234,7 +234,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   start_rb = dlsch0_harq->start_rb;
   nb_rb_pdsch =  dlsch0_harq->nb_rb;
-  l0 = dlsch0_harq->start_symbol;
+  int lbar;
 
   DevAssert(dlsch0_harq);
   round = dlsch0_harq->round;
@@ -286,7 +286,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
 #endif
 
-  pilots = (symbol==l0) ? 1 : 0;
+  pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
 
   if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
@@ -297,19 +297,19 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
     nb_rb = nr_dlsch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-    							   pdsch_vars[eNB_id]->dl_ch_estimates,
-                                   pdsch_vars[eNB_id]->rxdataF_ext,
-                                   pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                   dlsch0_harq->pmi_alloc,
-                                   pdsch_vars[eNB_id]->pmi_ext,
-                                   symbol,
-								   pilots,
-								   start_rb,
-								   nb_rb_pdsch,
-                                   nr_tti_rx,
-                                   ue->high_speed_flag,
-                                   frame_parms,
-                                   dlsch0_harq->mimo_mode);
+				      pdsch_vars[eNB_id]->dl_ch_estimates,
+				      pdsch_vars[eNB_id]->rxdataF_ext,
+				      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+				      dlsch0_harq->pmi_alloc,
+				      pdsch_vars[eNB_id]->pmi_ext,
+				      symbol,
+				      pilots,
+				      start_rb,
+				      nb_rb_pdsch,
+				      nr_tti_rx,
+				      ue->high_speed_flag,
+				      frame_parms,
+				      dlsch0_harq->mimo_mode);
 #ifdef DEBUG_DLSCH_MOD
       printf("dlsch: using pmi %lx, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc));
        for (rb=0;rb<nb_rb;rb++)
@@ -352,18 +352,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   } else if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
 		  //printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                     pdsch_vars[eNB_id]->dl_ch_estimates,
-                                     pdsch_vars[eNB_id]->rxdataF_ext,
-                                     pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                     dlsch0_harq->pmi_alloc,
-                                     pdsch_vars[eNB_id]->pmi_ext,
-                                     symbol,
-									 pilots,
-									 start_rb,
-									 nb_rb_pdsch,
-                                     nr_tti_rx,
-                                     ue->high_speed_flag,
-                                     frame_parms);
+					pdsch_vars[eNB_id]->dl_ch_estimates,
+					pdsch_vars[eNB_id]->rxdataF_ext,
+					pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+					dlsch0_harq->pmi_alloc,
+					pdsch_vars[eNB_id]->pmi_ext,
+					symbol,
+					pilots,
+					start_rb,
+					nb_rb_pdsch,
+					nr_tti_rx,
+					ue->high_speed_flag,
+					frame_parms);
 
   } /*else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation: beamforming mode not supported yet.\n");
@@ -375,7 +375,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
-  len = (symbol==l0)? (nb_rb*6):(nb_rb*12);
+  len = (pilots==1)? (nb_rb*6):(nb_rb*12);
 
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -395,11 +395,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   n_rx = frame_parms->nb_antennas_rx;
 
   nr_dlsch_scale_channel(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                      frame_parms,
-                      dlsch,
-                      symbol,
-					  pilots,
-                      nb_rb);
+			 frame_parms,
+			 dlsch,
+			 symbol,
+			 pilots,
+			 nb_rb);
 
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -648,13 +648,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
 #if UE_TIMING_TRACE
+
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
   //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
   // compute LLRs
   // -> // compute @pointer where llrs should filled for this ofdm-symbol
 
-  pdsch_vars[eNB_id]->llr_offset[l0-1] = 0;
+    if (first_symbol_flag==1) pdsch_vars[eNB_id]->llr_offset[symbol-1] = 0;
   llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol-1];
   //pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
   //pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
@@ -1788,11 +1789,11 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
 
 
 void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t **dlsch_ue,
-                         uint8_t symbol,
-						 uint8_t pilots,
-                         unsigned short nb_rb)
+			    NR_DL_FRAME_PARMS *frame_parms,
+			    NR_UE_DLSCH_t **dlsch_ue,
+			    uint8_t symbol,
+			    uint8_t pilots,
+			    unsigned short nb_rb)
 {
 
 #if defined(__x86_64__)||defined(__i386__)
@@ -1808,7 +1809,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 
   // Determine scaling amplitude based the symbol
 
-ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
+  ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
     LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);

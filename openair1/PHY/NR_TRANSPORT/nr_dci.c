@@ -137,7 +137,6 @@ void nr_pdcch_scrambling(uint32_t *in,
   uint32_t x1, x2, s=0;
   reset = 1;
   x2 = (n_RNTI<<16) + Nid;
-
   for (int i=0; i<size; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
@@ -150,9 +149,9 @@ void nr_pdcch_scrambling(uint32_t *in,
     }
 
     (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
-    //printf("nr_pdcch_scrambling: in %d seq 0x%08x => out %d\n",((*in)>>(i&0x1f))&1,s,((*out)>>(i&0x1f))&1);
   }
 }
+
 
 uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 			    nfapi_nr_ul_dci_request_pdus_t    *ul_dci_pdu,
@@ -165,9 +164,6 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
-  nr_cce_t cce;
-  nr_reg_t reg;
-  nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
   /*First iteration: single DCI*/
 
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15; 
@@ -202,13 +198,15 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
-    LOG_D(PHY, "Coreset rb_offset %d\n",rb_offset);
+    LOG_D(PHY, "Coreset rb_offset %d, nb_rb %d\n",rb_offset,n_rb);
     LOG_D(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
     // DMRS length is per OFDM symbol
-    uint32_t dmrs_length = (pdcch_pdu_rel15->precoderGranularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
+    AssertFatal(pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED,
+		"Interleaved CCE REG MAPPING not supported\n");
+    uint32_t dmrs_length = (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED)?
       (n_rb*6) : (pdcch_pdu_rel15->AggregationLevel[d]*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = pdcch_pdu_rel15->AggregationLevel[d]*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-    LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
+    LOG_D(PHY, "DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d)\n", dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
       
     /// DMRS QPSK modulation
@@ -234,12 +232,12 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
 						   pdcch_pdu_rel15->PayloadSizeBits[d], 
 						   pdcch_pdu_rel15->AggregationLevel[d],
-						   0);
-    polar_encoder_fast((uint64_t*)pdcch_pdu_rel15->Payload[d], encoder_output, pdcch_pdu_rel15->RNTI[d],1,currentPtr);
+						   0,NULL);
+    polar_encoder_fast((uint64_t*)pdcch_pdu_rel15->Payload[d], encoder_output, n_RNTI,1,currentPtr);
 #ifdef DEBUG_CHANNEL_CODING
-    printf("polar rnti %d\n",pdcch_pdu_rel15->RNTI[d]);
+    printf("polar rnti %x,length %d, L %d\n",n_RNTI, pdcch_pdu_rel15->PayloadSizeBits[d],pdcch_pdu_rel15->AggregationLevel[d]);
     printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
-	   pdcch_pdu.Payload[d][0], pdcch_pdu.Payload[d][1]);
+	   ((uint64_t*)pdcch_pdu_rel15->Payload[d])[0], ((uint64_t*)pdcch_pdu_rel15->Payload[d])[1]);
     printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
     
     for (int i=0; i<encoded_length>>5; i++)
@@ -274,74 +272,30 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     /*Reorder REG list for a freq first mapping*/
     uint8_t nb_regs = pdcch_pdu_rel15->AggregationLevel[d]*NR_NB_REG_PER_CCE;
 
-    /*    
-    for (int cce_idx=pdcch_pdu_rel15->CceIndex; 
-	 cce_idx<(pdcch_pdu_rel15->CceIndex+pdcch_pdu_rel15->AggregationLevel[d]); 
-	 cce_idx++) {
-      cce = gNB->cce_list[cce_idx];
-      
-      for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
-	reg = cce.reg_list[reg_idx];
-	reg_mapping_list[reg_idx+cce_idx*NR_NB_REG_PER_CCE] = reg;
-      }
-    }
-    */
-    
-    if (pdcch_pdu_rel15->precoderGranularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS) {
-      /*in this case the DMRS are mapped on all the coreset*/
-      for (l=cset_start_symb; l<cset_start_symb+ cset_nsymb; l++) {
-	
-	// dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
-	if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-	  dmrs_idx = 0;
-	else
-	  dmrs_idx = rb_offset*3;
-	
-	k = cset_start_sc + 1;
-	
-	while (dmrs_idx<3*n_rb) {
-	  ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-	  ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
-#ifdef DEBUG_PDCCH_DMRS
-	  printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
-		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
-#endif
-	  k+=4;
-	  
-	  if (k >= frame_parms.ofdm_symbol_size)
-	    k -= frame_parms.ofdm_symbol_size;
-	  
-	  dmrs_idx++;
-	}
-      }
-    }
-    
-    /*Now mapping the encoded DCI based on newly constructed REG list
-     * and the DMRS for the precoder granularity same as REG bundle*/
+    /*Mapping the encoded DCI along with the DMRS */
     for (int reg_idx=0; reg_idx<nb_regs; reg_idx++) {
-      reg = reg_mapping_list[reg_idx];
-      k = cset_start_sc + reg.start_sc_idx;
+      k = cset_start_sc + (12*reg_idx/cset_nsymb);
       
       if (k >= frame_parms.ofdm_symbol_size)
 	k -= frame_parms.ofdm_symbol_size;
       
-      l = cset_start_symb + reg.symb_idx;
+      l = cset_start_symb + ((reg_idx/cset_nsymb)%cset_nsymb);
       
       // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
       if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-	dmrs_idx = (reg.reg_idx/cset_nsymb)*3;
+	dmrs_idx = (reg_idx/cset_nsymb)*3;
       else
-	dmrs_idx = ((reg.reg_idx/cset_nsymb)+rb_offset)*3;
+	dmrs_idx = ((reg_idx/cset_nsymb)+rb_offset)*3;
       
       k_prime = 0;
       
       for (int m=0; m<NR_NB_SC_PER_RB; m++) {
 	if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
-	  if (pdcch_pdu_rel15->precoderGranularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
-	    ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-	    ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+	  if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
+	    ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (2*amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+	    ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (2*amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
-	    printf("l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+	    printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
 		   ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
 	    dmrs_idx++;
@@ -352,7 +306,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 	  ((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dci[dci_idx<<1]) >> 15;
 	  ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dci[(dci_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-	  printf("l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+	  printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
 		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
 	  dci_idx++;

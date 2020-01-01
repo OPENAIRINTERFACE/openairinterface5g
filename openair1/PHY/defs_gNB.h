@@ -632,17 +632,12 @@ typedef struct PHY_VARS_gNB_s {
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
-  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
+  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
-/*
-  LTE_eNB_UE_stats    UE_stats[NUMBER_OF_UE_MAX];
-  LTE_eNB_UE_stats   *UE_stats_ptr[NUMBER_OF_UE_MAX];
-*/
   uint8_t pbch_configured;
-  //  uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char gNB_generate_rar;
 
   /// NR synchronization sequences
@@ -665,7 +660,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t nr_gold_pusch[2][20][2][NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD];
 
   /// Indicator set to 0 after first SR
-  uint8_t first_sr[NUMBER_OF_UE_MAX];
+  uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
 
   /// PRACH root sequence
   uint32_t X_u[64][839];
@@ -679,7 +674,6 @@ typedef struct PHY_VARS_gNB_s {
   /// N0 (used for abstraction)
   double N0;
 
-  unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
 
@@ -697,89 +691,29 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
-  // PDSCH Variables
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // PUCCH variables
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_UE_MAX];
-
-  // TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_UE_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_UE_MAX];
-
-  // CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_UE_MAX];
-
-  // SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
-  uint8_t ncs_cell[20][7];
-
-  // Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_UE_MAX];
-
-  // Transmission mode per UE
-  uint8_t transmission_mode[NUMBER_OF_UE_MAX];
-
-  /// cba_last successful reception for each group, used for collision detection
-  uint8_t cba_last_reception[4];
-
-  // Pointers for active physicalConfigDedicated to be applied in current slot
-  struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
-
-
-  uint32_t rb_mask_ul[4];
-
-  /// Information regarding TM5
-  MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
-
-
-  /// target_ue_dl_mcs : only for debug purposes
-  uint32_t target_ue_dl_mcs;
-  /// target_ue_ul_mcs : only for debug purposes
-  uint32_t target_ue_ul_mcs;
-  /// target_ue_dl_rballoc : only for debug purposes
-  uint32_t ue_dl_rb_alloc;
-  /// target ul PRBs : only for debug
-  uint32_t ue_ul_nb_rb;
-
-  ///check for Total Transmissions
-  uint32_t check_for_total_transmissions;
-
-  ///check for MU-MIMO Transmissions
-  uint32_t check_for_MUMIMO_transmissions;
-
-  ///check for SU-MIMO Transmissions
-  uint32_t check_for_SUMIMO_transmissions;
-
-  ///check for FULL MU-MIMO Transmissions
-  uint32_t  FULL_MUMIMO_transmissions;
-
-  /// Counter for total bitrate, bits and throughput in downlink
-  uint32_t total_dlsch_bitrate;
-  uint32_t total_transmitted_bits;
-  uint32_t total_system_throughput;
-
-  int hw_timing_advance;
-
+  /*
   time_stats_t phy_proc;
+  */
   time_stats_t phy_proc_tx;
+  /*
   time_stats_t phy_proc_rx;
+  */
   time_stats_t rx_prach;
-
+  /*
   time_stats_t ofdm_mod_stats;
+  */
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t tinput;
+  time_stats_t tprep;
+  time_stats_t tparity;
+  time_stats_t toutput;
+  
   time_stats_t dlsch_rate_matching_stats;
-  time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_interleaving_stats;
-
+  time_stats_t dlsch_segmentation_stats;
+  /*
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_channel_estimation_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
@@ -790,29 +724,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_deinterleaving_stats;
   time_stats_t ulsch_demultiplexing_stats;
   time_stats_t ulsch_llr_stats;
-  time_stats_t ulsch_tc_init_stats;
-  time_stats_t ulsch_tc_alpha_stats;
-  time_stats_t ulsch_tc_beta_stats;
-  time_stats_t ulsch_tc_gamma_stats;
-  time_stats_t ulsch_tc_ext_stats;
-  time_stats_t ulsch_tc_intl1_stats;
-  time_stats_t ulsch_tc_intl2_stats;
-
-#ifdef LOCALIZATION
-  /// time state for localization
-  time_stats_t localization_stats;
-#endif
-
-  int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
-  int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
-  int32_t pucch1_stats_thres[NUMBER_OF_UE_MAX][10*1024];
-  int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
-  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][2*10*1024];
-  int32_t pusch_stats_rb[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_round[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
+  */
 } PHY_VARS_gNB;
 
 #endif

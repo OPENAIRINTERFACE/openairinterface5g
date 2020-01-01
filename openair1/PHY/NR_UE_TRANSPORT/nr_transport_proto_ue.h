@@ -1113,6 +1113,7 @@ void *nr_dlsch_decoding_2thread0(void *arg);
 
 void *nr_dlsch_decoding_2thread1(void *arg);
 
+
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
 			   uint8_t q,
@@ -1124,17 +1125,10 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
-
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint32_t frame,
-                    uint8_t nr_tti_rx,
-                    uint8_t eNB_id,
-                    MIMO_mode_t mimo_mode,
-                    uint32_t high_speed_flag,
-                    uint8_t is_secondary_ue,
-                    int nb_coreset_active,
-                    uint16_t symbol_mon,
-                    NR_SEARCHSPACE_TYPE_t searchSpaceType);
+                    uint32_t slot);
+
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1544,10 +1538,9 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,NR_DL_FRAME
 
 void pdcch_interleaving(NR_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
-void pdcch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                        uint8_t subframe,
-                        int8_t* llr,
-                        uint32_t length);
+void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t slot,
+                           int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id);
+
 
 
 
@@ -1711,46 +1704,14 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
-void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
-			   int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common);
-
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
-uint8_t nr_dci_decoding_procedure(int s,
-                                  int p,
-                                  PHY_VARS_NR_UE *ue,
-                                  NR_DCI_ALLOC_t *dci_alloc,
-                                  NR_SEARCHSPACE_TYPE_t searchSpacetype,
-                                  int16_t eNB_id,
-                                  uint8_t nr_tti_rx,
-                                  uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-                                  uint16_t n_RB_ULBWP,
-                                  uint16_t n_RB_DLBWP,
-                                  crc_scrambled_t *crc_scrambled,
-                                  format_found_t *format_found,
-                                  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+				  int frame,
+				  int slot,
+				  fapi_nr_dci_indication_t *dci_ind);
 
-int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
-        uint8_t eNB_id,
-        int frame,
-        uint8_t nr_tti_rx,
-        uint64_t dci_pdu[2],
-        uint16_t rnti,
-        uint8_t dci_length,
-        NR_DCI_format_t dci_format,
-        NR_UE_PDCCH *pdcch_vars,
-        NR_UE_PDSCH *pdsch_vars,
-        NR_UE_DLSCH_t **dlsch,
-        NR_UE_ULSCH_t *ulsch,
-        NR_DL_FRAME_PARMS *frame_parms,
-        PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-        uint8_t beamforming_mode,
-        uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-        uint16_t n_RB_ULBWP,
-        uint16_t n_RB_DLBWP,
-        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
-	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -1794,22 +1755,11 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
 
-int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
-			uint8_t eNB_id,
-			lte_frame_type_t frame_type,
-			uint8_t dci_length,
-			uint16_t rnti,
-			uint64_t dci_pdu[2],
-			fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
-			uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-			NR_DCI_format_t dci_format,
-			uint8_t nr_tti_rx,
-			uint16_t n_RB_ULBWP,
-			uint16_t n_RB_DLBWP,
-			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+
 
 int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf );
 
 void *dlsch_thread(void *arg);
 /**@}*/
 #endif
+

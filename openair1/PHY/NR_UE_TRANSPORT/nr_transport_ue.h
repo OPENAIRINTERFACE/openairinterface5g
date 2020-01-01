@@ -255,8 +255,6 @@ typedef struct {
   uint8_t DCINdi;
   /// DLSCH status flag indicating
   SCH_status_t status;
-  /// Dynamic Configuration from FAPI
-  nfapi_nr_dl_tti_pdsch_pdu_rel15_t dl_config_pdu;
   /// Transport block size
   uint32_t TBS;
   /// The payload + CRC size in bits
@@ -301,12 +299,20 @@ typedef struct {
   int8_t delta_PUCCH;
   /// Number of soft channel bits
   uint32_t G;
+  /// Start PRB of BWP
+  uint16_t BWPStart;
+  /// Number of PRBs in BWP
+  uint16_t BWPSize;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Starting RB number
   uint16_t start_rb;
   /// Number of Symbols
   uint16_t nb_symbols;
+  /// DMRS symbol positions
+  uint16_t dlDmrsSymbPos;
+  /// DMRS Configuration Type
+  uint8_t dmrsConfigType;
   /// Starting Symbol number
   uint16_t start_symbol;
   /// Current subband PMI allocation

@@ -188,7 +188,8 @@ void nr_polar_print_polarParams(t_nrPolar_params *polarParams);
 t_nrPolar_params *nr_polar_params (int8_t messageType,
                                    uint16_t messageLength,
                                    uint8_t aggregation_level,
-				   int decoder_flag);
+				   int decoder_flag,
+				   t_nrPolar_params **polarList_ext);
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level);
 

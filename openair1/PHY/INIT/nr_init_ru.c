@@ -82,7 +82,7 @@ int nr_phy_init_RU(RU_t *ru) {
   
 
     // allocate precoding input buffers (TX)
-    ru->common.txdataF = (int32_t **)malloc16(ru->nb_tx**sizeof(int32_t*));
+    ru->common.txdataF = (int32_t **)malloc16(ru->nb_tx*sizeof(int32_t*));
     for(i=0; i< ru->nb_tx; ++i)  ru->common.txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
 
     // allocate IFFT input buffers (TX)
@@ -126,7 +126,7 @@ int nr_phy_init_RU(RU_t *ru) {
     
       int l_ind = 0;
       for (i=0; i<RC.nb_nr_L1_inst; i++) {
-        for (p=0;p<nb_logical_antennas;p++) {
+        for (p=0;p<ru->nb_log_antennas;p++) {
           if ((fp->L_ssb >> p) & 0x01)  {
 	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	    for (j=0; j<ru->nb_tx; j++) {

@@ -328,7 +328,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   // Check if there are downlink symbols in the slot, if not return, no scheduling opportunities
-  if (is_nr_DL_slot(cc,slot_txP)==0) return;
+  if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)==0) return;
 
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;

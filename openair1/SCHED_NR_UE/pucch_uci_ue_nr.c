@@ -211,11 +211,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-                            CC_id,
-                            frame_tx,
-                            gNB_id,
-                            ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-                            nr_tti_tx); // nr_tti_rx used for meas gap
+				CC_id,
+				frame_tx,
+				gNB_id,
+				0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+				nr_tti_tx); // nr_tti_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -590,7 +590,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format2_nr:
     {
       nr_generate_pucch2(ue,
-                         ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                         0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                          ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated[gNB_id],
@@ -608,7 +608,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,

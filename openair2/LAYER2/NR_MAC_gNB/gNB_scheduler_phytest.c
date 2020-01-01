@@ -126,7 +126,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0; // Point A
     
-    pdsch_pdu_rel15->dmrsConfigType = 1; // 1 by default for InitialBWP
+    pdsch_pdu_rel15->dmrsConfigType = 0; // Type 1 by default for InitialBWP
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
     pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;
@@ -173,9 +173,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 				 dlBWP_carrier_bandwidth);
     
     
-    pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
-									       pdsch_pdu_rel15->rbSize, 
-									       dlBWP_carrier_bandwidth);
+    pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize, 
+                                                                               pdsch_pdu_rel15->rbStart, 
+                                                                               dlBWP_carrier_bandwidth);
     pdu_rel15->time_domain_assignment = time_domain_assignment;
     
     pdu_rel15->vrb_to_prb_mapping = 1;
@@ -248,7 +248,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 int configure_fapi_dl_Tx(int Mod_idP,
 			 int *CCEIndex,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
-			 nfapi_nr_pdu_t *TX_req) {
+			 nfapi_nr_pdu_t *TX_req,
+			 int *mcsIndex,
+			 int *rbSize,
+			 int *rbStart) {
 
 
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
@@ -265,8 +268,6 @@ int configure_fapi_dl_Tx(int Mod_idP,
   int UE_id = 0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
 
-
-  LOG_I(PHY,"UE_id %d\n",UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
@@ -301,10 +302,10 @@ int configure_fapi_dl_Tx(int Mod_idP,
   else pdsch_pdu_rel15->CyclicPrefix=0;
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
-  int mcsIndex = 9;
+  int mcs = (mcsIndex!=NULL) ? *mcsIndex : 9;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
-  pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
+  pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
   pdsch_pdu_rel15->rvIndex[0] = 0;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
@@ -312,14 +313,14 @@ int configure_fapi_dl_Tx(int Mod_idP,
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
     
-  pdsch_pdu_rel15->dmrsConfigType = 1; // 1 by default for InitialBWP
+  pdsch_pdu_rel15->dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;  
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
   pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;
   pdsch_pdu_rel15->dmrsPorts = 1;
   pdsch_pdu_rel15->resourceAlloc = 1;
-  pdsch_pdu_rel15->rbStart = 0;
-  pdsch_pdu_rel15->rbSize = 50;
+  pdsch_pdu_rel15->rbStart = (rbStart!=NULL) ? *rbStart : 0;
+  pdsch_pdu_rel15->rbSize = (rbSize!=NULL) ? *rbSize : pdsch_pdu_rel15->BWPSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
     // choose shortest PDSCH
   int startSymbolAndLength=0;
@@ -333,14 +334,14 @@ int configure_fapi_dl_Tx(int Mod_idP,
   pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
  
   //  k0 = *bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-  pdsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(NULL,
+  pdsch_pdu_rel15->dlDmrsSymbPos    = fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup,
 						     scc->dmrs_TypeA_Position,
 						     pdsch_pdu_rel15->NrOfSymbols);
 
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
   
-  dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbStart, 
-										   pdsch_pdu_rel15->rbSize, 
+  dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize, 
+										   pdsch_pdu_rel15->rbStart, 
 										   NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
   dci_pdu_rel15[0].time_domain_assignment = time_domain_assignment; // row index used here instead of SLIV;
   dci_pdu_rel15[0].vrb_to_prb_mapping = 1;
@@ -357,7 +358,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dci_pdu_rel15[0].pucch_resource_indicator = 7;
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
   
-  LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+  LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment,
 	pdsch_pdu_rel15->rbStart, 
 	pdsch_pdu_rel15->rbSize,	
@@ -392,8 +393,9 @@ int configure_fapi_dl_Tx(int Mod_idP,
   rnti_types[0]   = NR_RNTI_C;
 
   pdcch_pdu_rel15->PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
-  
-  LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
+
+  LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
 	pdcch_pdu_rel15->RNTI[0],
 	rnti_types[0],
@@ -407,7 +409,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
 		x_Overhead);
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
-  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+  LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	pdsch_pdu_rel15->rbStart,
 	pdsch_pdu_rel15->rbSize,
 	startSymbolAndLength,
@@ -433,8 +435,8 @@ int configure_fapi_dl_Tx(int Mod_idP,
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
 
-  dci_pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_start, 
-										 pusch_pdu->rb_size, 
+  dci_pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, 
+										 pusch_pdu->rb_start, 
 										 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
   dci_pdu_rel15->time_domain_assignment = 2; // row index used here instead of SLIV;
@@ -447,7 +449,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
   dci_pdu_rel15->harq_pid = 0;
   dci_pdu_rel15->tpc = 2;
   
-  LOG_I(MAC, "[gNB scheduler phytest] ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+  LOG_D(MAC, "[gNB scheduler phytest] ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
 	pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci],
 	dci_pdu_rel15->frequency_domain_assignment,
 	dci_pdu_rel15->time_domain_assignment,
@@ -633,8 +635,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       TBS_bytes = configure_fapi_dl_Tx(module_idP,
 				       CCEIndices,
 				       dl_req, 
-				       TX_req); 
-
+				       TX_req,
+				       dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
+				       dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
+				       dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, , TBS size: %d \n \n", frameP, slotP, TBS_bytes);
       for(int i = 0; i < 10; i++) { // TBS_bytes dlsch_pdu_rel15->transport_block_size/8 6784/8
@@ -668,10 +672,13 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     int CCEIndices[2];
     CCEIndices[0] = CCEIndex;
-    LOG_I(MAC,"Configuring DL_TX in %d.%d\n",frameP,slotP);
-    TBS_bytes = configure_fapi_dl_Tx(module_idP,CCEIndices,dl_req, TX_req); 
-    // HOT FIX for all zero pdu problem
-    // ------------------------------------------------------------------------------------------------
+    LOG_D(MAC,"Configuring DL_TX in %d.%d\n",frameP,slotP);
+    TBS_bytes = configure_fapi_dl_Tx(module_idP,CCEIndices,dl_req, TX_req,
+				     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
+				     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
+				     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL); 
+// HOT FIX for all zero pdu problem
+// ------------------------------------------------------------------------------------------------
     
     for(int i = 0; i < TBS_bytes; i++) { //
       ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) rand();
@@ -679,10 +686,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     }
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     if (frameP%100 == 0){
-    LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
-    for(int i = 0; i < 10; i++) {
-    LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
-  }
+      LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
+      for(int i = 0; i < 10; i++) {
+	LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+      }
     }
 #endif
     
@@ -827,7 +834,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 
   dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
   rnti_types[0]   = NR_RNTI_C;
-  LOG_I(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
+  LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
   nr_configure_pdcch(pdcch_pdu_rel15,
 		     1, // ue-specific,
 		     scc,
@@ -839,7 +846,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   AssertFatal(CCEIndex>=0,"CCEIndex is negative \n");
   pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci] = CCEIndex;
 
-  LOG_I(PHY,"CCEIndex %d\n",pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci]);
+  LOG_D(PHY,"CCEIndex %d\n",pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci]);
 
   config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
   

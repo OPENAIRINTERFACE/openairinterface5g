@@ -4836,22 +4836,22 @@ void idft4096(int16_t *x,int16_t *y,int scale)
   if (scale>0) {
 
     for (i=0; i<64; i++) {
-      y128[0]  = shiftright_int16(y128[0],1);
-      y128[1]  = shiftright_int16(y128[1],1);
-      y128[2]  = shiftright_int16(y128[2],1);
-      y128[3]  = shiftright_int16(y128[3],1);
-      y128[4]  = shiftright_int16(y128[4],1);
-      y128[5]  = shiftright_int16(y128[5],1);
-      y128[6]  = shiftright_int16(y128[6],1);
-      y128[7]  = shiftright_int16(y128[7],1);
-      y128[8]  = shiftright_int16(y128[8],1);
-      y128[9]  = shiftright_int16(y128[9],1);
-      y128[10] = shiftright_int16(y128[10],1);
-      y128[11] = shiftright_int16(y128[11],1);
-      y128[12] = shiftright_int16(y128[12],1);
-      y128[13] = shiftright_int16(y128[13],1);
-      y128[14] = shiftright_int16(y128[14],1);
-      y128[15] = shiftright_int16(y128[15],1);
+      y128[0]  = shiftright_int16(y128[0],scale);
+      y128[1]  = shiftright_int16(y128[1],scale);
+      y128[2]  = shiftright_int16(y128[2],scale);
+      y128[3]  = shiftright_int16(y128[3],scale);
+      y128[4]  = shiftright_int16(y128[4],scale);
+      y128[5]  = shiftright_int16(y128[5],scale);
+      y128[6]  = shiftright_int16(y128[6],scale);
+      y128[7]  = shiftright_int16(y128[7],scale);
+      y128[8]  = shiftright_int16(y128[8],scale);
+      y128[9]  = shiftright_int16(y128[9],scale);
+      y128[10] = shiftright_int16(y128[10],scale);
+      y128[11] = shiftright_int16(y128[11],scale);
+      y128[12] = shiftright_int16(y128[12],scale);
+      y128[13] = shiftright_int16(y128[13],scale);
+      y128[14] = shiftright_int16(y128[14],scale);
+      y128[15] = shiftright_int16(y128[15],scale);
 
       y128+=16;
     }
@@ -8591,6 +8591,8 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
+//#define round trunc
+
 void init_rad4(int N,int16_t *tw) {
 
   int16_t *twa = tw;
@@ -8759,6 +8761,8 @@ void init_dfts(void)
   init_rad4_rep(1152,twa1152,twb1152,twc1152);
   init_rad4_rep(1200,twa1200,twb1200,twc1200);
 }
+
+//#undef round
 
 #ifdef MR_MAIN
 #include <string.h>

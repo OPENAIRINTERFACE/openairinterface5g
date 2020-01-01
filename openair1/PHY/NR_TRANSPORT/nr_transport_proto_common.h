@@ -1728,41 +1728,6 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
-uint8_t nr_dci_decoding_procedure(int s,
-                                  int p,
-                                  PHY_VARS_NR_UE *ue,
-                                  NR_DCI_ALLOC_t *dci_alloc,
-                                  NR_SEARCHSPACE_TYPE_t searchSpacetype,
-                                  int16_t eNB_id,
-                                  uint8_t nr_tti_rx,
-                                  uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-                                  uint16_t n_RB_ULBWP,
-                                  uint16_t n_RB_DLBWP,
-                                  crc_scrambled_t *crc_scrambled,
-                                  format_found_t *format_found,
-                                  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
-
-int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
-        uint8_t eNB_id,
-        int frame,
-        uint8_t nr_tti_rx,
-        uint64_t dci_pdu[2],
-        uint16_t rnti,
-        uint8_t dci_length,
-        NR_DCI_format_t dci_format,
-        NR_UE_PDCCH *pdcch_vars,
-        NR_UE_PDSCH *pdsch_vars,
-        NR_UE_DLSCH_t **dlsch,
-        NR_UE_ULSCH_t *ulsch,
-        NR_DL_FRAME_PARMS *frame_parms,
-        PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-        uint8_t beamforming_mode,
-        uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-        uint16_t n_RB_ULBWP,
-        uint16_t n_RB_DLBWP,
-        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
-	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
-
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              PDSCH_t type,
              unsigned char eNB_id,
@@ -1788,21 +1753,6 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    uint8_t harq_pid,
 			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
-
-int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
-			uint8_t eNB_id,
-			lte_frame_type_t frame_type,
-			uint8_t dci_length,
-			uint16_t rnti,
-			uint64_t dci_pdu[2],
-			fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
-			uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-			NR_DCI_format_t dci_format,
-			uint8_t nr_tti_rx,
-			uint16_t n_RB_ULBWP,
-			uint16_t n_RB_DLBWP,
-			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
-
 
 /**@}*/
 #endif

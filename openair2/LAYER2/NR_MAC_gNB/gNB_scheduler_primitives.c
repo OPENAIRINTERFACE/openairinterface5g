@@ -39,6 +39,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/nr/nr_common.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -64,7 +65,6 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
-#define CEILIDIV(a,b) ((a+b-1)/b)
 
 #include "common/ran_context.h"
 
@@ -1367,146 +1367,8 @@ int add_new_nr_ue(module_id_t mod_idP,
   }
 }
 */
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
 
-  int l0;
-  if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
-  else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
-  else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
-  if (pdsch_Config == NULL) { // Initial BWP
-    return(1<<l0);
-  }
-  else {
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of slot
-      NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
-      int pos2=0;
-      if (dmrs_config->maxLength == NULL) {
-	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
-	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
-	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
-	  return(1<<l0);
-	
-	
-	switch (NrOfSymbols) {
-	case 2 :
-	case 3 :
-	case 4 :
-	case 5 :
-	case 6 :
-	case 7 :
-	  AssertFatal(1==0,"Incoompatible NrOfSymbols %d and dmrs_Additional_Position %d\n",
-		      NrOfSymbols,(int)*dmrs_config->dmrs_AdditionalPosition);
-	  break;
-	case 8 :
-	case 9:
-	  return(1<<l0 | 1<<7);
-	  break;
-	case 10:
-	case 11:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  break;
-	case 12:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	case 13:
-	case 14:
-	  if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<11);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	}
-      }
-      else {
-	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
-	AssertFatal(NrOfSymbols>3,"Illegal NrOfSymbols %d for len2 DMRS\n",NrOfSymbols);
-	if (NrOfSymbols < 10) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 || 1<<8);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 || 1<<10);
-      }
-    }
-    else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
-	     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of PDSCH resource
-      AssertFatal(1==0,"TypeB DMRS not supported yet\n");
-    }
-  }
-  AssertFatal(1==0,"Shouldn't get here\n");
-  return(-1);
-}
 
-int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
 
-int is_nr_DL_slot(NR_COMMON_channels_t *cc,slot_t slot) {
 
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int period,period1,period2=0;
-
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
-
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
-      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
-    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  else
-    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
-			       
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
-    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
-    else
-      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
-  }    
-  period = period1+period2;
-  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
-  int slots=period*(1<<scs)/1000;
-  int slots1=period1*(1<<scs)/1000;
-  int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
-}
-
-int is_nr_UL_slot(NR_COMMON_channels_t *cc,slot_t slot) {
-
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int period,period1,period2=0;
-
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
-
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
-      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
-    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  else
-    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
-			       
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
-    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
-    else
-      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
-  }    
-  period = period1+period2;
-  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
-  int slots=period*(1<<scs)/1000;
-  int slots1=period1*(1<<scs)/1000;
-  int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period >= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
-}
 

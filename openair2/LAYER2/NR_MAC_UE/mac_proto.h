@@ -20,7 +20,7 @@
  */
 
 /* \file proto.h
- * \brief MAC functions prototypes for eNB and UE
+ * \brief MAC functions prototypes for gNB and UE
  * \author R. Knopp, K.H. HSU
  * \date 2018
  * \version 0.1
@@ -64,18 +64,14 @@ int8_t nr_ue_decode_mib(
    \param gNB_index                 gNB index
    \param mibP                      pointer to RRC message MIB
    \param sccP                      pointer to ServingCellConfigCommon structure,
-   \param mac_cell_group_configP    pointer to RRC message MAC-related in cell group config 
-   \param phy_cell_group_configP    pointer to RRC message PHY-related in cell group config
    \param spcell_configP            pointer to RRC message serving cell config*/
-int nr_rrc_mac_config_req_ue( 
-    module_id_t module_id, 
-    int cc_id, 
-    uint8_t gNB_index, 
-    NR_MIB_t *mibP, 
+int nr_rrc_mac_config_req_ue(
+    module_id_t                     module_id,
+    int                             cc_idP,
+    uint8_t                         gNB_index,
+    NR_MIB_t                        *mibP,
     NR_ServingCellConfigCommon_t    *sccP,
-    NR_MAC_CellGroupConfig_t *mac_cell_group_configP, 
-    NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, 
-    NR_SpCellConfig_t *spcell_configP );
+    NR_SpCellConfig_t               *spCell_ConfigP);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 int nr_l2_init_ue(void);
@@ -118,7 +114,8 @@ uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
+int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
 uint32_t get_ssb_slot(uint32_t ssb_index);
@@ -132,11 +129,23 @@ void nr_ue_process_mac_pdu(
     uint8_t CC_id,
     uint8_t *pduP, 
     uint16_t mac_pdu_len, 
-    uint8_t eNB_index);
+    uint8_t gNB_index);
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
-void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index);
+void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t gNB_index);
+
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot);
+
+int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+			int dci_format,
+			uint8_t dci_length,
+			uint16_t rnti,
+			uint64_t *dci_pdu,
+			nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
+
+
+
 
 #endif
 /** @}*/

@@ -185,10 +185,12 @@ void nr_polar_print_polarParams(t_nrPolar_params *polarParams) {
 t_nrPolar_params *nr_polar_params (int8_t messageType,
                                    uint16_t messageLength,
                                    uint8_t aggregation_level,
-	 		           int decoding_flag) {
+	 		           int decoding_flag,
+				   t_nrPolar_params **polarList_ext) {
   static t_nrPolar_params *polarList = NULL;
-  nr_polar_init(&polarList, messageType,messageLength,aggregation_level,decoding_flag);
-  t_nrPolar_params *polarParams=polarList;
+  nr_polar_init(polarList_ext != NULL ? polarList_ext : &polarList, 
+		messageType,messageLength,aggregation_level,decoding_flag);
+  t_nrPolar_params *polarParams=polarList_ext != NULL ? *polarList_ext : polarList;
   const int tag=messageType * messageLength * nr_polar_aggregation_prime(aggregation_level);
 
   while (polarParams != NULL) {

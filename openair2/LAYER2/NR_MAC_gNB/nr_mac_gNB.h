@@ -59,6 +59,8 @@
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#include "nr_mac_common.h"
+
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
@@ -241,31 +243,6 @@ uint16_t padding;
 
 } dci_pdu_rel15_t;
 
-typedef enum {
-  NR_DL_DCI_FORMAT_1_0 = 0,
-  NR_DL_DCI_FORMAT_1_1,
-  NR_DL_DCI_FORMAT_2_0,
-  NR_DL_DCI_FORMAT_2_1,
-  NR_DL_DCI_FORMAT_2_2,
-  NR_DL_DCI_FORMAT_2_3,
-  NR_UL_DCI_FORMAT_0_0,
-  NR_UL_DCI_FORMAT_0_1
-} nr_dci_format_t;
 
-typedef enum {
-  NR_RNTI_new = 0,
-  NR_RNTI_C,
-  NR_RNTI_RA,
-  NR_RNTI_P,
-  NR_RNTI_CS,
-  NR_RNTI_TC,
-  NR_RNTI_SP_CSI,
-  NR_RNTI_SI,
-  NR_RNTI_SFI,
-  NR_RNTI_INT,
-  NR_RNTI_TPC_PUSCH,
-  NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS
-} nr_rnti_type_t;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

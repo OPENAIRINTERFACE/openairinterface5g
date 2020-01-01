@@ -67,7 +67,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 int configure_fapi_dl_Tx(int Mod_id,
 			 int *CCEIndeces,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
-			 nfapi_nr_pdu_t *TX_req);
+			 nfapi_nr_pdu_t *TX_req,
+			 int *mcsIndex,
+			 int *rbSize,
+			 int *rbStart);
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
@@ -160,7 +163,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 		     int m
 		     );
 
-int is_nr_DL_slot(NR_COMMON_channels_t *cc,slot_t slotP);
-int is_nr_UL_slot(NR_COMMON_channels_t *cc,slot_t slotP);
+int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

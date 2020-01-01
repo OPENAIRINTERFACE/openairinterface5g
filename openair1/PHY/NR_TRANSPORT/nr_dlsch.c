@@ -76,7 +76,14 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  int xOverhead,
                           time_stats_t *dlsch_encoding_stats,
                           time_stats_t *dlsch_scrambling_stats,
-                          time_stats_t *dlsch_modulation_stats) {
+                          time_stats_t *dlsch_modulation_stats,
+			  time_stats_t *tinput,
+			  time_stats_t *tprep,
+			  time_stats_t *tparity,
+			  time_stats_t *toutput,
+			  time_stats_t *dlsch_rate_matching_stats,
+			  time_stats_t *dlsch_interleaving_stats,
+			  time_stats_t *dlsch_segmentation_stats) {
 
   int harq_pid = 0;
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
@@ -85,15 +92,23 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-  uint16_t nb_symbols = rel15->NrOfSymbols;
-  uint8_t Qm = rel15->qamModOrder[0];
-  uint32_t encoded_length = nb_symbols*Qm;
 
+  uint8_t dmrs_Type = rel15->dmrsConfigType;
+  int nb_re_dmrs = (dmrs_Type== NFAPI_NR_DMRS_TYPE1) ? 6:4;
+  uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
+  int16_t mod_dmrs[n_dmrs<<1];
+
+  uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
+  uint8_t Qm = rel15->qamModOrder[0];
+  uint32_t encoded_length = nb_re*Qm;
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
   start_meas(dlsch_encoding_stats);
-  nr_dlsch_encoding(harq->pdu, frame, slot, dlsch, frame_parms);
+  nr_dlsch_encoding(harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+		    dlsch_rate_matching_stats,
+		    dlsch_interleaving_stats,
+		    dlsch_segmentation_stats);
   stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
   printf("PDSCH encoding:\nPayload:\n");
@@ -110,6 +125,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   }
   printf("\n");
 #endif
+
+
 
   /// scrambling
   start_meas(dlsch_scrambling_stats);
@@ -142,8 +159,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                          mod_symbs[q]);
   stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
-  printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_symbols);
-  for (int i=0; i<nb_symbols>>3; i++) {
+  printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_re);
+  for (int i=0; i<nb_re>>3; i++) {
     for (int j=0; j<8; j++) {
       printf("%d %d\t", mod_symbs[0][((i<<3)+j)<<1], mod_symbs[0][(((i<<3)+j)<<1)+1]);
     }
@@ -155,53 +172,50 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   /// Layer mapping
   nr_layer_mapping(mod_symbs,
 		   rel15->nrOfLayers,
-		   nb_symbols,
+		   nb_re,
 		   tx_layers);
 #ifdef DEBUG_DLSCH
   printf("Layer mapping (%d layers):\n", rel15->nrOfLayers);
   for (int l=0; l<rel15->nrOfLayers; l++)
-    for (int i=0; i<(nb_symbols/rel15->nrOfLayers)>>3; i++) {
+    for (int i=0; i<(nb_re/rel15->nrOfLayers)>>3; i++) {
+      printf("layer %d, Re %d..%d : ",l,i<<3,(i<<3)+7);
       for (int j=0; j<8; j++) {
-	printf("%d %d\t", tx_layers[l][((i<<3)+j)<<1], tx_layers[l][(((i<<3)+j)<<1)+1]);
+	printf("l%d %d\t", tx_layers[l][((i<<3)+j)<<1], tx_layers[l][(((i<<3)+j)<<1)+1]);
       }
       printf("\n");
     }
 #endif
 
   /// Antenna port mapping
-    //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
-
+  //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
+  
   /// DMRS QPSK modulation
- uint8_t dmrs_Type = rel15->dmrsConfigType;
- int nb_re_dmrs = (dmrs_Type==1) ? 6:4;
- uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
- int16_t mod_dmrs[n_dmrs<<1];
- 
- 
- l0 = get_l0(rel15->dlDmrsSymbPos);
- nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-
+  
+  
+  l0 = get_l0(rel15->dlDmrsSymbPos);
+  nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+  
 #ifdef DEBUG_DLSCH
-printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_Type);
-for (int i=0; i<n_dmrs>>4; i++) {
-  for (int j=0; j<8; j++) {
-    printf("%d %d\t", mod_dmrs[((i<<3)+j)<<1], mod_dmrs[(((i<<3)+j)<<1)+1]);
+  printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_Type);
+  for (int i=0; i<n_dmrs>>4; i++) {
+    for (int j=0; j<8; j++) {
+      printf("%d %d\t", mod_dmrs[((i<<3)+j)<<1], mod_dmrs[(((i<<3)+j)<<1)+1]);
+    }
+    printf("\n");
   }
-  printf("\n");
-}
 #endif
-
-
+  
+  
   /// Resource mapping
-
+  
   // Non interleaved VRB to PRB mapping
   uint16_t start_sc = frame_parms->first_carrier_offset + rel15->rbStart*NR_NB_SC_PER_RB;
   if (start_sc >= frame_parms->ofdm_symbol_size)
     start_sc -= frame_parms->ofdm_symbol_size;
 
 #ifdef DEBUG_DLSCH_MAPPING
-  printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",
-	 start_sc, rel15->StartSymbolIndex, rel15->rbSize, rel15->NrOfSymbols);
+  printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
+	 start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
   for (int ap=0; ap<rel15->nrOfLayers; ap++) {
 
@@ -212,8 +226,8 @@ for (int i=0; i<n_dmrs>>4; i++) {
     l_prime[0] = 0; // single symbol ap 0
     uint8_t dmrs_symbol = l0+l_prime[0];
 #ifdef DEBUG_DLSCH_MAPPING
-    printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n",
-	   ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
+    printf("DMRS Type %d params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n",
+	   1+dmrs_Type,ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
     uint8_t k_prime=0;
     uint16_t m=0, n=0, dmrs_idx=0, k=0;

@@ -79,7 +79,14 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  int xOverhead,
                           time_stats_t *dlsch_encoding_stats,
                           time_stats_t *dlsch_scrambling_stats,
-                          time_stats_t *dlsch_modulation_stats);
+                          time_stats_t *dlsch_modulation_stats,
+			  time_stats_t *tinput,
+			  time_stats_t *tprep,
+			  time_stats_t *tparity,
+			  time_stats_t *toutput,
+			  time_stats_t *dlsch_rate_matching_stats,
+			  time_stats_t *dlsch_interleaving_stats,
+			  time_stats_t *dlsch_segmentation_stats);
 
 
 void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
@@ -91,9 +98,16 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
 int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 int nr_dlsch_encoding(unsigned char *a,int frame,
-                     uint8_t slot,
-                     NR_gNB_DLSCH_t *dlsch,
-                     NR_DL_FRAME_PARMS* frame_parms);
+		      uint8_t slot,
+		      NR_gNB_DLSCH_t *dlsch,
+		      NR_DL_FRAME_PARMS* frame_parms,
+		      time_stats_t *tinput,
+		      time_stats_t *tprep,
+		      time_stats_t *tparity,
+		      time_stats_t *toutput,
+		      time_stats_t *dlsch_rate_matching_stats,
+		      time_stats_t *dlsch_interleaving_stats,
+		      time_stats_t *dlsch_segmentation_stats);
 
 
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);

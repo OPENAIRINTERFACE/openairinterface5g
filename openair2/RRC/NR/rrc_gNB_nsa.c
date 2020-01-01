@@ -41,7 +41,6 @@
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-  int rnti = taus()&65535;
   OCTET_STRING_t *ueCapabilityRAT_Container_nr;
   OCTET_STRING_t *ueCapabilityRAT_Container_MRDC;
   int list_size;
@@ -56,7 +55,6 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerL
   AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
   // decode and store capabilities
   ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
-  ue_context_p->ue_id_rnti = rnti;
   
   asn_dec_rval_t dec_rval = uper_decode(NULL,
 					&asn_DEF_NR_UE_NR_Capability,
@@ -127,7 +125,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
 
   fill_default_rbconfig(ue_context_p->ue_context.rb_config);
-
+  ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));
   generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
