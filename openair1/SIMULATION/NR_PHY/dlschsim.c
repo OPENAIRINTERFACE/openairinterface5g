@@ -491,7 +491,7 @@ int main(int argc, char **argv)
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
 	if (input_fd == NULL) {
-		nr_dlsch_encoding(test_input, frame, slot, dlsch, frame_parms);
+		nr_dlsch_encoding(test_input, frame, slot, dlsch, frame_parms,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {

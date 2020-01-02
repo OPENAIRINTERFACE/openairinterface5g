@@ -773,7 +773,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  //short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,err_flag=0,K_bytes_F;
   uint8_t crc_type;
   //UE_rxtx_proc_t *proc = &phy_vars_ue->proc;
@@ -952,8 +951,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     break;
   }
 
-  if (harq_process->C > MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_ldpc_iterations));
   }
 #ifdef DEBUG_DLSCH_DECODING
@@ -1392,7 +1391,6 @@ void *nr_dlsch_decoding_process(void *arg)
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-//  short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
   uint8_t crc_type;
   uint8_t C,Cprime;
@@ -1531,8 +1529,8 @@ void *nr_dlsch_decoding_process(void *arg)
     break;
   }
 
-  if (harq_process->C > MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_ldpc_iterations));
   }*/
 #ifdef DEBUG_DLSCH_DECODING

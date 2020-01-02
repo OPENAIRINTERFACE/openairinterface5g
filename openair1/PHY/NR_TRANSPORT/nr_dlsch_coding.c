@@ -282,7 +282,6 @@ int nr_dlsch_encoding(unsigned char *a,
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
   uint32_t r_offset=0;
-  //uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t BG=1;
   uint32_t E;
   uint8_t Ilbrm = 1;
@@ -293,13 +292,6 @@ int nr_dlsch_encoding(unsigned char *a,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  /*
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
-  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
-    channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-  }
-  */
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;

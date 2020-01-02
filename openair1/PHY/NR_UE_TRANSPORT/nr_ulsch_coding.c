@@ -238,13 +238,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 
-  /*
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
-  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
-    channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-  }
-  */
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);

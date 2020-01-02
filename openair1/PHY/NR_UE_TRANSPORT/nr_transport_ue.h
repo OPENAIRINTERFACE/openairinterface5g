@@ -284,7 +284,7 @@ typedef struct {
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// LDPC processing buffers
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_DLSCH_SEGMENTS];
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
