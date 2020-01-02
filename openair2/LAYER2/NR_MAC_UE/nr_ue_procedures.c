@@ -441,10 +441,10 @@ int8_t nr_ue_decode_mib(
         float big_o;
         float big_m;
         uint32_t temp;
-        SFN_C_TYPE sfn_c;   //  only valid for mux=1
-        uint32_t n_c;
-        uint32_t number_of_search_space_per_slot;
-        uint32_t first_symbol_index;
+        SFN_C_TYPE sfn_c=SFN_C_IMPOSSIBLE;   //  only valid for mux=1
+        uint32_t n_c=UINT_MAX;
+        uint32_t number_of_search_space_per_slot=UINT_MAX;
+        uint32_t first_symbol_index=UINT_MAX;
         uint32_t search_space_duration;  //  element of search space
         uint32_t coreset_duration;  //  element of coreset
         
@@ -582,6 +582,7 @@ int8_t nr_ue_decode_mib(
             search_space_duration = 1;
         }
 
+	AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
         coreset_duration = num_symbols * number_of_search_space_per_slot;
 
         mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
@@ -591,8 +592,11 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
         mac->type0_pdcch_dci_config.duration = search_space_duration;
         mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
+	AssertFatal(first_symbol_index!=UINT_MAX,"");
         mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
 
+	AssertFatal(sfn_c!=SFN_C_IMPOSSIBLE,"");
+	AssertFatal(n_c!=UINT_MAX,"");
         mac->type0_pdcch_ss_sfn_c = sfn_c;
         mac->type0_pdcch_ss_n_c = n_c;
         

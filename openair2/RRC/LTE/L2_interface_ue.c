@@ -59,8 +59,8 @@ mac_rrc_data_req_ue(
 )
 //--------------------------------------------------------------------------
 {
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
-  LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %d\n",Mod_idP,frameP,Srb_id);
+  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
+  LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %ld\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size);
 
   //TTN (for D2D)
@@ -72,7 +72,7 @@ mac_rrc_data_req_ue(
     return(Ret_size);
   }
 
-  LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
+  LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %ld\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
 
   if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
@@ -137,7 +137,7 @@ mac_rrc_data_ind_ue(
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, 0, rntiP, frameP, sub_frameP,eNB_indexP);
 
   if(srb_idP == BCCH_SI_MBMS) {
-    LOG_D(RRC,"[UE %d] Received SDU for BCCH on MBMS SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+    LOG_D(RRC,"[UE %d] Received SDU for BCCH on MBMS SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 #if defined(ENABLE_ITTI)
     {
       MessageDef *message_p;
@@ -167,7 +167,7 @@ mac_rrc_data_ind_ue(
   }
 
   if(srb_idP == BCCH) {
-    LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+    LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 #if defined(ENABLE_ITTI)
     {
       MessageDef *message_p;
@@ -197,13 +197,13 @@ mac_rrc_data_ind_ue(
   }
 
   if(srb_idP == PCCH) {
-    LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+    LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
     decode_PCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t *)sduP,sdu_lenP);
   }
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
     if (sdu_lenP>0) {
-      LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
+      LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %ld from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
@@ -237,7 +237,7 @@ mac_rrc_data_ind_ue(
   }
 
   if ((srb_idP & RAB_OFFSET) == MCCH) {
-    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
+    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
           module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
 #if defined(ENABLE_ITTI)
     {
@@ -266,7 +266,7 @@ mac_rrc_data_ind_ue(
 
   //TTN (for D2D)
   if(srb_idP == SL_DISCOVERY) {
-    LOG_I(RRC,"[UE %d] Received SDU (%d bytes) for SL_DISCOVERY on SRB %d from eNB %d\n",module_idP, sdu_lenP, srb_idP,eNB_indexP);
+    LOG_I(RRC,"[UE %d] Received SDU (%d bytes) for SL_DISCOVERY on SRB %ld from eNB %d\n",module_idP, sdu_lenP, srb_idP,eNB_indexP);
     decode_SL_Discovery_Message(&ctxt, eNB_indexP, sduP, sdu_lenP);
   }
 
@@ -350,7 +350,7 @@ rrc_data_ind_ue(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
         ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
 #if defined(ENABLE_ITTI)
   {

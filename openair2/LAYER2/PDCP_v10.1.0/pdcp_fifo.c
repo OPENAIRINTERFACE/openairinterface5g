@@ -98,7 +98,7 @@ extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint
 
 void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
   LOG_I(PDCP,"%s: \nPC5S message, header traffic_type: %d)\n", title, sl_pc5s_msg->pc5s_header.traffic_type);
-  LOG_I(PDCP,"PC5S message, header rb_id: %d)\n", sl_pc5s_msg->pc5s_header.rb_id);
+  LOG_I(PDCP,"PC5S message, header rb_id: %ld)\n", sl_pc5s_msg->pc5s_header.rb_id);
   LOG_I(PDCP,"PC5S message, header data_size: %d)\n", sl_pc5s_msg->pc5s_header.data_size);
   LOG_I(PDCP,"PC5S message, header inst: %d)\n", sl_pc5s_msg->pc5s_header.inst);
   LOG_I(PDCP,"PC5-S message, sourceL2Id: 0x%08x\n)\n", sl_pc5s_msg->pc5s_header.sourceL2Id);
@@ -181,33 +181,19 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
           ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
 
     if (h_rc == HASH_TABLE_OK) {
-      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %d \n",
+      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %ld \n",
             ctxt.frame, ctxt.instance, len, rab_id);
-      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %u]\n",
+      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id);
-      MSC_LOG_RX_MESSAGE((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                         NULL, 0,
-                         MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                         MSC_AS_TIME_ARGS(ctxt_pP),
-                         ctxt.instance, rab_id, rab_id, len);
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA
                     , NULL, NULL
                    );
     } else {
-      MSC_LOG_RX_DISCARDED_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ctxt.instance, rab_id, rab_id, len);
       LOG_D(PDCP,
-            "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %u] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+            "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] TUN NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id, key);
     }
@@ -253,7 +239,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
           if (nas_nlh_rx->nlmsg_len == sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr)) {
             pdcp_read_state_g = 1;  //get
             memcpy((void *)&pdcp_read_header_g, (void *)NLMSG_DATA(nas_nlh_rx), sizeof(pdcp_data_req_header_t));
-            LOG_D(PDCP, "[PDCP][NETLINK] RX pdcp_data_req_header_t inst %u, rb_id %u data_size %d, source L2Id 0x%08x, destination L2Id 0x%08x\n",
+            LOG_D(PDCP, "[PDCP][NETLINK] RX pdcp_data_req_header_t inst %u, rb_id %ld data_size %d, source L2Id 0x%08x, destination L2Id 0x%08x\n",
                   pdcp_read_header_g.inst, pdcp_read_header_g.rb_id, pdcp_read_header_g.data_size,pdcp_read_header_g.sourceL2Id, pdcp_read_header_g.destinationL2Id );
           } else {
             LOG_E(PDCP, "[PDCP][NETLINK] WRONG size %d should be sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr)\n",
@@ -269,7 +255,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
           //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
-          LOG_D(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %d, source L2Id = 0x%08x, destination L2Id = 0x%08x \n", pdcp_read_header_g.rb_id, pdcp_read_header_g.sourceL2Id,
+          LOG_D(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %ld, source L2Id = 0x%08x, destination L2Id = 0x%08x \n", pdcp_read_header_g.rb_id, pdcp_read_header_g.sourceL2Id,
                 pdcp_read_header_g.destinationL2Id);
 
           if (ctxt.enb_flag) {
@@ -283,25 +269,14 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
 
               if (h_rc == HASH_TABLE_OK) {
-                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d for rnti: %d \n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %ld for rnti: %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
                       nas_nlh_rx->nlmsg_len-sizeof(struct nlmsghdr),
                       pdcp_read_header_g.rb_id,
                       ctxt.rnti);
-                MSC_LOG_RX_MESSAGE(
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                  NULL,
-                  0,
-                  MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                  MSC_AS_TIME_ARGS(ctxt_pP),
-                  pdcp_read_header_g.inst,
-                  pdcp_read_header_g.rb_id,
-                  rab_id,
-                  pdcp_read_header_g.data_size);
-                LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u]UE %u][RB %u]\n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u]UE %u][RB %ld]\n",
                       ctxt_cpy.frame,
                       pdcp_read_header_g.inst,
                       pdcp_read_header_g.rb_id,
@@ -320,7 +295,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                               ,NULL, NULL
                              );
               } else {
-                LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE, DROPPED\n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %ld] NON INSTANCIATED INSTANCE, DROPPED\n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       pdcp_read_header_g.rb_id,
@@ -335,7 +310,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               for (ue_id = 0; ue_id < NB_UE_INST; ue_id++) {
                 if (oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id] != NOT_A_RNTI) {
                   ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id];
-                  LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
+                  LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
                         ctxt.frame,
                         pdcp_read_header_g.inst,
                         pdcp_read_header_g.rb_id,
@@ -377,27 +352,27 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                       ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                 key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                 h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-                LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+                LOG_D(PDCP,"request key %x : (%d,%x,%d,%ld)\n",
                       (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
               } else {
                 rab_id = rab_id % LTE_maxDRB;
-                LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
+                LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%ld, SRB_FLAG=%d)\n",
                       ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
                 key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
                 h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-                LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+                LOG_D(PDCP,"request key %x : (%d,%x,%d,%ld)\n",
                       (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
               }
 
               if (h_rc == HASH_TABLE_OK) {
                 rab_id = pdcp_p->rb_id;
-                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %ld \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
                       nas_nlh_rx->nlmsg_len-sizeof(struct nlmsghdr),
                       pdcp_read_header_g.rb_id);
-                LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB %u]\n",
+                LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB %ld]\n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       pdcp_read_header_g.rb_id,
@@ -405,17 +380,6 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                       ctxt.module_id,
                       ctxt.rnti,
                       rab_id);
-                MSC_LOG_RX_MESSAGE(
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                  NULL,
-                  0,
-                  MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                  MSC_AS_TIME_ARGS(ctxt_pP),
-                  pdcp_read_header_g.inst,
-                  pdcp_read_header_g.rb_id,
-                  rab_id,
-                  pdcp_read_header_g.data_size);
                 pdcp_data_req(
                   &ctxt,
                   SRB_FLAG_NO,
@@ -441,7 +405,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                   rab_id,
                   pdcp_read_header_g.data_size);
                 LOG_D(PDCP,
-                      "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+                      "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       pdcp_read_header_g.rb_id,
@@ -453,7 +417,7 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
               } /* h_rc != HASH_TABLE_OK */
             }  else {/* else of rab_id != 0 */
               LOG_D(PDCP, "Forcing send on DEFAULT_RAB_ID\n");
-              LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
+              LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
                     ctxt.frame,
                     pdcp_read_header_g.inst,
                     pdcp_read_header_g.rb_id,
@@ -461,16 +425,6 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                     ctxt.module_id,
                     ctxt.rnti,
                     DEFAULT_RAB_ID);
-              MSC_LOG_RX_MESSAGE(
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                NULL,0,
-                MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u default rab %u size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                pdcp_read_header_g.inst,
-                pdcp_read_header_g.rb_id,
-                DEFAULT_RAB_ID,
-                pdcp_read_header_g.data_size);
               pdcp_data_req (
                 &ctxt,
                 SRB_FLAG_NO,
@@ -555,7 +509,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
         //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
         ctxt.frame         = ctxt_cpy.frame;
         ctxt.enb_flag      = ctxt_cpy.enb_flag;
-        LOG_I(PDCP, "[PDCP] pc5s_header->rb_id = %d\n", pc5s_header->rb_id);
+        LOG_I(PDCP, "[PDCP] pc5s_header->rb_id = %ld\n", pc5s_header->rb_id);
 
         if (ctxt_cpy.enb_flag) {
           ctxt.module_id = 0;
@@ -575,26 +529,26 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                     ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
               key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
               h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-              LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+              LOG_D(PDCP,"request key %x : (%d,%x,%d,%ld)\n",
                     (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
             } else {
               rab_id = rab_id % LTE_maxDRB;
-              LOG_I(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
+              LOG_I(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%ld, SRB_FLAG=%d)\n",
                     ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
               key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
               h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-              LOG_I(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+              LOG_I(PDCP,"request key %x : (%d,%x,%d,%ld)\n",
                     (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
             }
 
             if (h_rc == HASH_TABLE_OK) {
               rab_id = pdcp_p->rb_id;
-              LOG_I(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d  on Rab %d \n",
+              LOG_I(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d  on Rab %ld \n",
                     ctxt.frame,
                     pc5s_header->inst,
                     bytes_received,
                     pc5s_header->rb_id);
-              LOG_I(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB %u]\n",
+              LOG_I(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB %ld]\n",
                     ctxt.frame,
                     pc5s_header->inst,
                     pc5s_header->rb_id,
@@ -638,7 +592,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                 rab_id,
                 pc5s_header->data_size);
               LOG_D(PDCP,
-                    "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+                    "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
                     ctxt.frame,
                     pc5s_header->inst,
                     pc5s_header->rb_id,
@@ -650,7 +604,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
             }
           }  else { /* else of if (rab_id == 0) */
             LOG_D(PDCP, "Forcing send on DEFAULT_RAB_ID\n");
-            LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
+            LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
                   ctxt.frame,
                   pc5s_header->inst,
                   pc5s_header->rb_id,
@@ -704,28 +658,6 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
   } /* PDCP_USE_NETLINK */
 
   return 0;
-}
-
-
-void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t *const  ctxt_pP) {
-  module_id_t          dst_id; // dst for otg
-  protocol_ctxt_t      ctxt;
-
-  // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
-  if ((otg_enabled==1) && (ctxt_pP->enb_flag == ENB_FLAG_YES)) { // generate DL traffic
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(
-      &ctxt,
-      ctxt_pP->module_id,
-      ctxt_pP->enb_flag,
-      NOT_A_RNTI,
-      ctxt_pP->frame,
-      ctxt_pP->subframe,
-      ctxt_pP->module_id);
-
-    for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
-      ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
-    }
-  }
 }
 
 //TTN for D2D (PC5S)

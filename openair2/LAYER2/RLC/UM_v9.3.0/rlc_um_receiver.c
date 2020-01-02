@@ -50,7 +50,7 @@ rlc_um_display_rx_window(
   LOG_T(RLC, "\n");
   sprintf(time_out_str, "%010d", rlc_pP->t_reordering.ms_duration);
   time_out_str[10] = 0;
-  LOG_T(RLC, "| RLC UM RB %02d    VR(UR)=%03d    VR(UX)=%03d    VR(UH)=%03d    t-Reordering: %s %s %s             |",
+  LOG_T(RLC, "| RLC UM RB %02ld    VR(UR)=%03d    VR(UX)=%03d    VR(UH)=%03d    t-Reordering: %s %s %s             |",
         rlc_pP->rb_id, rlc_pP->vr_ur, rlc_pP->vr_ux, rlc_pP->vr_uh,
         (rlc_pP->t_reordering.running)?" ON":"OFF",
         (rlc_pP->t_reordering.running)?"Time-out frameP:":"               ",

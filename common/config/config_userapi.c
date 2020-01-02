@@ -81,7 +81,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length);
+    *ptr = malloc(length>40?length:40); // LTS: dummy fix, waiting Francois full fix in 4G branch
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);
@@ -386,13 +386,12 @@ int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
     status=1;
 
     if (cfgoptions->numelt == 0 ) {
-      config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
       config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
       sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
       printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
     } else {
-      sprintf((char *)*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)*(cfgoptions->strptr));
+      sprintf((char *)(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)(cfgoptions->strptr));
     }
   }
 

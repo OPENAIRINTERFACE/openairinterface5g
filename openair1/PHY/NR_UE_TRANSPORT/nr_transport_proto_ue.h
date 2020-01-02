@@ -47,7 +47,8 @@
     \brief This function frees memory allocated for a particular DLSCH at UE
     @param dlsch Pointer to DLSCH to be removed
 */
-void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch,uint8_t N_RB_DL);
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
+
 
 /** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at UE

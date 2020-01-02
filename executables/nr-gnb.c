@@ -194,11 +194,6 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) */
 
-  if (slot_rx == NR_UPLINK_SLOT || gNB->frame_parms.frame_type == FDD) {
-    nfapi_nr_ul_config_ulsch_pdu_rel15_t *ulsch_pdu_rel15 = &gNB->ulsch[1][0]->harq_processes[0]->ulsch_pdu.ulsch_pdu_rel15;
-    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx, ulsch_pdu_rel15->start_symbol, ulsch_pdu_rel15->start_symbol + ulsch_pdu_rel15->number_symbols);
-  }
-
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -216,6 +211,9 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   //if (wait_CCs(proc)<0) return(-1);
 
   if (oai_exit) return(-1);
+
+  //if (slot_rx == NR_UPLINK_SLOT || gNB->frame_parms.frame_type == FDD) 
+    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
 
   if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
     phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
@@ -292,6 +290,8 @@ static void *gNB_L1_thread_tx(void *param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,slot_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,frame_tx);
     phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 1 );
     pthread_mutex_lock( &L1_proc_tx->mutex );
     L1_proc_tx->instance_cnt = -1;
 
@@ -303,6 +303,7 @@ static void *gNB_L1_thread_tx(void *param) {
     pthread_mutex_unlock(&L1_proc_tx->mutex);
 
     wakeup_txfh(gNB,L1_proc_tx,frame_tx,slot_tx,timestamp_tx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_WAKEUP_TXFH, 0 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
   }
 
@@ -422,10 +423,10 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
 
 // note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,1);
-  waitret=timedwait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh",1000000); 
+  waitret=wait_on_condition(&proc->mutex_RUs_tx,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh"); 
+  AssertFatal(release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")==0, "error releaseing gNB lock on RUs\n"); 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,0);
 
-  AssertFatal(release_thread(&proc->mutex_RUs_tx,&proc->instance_cnt_RUs,"wakeup_txfh")==0, "error releaseing gNB lock on RUs\n"); 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
 
   if (waitret == ETIMEDOUT) {
@@ -450,7 +451,7 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
     ru      = gNB->RU_list[i];
     ru_proc = &ru->proc;
     
-    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_gNBs))==0,"ERROR pthread_mutex_lock failed on mutex_gNBs L1_thread_tx with ret=%d\n",ret);
+    //AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_gNBs))==0,"ERROR pthread_mutex_lock failed on mutex_gNBs L1_thread_tx with ret=%d\n",ret);
 
     if (ru_proc->instance_cnt_gNBs == 0) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST_UE, 1);
@@ -458,7 +459,7 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
       AssertFatal((ret=pthread_mutex_lock(&gNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
       gNB->proc.RU_mask_tx = 0;
       AssertFatal((ret=pthread_mutex_unlock(&gNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
-      AssertFatal((ret=pthread_mutex_unlock( &ru_proc->mutex_gNBs ))==0,"mutex_unlock return %d\n",ret);
+      //AssertFatal((ret=pthread_mutex_unlock( &ru_proc->mutex_gNBs ))==0,"mutex_unlock return %d\n",ret);
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST_UE, 0);
       return(-1);
@@ -524,6 +525,8 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
   int ret;
   int i;
+  struct timespec abstime;
+  int time_ns = 50000;
   
   AssertFatal((ret=pthread_mutex_lock(&proc->mutex_RU))==0,"mutex_lock returns %d\n",ret);
   for (i=0;i<gNB->num_RU;i++) {
@@ -544,14 +547,22 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     AssertFatal((ret=pthread_mutex_unlock(&proc->mutex_RU))==0,"muex_unlock returns %d\n",ret);
   }
 
+  clock_gettime(CLOCK_REALTIME, &abstime);
+  abstime.tv_nsec = abstime.tv_nsec + time_ns;
+
+  if (abstime.tv_nsec >= 1000*1000*1000) {
+    abstime.tv_nsec -= 1000*1000*1000;
+    abstime.tv_sec  += 1;
+  }
 
   // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
-  AssertFatal((ret=pthread_mutex_lock(&L1_proc->mutex)) == 0,"mutex_lock returns %d\n", ret);
+  AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
 
   if (L1_proc->instance_cnt == 0) { // L1_thread is busy so abort the subframe
    AssertFatal((ret=pthread_mutex_unlock( &L1_proc->mutex))==0,"muex_unlock return %d\n",ret);
    LOG_W(PHY,"L1_thread isn't ready in %d.%d, aborting RX processing\n",ru_proc->frame_rx,ru_proc->tti_rx); 
+   return(-1);
   }
  
   ++L1_proc->instance_cnt;
@@ -943,7 +954,8 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
       gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
       memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-      memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
+      memset((void *)&gNB->UL_tti_req,0,sizeof(nfapi_nr_ul_tti_request_t));
+      //memset((void *)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");
       gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
       gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
@@ -951,6 +963,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
       gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;
+      
       gNB->prach_energy_counter = 0;
     }
   }

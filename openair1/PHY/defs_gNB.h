@@ -616,6 +616,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_IF_Module_t       *if_inst;
   NR_UL_IND_t          UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
+
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
   /// NFAPI RX ULSCH CRC information
@@ -631,19 +632,16 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t         Sched_INFO;
+  //Sched_Rsp_t         Sched_INFO;
+  nfapi_nr_ul_tti_request_t     UL_tti_req;
+  
   NR_gNB_PDCCH        pdcch_vars;
   NR_gNB_PBCH         pbch;
-  // LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;
-/*  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PRACH       prach_vars;*/
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
-  // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA
+  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
 /*

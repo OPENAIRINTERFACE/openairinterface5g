@@ -81,6 +81,7 @@
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
+static int DEFBFW[] = {0x00007fff};
 
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
@@ -2730,11 +2731,6 @@ void init_RU(char *rf_config_file,
       ru->generate_dmrs_sync = 1;
     else
       ru->generate_dmrs_sync = 0;
-
-    if (ru->generate_dmrs_sync == 1) {
-      generate_ul_ref_sigs();
-      ru->dmrssync = (int16_t *)malloc16_clear(ru->frame_parms->ofdm_symbol_size*2*sizeof(int16_t));
-    }
 
     ru->wakeup_L1_sleeptime = 2000;
     ru->wakeup_L1_sleep_cnt_max  = 3;

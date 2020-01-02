@@ -195,7 +195,7 @@ void server_socket_tcp_ip4()
 
 
               /* create  new thread for the new connection */
-              threadCreate(&id, (void *)recv_ip4_tcp, (void*)csock), "OTG", -1, OAI_PRIORITY_RT_LOW);
+              threadCreate(&id, (void *)recv_ip4_tcp, (void*)csock, "OTG", -1, OAI_PRIORITY_RT_LOW);
               LOG_I(OTG,"SOCKET:: TCP-IP4 :: Client n=%d finish transmission\n", cmpt_cl);
               cmpt_cl+=1;
             }

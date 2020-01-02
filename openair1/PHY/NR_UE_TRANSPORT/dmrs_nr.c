@@ -258,7 +258,7 @@ uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
 *
 *********************************************************************/
 
-uint16_t get_dmrs_freq_idx_ul(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
+uint16_t get_dmrs_freq_idx_ul(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
 
   uint16_t dmrs_idx;
 

@@ -419,7 +419,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
                                    0x1234, proc->frame_rx,
                                    proc->nr_tti_rx, 0);
-	  //pdcp_run(&ctxt);
+	  pdcp_run(&ctxt);
           pdcp_fifo_flush_sdus(&ctxt);
   }
   }
@@ -538,6 +538,9 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                dummy_rx,
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
+    if (IS_SOFTMODEM_RFSIM ) {
+	 usleep(1000); // slow down, as would do actuall rf to let cpu for the synchro thread
+    }
   }
 
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)

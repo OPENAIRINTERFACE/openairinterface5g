@@ -34,16 +34,20 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
 
-nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot);
+nr_slot_t nr_slot_select (nfapi_nr_config_request_t *cfg, unsigned char slot, int frame);
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_meas);
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, uint8_t symbol_start, uint8_t symbol_end);
+void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
-void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols);
+void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa);
 void nr_init_feptx_thread(RU_t *ru);
+void fep_full(RU_t *ru,int slot);
+void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
+void nr_init_feptx_prec_thread(RU_t *ru);
+void nr_feptx_prec_control(RU_t *ru,int frame,int tti_tx);
 void nr_init_feprx_thread(RU_t *ru);
 void nr_fep_full(RU_t *ru, int slot);
 void nr_fep_full_2thread(RU_t *ru, int slot);

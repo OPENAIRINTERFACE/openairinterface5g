@@ -148,7 +148,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
             //printf("x1 : %x, x2 : %x\n",x1,x2);
         }
 
-        for (n=0; n<52; n++) {
+        for (n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
           x1 = (x1>>1) ^ (x1>>4);
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);

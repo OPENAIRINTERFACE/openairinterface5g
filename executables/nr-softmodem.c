@@ -106,7 +106,6 @@ int config_sync_var=-1;
 #endif
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int mmapped_dma=0;
@@ -924,6 +923,10 @@ init_opt();
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
+
 #if defined(ENABLE_ITTI)
 
   if (RC.nb_nr_inst > 0)  {
@@ -941,9 +944,6 @@ init_opt();
   for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
-
-  if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
