@@ -209,6 +209,8 @@ tpool_t *Tpool;
 
 char *usrp_args=NULL;
 
+char *rrc_config_path=NULL;
+
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
@@ -766,7 +768,7 @@ int main( int argc, char **argv ) {
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_NR_UE(1);
+  init_NR_UE(1,rrc_config_path);
 
   while(true)
     sleep(3600);

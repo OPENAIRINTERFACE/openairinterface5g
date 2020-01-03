@@ -809,7 +809,7 @@ if (slot_nr==18)
   return NULL;
 }
 
-void init_NR_UE(int nb_inst) {
+void init_NR_UE(int nb_inst, char* rrc_config_path) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   pthread_t threads[nb_inst];
@@ -817,7 +817,7 @@ void init_NR_UE(int nb_inst) {
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
     AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
-    nr_l3_init_ue();
+    nr_l3_init_ue(rrc_config_path);
     nr_l2_init_ue();
     mac_inst = get_mac_inst(inst);
     mac_inst->if_module = UE->if_inst;

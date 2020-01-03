@@ -85,7 +85,8 @@
   {"worker-config",         CONFIG_HLP_WORKER_CMD,  0,              strptr:(char **)&worker_config,        defstrval:NULL,        TYPE_STRING, 0}, \
   {"s" ,                    CONFIG_HLP_SNR,         0,              dblptr:&snr_dB,                        defdblval:25,          TYPE_DOUBLE, 0}, \
   {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL, iptr:&nonbiotflag,                     defintval:0,           TYPE_INT,    0}, \
-  {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}  \
+  {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \
+  {"rrc_config_path",       CONFIG_HLP_RRC_CFG_PATH,0,              strptr:(char **)&rrc_config_path,      defstrval:"./",        TYPE_STRING, 0} \
 }
 
 
@@ -97,7 +98,7 @@ extern int T_dont_fork;
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
-extern void init_NR_UE(int);
+extern void init_NR_UE(int, char*);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
