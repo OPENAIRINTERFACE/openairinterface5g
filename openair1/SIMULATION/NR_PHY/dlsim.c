@@ -107,7 +107,8 @@ int rlc_module_init (int eNB_id) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
 
-void config_common(int Mod_idP, 
+void config_common(int Mod_idP,
+                   int pdsch_AntennaPorts, 
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
@@ -548,9 +549,9 @@ int main(int argc, char **argv)
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0,1,scc,0,0,NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0,1,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   // stub to configure frame_parms
