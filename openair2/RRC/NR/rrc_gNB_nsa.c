@@ -115,11 +115,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
   carrier->initial_csi_index[rrc->Nb_ue] = 0;
-  carrier->n_physical_antenna_ports = 1;
   fill_default_reconfig(carrier->servingcellconfigcommon,
 			reconfig_ies,
 			ue_context_p->ue_context.secondaryCellGroup,
-			carrier->n_physical_antenna_ports,
+			carrier->pdsch_AntennaPorts,
 			carrier->initial_csi_index[rrc->Nb_ue]);
 
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -135,6 +134,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // configure MAC and RLC
   rrc_mac_config_req_gNB(rrc->module_id,
 			 rrc->carrier.ssb_SubcarrierOffset,
+                         rrc->carrier.pdsch_AntennaPorts,
 			 NULL,
 			 1, // add_ue flag
 			 ue_context_p->ue_id_rnti,

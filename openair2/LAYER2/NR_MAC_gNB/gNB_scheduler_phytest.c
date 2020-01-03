@@ -500,7 +500,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   uint16_t rnti = UE_list->rnti[UE_id];
   DLSCH_PDU dlsch_pdu;
   //PDSCH_PDU *pdsch_pdu = (PDSCH_PDU*) malloc(sizeof(PDSCH_PDU));
-  
+ 
+  if (UE_list->num_UEs ==0) return;
+ 
   int CCEIndex=-1;
   
   LOG_D(MAC, "Scheduling UE specific search space DCI type 1\n");

@@ -401,6 +401,7 @@ typedef struct NRRrcConfigurationReq_s {
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
   NR_ServingCellConfigCommon_t *scc;
   int                          ssb_SubcarrierOffset;
+  int                          pdsch_AntennaPorts;
 } gNB_RrcConfigurationReq;
 
 

@@ -221,7 +221,7 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 }
 
 
-void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -289,7 +289,6 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
     }
   }
 
-  // set tx and rx antennas to number of SSB
 
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
@@ -405,16 +404,18 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->num_tlv++;
 
-  cfg->carrier_config.num_tx_ant.value = 0;
+  cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
+  AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 13, "pdsch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
+  int num_ssb=0;
   for (int i=0;i<32;i++) {
-    cfg->carrier_config.num_tx_ant.value += (cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1;
-    cfg->carrier_config.num_tx_ant.value += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
+    num_ssb += (cfg->ssb_table.ssb_mask_list[0].ssb_mask.value>>i)&1;
+    num_ssb += (cfg->ssb_table.ssb_mask_list[1].ssb_mask.value>>i)&1;
   } 
 
   cfg->carrier_config.num_rx_ant.value = cfg->carrier_config.num_tx_ant.value;
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
-  LOG_I(MAC,"Set TX/RX antenna number to %d (ssb: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  LOG_I(MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
@@ -475,6 +476,7 @@ void config_common(int Mod_idP, NR_ServingCellConfigCommon_t *scc) {
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
+                           int pdsch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
 			   int add_ue,
 			   uint32_t rnti,
@@ -486,7 +488,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     LOG_I(MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
-    config_common(Mod_idP, 
+    config_common(Mod_idP,
+                  pdsch_AntennaPorts, 
 		  scc);
     LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   

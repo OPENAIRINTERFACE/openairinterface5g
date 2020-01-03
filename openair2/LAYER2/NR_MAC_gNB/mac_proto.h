@@ -39,10 +39,12 @@ void set_cset_offset(uint16_t);
 void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
+                   int pdsch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
+                           int pdsch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
 			   int nsa_flag,
 			   uint32_t rnti,

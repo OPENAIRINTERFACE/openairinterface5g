@@ -519,13 +519,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
   int ssb_SubcarrierOffset = 0;
-  int pdschAntennaPorts = 1;
+  int pdsch_AntennaPorts = 1;
   int ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
   paramdef_t SSBsParams[] = SSBPARAMS_DESC;
+  paramlist_def_t SSBsParamList = {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET, NULL, 0};
   paramdef_t PDSCHANTENNAParams[] = PDSCHANTENNAPARAMS_DESC;
   paramlist_def_t PDSCHANTENNAParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
    ////////// Physical parameters
@@ -648,8 +649,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
         printf("SSB SCO %d\n",ssb_SubcarrierOffset);
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-        printf("pdschAntennaPorts %d\n",pdschAntennaPorts);
-	NRRRC_CONFIGURATION_REQ (msg_p).pdschAntennaPorts = pdschAntennaPorts;
+        printf("pdsch_AntennaPorts %d\n",pdsch_AntennaPorts);
+	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
