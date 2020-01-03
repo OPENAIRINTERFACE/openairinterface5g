@@ -352,6 +352,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->ssb_table.ssb_period.value		= 1; //10ms
   gNB_config->carrier_config.dl_grid_size[mu].value     = N_RB_DL;
   gNB_config->carrier_config.ul_grid_size[mu].value     = N_RB_UL;
+  gNB_config->carrier_config.num_tx_ant.value           = fp->nb_antennas_tx;
+  gNB_config->carrier_config.num_rx_ant.value           = fp->nb_antennas_rx;
 
   //gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
