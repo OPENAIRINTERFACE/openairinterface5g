@@ -452,6 +452,7 @@ int main(int argc, char **argv)
 	rel15->TBSize[0]      = TBS;
         rel15->targetCodeRate[0] = rate;
         rel15->NrOfCodewords = 1;
+        rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
@@ -472,6 +473,7 @@ int main(int argc, char **argv)
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
 	harq_process->R = rate;
+        harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
