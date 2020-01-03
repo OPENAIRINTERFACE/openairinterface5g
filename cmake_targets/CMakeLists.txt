@@ -1319,6 +1319,7 @@ set(PHY_SRC_UE
 
   set(PHY_NR_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prach_common.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools_common.c
   )
 
   set(PHY_NR_SRC
@@ -2467,6 +2468,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_mac_common.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c

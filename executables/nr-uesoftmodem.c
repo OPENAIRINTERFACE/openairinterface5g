@@ -719,11 +719,7 @@ int main( int argc, char **argv ) {
     PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
 
-
-    if (phy_test==1)
-      UE[CC_id]->mac_enabled = 0;
-    else
-      UE[CC_id]->mac_enabled = 1;
+    UE[CC_id]->mac_enabled = 1;
 
     UE[CC_id]->UE_scan = UE_scan;
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
@@ -731,13 +727,6 @@ int main( int argc, char **argv ) {
     UE[CC_id]->mode    = mode;
     UE[CC_id]->no_timing_correction = UE_no_timing_correction;
     printf("UE[%d]->mode = %d\n",CC_id,mode);
-
-    for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
-      if (UE[CC_id]->mac_enabled == 1)
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1234;
-      else
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1235;
-    }
 
     UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
     UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];

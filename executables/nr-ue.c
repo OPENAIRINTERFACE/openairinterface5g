@@ -392,7 +392,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
     scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
     scheduled_response.ul_config->number_pdus = 1;
-    scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_ULSCH;
+    scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
@@ -409,7 +409,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, scheduled_response.dl_config);
+    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
@@ -821,17 +821,6 @@ void init_NR_UE(int nb_inst) {
     nr_l2_init_ue();
     mac_inst = get_mac_inst(inst);
     mac_inst->if_module = UE->if_inst;
-    // Initial bandwidth part configuration -- full carrier bandwidth
-    mac_inst->initial_bwp_dl.bwp_id = 0;
-    mac_inst->initial_bwp_dl.location = 0;
-    mac_inst->initial_bwp_dl.scs = UE->frame_parms.subcarrier_spacing;
-    mac_inst->initial_bwp_dl.N_RB = UE->frame_parms.N_RB_DL;
-    mac_inst->initial_bwp_dl.cyclic_prefix = UE->frame_parms.Ncp;
-    mac_inst->initial_bwp_ul.bwp_id = 0;
-    mac_inst->initial_bwp_ul.location = 0;
-    mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
-    mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
-    mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 

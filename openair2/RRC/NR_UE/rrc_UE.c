@@ -409,7 +409,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL,NULL, NULL, NULL);
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL);
     }
     
     return 0;
