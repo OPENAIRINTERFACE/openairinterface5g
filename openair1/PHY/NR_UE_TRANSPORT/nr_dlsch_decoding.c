@@ -252,9 +252,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint16_t nb_rb;// = 30;
   double Coderate;// = 0.0;
 
-
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
-  AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
+  AssertFatal(dmrs_Type == NFAPI_NR_DMRS_TYPE1 || dmrs_Type == NFAPI_NR_DMRS_TYPE2,"Illegal dmrs_type %d\n",dmrs_Type);
   uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
