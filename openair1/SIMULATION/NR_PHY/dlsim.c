@@ -186,8 +186,6 @@ int main(int argc, char **argv)
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   //int n_errors2, n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
-  uint16_t Nid_cell=0;
-  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
   //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
@@ -206,25 +204,21 @@ int main(int argc, char **argv)
   int N_RB_DL=106,mu=1;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t dlsch_config;
 
-  uint16_t ssb_periodicity = 10;
 
   //unsigned char frame_type = 0;
 
   int frame=0,slot=1;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
-  int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   UE_nr_rxtx_proc_t UE_proc;
   NR_Sched_Rsp_t Sched_INFO;
   gNB_MAC_INST *gNB_mac;
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
-  int ret;
   int run_initial_sync=0;
   int do_pdcch_flag=1;
 
-  uint16_t cset_offset = 0;
   int loglvl=OAILOG_INFO;
 
   float target_error_rate = 0.01;
@@ -238,10 +232,10 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  int mcsIndex_set=0,rbStart_set=0,rbSize_set=0,StartSymbolIndex_set=0,NrOfSymbols_set=0;
+  int mcsIndex_set=0,rbStart_set=0,rbSize_set=0;
   int print_perf             = 0;
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Eo:a:b:c:j:e:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -367,14 +361,6 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'M':
-      SSB_positions = atoi(optarg);
-      break;
-
-    case 'N':
-      Nid_cell = atoi(optarg);
-      break;
-
     case 'R':
       N_RB_DL = atoi(optarg);
       break;
@@ -408,9 +394,6 @@ int main(int argc, char **argv)
 	css_flag=1;
 	break;
 
-    case 'o':
-      cset_offset = atoi(optarg);
-      break;
 
     case 'a':
       dlsch_config.rbStart = atoi(optarg);
@@ -420,16 +403,6 @@ int main(int argc, char **argv)
     case 'b':
       dlsch_config.rbSize = atoi(optarg);
       rbSize_set=1;
-      break;
-
-    case 'c':
-      dlsch_config.StartSymbolIndex = atoi(optarg);
-      StartSymbolIndex_set=1;
-      break;
-
-    case 'j':
-      dlsch_config.NrOfSymbols = atoi(optarg);
-      NrOfSymbols_set=1;
       break;
 
     case 'e':
@@ -454,8 +427,6 @@ int main(int argc, char **argv)
       printf("-z Number of RX antennas used in UE\n");
       //printf("-i Relative strength of first intefering gNB (in dB) - cell_id mod 3 = 1\n");
       //printf("-j Relative strength of second intefering gNB (in dB) - cell_id mod 3 = 2\n");
-      printf("-M Multiple SSB positions in burst\n");
-      printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
@@ -595,7 +566,6 @@ int main(int argc, char **argv)
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  slot_length_complex_samples_no_prefix = frame_parms->samples_per_slot_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -665,7 +635,7 @@ int main(int argc, char **argv)
 
   UE_mac->if_module = nr_ue_if_module_init(0);
   
-  unsigned int available_bits;
+  unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
   unsigned int errors_bit    = 0;
@@ -687,8 +657,6 @@ int main(int argc, char **argv)
 
 
   //Configure UE
-  uint32_t pdcch_ConfigSIB1     = 0;
-  uint32_t ssb_SubcarrierOffset = 0;
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
@@ -717,7 +685,6 @@ int main(int argc, char **argv)
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
     varArray_t *table_tx=initVarArray(1000,sizeof(double));
-    varArray_t *table_tx_ifft=initVarArray(1000,sizeof(double));
     reset_meas(&gNB->phy_proc_tx); // total gNB tx
     reset_meas(&gNB->dlsch_scrambling_stats);
     reset_meas(&gNB->dlsch_interleaving_stats);
@@ -801,7 +768,9 @@ int main(int argc, char **argv)
       
       //  if (n_trials==1) printf("txlev %d (%f)\n",txlev,10*log10((double)txlev));
       
-      for (i=0; i<frame_length_complex_samples; i++) {
+      for (i=(slot * frame_parms->samples_per_slot); 
+	   i<((slot+1) * frame_parms->samples_per_slot); 
+	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	  r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
 	  r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
@@ -812,11 +781,13 @@ int main(int argc, char **argv)
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t rel15 = gNB_dlsch->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15;
       
       //AWGN
-      sigma2_dB = 10 * log10((double)txlev * (N_RB_DL/rel15.rbSize)) - SNR;
+      sigma2_dB = 10 * log10((double)txlev * ((double)UE->frame_parms.ofdm_symbol_size/(12*rel15.rbSize))) - SNR;
       sigma2    = pow(10, sigma2_dB/10);
-      if (n_trials==1) printf("sigma2 %f (%f dB), txlev %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev* (N_RB_DL/rel15.rbSize)),(double)N_RB_DL/rel15.rbSize);
+      if (n_trials==1) printf("sigma2 %f (%f dB), txlev %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev),(double)(double)UE->frame_parms.ofdm_symbol_size/(12*rel15.rbSize));
       
-      for (i=0; i<frame_length_complex_samples; i++) {
+      for (i=(slot * frame_parms->samples_per_slot); 
+	   i<((slot+1) * frame_parms->samples_per_slot); 
+	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
@@ -899,7 +870,7 @@ int main(int argc, char **argv)
       
       if (errors_scrambling > 0) {
 	if (n_trials == 1)
-	  printf("errors_scrambling = %d (trial %d)\n", errors_scrambling, trial);
+	  printf("errors_scrambling = %d/%d (trial %d)\n", errors_scrambling, available_bits,trial);
       }
       
       if (errors_bit > 0) {
@@ -935,7 +906,11 @@ int main(int argc, char **argv)
 
 
     if (print_perf==1) {
-      printf("\ngNB TX function statistics (per %d us slot)\n",1000>>*scc->ssbSubcarrierSpacing);
+      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
+	     1000>>*scc->ssbSubcarrierSpacing,dlsch_config.rbSize,dlsch_config.mcsIndex[0],
+	     gNB->dlsch[0][0]->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
+	     gNB->dlsch[0][0]->harq_processes[0]->K,
+	     gNB->dlsch[0][0]->harq_processes[0]->K/((gNB->dlsch[0][0]->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
       printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");

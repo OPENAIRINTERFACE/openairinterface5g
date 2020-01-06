@@ -70,9 +70,9 @@ int configure_fapi_dl_Tx(int Mod_id,
 			 int *CCEIndeces,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req,
-			 int *mcsIndex,
-			 int *rbSize,
-			 int *rbStart);
+			 uint8_t *mcsIndex,
+			 uint16_t *rbSize,
+			 uint16_t *rbStart);
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,

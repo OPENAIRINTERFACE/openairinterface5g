@@ -47,7 +47,7 @@ extern RAN_CONTEXT_t RC;
 
 void mac_top_init_gNB(void)
 {
-  module_id_t     i,j;
+  module_id_t     i;
   int             list_el;
   NR_UE_list_t    *UE_list;
   gNB_MAC_INST    *nrmac;
@@ -113,4 +113,5 @@ void mac_top_init_gNB(void)
     UE_list->active[list_el] = FALSE;
   }
 
+  srand48(0);
 }

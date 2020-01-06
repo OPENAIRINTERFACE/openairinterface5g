@@ -316,9 +316,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       
   protocol_ctxt_t   ctxt;
 
-  int               CC_id, i = -1;
-  NR_UE_list_t      *UE_list = &RC.nrmac[module_idP]->UE_list;
-  rnti_t            rnti;
+  int               CC_id;
+  
+  
 
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
   //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;

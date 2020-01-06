@@ -249,9 +249,9 @@ int configure_fapi_dl_Tx(int Mod_idP,
 			 int *CCEIndex,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req,
-			 int *mcsIndex,
-			 int *rbSize,
-			 int *rbStart) {
+			 uint8_t *mcsIndex,
+			 uint16_t *rbSize,
+			 uint16_t *rbStart) {
 
 
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
@@ -303,7 +303,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
   int mcs = (mcsIndex!=NULL) ? *mcsIndex : 9;
-  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
+  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcs,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
@@ -430,7 +430,7 @@ int configure_fapi_dl_Tx(int Mod_idP,
   //  TX_req->TLVs[0].length = 8;
   //    memcpy((void*)&TX_req->TLVs[0].value.direct[0],(void*)&cc[CC_id].RAR_pdu.payload[0],TX_req->TLVs[0].length);
 
-  return TBS/8; //Return TBS in bytes
+  return TBS; //Return TBS in bytes
 }
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
@@ -681,9 +681,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 				     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL); 
 // HOT FIX for all zero pdu problem
 // ------------------------------------------------------------------------------------------------
-    
+
+    LOG_D(MAC,"Filling %d bytes in DL_TX\n",TBS_bytes);    
     for(int i = 0; i < TBS_bytes; i++) { //
-      ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) rand();
+      ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
       //LOG_I(MAC, "%x. ", ((uint8_t *)nr_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
     }
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)

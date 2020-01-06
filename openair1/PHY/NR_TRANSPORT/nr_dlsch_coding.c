@@ -305,13 +305,13 @@ int nr_dlsch_encoding(unsigned char *a,
 #ifdef DEBUG_DLSCH_CODING
   LOG_D(PHY,"encoding thinks this is a new packet \n");
 #endif
-    /*
+  /*    
     int i;
     LOG_D(PHY,"dlsch (tx): \n");
     for (i=0;i<(A>>3);i++)
-      LOG_D(PHY,"%02x.",a[i]);
+      LOG_D(PHY,"%02x\n",a[i]);
     LOG_D(PHY,"\n");
-    */
+  */
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
@@ -381,7 +381,7 @@ int nr_dlsch_encoding(unsigned char *a,
       LOG_D(PHY,"Encoder: B %d F %d \n",dlsch->harq_processes[harq_pid]->B, dlsch->harq_processes[harq_pid]->F);
       LOG_D(PHY,"start ldpc encoder segment %d/%d\n",r,dlsch->harq_processes[harq_pid]->C);
       LOG_D(PHY,"input %d %d %d %d %d \n", dlsch->harq_processes[harq_pid]->c[r][0], dlsch->harq_processes[harq_pid]->c[r][1], dlsch->harq_processes[harq_pid]->c[r][2],dlsch->harq_processes[harq_pid]->c[r][3], dlsch->harq_processes[harq_pid]->c[r][4]);
-      for (int cnt =0 ; cnt < 22*(*pz)/8; cnt ++){
+      for (int cnt =0 ; cnt < 22*(*Zc)/8; cnt ++){
       LOG_D(PHY,"%d ", dlsch->harq_processes[harq_pid]->c[r][cnt]);
       }
       LOG_D(PHY,"\n");
@@ -407,7 +407,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
-    if (dlsch->harq_processes[harq_pid]->F>0) {
+    if (F>0) {
       for (int k=(Kr-F-2*(*Zc)); k<Kr-2*(*Zc); k++) {
         dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
 	//if (k<(Kr-F+8))
@@ -415,19 +415,24 @@ int nr_dlsch_encoding(unsigned char *a,
       }
     }
 
-#ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
-        r,
-        G,
-        Kr*3,
-        mod_order,nb_rb);
-#endif
+
 
 #ifdef DEBUG_DLSCH_CODING
   LOG_D(PHY,"rvidx in encoding = %d\n", rel15->rvIndex[0]);
 #endif
 
     E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15->nrOfLayers, r);
+
+#ifdef DEBUG_DLSCH_CODING
+    printf("Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+	   r,
+	   dlsch->harq_processes[harq_pid]->C,
+	   G,
+	   E,
+	   F,
+	   Kr-F-2*(*Zc),
+	   mod_order,nb_rb);
+#endif
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
     if (rel15->nrOfLayers < Nl)
@@ -443,6 +448,8 @@ int nr_dlsch_encoding(unsigned char *a,
                           dlsch->harq_processes[harq_pid]->d[r],
                           dlsch->harq_processes[harq_pid]->e+r_offset,
                           dlsch->harq_processes[harq_pid]->C,
+                          F,
+                          Kr-F-2*(*Zc),
                           rel15->rvIndex[0],
                           E);
     stop_meas(dlsch_rate_matching_stats);

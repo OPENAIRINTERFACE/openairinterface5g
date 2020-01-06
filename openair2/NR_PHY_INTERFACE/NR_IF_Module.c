@@ -107,21 +107,6 @@ void handle_nr_sr(NR_UL_IND_t *UL_info) {
 }
 
 void handle_nr_cqi(NR_UL_IND_t *UL_info) {
-  if (nfapi_mode == 1) {
-    if (UL_info->cqi_ind.number_of_cqis>0) {
-      LOG_D(PHY,"UL_info->cqi_ind.number_of_cqis:%d\n", UL_info->cqi_ind.number_of_cqis);
-      nfapi_cqi_indication_t ind;
-      ind.header.message_id = NFAPI_RX_CQI_INDICATION;
-      ind.sfn_sf = UL_info->frame<<4 | UL_info->slot;
-      ind.cqi_indication_body = UL_info->cqi_ind;
-
-      //      oai_nfapi_cqi_indication(&ind);
-
-      UL_info->cqi_ind.number_of_cqis=0;
-    }
-  }
-  else
-  {
 
     /*
     for (int i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
@@ -135,7 +120,7 @@ void handle_nr_cqi(NR_UL_IND_t *UL_info) {
           &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
     */
     UL_info->cqi_ind.number_of_cqis=0;
-  }
+
 }
 
 void handle_nr_harq(NR_UL_IND_t *UL_info) {
@@ -300,7 +285,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
       if ((mac->common_channels[CC_id].ServingCellConfigCommon->tdd_UL_DL_ConfigurationCommon==NULL) ||
-          (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
+          (is_nr_UL_slot(mac->common_channels[CC_id].ServingCellConfigCommon,(sched_info->slot+sf_ahead)%spf)>0))
         sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
       else
         sched_info->UL_tti_req      = NULL;

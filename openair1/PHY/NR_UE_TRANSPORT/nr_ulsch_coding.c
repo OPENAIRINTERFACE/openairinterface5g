@@ -396,6 +396,8 @@ opp_enabled=0;
                           harq_process->d[r],
                           harq_process->e+r_offset,
                           harq_process->C,
+			  F,
+                          Kr-F-2*(*pz),
                           harq_process->rvidx,
                           E);
 

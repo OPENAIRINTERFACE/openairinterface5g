@@ -481,6 +481,8 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
                           uint8_t *w,
                           uint8_t *e,
                           uint8_t C,
+			  uint32_t F,
+			  uint32_t Foffset,
                           uint8_t rvidx,
                           uint32_t E);
 
