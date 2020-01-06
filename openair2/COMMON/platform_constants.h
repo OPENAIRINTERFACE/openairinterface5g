@@ -81,9 +81,9 @@
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #else
-      #define MAX_MOBILES_PER_ENB         16
-      #define MAX_MOBILES_PER_ENB_NB_IoT  16
-      #define MAX_MOBILES_PER_GNB         16
+      #define MAX_MOBILES_PER_ENB         4
+      #define MAX_MOBILES_PER_ENB_NB_IoT  4
+      #define MAX_MOBILES_PER_GNB         4
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #endif
