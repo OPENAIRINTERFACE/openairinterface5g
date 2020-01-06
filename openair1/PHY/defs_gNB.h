@@ -89,11 +89,11 @@ typedef struct {
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
   /// Concatenated sequences
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *e;
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Interleaver outputs
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *f;
   /// Number of code segments
   uint32_t C;
   /// Number of bits in "small" code segments
@@ -273,7 +273,7 @@ typedef struct {
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  int16_t *w[MAX_NUM_NR_ULSCH_SEGMENTS];
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 

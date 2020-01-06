@@ -127,9 +127,9 @@ typedef struct {
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *e; 
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *f; 
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments
@@ -278,7 +278,7 @@ typedef struct {
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  int16_t *w[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)

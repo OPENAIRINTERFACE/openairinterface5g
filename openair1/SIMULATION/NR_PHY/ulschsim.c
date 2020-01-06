@@ -566,6 +566,7 @@ int main(int argc, char **argv)
     printf("\n");
   }
 
+
   if (output_fd)
     fclose(output_fd);
 
