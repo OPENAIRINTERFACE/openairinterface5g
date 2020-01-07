@@ -91,7 +91,7 @@ logging.basicConfig(
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
-class SSHConnection():
+class OaiCiTest():
 	def __init__(self):
 		self.FailReportCnt = 0
 		self.prematureExit = False
@@ -230,7 +230,7 @@ class SSHConnection():
 		if connect_status:
 			pass
 		else:
-			sys.exit('SSH Connection Failed')
+			sys.exit('CiTestObj.Connection Failed')
 
 	def command(self, commandline, expectedline, timeout):
 		logging.debug(commandline)
@@ -2810,7 +2810,7 @@ class SSHConnection():
 		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,))
+			p = Process(target = CiTestObj.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2850,15 +2850,15 @@ class SSHConnection():
 		# in noS1 config, no need to check status from EPC
 		result = re.search('noS1', str(self.Initialize_eNB_args))
 		if result is None:
-			p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
-			p = Process(target = SSH.CheckMMEProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckMMEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
-			p = Process(target = SSH.CheckSPGWProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckSPGWProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2866,12 +2866,12 @@ class SSHConnection():
 			if (check_eNB == False) and (check_OAI_UE == False):
 				return 0
 		if check_eNB:
-			p = Process(target = SSH.CheckeNBProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckeNBProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		if check_OAI_UE:
-			p = Process(target = SSH.CheckOAIUEProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckOAIUEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2902,7 +2902,7 @@ class SSHConnection():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		if initialize_OAI_UE_flag == False:
-			p = Process(target = SSH.CheckOAIUEProcess, args = (status_queue,))
+			p = Process(target = CiTestObj.CheckOAIUEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -3639,7 +3639,7 @@ class SSHConnection():
 		multi_jobs = []
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target= SSH.TerminateUE_common, args = (device_id,i,))
+			p = Process(target= CiTestObj.TerminateUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -4382,108 +4382,108 @@ def CheckClassValidity(action,id):
 
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
-		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
-		SSH.eNB_instance = test.findtext('eNB_instance')
-		if (SSH.eNB_instance is None):
-			SSH.eNB_instance = '0'
-		SSH.eNB_serverId = test.findtext('eNB_serverId')
-		if (SSH.eNB_serverId is None):
-			SSH.eNB_serverId = '0'
+		CiTestObj.Build_eNB_args = test.findtext('Build_eNB_args')
+		CiTestObj.eNB_instance = test.findtext('eNB_instance')
+		if (CiTestObj.eNB_instance is None):
+			CiTestObj.eNB_instance = '0'
+		CiTestObj.eNB_serverId = test.findtext('eNB_serverId')
+		if (CiTestObj.eNB_serverId is None):
+			CiTestObj.eNB_serverId = '0'
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
-			SSH.backgroundBuild = False
+			CiTestObj.backgroundBuild = False
 		else:
 			if re.match('true', xmlBgBuildField, re.IGNORECASE):
-				SSH.backgroundBuild = True
+				CiTestObj.backgroundBuild = True
 			else:
-				SSH.backgroundBuild = False
+				CiTestObj.backgroundBuild = False
 
 	if action == 'WaitEndBuild_eNB':
-		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
-		SSH.eNB_instance = test.findtext('eNB_instance')
-		if (SSH.eNB_instance is None):
-			SSH.eNB_instance = '0'
-		SSH.eNB_serverId = test.findtext('eNB_serverId')
-		if (SSH.eNB_serverId is None):
-			SSH.eNB_serverId = '0'
+		CiTestObj.Build_eNB_args = test.findtext('Build_eNB_args')
+		CiTestObj.eNB_instance = test.findtext('eNB_instance')
+		if (CiTestObj.eNB_instance is None):
+			CiTestObj.eNB_instance = '0'
+		CiTestObj.eNB_serverId = test.findtext('eNB_serverId')
+		if (CiTestObj.eNB_serverId is None):
+			CiTestObj.eNB_serverId = '0'
 
 	if action == 'Initialize_eNB':
-		SSH.Initialize_eNB_args = test.findtext('Initialize_eNB_args')
-		SSH.eNB_instance = test.findtext('eNB_instance')
-		if (SSH.eNB_instance is None):
-			SSH.eNB_instance = '0'
-		SSH.eNB_serverId = test.findtext('eNB_serverId')
-		if (SSH.eNB_serverId is None):
-			SSH.eNB_serverId = '0'
+		CiTestObj.Initialize_eNB_args = test.findtext('Initialize_eNB_args')
+		CiTestObj.eNB_instance = test.findtext('eNB_instance')
+		if (CiTestObj.eNB_instance is None):
+			CiTestObj.eNB_instance = '0'
+		CiTestObj.eNB_serverId = test.findtext('eNB_serverId')
+		if (CiTestObj.eNB_serverId is None):
+			CiTestObj.eNB_serverId = '0'
 
 	if action == 'Terminate_eNB':
-		SSH.eNB_instance = test.findtext('eNB_instance')
-		if (SSH.eNB_instance is None):
-			SSH.eNB_instance = '0'
-		SSH.eNB_serverId = test.findtext('eNB_serverId')
-		if (SSH.eNB_serverId is None):
-			SSH.eNB_serverId = '0'
+		CiTestObj.eNB_instance = test.findtext('eNB_instance')
+		if (CiTestObj.eNB_instance is None):
+			CiTestObj.eNB_instance = '0'
+		CiTestObj.eNB_serverId = test.findtext('eNB_serverId')
+		if (CiTestObj.eNB_serverId is None):
+			CiTestObj.eNB_serverId = '0'
 
 	if action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
-			SSH.nbMaxUEtoAttach = -1
+			CiTestObj.nbMaxUEtoAttach = -1
 		else:
-			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
 
 	if action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
 		if (expectedNBUE is None):
-			SSH.expectedNbOfConnectedUEs = -1
+			CiTestObj.expectedNbOfConnectedUEs = -1
 		else:
-			SSH.expectedNbOfConnectedUEs = int(expectedNBUE)
+			CiTestObj.expectedNbOfConnectedUEs = int(expectedNBUE)
 
 	if action == 'Build_OAI_UE':
-		SSH.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
+		CiTestObj.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
 
 	if action == 'Initialize_OAI_UE':
-		SSH.Initialize_OAI_UE_args = test.findtext('Initialize_OAI_UE_args')
-		SSH.UE_instance = test.findtext('UE_instance')
-		if (SSH.UE_instance is None):
-			SSH.UE_instance = '0'
+		CiTestObj.Initialize_OAI_UE_args = test.findtext('Initialize_OAI_UE_args')
+		CiTestObj.UE_instance = test.findtext('UE_instance')
+		if (CiTestObj.UE_instance is None):
+			CiTestObj.UE_instance = '0'
 
 	if action == 'Terminate_OAI_UE':
-		SSH.eNB_instance = test.findtext('UE_instance')
-		if (SSH.UE_instance is None):
-			SSH.UE_instance = '0'
+		CiTestObj.eNB_instance = test.findtext('UE_instance')
+		if (CiTestObj.UE_instance is None):
+			CiTestObj.UE_instance = '0'
 
 	if action == 'Ping' or action == 'Ping_CatM_module':
-		SSH.ping_args = test.findtext('ping_args')
-		SSH.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
+		CiTestObj.ping_args = test.findtext('ping_args')
+		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
 
 	if action == 'Iperf':
-		SSH.iperf_args = test.findtext('iperf_args')
-		SSH.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
-		SSH.iperf_profile = test.findtext('iperf_profile')
-		if (SSH.iperf_profile is None):
-			SSH.iperf_profile = 'balanced'
+		CiTestObj.iperf_args = test.findtext('iperf_args')
+		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		CiTestObj.iperf_profile = test.findtext('iperf_profile')
+		if (CiTestObj.iperf_profile is None):
+			CiTestObj.iperf_profile = 'balanced'
 		else:
-			if SSH.iperf_profile != 'balanced' and SSH.iperf_profile != 'unbalanced' and SSH.iperf_profile != 'single-ue':
-				logging.debug('ERROR: test-case has wrong profile ' + SSH.iperf_profile)
-				SSH.iperf_profile = 'balanced'
+			if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
+				logging.debug('ERROR: test-case has wrong profile ' + CiTestObj.iperf_profile)
+				CiTestObj.iperf_profile = 'balanced'
 
 	if action == 'IdleSleep':
 		string_field = test.findtext('idle_sleep_time_in_sec')
 		if (string_field is None):
-			SSH.idle_sleep_time = 5
+			CiTestObj.idle_sleep_time = 5
 		else:
-			SSH.idle_sleep_time = int(string_field)
+			CiTestObj.idle_sleep_time = int(string_field)
 
 	if action == 'Perform_X2_Handover':
 		string_field = test.findtext('x2_ho_options')
 		if (string_field is None):
-			SSH.x2_ho_options = 'network'
+			CiTestObj.x2_ho_options = 'network'
 		else:
 			if string_field != 'network':
 				logging.error('ERROR: test-case has wrong option ' + string_field)
-				SSH.x2_ho_options = 'network'
+				CiTestObj.x2_ho_options = 'network'
 			else:
-				SSH.x2_ho_options = string_field
+				CiTestObj.x2_ho_options = string_field
 
 
 #check if given test is in list
@@ -4502,7 +4502,7 @@ def receive_signal(signum, frame):
 # Parameter Check
 #-----------------------------------------------------------
 mode = ''
-SSH = SSHConnection()
+CiTestObj = OaiCiTest()
 
 argvs = sys.argv
 argc = len(argvs)
@@ -4521,7 +4521,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
-		SSH.ranRepository = matchReg.group(1)
+		CiTestObj.ranRepository = matchReg.group(1)
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
@@ -4529,257 +4529,257 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
-			SSH.ranAllowMerge = True
+			CiTestObj.ranAllowMerge = True
 	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
-		SSH.ranBranch = matchReg.group(1)
+		CiTestObj.ranBranch = matchReg.group(1)
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
-		SSH.ranCommitID = matchReg.group(1)
+		CiTestObj.ranCommitID = matchReg.group(1)
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
-		SSH.ranTargetBranch = matchReg.group(1)
+		CiTestObj.ranTargetBranch = matchReg.group(1)
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNBIPAddress = matchReg.group(1)
+			CiTestObj.eNBIPAddress = matchReg.group(1)
 		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB1IPAddress = matchReg.group(1)
+			CiTestObj.eNB1IPAddress = matchReg.group(1)
 		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB2IPAddress = matchReg.group(1)
+			CiTestObj.eNB2IPAddress = matchReg.group(1)
 	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNBUserName = matchReg.group(1)
+			CiTestObj.eNBUserName = matchReg.group(1)
 		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB1UserName = matchReg.group(1)
+			CiTestObj.eNB1UserName = matchReg.group(1)
 		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB2UserName = matchReg.group(1)
+			CiTestObj.eNB2UserName = matchReg.group(1)
 	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNBPassword = matchReg.group(1)
+			CiTestObj.eNBPassword = matchReg.group(1)
 		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB1Password = matchReg.group(1)
+			CiTestObj.eNB1Password = matchReg.group(1)
 		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB2Password = matchReg.group(1)
+			CiTestObj.eNB2Password = matchReg.group(1)
 	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNBSourceCodePath = matchReg.group(1)
+			CiTestObj.eNBSourceCodePath = matchReg.group(1)
 		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB1SourceCodePath = matchReg.group(1)
+			CiTestObj.eNB1SourceCodePath = matchReg.group(1)
 		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			SSH.eNB2SourceCodePath = matchReg.group(1)
+			CiTestObj.eNB2SourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.EPCIPAddress = matchReg.group(1)
+		CiTestObj.EPCIPAddress = matchReg.group(1)
 	elif re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE)
-		SSH.EPCBranch = matchReg.group(1)
+		CiTestObj.EPCBranch = matchReg.group(1)
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
-		SSH.EPCUserName = matchReg.group(1)
+		CiTestObj.EPCUserName = matchReg.group(1)
 	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
-		SSH.EPCPassword = matchReg.group(1)
+		CiTestObj.EPCPassword = matchReg.group(1)
 	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		SSH.EPCSourceCodePath = matchReg.group(1)
+		CiTestObj.EPCSourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
-			SSH.EPCType = matchReg.group(1)
+			CiTestObj.EPCType = matchReg.group(1)
 		else:
 			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS)')
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.ADBIPAddress = matchReg.group(1)
+		CiTestObj.ADBIPAddress = matchReg.group(1)
 	elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE)
-		SSH.ADBUserName = matchReg.group(1)
+		CiTestObj.ADBUserName = matchReg.group(1)
 	elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('centralized', matchReg.group(1), re.IGNORECASE) or re.match('distributed', matchReg.group(1), re.IGNORECASE):
 			if re.match('distributed', matchReg.group(1), re.IGNORECASE):
-				SSH.ADBCentralized = False
+				CiTestObj.ADBCentralized = False
 			else:
-				SSH.ADBCentralized = True
+				CiTestObj.ADBCentralized = True
 		else:
 			sys.exit('Invalid ADB Type: ' + matchReg.group(1) + ' -- (should be centralized or distributed)')
 	elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE)
-		SSH.ADBPassword = matchReg.group(1)
+		CiTestObj.ADBPassword = matchReg.group(1)
 	elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
-		SSH.testXMLfiles.append(matchReg.group(1))
-		SSH.nbTestXMLfiles += 1
+		CiTestObj.testXMLfiles.append(matchReg.group(1))
+		CiTestObj.nbTestXMLfiles += 1
 	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UEIPAddress = matchReg.group(1)
+		CiTestObj.UEIPAddress = matchReg.group(1)
 	elif re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UEUserName = matchReg.group(1)
+		CiTestObj.UEUserName = matchReg.group(1)
 	elif re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UEPassword = matchReg.group(1)
+		CiTestObj.UEPassword = matchReg.group(1)
 	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UESourceCodePath = matchReg.group(1)
+		CiTestObj.UESourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
 		finalStatus = matchReg.group(1)
 		if ((finalStatus == 'true') or (finalStatus == 'True')):
-			SSH.finalStatus = True
+			CiTestObj.finalStatus = True
 	else:
 		Usage()
 		sys.exit('Invalid Parameter: ' + myArgv)
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
-	if SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '':
+	if CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.eNB_serverId = '0'
-	SSH.eNB_instance = '0'
-	SSH.eNBSourceCodePath = '/tmp/'
-	SSH.TerminateeNB()
+	CiTestObj.eNB_serverId = '0'
+	CiTestObj.eNB_instance = '0'
+	CiTestObj.eNBSourceCodePath = '/tmp/'
+	CiTestObj.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
-	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
+	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	SSH.TerminateUE()
+	CiTestObj.TerminateUE()
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
-	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '':
+	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	SSH.TerminateOAIUE()
+	CiTestObj.TerminateOAIUE()
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.TerminateHSS()
+	CiTestObj.TerminateHSS()
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.TerminateMME()
+	CiTestObj.TerminateMME()
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.TerminateSPGW()
+	CiTestObj.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
-	if (SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '') and (SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == ''):
+	if (CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectBuild()
+	CiTestObj.LogCollectBuild()
 elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
-	if SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '':
+	if CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollecteNB()
+	CiTestObj.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectHSS()
+	CiTestObj.LogCollectHSS()
 elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectMME()
+	CiTestObj.LogCollectMME()
 elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectSPGW()
+	CiTestObj.LogCollectSPGW()
 elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectPing()
+	CiTestObj.LogCollectPing()
 elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
-	if SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCSourceCodePath == '':
+	if CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCSourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectIperf()
+	CiTestObj.LogCollectIperf()
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
-	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
-	SSH.LogCollectOAIUE()
+	CiTestObj.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
-	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
+	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	count = 0
 	foundCount = 0
-	while (count < SSH.nbTestXMLfiles):
-		xml_test_file = cwd + "/" + SSH.testXMLfiles[count]
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[count]
+	while (count < CiTestObj.nbTestXMLfiles):
+		xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[count]
+		xml_test_file = sys.path[0] + "/" + CiTestObj.testXMLfiles[count]
 		if (os.path.isfile(xml_test_file)):
 			xmlTree = ET.parse(xml_test_file)
 			xmlRoot = xmlTree.getroot()
-			SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
-			SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
-			SSH.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
+			CiTestObj.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
+			CiTestObj.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
+			CiTestObj.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
 			foundCount += 1
 		count += 1
-	if foundCount != SSH.nbTestXMLfiles:
-		SSH.nbTestXMLfiles = foundCount
-	SSH.CreateHtmlHeader()
+	if foundCount != CiTestObj.nbTestXMLfiles:
+		CiTestObj.nbTestXMLfiles = foundCount
+	CiTestObj.CreateHtmlHeader()
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
-	SSH.CreateHtmlFooter(SSH.finalStatus)
+	CiTestObj.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if SSH.eNBIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+		if CiTestObj.eNBIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '' or CiTestObj.EPCIPAddress == '' or CiTestObj.EPCUserName == '' or CiTestObj.EPCPassword == '' or CiTestObj.EPCType == '' or CiTestObj.EPCSourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 
-		if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
-			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
-			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
+		if (CiTestObj.EPCIPAddress != '') and (CiTestObj.EPCIPAddress != 'none'):
+			CiTestObj.copyout(CiTestObj.EPCIPAddress, CiTestObj.EPCUserName, CiTestObj.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
+			CiTestObj.copyout(CiTestObj.EPCIPAddress, CiTestObj.EPCUserName, CiTestObj.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
-		if SSH.UEIPAddress == '' or SSH.ranRepository == '' or SSH.ranBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		if CiTestObj.UEIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
 			Usage()
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
-	if (SSH.nbTestXMLfiles != 1):
+	if (CiTestObj.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
-		xml_test_file = cwd + "/" + SSH.testXMLfiles[0]
+		xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[0]
 
 	xmlTree = ET.parse(xml_test_file)
 	xmlRoot = xmlTree.getroot()
 
 	exclusion_tests=xmlRoot.findtext('TestCaseExclusionList',default='')
 	requested_tests=xmlRoot.findtext('TestCaseRequestedList',default='')
-	if (SSH.nbTestXMLfiles == 1):
-		SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-		SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
+	if (CiTestObj.nbTestXMLfiles == 1):
+		CiTestObj.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
+		CiTestObj.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 		repeatCount = xmlRoot.findtext('repeatCount',default='1')
-		SSH.repeatCounts.append(int(repeatCount))
+		CiTestObj.repeatCounts.append(int(repeatCount))
 	all_tests=xmlRoot.findall('testCase')
 
 	exclusion_tests=exclusion_tests.split()
@@ -4805,8 +4805,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
-	if (SSH.EPCIPAddress != '') and (SSH.EPCIPAddress != 'none'):
-		SSH.CheckFlexranCtrlInstallation()
+	if (CiTestObj.EPCIPAddress != '') and (CiTestObj.EPCIPAddress != 'none'):
+		CiTestObj.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -4819,109 +4819,109 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	signal.signal(signal.SIGUSR1, receive_signal)
 
-	SSH.CreateHtmlTabHeader()
+	CiTestObj.CreateHtmlTabHeader()
 
-	SSH.FailReportCnt = 0
-	SSH.prematureExit = True
-	SSH.startTime = int(round(time.time() * 1000))
-	while SSH.FailReportCnt < SSH.repeatCounts[0] and SSH.prematureExit:
-		SSH.prematureExit = False
+	CiTestObj.FailReportCnt = 0
+	CiTestObj.prematureExit = True
+	CiTestObj.startTime = int(round(time.time() * 1000))
+	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and CiTestObj.prematureExit:
+		CiTestObj.prematureExit = False
 		# At every iteratin of the retry loop, a separator will be added
-		SSH.CreateHtmlRetrySeparator()
+		CiTestObj.CreateHtmlRetrySeparator()
 		for test_case_id in todo_tests:
-			if SSH.prematureExit:
+			if CiTestObj.prematureExit:
 				break
 			for test in all_tests:
-				if SSH.prematureExit:
+				if CiTestObj.prematureExit:
 					break
 				id = test.get('id')
 				if test_case_id != id:
 					continue
-				SSH.testCase_id = id
-				SSH.desc = test.findtext('desc')
+				CiTestObj.testCase_id = id
+				CiTestObj.desc = test.findtext('desc')
 				action = test.findtext('class')
 				if (CheckClassValidity(action, id) == False):
 					continue
-				SSH.ShowTestID()
+				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
 				if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-					if (SSH.ADBIPAddress != 'none'):
+					if (CiTestObj.ADBIPAddress != 'none'):
 						terminate_ue_flag = False
-						SSH.GetAllUEDevices(terminate_ue_flag)
+						CiTestObj.GetAllUEDevices(terminate_ue_flag)
 				if action == 'Build_eNB':
-					SSH.BuildeNB()
+					CiTestObj.BuildeNB()
 				elif action == 'WaitEndBuild_eNB':
-					SSH.WaitBuildeNBisFinished()
+					CiTestObj.WaitBuildeNBisFinished()
 				elif action == 'Initialize_eNB':
-					SSH.InitializeeNB()
+					CiTestObj.InitializeeNB()
 				elif action == 'Terminate_eNB':
-					SSH.TerminateeNB()
+					CiTestObj.TerminateeNB()
 				elif action == 'Initialize_UE':
-					SSH.InitializeUE()
+					CiTestObj.InitializeUE()
 				elif action == 'Terminate_UE':
-					SSH.TerminateUE()
+					CiTestObj.TerminateUE()
 				elif action == 'Attach_UE':
-					SSH.AttachUE()
+					CiTestObj.AttachUE()
 				elif action == 'Detach_UE':
-					SSH.DetachUE()
+					CiTestObj.DetachUE()
 				elif action == 'DataDisable_UE':
-					SSH.DataDisableUE()
+					CiTestObj.DataDisableUE()
 				elif action == 'DataEnable_UE':
-					SSH.DataEnableUE()
+					CiTestObj.DataEnableUE()
 				elif action == 'CheckStatusUE':
-					SSH.CheckStatusUE()
+					CiTestObj.CheckStatusUE()
 				elif action == 'Build_OAI_UE':
-					SSH.BuildOAIUE()
+					CiTestObj.BuildOAIUE()
 				elif action == 'Initialize_OAI_UE':
-					SSH.InitializeOAIUE()
+					CiTestObj.InitializeOAIUE()
 				elif action == 'Terminate_OAI_UE':
-					SSH.TerminateOAIUE()
+					CiTestObj.TerminateOAIUE()
 				elif action == 'Initialize_CatM_module':
-					SSH.InitializeCatM()
+					CiTestObj.InitializeCatM()
 				elif action == 'Terminate_CatM_module':
-					SSH.TerminateCatM()
+					CiTestObj.TerminateCatM()
 				elif action == 'Attach_CatM_module':
-					SSH.AttachCatM()
+					CiTestObj.AttachCatM()
 				elif action == 'Detach_CatM_module':
-					SSH.TerminateCatM()
+					CiTestObj.TerminateCatM()
 				elif action == 'Ping_CatM_module':
-					SSH.PingCatM()
+					CiTestObj.PingCatM()
 				elif action == 'Ping':
-					SSH.Ping()
+					CiTestObj.Ping()
 				elif action == 'Iperf':
-					SSH.Iperf()
+					CiTestObj.Iperf()
 				elif action == 'Reboot_UE':
-					SSH.RebootUE()
+					CiTestObj.RebootUE()
 				elif action == 'Initialize_HSS':
-					SSH.InitializeHSS()
+					CiTestObj.InitializeHSS()
 				elif action == 'Terminate_HSS':
-					SSH.TerminateHSS()
+					CiTestObj.TerminateHSS()
 				elif action == 'Initialize_MME':
-					SSH.InitializeMME()
+					CiTestObj.InitializeMME()
 				elif action == 'Terminate_MME':
-					SSH.TerminateMME()
+					CiTestObj.TerminateMME()
 				elif action == 'Initialize_SPGW':
-					SSH.InitializeSPGW()
+					CiTestObj.InitializeSPGW()
 				elif action == 'Terminate_SPGW':
-					SSH.TerminateSPGW()
+					CiTestObj.TerminateSPGW()
 				elif action == 'Initialize_FlexranCtrl':
-					SSH.InitializeFlexranCtrl()
+					CiTestObj.InitializeFlexranCtrl()
 				elif action == 'Terminate_FlexranCtrl':
-					SSH.TerminateFlexranCtrl()
+					CiTestObj.TerminateFlexranCtrl()
 				elif action == 'IdleSleep':
-					SSH.IdleSleep()
+					CiTestObj.IdleSleep()
 				elif action == 'Perform_X2_Handover':
-					SSH.Perform_X2_Handover()
+					CiTestObj.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-		SSH.FailReportCnt += 1
-	if SSH.FailReportCnt == SSH.repeatCounts[0] and SSH.prematureExit:
-		logging.debug('Testsuite failed ' + str(SSH.FailReportCnt) + ' time(s)')
-		SSH.CreateHtmlTabFooter(False)
+		CiTestObj.FailReportCnt += 1
+	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and CiTestObj.prematureExit:
+		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		CiTestObj.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
 	else:
-		logging.info('Testsuite passed after ' + str(SSH.FailReportCnt) + ' time(s)')
-		SSH.CreateHtmlTabFooter(True)
+		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		CiTestObj.CreateHtmlTabFooter(True)
 else:
 	Usage()
 	sys.exit('Invalid mode')
