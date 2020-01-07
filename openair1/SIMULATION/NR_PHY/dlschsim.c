@@ -628,9 +628,9 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(gNB->dlsch[0][i]);
+		free_gNB_dlsch(gNB->dlsch[0][i],N_RB_DL);
 		printf("UE %d\n", i);
-		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]));
+		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}
 
 	for (i = 0; i < 2; i++) {

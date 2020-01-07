@@ -49,12 +49,22 @@
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch,uint16_t N_RB)
 {
   int i;
   int r;
 
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   if (dlsch) {
+
+    if (N_RB != 273) {
+      a_segments = a_segments*N_RB;
+      a_segments = a_segments/273;
+    }  
+
+    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
+
 #ifdef DEBUG_DLSCH_FREE
     LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
 #endif
@@ -70,10 +80,26 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES); //this should be MAX_NR_DLSCH_PAYLOAD_BYTES
+          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
+#endif
+        }
+
+        if (dlsch->harq_processes[i]->e) {
+          free16(dlsch->harq_processes[i]->e,14*N_RB*12*8);
+          dlsch->harq_processes[i]->e = NULL;
+#ifdef DEBUG_DLSCH_FREE
+          printf("Freeing dlsch process %d e (%p)\n",i,dlsch->harq_processes[i]->e);
+#endif
+        }
+
+        if (dlsch->harq_processes[i]->f) {
+          free16(dlsch->harq_processes[i]->f,14*N_RB*12*8);
+          dlsch->harq_processes[i]->f = NULL;
+#ifdef DEBUG_DLSCH_FREE
+          printf("Freeing dlsch process %d f (%p)\n",i,dlsch->harq_processes[i]->f);
 #endif
         }
 
@@ -81,7 +107,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
         LOG_D(PHY,"Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
 #endif
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
 
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
@@ -119,9 +145,15 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   NR_gNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (N_RB <= 107) bw_scaling =2;
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273;
+  }  
+
+  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
   
   dlsch = (NR_gNB_DLSCH_t *)malloc16(sizeof(NR_gNB_DLSCH_t));
 
@@ -161,31 +193,31 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));
-      LOG_T(PHY, "Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
-    		  MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling,bw_scaling, i,dlsch->harq_processes[i]);
+      LOG_T(PHY, "Required mem size %d  dlsch->harq_processes[%d] %p\n",
+    		  dlsch_bytes, i,dlsch->harq_processes[i]);
 
       if (dlsch->harq_processes[i]) {
         bzero(dlsch->harq_processes[i],sizeof(NR_DL_gNB_HARQ_t));
         //    dlsch->harq_processes[i]->first_tx=1;
-        dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
-        dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        dlsch->harq_processes[i]->b = (unsigned char*)malloc16(dlsch_bytes);
+        dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(dlsch_bytes);
         if (dlsch->harq_processes[i]->pdu) {
-          bzero(dlsch->harq_processes[i]->pdu,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
-          nr_emulate_dlsch_payload(dlsch->harq_processes[i]->pdu, (MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling)>>3);
+          bzero(dlsch->harq_processes[i]->pdu,dlsch_bytes);
+          nr_emulate_dlsch_payload(dlsch->harq_processes[i]->pdu, (dlsch_bytes)>>3);
         } else {
           LOG_D(PHY,"Can't allocate PDU\n");
           exit_flag=1;
         }
 
         if (dlsch->harq_processes[i]->b) {
-          bzero(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(dlsch->harq_processes[i]->b,dlsch_bytes);
         } else {
           LOG_D(PHY,"Can't get b\n");
           exit_flag=1;
         }
 
         if (abstraction_flag==0) {
-          for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) {
+          for (r=0; r<a_segments; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             // [hna] 8448 is the maximum CB size in NR
             //       68*348 = 68*(maximum size of Zc)
@@ -205,6 +237,20 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
               exit_flag=2;
             }
           }
+          dlsch->harq_processes[i]->e = (uint8_t*)malloc16(14*N_RB*12*8);
+          if (dlsch->harq_processes[i]->e) {
+            bzero(dlsch->harq_processes[i]->e,14*N_RB*12*8);
+          } else {
+            printf("Can't get e\n");
+            exit_flag=1;
+          }
+          dlsch->harq_processes[i]->f = (uint8_t*)malloc16(14*N_RB*12*8);
+          if (dlsch->harq_processes[i]->f) {
+            bzero(dlsch->harq_processes[i]->f,14*N_RB*12*8);
+          } else {
+            printf("Can't get f\n");
+            exit_flag=1;
+          }
         }
       } else {
         LOG_D(PHY,"Can't get harq_p %d\n",i);
@@ -223,7 +269,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
-  free_gNB_dlsch(dlsch);
+  free_gNB_dlsch(dlsch,N_RB);
   return(NULL);
 
 
@@ -325,7 +371,7 @@ int nr_dlsch_encoding(unsigned char *a,
       dlsch->harq_processes[harq_pid]->B = A+24;
       //    dlsch->harq_processes[harq_pid]->b = a;
    
-      AssertFatal((A/8)+3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_DLSCH_PAYLOAD_BYTES);
+      AssertFatal((A/8)+4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_DLSCH_PAYLOAD_BYTES);
 
       memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);  // why is this +4 if the CRC is only 3 bytes?
     }
@@ -391,7 +437,7 @@ int nr_dlsch_encoding(unsigned char *a,
       //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
     }
 
-    for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
+    for(int j=0;j<((dlsch->harq_processes[harq_pid]->C-1)/8+1);j++) {
       ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,
 				    dlsch->harq_processes[harq_pid]->C,j,
 				    tinput,tprep,tparity,toutput);

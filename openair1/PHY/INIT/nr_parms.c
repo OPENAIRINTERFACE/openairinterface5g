@@ -84,7 +84,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 nfapi_nr_config_request_scf_t* cfg,
 			 int mu0,
 			 int Ncp,
-			 int N_RB_DL)
+			 int N_RB_DL,
+                         int N_RB_UL)
 
 {
 
@@ -103,6 +104,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
+  fp->N_RB_UL = N_RB_UL;
 
   switch(mu) {
 
@@ -267,11 +269,13 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* config,
   fp->frame_type = config->cell_config.frame_duplex_type.value;
   fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask.value ;
   int N_RB_DL = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
+  int N_RB_UL = config->carrier_config.ul_grid_size[config->ssb_config.scs_common.value].value;
   return nr_init_frame_parms0(fp,
 			      config,
 			      0,
 			      NFAPI_CP_NORMAL,
-			      N_RB_DL);
+			      N_RB_DL,
+                              N_RB_UL);
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
@@ -281,8 +285,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
-  /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
-  nr_init_frame_parms0(fp,NULL,mu,Ncp,N_RB_DL);
+  int N_RB_UL = N_RB_DL;
+  nr_init_frame_parms0(fp,NULL,mu,Ncp,N_RB_DL,N_RB_UL);
   fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset);
   return 0;
 }

@@ -42,7 +42,7 @@
 
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch)
+void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch,unsigned char N_RB_UL)
 {
   int i, r;
 
@@ -51,18 +51,35 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch)
     printf("Freeing ulsch %p\n",ulsch);
 #endif
 
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
+
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
+    a_segments = a_segments/273;
+  }  
+
+  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]) {
 
         if (ulsch->harq_processes[i]->a) {
-          free16(ulsch->harq_processes[i]->a,MAX_NR_ULSCH_PAYLOAD_BYTES);
+          free16(ulsch->harq_processes[i]->a,ulsch_bytes);
           ulsch->harq_processes[i]->a = NULL;
         }
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,MAX_NR_ULSCH_PAYLOAD_BYTES);
+          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
           ulsch->harq_processes[i]->b = NULL;
         }
-        for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS; r++) {
+        if (ulsch->harq_processes[i]->e) {
+          free16(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
+          ulsch->harq_processes[i]->e = NULL;
+        }
+        if (ulsch->harq_processes[i]->f) {
+          free16(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
+          ulsch->harq_processes[i]->f = NULL;
+        }
+        for (r=0; r<a_segments; r++) {
           if (ulsch->harq_processes[i]->c[r]) {
             free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             ulsch->harq_processes[i]->c[r] = NULL;
@@ -92,18 +109,14 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
 {
   NR_UE_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,r;
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (N_RB_UL) {
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
+    a_segments = a_segments/273;
+  }  
 
-  case 106:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
-  }
+  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   ulsch = (NR_UE_ULSCH_t *)malloc16(sizeof(NR_UE_ULSCH_t));
 
@@ -123,25 +136,25 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
       //      printf("ulsch->harq_processes[%d] %p\n",i,ulsch->harq_processes[i]);
       if (ulsch->harq_processes[i]) {
         memset(ulsch->harq_processes[i], 0, sizeof(NR_UL_UE_HARQ_t));
-        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
-        ulsch->harq_processes[i]->a = (unsigned char*)malloc16(MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(ulsch_bytes);
+        ulsch->harq_processes[i]->a = (unsigned char*)malloc16(ulsch_bytes);
 
         if (ulsch->harq_processes[i]->a) {
-          bzero(ulsch->harq_processes[i]->a,MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(ulsch->harq_processes[i]->a,ulsch_bytes);
         } else {
           printf("Can't allocate PDU\n");
           exit_flag=1;
         }
 
         if (ulsch->harq_processes[i]->b)
-          bzero(ulsch->harq_processes[i]->b,MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(ulsch->harq_processes[i]->b,ulsch_bytes);
         else {
           LOG_E(PHY,"Can't get b\n");
           exit_flag=1;
         }
 
         if (abstraction_flag==0) {
-          for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS/bw_scaling; r++) {
+          for (r=0; r<a_segments; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(8448);
             ulsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384); //max size for coded output
@@ -158,6 +171,20 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
               printf("Can't get d\n");
               exit_flag=2;
             }
+          }
+          ulsch->harq_processes[i]->e = (uint8_t*)malloc16(14*N_RB_UL*12*8);
+          if (ulsch->harq_processes[i]->e) {
+            bzero(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
+          } else {
+            printf("Can't get e\n");
+            exit_flag=1;
+          }
+          ulsch->harq_processes[i]->f = (uint8_t*)malloc16(14*N_RB_UL*12*8);
+          if (ulsch->harq_processes[i]->f) {
+            bzero(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
+          } else {
+            printf("Can't get f\n");
+            exit_flag=1;
           }
         }
 
@@ -179,7 +206,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
   }
 
   LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
-  free_nr_ue_ulsch(ulsch);
+  free_nr_ue_ulsch(ulsch,N_RB_UL);
   return(NULL);
 
 
@@ -237,6 +264,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
+
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 

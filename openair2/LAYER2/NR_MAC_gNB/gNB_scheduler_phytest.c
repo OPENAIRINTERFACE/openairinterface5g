@@ -480,7 +480,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_dl_tti_request_body_t   *dl_req;
   nfapi_nr_pdu_t            *TX_req;
 
-
   int TBS;
   int TBS_bytes;
   int lcid;
@@ -491,7 +490,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   mac_rlc_status_resp_t rlc_status;
   uint16_t sdu_lengths[NB_RB_MAX];
   int num_sdus = 0;
-  unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
+  unsigned char dlsch_buffer[MAX_NR_DLSCH_PAYLOAD_BYTES];
   int offset;
   int UE_id = 0;
   unsigned char sdu_lcids[NB_RB_MAX];

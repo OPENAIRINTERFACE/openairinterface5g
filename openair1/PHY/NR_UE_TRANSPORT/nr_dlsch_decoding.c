@@ -56,31 +56,46 @@ notifiedFIFO_elt_t *msgToPush;
 
 //extern double cpuf;
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr)
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
 {
 
   int i,r;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   NR_UE_DLSCH_t *dlsch=*dlschptr;
+
   if (dlsch) {
+    if (N_RB_DL != 273) {
+      a_segments = a_segments*N_RB_DL;
+      a_segments = a_segments/273;
+    }  
+ 
+    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES);
+          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
           dlsch->harq_processes[i]->b = NULL;
         }
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
+        for (r=0; r<a_segments; r++) {
           free16(dlsch->harq_processes[i]->c[r],1056);
           dlsch->harq_processes[i]->c[r] = NULL;
         }
 
-        for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
+        for (r=0; r<a_segments; r++)
           if (dlsch->harq_processes[i]->d[r]) {
             free16(dlsch->harq_processes[i]->d[r],(3*8448)*sizeof(short));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
         
-        for (r=0; r<(MAX_NUM_NR_DLSCH_SEGMENTS); r++) {
+        for (r=0; r<a_segments; r++)
+          if (dlsch->harq_processes[i]->w[r]) {
+            free16(dlsch->harq_processes[i]->w[r],(3*8448)*sizeof(short));
+            dlsch->harq_processes[i]->w[r] = NULL;
+          }
+
+        for (r=0; r<a_segments; r++) {
           if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
             nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
             dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
@@ -103,25 +118,14 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
   NR_UE_DLSCH_t *dlsch;
   uint8_t exit_flag = 0,i,r;
 
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (N_RB_DL) {
-  case 6:
-    bw_scaling =16;
-    break;
+  if (N_RB_DL != 273) {
+    a_segments = a_segments*N_RB_DL;
+    a_segments = a_segments/273;
+  }  
 
-  case 25:
-    bw_scaling =4;
-    break;
-
-  case 50:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
-  }
+  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
 
@@ -140,15 +144,15 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
         dlsch->harq_processes[i]->first_tx=1;
-        dlsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        dlsch->harq_processes[i]->b = (uint8_t*)malloc16(dlsch_bytes);
 
         if (dlsch->harq_processes[i]->b)
-          memset(dlsch->harq_processes[i]->b,0,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+          memset(dlsch->harq_processes[i]->b,0,dlsch_bytes);
         else
           exit_flag=3;
 
         if (abstraction_flag == 0) {
-          for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) { 
+          for (r=0; r<a_segments; r++) { 
             dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(1056);
 
@@ -163,6 +167,13 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
               memset(dlsch->harq_processes[i]->d[r],0,(3*8448)*sizeof(short));
             else
               exit_flag=2;
+
+            dlsch->harq_processes[i]->w[r] = (short*)malloc16((3*8448)*sizeof(short));
+
+            if (dlsch->harq_processes[i]->w[r])
+              memset(dlsch->harq_processes[i]->w[r],0,(3*8448)*sizeof(short));
+            else
+              exit_flag=2;
           }
         }
       } else {
@@ -175,7 +186,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
   }
 
   printf("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(NR_DL_UE_HARQ_t), exit_flag);
-  free_nr_ue_dlsch(&dlsch);
+  free_nr_ue_dlsch(&dlsch,N_RB_DL);
 
   return(NULL);
 }
@@ -391,20 +402,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   err_flag = 0;
   r_offset = 0;
 
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (frame_parms->N_RB_DL) {
-    case 106:
-      bw_scaling =2;
-      break;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
+    a_segments = a_segments/273;
+  }  
 
-    default:
-      bw_scaling =1;
-      break;
-  }
-
-  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > a_segments) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return((1+dlsch->max_ldpc_iterations));
   }
 
@@ -925,20 +931,15 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   err_flag = 0;
   r_offset = 0;
 
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (frame_parms->N_RB_DL) {
-  case 106:
-    bw_scaling =2;
-    break;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
+    a_segments = a_segments/273;
+  }  
 
-  default:
-    bw_scaling =1;
-    break;
-  }
-
-  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > a_segments) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return((1+dlsch->max_ldpc_iterations));
   }
 #ifdef DEBUG_DLSCH_DECODING
@@ -1503,20 +1504,15 @@ void *nr_dlsch_decoding_process(void *arg)
   //r_offset = 0;
 
   /*
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (frame_parms->N_RB_DL) {
-  case 106:
-    bw_scaling =2;
-    break;
+  if (nb_rb != 273) {
+    a_segments = a_segments*nb_rb;
+    a_segments = a_segments/273;
+  }  
 
-  default:
-    bw_scaling =1;
-    break;
-  }
-
-  if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
-    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
+  if (harq_process->C > a_segments) {
+    LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
     return((1+dlsch->max_ldpc_iterations));
   }*/
 #ifdef DEBUG_DLSCH_DECODING

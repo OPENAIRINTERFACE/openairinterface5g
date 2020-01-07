@@ -89,7 +89,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  time_stats_t *dlsch_segmentation_stats);
 
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch,uint16_t N_RB);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 

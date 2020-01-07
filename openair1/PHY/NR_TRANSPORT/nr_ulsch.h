@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch);
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch,uint8_t N_RB_UL);
 
 NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
