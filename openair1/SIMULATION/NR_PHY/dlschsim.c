@@ -454,6 +454,7 @@ int main(int argc, char **argv)
         rel15->NrOfCodewords = 1;
         rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	rel15->dlDmrsSymbPos = 4;
+	rel15->mcsIndex[0] = Imcs;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
@@ -529,9 +530,11 @@ int main(int argc, char **argv)
 				//printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);
 
 				//channel_output_fixed[i] = (char)quantize(1,channel_output_fixed[i],qbits);
-
-				//if (i<16)   printf("channel_output_fixed[%d] = %d\n",i,channel_output_fixed[i]);
-
+/*
+				if (i<16)   printf("input[%d] %f => channel_output_fixed[%d] = %d\n",
+						   i,modulated_input[i],
+						   i,channel_output_fixed[i]);
+*/
 				//Uncoded BER
 				if (channel_output_fixed[i] < 0)
 					channel_output_uncoded[i] = 1;  //QPSK demod
