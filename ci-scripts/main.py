@@ -134,6 +134,7 @@ class SSHConnection():
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
 		self.eNBmbmsEnables = [False, False, False]
+		self.eNBstatuses = [-1, -1, -1]
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -899,6 +900,8 @@ class SSHConnection():
 					logging.debug('\u001B[1m oaitun_enm1 interface is mounted and configured\u001B[0m')
 				else:
 					logging.error('\u001B[1m oaitun_enm1 interface is either NOT mounted or NOT configured\u001B[0m')
+		if enbDidSync:
+			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId)
 
 		self.close()
 		self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
@@ -2992,7 +2995,24 @@ class SSHConnection():
 
 	def CheckeNBProcess(self, status_queue):
 		try:
-			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+			# At least the instance 0 SHALL be on!
+			if self.eNBstatuses[0] == 0:
+				lIpAddr = self.eNBIPAddress
+				lUserName = self.eNBUserName
+				lPassWord = self.eNBPassword
+			elif self.eNBstatuses[0] == 1:
+				lIpAddr = self.eNB1IPAddress
+				lUserName = self.eNB1UserName
+				lPassWord = self.eNB1Password
+			elif self.eNBstatuses[0] == 2:
+				lIpAddr = self.eNB2IPAddress
+				lUserName = self.eNB2UserName
+				lPassWord = self.eNB2Password
+			else:
+				lIpAddr = self.eNBIPAddress
+				lUserName = self.eNBUserName
+				lPassWord = self.eNBPassword
+			self.open(lIpAddr, lUserName, lPassWord)
 			self.command('stdbuf -o0 ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is None:
@@ -3589,6 +3609,7 @@ class SSHConnection():
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
+		self.eNBstatuses[int(self.eNB_instance)] = -1
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
