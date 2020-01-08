@@ -517,9 +517,10 @@ int main(int argc, char **argv)
         if (channel_output_uncoded[i] != ulsch_ue->harq_processes[harq_pid]->f[i])
           errors_bit_uncoded = errors_bit_uncoded + 1;
       }
-
+/*
       printf("errors bits uncoded %u\n", errors_bit_uncoded);
       printf("\n");
+*/
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);
@@ -542,13 +543,13 @@ int main(int argc, char **argv)
           errors_bit++;
         }
       }
-
+/*
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
           printf("errors_bit %u (trial %d)\n", errors_bit, trial);
       }
-      printf("\n");
+      printf("\n");*/
     }
     
     printf("*****************************************\n");
@@ -558,7 +559,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
 
-    if (errors_bit == 0) {
+    if (n_errors == 0) {
       printf("PUSCH test OK\n");
       printf("\n");
       break;

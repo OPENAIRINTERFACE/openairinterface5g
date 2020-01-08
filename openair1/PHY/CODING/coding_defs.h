@@ -38,7 +38,7 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
-#define MAX_LDPC_ITERATIONS 5
+#define MAX_LDPC_ITERATIONS 10//5
 #define MAX_LDPC_ITERATIONS_MBSFN 4
 
 #define LTE_NULL 2
@@ -495,7 +495,9 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
                              uint8_t C,
                              uint8_t rvidx,
                              uint8_t clear,
-                             uint32_t E);
+                             uint32_t E,
+			     uint32_t F,
+			     uint32_t Foffset);
 
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;

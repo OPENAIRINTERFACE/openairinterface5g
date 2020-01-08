@@ -523,7 +523,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                  harq_process->C,
                                  nfapi_ulsch_pdu_rel15->rv,
                                  (harq_process->round==0)?1:0,
-                                 E)==-1) {
+                                 E,
+				 harq_process->F,
+				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
 #if gNB_TIMING_TRACE
       stop_meas(ulsch_rate_unmatching_stats);
 #endif
@@ -581,7 +583,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       }
 
       AssertFatal(kc!=255,"");
-      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
+      j+=(harq_process->F>>3);
+      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
+      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++) {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
     

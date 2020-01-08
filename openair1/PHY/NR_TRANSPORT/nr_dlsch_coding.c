@@ -455,6 +455,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
     if (F>0) {
       for (int k=(Kr-F-2*(*Zc)); k<Kr-2*(*Zc); k++) {
+	// writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
         dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
 	//if (k<(Kr-F+8))
 	//printf("r %d filler bits [%d] = %d \n", r,k, dlsch->harq_processes[harq_pid]->d[r][k]);
