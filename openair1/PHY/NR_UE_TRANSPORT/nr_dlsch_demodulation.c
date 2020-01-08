@@ -380,10 +380,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
     		frame,nr_tti_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
     		frame,nr_tti_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
@@ -404,9 +404,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -483,9 +483,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -596,9 +596,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // MRC
@@ -641,9 +641,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -1018,9 +1018,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // Please keep it: useful for debugging
@@ -1091,7 +1091,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 
   uint32_t *bundle_deint = malloc(N_bundle*sizeof(uint32_t));
 
-  printf("N_bundle %d L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
+  printf("N_bundle %u L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 
   if (symbol==start_symbol)
 	  nb_re = 6;
@@ -1117,6 +1117,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 		  //printf("k %d m %d bundle_deint %d llr_deint %d\n", k, m, bundle_deint[k], llr_deint[bundle_deint[k]*nb_re*L+m]);
 	  }
   }
+  free(bundle_deint);
 }
 
 //==============================================================================================
@@ -2455,7 +2456,7 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
   int prb,nb_rb=0;
   unsigned short k;
   int i,j,aarx;
-  int32_t *dl_ch0=NULL,*dl_ch0p=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1p=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
+  int32_t *dl_ch0=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
 
   k = frame_parms->first_carrier_offset + 516; //0
 
@@ -2511,8 +2512,8 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
               if ((i&1)!=frame_parms->nushift) {
                 rxF_ext[j]=rxF[i];
                 //        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-                dl_ch0_ext[j]=dl_ch0p[i];
-                dl_ch1_ext[j++]=dl_ch1p[i];
+                dl_ch0_ext[j]=dl_ch0[i];
+                dl_ch1_ext[j++]=dl_ch1[i];
               }
             }
             dl_ch0_ext+=6;
