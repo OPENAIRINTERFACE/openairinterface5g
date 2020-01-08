@@ -38,13 +38,27 @@
 
 struct s1ap_eNB_mme_data_s *
 s1ap_eNB_nnsf_select_mme(s1ap_eNB_instance_t       *instance_p,
-                         rrc_establishment_cause_t  cause)
+                         rrc_establishment_cause_t  cause,
+                         uint32_t                   plmn_id)
 {
   struct s1ap_eNB_mme_data_s *mme_data_p = NULL;
   struct s1ap_eNB_mme_data_s *mme_highest_capacity_p = NULL;
-  uint8_t current_capacity = 0;
+  typedef struct MME_nnsf_inf {
+    struct s1ap_eNB_mme_data_s *mme_p;
+    uint64_t weight;
+  } MME_nnsf_inf_t;
+  
+  uint16_t capacity_sum = 0;
+  MME_nnsf_inf_t mme_inf[10];
+  int       cnt;
+  int       nb_mme = 0;
+  uint64_t  weight = 0;
+  
+  memset(mme_inf, 0, sizeof(mme_inf));
 
   RB_FOREACH(mme_data_p, s1ap_mme_map, &instance_p->s1ap_mme_head) {
+    struct served_gummei_s *gummei_p = NULL;
+    capacity_sum = capacity_sum + mme_data_p->relative_mme_capacity;
     if (mme_data_p->state != S1AP_ENB_STATE_CONNECTED) {
       /* The association between MME and eNB is not ready for the moment,
        * go to the next known MME.
@@ -79,11 +93,55 @@ s1ap_eNB_nnsf_select_mme(s1ap_eNB_instance_t       *instance_p,
       }
     }
 
-    if (current_capacity < mme_data_p->relative_mme_capacity) {
-      /* We find a better MME, keep a reference to it */
-      current_capacity = mme_data_p->relative_mme_capacity;
-      mme_highest_capacity_p = mme_data_p;
+    gummei_p = mme_data_p->served_gummei.stqh_first;
+    if( gummei_p != NULL )
+    {
+      struct plmn_identity_s *served_plmns_p = NULL;
+
+      served_plmns_p = gummei_p->served_plmns.stqh_first;
+      if( served_plmns_p != 0 )
+      for( cnt = 0 ; cnt < 8 ; cnt++)
+      {
+        if ( (served_plmns_p->mcc == instance_p->mcc[plmn_id]) &&
+          (served_plmns_p->mnc == instance_p->mnc[plmn_id]) )
+        {
+          mme_inf[nb_mme].mme_p = mme_data_p;
+          nb_mme++;
+          break;
+        }
+        if( served_plmns_p->next.stqe_next == 0 )
+        {
+          break;
+        }
+        served_plmns_p = served_plmns_p->next.stqe_next;
+      }
     }
+  }
+  if( nb_mme != 0 )
+  {
+    for( cnt = 0 ; cnt < nb_mme ; cnt++ )
+    {
+      mme_inf[cnt].weight = (capacity_sum*10)/mme_inf[cnt].mme_p->relative_mme_capacity;
+      mme_inf[cnt].weight = (mme_inf[cnt].weight)*(mme_inf[cnt].mme_p->nb_calls + 1);
+    }
+    mme_highest_capacity_p = mme_inf[0].mme_p;
+    weight = mme_inf[0].weight;
+    for( cnt = 1 ; cnt < nb_mme ; cnt++ )
+    {
+      if( weight > mme_inf[cnt].weight )
+      {
+        mme_highest_capacity_p = mme_inf[cnt].mme_p;
+        weight = mme_inf[cnt].weight;
+      }
+    }
+  }
+  else
+  {
+    mme_highest_capacity_p = NULL;
+  }
+  if( mme_highest_capacity_p != NULL )
+  {
+    mme_highest_capacity_p->nb_calls++;
   }
 
   return mme_highest_capacity_p;

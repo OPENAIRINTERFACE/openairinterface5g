@@ -164,6 +164,8 @@ typedef struct s1ap_eNB_mme_data_s {
 
   /* Only meaningfull in virtual mode */
   struct s1ap_eNB_instance_s *s1ap_eNB_instance;
+  
+  uint32_t nb_calls;
 } s1ap_eNB_mme_data_t;
 
 typedef struct s1ap_eNB_instance_s {

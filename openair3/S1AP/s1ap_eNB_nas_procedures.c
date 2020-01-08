@@ -138,8 +138,9 @@ int s1ap_eNB_handle_nas_first_req(
          * identity, selects the MME with the highest capacity.
          */
         mme_desc_p = s1ap_eNB_nnsf_select_mme(
-                         instance_p,
-                         s1ap_nas_first_req_p->establishment_cause);
+                       instance_p,
+                       s1ap_nas_first_req_p->establishment_cause,
+                       s1ap_nas_first_req_p->selected_plmn_identity);
 
         if (mme_desc_p) {
             S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
@@ -232,9 +233,9 @@ int s1ap_eNB_handle_nas_first_req(
     MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
                                   0, // Cell ID
                                   &ie->value.choice.EUTRAN_CGI.cell_ID);
-    MCC_MNC_TO_TBCD(instance_p->mcc[ue_desc_p->selected_plmn_identity],
-                    instance_p->mnc[ue_desc_p->selected_plmn_identity],
-                    instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
+    MCC_MNC_TO_TBCD(instance_p->mcc[mme_desc_p->broadcast_plmn_index[0]],
+                    instance_p->mnc[mme_desc_p->broadcast_plmn_index[0]],
+                    instance_p->mnc_digit_length[mme_desc_p->broadcast_plmn_index[0]],
                     &ie->value.choice.EUTRAN_CGI.pLMNidentity);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* Set the establishment cause according to those provided by RRC */
@@ -494,9 +495,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
     MCC_MNC_TO_PLMNID(
-        s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+        s1ap_eNB_instance_p->mcc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->mme_ref->broadcast_plmn_index[0]],
         &ie->value.choice.EUTRAN_CGI.pLMNidentity);
     //#warning "TODO get cell id from RRC"
     MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
