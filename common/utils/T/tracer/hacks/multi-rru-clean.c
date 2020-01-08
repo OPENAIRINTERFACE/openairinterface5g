@@ -12,6 +12,7 @@ void usage(void)
     "usage: <number of tags> <input record file> <output curated record file>\n"
     "options:\n"
     "    -d <database file>        this option is mandatory\n"
+    "    -e <event name>           trace given event (default CALIBRATION_CHANNEL_ESTIMATES)\n"
   );
   exit(1);
 }
@@ -88,6 +89,7 @@ int main(int n, char **v)
   int  number_of_tags = -1;
   char *input_filename = NULL;
   char *output_filename = NULL;
+  char *event_name = "CALIBRATION_CHANNEL_ESTIMATES";
   int  i;
   FILE *in;
   FILE *out;
@@ -107,6 +109,8 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d")) { if (i > n-2) usage();
       database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-e")) { if (i > n-2) usage();
+      event_name = v[++i]; continue; }
     if (number_of_tags == -1) { number_of_tags = atoi(v[i]);
       if (number_of_tags <= 0) {usage();} continue; }
     if (input_filename == NULL) { input_filename = v[i]; continue; }
@@ -124,7 +128,7 @@ int main(int n, char **v)
 
   database = parse_database(database_filename);
 
-  channel_estimate_id = event_id_from_name(database, "CALIBRATION_CHANNEL_ESTIMATES");
+  channel_estimate_id = event_id_from_name(database, event_name);
   f = get_format(database, channel_estimate_id);
 
   frame_arg    = get_field(&f, "frame",    "int");

@@ -439,35 +439,33 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         b->headerMode=false;
 
         if ( t->nextTimestamp == 0 ) { // First block in UE, resync with the eNB current TS
-	  t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
-	    b->th.timestamp -  nsamps_for_initial :
-	    0;
-	  b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
-	    b->th.timestamp :
-	    nsamps_for_initial;
-	  LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
-	  b->trashingPacket=true;
-	} else if ( b->lastReceivedTS < b->th.timestamp) {
+          t->nextTimestamp  = b->th.timestamp > nsamps_for_initial ? b->th.timestamp - nsamps_for_initial : 0;
+          b->lastReceivedTS = b->th.timestamp > nsamps_for_initial ? b->th.timestamp : nsamps_for_initial;
+          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+          b->trashingPacket=true;
+        } else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 	  
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
             for (int a=0; a < nbAnt; a++) {
-              b->circularBuf[(index*nbAnt+a)%CirSize].r=0;
-              b->circularBuf[(index*nbAnt+a)%CirSize].i=0;
+              b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
+              b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
             }
           }
+
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
-	  b->lastReceivedTS=b->th.timestamp;
+          b->lastReceivedTS=b->th.timestamp;
 	  
         } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
-	  LOG_W(HW,"Received Rx/Tx synchro out of order\n");
-	  b->trashingPacket=true;
-	} else if ( b->lastReceivedTS == b->th.timestamp ) {
-	  // normal case
-	} else {
-	  abort();
-	    AssertFatal(false, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);	}
+          LOG_W(HW,"Received Rx/Tx synchro out of order\n");
+          b->trashingPacket=true;
+        } else if ( b->lastReceivedTS == b->th.timestamp ) {
+          // normal case
+        } else {
+          abort();
+          AssertFatal(false, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+        }
 
         pthread_mutex_lock(&Sockmutex);
 
@@ -481,17 +479,17 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 
       if ( b->headerMode==false ) {
         LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
-	if ( ! b->trashingPacket ) {
-	  b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
-	}
+        if ( ! b->trashingPacket ) {
+          b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
+        }
 
-	if ( b->remainToTransfer==0) {
-	  LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
-	  b->headerMode=true;
-	  b->transferPtr=(char *)&b->th;
-	  b->remainToTransfer=sizeof(samplesBlockHeader_t);
-	  b->th.magic=-1;
-	  b->trashingPacket=false;
+        if ( b->remainToTransfer==0) {
+          LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
+          b->headerMode=true;
+          b->transferPtr=(char *)&b->th;
+          b->remainToTransfer=sizeof(samplesBlockHeader_t);
+          b->th.magic=-1;
+          b->trashingPacket=false;
         }
       }
     }

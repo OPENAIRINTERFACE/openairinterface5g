@@ -192,12 +192,12 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       uint8_t eNB_offset,
-			       unsigned char Ns,
-			       unsigned char symbol,
-			       int dmrss,
-			       uint8_t ssb_index,
-			       uint8_t n_hf)
+                               uint8_t eNB_offset,
+                               unsigned char Ns,
+                               unsigned char symbol,
+                               int dmrss,
+                               uint8_t ssb_index,
+                               uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx,p;
