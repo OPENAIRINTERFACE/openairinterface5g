@@ -723,12 +723,12 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
   int slot_type         = nr_slot_select(cfg,frame,slot%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)-1))%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
-  int sf_extension  = 0;
+  int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
   int siglen=fp->samples_per_slot;
   int flags=1;
 
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
+  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
 
     if(slot_type == NR_MIXED_SLOT) {
       txsymb = 0;
@@ -744,49 +744,15 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
     if (cfg->cell_config.frame_duplex_type.value == TDD &&
         slot_type == NR_DOWNLINK_SLOT &&
-        prevslot_type == NR_UPLINK_SLOT)
-         
+        prevslot_type == NR_UPLINK_SLOT) {
       flags = 2; // start of burst
-                //sf_extension = ru->sf_extension;
-
-  /*if ((slot == 0) ||
-      (slot == 1)) {
-    int siglen=fp->samples_per_slot;
-    int flags;
-    if (slot==0)
-      flags = 2;
-    else if (slot==1)
-      flags=3;*/
-
-
-    //if ((slot_type & NR_UPLINK_SLOT) == 0) {
-      
-      
-       /* if (SF_type == SF_S) {
-	siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
-	flags=3; // end of burst
-        }
-        if ((fp->frame_type == TDD) &&
-	(SF_type == SF_DL)&&
-	(prevSF_type == SF_UL) &&
-	(nextSF_type == SF_DL)) {
-	flags = 2; // start of burst
-	sf_extension = ru->N_TA_offset<<1;
-        }
-	
-        if ((cfg->subframe_config.duplex_mode == TDD) &&
-	(SF_type == SF_DL)&&
-	(prevSF_type == SF_UL) &&
-	(nextSF_type == SF_UL)) {
-	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-	sf_extension = ru->N_TA_offset<<1;
-        }*/ 
-
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
-      for (i=0; i<ru->nb_tx; i++)
-	txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
-      
+    }
+    
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
+    for (i=0; i<ru->nb_tx; i++)
+      txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
+    
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
       // prepare tx buffer pointers
@@ -800,7 +766,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
-    }
+  }
 }
 
 
