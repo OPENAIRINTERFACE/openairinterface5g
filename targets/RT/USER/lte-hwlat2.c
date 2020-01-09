@@ -1197,7 +1197,7 @@ void  histogram_save_in_csv( histo_time_t *histo , char *file_sufix)
       fprintf( fp, "%d-%.0f;%u\n", min_val, histo[i].max, histo[i].count );
     min_val = histo[i].max;
   }
-
+  free(csv_filename);
   fclose( fp );
 }
 

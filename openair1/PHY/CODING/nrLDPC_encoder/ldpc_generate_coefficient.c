@@ -494,7 +494,8 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
     fprintf(fd,"  int i2;\n");
     fprintf(fd2,"  int i2;\n");
     fprintf(fd,"  for (i2=0; i2<%d; i2++) {\n",Zc>>shift);
-    fprintf(fd2,"  for (i2=0; i2<%d; i2++) {\n",Zc>>(shift-1));
+    if (shift > 0)
+      fprintf(fd2,"  for (i2=0; i2<%d; i2++) {\n",Zc>>(shift-1));
     for (i2=0; i2 < 1; i2++)
     {
       //t=Kb*Zc+i2;

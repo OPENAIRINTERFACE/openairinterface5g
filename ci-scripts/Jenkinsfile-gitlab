@@ -44,7 +44,28 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build gNB-USRP", "Build nr-UE-USRP", "Build eNB-USRP", "Build basic-sim", "Build phy-sim", "Build eNB-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13", "Test-IF4p5-TDD-Band38-Multi-RRU" , "Test-Mono-FDD-Band13-X2-HO", "Test-TDD-Band78-gNB-NR-UE"])
+        gitlabBuilds(builds: [
+            "Build gNB-USRP",
+            "Build nr-UE-USRP",
+            "Build eNB-USRP",
+            "Build basic-sim",
+            "Build phy-sim",
+            "Build eNB-ethernet",
+            "Build UE-ethernet",
+            "Analysis with cppcheck",
+            "Test phy-sim",
+            "Test basic-sim",
+            "Test L2-sim",
+            "Test-Mono-FDD-Band7",
+            "Test-Mono-TDD-Band40",
+            "Test-IF4p5-FDD-Band7",
+            "Test-IF4p5-TDD-Band40",
+            "Test-Mono-FDD-Band13-LTE-M",
+            "Test-IF4p5-TDD-Band38-Multi-RRU",
+            "Test-eNB-OAI-UE-FDD-Band7",
+            "Test-Mono-FDD-Band13-X2-HO",
+            "Test-TDD-Band78-gNB-NR-UE"
+        ])
         ansiColor('xterm')
     }
 
@@ -542,7 +563,7 @@ pipeline {
                     steps {
                         script {
                             sh "sleep 60"
-                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13')
+                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13-LTE-M')
                         }
                     }
                     post {
