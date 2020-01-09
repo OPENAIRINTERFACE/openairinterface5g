@@ -278,6 +278,7 @@ char phich_string[13][4] = {"","1/6","","1/2","","","one","","","","","","two"};
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
+
 int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   int32_t sync_pos,sync_pos2,sync_pos_slot;
   int32_t metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0;
@@ -557,13 +558,12 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
     ue->measurements.rx_power_avg_dB[0] = dB_fixed(ue->measurements.rx_power_avg[0]);
     LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
   } else {
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM )
       phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
   }
 
   return ret;
 }
-

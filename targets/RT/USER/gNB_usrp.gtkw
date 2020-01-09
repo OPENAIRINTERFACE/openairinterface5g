@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Fri Sep  6 15:01:30 2019
+[*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
+[*] Tue Dec 17 15:31:51 2019
 [*]
-[dumpfile] "/tmp/gNB_prec.vcd"
-[dumpfile_mtime] "Fri Sep  6 14:59:50 2019"
-[dumpfile_size] 13106022
-[savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 2183320000
+[dumpfile] "/tmp/gNB.vcd"
+[dumpfile_mtime] "Tue Dec 17 15:25:49 2019"
+[dumpfile_size] 6343431
+[savefile] "/home/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 1517712000
 [size] 1920 1018
-[pos] -1 -1
-*-18.423141 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -9 -33
+*-19.276148 1518358451 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
@@ -60,9 +60,11 @@ functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
 functions.phy_procedures_ru_feptx_ofdm0
 functions.phy_procedures_ru_feptx_ofdm1
+functions.phy_procedures_ru_feptx_ofdm2
 functions.phy_procedures_ru_feptx_prec0
 functions.phy_procedures_ru_feptx_prec1
-@23
+functions.phy_procedures_ru_feptx_prec2
+@22
 variables.ru_tx_ofdm_mask[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

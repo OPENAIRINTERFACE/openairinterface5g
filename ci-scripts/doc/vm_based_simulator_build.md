@@ -51,18 +51,20 @@ Mandatory Options:
 Options:
 --------
  # OpenAirInterface Build Variants
-    --variant enb-usrp     OR -v1
-    --variant basic-sim    OR -v2
-    --variant phy-sim      OR -v3
-    --variant cppcheck     OR -v4
-    --variant enb-ethernet OR -v7
-    --variant ue-ethernet  OR -v8
+    --variant enb-usrp        OR -v1     ( build and test  )
+    --variant basic-sim       OR -v2     ( build and test  )
+    --variant phy-sim         OR -v3     ( build and test  )
+    --variant cppcheck        OR -v4     ( build and test  )
+    --variant gnb-usrp        OR -v5     ( build and test  )
+    --variant nr-ue-usrp      OR -v6     ( build and test  )
+    --variant enb-ethernet    OR -v7     ( build and test  )
+    --variant ue-ethernet     OR -v8     ( build and test  )
  # non-OSA Build Variants
-    --variant flexran-rtc  OR -v10
+    --variant flexran-rtc     OR -v10    ( build and test non-OSA )
  # OpenAirInterface Test Variants
-    --variant l1-sim       OR -v20
-    --variant rf-sim       OR -v21
-    --variant l2-sim       OR -v22
+    --variant l1-sim          OR -v20    ( test  )
+    --variant rf-sim          OR -v21    ( test  )
+    --variant l2-sim          OR -v22    ( test  )
     Specify the variant to build.
 
     --keep-vm-alive OR -k

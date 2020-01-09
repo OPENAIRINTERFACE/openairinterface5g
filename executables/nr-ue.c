@@ -574,7 +574,7 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
-  if ( getenv("RFSIMULATOR") != 0) {
+  if (IS_SOFTMODEM_RFSIM) {
     LOG_E(PHY,"SET rx_offset %d \n",UE->rx_offset);
     //UE->rx_offset_diff=0;
     return 0;
@@ -803,7 +803,7 @@ if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
     msgToPush->key=slot_nr;
     pushTpool(Tpool, msgToPush);
 
-    if (getenv("RFSIMULATOR") || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
+    if (IS_SOFTMODEM_RFSIM || IS_SOFTMODEM_NOS1) {  //getenv("RFSIMULATOR")
       // FixMe: Wait previous thread is done, because race conditions seems too bad
       // in case of actual RF board, the overlap between threads mitigate the issue
       // We must receive one message, that proves the slot processing is done

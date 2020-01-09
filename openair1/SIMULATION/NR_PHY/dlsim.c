@@ -75,30 +75,28 @@ void config_common(int Mod_idP,int CC_idP,int Nid_cell,int nr_bandP,uint64_t SSB
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return(0);}
 uint64_t get_softmodem_optmask(void) {return 0;}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
-					  const rnti_t            rntiP,
-					  const eNB_index_t       eNB_index,
-					  const frame_t           frameP,
-					  const sub_frame_t 	  subframeP,
-					  const eNB_flag_t        enb_flagP,
-					  const MBMS_flag_t       MBMS_flagP,
-					  const logical_chan_id_t channel_idP,
-					  const tb_size_t         tb_sizeP,
-					  const uint32_t sourceL2Id,
-					  const uint32_t destinationL2Id)
-{mac_rlc_status_resp_t  mac_rlc_status_resp={0}; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
-			      const rnti_t            rntiP,
-			      const eNB_index_t       eNB_index,
-			      const frame_t           frameP,
-			      const eNB_flag_t        enb_flagP,
-			      const MBMS_flag_t       MBMS_flagP,
-			      const logical_chan_id_t channel_idP,
-			      const tb_size_t         tb_sizeP,
-			      char             *buffer_pP,
-			      const uint32_t sourceL2Id,
-			      const uint32_t destinationL2Id )
-{return 0;}
+mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
+                                         const rnti_t            rntiP,
+                                         const eNB_index_t       eNB_index,
+                                         const frame_t           frameP,
+                                         const sub_frame_t       subframeP,
+                                         const eNB_flag_t        enb_flagP,
+                                         const MBMS_flag_t       MBMS_flagP,
+                                         const logical_chan_id_t channel_idP,
+                                         const tb_size_t         tb_sizeP,
+                                         const uint32_t          sourceL2Id,
+                                         const uint32_t          destinationL2Id) {mac_rlc_status_resp_t  mac_rlc_status_resp = {0}; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(const module_id_t       module_idP,
+                            const rnti_t            rntiP,
+                            const eNB_index_t       eNB_index,
+                            const frame_t           frameP,
+                            const eNB_flag_t        enb_flagP,
+                            const MBMS_flag_t       MBMS_flagP,
+                            const logical_chan_id_t channel_idP,
+                            const tb_size_t         tb_sizeP,
+                            char                    *buffer_pP,
+                            const uint32_t          sourceL2Id,
+                            const uint32_t          destinationL2Id) {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
@@ -862,7 +860,7 @@ int main(int argc, char **argv)
   
         if (errors_scrambling > 0) {
           if (n_trials == 1)
-            printf("errors_scrambling = %d (trial %d)\n", errors_scrambling, trial);
+            printf("errors_scrambling = %u (trial %d)\n", errors_scrambling, trial);
         }
   
         if (errors_bit > 0) {

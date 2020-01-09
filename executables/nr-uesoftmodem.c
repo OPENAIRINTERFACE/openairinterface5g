@@ -116,7 +116,7 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-static clock_source_t    clock_source = internal;
+static clock_source_t    clock_source = unset;
 int                      single_thread_flag=1;
 static double            snr_dB=20;
 

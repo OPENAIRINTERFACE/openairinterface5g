@@ -806,7 +806,6 @@ static void *ru_thread_asynch_rxtx( void *param ) {
   printf( "devices ok (ru_thread_asynch_rx)\n");
 
   while (!oai_exit) {
-    if (oai_exit) break;
 
     if (subframe==9) {
       subframe=0;
@@ -854,7 +853,7 @@ static void *ru_thread_prach( void *param ) {
   LOG_I(PHY,"%s() RU configured - RACH processing thread running\n", __FUNCTION__);
 
   while (!oai_exit) {
-    if (oai_exit) break;
+    
 
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
 
@@ -1159,7 +1158,7 @@ int setup_RU_buffers(RU_t *ru) {
     frame_parms = ru->nr_frame_parms;
     printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
   } else {
-    printf("RU[%d] not initialized\n", ru->idx);
+    printf("ru pointer is NULL\n");
     return(-1);
   }
 
@@ -1259,7 +1258,6 @@ static void *ru_thread_tx( void *param ) {
   }
 
   while (!oai_exit) {
-    if (oai_exit) break;
 
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
@@ -2271,6 +2269,9 @@ void RCconfig_RU(void)
         } else {
           LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
+      }
+      else {
+	RC.ru[j]->openair0_cfg.clock_source = unset;
       }
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {

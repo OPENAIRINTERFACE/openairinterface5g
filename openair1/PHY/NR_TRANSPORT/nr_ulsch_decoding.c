@@ -58,10 +58,9 @@ static uint64_t nb_error_decod =0;
 
 //extern double cpuf;
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
-{
-
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr) {
   int i,r;
+  NR_gNB_ULSCH_t *ulsch = *ulschptr;
 
   if (ulsch) {
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
@@ -92,7 +91,7 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
       }
     }
     free16(ulsch,sizeof(NR_gNB_ULSCH_t));
-    ulsch = NULL;
+    *ulschptr = NULL;
   }
 }
 
@@ -168,8 +167,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
   }
 
   printf("new_gNB_ulsch with size %zu: exit_flag = %u\n",sizeof(NR_UL_gNB_HARQ_t), exit_flag);
-  free_gNB_ulsch(ulsch);
-  
+  free_gNB_ulsch(&ulsch);
   return(NULL);
 }
 
@@ -286,10 +284,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t harq_pid,
                            uint8_t is_crnti)
 {
-
   uint32_t A,E;
   uint32_t G;
-  uint32_t ret,offset;
+  uint32_t ret, offset;
   int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
@@ -308,14 +305,18 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   t_nrLDPC_dec_params* p_decParams    = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
+  if (!harq_process) {
+    printf("ulsch_decoding.c: NULL harq_process pointer\n");
+    return (ulsch->max_ldpc_iterations + 1);
+  }
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
   int16_t  z [68*384];
   int8_t   l [68*384];
-  uint8_t  kc=255;
-  uint8_t  Ilbrm        = 0;
-  uint32_t Tbslbrm     = 950984;
-  double   Coderate    = 0.0;
+  uint8_t  kc       = 255;
+  uint8_t  Ilbrm    = 0;
+  uint32_t Tbslbrm  = 950984;
+  double   Coderate = 0.0;
   
   // ------------------------------------------------------------------
   uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
@@ -335,11 +336,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   
    if (!ulsch_llr) {
     printf("ulsch_decoding.c: NULL ulsch_llr pointer\n");
-    return (ulsch->max_ldpc_iterations + 1);
-  }
-
-  if (!harq_process) {
-    printf("ulsch_decoding.c: NULL harq_process pointer\n");
     return (ulsch->max_ldpc_iterations + 1);
   }
 
@@ -531,7 +527,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %d) :",r);
+    printf("decoder input(segment %u) :", r);
     int i; 
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
@@ -620,7 +616,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int k=0;k<A>>3;k++)
        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-      printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
+      printf("no_iterations_ldpc %d (ret %u)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
 #endif
 
@@ -708,13 +704,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
-    printf("copied %d bytes to b sequence (harq_pid %d)\n",
-           (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
-    printf("b[0] = %x,c[%d] = %x\n",
-           harq_process->b[offset],
-           harq_process->F>>3,
-           harq_process->c[r]);
+    printf("Segment %u : Kr = %u bytes\n", r, Kr_bytes);
+    printf("copied %d bytes to b sequence (harq_pid %d)\n", (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)), harq_pid);
+    printf("b[0] = %x, c[%d] = %x\n", harq_process->b[offset], harq_process->F>>3, harq_process->c[r]);
 #endif
 
   }

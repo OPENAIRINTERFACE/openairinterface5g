@@ -33,30 +33,23 @@
 #ifndef __LAYER2_NR_MAC_DEFS_H__
 #define __LAYER2_NR_MAC_DEFS_H__
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "platform_types.h"
-
 #include "NR_DRX-Config.h"
 #include "NR_SchedulingRequestConfig.h"
 #include "NR_BSR-Config.h"
 #include "NR_TAG-Config.h"
 #include "NR_PHR-Config.h"
 #include "NR_RNTI-Value.h"
-
 #include "NR_MIB.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "NR_PhysicalCellGroupConfig.h"
 #include "NR_SpCellConfig.h"
-
 #include "NR_ServingCellConfig.h"
 #include "fapi_nr_ue_interface.h"
 #include "NR_IF_Module.h"
-
 #include "PHY/defs_nr_common.h"
 
 #define NB_NR_UE_MAC_INST 1
@@ -72,13 +65,13 @@ typedef enum {
 typedef struct {
   
   ////  MAC config
-  NR_DRX_Config_t    	          *drx_Config;
-  NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
-  NR_BSR_Config_t    	          *bsr_Config;
-  NR_TAG_Config_t	          *tag_Config;
-  NR_PHR_Config_t	          *phr_Config;
-  NR_RNTI_Value_t 	          *cs_RNTI;
-  NR_MIB_t 	                  *mib;
+  NR_DRX_Config_t    	       *drx_Config;
+  NR_SchedulingRequestConfig_t *schedulingRequestConfig;
+  NR_BSR_Config_t    	       *bsr_Config;
+  NR_TAG_Config_t              *tag_Config;
+  NR_PHR_Config_t              *phr_Config;
+  NR_RNTI_Value_t              *cs_RNTI;
+  NR_MIB_t                     *mib;
   
   ///     Type0-PDCCH seach space
   fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
