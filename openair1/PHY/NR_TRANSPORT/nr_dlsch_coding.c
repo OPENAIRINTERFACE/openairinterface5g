@@ -470,16 +470,15 @@ int nr_dlsch_encoding(unsigned char *a,
 
     E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15->nrOfLayers, r);
 
-#ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
-	   r,
-	   dlsch->harq_processes[harq_pid]->C,
-	   G,
-	   E,
-	   F,
-	   Kr-F-2*(*Zc),
-	   mod_order,nb_rb);
-#endif
+    //#ifdef DEBUG_DLSCH_CODING
+    LOG_D(PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+	  r,
+	  dlsch->harq_processes[harq_pid]->C,
+	  G,
+	  E,
+	  F,
+	  Kr-F-2*(*Zc),
+	  mod_order,nb_rb);
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
     if (rel15->nrOfLayers < Nl)
