@@ -62,8 +62,7 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
 NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch,unsigned char N_RB_UL);
-
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
 
 NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
