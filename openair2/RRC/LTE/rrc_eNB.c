@@ -112,6 +112,8 @@ extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t 
 extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, security_capabilities_t *security_capabilities_pP);
 extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
 extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t *kenb_star);
+extern int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt, rrc_eNB_ue_context_t *ue_context, unsigned char *buffer, int buffer_size, OCTET_STRING_t *scg_group_config, OCTET_STRING_t *scg_RB_config);
+extern struct rrc_eNB_ue_context_s * get_first_ue_context(eNB_RRC_INST *rrc_instance_pP);
 
 pthread_mutex_t      rrc_release_freelist;
 RRC_release_list_t   rrc_release_info;
@@ -8265,15 +8267,6 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
 						      (uint8_t *)m->rrc_buffer,
 						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
 
-/*    asn_dec_rval_t dec_rval = uper_decode( NULL,
-						      &asn_DEF_LTE_UL_DCCH_Message,
-						      (void **)&LTE_UL_DCCH_Message,
-						      (uint8_t *)m->rrc_buffer,
-						      (int) m->rrc_buffer_size, 0, 0);//m->rrc_buffer_size);
-
-    eNB_RRC_INST         *rrc=RC.rrc[enb_mod_idP];*/
-
-
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
 	// free the memory
@@ -8291,18 +8284,17 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
 
     if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig){
     	scg_CellGroupConfig = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig;
-
+#ifdef DEBUG_SCG_CONFIG
     	{
     		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size;
     		int i;
-    		LOG_I(RRC, "Dumping scg_CellGroupConfig:", size_s);
+    		LOG_I(RRC, "Dumping scg_CellGroupConfig: %d", size_s);
     		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->buf[i]);
     		printf("\n");
 
     	}
-    	/*scg_conf = calloc(1, sizeof(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig));
-    	memcpy(scg_conf.buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size);
-    	scg_conf->size =  CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size;*/
+#endif
+
     }
     else{
     	LOG_W(RRC, "SCG Cell group configuration is not present in the Addition Response message \n");
@@ -8310,18 +8302,16 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     }
     if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config){
     	nr1_conf = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config;
-
+#ifdef DEBUG_SCG_CONFIG
     	{
     		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size;
     		int i;
-    		LOG_I(RRC, "Dumping scg_RB_Config:", size_s);
+    		LOG_I(RRC, "Dumping scg_RB_Config: %d", size_s);
     		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->buf[i]);
     		printf("\n");
 
     	}
-    	/*nr1_conf = calloc(1, sizeof(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config));
-    	memcpy(nr1_conf->buf,CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->buf, CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size);
-    	nr1_conf->size = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size;*/
+#endif
     }
     else{
     	LOG_W(RRC, "SCG RB configuration is not present in the Addition Response message \n");
@@ -8333,7 +8323,7 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     unsigned char buffer[8192];
     int size;
 
-    ue_context = get_first_ue_context(RC.rrc[enb_mod_idP]);
+    ue_context = (rrc_eNB_ue_context_t *) get_first_ue_context(RC.rrc[enb_mod_idP]);
 
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     0,
@@ -8350,23 +8340,6 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
                    size,
                    buffer,
                    PDCP_TRANSMISSION_MODE_CONTROL);
-
-
-    /*NR_CG_ConfigInfo_t *CG_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo));
-    CG_ConfigInfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
-    CG_ConfigInfo->criticalExtensions.choice.c1 = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1));
-    CG_ConfigInfo->criticalExtensions.choice.c1->present = NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo;
-    CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo));
-    NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
-    cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof(*cg_ConfigInfo->ue_CapabilityInfo));
-    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,(void*)&LTE_UL_DCCH_Message->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList,m->rrc_buffer,m->rrc_buffer_size);
-    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-		   enc_rval.failed_type->name, enc_rval.encoded);
-    OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
-			   (const char *)m->rrc_buffer,
-			   (enc_rval.encoded+7)>>3);
-    parse_CG_ConfigInfo(rrc,CG_ConfigInfo);*/
-
 }
 
 
@@ -8705,7 +8678,7 @@ rrc_endc_hack_init();
   while (1) {
     (void) rrc_enb_process_itti_msg(NULL);
 {
-  extern volatile int go_nr;
+  //extern volatile int go_nr;
   void rrc_go_nr(void);
   //if (go_nr) rrc_go_nr();
 }

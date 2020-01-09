@@ -164,6 +164,17 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 	  dummy_scg_conf.size = 4;
   }
 
+#ifdef DEBUG_SCG_CONFIG
+	{
+		int size_s = nr.choice.setup.nr_SecondaryCellGroupConfig_r15->size;
+		int i;
+		LOG_I(RRC, "Dumping nr_SecondaryCellGroupConfig: %d", size_s);
+		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)nr.choice.setup.nr_SecondaryCellGroupConfig_r15->buf[i]);
+		printf("\n");
+
+	}
+#endif
+
 
   long sk_counter = 0;
   cr_1510.sk_Counter_r15 = &sk_counter;
@@ -178,6 +189,18 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 	  dummy_nr1_conf.buf = nr1_buf;
 	  dummy_nr1_conf.size = 4;
   }
+
+#ifdef DEBUG_SCG_CONFIG
+  {
+	  int size_s = cr_1510.nr_RadioBearerConfig1_r15->size;
+	  int i;
+	  LOG_I(RRC, "Dumping nr_RadioBearerConfig1: %d", size_s);
+	  for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)cr_1510.nr_RadioBearerConfig1_r15->buf[i]);
+	  printf("\n");
+
+  }
+#endif
+
 
   OCTET_STRING_t nr2_conf;
   unsigned char nr2_buf[4] = { 0, 0, 0, 0 };

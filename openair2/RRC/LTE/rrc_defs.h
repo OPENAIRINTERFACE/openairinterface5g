@@ -92,6 +92,7 @@
 
 #define PC5_DISCOVERY_PAYLOAD_SIZE      29
 
+#define DEBUG_SCG_CONFIG 1
 
 typedef enum {
   UE_STATE_OFF_NETWORK,
