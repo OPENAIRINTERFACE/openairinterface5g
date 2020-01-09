@@ -812,15 +812,23 @@ if (slot_nr==18)
 void init_NR_UE(int nb_inst, char* rrc_config_path) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
+
+  for (inst=0; inst < nb_inst; inst++) {
+    nr_l3_init_ue(rrc_config_path);
+    nr_l2_init_ue();
+    mac_inst = get_mac_inst(inst);
+    AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
+  }
+}
+
+void init_NR_UE_threads(int nb_inst) {
+  int inst;
+
   pthread_t threads[nb_inst];
 
   for (inst=0; inst < nb_inst; inst++) {
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
-    AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
-    nr_l3_init_ue(rrc_config_path);
-    nr_l2_init_ue();
-    mac_inst = get_mac_inst(inst);
-    mac_inst->if_module = UE->if_inst;
+
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 
@@ -833,4 +841,3 @@ void init_NR_UE(int nb_inst, char* rrc_config_path) {
 
   printf("UE threads created by %ld\n", gettid());
 }
-

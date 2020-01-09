@@ -44,181 +44,12 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 
 #include "NR_MIB.h"
+#include "nr_mac_common.h"
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
- 
-uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
-{
-  uint16_t bandwidth;
-
-  if (nr_band < 100)  { //FR1
-   switch(mu) {
-    case 0 :
-      switch(nb_rb) {
-        case 25 :
-          bandwidth  = 5; 
-          break;
-        case 52 :
-          bandwidth  = 10;
-          break; 
-        case 79 :
-          bandwidth  = 15; 
-          break;
-        case 106 :
-          bandwidth  = 20; 
-          break;
-        case 133 :
-          bandwidth  = 25;
-          break; 
-        case 160 :
-          bandwidth  = 30;
-          break; 
-        case 216 :
-          bandwidth  = 40; 
-          break;
-        case 270 :
-          bandwidth  = 50;
-          break;
-      default:
-        AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d\n", nb_rb, mu);
-      }
-      break;
-    case 1 :
-      switch(nb_rb) {
-        case 11 :
-          bandwidth = 5; 
-          break;
-        case 24 :
-          bandwidth  = 10;
-          break; 
-        case 38 :
-          bandwidth  = 15; 
-          break;
-        case 51 :
-          bandwidth  = 20; 
-          break;
-        case 65 :
-          bandwidth  = 25;
-          break; 
-        case 78 :
-          bandwidth  = 30;
-          break; 
-        case 106 :
-          bandwidth  = 40; 
-          break;
-        case 133 :
-          bandwidth  = 50;
-          break;
-        case 162 :
-          bandwidth  = 60;
-          break;
-        case 189 :
-          bandwidth  = 70;
-          break;
-        case 217 :
-          bandwidth = 80;
-          break;
-        case 245 :
-          bandwidth  = 90;
-          break;
-        case 273 :
-          bandwidth  = 100;
-          break;
-      default:
-        AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d\n", nb_rb, mu);
-      }
-      break;
-    case 2 :
-      switch(nb_rb) {
-        case 11 :
-          bandwidth = 10;
-          break; 
-        case 18 :
-          bandwidth  = 15; 
-          break;
-        case 24 :
-          bandwidth = 20; 
-          break;
-        case 31 :
-          bandwidth  = 25;
-          break; 
-        case 38 :
-          bandwidth  = 30;
-          break; 
-        case 51 :
-          bandwidth  = 40; 
-          break;
-        case 65 :
-          bandwidth  = 50;
-          break;
-        case 79 :
-          bandwidth  = 60;
-          break;
-        case 93 :
-          bandwidth  = 70;
-          break;
-        case 107 :
-          bandwidth  = 80;
-          break;
-        case 121 :
-          bandwidth  = 90;
-          break;
-        case 135 :
-          bandwidth  = 100;
-          break;
-      default:
-        AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d\n", nb_rb, mu);
-      }
-      break;
-   default:
-     AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
-  else {
-   switch(mu) {
-    case 2 :
-      switch(nb_rb) {
-        case 66 :
-          bandwidth = 50; 
-          break;
-        case 132 :
-          bandwidth = 100;
-          break; 
-        case 264 :
-          bandwidth = 200; 
-          break;
-      default:
-        AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d\n", nb_rb, mu);
-      }
-      break;
-    case 3 :
-      switch(nb_rb) {
-        case 32 :
-          bandwidth  = 50; 
-          break;
-        case 66 :
-          bandwidth = 100;
-          break; 
-        case 132 :
-          bandwidth = 200; 
-          break;
-        case 264 :
-          bandwidth = 400; 
-          break;
-      default:
-        AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d\n", nb_rb, mu);
-      }
-      break;
-    default:
-      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
-
-  return (bandwidth);
-}
 
 
 void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
@@ -419,6 +250,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
+
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
@@ -432,7 +264,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
   LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
   if(cfg->cell_config.frame_duplex_type.value == TDD){
-  int return_tdd = set_tdd_config_nr(cfg,
+    int return_tdd = set_tdd_config_nr(cfg,
 		    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,

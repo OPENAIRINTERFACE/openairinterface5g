@@ -145,7 +145,9 @@ int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 			nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
-
+int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
+                         int nrofDownlinkSlots, int nrofDownlinkSymbols,
+                         int nrofUplinkSlots,   int nrofUplinkSymbols);
 
 #endif
 /** @}*/

@@ -32,6 +32,12 @@
 #ifndef __LAYER2_NR_MAC_COMMON_H__
 #define __LAYER2_NR_MAC_COMMON_H__
 
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
+
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
+
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,

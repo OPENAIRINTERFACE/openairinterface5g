@@ -221,8 +221,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_mib(
-			UE_nr_rxtx_proc_t *proc,
+int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
 			module_id_t module_id,
 			int 		cc_id,
 			uint8_t 	gNB_index,
