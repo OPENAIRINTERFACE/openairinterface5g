@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  Copyleft: OpenAirInterface software alliance and it's licence
+  Copyleft: OpenAirInterface software alliance and it's license
 */
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_

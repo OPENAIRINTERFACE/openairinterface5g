@@ -412,7 +412,7 @@ typedef enum {
 } rru_state_t;
 
 
-/// Some commamds to RRU. Not sure we should do it like this !
+/// Some commands to RRU. Not sure we should do it like this !
 typedef enum {
   EMPTY            = 0,
   STOP_RU          = 1,
@@ -434,7 +434,7 @@ typedef struct RU_t_s {
   node_function_t function;
   /// Ethernet parameters for fronthaul interface
   eth_params_t eth_params;
-  /// flag to indicate the RU is in synch with a master reference
+  /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset
   int rx_offset;
@@ -565,7 +565,7 @@ typedef struct RU_t_s {
   time_stats_t rx_fhaul;
   /// Timing statistics (TX Fronthaul + Compression)
   time_stats_t tx_fhaul;
-  /// Timong statistics (Compression)
+  /// Timing statistics (Compression)
   time_stats_t compression;
   /// Timing statistics (Fronthaul transport)
   time_stats_t transport;
@@ -676,7 +676,7 @@ typedef struct RRU_config_s {
   uint32_t tx_freq[MAX_BANDS_PER_RRU];
   /// RX frequency
   uint32_t rx_freq[MAX_BANDS_PER_RRU];
-  /// TX attenation w.r.t. max
+  /// TX attenuation w.r.t. max
   uint8_t att_tx[MAX_BANDS_PER_RRU];
   /// RX attenuation w.r.t. max
   uint8_t att_rx[MAX_BANDS_PER_RRU];
@@ -695,7 +695,7 @@ typedef struct RRU_config_s {
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_ConfigIndex for IF4p5 per CE Level
   int emtc_prach_ConfigIndex[MAX_BANDS_PER_RRU][4];
-  /// mutex for asynch RX/TX thread
+  /// mutex for async RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;

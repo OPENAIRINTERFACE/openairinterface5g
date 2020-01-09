@@ -140,7 +140,7 @@ void *gNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_GNB_APP);
 
-  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
+  LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
   RCconfig_NR_L1();
 

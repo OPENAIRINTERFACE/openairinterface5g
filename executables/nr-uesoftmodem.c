@@ -82,7 +82,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
-//extern void initTpool(char *params,tpool_t *pool, bool performanceMeas);
+//extern void initTpool(char *params, tpool_t *pool, bool performanceMeas);
 
 /* Forms and Objects */
 
@@ -433,19 +433,19 @@ static void get_options(void) {
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
        frame_parms[0]->N_RB_DL = 6;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 100 ) {
        frame_parms[0]->N_RB_DL = 100;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
        frame_parms[0]->N_RB_DL = 50;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
        frame_parms[0]->N_RB_DL = 25;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
       }
       UE_scan = 0;
       frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
@@ -588,7 +588,7 @@ void init_openair0(void) {
     else //FDD
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+    printf("HW: Configuring card %d, nb_antennas_tx/rx %hhu/%hhu\n",card,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
     openair0_cfg[card].Mod_id = 0;
@@ -714,7 +714,7 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
+    printf("frame_parms %hu\n",frame_parms[CC_id]->ofdm_symbol_size);
     nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
     PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];

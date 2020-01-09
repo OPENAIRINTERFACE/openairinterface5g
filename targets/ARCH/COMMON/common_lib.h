@@ -56,7 +56,7 @@ typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
 
-/*!\brief structrue holds the parameters to configure USRP devices*/
+/*!\brief structure holds the parameters to configure USRP devices*/
 typedef struct openair0_device_t openair0_device;
 
 //#define USRP_GAIN_OFFSET (56.0)  // 86 calibrated for USRP B210 @ 2.6 GHz to get equivalent RS EPRE in OAI to SMBV100 output
@@ -287,7 +287,7 @@ struct openair0_device_t {
   /*!brief Type of this device */
   dev_type_t type;
 
-  /*!brief Transport protocol type that the device suppports (in case I/Q samples need to be transported) */
+  /*!brief Transport protocol type that the device supports (in case I/Q samples need to be transported) */
   transport_type_t transp_type;
 
   /*!brief Type of the device's host (RAU/RRU) */

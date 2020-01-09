@@ -166,7 +166,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
       return(ulsch);
   }
 
-  printf("new_gNB_ulsch with size %zu: exit_flag = %u\n",sizeof(NR_UL_gNB_HARQ_t), exit_flag);
+  printf("new_gNB_ulsch with size %zu: exit_flag = %hhu\n",sizeof(NR_UL_gNB_HARQ_t), exit_flag);
   free_gNB_ulsch(&ulsch);
   return(NULL);
 }

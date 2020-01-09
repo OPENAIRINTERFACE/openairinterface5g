@@ -163,7 +163,7 @@ int netlink_init(void) {
     }
   }
 
-  printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd[0]);
+  printf("[NETLINK] Opened socket with fd %d\n",nas_sock_fd[0]);
   ret = fcntl(nas_sock_fd[0],F_SETFL,O_NONBLOCK);
 
   if (ret == -1) {

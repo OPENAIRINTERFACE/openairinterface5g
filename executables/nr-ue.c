@@ -539,7 +539,7 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
     if (IS_SOFTMODEM_RFSIM ) {
-	 usleep(1000); // slow down, as would do actuall rf to let cpu for the synchro thread
+	 usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
     }
   }
 
@@ -639,7 +639,7 @@ void *UE_thread(void *arg) {
       }
     }
 
-    AssertFatal( !syncRunning, "At this point synchronisation can't be running\n");
+    AssertFatal( !syncRunning, "At this point synchronization can't be running\n");
 
     if (!UE->is_synchronized) {
       readFrame(UE, &timestamp);
@@ -668,7 +668,7 @@ void *UE_thread(void *arg) {
       // we have the decoded frame index in the return of the synch process
       // and we shifted above to the first slot of next frame
       decoded_frame_rx++;
-      // we do ++ first in the regular processing, so it will be beging of frame;
+      // we do ++ first in the regular processing, so it will be begin of frame;
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
@@ -832,7 +832,7 @@ void init_NR_UE(int nb_inst) {
     mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
-    LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
+    LOG_I(PHY,"Initializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 
 #ifdef UE_DLSCH_PARALLELISATION
