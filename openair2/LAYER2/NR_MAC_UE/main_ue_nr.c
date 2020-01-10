@@ -36,8 +36,7 @@
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
-int
-nr_l2_init_ue(void)
+NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
 {
     //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
@@ -45,6 +44,8 @@ nr_l2_init_ue(void)
     
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
+
+    nr_rrc_mac_config_req_ue(0,0,0,NULL,rrc_inst->cell_group_config->spCellConfig);
     
     if (IS_SOFTMODEM_NOS1){
         if (rlc_module_init(0) != 0) {
@@ -55,7 +56,7 @@ nr_l2_init_ue(void)
     }
 
 
-    return (1);
+    return (nr_ue_mac_inst);
 }
 
 NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id){

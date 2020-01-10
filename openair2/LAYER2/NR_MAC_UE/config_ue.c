@@ -268,27 +268,24 @@ int nr_rrc_mac_config_req_ue(
     int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
-    NR_ServingCellConfigCommon_t    *sccP,
+    //    NR_ServingCellConfigCommon_t    *sccP,
     //    NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     //    NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
     NR_SpCellConfig_t               *spCell_ConfigP ){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-//    NR_ServingCellConfig_t *serving_cell_config = spcell_configP->spCellConfigDedicated;
-//  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
+    //    NR_ServingCellConfig_t *serving_cell_config = spcell_configP->spCellConfigDedicated;
+    //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
-    NR_ServingCellConfigCommon_t    *scc;
 
     if(mibP != NULL){
       mac->mib = mibP;    //  update by every reception
     }
-
-
     
     
     if(spCell_ConfigP != NULL ){
-      mac->servCellIndex = spCell_ConfigP->servCellIndex;
+      mac->servCellIndex = *spCell_ConfigP->servCellIndex;
       if (spCell_ConfigP->reconfigurationWithSync) {
 	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac);

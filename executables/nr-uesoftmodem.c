@@ -766,11 +766,14 @@ int main( int argc, char **argv ) {
 #else
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
 #endif
+
   }
 
+  init_NR_UE_threads(1);
+  printf("UE threads created by %ld\n", gettid());
+  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_NR_UE_threads(1);
 
   while(true)
     sleep(3600);
