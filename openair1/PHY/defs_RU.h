@@ -617,7 +617,9 @@ typedef enum {
   RRU_sync_ok=6,
   RRU_frame_resynch=7,
   RRU_MSG_max_num=8,
-  RRU_check_sync = 9
+  RRU_check_sync = 9,
+  RRU_config_update=10,
+  RRU_config_update_ok=11
 } rru_config_msg_type_t;
 
 
@@ -711,6 +713,10 @@ typedef struct RRU_config_s {
   time_stats_t ru_arrival_time;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
+  /// embms mbsfn sf config
+  int num_MBSFN_config;
+  /// embms mbsfn sf config
+  MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
 #endif //__PHY_DEFS_RU__H__

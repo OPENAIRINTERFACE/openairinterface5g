@@ -339,7 +339,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
       for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
         MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
 
-        if (MBMS_SessionInfo_p->sessionId_r9)
+        if (0/*MBMS_SessionInfo_p->sessionId_r9*/)
           mbms_session_id  = MBMS_SessionInfo_p->sessionId_r9->buf[0];
         else
           mbms_session_id  = MBMS_SessionInfo_p->logicalChannelIdentity_r9;
@@ -379,7 +379,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
           }
         }
 
-        LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %ld SESSION ID %u SERVICE ID %u\n",
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               lc_id,
               rb_id,
@@ -611,14 +611,14 @@ rlc_union_t *rrc_rlc_add_rlc   (
     }
 
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
-  }
-
-  if ((sourceL2Id > 0) && (destinationL2Id > 0) ) {
-    key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, sourceL2Id, destinationL2Id, srb_flagP);
-    key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, sourceL2Id, destinationL2Id, srb_flagP);
   } else {
-    key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-    key_lcid = RLC_COLL_KEY_LCID_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, srb_flagP);
+    if ((sourceL2Id > 0) && (destinationL2Id > 0) ) {
+       key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, sourceL2Id, destinationL2Id, srb_flagP);
+       key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, sourceL2Id, destinationL2Id, srb_flagP);
+    } else {
+       key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+       key_lcid = RLC_COLL_KEY_LCID_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, srb_flagP);
+    }
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void **)&rlc_union_p);

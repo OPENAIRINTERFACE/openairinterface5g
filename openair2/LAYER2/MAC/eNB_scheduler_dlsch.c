@@ -507,6 +507,13 @@ schedule_ue_spec(module_id_t module_idP,
   rrc_eNB_ue_context_t *ue_contextP = NULL;
   int nb_mac_CC = RC.nb_mac_CC[module_idP];
   long dl_Bandwidth;
+
+  if(is_pmch_subframe(frameP,subframeP,&RC.eNB[module_idP][0]->frame_parms)){
+       //LOG_E(MAC,"Frame[%d] SF:%d This SF should not be allocated\n",frameP,subframeP);
+       return ;
+  }
+
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,
                                           VCD_FUNCTION_IN);

@@ -97,6 +97,8 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "pdcp.h"
 
+#define MBMS_EXPERIMENTAL
+
 extern volatile int oai_exit;
 extern int emulate_rf;
 extern int numerology;
@@ -1881,10 +1883,19 @@ static void *ru_thread( void *param ) {
 
         AssertFatal((ret=pthread_mutex_unlock(&ru->proc.mutex_pre_scd))==0,"[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
 #endif
+	// wakeup all eNB processes waiting for this RU
+	if (ru->num_eNB>0) wakeup_L1s(ru);
 
-        // wakeup all eNB processes waiting for this RU
-        if (ru->num_eNB>0) wakeup_L1s(ru);
-
+#ifdef MBMS_EXPERIMENTAL
+	//Workaround ... this must be properly handled
+	if(ru->if_south==LOCAL_RF && ru->function==eNodeB_3GPP && RC.eNB[0][0]!=NULL){
+		if(ru->frame_parms.num_MBSFN_config!=RC.eNB[0][0]->frame_parms.num_MBSFN_config){
+			ru->frame_parms = RC.eNB[0][0]->frame_parms;//->frame_parms;
+			LOG_W(PHY,"RU MBSFN SF PARAMS Updated\n");
+		}
+	}
+#endif
+	
 #ifndef PHY_TX_THREAD
 
         if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0) {

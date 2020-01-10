@@ -3545,7 +3545,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
         if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&2) == 0) {
           UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=2;
-          new_sib=1;
+          //new_sib=1;
           memcpy( UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index], &typeandinfo->choice.sib2, sizeof(LTE_SystemInformationBlockType2_t) );
           LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB2 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
           dump_sib2( UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index] );
@@ -3613,7 +3613,58 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
             }
 #endif
           }
-        }
+        }else{
+                       //LOG_W( RRC, "[UE %d] Received new SIB1/SIB2/SIB3 with MBMSs %d\n", ctxt_pP->module_id, ((&typeandinfo->choice.sib2)->mbsfn_SubframeConfigList == NULL ? 0:1) );
+               if((&typeandinfo->choice.sib2)->mbsfn_SubframeConfigList != NULL && (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&4096) == 0){
+                       LOG_W( RRC, "[UE %d] Received SIB2 with MBSFN SF Config\n", ctxt_pP->module_id );
+
+                       memcpy( UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index], &typeandinfo->choice.sib2, sizeof(LTE_SystemInformationBlockType2_t) );
+                       LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+                               ctxt_pP->frame, ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
+                       rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
+                               (LTE_RadioResourceConfigCommonSIB_t *)NULL,
+                                (struct LTE_PhysicalConfigDedicated *)NULL,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+                                (LTE_SCellToAddMod_r10_t *)NULL,
+#endif
+                                (LTE_MeasObjectToAddMod_t **)NULL,
+                                (LTE_MAC_MainConfig_t *)NULL,
+                                0,
+                                (struct LTE_LogicalChannelConfig *)NULL,
+                                (LTE_MeasGapConfig_t *)NULL,
+                                (LTE_TDD_Config_t *)NULL,
+                                (LTE_MobilityControlInfo_t *)NULL,
+                                NULL,
+                                NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                                UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                                ,0,
+                                (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
+                                (LTE_PMCH_InfoList_r9_t *)NULL
+#endif
+#ifdef CBA
+                                ,0,
+                                0
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                ,
+                                0,
+                                NULL,
+                                NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *)NULL
+#endif
+                               );
+
+               }
+       }
 
         break; // case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2
 
@@ -3756,8 +3807,8 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
                                 (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                                 (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                                );
-          break;
         }
+        break;
 
       //SIB18
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib18_v1250:
@@ -3823,19 +3874,30 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
       default:
         break;
     }
+    if (new_sib == 1) {
+      UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt++;
+  
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt == sib1->schedulingInfoList.list.count)
+        rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+  
+      LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+            UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus,
+            UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt,
+            sib1->schedulingInfoList.list.count);
+    }
   }
 
-  if (new_sib == 1) {
-    UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt++;
+  //if (new_sib == 1) {
+  //  UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt++;
 
-    if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt == sib1->schedulingInfoList.list.count)
-      rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+  //  if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt == sib1->schedulingInfoList.list.count)
+  //    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
 
-    LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus,
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt,
-          sib1->schedulingInfoList.list.count);
-  }
+  //  LOG_I(RRC,"SIStatus %x, SIcnt %d/%d\n",
+  //        UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus,
+  //        UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt,
+  //        sib1->schedulingInfoList.list.count);
+  //}
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_OUT);
   return 0;
@@ -4158,7 +4220,7 @@ int decode_MCCH_Message( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB
           ctxt_pP->frame,
           mbsfn_sync_area);
     return 0; // avoid decoding to prevent memory bloating
-  } else {
+  } else if(UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State >= RRC_CONNECTED /*|| UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_RECONFIGURED*/){
     dec_rval = uper_decode_complete(NULL,
                                     &asn_DEF_LTE_MCCH_Message,
                                     (void **)&mcch,
@@ -4256,7 +4318,8 @@ void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_index, f
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                        );
-  UE_rrc_inst[ue_mod_idP].Info[eNB_index].MCCHStatus[mbsfn_sync_area] = 1;
+  if(UE_rrc_inst[ue_mod_idP].Info[eNB_index].State >= RRC_CONNECTED /*|| UE_rrc_inst[ue_mod_idP].Info[eNB_index].State == RRC_RECONFIGURED*/)
+  	UE_rrc_inst[ue_mod_idP].Info[eNB_index].MCCHStatus[mbsfn_sync_area] = 1;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_idP, ENB_FLAG_NO, UE_rrc_inst[ue_mod_idP].Info[eNB_index].rnti, frameP, 0,eNB_index);
   // Config Radio Bearer for MBMS user data (similar way to configure for eNB side in init_MBMS function)
   rrc_pdcp_config_asn1_req(&ctxt,

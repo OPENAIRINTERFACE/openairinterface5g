@@ -72,7 +72,6 @@
 #define MAX_NUM_RU_PER_eNB 64
 #define MAX_NUM_RX_PRACH_PREAMBLES 4
 
-
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[

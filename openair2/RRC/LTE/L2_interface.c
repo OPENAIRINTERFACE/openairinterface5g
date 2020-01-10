@@ -78,7 +78,7 @@ mac_rrc_data_req(
   carrier = &rrc->carrier[0];
   mib     = &carrier->mib;
 
-  if(Srb_id == BCCH_SI_MBMS) {
+  if((Srb_id & RAB_OFFSET) == BCCH_SI_MBMS){
     if (frameP%4 == 0) {
       memcpy(&buffer_pP[0],
              RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
@@ -206,7 +206,7 @@ mac_rrc_data_req(
            RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
     if (LOG_DEBUGFLAG(DEBUG_RRC)) {
-      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
+      LOG_W(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
       for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
         LOG_T(RRC,"%x.",buffer_pP[i]);
@@ -299,10 +299,8 @@ mac_rrc_data_ind(
       if (ue_context_p->ue_context.Status != RRC_RECONFIGURED) {
         LOG_E(RRC,"[eNB %d] Received C-RNTI ,but UE %x status(%d) not RRC_RECONFIGURED\n",module_idP,rntiP,ue_context_p->ue_context.Status);
         return (-1);
-      } else {
-        rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
-        ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-      }
+      } 
+      rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
     }
   }
 

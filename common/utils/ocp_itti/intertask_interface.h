@@ -206,6 +206,8 @@ typedef struct IttiMsgText_s {
 #endif
 #include <openair2/COMMON/s1ap_messages_types.h>
 #include <openair2/COMMON/x2ap_messages_types.h>
+#include <openair2/COMMON/m2ap_messages_types.h>
+#include <openair2/COMMON/m3ap_messages_types.h>
 #include <openair2/COMMON/sctp_messages_types.h>
 #include <openair2/COMMON/udp_messages_types.h>
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
@@ -231,6 +233,7 @@ typedef struct IttiMsgText_s {
 #include <openair3/NAS/UE/user_defs.h>
 #include <openair3/NAS/UE/nas_ue_task.h>
 #include <openair3/S1AP/s1ap_eNB.h>
+#include <openair3/MME_APP/mme_app.h>
 //#include <proto.h>
 
 #include <openair3/GTPV1-U/gtpv1u_eNB_task.h>
@@ -290,9 +293,16 @@ typedef struct {
   TASK_DEF(TASK_RAL_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_M2AP_ENB,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_M2AP_MCE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_M3AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_M3AP_MME,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_M3AP_MCE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_SCTP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_ENB_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_GNB_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_MCE_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_MME_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_FLEXRAN_AGENT,TASK_PRIORITY_MED, 200, NULL, NULL) \
   TASK_DEF(TASK_PHY_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MAC_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
