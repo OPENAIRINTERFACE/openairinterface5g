@@ -334,6 +334,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint64_t L_ssb;
   /// Total number of SSB transmitted
   uint8_t N_ssb;
+  /// SSB index
+  uint8_t ssb_index;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 

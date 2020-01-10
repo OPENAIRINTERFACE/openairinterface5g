@@ -478,20 +478,6 @@ typedef struct {
 } fapi_nr_pucch_config_common_t;
 
 typedef struct {
-
-  uint8_t subcarrier_spacing_common;
-  uint8_t ssb_subcarrier_offset;
-  uint8_t dmrs_type_a_position;
-  uint8_t pdcch_config_sib1;
-  uint8_t cell_barred;
-  uint8_t intra_frequency_reselection;
-
-  uint16_t system_frame_number;
-  uint8_t ssb_index;
-  uint8_t half_frame_bit;
-} fapi_nr_pbch_config_t;
-
-typedef struct {
         
   fapi_nr_pdcch_config_common_t pdcch_config_common;
   fapi_nr_pdsch_config_common_t pdsch_config_common;
@@ -950,7 +936,7 @@ typedef struct {
   fapi_nr_tdd_table_t tdd_table;
   fapi_nr_prach_config_t prach_config;
 
-  fapi_nr_pbch_config_t pbch_config;  //  MIB
+  uint16_t mib_sfn;
 
   fapi_nr_dl_bwp_common_config_t     dl_bwp_common;
   fapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;

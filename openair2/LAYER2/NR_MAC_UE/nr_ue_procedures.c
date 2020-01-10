@@ -609,20 +609,8 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_id;
 
-  mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
-  mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
-  mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation
-  mac->phy_config.config_req.pbch_config.dmrs_type_a_position = mac->mib->dmrs_TypeA_Position;
-  mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero) * 16 + (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
-  mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
-  mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
-  mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;
-  mac->phy_config.config_req.pbch_config.ssb_index = ssb_index;
-  mac->phy_config.config_req.config_mask |= FAPI_NR_CONFIG_REQUEST_MASK_PBCH;
+  mac->phy_config.config_req.mib_sfn = frame;
 
-  if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL){
-    mac->if_module->phy_config_request(&mac->phy_config);
-  }
   proc->decoded_frame_rx=frame;
   //}
   return 0;

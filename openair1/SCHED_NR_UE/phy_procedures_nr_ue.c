@@ -2707,7 +2707,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
-		   ue->nrUE_config.pbch_config.ssb_index,
+		   (ue->frame_parms.ssb_index)&7,
 		   SISO,
 		   ue->high_speed_flag);
 
@@ -4027,20 +4027,20 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 
-int is_pbch_in_slot(fapi_nr_pbch_config_t *pbch_config, int frame, int slot, int periodicity, uint16_t slots_per_frame)  {
+int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
 
-  int ssb_slot_decoded = (pbch_config->ssb_index)/2;
+  int ssb_slot_decoded = (fp->ssb_index)/2;
 
-  if (periodicity == 5) {  
+  if (config->ssb_table.ssb_period == 5) {  
     // check for pbch in corresponding slot each half frame
-    if (pbch_config->half_frame_bit)
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - slots_per_frame/2);
+    if (fp->half_frame_bit)
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded - fp->slots_per_frame/2);
     else
-      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + slots_per_frame/2);
+      return(slot == ssb_slot_decoded || slot == ssb_slot_decoded + fp->slots_per_frame/2);
   }
   else {
     // if the current frame is supposed to contain ssb
-    if (!((frame-(pbch_config->system_frame_number))%(periodicity/10)))
+    if (!((frame-(config->mib_sfn))%(config->ssb_table.ssb_period/10)))
       return(slot == ssb_slot_decoded);
     else
       return 0;
@@ -4065,9 +4065,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint16_t start_symb_sch = dlsch0_harq->start_symbol;
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
-  uint8_t ssb_periodicity = cfg->ssb_table.ssb_period;
   uint8_t dci_cnt = 0;
-  fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
+  NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
@@ -4082,7 +4081,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
   
-  slot_pbch = is_pbch_in_slot(pbch_config, frame_rx, nr_tti_rx, ssb_periodicity, ue->frame_parms.slots_per_frame);
+  slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)
@@ -4092,7 +4091,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       for (int i=1; i<4; i++) {
 
 	nr_slot_fep(ue,
-		    (ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),
+		    (ue->symbol_offset+i)%(fp->symbols_per_slot),
 		    nr_tti_rx,
 		    0,
 		    0);
@@ -4100,7 +4099,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config->ssb_index)&7,pbch_config->half_frame_bit);
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
@@ -4110,12 +4109,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
       if (ue->no_timing_correction==0) {
         LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
-        nr_adjust_synch_ue(&ue->frame_parms,
-      		             ue,
-  						 eNB_id,
-  						 nr_tti_rx,
-  						 0,
-  						 16384);
+        nr_adjust_synch_ue(fp,
+      		           ue,
+  			   eNB_id,
+  			   nr_tti_rx,
+  			   0,
+  			   16384);
       }
     }
 
@@ -4137,13 +4136,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     // note: this only works if RBs for PDCCH are contigous!
     LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-	  ue->frame_parms.first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
+	  fp->first_carrier_offset,pdcch_vars->pdcch_config[0].BWPStart,coreset_start_rb);
     if (coreset_nb_rb > 0)
       nr_pdcch_channel_estimation(ue,
 				  0,
 				  nr_tti_rx,
 				  l,
-				  ue->frame_parms.first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
+				  fp->first_carrier_offset+(pdcch_vars->pdcch_config[0].BWPStart + coreset_start_rb)*12,
 				  coreset_nb_rb);
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
@@ -4212,11 +4211,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     nr_ue_measurement_procedures(2,ue,proc,eNB_id,nr_tti_rx,mode);
 
     /*
-    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates[0][0],ue->frame_parms.ofdm_symbol_size*14,1,1);
+    write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],fp->ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
     write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
     write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
-    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],ue->frame_parms.N_RB_DL*12*14,1,1);
+    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
     write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
     */
     
@@ -4307,16 +4306,16 @@ start_meas(&ue->generic_stat);
        //write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
        //write_output("llr.m","llr",  &ue->pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
 
-       write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
-       //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
+       write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
+       //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
 
-       //write_output("rxdataF0_previous.m"    , "rxdataF0_prev", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
+       //write_output("rxdataF0_previous.m"    , "rxdataF0_prev", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
 
-       write_output("dl_ch_estimates.m", "dl_ch_estimates_sfn5", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[0][0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
-       write_output("dl_ch_estimates_ext.m", "dl_ch_estimatesExt_sfn5", &ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates_ext[0][0],14*ue->frame_parms.N_RB_DL*12,1,1);
-       write_output("rxdataF_comp00.m","rxdataF_comp00",         &ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->rxdataF_comp0[0][0],14*ue->frame_parms.N_RB_DL*12,1,1);
-       //write_output("magDLFirst.m", "magDLFirst", &phy_vars_ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_mag0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-       //write_output("magDLSecond.m", "magDLSecond", &phy_vars_ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_magb0[0][0],14*frame_parms->N_RB_DL*12,1,1);
+       write_output("dl_ch_estimates.m", "dl_ch_estimates_sfn5", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[0][0][0],14*fp->ofdm_symbol_size,1,1);
+       write_output("dl_ch_estimates_ext.m", "dl_ch_estimatesExt_sfn5", &ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates_ext[0][0],14*fp->N_RB_DL*12,1,1);
+       write_output("rxdataF_comp00.m","rxdataF_comp00",         &ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->rxdataF_comp0[0][0],14*fp->N_RB_DL*12,1,1);
+       //write_output("magDLFirst.m", "magDLFirst", &phy_vars_ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_mag0[0][0],14*fp->N_RB_DL*12,1,1);
+       //write_output("magDLSecond.m", "magDLSecond", &phy_vars_ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_magb0[0][0],14*fp->N_RB_DL*12,1,1);
 
        AssertFatal (0,"");
   }
