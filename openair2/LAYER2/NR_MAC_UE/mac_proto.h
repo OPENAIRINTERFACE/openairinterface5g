@@ -35,7 +35,9 @@
 
 #include "mac_defs.h"
 #include "mac.h"
-#include <openair1/PHY/defs_nr_UE.h>
+#include "PHY/defs_nr_UE.h"
+#include "RRC/NR_UE/rrc_defs.h"
+
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
@@ -70,11 +72,11 @@ int nr_rrc_mac_config_req_ue(
     int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
-    NR_ServingCellConfigCommon_t    *sccP,
+    //NR_ServingCellConfigCommon_t    *sccP,
     NR_SpCellConfig_t               *spCell_ConfigP);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
-int nr_l2_init_ue(void);
+NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
 
 /**\brief fetch MAC instance by module_id, within 0 - (NB_NR_UE_MAC_INST-1)
    \param module_id index of MAC instance(s)*/
