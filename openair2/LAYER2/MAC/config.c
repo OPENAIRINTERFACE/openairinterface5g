@@ -703,9 +703,7 @@ config_sib13( int Mod_id,
 //  }
 //  lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
 //
-//#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
-//#endif
 //
    PHY_Config_t phycfg;
    phycfg.Mod_id = Mod_id;

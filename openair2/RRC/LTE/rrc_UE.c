@@ -3624,9 +3624,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
                        rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
                                (LTE_RadioResourceConfigCommonSIB_t *)NULL,
                                 (struct LTE_PhysicalConfigDedicated *)NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                 (LTE_SCellToAddMod_r10_t *)NULL,
-#endif
                                 (LTE_MeasObjectToAddMod_t **)NULL,
                                 (LTE_MAC_MainConfig_t *)NULL,
                                 0,
@@ -3640,27 +3638,18 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
                                NULL,
                                NULL,
                                 UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                 ,0,
                                 (LTE_MBSFN_AreaInfoList_r9_t *)NULL,
-                                (LTE_PMCH_InfoList_r9_t *)NULL
-#endif
+                                (LTE_PMCH_InfoList_r9_t *)NULL,
 #ifdef CBA
-                                ,0,
-                                0
+                                0,0,
 #endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                ,
                                 0,
                                 NULL,
-                                NULL
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
+                                NULL,
                         0,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *)NULL
-#endif
                                );
 
                }

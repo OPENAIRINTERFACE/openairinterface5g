@@ -92,11 +92,9 @@ tbs_size_t mac_rlc_data_req(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
-  char             *buffer_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
+  char             *buffer_pP,
+  const uint32_t sourceL2Id,
+  const uint32_t destinationL2Id
    )
 {
   int ret;
@@ -147,11 +145,9 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
+  const tb_size_t         tb_sizeP,
+  const uint32_t sourceL2Id,
+  const uint32_t destinationL2Id
   )
 {
   nr_rlc_ue_t *ue;
@@ -210,11 +206,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const mui_t        muiP,
                                   confirm_t    confirmP,
                                   sdu_size_t   sdu_sizeP,
-                                  mem_block_t *sdu_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
+                                  mem_block_t *sdu_pP,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
                                  )
 {
   int rnti = ctxt_pP->rnti;
@@ -754,13 +748,10 @@ static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const LTE_DRB_ToAddModList_t   * const drb2add_listP,
-    const LTE_DRB_ToReleaseList_t  * const drb2release_listP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    ,const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
-    ,const uint32_t sourceL2Id
-    ,const uint32_t destinationL2Id
-#endif
-                                        )
+    const LTE_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    const uint32_t sourceL2Id,
+    const uint32_t destinationL2Id)
 {
   int rnti = ctxt_pP->rnti;
   int i;

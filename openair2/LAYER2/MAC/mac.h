@@ -906,10 +906,8 @@ typedef struct {
   uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
   sub_frame_t Msg2_subframe;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
   uint8_t pusch_repetition_levels;
-#endif
   LTE_PhysicalConfigDedicated_t *physicalConfigDedicated;
 } UE_TEMPLATE;
 
@@ -1117,10 +1115,8 @@ typedef struct {
   uint8_t msg2_narrowband;
   uint8_t msg34_narrowband;
   int     msg4_rrc_sdu_length;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
   uint8_t pusch_repetition_levels;
-#endif
   int32_t  crnti_rrc_mui;
   int8_t   crnti_harq_pid;
 } RA_t;
