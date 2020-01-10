@@ -113,30 +113,28 @@ void config_common(int Mod_idP,
 		   );
 
 uint64_t get_softmodem_optmask(void) {return 0;}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
-					  const rnti_t            rntiP,
-					  const eNB_index_t       eNB_index,
-					  const frame_t           frameP,
-					  const sub_frame_t 	  subframeP,
-					  const eNB_flag_t        enb_flagP,
-					  const MBMS_flag_t       MBMS_flagP,
-					  const logical_chan_id_t channel_idP,
-					  const tb_size_t         tb_sizeP,
-					  const uint32_t sourceL2Id,
-					  const uint32_t destinationL2Id)
-{mac_rlc_status_resp_t  mac_rlc_status_resp={0}; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
-			      const rnti_t            rntiP,
-			      const eNB_index_t       eNB_index,
-			      const frame_t           frameP,
-			      const eNB_flag_t        enb_flagP,
-			      const MBMS_flag_t       MBMS_flagP,
-			      const logical_chan_id_t channel_idP,
-			      const tb_size_t         tb_sizeP,
-			      char             *buffer_pP,
-			      const uint32_t sourceL2Id,
-			      const uint32_t destinationL2Id )
-{return 0;}
+mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
+                                         const rnti_t            rntiP,
+                                         const eNB_index_t       eNB_index,
+                                         const frame_t           frameP,
+                                         const sub_frame_t       subframeP,
+                                         const eNB_flag_t        enb_flagP,
+                                         const MBMS_flag_t       MBMS_flagP,
+                                         const logical_chan_id_t channel_idP,
+                                         const tb_size_t         tb_sizeP,
+                                         const uint32_t          sourceL2Id,
+                                         const uint32_t          destinationL2Id) {mac_rlc_status_resp_t  mac_rlc_status_resp = {0}; return mac_rlc_status_resp;}
+tbs_size_t mac_rlc_data_req(const module_id_t       module_idP,
+                            const rnti_t            rntiP,
+                            const eNB_index_t       eNB_index,
+                            const frame_t           frameP,
+                            const eNB_flag_t        enb_flagP,
+                            const MBMS_flag_t       MBMS_flagP,
+                            const logical_chan_id_t channel_idP,
+                            const tb_size_t         tb_sizeP,
+                            char                    *buffer_pP,
+                            const uint32_t          sourceL2Id,
+                            const uint32_t          destinationL2Id) {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
@@ -852,7 +850,6 @@ int main(int argc, char **argv)
 	  }
 	
       }
-      
       for (i = 0; i < TBS; i++) {
 	
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);

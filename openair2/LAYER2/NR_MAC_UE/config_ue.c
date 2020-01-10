@@ -35,98 +35,232 @@
 
 #include "NR_MAC-CellGroupConfig.h"
 
+#include "../NR_MAC_gNB/nr_mac_common.h"
+#include "SCHED_NR/phy_frame_config_nr.h"
 
+int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
+                         int mu,
+                         int nrofDownlinkSlots, int nrofDownlinkSymbols,
+                         int nrofUplinkSlots,   int nrofUplinkSymbols) {
+
+  int slot_number = 0;
+  int nb_periods_per_frame;
+  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+
+  switch(cfg->tdd_table.tdd_period) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", cfg->tdd_table.tdd_period);
+  }
+
+  int nb_slots_per_period = ((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
+
+  if ( (nrofDownlinkSymbols + nrofUplinkSymbols) == 0 )
+    AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots),
+                "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d \n",
+                nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
+  else {
+    AssertFatal(nrofDownlinkSymbols + nrofUplinkSymbols < 14,"illegal symbol configuration DL %d, UL %d\n",nrofDownlinkSymbols,nrofUplinkSymbols);
+    AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots + 1),
+                "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nrofMixed slots 1, nb_slots_per_period %d \n",
+                nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
+  }
+
+  cfg->tdd_table.max_tdd_periodicity_list = (fapi_nr_max_tdd_periodicity_t *) malloc(nb_slots_to_set*sizeof(fapi_nr_max_tdd_periodicity_t));
+
+  for(int memory_alloc =0 ; memory_alloc<nb_slots_to_set; memory_alloc++)
+    cfg->tdd_table.max_tdd_periodicity_list[memory_alloc].max_num_of_symbol_per_slot_list = (fapi_nr_max_num_of_symbol_per_slot_t *) malloc(NR_NUMBER_OF_SYMBOLS_PER_SLOT*sizeof(
+          fapi_nr_max_num_of_symbol_per_slot_t));
+
+  while(slot_number != nb_slots_to_set) {
+    if(nrofDownlinkSlots != 0) {
+      for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config= 0;
+
+        if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
+          slot_number++;
+      }
+    }
+
+    if (nrofDownlinkSymbols != 0 || nrofUplinkSymbols != 0) {
+      for(int number_of_symbol =0; number_of_symbol < nrofDownlinkSymbols; number_of_symbol++) {
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 0;
+      }
+
+      for(int number_of_symbol = nrofDownlinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol++) {
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 2;
+      }
+
+      for(int number_of_symbol = NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 1;
+      }
+
+      slot_number++;
+    }
+
+    if(nrofUplinkSlots != 0) {
+      for (int number_of_symbol = 0; number_of_symbol < nrofUplinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config= 1;
+
+        if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
+          slot_number++;
+      }
+    }
+  }
+
+  return (0);
+}
 
 
 void config_common_ue(NR_UE_MAC_INST_t *mac) {
 
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
-/*
-  mac->if_module->phy_config_request(&mac->phy_config);
-  cfg->sch_config.physical_cell_id = *scc->physCellId;
-  cfg->sch_config.ssb_scg_position_in_burst = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+  int i;
 
-  cfg->subframe_config.duplex_mode                          = 1;
+  // carrier config
 
-  cfg->fapi_config.rf_bands.number_rf_bands       = 1;
-  cfg->fapi_config.rf_bands.rf_band[0]            = *(long*)scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];  
+  cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                                      scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+                                                      *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
-  cfg->fapi_config.nrarfcn                  = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+  cfg->carrier_config.dl_frequency = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                                                  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA)/1000; // freq in kHz
 
-  //  cfg->subframe_config.numerology_index_mu = 1;
-
-  cfg->rf_config.dl_carrier_bandwidth    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-  LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->rf_config.dl_carrier_bandwidth);
-
-  cfg->rf_config.ul_carrier_bandwidth    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-
-  cfg->rf_config.dl_subcarrierspacing    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-  cfg->rf_config.ul_subcarrierspacing    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-
-  cfg->rf_config.dl_offsettocarrier    = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
-
-  cfg->rf_config.ul_offsettocarrier    = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
- 
-  // InitialBWP configuration
-
-  cfg->initialBWP_config.dl_bandwidth    = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
-
-  cfg->initialBWP_config.dl_offset    = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
-
-  cfg->initialBWP_config.dl_subcarrierSpacing    = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
-
-  LOG_I(PHY,"%s() initialBWP_dl_Bandwidth.RBstart.SCS :%d.%d.%d\n", __FUNCTION__, cfg->initialBWP_config.dl_bandwidth,cfg->initialBWP_config.dl_offset,cfg->initialBWP_config.dl_subcarrierSpacing);
-
-  cfg->initialBWP_config.ul_bandwidth    = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
-
-  cfg->initialBWP_config.ul_offset    = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
-
-  cfg->initialBWP_config.ul_subcarrierSpacing    = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-
-  LOG_I(PHY,"%s() initialBWP_ul_Bandwidth.RBstart.SCS :%d.%d.%d\n", __FUNCTION__, cfg->initialBWP_config.ul_bandwidth,cfg->initialBWP_config.ul_offset,cfg->initialBWP_config.ul_subcarrierSpacing);
-
-
-  cfg->rach_config.prach_RootSequenceIndex = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139;
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    cfg->rach_config.prach_msg1_SubcarrierSpacing = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else cfg->rach_config.prach_msg1_SubcarrierSpacing=cfg->rf_config.dl_subcarrierspacing;
-
-  cfg->rach_config.restrictedSetConfig = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig;
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)
-    cfg->rach_config.msg3_transformPrecoding = 1;
-  else cfg->rach_config.msg3_transformPrecoding = 0;
-
-  cfg->rach_config.prach_ConfigurationIndex = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;  
-  cfg->rach_config.prach_msg1_FDM = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;            
-  cfg->rach_config.prach_msg1_FrequencyStart = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart; 
-  cfg->rach_config.zeroCorrelationZoneConfig = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-  cfg->rach_config.preambleReceivedTargetPower = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower;
-
-  // PDCCH-ConfigCommon
-  cfg->pdcch_config.controlResourceSetZero = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
-  cfg->pdcch_config.searchSpaceZero = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
-
-  // PDSCH-ConfigCommon
-  cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
-  cfg->pdsch_config.dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
-  AssertFatal(cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations<=NFAPI_NR_PDSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations);
-  for (int i=0;i<cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations;i++) {
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[i]=*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[i]=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[i]=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
+  for (i=0; i<5; i++) {
+    if (i==scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
+      cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+      cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+    }
+    else {
+      cfg->carrier_config.dl_grid_size[i] = 0;
+      cfg->carrier_config.dl_k0[i] = 0;
+    }
   }
 
-  // PUSCH-ConfigCommon
-  cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
-  cfg->pusch_config.dmrs_TypeA_Position = scc->dmrs_TypeA_Position+2;
-  AssertFatal(cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations<=NFAPI_NR_PUSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations);
-  for (int i=0;i<cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations;i++) {
-    cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i]=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
+  cfg->carrier_config.uplink_bandwidth = config_bandwidth(scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                                          scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+                                                          *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]);
+
+  int UL_pointA;
+  if (scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA == NULL)
+    UL_pointA = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+  else
+    UL_pointA = *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA; 
+
+  cfg->carrier_config.uplink_frequency = from_nrarfcn(*scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0],
+                                                      UL_pointA)/1000; // freq in kHz
+
+
+  for (i=0; i<5; i++) {
+    if (i==scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
+      cfg->carrier_config.ul_grid_size[i] = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+      cfg->carrier_config.ul_k0[i] = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+    }
+    else {
+      cfg->carrier_config.ul_grid_size[i] = 0;
+      cfg->carrier_config.ul_k0[i] = 0;
+    }
   }
-*/
+
+
+  // cell config
+
+  cfg->cell_config.phy_cell_id = *scc->physCellId;
+  cfg->cell_config.frame_duplex_type = 1;
+
+
+  // SSB config
+  cfg->ssb_config.ss_pbch_power = scc->ss_PBCH_BlockPower;
+  cfg->ssb_config.scs_common = *scc->ssbSubcarrierSpacing;
+
+  // SSB Table config
+  int scs_scaling = 1<<(cfg->ssb_config.scs_common);
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
+    scs_scaling = scs_scaling*3;
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
+    scs_scaling = scs_scaling>>2;
+  uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+  cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling);
+  cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
+
+  switch (scc->ssb_PositionsInBurst->present) {
+    case 1 :
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0];
+      cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
+      break;
+    case 2 :
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+      cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
+      break;
+    case 3 :
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = 0;
+      cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
+      for (i=0; i<4; i++) {
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
+      }
+      break;
+    default:
+      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", scc->ssb_PositionsInBurst->present);
+  }
+
+  // TDD Table Configuration
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
+    cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+  else {
+    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+    cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  }
+  LOG_I(MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period);
+  if(cfg->cell_config.frame_duplex_type == TDD){
+    int return_tdd = set_tdd_config_nr_ue(cfg,
+		     scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
+                     );
+
+    if (return_tdd !=0)
+      LOG_E(PHY,"TDD configuration can not be done\n");
+    else
+      LOG_I(PHY,"TDD has been properly configurated\n");
+  }
+
+
 }
 
 int nr_rrc_mac_config_req_ue(

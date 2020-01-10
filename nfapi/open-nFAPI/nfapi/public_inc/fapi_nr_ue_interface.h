@@ -840,8 +840,115 @@ typedef struct {
 #define FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_DEDICATED    0x08
 #define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED    0x10
 
+typedef struct 
+{
+  uint16_t dl_bandwidth;//Carrier bandwidth for DL in MHz [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  uint32_t dl_frequency; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  uint16_t dl_k0[5];//𝑘_{0}^{𝜇} for each of the numerologies [38.211, sec 5.3.1] Value: 0 ->23699
+  uint16_t dl_grid_size[5];//Grid size 𝑁_{𝑔𝑟𝑖𝑑}^{𝑠𝑖𝑧𝑒,𝜇} for each of the numerologies [38.211, sec 4.4.2] Value: 0->275 0 = this numerology not used
+  uint16_t num_tx_ant;//Number of Tx antennas
+  uint16_t uplink_bandwidth;//Carrier bandwidth for UL in MHz. [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  uint32_t uplink_frequency;//Absolute frequency of UL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  uint16_t ul_k0[5];//𝑘0 𝜇 for each of the numerologies [38.211, sec 5.3.1] Value: : 0 ->23699
+  uint16_t ul_grid_size[5];//Grid size 𝑁𝑔𝑟𝑖𝑑 𝑠𝑖𝑧𝑒,𝜇 for each of the numerologies [38.211, sec 4.4.2]. Value: 0->275 0 = this numerology not used
+  uint16_t num_rx_ant;//
+  uint8_t  frequency_shift_7p5khz;//Indicates presence of 7.5KHz frequency shift. Value: 0 = false 1 = true
+
+} fapi_nr_ue_carrier_config_t; 
+
+typedef struct 
+{
+  uint8_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
+  uint8_t frame_duplex_type;//Frame duplex type Value: 0 = FDD 1 = TDD
+
+} fapi_nr_cell_config_t;
+
+typedef struct 
+{
+  uint32_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  uint8_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
+  uint8_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
+
+} fapi_nr_ssb_config_t;
+
+typedef struct 
+{
+  uint32_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
+
+} fapi_nr_ssb_mask_size_2_t;
+
+typedef struct 
+{
+  int8_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+
+} fapi_nr_ssb_mask_size_64_t;
+
+typedef struct 
+{
+  uint16_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Given in PRB [38.211, section 4.4.4.2] Value: 0->2199
+  uint8_t  beta_pss;//PSS EPRE to SSS EPRE in a SS/PBCH block [38.213, sec 4.1] Values: 0 = 0dB
+  uint8_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
+  uint8_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
+  uint32_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
+  fapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
+  fapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  uint8_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+  uint8_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
+
+} fapi_nr_ssb_table_t;
+
+typedef struct 
+{
+  uint8_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
+
+} fapi_nr_max_num_of_symbol_per_slot_t;
+
+typedef struct 
+{
+  fapi_nr_max_num_of_symbol_per_slot_t* max_num_of_symbol_per_slot_list;
+
+} fapi_nr_max_tdd_periodicity_t;
+
+typedef struct 
+{
+  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 8: ms3 9: ms4
+  fapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
+
+} fapi_nr_tdd_table_t;
+
+typedef struct 
+{
+  uint8_t  num_prach_fd_occasions;
+  uint16_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
+  uint8_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
+  uint16_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
+  uint8_t  prach_zero_corr_conf;//PRACH Zero CorrelationZone Config which is used to dervive 𝑁𝑐𝑠 [38.211, sec 6.3.3.1] Value: from 0 to 15
+  uint8_t  num_unused_root_sequences;//Number of unused sequences available for noise estimation per FD occasion. At least one unused root sequence is required per FD occasion.
+  uint8_t* unused_root_sequences_list;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
+
+} fapi_nr_num_prach_fd_occasions_t;
+
+typedef struct 
+{
+  uint8_t prach_sequence_length;//RACH sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
+  uint8_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
+  uint8_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
+  uint8_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  fapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
+  uint8_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
+  uint8_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+
+} fapi_nr_prach_config_t;
+
 typedef struct {
   uint32_t config_mask;
+
+  fapi_nr_ue_carrier_config_t carrier_config;
+  fapi_nr_cell_config_t cell_config;
+  fapi_nr_ssb_config_t ssb_config;
+  fapi_nr_ssb_table_t ssb_table;
+  fapi_nr_tdd_table_t tdd_table;
+  fapi_nr_prach_config_t prach_config;
 
   fapi_nr_pbch_config_t pbch_config;  //  MIB
 

@@ -680,13 +680,19 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   init_opt() ;
-  if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
+  #ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+  init_NR_UE(1,rrc_config_path);
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
 /*
 #ifdef PDCP_USE_NETLINK
   netlink_init();
@@ -695,10 +701,6 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
-  #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
-#endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   // init the parameters
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -722,7 +724,7 @@ int main( int argc, char **argv ) {
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
 
     UE[CC_id]->mac_enabled = 1;
-
+    UE[CC_id]->if_inst = nr_ue_if_module_init(0);
     UE[CC_id]->UE_scan = UE_scan;
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
     UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
@@ -768,7 +770,7 @@ int main( int argc, char **argv ) {
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_NR_UE(1,rrc_config_path);
+  init_NR_UE_threads(1);
 
   while(true)
     sleep(3600);

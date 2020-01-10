@@ -250,6 +250,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
     avg128P = _mm_setzero_si128();
     dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][0];
 #elif defined(__arm__)
+    dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][0];
 #endif
 
     for (rb=0; rb<(nb_rb*3)>>2; rb++) {
@@ -361,6 +362,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
      * then the IQ symbol is going to be found at the position 0+c_rb-N_RB_DL/2 in rxdataF and
      * we have to point the pointer at (1+c_rb-N_RB_DL/2) in rxdataF
      */
+
     LOG_DDD("n_BWP_start=%d, coreset_nbr_rb=%d\n",n_BWP_start,coreset_nbr_rb);
     int c_rb_by6;
     c_rb = n_BWP_start;
@@ -827,8 +829,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     }
   }
 
-  LOG_DD("symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
-  LOG_DD("coreset_freq_dom=(%ld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
+  LOG_DD("symbol_mon=(%u) and start_symbol=(%u)\n",symbol_mon,start_symbol);
+  LOG_DD("coreset_freq_dom=(%lu) n_rb_offset=(%u) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
          coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R,pdcch_DMRS_scrambling_id);
   //
   // according to 38.213 v15.1.0: a PDCCH monitoring pattern within a slot,
@@ -845,7 +847,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // for (int j=0; j < coreset_nbr_act; j++) {
   // for each active CORESET (max number of active CORESETs in a BWP is 3),
   // we calculate the number of RB for each CORESET bitmap
-  LOG_DD("coreset_freq_dom=(%ld)\n",coreset_freq_dom);
+  LOG_DD("coreset_freq_dom=(%lu)\n",coreset_freq_dom);
   int i; //for each bit in the coreset_freq_dom bitmap
 
   for (i = 0; i < 45; i++) {
@@ -854,8 +856,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   }
 
   coreset_nbr_rb = 6 * coreset_nbr_rb; // coreset_nbr_rb has to be multiplied by 6 to indicate the number of PRB or REG(=12 RE) within the CORESET
-  LOG_DD("coreset_freq_dom=(%ld,%lx), coreset_nbr_rb=%d\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
-  LOG_DD("coreset_nbr_rb=%d, coreset_nbr_reg=%d, coreset_C=(%d/(%d*%d))=%d\n",
+  LOG_DD("coreset_freq_dom=(%lu,%lx), coreset_nbr_rb=%u\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
+  LOG_DD("coreset_nbr_rb=%u, coreset_nbr_reg=%u, coreset_C=(%u/(%d*%d))=%u\n",
          coreset_nbr_rb, 
 	 coreset_time_dur * coreset_nbr_rb,
 	 coreset_time_dur * coreset_nbr_rb,
@@ -1229,9 +1231,9 @@ void nr_dci_decoding_procedure0(int s,
   LOG_DDD("debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",nCCE[p] / L2,p,nCCE[p],L2);
   LOG_DDD("debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",L2*m_p_s_L_max,L2,m_p_s_L_max);
   CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
-  LOG_DDD("CCEind(%d) = (((Yk(%u) + ((m(%u)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) %% (nCCE[p] / L2)) * L2)\n",
+  LOG_DDD("CCEind(%u) = (((Yk(%u) + ((m(%u)*nCCE[p](%u))/(L2(%d)*m_p_s_L_max(%d)))) %% (nCCE[p] / L2)) * L2)\n",
             CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);
-  LOG_DDD("n_candidate(m)=%u | CCEind=%d |",m,CCEind);
+  LOG_DDD("n_candidate(m)=%u | CCEind=%u |",m,CCEind);
 
     if (CCEind < 32)
       CCEmap = CCEmap0;
@@ -1239,7 +1241,7 @@ void nr_dci_decoding_procedure0(int s,
       CCEmap = CCEmap1;
     else if (CCEind < 96)
       CCEmap = CCEmap2;
-    else AssertFatal(1==0,"Illegal CCEind %d (Yk %u, m %u, nCCE %d, L2 %d\n", CCEind, Yk, m, nCCE[p], L2);
+    else AssertFatal(1==0,"Illegal CCEind %u (Yk %u, m %u, nCCE %u, L2 %u\n", CCEind, Yk, m, nCCE[p], L2);
 
     switch (L2) {
       case 1:
@@ -1286,7 +1288,7 @@ void nr_dci_decoding_procedure0(int s,
       LOG_DDD("... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
       LOG_DDD("... we have to replace this part of the code by polar decoding\n");
       //      for (int m=0; m < (nCCE[p]*6*9*2); m++)
-      LOG_DDD("(polar decoding)-> polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%d): \n",
+      LOG_DDD("(polar decoding)-> polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%u): \n",
              coreset_time_dur,coreset_nbr_rb,p,CCEind);
       
       //int reg_p=0,reg_e=0;

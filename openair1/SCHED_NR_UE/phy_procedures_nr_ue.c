@@ -2683,9 +2683,9 @@ void restart_phy(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,uint
 #endif //(0)
 
 void nr_ue_pbch_procedures(uint8_t eNB_id,
-						   PHY_VARS_NR_UE *ue,
-						   UE_nr_rxtx_proc_t *proc,
-						   uint8_t abstraction_flag)
+			   PHY_VARS_NR_UE *ue,
+			   UE_nr_rxtx_proc_t *proc,
+			   uint8_t abstraction_flag)
 {
   //  int i;
   //int pbch_tx_ant=0;
@@ -3265,10 +3265,12 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
 
+  if (!dlsch0)
+  	return;
   if (dlsch0->active == 0)
     return;
 
-  if (dlsch0 && (!dlsch1))  {
+  if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
     uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
     uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
@@ -4057,12 +4059,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int slot_pbch;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  fapi_nr_config_request_t *cfg = &ue->nrUE_config;
   uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
   NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint16_t start_symb_sch = dlsch0_harq->start_symbol;
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
-  uint8_t ssb_periodicity = 10;// ue->ssb_periodicity; // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
+  uint8_t ssb_periodicity = cfg->ssb_table.ssb_period;
   uint8_t dci_cnt = 0;
   fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
   

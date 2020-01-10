@@ -60,9 +60,7 @@
 extern RAN_CONTEXT_t RC;
 
 
-int8_t
-get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
-                       uint8_t mbsfn_sync_area) {
+int8_t get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id, uint8_t mbsfn_sync_area) {
   // currently there is one-to-one mapping between sf allocation pattern and sync area
   if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
     LOG_W(MAC,
@@ -81,9 +79,8 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
   }
 }
 
-int
-schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-              sub_frame_t subframeP) {
+
+int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP) {
   int mcch_flag = 0, mtch_flag = 0, msi_flag = 0;
   int mbsfn_period = 0; // 1<<(RC.mac[module_idP]->mbsfn_SubframeConfig[0]->radioframeAllocationPeriod);
   int mcch_period = 0;  //32<<(RC.mac[module_idP]->mbsfn_AreaInfo[0]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
@@ -734,15 +731,8 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     }
 
     /* Tracing of PDU is done on UE side */
-    if (opt_enabled == 1) {
-      trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) cc->MCH_pdu.payload, TBS, module_idP, WS_M_RNTI, 0xffff,  // M_RNTI = 6 in wirehsark
-                RC.mac[module_idP]->frame,
-                RC.mac[module_idP]->subframe, 0, 0);
-      LOG_D(OPT,
-            "[eNB %d][MCH] CC_id %d Frame %d : MAC PDU with size %d\n",
-            module_idP, CC_id, frameP, TBS);
-    }
-
+    trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) cc->MCH_pdu.payload, TBS, module_idP, WS_M_RNTI, 0xffff,  // M_RNTI = 6 in wireshark
+              RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe, 0, 0);
     /*
        for (j=0;j<sdu_length_total;j++)
        printf("%2x.",RC.mac[module_idP]->MCH_pdu.payload[j+offset]);
@@ -771,8 +761,8 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
    */
 }
 
-MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-                     sub_frame_t subframeP) {
+
+MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t subframeP) {
   //  RC.mac[module_idP]->MCH_pdu.mcs=0;
   //LOG_D(MAC," MCH_pdu.mcs is %d\n", RC.mac[module_idP]->MCH_pdu.mcs);
   //#warning "MCH pdu should take the CC_id index"

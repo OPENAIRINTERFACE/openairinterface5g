@@ -407,7 +407,9 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
                              uint8_t C,
                              uint8_t rvidx,
                              uint8_t clear,
-                             uint32_t E)
+                             uint32_t E,
+			     uint32_t F,
+			     uint32_t Foffset)
 {
   uint32_t Ncb,ind,k,Nref,N;
 
@@ -431,53 +433,60 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   }
 
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
+  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E); 
+  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb); 
 
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d\n", clear, E, ind, Ncb, rvidx);
 #endif
 
-  if (clear==1)
-    memset(w,0,Ncb*sizeof(int16_t));
+  if (clear==1) memset(w,0,Ncb*sizeof(int16_t));
 
   k=0;
 
+  if (ind < Foffset)
+    for (; (ind<Foffset)&&(k<E); ind++) {
+#ifdef RM_DEBUG
+      printf("RM_RX k%d Ind %d(before filler): %d (%d)=>",k,ind,w[ind],soft_input[k]);
+#endif
+      w[ind]+=soft_input[k++];
+#ifdef RM_DEBUG
+      printf("%d\n",w[ind]);
+#endif
+    }
+  if (ind >= Foffset && ind < Foffset+F) ind=Foffset+F;
+
   for (; (ind<Ncb)&&(k<E); ind++) {
-    if (soft_input[ind] != NR_NULL) {
+#ifdef RM_DEBUG
+    printf("RM_RX k%d Ind %d(after filler) %d (%d)=>",k,ind,w[ind],soft_input[k]);
+#endif
       w[ind] += soft_input[k++];
 #ifdef RM_DEBUG
-      printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);
-#endif
-    }
-
-#ifdef RM_DEBUG
-    else {
-      printf("RM_RX Ind: %d NULL %d\n",ind,nulled);
-      nulled++;
-    }
-
+      printf("%d\n",w[ind]);
 #endif
   }
 
-  if (rvidx !=0){
   while(k<E) {
-    for (ind=0; (ind<Ncb)&&(k<E); ind++) {
-      if (soft_input[ind] != NR_NULL) {
-        w[ind] += soft_input[k++];
+    for (ind=0; (ind<Foffset)&&(k<E); ind++) {
 #ifdef RM_DEBUG
-        printf("RM_RX k%d Ind: %d (%d)(soft in %d)\n",k-1,ind,w[ind],soft_input[k-1]);
+      printf("RM_RX k%d Ind %d(before filler) %d(%d)=>",k,ind,w[ind],soft_input[k]);
 #endif
-      }
-
+      w[ind]+=soft_input[k++];
 #ifdef RM_DEBUG
-      else {
-        printf("RM_RX Ind: %d NULL %d\n",ind,nulled);
-        nulled++;
-      }
-
+      printf("%d\n",w[ind]);
+#endif
+    }
+    for (ind=Foffset+F; (ind<Ncb)&&(k<E); ind++) {
+#ifdef RM_DEBUG
+      printf("RM_RX (after filler) k%d Ind: %d (%d)(soft in %d)=>",k,ind,w[ind],soft_input[k]);
+#endif
+      w[ind] += soft_input[k++];
+#ifdef RM_DEBUG
+      printf("%d\n",w[ind]);
 #endif
     }
   }
-  }
+
 
   return 0;
 }
