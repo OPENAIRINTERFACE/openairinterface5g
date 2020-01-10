@@ -352,32 +352,30 @@ static void UE_synch(void *arg) {
   }
 }
 
-void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
-
-  nr_dcireq_t dcireq;
-  nr_scheduled_response_t scheduled_response;
+void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   uint32_t nb_rb, start_rb;
   uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
   uint16_t n_rnti;
 
-  // Process Rx data for one sub-frame
-  if (nr_slot_select(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
-    //TODO: all of this has to be moved to the MAC!!!
+  nr_dcireq_t dcireq;
+  nr_scheduled_response_t scheduled_response;
+
+  // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
+  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
+
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
     dcireq.frame     = proc->frame_rx;
     dcireq.slot      = proc->nr_tti_rx;
-    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-    scheduled_response.dl_config = &dcireq.dl_config_req;
+    scheduled_response.dl_config = NULL;
     scheduled_response.ul_config = &dcireq.ul_config_req;
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
-
     //--------------------------Temporary configuration-----------------------------//
     n_rnti = 0x1234;
     nb_rb = 50;
@@ -388,7 +386,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     mcs = 9;
     harq_pid = 0;
     rvidx = 0;
-  //------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
     scheduled_response.ul_config->number_pdus = 1;
@@ -403,8 +401,45 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
-    nr_ue_scheduled_response(&scheduled_response);
 
+    nr_ue_scheduled_response(&scheduled_response);
+    
+    if (UE->mode != loop_through_memory) {
+      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
+      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
+    }
+  }
+}
+
+void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+
+  nr_dcireq_t dcireq;
+  nr_scheduled_response_t scheduled_response;
+
+  //program DCI for slot 1
+  //TODO: all of this has to be moved to the MAC!!!
+  if (proc->nr_tti_tx == NR_DOWNLINK_SLOT || UE->frame_parms.frame_type == FDD){
+    dcireq.module_id = UE->Mod_id;
+    dcireq.gNB_index = 0;
+    dcireq.cc_id     = 0;
+    dcireq.frame     = proc->frame_rx;
+    dcireq.slot      = proc->nr_tti_rx;
+    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+
+    // we should have received a DL DCI here, so configure DL accordingly
+    scheduled_response.dl_config = &dcireq.dl_config_req;
+    scheduled_response.ul_config = NULL;
+    scheduled_response.tx_request = NULL;
+    scheduled_response.module_id = UE->Mod_id;
+    scheduled_response.CC_id     = 0;
+    scheduled_response.frame = proc->frame_rx;
+    scheduled_response.slot  = proc->nr_tti_rx;
+
+    nr_ue_scheduled_response(&scheduled_response);
+  }
+
+  // Process Rx data for one sub-frame
+  if ( proc->nr_tti_rx >=0 && proc->nr_tti_rx <= 1 ) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
@@ -413,15 +448,15 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
-  if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
-	  //Hardcoded rnti value
-	  protocol_ctxt_t ctxt;
-	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
-                                   0x1234, proc->frame_rx,
-                                   proc->nr_tti_rx, 0);
-	  pdcp_run(&ctxt);
-          pdcp_fifo_flush_sdus(&ctxt);
-  }
+    if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
+      //Hardcoded rnti value
+      protocol_ctxt_t ctxt;
+      PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO,
+				     0x1234, proc->frame_rx,
+				     proc->nr_tti_rx, 0);
+      pdcp_run(&ctxt);
+      pdcp_fifo_flush_sdus(&ctxt);
+    }
   }
 
   
@@ -456,45 +491,14 @@ typedef struct processingData_s {
 }  processingData_t;
 
 void UE_processing(void *arg) {
-  uint8_t thread_id;
   processingData_t *rxtxD=(processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
+
   processSlotRX(UE, proc);
-  //printf(">>> mac ended\n");
-  // Prepare the future Tx data
-/*
-#ifndef NO_RAT_NR
 
-  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
-#else
-  if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
-      (UE->frame_parms.frame_type == FDD) )
-#endif
-*/
+  processSlotTX(UE, proc);
 
-
-  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
-
-    thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
-
-
-    if (UE->mode != loop_through_memory)
-      phy_procedures_nrUE_TX(UE,proc,0,thread_id);
-
-  }
-
-  //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
-
-#if 0
-
-  if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
-      (UE->frame_parms.frame_type == TDD))
-    if (UE->mode != loop_through_memory)
-      //phy_procedures_UE_S_TX(UE,0,0,no_relay);
-      updateTimes(current, &t3, 10000, timing_proc_name);
-
-#endif
 }
 
 void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
@@ -812,12 +816,12 @@ if (slot_nr==18)
 void init_NR_UE(int nb_inst, char* rrc_config_path) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
-
+  NR_UE_RRC_INST_t* rrc_inst;
+  
   for (inst=0; inst < nb_inst; inst++) {
-    nr_l3_init_ue(rrc_config_path);
-    nr_l2_init_ue();
-    mac_inst = get_mac_inst(inst);
-    AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
+    AssertFatal((rrc_inst = nr_l3_init_ue(rrc_config_path)) != NULL, "can not initialize RRC module\n");
+    AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
+    AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
   }
 }
 
@@ -838,6 +842,4 @@ void init_NR_UE_threads(int nb_inst) {
 #endif
 
   }
-
-  printf("UE threads created by %ld\n", gettid());
 }
