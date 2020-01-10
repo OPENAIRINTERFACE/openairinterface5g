@@ -1582,18 +1582,30 @@ void *UE_thread(void *arg)
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
-        if (UE->mode != loop_through_memory) {
-          for(int sf=0; sf<10; sf++) {
-            for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-              rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
 
-            AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
-                            &timestamp,
-                            rxp,
-                            UE->frame_parms.samples_per_tti,
-                            UE->frame_parms.nb_antennas_rx), "");
-            if (IS_SOFTMODEM_RFSIM )
+        if (UE->mode != loop_through_memory) {
+          if (IS_SOFTMODEM_RFSIM) {
+            for(int sf=0; sf<10; sf++) {
+              for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+                rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
+
+              AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
+                              &timestamp,
+                              rxp,
+                              UE->frame_parms.samples_per_tti,
+                              UE->frame_parms.nb_antennas_rx), "");
               write_dummy(UE, timestamp);
+            }
+          } else {
+            for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+              rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
+
+            AssertFatal( UE->frame_parms.samples_per_tti*10 ==
+                         UE->rfdevice.trx_read_func(&UE->rfdevice,
+                                                    &timestamp,
+                                                    rxp,
+                                                    UE->frame_parms.samples_per_tti*10,
+                                                    UE->frame_parms.nb_antennas_rx), "");
           }
         }
 
