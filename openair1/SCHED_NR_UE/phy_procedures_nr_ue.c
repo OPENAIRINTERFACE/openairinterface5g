@@ -3265,10 +3265,12 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
 
+  if (!dlsch0)
+  	return;
   if (dlsch0->active == 0)
     return;
 
-  if (dlsch0 && (!dlsch1))  {
+  if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
     uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
     uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;

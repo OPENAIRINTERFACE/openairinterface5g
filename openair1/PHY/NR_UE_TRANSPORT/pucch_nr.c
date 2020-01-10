@@ -77,7 +77,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
   // initialization to be removed
   PUCCH_GroupHopping=neither;
   n_id=10;
-  printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%d, n_id=%d -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
+  printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%u, n_id=%u -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
 #endif
   uint8_t f_ss=0,f_gh=0;
   *u=0;
@@ -159,14 +159,14 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
 #ifdef DEBUG_NR_PUCCH_TX
   // initialization to be remo.ved
   c_init=10;
-  printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%d -> variable initialization TO BE REMOVED\n",c_init);
+  printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%u -> variable initialization TO BE REMOVED\n",c_init);
 #endif
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
   uint8_t n_cs=0;
   int l = 32, minShift = (14*8*nr_tti_tx )+ 8*(lnormal+lprime);
   int tmpShift =0;
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%d -> \n",c_init);
+  printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%u -> \n",c_init);
 #endif
 
   for (int m=0; m<8; m++) {
@@ -306,7 +306,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
       //((int16_t *)txptr[0][re_offset])[1] = (int16_t)((int32_t)amp * x_n_im[(12*l)+n])>>15;
       //txptr[re_offset] = (x_n_re[(12*l)+n]<<16) + x_n_im[(12*l)+n];
 #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t [nr_generate_pucch0] mapping to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+      printf("\t [nr_generate_pucch0] mapping to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
              amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,re_offset,
              l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -330,7 +330,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%d m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
+  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%lu m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
          nr_tti_tx,payload,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
 #endif
   /*
@@ -368,7 +368,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
   }
 //  printf("d_re=%d\td_im=%d\n",(int)d_re,(int)d_im);
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch1] sequence modulation: payload=%x \tde_re=%d \tde_im=%d\n",payload,d_re,d_im);
+  printf("\t [nr_generate_pucch1] sequence modulation: payload=%lx \tde_re=%d \tde_im=%d\n",payload,d_re,d_im);
 #endif
   /*
    * Defining cyclic shift hopping TS 38.211 Subclause 6.3.2.2.2
@@ -625,7 +625,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
         ((int16_t *)&txdataF[0][re_offset])[0] = z_re[i+n];
         ((int16_t *)&txdataF[0][re_offset])[1] = z_im[i+n];
 #ifdef DEBUG_NR_PUCCH_TX
-        printf("\t [nr_generate_pucch1] mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+        printf("\t [nr_generate_pucch1] mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -635,7 +635,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
         ((int16_t *)&txdataF[0][re_offset])[0] = z_dmrs_re[i+n];
         ((int16_t *)&txdataF[0][re_offset])[1] = z_dmrs_im[i+n];
 #ifdef DEBUG_NR_PUCCH_TX
-        printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+        printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -961,7 +961,7 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
   x2 = ((rnti)<<15)+n_id;
   s = lte_gold_generic(&x1, &x2, 1);
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%lx\n",s);
+  printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%x\n",s);
 #endif
 
   for (i=0; i<M_bit; i++) {
@@ -1094,7 +1094,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         uint16_t startingPRB,
                         uint8_t nr_bit) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch2] start function at slot(nr_tti_tx)=%d  with payload=%d and nr_bit=%d\n",nr_tti_tx, payload, nr_bit);
+  printf("\t [nr_generate_pucch2] start function at slot(nr_tti_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_tti_tx, payload, nr_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b;
@@ -1170,7 +1170,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   int m=0;
 
   for (int l=0; l<nrofSymbols; l++) {
-    x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*n_id) + 1)) + (2*n_id))%(1<<31); // c_init calculation according to TS38.211 subclause
+    x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*n_id) + 1)) + (2*n_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
     s = lte_gold_generic(&x1, &x2, 1);
     m = 0;
 
@@ -1210,7 +1210,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[0] = d_re[i+k];
           ((int16_t *)&txdataF[0][re_offset])[1] = d_im[i+k];
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                  n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+k,re_offset,
                  l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -1222,7 +1222,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)((int32_t)(amp*ONE_OVER_SQRT2*(1-(2*((uint8_t)((s>>((2*m)+1))&1)))))>>15);
           m++;
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                  n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+kk,re_offset,
                  l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -1240,6 +1240,9 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
       }
     }
   }
+  free(d_re);
+  free(d_im);
+  free(btilde);
 }
 //#if 0
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
@@ -1260,7 +1263,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                           uint8_t occ_length_format4,
                           uint8_t occ_index_format4) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch3_4] start function at slot(nr_tti_tx)=%d with payload=%d and nr_bit=%d\n", nr_tti_tx, payload, nr_bit);
+  printf("\t [nr_generate_pucch3_4] start function at slot(nr_tti_tx)=%d with payload=%lu and nr_bit=%d\n", nr_tti_tx, payload, nr_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b;
@@ -1665,7 +1668,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
       }
 
 #ifdef DEBUG_NR_PUCCH_TX
-      printf("re_offset=%d,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
+      printf("re_offset=%u,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
 #endif
 
       //txptr = &txdataF[0][re_offset];
@@ -1679,7 +1682,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[0] = z_re[n+k];
           ((int16_t *)&txdataF[0][re_offset])[1] = z_im[n+k];
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,k=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(z(l=%d,n=%d)=(%d,%d))\n",
+          printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,k=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(z(l=%d,n=%d)=(%d,%d))\n",
                  l,rb,n,k,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,n+k,re_offset,
                  l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -1691,7 +1694,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)((((int32_t)(32767*cos(alpha*((n+j)%N_ZC)))*r_u_v_base_im[n+j])>>15)
               + (((int32_t)(32767*sin(alpha*((n+j)%N_ZC)))*r_u_v_base_re[n+j])>>15));
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,j=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(r_u_v(l=%d,n=%d)=(%d,%d))\n",
+          printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,j=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(r_u_v(l=%d,n=%d)=(%d,%d))\n",
                  l,rb,n,j,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,n+j,re_offset,
                  l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
@@ -1705,5 +1708,8 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
       if (table_6_4_1_3_3_2_1_dmrs_positions[nrofSymbols-4][l] == 1) j+=12;
     }
   }
+  free(z_re);
+  free(z_im);
+  free(btilde);
 }
 

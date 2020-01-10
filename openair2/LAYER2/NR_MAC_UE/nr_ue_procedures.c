@@ -86,6 +86,8 @@ uint8_t table_9_2_2_1[16][8]={
   {1,0, 14,4, 0,3,6,9},
   {1,0, 14,26,0,3,0,0}
 };
+
+
 int8_t nr_ue_process_dlsch(module_id_t module_id,
 			   int cc_id,
 			   uint8_t gNB_index,
@@ -222,16 +224,16 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
 }
 
 int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
-			module_id_t module_id,
-			int 		cc_id,
-			uint8_t 	gNB_index,
-			uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
-			uint32_t    ssb_length,
-			uint32_t 	ssb_index,
-			void 		*pduP,
-			uint16_t    cell_id ){
-
-  LOG_D(MAC,"[L2][MAC] decode mib\n");
+                        module_id_t module_id,
+                        int cc_id,
+                        uint8_t gNB_index,
+                        uint8_t extra_bits,	//	8bits 38.212 c7.1.1
+                        uint32_t ssb_length,
+                        uint32_t ssb_index,
+                        void *pduP,
+                        uint16_t cell_id)
+{
+  LOG_I(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -451,7 +453,6 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
-        
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -625,8 +626,8 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   proc->decoded_frame_rx=frame;
   //}
   return 0;
-}
 
+}
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms

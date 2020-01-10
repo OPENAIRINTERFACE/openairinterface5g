@@ -33,31 +33,24 @@
 #ifndef __LAYER2_NR_MAC_DEFS_H__
 #define __LAYER2_NR_MAC_DEFS_H__
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "platform_types.h"
-
 #include "NR_DRX-Config.h"
 #include "NR_SchedulingRequestConfig.h"
 #include "NR_BSR-Config.h"
 #include "NR_TAG-Config.h"
 #include "NR_PHR-Config.h"
 #include "NR_RNTI-Value.h"
-
 #include "NR_MIB.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "NR_PhysicalCellGroupConfig.h"
 #include "NR_SpCellConfig.h"
-
 #include "NR_ServingCellConfig.h"
 #include "fapi_nr_ue_interface.h"
 #include "NR_IF_Module.h"
 #include "../NR_MAC_gNB/nr_mac_common.h"
-
 #include "PHY/defs_nr_common.h"
 
 #define NB_NR_UE_MAC_INST 1

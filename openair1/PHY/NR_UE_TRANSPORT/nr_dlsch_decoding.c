@@ -485,7 +485,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                                  harq_process->C,
                                  harq_process->rvidx,
                                  (harq_process->round==0)?1:0,
-                                 E)==-1) {
+                                 E,
+				 harq_process->F,
+				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
@@ -551,12 +553,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
       memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
+
       for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
       {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
-
-      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      // Kbytes_F = Kr_bytes - F>>3
+      j+=(harq_process->F>>3);
+      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
       {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
@@ -1052,7 +1057,9 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                                  harq_process->C,
                                  harq_process->rvidx,
                                  (harq_process->round==0)?1:0,
-                                 E)==-1) {
+                                 E,
+				 harq_process->F,
+				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -1593,7 +1600,9 @@ void *nr_dlsch_decoding_process(void *arg)
                                  harq_process->C,
                                  harq_process->rvidx,
                                  (harq_process->round==0)?1:0,
-                                 E)==-1) {
+                                 E,
+				 harq_process->F,
+				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -1654,11 +1663,11 @@ void *nr_dlsch_decoding_process(void *arg)
         start_meas(dlsch_turbo_decoding_stats);
 #endif
 //      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
-
+/*
         for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
               inv_d[cnt] = (1)*harq_process->d[r][cnt];
               }
-
+*/
         memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
         memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));

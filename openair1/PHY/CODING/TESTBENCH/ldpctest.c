@@ -317,6 +317,7 @@ int test_ldpc(short No_iteration,
         for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)
           if (channel_input[j][i]!=channel_input_optim[j][i]) {
             printf("differ in seg %u pos %u (%u,%u)\n", j, i, channel_input[j][i], channel_input_optim[j][i]);
+            free(channel_output);
             return (-1);
           }
       //else{

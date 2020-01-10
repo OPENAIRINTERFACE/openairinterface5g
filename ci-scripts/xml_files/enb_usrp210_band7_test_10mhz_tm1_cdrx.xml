@@ -56,7 +56,6 @@
 	<testCase id="040302">
 		<class>Attach_UE</class>
 		<desc>Attach UE</desc>
-		<nbMaxUEtoAttach>1</nbMaxUEtoAttach>
 	</testCase>
 
 	<testCase id="040401">

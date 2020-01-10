@@ -187,9 +187,8 @@ uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_
   LTE_BCCH_BCH_Message_MBMS_t *mib_fembms=&carrier->mib_fembms;
   uint8_t sfn = (uint8_t)((frame>>2)&0xff);
   uint16_t *spare = calloc(1,sizeof(uint16_t));
-  uint16_t *additionalNonMBSFNSubframes = calloc(1,sizeof(uint16_t));
 
-  if( spare == NULL || additionalNonMBSFNSubframes == NULL ) abort();
+  if( spare == NULL  ) abort();
 
   switch (N_RB_DL) {
     case 6:
@@ -217,7 +216,7 @@ uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_
       break;
 
     default:
-      AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
+      AssertFatal(1==0,"Unknown dl_Bandwidth %u\n",N_RB_DL);
   }
 
   LOG_I(RRC,"[MIB] systemBandwidth %x, additional non MBMS subframes %x, sfn %x\n",
@@ -287,7 +286,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
       break;
 
     default:
-      AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
+      AssertFatal(1==0,"Unknown dl_Bandwidth %u\n",N_RB_DL);
   }
 
   AssertFatal(phich_Resource <= LTE_PHICH_Config__phich_Resource_two,"Illegal phich_Resource\n");
@@ -1021,7 +1020,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
         sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
           = calloc(1, sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
         memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
-               sizeof(sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+               sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
 
         if (*configuration->fdd_DownlinkOrTddSubframeBitmapBR_r13[CC_id]) {
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
@@ -1183,7 +1182,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13
     = calloc(1, sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
   memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13, 0,
-         sizeof(sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13)));
+         sizeof(struct LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13));
   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->present
     = LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__fdd_DownlinkOrTddSubframeBitmapBR_r13_PR_subframePattern10_r13;
   sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_DownlinkOrTddSubframeBitmapBR_r13->choice.subframePattern10_r13.buf = calloc(2, sizeof(uint8_t));

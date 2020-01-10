@@ -1,0 +1,421 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+    if (params.pipelineUsesSlack != null) {
+        if (params.pipelineUsesSlack) {
+            slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+        }
+    }
+}
+
+// Location of the test XML file to be run
+def testXMLFile = params.pythonTestXmlFile
+def mainPythonAllXmlFiles = ""
+def buildStageStatus = true
+
+// Name of the test stage
+def testStageName = params.pipelineTestStageName
+
+// Name of the branch to work on
+def ranRepoBranch = params.pythonWorkingBranch
+
+// Lease booking parameters
+def r2labStartTime = params.R2LAB_LeaseBookStartTime
+def r2labDuration = params.R2LAB_LeaseBookDuration
+
+
+// Fixed deployment
+def r2labBaseIpAddr = '192.168.3.'
+def r2labPythonExeIdx = '14'
+def r2labPythonExe = 'fit' + r2labPythonExeIdx
+def r2labENB0Idx = '23'
+def r2labENB0 = 'fit' + r2labENB0Idx
+def r2labENB0IpAddr = r2labBaseIpAddr + r2labENB0Idx
+def r2labEPC0Idx = '17'
+def r2labEPC0 = 'fit' + r2labEPC0Idx
+def r2labEPC0IpAddr = r2labBaseIpAddr + r2labEPC0Idx
+def r2labUE0Idx = '6'
+def r2labUE0 = 'fit0' + r2labUE0Idx
+def r2labUE0IpAddr = r2labBaseIpAddr + r2labUE0Idx
+
+pipeline {
+    agent {
+        label 'master'
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        ansiColor('xterm')
+    }
+
+    stages {
+        stage ("Book session") {
+            steps {
+                script {
+                    echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+
+                    def allParametersPresent = true
+                    if (params.R2LAB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.R2LAB_FitNode_Credentials == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.R2LAB_LeaseBookStartTime == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.R2LAB_LeaseBookDuration == null) {
+                        allParametersPresent = false
+                    }
+
+                    // If not present picking a default Stage Name
+                    if (params.pipelineTestStageName == null) {
+                        // picking default
+                        testStageName = 'Tests at Inria R2LAB'
+                    }
+                    // If not present picking a default branch name
+                    if (params.pythonWorkingBranch == null) {
+                        ranRepoBranch = 'develop'
+                    }
+
+                    if (params.pythonTestXmlFile == null) {
+                        // picking default
+                        testXMLFile = 'xml_files/inria/enb_usrp210_band7_build.xml'
+                        echo "Test XML file(default):   ${testXMLFile}"
+                        mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
+                    } else {
+                        String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                        for (xmlFile in myXmlTestSuite) {
+                            mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                            echo "Test XML file         :   ${xmlFile}"
+                        }
+                    }
+
+                    if (!allParametersPresent) {
+                        currentBuild.result = 'ABORTED'
+                        error('Stopping early because no R2LAB credentials')
+                    }
+
+                    JOB_TIMESTAMP = sh returnStdout: true, script: 'date --rfc-3339=seconds | sed -e "s#+00:00##"'
+                    JOB_TIMESTAMP = JOB_TIMESTAMP.trim()
+
+                    echo '\u2705 \u001B[32mBook a Session\u001B[0m'
+
+                    BOOK_TIMESTAMP = sh returnStdout: true, script: 'date --rfc-3339=date'
+                    BOOK_TIMESTAMP = BOOK_TIMESTAMP.trim()
+
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_Credentials}", usernameVariable: 'r2labuser', passwordVariable: 'r2labpassword']
+                        ]) {
+                        sh "python3 /home/eurecom/inria-scripts/booking-lease.py --book-lease --from ${BOOK_TIMESTAMP}T${r2labStartTime} --duration ${r2labDuration} --slice inria_oaici ${r2labuser} ${r2labpassword}"
+                        sh "python3 /home/eurecom/inria-scripts/booking-lease.py --get-leases ${r2labuser} ${r2labpassword}"
+                    }
+                }
+            }
+        }
+        stage ("Load Images") {
+            steps {
+                script {
+                    echo '\u2705 \u001B[32mLoad Image for Python Executor\u001B[0m'
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
+
+                    echo '\u2705 \u001B[32mLoad Image for one eNB\u001B[0m'
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx} > /dev/null 2>&1'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx}'"
+
+                    echo '\u2705 \u001B[32mLoad Image for one OAI UE\u001B[0m'
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labUE0Idx} > /dev/null 2>&1'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labUE0Idx}'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labUE0Idx}'"
+
+                    echo '\u2705 \u001B[32mLoad Image for one EPC\u001B[0m'
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-epc ${r2labEPC0Idx} > /dev/null 2>&1'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labEPC0Idx}'"
+
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'nodes ${r2labUE0Idx},${r2labPythonExeIdx},${r2labEPC0Idx},${r2labENB0Idx} && st'"
+                }
+            }
+        }
+        stage ("Prepare Python Executor") {
+            steps {
+                script {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g && git fetch --all --prune --quiet\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g && git checkout --quiet ${ranRepoBranch}\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g && git pull --quiet origin ${ranRepoBranch}\"'"
+                        GIT_COMMIT_TO_RUN = sh returnStdout: true, script: "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g && git log -n1 --pretty=format:%H\"' | grep -v fit"
+                        GIT_COMMIT_TO_RUN = GIT_COMMIT_TO_RUN.trim()
+                        echo "Latest commit to use is ${GIT_COMMIT_TO_RUN}"
+
+                        // Putting the adaptation parameters for the OAI UE
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'scp /home/inria_oaici/for-ci/adapt_usim_parameters_${r2labUE0}.sed ${fituser}@${r2labUE0}:/tmp/adapt_usim_parameters.sed'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'scp /home/inria_oaici/for-ci/phones_list.txt ${fituser}@${r2labEPC0}:/tmp'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S cp /tmp/phones_list.txt /etc/ci\"'"
+
+                        // Out of rload, the sub-network-interfaces are not up
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:m11 172.16.1.102 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:m10 192.168.10.110 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:sxu 172.55.55.102 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:s1u 192.168.248.159 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:sxc 172.55.55.101 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:s5c 172.58.58.102 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:p5c 172.58.58.101 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ifconfig control:s11 172.16.1.104 up\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"ifconfig\"'"
+
+                        // Adding routes on the EPC
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip route add default via 192.168.3.100 dev control table lte\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip rule add from 12.0.0.0/8 table lte\"'"
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labEPC0} \"echo ${fitpasswd} | sudo -S ip rule add from 12.1.1.0/8 table lte\"'"
+
+                        // Adding a route on the eNB for the S1U interface
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labENB0} \"echo ${fitpasswd} | sudo -S ip route add 192.168.248.0/24 via ${r2labEPC0IpAddr} dev control\"'"
+
+                        // For the moment, simple way to route traffic from python executor to any UEs
+                        sh "ssh -t inria_oaici@faraday.inria.fr 'ssh -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"echo ${fitpasswd} | sudo -S ip route add 12.1.1.0/24 via ${r2labEPC0IpAddr} dev control\"'"
+                    }
+                }
+            }
+        }
+        stage ("Build and Test") {
+            steps {
+                script {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                        sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=InitiateHtml --ranRepository=https://gitlab.eurecom.fr/oai/openairinterface5g --ranBranch=${ranRepoBranch} --ranCommitID=${GIT_COMMIT_TO_RUN} --ranAllowMerge=false --ADBIPAddress=${r2labEPC0IpAddr} --ADBUserName=${fituser} --ADBPassword=${fitpasswd} --ADBType=distributed ${mainPythonAllXmlFiles}\"'"
+                        String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                        for (xmlFile in myXmlTestSuite) {
+                            try {
+                                sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=TesteNB --ranRepository=https://gitlab.eurecom.fr/oai/openairinterface5g --ranBranch=${ranRepoBranch} --ranCommitID=${GIT_COMMIT_TO_RUN} --ranAllowMerge=false --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd} --eNBSourceCodePath=/home/${fituser}/openairinterface5g --UEIPAddress=${r2labUE0IpAddr} --UEUserName=${fituser} --UEPassword=${fitpasswd} --UESourceCodePath=/home/${fituser}/openairinterface5g --EPCIPAddress=${r2labEPC0IpAddr} --EPCType=OAI-Rel14-CUPS --EPCUserName=${fituser}  --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --ADBIPAddress=${r2labEPC0IpAddr} --ADBUserName=${fituser} --ADBPassword=${fitpasswd} --ADBType=distributed --XMLTestFile=${xmlFile}\"'"
+                            } catch (Exception e) {
+                                currentBuild.result = 'FAILURE'
+                                buildStageStatus = false
+                            }
+                        }
+                        sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd}\"'"
+                    }
+                }
+            }
+        }
+        stage ("Prepare Log Collection") {
+            steps {
+                sh "ssh -t inria_oaici@faraday.inria.fr 'mkdir -p /home/inria_oaici/archives'"
+                sh "ssh -t inria_oaici@faraday.inria.fr 'touch /home/inria_oaici/archives/no_error.txt'"
+                sh "ssh -t inria_oaici@faraday.inria.fr 'rm -f /home/inria_oaici/archives/*.*'"
+                withCredentials([
+                    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                    ]) {
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labPythonExe}:/home/${fituser}/openairinterface5g/ci-scripts/test_results.html /home/inria_oaici/archives'"
+                }
+                sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/test_results.html ."
+                script {
+                    if(fileExists("./test_results.html")) {
+                        sh "mv ./test_results.html test_results-${JOB_NAME}.html"
+                        sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-${JOB_NAME}.html"
+                        archiveArtifacts "test_results-${JOB_NAME}.html"
+                    }
+                }
+            }
+        }
+        stage ("Log Collection") {
+            parallel {
+                stage('Log Collection (OAI eNB - Build)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (OAI eNB - Build)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectBuild --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd} --eNBSourceCodePath=/home/${fituser}/openairinterface5g\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labENB0}:/home/${fituser}/openairinterface5g/cmake_targets/build.log.zip /home/inria_oaici/archives/enb.build.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/enb.build.log.zip enb.build.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("enb.build.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "enb.build.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (OAI UE - Build)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (OAI UE - Build)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectBuild --UEIPAddress=${r2labUE0IpAddr} --UEUserName=${fituser} --UEPassword=${fitpasswd} --UESourceCodePath=/home/${fituser}/openairinterface5g\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labUE0}:/home/${fituser}/openairinterface5g/cmake_targets/build.log.zip /home/inria_oaici/archives/ue.build.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/ue.build.log.zip ue.build.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("ue.build.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "ue.build.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (OAI eNB - Runs)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (OAI eNB - Runs)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollecteNB --eNBIPAddress=${r2labENB0IpAddr} --eNBUserName=${fituser} --eNBPassword=${fitpasswd} --eNBSourceCodePath=/home/${fituser}/openairinterface5g\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labENB0}:/home/${fituser}/openairinterface5g/cmake_targets/enb.log.zip /home/inria_oaici/archives/enb.run.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/enb.run.log.zip enb.run.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("enb.run.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "enb.run.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (OAI UE - Runs)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (OAI UE - Runs)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectOAIUE --UEIPAddress=${r2labUE0IpAddr} --UEUserName=${fituser} --UEPassword=${fitpasswd} --UESourceCodePath=/home/${fituser}/openairinterface5g\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labUE0}:/home/${fituser}/openairinterface5g/cmake_targets/ue.log.zip /home/inria_oaici/archives/ue.run.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/ue.run.log.zip ue.run.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("ue.run.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "ue.run.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (MME)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (MME)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectMME --EPCIPAddress=${r2labEPC0IpAddr} --EPCUserName=${fituser} --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --EPCType=OAI-Rel14-CUPS\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labEPC0}:/home/${fituser}/openair-cn/scripts/mme.log.zip /home/inria_oaici/archives/mme.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/mme.log.zip mme.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("mme.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "mme.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (HSS)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (HSS)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectHSS --EPCIPAddress=${r2labEPC0IpAddr} --EPCUserName=${fituser} --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --EPCType=OAI-Rel14-CUPS\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labEPC0}:/home/${fituser}/openair-cn/scripts/hss.log.zip /home/inria_oaici/archives/hss.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/hss.log.zip hss.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("hss.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "hss.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (SPGW)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (SPGW)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectSPGW --EPCIPAddress=${r2labEPC0IpAddr} --EPCUserName=${fituser} --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --EPCType=OAI-Rel14-CUPS\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labEPC0}:/home/${fituser}/openair-cn/scripts/spgw.log.zip /home/inria_oaici/archives/spgw.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/spgw.log.zip spgw.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("spgw.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "spgw.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (Ping)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (Ping)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectPing --EPCIPAddress=${r2labEPC0IpAddr} --EPCUserName=${fituser} --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --EPCType=OAI-Rel14-CUPS\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labEPC0}:/home/${fituser}/openair-cn/scripts/ping.log.zip /home/inria_oaici/archives/ping.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/ping.log.zip ping.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("ping.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "ping.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (Iperf)') {
+                    steps {
+                        withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.R2LAB_FitNode_Credentials}", usernameVariable: 'fituser', passwordVariable: 'fitpasswd']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (Iperf)\u001B[0m'
+                            sh "ssh -t -t inria_oaici@faraday.inria.fr 'ssh -t -t -b 192.168.3.100 ${fituser}@${r2labPythonExe} \"cd openairinterface5g/ci-scripts && python3 main.py --mode=LogCollectIperf --EPCIPAddress=${r2labEPC0IpAddr} --EPCUserName=${fituser} --EPCPassword=${fitpasswd} --EPCSourceCodePath=/home/${fituser}/openair-cn --EPCType=OAI-Rel14-CUPS\"'"
+                            sh "ssh -t inria_oaici@faraday.inria.fr 'scp ${fituser}@${r2labEPC0}:/home/${fituser}/openair-cn/scripts/iperf.log.zip /home/inria_oaici/archives/iperf.log.zip'"
+                        }
+                        sh "scp inria_oaici@faraday.inria.fr:/home/inria_oaici/archives/iperf.log.zip iperf.log.${env.BUILD_ID}.zip"
+                        script {
+                            if(fileExists("iperf.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "iperf.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage ("Clean-up Log Collection") {
+            steps {
+                sh "ssh -t inria_oaici@faraday.inria.fr 'rm -Rf /home/inria_oaici/archives'"
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo '\u2705 \u001B[32mShutdown every node\u001B[0m'
+                sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
+                sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
+            }
+        }
+    }
+}
