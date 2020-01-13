@@ -379,7 +379,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t    *const ctxt_pP
           }
         }
 
-        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %ld SESSION ID %u SERVICE ID %u\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               lc_id,
               rb_id,

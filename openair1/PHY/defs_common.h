@@ -72,9 +72,6 @@
 
 #include "types.h"
 #include "nfapi_interface.h"
-//#include "defs.h"
-
-#include "defs_RU.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2

@@ -541,6 +541,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   if (pdcp_pdu_p != NULL) {
     memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
     memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
+
       rlc_status = rlc_data_req(&ctxt
                                 , 1
                                 , MBMS_FLAG_NO
@@ -549,10 +550,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                 , 0
                                 , rrc_dl_sdu_len
                                 , pdcp_pdu_p
-#ifdef Rel14
                                 ,NULL
                                 ,NULL
-#endif
                                 );
       switch (rlc_status) {
         case RLC_OP_STATUS_OK:

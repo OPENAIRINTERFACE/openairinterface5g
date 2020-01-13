@@ -80,7 +80,7 @@ void feptx0(RU_t *ru,
 
   slot_offset = slot*(fp->samples_per_tti>>1); //slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
-  //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
+  //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.tti_tx,slot);
 
   for (aa=0; aa<ru->nb_tx; aa++) {
     if (fp->Ncp == EXTENDED) {
@@ -105,7 +105,7 @@ void feptx0(RU_t *ru,
                        CYCLIC_PREFIX);
           LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d F(%d) t(%d) IS PMCH(%d)\n",
                     ru->proc.frame_tx,
-                    ru->proc.subframe_tx,
+                    ru->proc.tti_tx,
                     slot,
                     slot*slot_sizeF+fp->ofdm_symbol_size*2,
                     slot_offset+((fp->ofdm_symbol_size>>2)*2+fp->ofdm_symbol_size*2),
@@ -214,7 +214,7 @@ static void *feptx_thread(void *param)
     }
 	/*if(opp_enabled == 1 && ru->ofdm_mod_wakeup_stats.p_time>30*3000){
       print_meas_now(&ru->ofdm_mod_wakeup_stats,"fep wakeup",stderr);
-      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->tti_tx);
     }*/
   }
   return(NULL);
@@ -273,7 +273,7 @@ void feptx_ofdm_2thread(RU_t *ru,
   stop_meas(&ru->ofdm_mod_wait_stats);
   /*if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.p_time>30*3000){
     print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
-    printf("delay in feptx wait on condition in frame_rx: %d  subframe_rx: %d \n", proc->frame_tx, proc->subframe_tx);
+    printf("delay in feptx wait on condition in frame_rx: %d  subframe_rx: %d \n", proc->frame_tx, proc->tti_tx);
   }*/
 
   stop_meas(&ru->ofdm_mod_stats);

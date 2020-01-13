@@ -57,6 +57,7 @@
 #include "common_lib.h"
 #include "msc.h"
 #include "defs_common.h"
+#include "defs_RU.h"
 #include "impl_defs_top.h"
 #include "PHY/TOOLS/time_meas.h"
 //#include "PHY/CODING/coding_defs.h"

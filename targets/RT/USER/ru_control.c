@@ -685,9 +685,9 @@ void* ru_thread_control( void* param )
 	    	msg_len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_config_t);
 
 		LOG_W(PHY,"New MBSFN config received from RAU --- num_MBSFN_config %d\n",((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config);
-	        ru->frame_parms.num_MBSFN_config = ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config;
+	        ru->frame_parms->num_MBSFN_config = ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config;
 	        for(int i=0; i < ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config; i++){
-		 ru->frame_parms.MBSFN_config[i].mbsfn_SubframeConfig=((RRU_config_t *)&rru_config_msg.msg[0])->MBSFN_config[i].mbsfn_SubframeConfig;
+		 ru->frame_parms->MBSFN_config[i].mbsfn_SubframeConfig=((RRU_config_t *)&rru_config_msg.msg[0])->MBSFN_config[i].mbsfn_SubframeConfig;
 		  LOG_W(PHY,"Configuration received from RAU (num MBSFN %d, MBSFN_SubframeConfig[%d] pattern is %x )\n",
 		       ((RRU_config_t *)&rru_config_msg.msg[0])->num_MBSFN_config,
 		       i,

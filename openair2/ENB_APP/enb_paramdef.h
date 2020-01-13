@@ -1050,7 +1050,6 @@ typedef struct srb1_params_s {
     {ENB_CONFIG_STRING_MCE_IPV4_ADDR_FOR_M2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
     {ENB_CONFIG_STRING_MCE_PORT_FOR_M2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
   }
-}   
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            GTPU  configuration parameters                                                                                                      */

@@ -476,6 +476,12 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430: 
 	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib24_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib25_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
+	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 
 	LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2, %p %p\n",&typeandinfo->choice.sib2,*sib2);
@@ -884,6 +890,12 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib20_v1310: 
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430: 
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib24_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib25_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 

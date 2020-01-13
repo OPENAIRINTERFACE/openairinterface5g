@@ -37,7 +37,7 @@
 #include "common_lib.h"
 #include "openairinterface5g_limits.h"
 #include "PHY/TOOLS/time_meas.h"
-#include "openair1/PHY/defs_common.h"
+#include "defs_common.h"
 
 
 #define MAX_BANDS_PER_RRU 4
