@@ -1,8 +1,16 @@
 #-----------------------------------------------------------
+# Import
+#-----------------------------------------------------------
+import pexpect          # pexpect
+import logging
+
+#-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class SSHConnection():
 	def __init__(self):
+		self.ssh = ''
+
 	def open(self, ipaddress, username, password):
 		count = 0
 		connect_status = False
@@ -165,3 +173,5 @@ class SSHConnection():
 		else:
 			sys.exit('SCP failed')
 
+	def getBefore(self):
+		return str(self.ssh.before)

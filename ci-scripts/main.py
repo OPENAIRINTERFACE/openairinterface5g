@@ -87,7 +87,6 @@ logging.basicConfig(
 	level=logging.DEBUG,
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
 )
-import sshconnection.py 
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -214,7 +213,7 @@ class OaiCiTest():
 			elif self.sshresponse == 2:
 				# Checking if we are really on the remote client defined by its IP address
 				SSH.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "', '\$', 5)
-				result = re.search(str(ipaddress), str(self.ssh.before))
+				result = re.search(str(ipaddress), SSH.getBefore())
 				if result is None:
 					SSH.close()
 				else:
@@ -222,7 +221,7 @@ class OaiCiTest():
 					connect_status = True
 			else:
 				# debug output
-				logging.debug(str(self.ssh.before))
+				logging.debug(SSH.getBefore())
 				logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			# adding a tempo when failure
 			if not connect_status:
@@ -249,7 +248,7 @@ class OaiCiTest():
 			logging.debug('Expected Line : ' + expectedline)
 			result = re.search('ping |iperf |picocom', str(commandline))
 			if result is None:
-				logging.debug(str(self.ssh.before))
+				logging.debug(SSH.getBefore())
 				sys.exit(self.sshresponse)
 			else:
 				return -1
@@ -380,27 +379,27 @@ class OaiCiTest():
 		# Checking the BUILD INFO file
 		if not self.backgroundBuild:
 			SSH.command('ls *.txt', '\$', 5)
-			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			result = re.search('LAST_BUILD_INFO', SSH.getBefore())
 			if result is not None:
 				mismatch = False
 				SSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
-				result = re.search(self.ranCommitID, str(self.ssh.before))
+				result = re.search(self.ranCommitID, SSH.getBefore())
 				if result is None:
 					mismatch = True
 				SSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 				if (self.ranAllowMerge):
-					result = re.search('YES', str(self.ssh.before))
+					result = re.search('YES', SSH.getBefore())
 					if result is None:
 						mismatch = True
 					SSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 					if self.ranTargetBranch == '':
-						result = re.search('develop', str(self.ssh.before))
+						result = re.search('develop', SSH.getBefore())
 					else:
-						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+						result = re.search(self.ranTargetBranch, SSH.getBefore())
 					if result is None:
 						mismatch = True
 				else:
-					result = re.search('NO', str(self.ssh.before))
+					result = re.search('NO', SSH.getBefore())
 					if result is None:
 						mismatch = True
 				if not mismatch:
@@ -461,7 +460,7 @@ class OaiCiTest():
 		buildOAIprocess = True
 		while (count > 0) and buildOAIprocess:
 			SSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
-			result = re.search('build_oai', str(self.ssh.before))
+			result = re.search('build_oai', SSH.getBefore())
 			if result is None:
 				buildOAIprocess = False
 			else:
@@ -474,7 +473,7 @@ class OaiCiTest():
 		SSH.command('ls lte_build_oai/build', '\$', 3)
 		SSH.command('ls lte_build_oai/build', '\$', 3)
 		buildStatus = True
-		result = re.search('lte-softmodem', str(self.ssh.before))
+		result = re.search('lte-softmodem', SSH.getBefore())
 		if result is None:
 			buildStatus = False
 		else:
@@ -531,27 +530,27 @@ class OaiCiTest():
 		SSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		SSH.command('git config user.name "OAI Jenkins"', '\$', 5)
 		SSH.command('ls *.txt', '\$', 5)
-		result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+		result = re.search('LAST_BUILD_INFO', SSH.getBefore())
 		if result is not None:
 			mismatch = False
 			SSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
-			result = re.search(self.ranCommitID, str(self.ssh.before))
+			result = re.search(self.ranCommitID, SSH.getBefore())
 			if result is None:
 				mismatch = True
 			SSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 			if (self.ranAllowMerge):
-				result = re.search('YES', str(self.ssh.before))
+				result = re.search('YES', SSH.getBefore())
 				if result is None:
 					mismatch = True
 				SSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 				if self.ranTargetBranch == '':
-					result = re.search('develop', str(self.ssh.before))
+					result = re.search('develop', SSH.getBefore())
 				else:
-					result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					result = re.search(self.ranTargetBranch, SSH.getBefore())
 				if result is None:
 					mismatch = True
 			else:
-				result = re.search('NO', str(self.ssh.before))
+				result = re.search('NO', SSH.getBefore())
 				if result is None:
 					mismatch = True
 			if not mismatch:
@@ -581,7 +580,7 @@ class OaiCiTest():
 		SSH.command('ls lte_build_oai/build', '\$', 3)
 		SSH.command('ls lte_build_oai/build', '\$', 3)
 		buildStatus = True
-		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		result = re.search('lte-uesoftmodem', SSH.getBefore())
 		if result is None:
 			buildStatus = False
 		SSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
@@ -660,7 +659,7 @@ class OaiCiTest():
 			SSH.command('source oaienv', '\$', 5)
 			SSH.command('cd scripts', '\$', 5)
 			SSH.command('stdbuf -o0 hostname', '\$', 5)
-			result = re.search('hostname\\\\r\\\\n(?P<host_name>[a-zA-Z0-9\-\_]+)\\\\r\\\\n', str(self.ssh.before))
+			result = re.search('hostname\\\\r\\\\n(?P<host_name>[a-zA-Z0-9\-\_]+)\\\\r\\\\n', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m Hostname Not Found! \u001B[0m')
 				sys.exit(1)
@@ -708,7 +707,7 @@ class OaiCiTest():
 			return
 		SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
-		result = re.search('/opt/flexran_rtc/build/rt_controller', str(self.ssh.before))
+		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
 			self.flexranCtrlInstalled = True
 			logging.debug('Flexran Controller is installed')
@@ -727,7 +726,7 @@ class OaiCiTest():
 		SSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
 		SSH.command('echo ' + self.EPCPassword + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
 		SSH.command('ps -aux | grep --color=never rt_controller', '\$', 5)
-		result = re.search('rt_controller -c ', str(self.ssh.before))
+		result = re.search('rt_controller -c ', SSH.getBefore())
 		if result is not None:
 			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
 			self.flexranCtrlStarted = True
@@ -765,7 +764,7 @@ class OaiCiTest():
 		if result is not None:
 			SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			SSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
-			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', str(self.ssh.before))
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', SSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
@@ -802,7 +801,7 @@ class OaiCiTest():
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
 			SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
-			result = re.search('type: b200', str(self.ssh.before))
+			result = re.search('type: b200', SSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				SSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
@@ -864,9 +863,9 @@ class OaiCiTest():
 			else:
 				SSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
 				if rruCheck:
-					result = re.search('wait RUs', str(self.ssh.before))
+					result = re.search('wait RUs', SSH.getBefore())
 				else:
-					result = re.search('got sync|Starting F1AP at CU', str(self.ssh.before))
+					result = re.search('got sync|Starting F1AP at CU', SSH.getBefore())
 				if result is None:
 					time.sleep(6)
 				else:
@@ -956,7 +955,7 @@ class OaiCiTest():
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 10)
-		result = re.search('type: b200', str(self.ssh.before))
+		result = re.search('type: b200', SSH.getBefore())
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
@@ -971,7 +970,7 @@ class OaiCiTest():
 		# We may have to regenerate the .u* files
 		if result is None:
 			SSH.command('ls /tmp/*.sed', '\$', 5)
-			result = re.search('adapt_usim_parameters', str(self.ssh.before))
+			result = re.search('adapt_usim_parameters', SSH.getBefore())
 			if result is not None:
 				SSH.command('sed -f /tmp/adapt_usim_parameters.sed ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 			else:
@@ -1007,7 +1006,7 @@ class OaiCiTest():
 					doLoop = False
 					continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
-				result = re.search('got sync', str(self.ssh.before))
+				result = re.search('got sync', SSH.getBefore())
 				if result is None:
 					time.sleep(6)
 				else:
@@ -1016,7 +1015,7 @@ class OaiCiTest():
 			if gotSyncStatus == False:
 				# we certainly need to stop the lte-uesoftmodem process if it is still running!
 				SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
-				result = re.search('lte-uesoftmodem', str(self.ssh.before))
+				result = re.search('lte-uesoftmodem', SSH.getBefore())
 				if result is not None:
 					SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
 					time.sleep(3)
@@ -1033,7 +1032,7 @@ class OaiCiTest():
 					fullSyncStatus = True
 					continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
-				result = re.search('No cell synchronization found', str(self.ssh.before))
+				result = re.search('No cell synchronization found', SSH.getBefore())
 				if result is None:
 					time.sleep(6)
 				else:
@@ -1042,7 +1041,7 @@ class OaiCiTest():
 					logging.debug('Found: "No cell synchronization" message! --> try again')
 					time.sleep(6)
 					SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
-					result = re.search('lte-uesoftmodem', str(self.ssh.before))
+					result = re.search('lte-uesoftmodem', SSH.getBefore())
 					if result is not None:
 						SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
 			outterLoopCounter = outterLoopCounter - 1
@@ -1054,12 +1053,12 @@ class OaiCiTest():
 			if result is None:
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
-				result = re.search('inet addr:1|inet 1', str(self.ssh.before))
+				result = re.search('inet addr:1|inet 1', SSH.getBefore())
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
 				else:
-					logging.debug(str(self.ssh.before))
+					logging.debug(SSH.getBefore())
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
 					tunnelInterfaceStatus = False
 			else:
@@ -1085,7 +1084,7 @@ class OaiCiTest():
 		count = 0
 		while count < 5:
 			SSH.command('echo ' + self.ADBPassword + ' | sudo -S lsof | grep ttyUSB0', '\$', 10)
-			result = re.search('picocom', str(self.ssh.before))
+			result = re.search('picocom', SSH.getBefore())
 			if result is None:
 				count = 10
 			else:
@@ -1111,7 +1110,7 @@ class OaiCiTest():
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
 		# Checking if auto-attach is enabled
 		SSH.command('AT^AUTOATT?', 'OK', 5)
-		result = re.search('AUTOATT: (?P<state>[0-9\-]+)', str(self.ssh.before))
+		result = re.search('AUTOATT: (?P<state>[0-9\-]+)', SSH.getBefore())
 		if result is not None:
 			if result.group('state') is not None:
 				autoAttachState = int(result.group('state'))
@@ -1171,14 +1170,14 @@ class OaiCiTest():
 		attach_status = False
 		while count < 5:
 			SSH.command('AT+CEREG?', 'OK', 5)
-			result = re.search('CEREG: 2,(?P<state>[0-9\-]+),', str(self.ssh.before))
+			result = re.search('CEREG: 2,(?P<state>[0-9\-]+),', SSH.getBefore())
 			if result is not None:
 				mDataConnectionState = int(result.group('state'))
 				if mDataConnectionState is not None:
 					if mDataConnectionState == 1:
 						count = 10
 						attach_status = True
-						result = re.search('CEREG: 2,1,"(?P<networky>[0-9A-Z]+)","(?P<networkz>[0-9A-Z]+)"', str(self.ssh.before))
+						result = re.search('CEREG: 2,1,"(?P<networky>[0-9A-Z]+)","(?P<networkz>[0-9A-Z]+)"', SSH.getBefore())
 						if result is not None:
 							networky = result.group('networky')
 							networkz = result.group('networkz')
@@ -1189,13 +1188,13 @@ class OaiCiTest():
 						logging.debug('+CEREG: 2,' + str(mDataConnectionState))
 						attach_cnt = attach_cnt + 1
 			else:
-				logging.debug(str(self.ssh.before))
+				logging.debug(SSH.getBefore())
 				attach_cnt = attach_cnt + 1
 			count = count + 1
 			time.sleep(1)
 		if attach_status:
 			SSH.command('AT+CESQ', 'OK', 5)
-			result = re.search('CESQ: 99,99,255,255,(?P<rsrq>[0-9]+),(?P<rsrp>[0-9]+)', str(self.ssh.before))
+			result = re.search('CESQ: 99,99,255,255,(?P<rsrq>[0-9]+),(?P<rsrp>[0-9]+)', SSH.getBefore())
 			if result is not None:
 				nRSRQ = int(result.group('rsrq'))
 				nRSRP = int(result.group('rsrp'))
@@ -1246,7 +1245,7 @@ class OaiCiTest():
 				sys.exit(1)
 			else:
 				SSH.command('egrep --color=never "Allocated ipv4 addr" /opt/ltebox/var/log/xGwLog.0', '\$', 5)
-				result = re.search('Allocated ipv4 addr: (?P<ipaddr>[0-9\.]+) from Pool', str(self.ssh.before))
+				result = re.search('Allocated ipv4 addr: (?P<ipaddr>[0-9\.]+) from Pool', SSH.getBefore())
 				if result is not None:
 					moduleIPAddr = result.group('ipaddr')
 				else:
@@ -1263,7 +1262,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
-			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -1277,7 +1276,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
 				return
-			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', SSH.getBefore())
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -1338,7 +1337,7 @@ class OaiCiTest():
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry" | grep -m 1 mDataConnectionState', '\$', 15)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep -m 1 mDataConnectionState', '\$', 60)
-				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
+				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
 					lock.acquire()
@@ -1501,7 +1500,7 @@ class OaiCiTest():
 			# Save mDataConnectionState
 			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
 			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
-			result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
+			result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
 				sys.exit(1)
@@ -1514,7 +1513,7 @@ class OaiCiTest():
 			while count > 0:
 				count = count - 1
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
-				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
+				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
 				if result is None:
 					mDataConnectionState = None
 				else:
@@ -1619,13 +1618,14 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('adb devices', '\$', 15)
-			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",str(self.ssh.before))
+			#self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
+			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
 			SSH.close()
 		else:
 			if (os.path.isfile('./phones_list.txt')):
 				os.remove('./phones_list.txt')
 			SSH.command('ls /etc/*/phones*.txt', '\$', 5)
-			result = re.search('/etc/ci/phones_list.txt', str(self.ssh.before))
+			result = re.search('/etc/ci/phones_list.txt', SSH.getBefore())
 			SSH.close()
 			if (result is not None) and (len(self.UEDevices) == 0):
 				SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, '/etc/ci/phones_list.txt', '.')
@@ -1662,12 +1662,13 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
-			self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",str(self.ssh.before))
+			#self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
+			self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
 		else:
 			if (os.path.isfile('./modules_list.txt')):
 				os.remove('./modules_list.txt')
 			SSH.command('ls /etc/*/modules*.txt', '\$', 5)
-			result = re.search('/etc/ci/modules_list.txt', str(self.ssh.before))
+			result = re.search('/etc/ci/modules_list.txt', SSH.getBefore())
 			SSH.close()
 			if result is not None:
 				logging.debug('Found a module list file on ADB server')
@@ -1684,7 +1685,7 @@ class OaiCiTest():
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry"', '\$', 15)
 			else:
 				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\'', '\$', 60)
-			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', str(self.ssh.before))
+			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', SSH.getBefore())
 			serviceState = 'Service State: UNKNOWN'
 			if result is not None:
 				lServiceState = int(result.group('serviceState'))
@@ -1696,7 +1697,7 @@ class OaiCiTest():
 					serviceState = 'Service State: IN_SERVICE'
 				if lServiceState == 2:
 					serviceState = 'Service State: EMERGENCY_ONLY'
-			result = re.search('mDataConnectionState=(?P<dataConnectionState>[0-9]+)', str(self.ssh.before))
+			result = re.search('mDataConnectionState=(?P<dataConnectionState>[0-9]+)', SSH.getBefore())
 			dataConnectionState = 'Data State:    UNKNOWN'
 			if result is not None:
 				lDataConnectionState = int(result.group('dataConnectionState'))
@@ -1708,7 +1709,7 @@ class OaiCiTest():
 					dataConnectionState = 'Data State:    CONNECTED'
 				if lDataConnectionState == 3:
 					dataConnectionState = 'Data State:    SUSPENDED'
-			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', str(self.ssh.before))
+			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', SSH.getBefore())
 			dataConnectionReason = 'Data Reason:   UNKNOWN'
 			if result is not None:
 				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
@@ -1754,7 +1755,7 @@ class OaiCiTest():
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
 			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
-			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', str(self.ssh.before))
+			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', SSH.getBefore())
 			passStatus = True
 			if result is not None:
 				nb_ues = int(result.group('nb_ues'))
@@ -1802,7 +1803,7 @@ class OaiCiTest():
 				sys.exit('Insufficient Parameter')
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('ifconfig oaitun_ue1', '\$', 4)
-			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
+			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', SSH.getBefore())
 			if result is not None:
 				if result.group('ueipaddress') is not None:
 					UE_IPAddress = result.group('ueipaddress')
@@ -1827,7 +1828,7 @@ class OaiCiTest():
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "ip addr show | grep rmnet"', '\$', 15)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ip addr show | grep rmnet"\'', '\$', 60)
-				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', str(self.ssh.before))
+				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', SSH.getBefore())
 				if result is None:
 					logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
 					time.sleep(1)
@@ -1887,7 +1888,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
-			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -1901,7 +1902,7 @@ class OaiCiTest():
 				SSH.close()
 				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
-			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', SSH.getBefore())
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -1982,7 +1983,7 @@ class OaiCiTest():
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 				self.PingNoS1_wrong_exit(message)
 				return
-			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -1994,7 +1995,7 @@ class OaiCiTest():
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 				self.PingNoS1_wrong_exit(message)
 				return
-			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', SSH.getBefore())
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -2134,7 +2135,7 @@ class OaiCiTest():
 
 	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
 		SSH.command('awk -f /tmp/tcp_iperf_stats.awk /tmp/CI-eNB/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', str(self.ssh.before))
+		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', SSH.getBefore())
 		if result is not None:
 			avgbitrate = result.group('average')
 			maxbitrate = result.group('maximum')
@@ -2163,9 +2164,9 @@ class OaiCiTest():
 		if result is None:
 			return self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options)
 
-		result = re.search('Server Report:', str(self.ssh.before))
+		result = re.search('Server Report:', SSH.getBefore())
 		if result is None:
-			result = re.search('read failed: Connection refused', str(self.ssh.before))
+			result = re.search('read failed: Connection refused', SSH.getBefore())
 			if result is not None:
 				logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
 			else:
@@ -2189,7 +2190,7 @@ class OaiCiTest():
 				req_bandwidth = '%.1f Gbits/sec' % req_bw
 				req_bw = req_bw * 1000000000
 
-		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) +(\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
+		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) +(\((?P<packetloss>[0-9\.]+)%\))', SSH.getBefore())
 		if result is not None:
 			bitrate = result.group('bitrate')
 			packetloss = result.group('packetloss')
@@ -2340,9 +2341,9 @@ class OaiCiTest():
 
 
 	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
-		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
+		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', SSH.getBefore())
 		if result is None:
-			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
+			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', SSH.getBefore())
 			lock.acquire()
 			statusQueue.put(-1)
 			statusQueue.put(device_id)
@@ -2503,9 +2504,9 @@ class OaiCiTest():
 					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ls /data/local/tmp"\'', '\$', 60)
-				result = re.search('iperf3', str(self.ssh.before))
+				result = re.search('iperf3', SSH.getBefore())
 				if result is None:
-					result = re.search('iperf', str(self.ssh.before))
+					result = re.search('iperf', SSH.getBefore())
 					if result is None:
 						message = 'Neither iperf nor iperf3 installed on UE!'
 						logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -2517,10 +2518,10 @@ class OaiCiTest():
 							SSH.command('adb -s ' + device_id + ' shell "/data/local/tmp/iperf --version"', '\$', 5)
 						else:
 							SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf --version"\'', '\$', 60)
-						result = re.search('iperf version 2.0.5', str(self.ssh.before))
+						result = re.search('iperf version 2.0.5', SSH.getBefore())
 						if result is not None:
 							self.ueIperfVersion = '2.0.5'
-						result = re.search('iperf version 2.0.10', str(self.ssh.before))
+						result = re.search('iperf version 2.0.10', SSH.getBefore())
 						if result is not None:
 							self.ueIperfVersion = '2.0.10'
 				else:
@@ -2529,10 +2530,10 @@ class OaiCiTest():
 			else:
 				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 				SSH.command('iperf --version', '\$', 5)
-				result = re.search('iperf version 2.0.5', str(self.ssh.before))
+				result = re.search('iperf version 2.0.5', SSH.getBefore())
 				if result is not None:
 					self.ueIperfVersion = '2.0.5'
-				result = re.search('iperf version 2.0.10', str(self.ssh.before))
+				result = re.search('iperf version 2.0.10', SSH.getBefore())
 				if result is not None:
 					self.ueIperfVersion = '2.0.10'
 				SSH.close()
@@ -2640,7 +2641,7 @@ class OaiCiTest():
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps" | grep --color=never iperf | grep -v grep\'', '\$', 60)
-				result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
+				result = re.search('shell +(?P<pid>\d+)', SSH.getBefore())
 				if result is not None:
 					pid_iperf = result.group('pid')
 					if self.ADBCentralized:
@@ -2931,7 +2932,7 @@ class OaiCiTest():
 		try:
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-uesoftmodem', str(self.ssh.before))
+			result = re.search('lte-uesoftmodem', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
 				status_queue.put(OAI_UE_PROCESS_FAILED)
@@ -2945,7 +2946,7 @@ class OaiCiTest():
 		try:
 			SSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-softmodem', str(self.ssh.before))
+			result = re.search('lte-softmodem', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(ENB_PROCESS_FAILED)
@@ -2960,11 +2961,11 @@ class OaiCiTest():
 			SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				result = re.search('oai_hss -j', str(self.ssh.before))
+				result = re.search('oai_hss -j', SSH.getBefore())
 			elif re.match('OAI', self.EPCType, re.IGNORECASE):
-				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
 			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-				result = re.search('hss_sim s6as diam_hss', str(self.ssh.before))
+				result = re.search('hss_sim s6as diam_hss', SSH.getBefore())
 			else:
 				logging.error('This should not happen!')
 			if result is None:
@@ -2981,11 +2982,11 @@ class OaiCiTest():
 			SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				result = re.search('mme -c', str(self.ssh.before))
+				result = re.search('mme -c', SSH.getBefore())
 			elif re.match('OAI', self.EPCType, re.IGNORECASE):
-				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
 			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-				result = re.search('mme', str(self.ssh.before))
+				result = re.search('mme', SSH.getBefore())
 			else:
 				logging.error('This should not happen!')
 			if result is None:
@@ -3002,13 +3003,13 @@ class OaiCiTest():
 			SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 				SSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
-				result = re.search('spgwu -c ', str(self.ssh.before))
+				result = re.search('spgwu -c ', SSH.getBefore())
 			elif re.match('OAI', self.EPCType, re.IGNORECASE):
 				SSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
-				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
 			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 				SSH.command('stdbuf -o0 ps -aux | grep --color=never xGw | grep -v grep', '\$', 5)
-				result = re.search('xGw', str(self.ssh.before))
+				result = re.search('xGw', SSH.getBefore())
 			else:
 				logging.error('This should not happen!')
 			if result is None:
@@ -3448,13 +3449,13 @@ class OaiCiTest():
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		SSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		SSH.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-		result = re.search('lte-softmodem', str(self.ssh.before))
+		result = re.search('lte-softmodem', SSH.getBefore())
 		if result is not None:
 			SSH.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
 			SSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
 			time.sleep(10)
 			SSH.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-softmodem', str(self.ssh.before))
+			result = re.search('lte-softmodem', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 				time.sleep(5)
@@ -3521,7 +3522,7 @@ class OaiCiTest():
 			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT oai_hss || true', '\$', 5)
 			time.sleep(2)
 			SSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
-			result = re.search('oai_hss -j', str(self.ssh.before))
+			result = re.search('oai_hss -j', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL oai_hss || true', '\$', 5)
 			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-hss.sh', '\$', 5)
@@ -3529,7 +3530,7 @@ class OaiCiTest():
 			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_hss oai_hss || true', '\$', 5)
 			time.sleep(2)
 			SSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
-			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+			result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_hss oai_hss || true', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
@@ -3549,7 +3550,7 @@ class OaiCiTest():
 			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_mme mme || true', '\$', 5)
 			time.sleep(2)
 			SSH.command('stdbuf -o0 ps -aux | grep mme | grep -v grep', '\$', 5)
-			result = re.search('mme -c', str(self.ssh.before))
+			result = re.search('mme -c', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_mme mme || true', '\$', 5)
 			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-mme.sh', '\$', 5)
@@ -3567,12 +3568,12 @@ class OaiCiTest():
 			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT spgwc spgwu || true', '\$', 5)
 			time.sleep(2)
 			SSH.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
-			result = re.search('spgwc -c |spgwu -c ', str(self.ssh.before))
+			result = re.search('spgwc -c |spgwu -c ', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL spgwc spgwu || true', '\$', 5)
 			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-spgw*.sh', '\$', 5)
 			SSH.command('stdbuf -o0 ps -aux | grep tshark | grep -v grep', '\$', 5)
-			result = re.search('-w ', str(self.ssh.before))
+			result = re.search('-w ', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT tshark || true', '\$', 5)
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 ' + self.EPCSourceCodePath + '/scripts/*.pcap', '\$', 5)
@@ -3580,7 +3581,7 @@ class OaiCiTest():
 			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_spgw spgw || true', '\$', 5)
 			time.sleep(2)
 			SSH.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
-			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+			result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_spgw spgw || true', '\$', 5)
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
@@ -3623,7 +3624,7 @@ class OaiCiTest():
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"', '\$', 5)
 			else:
 				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"\'', '\$', 60)
-			result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
+			result = re.search('shell +(?P<pid>\d+)', SSH.getBefore())
 			if result is not None:
 				pid_iperf = result.group('pid')
 				if self.ADBCentralized:
@@ -3653,13 +3654,13 @@ class OaiCiTest():
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 		SSH.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		result = re.search('lte-uesoftmodem', SSH.getBefore())
 		if result is not None:
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S daemon --name=ue' + str(self.UE_instance) + '_daemon --stop', '\$', 5)
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT lte-uesoftmodem || true', '\$', 5)
 			time.sleep(10)
 			SSH.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-uesoftmodem', str(self.ssh.before))
+			result = re.search('lte-uesoftmodem', SSH.getBefore())
 			if result is not None:
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL lte-uesoftmodem || true', '\$', 5)
 				time.sleep(5)
@@ -3964,27 +3965,27 @@ class OaiCiTest():
 
 		SSH.open(IPAddress, UserName, Password)
 		SSH.command('lsb_release -a', '\$', 5)
-		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
+		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
 		if result is not None:
 			self.OsVersion = result.group('os_type')
 			logging.debug('OS is: ' + self.OsVersion)
 		SSH.command('uname -r', '\$', 5)
-		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', str(self.ssh.before))
+		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', SSH.getBefore())
 		if result is not None:
 			self.KernelVersion = result.group('kernel_version')
 			logging.debug('Kernel Version is: ' + self.KernelVersion)
 		SSH.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
-		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
+		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
 		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 15)
-		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
+		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		if result is not None:
 			self.UsrpBoard = result.group('usrp_board')
 			logging.debug('USRP Board  is: ' + self.UsrpBoard)
 		SSH.command('lscpu', '\$', 5)
-		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
+		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
 			self.CpuNb = result.group('nb_cpus')
 			logging.debug('nb_cpus: ' + self.CpuNb)
@@ -4504,6 +4505,7 @@ def receive_signal(signum, frame):
 #-----------------------------------------------------------
 mode = ''
 CiTestObj = OaiCiTest()
+from sshconnection import *
 SSH = SSHConnection()
 
 argvs = sys.argv
