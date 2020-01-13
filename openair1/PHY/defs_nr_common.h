@@ -238,8 +238,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
   uint8_t N_RBGS;
-  /// EUTRA Band
-  uint16_t eutra_band;
+  /// NR Band
+  uint16_t nr_band;
   /// DL carrier frequency
   uint64_t dl_CarrierFreq;
   /// UL carrier frequency
@@ -300,7 +300,7 @@ typedef struct NR_DL_FRAME_PARMS {
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
-  uint8_t nb_antenna_ports_eNB;
+  uint8_t nb_antenna_ports_gNB;
   /// PRACH_CONFIG
   NR_PRACH_CONFIG_COMMON prach_config_common;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)

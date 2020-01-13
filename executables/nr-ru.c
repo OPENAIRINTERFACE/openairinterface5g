@@ -1808,19 +1808,19 @@ int check_capabilities(RU_t *ru,RRU_capabilities_t *cap)
   FH_fmt_options_t fmt = cap->FH_fmt;
   int i;
   int found_band=0;
-  LOG_I(PHY,"RRU %d, num_bands %d, looking for band %d\n",ru->idx,cap->num_bands,ru->nr_frame_parms->eutra_band);
+  LOG_I(PHY,"RRU %d, num_bands %d, looking for band %d\n",ru->idx,cap->num_bands,ru->nr_frame_parms->nr_band);
 
   for (i=0; i<cap->num_bands; i++) {
     LOG_I(PHY,"band %d on RRU %d\n",cap->band_list[i],ru->idx);
 
-    if (ru->nr_frame_parms->eutra_band == cap->band_list[i]) {
+    if (ru->nr_frame_parms->nr_band == cap->band_list[i]) {
       found_band=1;
       break;
     }
   }
 
   if (found_band == 0) {
-    LOG_I(PHY,"Couldn't find target EUTRA band %d on RRU %d\n",ru->nr_frame_parms->eutra_band,ru->idx);
+    LOG_I(PHY,"Couldn't find target NR band %d on RRU %d\n",ru->nr_frame_parms->nr_band,ru->idx);
     return(-1);
   }
 
@@ -1877,11 +1877,11 @@ void configure_ru(int idx,
   ru->nb_tx                      = capabilities->nb_tx[0];
   ru->nb_rx                      = capabilities->nb_rx[0];
   // Pass configuration to RRU
-  LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->nr_frame_parms->eutra_band);
+  LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->nr_frame_parms->nr_band);
   // wait for configuration
   config->FH_fmt                 = ru->if_south;
   config->num_bands              = 1;
-  config->band_list[0]           = ru->nr_frame_parms->eutra_band;
+  config->band_list[0]           = ru->nr_frame_parms->nr_band;
   config->tx_freq[0]             = ru->nr_frame_parms->dl_CarrierFreq;
   config->rx_freq[0]             = ru->nr_frame_parms->ul_CarrierFreq;
   //config->tdd_config[0]          = ru->nr_frame_parms->tdd_config;
@@ -1905,7 +1905,7 @@ void configure_rru(int idx,
   RRU_config_t *config     = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
   nfapi_nr_config_request_scf_t *gNB_config = &ru->gNB_list[0]->gNB_config;
-  ru->nr_frame_parms->eutra_band                                          = config->band_list[0];
+  ru->nr_frame_parms->nr_band                                             = config->band_list[0];
   ru->nr_frame_parms->dl_CarrierFreq                                      = config->tx_freq[0];
   ru->nr_frame_parms->ul_CarrierFreq                                      = config->rx_freq[0];
 

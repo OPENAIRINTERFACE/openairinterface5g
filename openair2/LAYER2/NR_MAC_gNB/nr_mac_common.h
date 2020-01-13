@@ -38,6 +38,8 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,

@@ -492,7 +492,7 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   //int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
   int samples_per_frame = frame_parms->samples_per_frame;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_eNB;
+  uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_gNB;
   int16_t **rxsig_t;
   float **rxsig_t_dB;
   float *time;

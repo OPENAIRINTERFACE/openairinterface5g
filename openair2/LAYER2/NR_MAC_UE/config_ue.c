@@ -151,6 +151,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac) {
 
   // carrier config
 
+  LOG_I(MAC,"UE Config Common\n");  
+
   cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                                       scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
                                                       *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
@@ -214,7 +216,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac) {
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling);
   cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-
+  cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0];

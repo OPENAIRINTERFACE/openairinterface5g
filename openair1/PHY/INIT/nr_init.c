@@ -360,7 +360,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB->mac_enabled   = 1;
   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
-  fp->eutra_band = 78;
+  fp->nr_band = 78;
   fp->threequarter_fs= 0;
   nr_init_frame_parms(gNB_config, fp);
   gNB->configured    = 1;
@@ -409,7 +409,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   int32_t dlul_offset = 0;
   lte_frame_type_t frame_type = 0;
   
-  get_band(fp->dl_CarrierFreq,&fp->eutra_band,&dlul_offset,&frame_type);
+  get_band(fp->dl_CarrierFreq,&fp->nr_band,&dlul_offset,&frame_type);
 
   fp->ul_CarrierFreq = (gNB_config->carrier_config.uplink_frequency.value)*1e3 + (gNB_config->carrier_config.uplink_bandwidth.value)*5e5;
 

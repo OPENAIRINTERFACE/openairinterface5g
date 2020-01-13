@@ -547,7 +547,7 @@ void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
         frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms[CC_id]->Nid_cell            = 0;
         frame_parms[CC_id]->num_MBSFN_config    = 0;
-        frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+        frame_parms[CC_id]->nb_antenna_ports_gNB  = 1;
         frame_parms[CC_id]->nb_antennas_tx      = 1;
         frame_parms[CC_id]->nb_antennas_rx      = 1;
 
