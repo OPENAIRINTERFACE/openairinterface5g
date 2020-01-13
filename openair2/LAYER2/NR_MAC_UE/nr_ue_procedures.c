@@ -609,8 +609,6 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_id;
 
-  mac->phy_config.config_req.mib_sfn = frame;
-
   proc->decoded_frame_rx=frame;
   //}
   return 0;
@@ -627,8 +625,7 @@ uint32_t get_ssb_frame(uint32_t test){
 // 1. TODO: Call RRC for link status return to PHY
 // 2. TODO: Perform SR/BSR procedures for scheduling feedback
 // 3. TODO: Perform PHR procedures
-NR_UE_L2_STATE_t nr_ue_scheduler(
-				 const module_id_t module_id,
+NR_UE_L2_STATE_t nr_ue_scheduler(const module_id_t module_id,
 				 const uint8_t gNB_index,
 				 const int cc_id,
 				 const frame_t rx_frame,
