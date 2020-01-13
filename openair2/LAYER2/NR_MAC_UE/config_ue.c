@@ -143,12 +143,17 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
 }
 
 
-void config_common_ue(NR_UE_MAC_INST_t *mac) {
+void config_common_ue(NR_UE_MAC_INST_t *mac,
+		      module_id_t       module_id,
+		      int               cc_idP) {
 
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
 
+    mac->phy_config.Mod_id = module_id;
+    mac->phy_config.CC_id = cc_idP;    
+  
   // carrier config
 
   LOG_I(MAC,"UE Config Common\n");  
@@ -290,7 +295,7 @@ int nr_rrc_mac_config_req_ue(
       mac->servCellIndex = *spCell_ConfigP->servCellIndex;
       if (spCell_ConfigP->reconfigurationWithSync) {
 	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
-	config_common_ue(mac);
+	config_common_ue(mac,module_id,cc_idP);
 	mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
