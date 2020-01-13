@@ -402,8 +402,8 @@ int main(int argc, char **argv)
 
   RC.nb_nr_L1_inst=1;
   phy_init_nr_gNB(gNB,0,0);
-  nr_phy_init_RU(RU);
-  set_tdd_config_nr(frame_parms, 5000,
+  nr_phy_init_RU(ru);
+  set_tdd_config_nr(&gNB->gNB_config, 5000,
 		    7, 6,
 		    2, 4);
 
@@ -517,8 +517,8 @@ int main(int argc, char **argv)
 			     subframe,
 			     0); //Nf */ //commented for testing purpose
 
-UE_nr_rxtx_proc_t proc={0};
-nr_ue_prach_procedures(UE,&proc,0,0,0);
+  UE_nr_rxtx_proc_t proc={0};
+  nr_ue_prach_procedures(UE,&proc,0,0,0);
 
 
   /* tx_lev_dB not used later, no need to set */
@@ -590,7 +590,7 @@ nr_ue_prach_procedures(UE,&proc,0,0,0);
           }
         }
 	uint16_t preamble_rx;
-        rx_nr_prach_ru(RU,
+        rx_nr_prach_ru(ru,
 		       0,
 		       subframe);
 	gNB->prach_vars.rxsigF = ru->prach_rxsigF;
