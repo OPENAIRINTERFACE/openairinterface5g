@@ -99,9 +99,10 @@ extern int T_dont_fork;
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 extern void init_NR_UE(int, char*);
+extern void init_NR_UE_threads(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
-PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
+void init_nr_ue_vars(PHY_VARS_NR_UE *ue, NR_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern tpool_t *Tpool;
 #endif

@@ -183,7 +183,7 @@ void RCconfig_L1(void) {
     if (RC.eNB[j] == NULL) {
       RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB **));
       LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
-      memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB ** *));
+      memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
     }
 
     for (i=0; i<RC.nb_L1_CC[j]; i++) {
@@ -277,6 +277,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   int               nb_cc                         = 0;
   int32_t           offsetMaxLimit                = 0;
   int32_t           cycleNb                       = 0;
+   
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_CONFIGURATION_REQ);
   ccparams_lte_t ccparams_lte;
   ccparams_sidelink_t SLconfig;
@@ -310,7 +311,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
   num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
   AssertFatal (i<num_enbs,
-               "Failed to parse config file no %ith element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+               "Failed to parse config file no %uth element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
 
   if (num_enbs>0) {
     // Output a list of all eNBs.
@@ -334,7 +335,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
     if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
       paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
       char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-      sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,i,ENB_CONFIG_STRING_SCTP_CONFIG);
+      sprintf(aprefix,"%s.[%u].%s",ENB_CONFIG_STRING_ENB_LIST,i,ENB_CONFIG_STRING_SCTP_CONFIG);
       config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
       rrc->node_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
       LOG_I(ENB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
@@ -443,16 +444,16 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             // Cell params, MIB/SIB1 in DU
             RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
             AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
-                         "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
+                         "Failed to parse eNB configuration file %s, enb %u illegal tdd_config %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config, LTE_TDD_Config__subframeAssignment_sa6);
             RRC_CONFIGURATION_REQ (msg_p).tdd_config_s[j] = ccparams_lte.tdd_config_s;
             AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
-                         "Failed to parse eNB configuration file %s, enb %d illegal tdd_config_s %d (should be 0-%d)!",
+                         "Failed to parse eNB configuration file %s, enb %u illegal tdd_config_s %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
 
             if (!ccparams_lte.prefix_type)
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d define %s: NORMAL,EXTENDED!\n",
+                           "Failed to parse eNB configuration file %s, enb %u define %s: NORMAL,EXTENDED!\n",
                            RC.config_file_name, i, ENB_CONFIG_STRING_PREFIX_TYPE);
             else if (strcmp(ccparams_lte.prefix_type, "NORMAL") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
@@ -460,13 +461,13 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
             } else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
                            RC.config_file_name, i, ccparams_lte.prefix_type);
             }
 
             if (!ccparams_lte.pbch_repetition)
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+                           "Failed to parse eNB configuration file %s, enb %u define %s: TRUE,FALSE!\n",
                            RC.config_file_name, i, ENB_CONFIG_STRING_PBCH_REPETITION);
             else if (strcmp(ccparams_lte.pbch_repetition, "TRUE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 1;
@@ -474,7 +475,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 0;
             } else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
                            RC.config_file_name, i, ccparams_lte.pbch_repetition);
             }
 
@@ -485,7 +486,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
             if (ccparams_lte.Nid_cell>503) {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
                            RC.config_file_name, i, ccparams_lte.Nid_cell);
             }
 
@@ -498,7 +499,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 (ccparams_lte.N_RB_DL!=75) &&
                 (ccparams_lte.N_RB_DL!=100)) {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
                            RC.config_file_name, i, ccparams_lte.N_RB_DL);
             }
 
@@ -508,7 +509,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = TDD;
             } else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
                            RC.config_file_name, i, ccparams_lte.frame_type);
             }
 
@@ -522,7 +523,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
             if ((ccparams_lte.nb_antenna_ports <1) || (ccparams_lte.nb_antenna_ports > 2))
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
                            RC.config_file_name, i, ccparams_lte.nb_antenna_ports);
 
             RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
@@ -533,19 +534,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               if ((ccparams_lte.prach_root <0) || (ccparams_lte.prach_root > 1023))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_root choice: 0..1023 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_root choice: 0..1023 !\n",
                              RC.config_file_name, i, ccparams_lte.prach_root);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_config_index = ccparams_lte.prach_config_index;
 
               if ((ccparams_lte.prach_config_index <0) || (ccparams_lte.prach_config_index > 63))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_config_index choice: 0..1023 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_config_index choice: 0..1023 !\n",
                              RC.config_file_name, i, ccparams_lte.prach_config_index);
 
               if (!ccparams_lte.prach_high_speed)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PRACH_HIGH_SPEED);
               else if (strcmp(ccparams_lte.prach_high_speed, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_high_speed = TRUE;
@@ -553,7 +554,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_high_speed = FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prach_config choice: ENABLE,DISABLE !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for prach_config choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.prach_high_speed);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_zero_correlation = ccparams_lte.prach_zero_correlation;
@@ -561,7 +562,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.prach_zero_correlation <0) ||
                   (ccparams_lte.prach_zero_correlation > 15))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
                              RC.config_file_name, i, ccparams_lte.prach_zero_correlation);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_freq_offset = ccparams_lte.prach_freq_offset;
@@ -569,7 +570,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.prach_freq_offset <0) ||
                   (ccparams_lte.prach_freq_offset > 94))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
                              RC.config_file_name, i, ccparams_lte.prach_freq_offset);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_delta_shift = ccparams_lte.pucch_delta_shift-1;
@@ -577,7 +578,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pucch_delta_shift <1) ||
                   (ccparams_lte.pucch_delta_shift > 3))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_delta_shift);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nRB_CQI = ccparams_lte.pucch_nRB_CQI;
@@ -585,7 +586,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pucch_nRB_CQI <0) ||
                   (ccparams_lte.pucch_nRB_CQI > 98))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_nRB_CQI);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nCS_AN = ccparams_lte.pucch_nCS_AN;
@@ -593,7 +594,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pucch_nCS_AN <0) ||
                   (ccparams_lte.pucch_nCS_AN > 7))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_nCS_AN);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_n1_AN = ccparams_lte.pucch_n1_AN;
@@ -601,7 +602,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pucch_n1_AN <0) ||
                   (ccparams_lte.pucch_n1_AN > 2047))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_n1_AN);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_referenceSignalPower = ccparams_lte.pdsch_referenceSignalPower;
@@ -609,7 +610,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pdsch_referenceSignalPower <-60) ||
                   (ccparams_lte.pdsch_referenceSignalPower > 50))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_referenceSignalPower choice:-60..50!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pdsch_referenceSignalPower choice:-60..50!\n",
                              RC.config_file_name, i, ccparams_lte.pdsch_referenceSignalPower);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_p_b = ccparams_lte.pdsch_p_b;
@@ -617,7 +618,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pdsch_p_b <0) ||
                   (ccparams_lte.pdsch_p_b > 3))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_p_b choice: 0..3!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pdsch_p_b choice: 0..3!\n",
                              RC.config_file_name, i, ccparams_lte.pdsch_p_b);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_n_SB = ccparams_lte.pusch_n_SB;
@@ -625,12 +626,12 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pusch_n_SB <1) ||
                   (ccparams_lte.pusch_n_SB > 4))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_n_SB choice: 1..4!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pusch_n_SB choice: 1..4!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_n_SB);
 
               if (!ccparams_lte.pusch_hoppingMode)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: interSubframe,intraAndInterSubframe!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: interSubframe,intraAndInterSubframe!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_HOPPINGMODE);
               else if (strcmp(ccparams_lte.pusch_hoppingMode,"interSubFrame")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
@@ -638,7 +639,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingMode choice: interSubframe,intraAndInterSubframe!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_hoppingMode choice: interSubframe,intraAndInterSubframe!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_hoppingMode);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingOffset = ccparams_lte.pusch_hoppingOffset;
@@ -646,12 +647,12 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pusch_hoppingOffset<0) ||
                   (ccparams_lte.pusch_hoppingOffset>98))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingOffset choice: 0..98!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_hoppingOffset choice: 0..98!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_hoppingMode);
 
               if (!ccparams_lte.pusch_enable64QAM)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_ENABLE64QAM);
               else if (strcmp(ccparams_lte.pusch_enable64QAM, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = TRUE;
@@ -659,12 +660,12 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_enable64QAM);
 
               if (!ccparams_lte.pusch_groupHoppingEnabled)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN);
               else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled = TRUE;
@@ -672,7 +673,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled= FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_groupHoppingEnabled);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupAssignment = ccparams_lte.pusch_groupAssignment;
@@ -680,12 +681,12 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pusch_groupAssignment<0)||
                   (ccparams_lte.pusch_groupAssignment>29))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_groupAssignment choice: 0..29!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pusch_groupAssignment choice: 0..29!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_groupAssignment);
 
               if (!ccparams_lte.pusch_sequenceHoppingEnabled)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN);
               else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = TRUE;
@@ -693,7 +694,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_sequenceHoppingEnabled choice: ENABLE,DISABLE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_sequenceHoppingEnabled choice: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_sequenceHoppingEnabled);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_nDMRS1= ccparams_lte.pusch_nDMRS1;  //cyclic_shift in RRC!
@@ -701,7 +702,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pusch_nDMRS1 <0) ||
                   (ccparams_lte.pusch_nDMRS1>7))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_nDMRS1 choice: 0..7!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pusch_nDMRS1 choice: 0..7!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_nDMRS1);
 
               if (strcmp(ccparams_lte.phich_duration,"NORMAL")==0) {
@@ -710,7 +711,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_duration= LTE_PHICH_Config__phich_Duration_extended;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
                              RC.config_file_name, i, ccparams_lte.phich_duration);
 
               if (strcmp(ccparams_lte.phich_resource,"ONESIXTH")==0) {
@@ -723,7 +724,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_two;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
                              RC.config_file_name, i, ccparams_lte.phich_resource);
 
               printf("phich.resource %ld (%s), phich.duration %ld (%s)\n",
@@ -736,7 +737,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable= FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.srs_enable);
 
               if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable== TRUE) {
@@ -744,7 +745,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 if ((ccparams_lte.srs_BandwidthConfig < 0) ||
                     (ccparams_lte.srs_BandwidthConfig >7))
-                  AssertFatal (0, "Failed to parse eNB configuration file %s, enb %d unknown value %d for srs_BandwidthConfig choice: 0...7\n",
+                  AssertFatal (0, "Failed to parse eNB configuration file %s, enb %u unknown value %d for srs_BandwidthConfig choice: 0...7\n",
                                RC.config_file_name, i, ccparams_lte.srs_BandwidthConfig);
 
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_SubframeConfig= ccparams_lte.srs_SubframeConfig;
@@ -752,7 +753,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 if ((ccparams_lte.srs_SubframeConfig<0) ||
                     (ccparams_lte.srs_SubframeConfig>15))
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for srs_SubframeConfig choice: 0..15 !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for srs_SubframeConfig choice: 0..15 !\n",
                                RC.config_file_name, i, ccparams_lte.srs_SubframeConfig);
 
                 if (strcmp(ccparams_lte.srs_ackNackST, "ENABLE") == 0) {
@@ -761,7 +762,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_ackNackST= FALSE;
                 } else
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
                                RC.config_file_name, i, ccparams_lte.srs_ackNackST);
 
                 if (strcmp(ccparams_lte.srs_MaxUpPts, "ENABLE") == 0) {
@@ -770,7 +771,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_MaxUpPts= FALSE;
                 } else
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_MaxUpPts choice: ENABLE,DISABLE !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_MaxUpPts choice: ENABLE,DISABLE !\n",
                                RC.config_file_name, i, ccparams_lte.srs_MaxUpPts);
               }
 
@@ -779,7 +780,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pusch_p0_Nominal<-126) ||
                   (ccparams_lte.pusch_p0_Nominal>24))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
                              RC.config_file_name, i, ccparams_lte.pusch_p0_Nominal);
 
               if (strcmp(ccparams_lte.pusch_alpha,"AL0")==0) {
@@ -800,7 +801,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al1;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_alpha);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_p0_Nominal= ccparams_lte.pucch_p0_Nominal;
@@ -808,7 +809,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.pucch_p0_Nominal<-127) ||
                   (ccparams_lte.pucch_p0_Nominal>-96))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
                              RC.config_file_name, i, ccparams_lte.pucch_p0_Nominal);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].msg3_delta_Preamble= ccparams_lte.msg3_delta_Preamble;
@@ -816,7 +817,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.msg3_delta_Preamble<-1) ||
                   (ccparams_lte.msg3_delta_Preamble>6))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for msg3_delta_Preamble choice: -1..6 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for msg3_delta_Preamble choice: -1..6 !\n",
                              RC.config_file_name, i, ccparams_lte.msg3_delta_Preamble);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF_2")==0) {
@@ -827,7 +828,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF1")==0) {
@@ -838,7 +839,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1b);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF_2")==0) {
@@ -851,7 +852,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2 choice: deltaF_2,dltaF0,deltaF1,deltaF2!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2 choice: deltaF_2,dltaF0,deltaF1,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF_2")==0) {
@@ -862,7 +863,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2a);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF_2")==0) {
@@ -873,7 +874,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2b);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_numberOfRA_Preambles= (ccparams_lte.rach_numberOfRA_Preambles/4)-1;
@@ -882,7 +883,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   (ccparams_lte.rach_numberOfRA_Preambles>64) ||
                   ((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_numberOfRA_Preambles choice: 4,8,12,...,64!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_numberOfRA_Preambles choice: 4,8,12,...,64!\n",
                              RC.config_file_name, i, ccparams_lte.rach_numberOfRA_Preambles);
 
               if (strcmp(ccparams_lte.rach_preamblesGroupAConfig, "ENABLE") == 0) {
@@ -893,7 +894,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                     (ccparams_lte.rach_numberOfRA_Preambles>60) ||
                     ((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_sizeOfRA_PreamblesGroupA choice: 4,8,12,...,60!\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_sizeOfRA_PreamblesGroupA choice: 4,8,12,...,60!\n",
                                RC.config_file_name, i, ccparams_lte.rach_sizeOfRA_PreamblesGroupA);
 
                 switch (ccparams_lte.rach_messageSizeGroupA) {
@@ -915,7 +916,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                   default:
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_messageSizeGroupA choice: 56,144,208,256!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_messageSizeGroupA choice: 56,144,208,256!\n",
                                  RC.config_file_name, i, ccparams_lte.rach_messageSizeGroupA);
                     break;
                 }
@@ -938,13 +939,13 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB18;
                 } else
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
                                RC.config_file_name, i, ccparams_lte.rach_messagePowerOffsetGroupB);
               } else if (strcmp(ccparams_lte.rach_preamblesGroupAConfig, "DISABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preamblesGroupAConfig= FALSE;
               } else
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rach_preamblesGroupAConfig choice: ENABLE,DISABLE !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for rach_preamblesGroupAConfig choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.rach_preamblesGroupAConfig);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleInitialReceivedTargetPower= (ccparams_lte.rach_preambleInitialReceivedTargetPower+120)/2;
@@ -953,7 +954,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   (ccparams_lte.rach_preambleInitialReceivedTargetPower>-90) ||
                   ((ccparams_lte.rach_preambleInitialReceivedTargetPower&1)!=0))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleInitialReceivedTargetPower choice: -120,-118,...,-90 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_preambleInitialReceivedTargetPower choice: -120,-118,...,-90 !\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleInitialReceivedTargetPower);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_powerRampingStep= ccparams_lte.rach_powerRampingStep/2;
@@ -962,7 +963,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   (ccparams_lte.rach_powerRampingStep>6) ||
                   ((ccparams_lte.rach_powerRampingStep&1)!=0))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_powerRampingStep choice: 0,2,4,6 !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_powerRampingStep choice: 0,2,4,6 !\n",
                              RC.config_file_name, i, ccparams_lte.rach_powerRampingStep);
 
               switch (ccparams_lte.rach_preambleTransMax) {
@@ -1012,7 +1013,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleTransMax choice: 3,4,5,6,7,8,10,20,50,100,200!\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_preambleTransMax choice: 3,4,5,6,7,8,10,20,50,100,200!\n",
                                RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
                   break;
               }
@@ -1023,7 +1024,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   (ccparams_lte.rach_raResponseWindowSize==9)||
                   (ccparams_lte.rach_raResponseWindowSize>10))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_macContentionResolutionTimer= (ccparams_lte.rach_macContentionResolutionTimer/8)-1;
@@ -1032,7 +1033,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   (ccparams_lte.rach_macContentionResolutionTimer>64) ||
                   ((ccparams_lte.rach_macContentionResolutionTimer&7)!=0))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_maxHARQ_Msg3Tx= ccparams_lte.rach_maxHARQ_Msg3Tx;
@@ -1040,7 +1041,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if ((ccparams_lte.rach_maxHARQ_Msg3Tx<0) ||
                   (ccparams_lte.rach_maxHARQ_Msg3Tx>8))
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_maxHARQ_Msg3Tx choice: 1..8!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_maxHARQ_Msg3Tx choice: 1..8!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
               switch (ccparams_lte.pcch_defaultPagingCycle) {
@@ -1062,7 +1063,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pcch_defaultPagingCycle choice: 32,64,128,256!\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pcch_defaultPagingCycle choice: 32,64,128,256!\n",
                                RC.config_file_name, i, ccparams_lte.pcch_defaultPagingCycle);
                   break;
               }
@@ -1084,7 +1085,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               } else if (strcmp(ccparams_lte.pcch_nB, "oneThirtySecondT") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneThirtySecondT;
               } else {
-                AssertFatal (0, "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pcch_nB choice: fourT,twoT,oneT,halfT,quarterT,oneighthT,oneSixteenthT,oneThirtySecondT !\n",
+                AssertFatal (0, "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pcch_nB choice: fourT,twoT,oneT,halfT,quarterT,oneighthT,oneSixteenthT,oneThirtySecondT !\n",
                              RC.config_file_name,
                              i,
                              ccparams_lte.pcch_nB);
@@ -1098,7 +1099,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_setup;
               } else {
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_Config_present choice: prNothing, prRelease, prSetup!\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_Config_present choice: prNothing, prRelease, prSetup!\n",
                              RC.config_file_name, i, ccparams_lte.drx_Config_present);
               }
 
@@ -1136,7 +1137,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf200;
               } else {
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_onDurationTimer choice !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_onDurationTimer choice !\n",
                              RC.config_file_name, i, ccparams_lte.drx_onDurationTimer);
                 break;
               }
@@ -1207,7 +1208,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare1;
               } else {
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_InactivityTimer choice !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_InactivityTimer choice !\n",
                              RC.config_file_name, i, ccparams_lte.drx_InactivityTimer);
                 break;
               }
@@ -1216,7 +1217,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               if (!ccparams_lte.mbms_dedicated_serving_cell)
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+                             "Failed to parse eNB configuration file %s, enb %u define %s: TRUE,FALSE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL);
               else if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell = TRUE;
@@ -1224,7 +1225,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell  = FALSE;
               } else {
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for mbms_dedicated_serving_cell choice: TRUE or FALSE !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for mbms_dedicated_serving_cell choice: TRUE or FALSE !\n",
                              RC.config_file_name, i, ccparams_lte.mbms_dedicated_serving_cell);
               }
 
@@ -1233,7 +1234,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 4))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
@@ -1242,7 +1243,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 8))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
@@ -1251,14 +1252,14 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 16))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
                                RC.config_file_name, i, ccparams_lte.N_RB_DL);
                   break;
               }
@@ -1281,7 +1282,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf33;
               } else {
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for drx_RetransmissionTimer choice !\n",
+                             "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_RetransmissionTimer choice !\n",
                              RC.config_file_name, i, ccparams_lte.drx_RetransmissionTimer);
                 break;
               }
@@ -1339,7 +1340,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   offsetMaxLimit = 2560;
                 } else {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file \"%s\", enb %d unknown string value \"%s\" for drx_longDrx_CycleStartOffset_present choice !\n",
+                               "Failed to parse eNB configuration file \"%s\", enb %u unknown string value \"%s\" for drx_longDrx_CycleStartOffset_present choice !\n",
                                RC.config_file_name, i, ccparams_lte.drx_longDrx_CycleStartOffset_present);
                 }
 
@@ -1347,7 +1348,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset = ccparams_lte.drx_longDrx_CycleStartOffset;
                 } else {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d incoherent value \"%d\" for drx_longDrx_CycleStartOffset !\n",
+                               "Failed to parse eNB configuration file %s, enb %u incoherent value \"%d\" for drx_longDrx_CycleStartOffset !\n",
                                RC.config_file_name, i, ccparams_lte.drx_longDrx_CycleStartOffset);
                 }
               }
@@ -1355,7 +1356,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               if  (strcmp(ccparams_lte.drx_shortDrx_Cycle, "") == 0 || ccparams_lte.drx_shortDrx_ShortCycleTimer == 0) {
                 if  (strcmp(ccparams_lte.drx_shortDrx_Cycle, "") != 0 || ccparams_lte.drx_shortDrx_ShortCycleTimer != 0) {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d incoherent values \"%s\" -  \"%d\" for drx_shortDrx_Cycle or drx_shortDrx_ShortCycleTimer choice !\n",
+                               "Failed to parse eNB configuration file %s, enb %u incoherent values \"%s\" -  \"%d\" for drx_shortDrx_Cycle or drx_shortDrx_ShortCycleTimer choice !\n",
                                RC.config_file_name, i, ccparams_lte.drx_shortDrx_Cycle, ccparams_lte.drx_shortDrx_ShortCycleTimer);
                 } else {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = -1;
@@ -1412,13 +1413,13 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf640;
                 } else {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d incoherent value \"%s\" for drx_shortDrx_Cycle !\n",
+                               "Failed to parse eNB configuration file %s, enb %u incoherent value \"%s\" for drx_shortDrx_Cycle !\n",
                                RC.config_file_name, i, ccparams_lte.drx_shortDrx_Cycle);
                 }
 
                 if (cycleNb > 0 && (offsetMaxLimit % cycleNb != 0 || cycleNb == offsetMaxLimit)) {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d incompatible (not multiple) values \"%d\" -  \"%d\" for drx_shortDrx_Cycle and drx_longDrx_CycleStartOffset choice !\n",
+                               "Failed to parse eNB configuration file %s, enb %u incompatible (not multiple) values \"%d\" -  \"%d\" for drx_shortDrx_Cycle and drx_longDrx_CycleStartOffset choice !\n",
                                RC.config_file_name, i, cycleNb, offsetMaxLimit);
                 }
 
@@ -1426,7 +1427,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_ShortCycleTimer = ccparams_lte.drx_shortDrx_ShortCycleTimer;
                 } else {
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for drx_shortDrx_ShortCycleTimer choice !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for drx_shortDrx_ShortCycleTimer choice !\n",
                                RC.config_file_name, i, ccparams_lte.drx_shortDrx_ShortCycleTimer );
                 }
               }
@@ -1450,7 +1451,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for bcch_modificationPeriodCoeff choice: 2,4,8,16",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for bcch_modificationPeriodCoeff choice: 2,4,8,16",
                                RC.config_file_name, i, ccparams_lte.bcch_modificationPeriodCoeff);
                   break;
               }
@@ -1493,7 +1494,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TransmissionMode choice: 1,2,3,4,5,6,7",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_TransmissionMode choice: 1,2,3,4,5,6,7",
                                RC.config_file_name, i, ccparams_lte.ue_TransmissionMode);
                   break;
               }
@@ -1505,7 +1506,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 4))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
@@ -1514,7 +1515,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 8))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
@@ -1523,14 +1524,14 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   if ((ccparams_lte.ue_multiple_max < 1) ||
                       (ccparams_lte.ue_multiple_max > 16))
                     AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
+                                 "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
                                  RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
                   break;
 
                 default:
                   AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+                               "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
                                RC.config_file_name, i, ccparams_lte.N_RB_DL);
                   break;
               }
@@ -1599,7 +1600,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               default:
                 AssertFatal (0,
-                             "Bad config value when parsing eNB configuration file %s, enb %d  srb1_max_retx_threshold %u!\n",
+                             "Bad config value when parsing eNB configuration file %s, enb %u  srb1_max_retx_threshold %d!\n",
                              RC.config_file_name, i, srb1_params.srb1_max_retx_threshold);
             }
 
@@ -1637,7 +1638,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   rrc->srb1_poll_pdu = LTE_PollPDU_pInfinity;
                 else
                   AssertFatal (0,
-                               "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_pdu %u!\n",
+                               "Bad config value when parsing eNB configuration file %s, enb %u  srb1_poll_pdu %d!\n",
                                RC.config_file_name, i, srb1_params.srb1_poll_pdu);
             }
 
@@ -1705,7 +1706,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   rrc->srb1_poll_byte = LTE_PollByte_kBinfinity;
                 else
                   AssertFatal (0,
-                               "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_byte %u!\n",
+                               "Bad config value when parsing eNB configuration file %s, enb %u  srb1_poll_byte %d!\n",
                                RC.config_file_name, i, srb1_params.srb1_poll_byte);
             }
 
@@ -1715,7 +1716,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               rrc->srb1_timer_poll_retransmit = (srb1_params.srb1_timer_poll_retransmit - 300)/50 + 50;
             } else {
               AssertFatal (0,
-                           "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_poll_retransmit %u!\n",
+                           "Bad config value when parsing eNB configuration file %s, enb %u  srb1_timer_poll_retransmit %d!\n",
                            RC.config_file_name, i, srb1_params.srb1_timer_poll_retransmit);
             }
 
@@ -1725,7 +1726,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               rrc->srb1_timer_status_prohibit = (srb1_params.srb1_timer_status_prohibit - 300)/50 + 51;
             } else {
               AssertFatal (0,
-                           "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_status_prohibit %u!\n",
+                           "Bad config value when parsing eNB configuration file %s, enb %u  srb1_timer_status_prohibit %d!\n",
                            RC.config_file_name, i, srb1_params.srb1_timer_status_prohibit);
             }
 
@@ -1856,7 +1857,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               default:
                 AssertFatal (0,
-                             "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
+                             "Bad config value when parsing eNB configuration file %s, enb %u  srb1_timer_reordering %d!\n",
                              RC.config_file_name, i, srb1_params.srb1_timer_reordering);
             }
           }
@@ -1879,13 +1880,13 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
   int num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
   AssertFatal (i<num_enbs,
-               "Failed to parse config file no %ith element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+               "Failed to parse config file no %uth element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
 
   if (num_enbs>0) {
     // Output a list of all eNBs.
     config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL);
     AssertFatal(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr != NULL,
-                "eNB id %d is not defined in configuration file\n",i);
+                "eNB id %u is not defined in configuration file\n",i);
     F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
 
     for (k=0; k <num_enbs ; k++) {
@@ -2130,7 +2131,7 @@ int RCconfig_S1(
               S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
             } else {
               AssertFatal(0,
-                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                          "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                           RC.config_file_name,
                           i,
                           *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
@@ -2359,7 +2360,7 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
               X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
             }else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                            RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
             }
 
@@ -2837,7 +2838,7 @@ void read_config_and_init(void) {
 
   for (uint32_t enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
     RC.rrc[enb_id] = malloc(sizeof(eNB_RRC_INST));
-    AssertFatal(RC.rrc[enb_id], "RRC context for eNB %d not allocated\n", enb_id);
+    AssertFatal(RC.rrc[enb_id], "RRC context for eNB %u not allocated\n", enb_id);
     memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }

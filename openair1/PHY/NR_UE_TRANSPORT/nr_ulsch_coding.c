@@ -42,9 +42,11 @@
 
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch,unsigned char N_RB_UL)
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
+
 {
   int i, r;
+  NR_UE_ULSCH_t *ulsch = *ulschptr;
 
   if (ulsch) {
 #ifdef DEBUG_ULSCH_FREE
@@ -97,7 +99,7 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch,unsigned char N_RB_UL)
       }
     }
     free16(ulsch,sizeof(NR_UE_ULSCH_t));
-    ulsch = NULL;
+    *ulschptr = NULL;
   }
 
 }
@@ -206,7 +208,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
   }
 
   LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
-  free_nr_ue_ulsch(ulsch,N_RB_UL);
+  free_nr_ue_ulsch(&ulsch,N_RB_UL);
   return(NULL);
 
 

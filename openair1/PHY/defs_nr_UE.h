@@ -870,7 +870,6 @@ typedef struct {
 
   nr_ue_if_module_t *if_inst;
 
-  //nfapi_nr_config_request_t  nrUE_config; <-- don't use config type for gNB!!!
   fapi_nr_config_request_t nrUE_config;
 
   // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
@@ -1001,7 +1000,6 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
-  uint8_t	   ssb_periodicity;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync

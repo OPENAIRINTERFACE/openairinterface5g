@@ -86,6 +86,8 @@ uint8_t table_9_2_2_1[16][8]={
   {1,0, 14,4, 0,3,6,9},
   {1,0, 14,26,0,3,0,0}
 };
+
+
 int8_t nr_ue_process_dlsch(module_id_t module_id,
 			   int cc_id,
 			   uint8_t gNB_index,
@@ -221,18 +223,17 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_mib(
-			UE_nr_rxtx_proc_t *proc,
-			module_id_t module_id,
-			int 		cc_id,
-			uint8_t 	gNB_index,
-			uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
-			uint32_t    ssb_length,
-			uint32_t 	ssb_index,
-			void 		*pduP,
-			uint16_t    cell_id ){
-
-  LOG_D(MAC,"[L2][MAC] decode mib\n");
+int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
+                        module_id_t module_id,
+                        int cc_id,
+                        uint8_t gNB_index,
+                        uint8_t extra_bits,	//	8bits 38.212 c7.1.1
+                        uint32_t ssb_length,
+                        uint32_t ssb_index,
+                        void *pduP,
+                        uint16_t cell_id)
+{
+  LOG_I(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -452,7 +453,6 @@ int8_t nr_ue_decode_mib(
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
-        
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -609,25 +609,11 @@ int8_t nr_ue_decode_mib(
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_id;
 
-  mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
-  mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
-  mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation
-  mac->phy_config.config_req.pbch_config.dmrs_type_a_position = mac->mib->dmrs_TypeA_Position;
-  mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero) * 16 + (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
-  mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
-  mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
-  mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;
-  mac->phy_config.config_req.pbch_config.ssb_index = ssb_index;
-  mac->phy_config.config_req.config_mask |= FAPI_NR_CONFIG_REQUEST_MASK_PBCH;
-
-  if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL){
-    mac->if_module->phy_config_request(&mac->phy_config);
-  }
   proc->decoded_frame_rx=frame;
   //}
   return 0;
-}
 
+}
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
@@ -639,8 +625,7 @@ uint32_t get_ssb_frame(uint32_t test){
 // 1. TODO: Call RRC for link status return to PHY
 // 2. TODO: Perform SR/BSR procedures for scheduling feedback
 // 3. TODO: Perform PHR procedures
-NR_UE_L2_STATE_t nr_ue_scheduler(
-				 const module_id_t module_id,
+NR_UE_L2_STATE_t nr_ue_scheduler(const module_id_t module_id,
 				 const uint8_t gNB_index,
 				 const int cc_id,
 				 const frame_t rx_frame,
@@ -1838,7 +1823,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   if(dlsch_config_pdu != NULL){
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
     if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList;
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
     else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     if (pdsch_TimeDomainAllocationList) {
@@ -1878,7 +1863,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   if(ulsch_config_pdu != NULL){
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
     if (mac->ULbwp[0]->bwp_Dedicated->pusch_Config)
-      pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList;
+      pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
 	
     if (pusch_TimeDomainAllocationList) {
       AssertFatal(pusch_TimeDomainAllocationList->list.count > time_domain_ind,

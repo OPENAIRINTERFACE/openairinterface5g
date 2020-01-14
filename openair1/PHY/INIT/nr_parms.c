@@ -21,17 +21,18 @@
 
 #include "phy_init.h"
 #include "common/utils/LOG/log.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
-
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 {
 
   int mu = fp->numerology_index;
   uint8_t half_frame_index = fp->half_frame_bit;
+  uint8_t i_ssb = fp->ssb_index;
   int symbol = 0;
   uint8_t n, n_temp;
   nr_ssb_type_e type = fp->ssb_type;
@@ -80,32 +81,8 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
   return symbol;
 }
 
-int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
-			 nfapi_nr_config_request_scf_t* cfg,
-			 int mu0,
-			 int Ncp,
-			 int N_RB_DL,
-                         int N_RB_UL)
-
+void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
 {
-
-  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : mu0;
-
-#if DISABLE_LOG_X
-  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
-#else
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
-#endif
-
-  if (Ncp == NFAPI_CP_EXTENDED)
-    AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
-
-  fp->half_frame_bit = 0;  // half frame bit initialized to 0 here
-  fp->numerology_index = mu;
-  fp->Ncp = Ncp;
-  fp->N_RB_DL = N_RB_DL;
-  fp->N_RB_UL = N_RB_UL;
-
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
@@ -119,16 +96,16 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
 
       // selection of SS block pattern according to TS 38101-1 Table 5.4.3.3-1 for SCS 30kHz
-      if (fp->eutra_band == 5 || fp->eutra_band == 66) 
+      if (fp->nr_band == 5 || fp->nr_band == 66) 
 	      fp->ssb_type = nr_ssb_type_B;
       else{  
-      	if (fp->eutra_band == 41 || ( fp->eutra_band > 76 && fp->eutra_band < 80) )
+      	if (fp->nr_band == 41 || ( fp->nr_band > 76 && fp->nr_band < 80) )
 		fp->ssb_type = nr_ssb_type_C;
 	else
-		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->eutra_band, mu);
+		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
       }
 
-      switch(N_RB_DL){
+      switch(fp->N_RB_DL){
         case 11:
         case 24:
         case 38:
@@ -171,21 +148,21 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
           break;
 
         case 245:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2626; //4096 - ( (245*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
         case 273:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2458; //4096 - ( (273*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB_DL, mu, fp);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
       }
       break;
 
@@ -193,7 +170,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
 
-      switch(N_RB_DL){ //FR1 bands only
+      switch(fp->N_RB_DL){ //FR1 bands only
         case 11:
         case 18:
         case 38:
@@ -207,7 +184,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
         case 121:
         case 135:
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB_DL, mu, fp);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
       }
       break;
 
@@ -226,10 +203,40 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   default:
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
+}
+
+
+int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
+			 nfapi_nr_config_request_scf_t* cfg,
+			 int mu0,
+			 int Ncp,
+			 int N_RB_DL,
+                         int N_RB_UL)
+
+{
+
+  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : mu0;
+
+#if DISABLE_LOG_X
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
+#else
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
+#endif
+
+  if (Ncp == NFAPI_CP_EXTENDED)
+    AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
+
+  fp->half_frame_bit = 0;  // half frame bit initialized to 0 here
+  fp->numerology_index = mu;
+  fp->Ncp = Ncp;
+  fp->N_RB_DL = N_RB_DL;
+  fp->N_RB_UL = N_RB_UL;
+
+  set_scs_parameters(fp, mu);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_eNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
   fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
   fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
 
@@ -279,15 +286,74 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* config,
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
-			   int mu, 
-			   int Ncp,
-			   int N_RB_DL,
-			   int n_ssb_crb,
-			   int ssb_subcarrier_offset) 
+			   fapi_nr_config_request_t* config, 
+			   int Ncp) 
 {
-  int N_RB_UL = N_RB_DL;
-  nr_init_frame_parms0(fp,NULL,mu,Ncp,N_RB_DL,N_RB_UL);
-  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset);
+
+  uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
+  fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
+
+  uint64_t ul_bw_khz = (12*config->carrier_config.ul_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
+  fp->ul_CarrierFreq = ((ul_bw_khz>>1) + config->carrier_config.uplink_frequency)*1000 ;
+
+  fp->numerology_index = config->ssb_config.scs_common;
+  fp->N_RB_UL = config->carrier_config.ul_grid_size[fp->numerology_index];
+  fp->N_RB_DL = config->carrier_config.dl_grid_size[fp->numerology_index];
+
+  int32_t uplink_frequency_offset = 0;
+
+  get_band(fp->dl_CarrierFreq, &fp->nr_band, &uplink_frequency_offset, &fp->frame_type);
+
+  AssertFatal(fp->frame_type==config->cell_config.frame_duplex_type, "Invalid duplex type in config request file for band %d\n", fp->nr_band);
+  AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+uplink_frequency_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
+
+#if DISABLE_LOG_X
+  printf("Initializing UE frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
+#else
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
+#endif
+
+  if (Ncp == NFAPI_CP_EXTENDED)
+    AssertFatal(fp->numerology_index == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, fp->numerology_index);
+
+  fp->Ncp = Ncp;
+
+  set_scs_parameters(fp,fp->numerology_index);
+
+  fp->slots_per_frame = 10* fp->slots_per_subframe;
+
+  fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
+
+  fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
+  fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
+  fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
+  fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
+  fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
+  fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
+			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
+  fp->samples_per_frame = 10 * fp->samples_per_subframe;
+  fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
+
+  fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + config->ssb_table.ssb_subcarrier_offset);
+
+  // definition of Lmax according to ts 38.213 section 4.1
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
+    fp->Lmax = 64;
+  }
+
+  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask;
+  
+  fp->N_ssb = 0;
+  for (int p=0; p<fp->Lmax; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
+
   return 0;
 }
 

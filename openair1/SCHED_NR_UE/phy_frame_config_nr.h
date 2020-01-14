@@ -36,18 +36,6 @@
 
 /*************** FUNCTIONS *****************************************/
 
-/** \brief This function processes tdd dedicated configuration for nr
- *  @param frame_parms NR DL Frame parameters
- *  @param dl_UL_TransmissionPeriodicity periodicity
- *  @param nrofDownlinkSlots number of downlink slots
- *  @param nrofDownlinkSymbols number of downlink symbols
- *  @param nrofUplinkSlots number of uplink slots
- *  @param nrofUplinkSymbols number of uplink symbols
-    @returns 0 if tdd dedicated configuration has been properly set or -1 on error with message */
-
-int set_tdd_config_nr(nfapi_nr_config_request_scf_t *cfg, int mu,
-                       int nrofDownlinkSlots, int nrofDownlinkSymbols,
-                       int nrofUplinkSlots,   int nrofUplinkSymbols);
 
 /** \brief This function adds a slot configuration to current dedicated configuration for nr
  *  @param frame_parms NR DL Frame parameters

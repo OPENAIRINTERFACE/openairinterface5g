@@ -945,6 +945,8 @@ extern "C" {
       std::cerr << "USRP device initialized in subframes replay mode for " << s->recplay_state->u_sf_loops << " loops. Use mmap="
                 << s->recplay_state->use_mmap << std::endl;
     } else {
+      // hotfix! to be checked later
+      uhd::set_thread_priority_safe(1.0);
       // Initialize USRP device
       int vers=0,subvers=0,subsubvers=0;
       int bw_gain_adjust=0;

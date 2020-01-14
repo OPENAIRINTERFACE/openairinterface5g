@@ -118,11 +118,6 @@ int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
 
 void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
-uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
-
-uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
-
-
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead);
 /** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
@@ -149,8 +144,6 @@ int add_new_nr_ue(module_id_t mod_idP,
 		  rnti_t rntiP);
 
 int get_num_dmrs(uint16_t dmrs_mask );
-
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
 uint16_t nr_dci_size(nr_dci_format_t format,
                          nr_rnti_type_t rnti_type,
