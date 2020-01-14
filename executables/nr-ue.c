@@ -413,7 +413,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   //program DCI for slot 1
   //TODO: all of this has to be moved to the MAC!!!
-  if (proc->nr_tti_tx == NR_DOWNLINK_SLOT || UE->frame_parms.frame_type == FDD){
+  if (proc->nr_tti_rx == NR_DOWNLINK_SLOT || UE->frame_parms.frame_type == FDD){
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
