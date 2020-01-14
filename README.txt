@@ -43,6 +43,16 @@ openairinterface5g
 
 RELEASE NOTES:
 
+v1.2.0 -> January 2020. This version adds the following implemented features:
+           * LTE-M : eNB support for Mode A repetitions
+             - PUSCH CE - 8 Repetitions
+           * Improved CDRX implementation for monolithic eNB
+           * Experimental eMBMS support (now also on eNB side)
+           * Bug fixes
+          This version also has an improved code quality:
+           * Better Test Coverage in Continuous Integration:
+             - Initial framework to do long-run testing at R2LAB
+
 v1.1.1 -> November 2019. Bug fix in the TDD Fair Round-Robin scheduler
 v1.1.0 -> July 2019. This version adds the following implemented features:
            * Experimental support of LTE-M
