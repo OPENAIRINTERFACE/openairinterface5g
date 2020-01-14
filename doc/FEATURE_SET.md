@@ -148,6 +148,24 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - Handover Cancel
  - X2-U interface implemented
 
+## eNB/MCE M2AP ##
+The M2AP layer is based on **3GPP 36.443** v14.0.1:
+ - M2 Setup Request
+ - M2 Setup Response 
+ - M2 Setup Failure
+ - M2 Scheduling Information
+ - M2 Scheduling Information Response 
+ - M2 Session Start Request
+ - M2 Session Start Response
+
+## MCE/MME M3AP ##
+The M3AP layer is based on **3GPP 36.444** v14.0.1:
+ - M3 Setup Request
+ - M3 Setup Response 
+ - M3 Setup Failure
+ - M3 Session Start Request
+ - M3 Session Start Response
+
 ## eNB Advanced Features ##
 
 **To be completed**
