@@ -151,10 +151,13 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
+
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
-
+  // NFAPI not yet supported for NR - this code has to be revised
   if (nfapi_mode == 1) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //add_subframe(&frame, &subframe, 4);
@@ -180,20 +183,18 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
             frame_tx, slot_tx);
     }
   }
-
-  /// NR disabling
   // ****************************************
-  // Common RX procedures subframe n
+
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
-/*
+
+  /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
     wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
   }
+  */
 
-  // UE-specific RX processing for subframe n
-  if (nfapi_mode == 0 || nfapi_mode == 1) */
-
+  // Call the scheduler
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -201,22 +202,30 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  
+  // RX processing
+  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
+  int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
-  /// end
+  if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
+    // UE-specific RX processing for subframe n
+    // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
+    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
+  }
+
+  if (oai_exit) return(-1);
+
   // *****************************************
   // TX processing for subframe n+sl_ahead
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
-  //if (wait_CCs(proc)<0) return(-1);
+  
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
 
-  if (oai_exit) return(-1);
-
-  //if (slot_rx == NR_UPLINK_SLOT || gNB->frame_parms.frame_type == FDD) 
-    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
-
-  if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
-    phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+    if(get_thread_parallel_conf() != PARALLEL_RU_L1_TRX_SPLIT) {
+      phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+    }
   }
 
   stop_meas( &softmodem_stats_rxtx_sf );
@@ -716,7 +725,7 @@ static void* process_stats_thread(void* param) {
 
 void init_gNB_proc(int inst) {
   int i=0;
-  int CC_id;
+  int CC_id = 0;
   PHY_VARS_gNB *gNB;
   gNB_L1_proc_t *proc;
   gNB_L1_rxtx_proc_t *L1_proc,*L1_proc_tx;
@@ -794,7 +803,7 @@ void kill_gNB_proc(int inst) {
   proc = &gNB->proc;
   L1_proc     = &proc->L1_proc;
   L1_proc_tx  = &proc->L1_proc_tx;
-  LOG_I(PHY, "Killing TX CC_id %d inst %d\n",inst );
+  LOG_I(PHY, "Killing TX inst %d\n",inst );
   
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
     pthread_mutex_lock(&L1_proc->mutex);
@@ -866,12 +875,12 @@ void print_opp_meas(void) {
 
 /// eNB kept in function name for nffapi calls, TO FIX
 void init_eNB_afterRU(void) {
-  int inst,CC_id,ru_id,i,aa;
+  int inst,ru_id,i,aa;
   PHY_VARS_gNB *gNB;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
-    LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, CC_id, RC.gNB[inst]);
+    LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
     gNB                                  =  RC.gNB[inst];
     phy_init_nr_gNB(gNB,0,0);
 
@@ -879,8 +888,6 @@ void init_eNB_afterRU(void) {
     if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
 
     LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-    //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
-    gNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
     LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
     for (ru_id=0,aa=0; ru_id<gNB->num_RU; ru_id++) {
@@ -893,7 +900,7 @@ void init_eNB_afterRU(void) {
       
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
 	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	gNB->prach_vars.rxsigF[0][aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
+	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
 	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }

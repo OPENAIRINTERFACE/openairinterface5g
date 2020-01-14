@@ -285,8 +285,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
       if ((mac->common_channels[CC_id].ServingCellConfigCommon->tdd_UL_DL_ConfigurationCommon==NULL) ||
-          (is_nr_UL_slot(mac->common_channels[CC_id].ServingCellConfigCommon,(sched_info->slot+sf_ahead)%spf)>0))
+          (is_nr_UL_slot(mac->common_channels[CC_id].ServingCellConfigCommon,UL_info->slot)>0)) {
+	//printf("NR_UL_indication: this is an UL slot. UL_info: frame %d, slot %d. UL_tti_req: frame %d, slot %d\n",UL_info->frame,UL_info->slot,mac->UL_tti_req[CC_id].SFN,mac->UL_tti_req[CC_id].Slot);
         sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
+      }
       else
         sched_info->UL_tti_req      = NULL;
 

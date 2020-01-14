@@ -2360,7 +2360,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 gNB_id,
                                 &ue->frame_parms);
 
-
+  //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
 /*
   if ((ue->UE_mode[eNB_id] == PRACH) &&

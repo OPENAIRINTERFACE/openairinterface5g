@@ -356,7 +356,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   nr_scheduled_response_t scheduled_response;
 
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
+  if (proc->nr_tti_tx == 8 || UE->frame_parms.frame_type == FDD){
 
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
@@ -383,7 +383,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     rvidx = 0;
     //------------------------------------------------------------------------------//
 
-    scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
+    scheduled_response.ul_config->sfn_slot = 8;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
@@ -735,7 +735,6 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-if (slot_nr==18)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
@@ -745,7 +744,7 @@ if (slot_nr==18)
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     4),"");
+                     1),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift

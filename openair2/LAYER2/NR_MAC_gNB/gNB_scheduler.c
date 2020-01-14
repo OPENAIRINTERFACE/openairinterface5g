@@ -313,26 +313,28 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                sub_frame_t slot_rxP,
                                frame_t frame_txP,
                                sub_frame_t slot_txP){
+
+  //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
-
   int               CC_id;
-  
-  
-
+    
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
   //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
+  pdcp_run(&ctxt);
+  //rrc_rx_tx(&ctxt, CC_id);
 
-  // Check if there are downlink symbols in the slot, if not return, no scheduling opportunities
-  if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)==0) return;
-
+  
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
+
+  // Check if there are downlink symbols in the slot, 
+  if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)) {
 
   memset(RC.nrmac[module_idP]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -361,32 +363,30 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
-  pdcp_run(&ctxt);
-  //rrc_rx_tx(&ctxt, CC_id);
 
   // This schedules MIB
   if((slot_txP == 0) && (frame_txP & 7) == 0){
     schedule_nr_mib(module_idP, frame_txP, slot_txP);
   }
 
-  // Phytest scheduling/ option not activated because of pending bug
   // Phytest scheduling
-
-
-  if (slot_rxP==2){
-    nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
-  }
-  
-  if (slot_txP==1){
+  if (phy_test && slot_txP==1){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
   }
-
 
   /*
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
     allocate_CCEs(module_idP, CC_id, subframeP, 0);
   */
+
+  } //is_nr_DL_slot
+
+  if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
+    if (phy_test && slot_rxP==8){
+      nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
+    }
+  }
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

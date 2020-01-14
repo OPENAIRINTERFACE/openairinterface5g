@@ -183,19 +183,22 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_COMMON_TX,0);
 
 
-
-  LOG_D(PHY, "[gNB %d] Frame %d slot %d \
-    Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
+  if (gNB->pdcch_pdu || gNB->ul_dci_pdu) {
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+	  gNB->Mod_id, frame, slot,
+	  gNB->ul_dci_pdu==NULL?0:gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci,
+	  gNB->pdcch_pdu==NULL?0:gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
 
-  if (gNB->pdcch_pdu || gNB->ul_dci_pdu) nr_generate_dci_top(gNB->pdcch_pdu,
-							     gNB->ul_dci_pdu,
-							     gNB->nr_gold_pdcch_dmrs[slot],
-							     &gNB->common_vars.txdataF[0][txdataF_offset],
-							     AMP, *fp);
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
+    nr_generate_dci_top(gNB->pdcch_pdu,
+			gNB->ul_dci_pdu,
+			gNB->nr_gold_pdcch_dmrs[slot],
+			&gNB->common_vars.txdataF[0][txdataF_offset],
+			AMP, *fp);
+  
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
+  }
  
   LOG_D(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);
   for (int i=0; i<gNB->num_pdsch_rnti; i++) {
@@ -395,8 +398,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	  nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
 	}
-	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[UE_id]->rxdataF_comp[0],6900,1,1);
-	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[UE_id]->rxdataF_ext[0],6900,1,1);
+	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
+	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
 	nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
 	nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
       }

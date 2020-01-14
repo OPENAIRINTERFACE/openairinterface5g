@@ -145,7 +145,7 @@ int main(int argc, char **argv)
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   int number_of_frames = 1;
-  int frame_length_complex_samples;
+  int frame_length_complex_samples,frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
   //init_eNB_afterRU();
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
-  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
@@ -577,7 +577,8 @@ int main(int argc, char **argv)
 
       phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
 
-      //LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
+      if (number_of_frames==1)
+	LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
 
       ///////////
       ////////////////////////////////////////////////////
@@ -616,7 +617,8 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-	//LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
+	if (number_of_frames==1)
+	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
         ////////////////////////////////////////////////////////////

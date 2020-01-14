@@ -198,7 +198,12 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 */
   // PRACH
   prach_vars->prachF = (int16_t *)malloc16_clear( 1024*2*sizeof(int16_t) );
-  prach_vars->rxsigF = (int16_t *)malloc16_clear( 1024*2*sizeof(int16_t) );
+  prach_vars->rxsigF = (int16_t **)malloc16_clear(Prx*sizeof(int16_t*));
+  /* 
+  for (i=0;i<Prx;i++){
+    prach_vars->rxsigF[i] = (int16_t *)malloc16_clear( 1024*2*sizeof(int16_t) );
+  }
+  */
   prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
 
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;

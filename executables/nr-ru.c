@@ -721,8 +721,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  int slot_type         = nr_slot_select(cfg,frame,slot%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
-  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)-1))%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
+  int slot_type         = nr_slot_select(cfg,frame,slot);
+  int prevslot_type     = nr_slot_select(cfg,frame,(slot+fp->slots_per_frame-1)%fp->slots_per_frame);
   int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
   int siglen=fp->samples_per_slot;
   int flags=1;
@@ -1366,6 +1366,8 @@ void *ru_thread( void *param ) {
   int                i = 0;
   int                aa;
 
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  
   // set default return value
   ru_thread_status = 0;
   // set default return value
@@ -1484,18 +1486,19 @@ void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
 
-    if (proc->tti_rx == NR_UPLINK_SLOT || fp->frame_type == FDD) {
+    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
+    if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
       if (ru->feprx) ru->feprx(ru,proc->tti_rx);
+      //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
 
+      LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
+      LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
+      
+      for (aa=0;aa<ru->nb_rx;aa++)
+	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
+	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
     }
-
-    LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-    LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
-
-    for (aa=0;aa<ru->nb_rx;aa++)
-      memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
-         (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
     // At this point, all information for subframe has been received on FH interface
 
