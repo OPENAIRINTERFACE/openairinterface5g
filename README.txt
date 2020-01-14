@@ -43,6 +43,7 @@ openairinterface5g
 
 RELEASE NOTES:
 
+v1.1.1 -> November 2019. Bug fix in the TDD Fair Round-Robin scheduler
 v1.1.0 -> July 2019. This version adds the following implemented features:
            * Experimental support of LTE-M
              - Single LTE-M UE attachment, legacy-LTE UE attachment is disabled
@@ -92,3 +93,4 @@ v0.4 -> Merge of feature-131-new-license. It closes issue#131 and changes the li
 v0.3 -> Last stable commit on develop branch before the merge of feature-131-new-license. This is the last commit with GPL License
 v0.2 -> Merge of enhancement-10-harmony to include NGFI RRH + New Interface for RF/BBU
 v0.1 -> Last stable commit on develop branch before enhancement-10-harmony
+

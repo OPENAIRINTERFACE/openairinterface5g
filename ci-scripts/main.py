@@ -134,11 +134,14 @@ class OaiCiTest():
 		self.eNB_serverId = ''
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
+		self.eNBmbmsEnables = [False, False, False]
+		self.eNBstatuses = [-1, -1, -1]
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
 		self.iperf_profile = ''
+		self.iperf_options = ''
 		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
 		self.UEDevicesStatus = []
@@ -211,7 +214,7 @@ class OaiCiTest():
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		SSH.command('mkdir -p ' + lSourcePath, '\$', 5)
 		SSH.command('cd ' + lSourcePath, '\$', 5)
-		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		SSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		SSH.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -364,7 +367,7 @@ class OaiCiTest():
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
-		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		SSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		SSH.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -639,13 +642,13 @@ class OaiCiTest():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
+			SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 			result = re.search('type: b200', SSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				SSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 15)
+				SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		SSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		SSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -657,6 +660,17 @@ class OaiCiTest():
 			SSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
 		else:
 			SSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
+		self.eNBmbmsEnables[int(self.eNB_instance)] = False
+		SSH.command('grep enable_enb_m2 ' + ci_full_config_file, '\$', 2);
+		result = re.search('yes', str(self.ssh.before))
+		if result is not None:
+			self.eNBmbmsEnables[int(self.eNB_instance)] = True
+			logging.debug('\u001B[1m MBMS is enabled on this eNB\u001B[0m')
+		result = re.search('noS1', str(self.Initialize_eNB_args))
+		eNBinNoS1 = False
+		if result is not None:
+			eNBinNoS1 = True
+			logging.debug('\u001B[1m eNB is in noS1 configuration \u001B[0m')
 		# Launch eNB with the modified config file
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
@@ -671,6 +685,7 @@ class OaiCiTest():
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
+		enbDidSync = False
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
@@ -709,11 +724,29 @@ class OaiCiTest():
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
-					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+					enbDidSync = True
 					time.sleep(10)
 
+		if enbDidSync and eNBinNoS1:
+			self.command('ifconfig oaitun_enb1', '\$', 4)
+			result = re.search('inet addr', str(self.ssh.before))
+			if result is not None:
+				logging.debug('\u001B[1m oaitun_enb1 interface is mounted and configured\u001B[0m')
+			else:
+				logging.error('\u001B[1m oaitun_enb1 interface is either NOT mounted or NOT configured\u001B[0m')
+			if self.eNBmbmsEnables[int(self.eNB_instance)]:
+				self.command('ifconfig oaitun_enm1', '\$', 4)
+				result = re.search('inet addr', str(self.ssh.before))
+				if result is not None:
+					logging.debug('\u001B[1m oaitun_enm1 interface is mounted and configured\u001B[0m')
+				else:
+					logging.error('\u001B[1m oaitun_enm1 interface is either NOT mounted or NOT configured\u001B[0m')
+		if enbDidSync:
+			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId)
+
 		SSH.close()
+		self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
+		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 	def InitializeUE_common(self, device_id, idx):
 		try:
@@ -793,13 +826,13 @@ class OaiCiTest():
 				sys.exit(1)
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 10)
+		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 60)
 		result = re.search('type: b200', SSH.getBefore())
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 			# Reloading FGPA bin firmware
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 15)
+			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 60)
 		else:
 			logging.debug('Did not find any B2xx device')
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
@@ -900,6 +933,15 @@ class OaiCiTest():
 					logging.debug(SSH.getBefore())
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
 					tunnelInterfaceStatus = False
+				if self.eNBmbmsEnables[0]:
+					self.command('ifconfig oaitun_uem1', '\$', 4)
+					result = re.search('inet addr', str(self.ssh.before))
+					if result is not None:
+						logging.debug('\u001B[1m oaitun_uem1 interface is mounted and configured\u001B[0m')
+						tunnelInterfaceStatus = tunnelInterfaceStatus and True
+					else:
+						logging.error('\u001B[1m oaitun_uem1 interface is either NOT mounted or NOT configured\u001B[0m')
+						tunnelInterfaceStatus = False
 			else:
 				tunnelInterfaceStatus = True
 
@@ -913,7 +955,10 @@ class OaiCiTest():
 				self.UEDevicesStatus = []
 				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
 		else:
-			self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+			if self.eNBmbmsEnables[0]:
+				self.htmlUEFailureMsg = 'oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
+			else:
+				self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
@@ -2537,17 +2582,18 @@ class OaiCiTest():
 			iClientIPAddr = self.eNBIPAddress
 			iClientUser = self.eNBUserName
 			iClientPasswd = self.eNBPassword
-		# Starting the iperf server
-		SSH.open(iServerIPAddr, iServerUser, iServerPasswd)
-		# args SHALL be "-c client -u any"
-		# -c 10.0.1.2 -u -b 1M -t 30 -i 1 -fm -B 10.0.1.1
-		# -B 10.0.1.1 -u -s -i 1 -fm
-		server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
-		server_options = server_options.replace('-c','-B')
-		SSH.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
-		SSH.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
-		time.sleep(0.5)
-		SSH.close()
+		if self.iperf_options != 'sink':
+			# Starting the iperf server
+			SSH.open(iServerIPAddr, iServerUser, iServerPasswd)
+			# args SHALL be "-c client -u any"
+			# -c 10.0.1.2 -u -b 1M -t 30 -i 1 -fm -B 10.0.1.1
+			# -B 10.0.1.1 -u -s -i 1 -fm
+			server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
+			server_options = server_options.replace('-c','-B')
+			SSH.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
+			SSH.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
+			time.sleep(0.5)
+			SSH.close()
 
 		# Starting the iperf client
 		modified_options = self.Iperf_ComputeModifiedBW(0, 1)
@@ -2563,14 +2609,23 @@ class OaiCiTest():
 			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 			clientStatus = -2
 		else:
-			clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
+			if self.iperf_options == 'sink':
+				clientStatus = 0
+				status_queue.put(0)
+				status_queue.put('OAI-UE')
+				status_queue.put('10.0.1.2')
+				status_queue.put('Sink Test : no check')
+			else:
+				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
 		SSH.close()
 
 		# Stopping the iperf server
-		SSH.open(iServerIPAddr, iServerUser, iServerPasswd)
-		SSH.command('killall --signal SIGKILL iperf', '\$', 5)
-		time.sleep(0.5)
-		SSH.close()
+		if self.iperf_options != 'sink':
+			SSH.open(iServerIPAddr, iServerUser, iServerPasswd)
+			SSH.command('killall --signal SIGKILL iperf', '\$', 5)
+			time.sleep(0.5)
+			SSH.close()
+
 		if (clientStatus == -1):
 			if (os.path.isfile('iperf_server_' + self.testCase_id + '.log')):
 				os.remove('iperf_server_' + self.testCase_id + '.log')
@@ -2578,9 +2633,10 @@ class OaiCiTest():
 			self.Iperf_analyzeV2Server(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
 
 		# copying on the EPC server for logCollection
-		copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
-		if (copyin_res == 0):
-			SSH.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
+		if (clientStatus == -1):
+			copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
+			if (copyin_res == 0):
+				SSH.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
 		copyin_res = SSH.copyin(iClientIPAddr, iClientUser, iClientPasswd, '/tmp/tmp_iperf_' + self.testCase_id + '.log', 'iperf_' + self.testCase_id + '_OAI-UE.log')
 		if (copyin_res == 0):
 			SSH.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
@@ -2783,9 +2839,26 @@ class OaiCiTest():
 
 	def CheckeNBProcess(self, status_queue):
 		try:
-			SSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+			# At least the instance 0 SHALL be on!
+			if self.eNBstatuses[0] == 0:
+				lIpAddr = self.eNBIPAddress
+				lUserName = self.eNBUserName
+				lPassWord = self.eNBPassword
+			elif self.eNBstatuses[0] == 1:
+				lIpAddr = self.eNB1IPAddress
+				lUserName = self.eNB1UserName
+				lPassWord = self.eNB1Password
+			elif self.eNBstatuses[0] == 2:
+				lIpAddr = self.eNB2IPAddress
+				lUserName = self.eNB2UserName
+				lPassWord = self.eNB2Password
+			else:
+				lIpAddr = self.eNBIPAddress
+				lUserName = self.eNBUserName
+				lPassWord = self.eNBPassword
+			SSH.open(lIpAddr, lUserName, lPassWord)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('lte-softmodem', SSH.getBefore())
+			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(ENB_PROCESS_FAILED)
@@ -2884,6 +2957,7 @@ class OaiCiTest():
 		ulschFailure = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
+		mbmsRequestMsg = 0
 		self.htmleNBFailureMsg = ''
 		isRRU = False
 		isSlave = False
@@ -3002,6 +3076,10 @@ class OaiCiTest():
 			result = re.search('dropping, not enough RBs', str(line))
 			if result is not None:
 				dropNotEnoughRBs += 1
+			if self.eNBmbmsEnables[int(self.eNB_instance)]:
+				result = re.search('MBMS USER-PLANE.*Requesting.*bytes from RLC', str(line))
+				if result is not None:
+					mbmsRequestMsg += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		if uciStatMsgCount > 0:
@@ -3045,6 +3123,11 @@ class OaiCiTest():
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if self.eNBmbmsEnables[int(self.eNB_instance)]:
+			if mbmsRequestMsg > 0:
+				rrcMsg = 'eNB requested ' + str(mbmsRequestMsg) + ' times the RLC for MBMS USER-PLANE'
+				logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+				self.htmleNBFailureMsg += rrcMsg + '\n'
 		if X2HO_inNbProcedures > 0:
 			rrcMsg = 'eNB completed ' + str(X2HO_inNbProcedures) + ' X2 Handover Connection procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
@@ -3116,6 +3199,7 @@ class OaiCiTest():
 		mib_found = False
 		frequency_found = False
 		plmn_found = False
+		mbms_messages = 0
 		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
 			result = re.search('Exiting OAI softmodem', str(line))
@@ -3155,6 +3239,10 @@ class OaiCiTest():
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
 				no_cell_sync_found = True
+			if self.eNBmbmsEnables[0]:
+				result = re.search('TRIED TO PUSH MBMS DATA', str(line))
+				if result is not None:
+					mbms_messages += 1
 			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>.{1,4}), TX_ANT (?P<tx_ant>\d)", str(line))
 			if result is not None and (not mib_found):
 				try:
@@ -3247,6 +3335,14 @@ class OaiCiTest():
 		if badDciCount > 0:
 			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1A" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if self.eNBmbmsEnables[0]:
+			if mbms_messages > 0:
+				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			else:
+				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
+				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
@@ -3341,6 +3437,7 @@ class OaiCiTest():
 					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId != '0':
 					SSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
@@ -3349,11 +3446,14 @@ class OaiCiTest():
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.preamtureExit = True
+					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
 					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.eNBmbmsEnables[int(self.eNB_instance)] = False
+		self.eNBstatuses[int(self.eNB_instance)] = -1
 
 	def TerminateHSS(self):
 		SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -3818,7 +3918,7 @@ class OaiCiTest():
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
-		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 15)
+		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 60)
 		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		if result is not None:
 			self.UsrpBoard = result.group('usrp_board')
@@ -4307,6 +4407,13 @@ def GetParametersFromXML(action):
 			if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
 				logging.debug('ERROR: test-case has wrong profile ' + CiTestObj.iperf_profile)
 				CiTestObj.iperf_profile = 'balanced'
+		CiTestObj.iperf_options = test.findtext('iperf_options')
+		if (CiTestObj.iperf_options is None):
+			CiTestObj.iperf_options = 'check'
+		else:
+			if CiTestObj.iperf_options != 'check' and CiTestObj.iperf_options != 'sink':
+				logging.debug('ERROR: test-case has wrong option ' + CiTestObj.iperf_options)
+				CiTestObj.iperf_options = 'check'
 
 	if action == 'IdleSleep':
 		string_field = test.findtext('idle_sleep_time_in_sec')
