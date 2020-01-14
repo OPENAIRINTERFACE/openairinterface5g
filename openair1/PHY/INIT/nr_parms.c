@@ -317,6 +317,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   set_scs_parameters(fp,fp->numerology_index);
 
+  fp->slots_per_frame = 10* fp->slots_per_subframe;
+
   fp->nb_antenna_ports_gNB = 1; // default value until overwritten by RRCConnectionReconfiguration
   fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
   fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
