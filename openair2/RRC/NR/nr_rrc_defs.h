@@ -50,6 +50,15 @@
 #include "NR_RRCReconfiguration.h"
 #include "NR_RRCReestablishmentRequest.h"
 #include "NR_BCCH-BCH-Message.h"
+#include "NR_BCCH-DL-SCH-Message.h"
+#include "NR_BCCH-BCH-Message.h"
+#include "NR_PLMN-IdentityInfo.h"
+#include "NR_MCC-MNC-Digit.h"
+//#include "MCCH-Message.h"
+//#include "MBSFNAreaConfiguration-r9.h"
+//#include "SCellToAddMod-r10.h"
+//#include "AS-Config.h"
+//#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_UE-MRDC-Capability.h"
 #include "NR_MeasResults.h"
@@ -78,7 +87,7 @@
 /*I will change the name of the structure for compile purposes--> hope not to undo this process*/
 
 typedef unsigned int uid_nr_t;
-#define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_NR_UE_MAX/8)/sizeof(unsigned int)) + 1)
+#define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((MAX_MOBILES_PER_GNB/8)/sizeof(unsigned int)) + 1)
 
 typedef struct nr_uid_linear_allocator_s {
   unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
@@ -113,7 +122,6 @@ typedef enum UE_STATE_NR_e {
 } NR_UE_STATE_t;
 
 
-//#define NUMBER_OF_NR_UE_MAX MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
 #define RRM_MALLOC(t,n)   (t *) malloc16( sizeof(t) * n )
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)
@@ -369,17 +377,21 @@ typedef struct {
   uint8_t                                   *MIB;
   uint8_t                                   sizeof_MIB;
 
+  uint8_t                                   *SIB1;
+  uint8_t                                   sizeof_SIB1;
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
   NR_BCCH_BCH_Message_t                     mib;
   int ssb_SubcarrierOffset;                  
+  int pdsch_AntennaPorts;
+  NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
-  int                                       n_physical_antenna_ports;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------

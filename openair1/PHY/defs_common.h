@@ -88,6 +88,7 @@
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
 #define PBCH_PDU_SIZE 3 //bytes
+#define NR_NUMBER_OF_SYMBOLS_PER_SLOT 14
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -902,39 +903,6 @@ typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
-/*extern THREAD_STRUCT thread_struct;
-
-static inline void set_parallel_conf(char *parallel_conf) {
-  mapping config[]= {
-    FOREACH_PARALLEL(GENERATE_ENUMTXT)
-    {NULL,-1}
-  };
-  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
-  if (thread_struct.parallel_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
-    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  }
-}
-
-static inline void set_worker_conf(char *worker_conf) {
-  mapping config[]={
-    FOREACH_WORKER(GENERATE_ENUMTXT)
-    {NULL, -1}
-  };
-  thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
-  if (thread_struct.worker_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
-    thread_struct.worker_conf = WORKER_DISABLE ;
-  }
-}
-
-static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-
-static inline WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}*/
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

@@ -196,6 +196,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
   rrc_mac_config_req_gNB(rrc->module_id,
 			 rrc->carrier.ssb_SubcarrierOffset,
+                         rrc->carrier.pdsch_AntennaPorts,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			 0,
 			 0,
@@ -288,6 +289,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->carrier.servingcellconfigcommon = configuration->scc;
+  rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
+  rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   /// System Information INIT
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
 

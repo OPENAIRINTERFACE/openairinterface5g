@@ -119,7 +119,7 @@ void dl_phy_sync_success(module_id_t module_idP,
 			 frame_t frameP,
 			 unsigned char eNB_index, uint8_t first_sync){}
 
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn) { return(0);}
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn) { return(0);}
 
 int32_t get_uldl_offset(int nr_bandP) { return(0);}
 

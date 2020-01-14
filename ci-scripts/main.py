@@ -128,6 +128,7 @@ class SSHConnection():
 		self.Build_eNB_args = ''
 		self.backgroundBuild = False
 		self.backgroundBuildTestId = ['', '', '']
+		self.Build_eNB_forced_workspace_cleanup = False
 		self.Initialize_eNB_args = ''
 		self.air_interface = 'lte'
 		self.eNB_instance = ''
@@ -370,9 +371,16 @@ class SSHConnection():
 			self.air_interface = 'nr'
 		else:
 			self.air_interface = 'lte'
+		if self.Build_eNB_forced_workspace_cleanup:
+			self.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
 		self.command('mkdir -p ' + lSourcePath, '\$', 5)
 		self.command('cd ' + lSourcePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -537,13 +545,42 @@ class SSHConnection():
 			ue_prefix = ''
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
 		if self.clean_repository:
-			pass
+			self.command('ls *.txt', '\$', 5)
+			result = re.search('LAST_BUILD_INFO', str(self.ssh.before))
+			if result is not None:
+				mismatch = False
+				self.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				result = re.search(self.ranCommitID, str(self.ssh.before))
+				if result is None:
+					mismatch = True
+				self.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				if (self.ranAllowMerge):
+					result = re.search('YES', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+					self.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					if self.ranTargetBranch == '':
+						result = re.search('develop', str(self.ssh.before))
+					else:
+						result = re.search(self.ranTargetBranch, str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				else:
+					result = re.search('NO', str(self.ssh.before))
+					if result is None:
+						mismatch = True
+				if not mismatch:
+					self.close()
+					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					return
+
 			self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
 			self.command('git checkout -f ' + self.ranCommitID, '\$', 5)
@@ -571,12 +608,23 @@ class SSHConnection():
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
-		self.close()
 		if buildStatus:
-			logging.info('\u001B[1m Building OAI ' + ue_prefix + 'UE Pass\u001B[0m')
+			# Generating a BUILD INFO file
+			self.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if (self.ranAllowMerge):
+				self.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				if self.ranTargetBranch == '':
+					self.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				else:
+					self.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			else:
+				self.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			self.close()
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 		else:
-			logging.error('\u001B[1m Building OAI ' + ue_prefix + 'UE Failed\u001B[0m')
+			self.close()
+			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
@@ -738,13 +786,13 @@ class SSHConnection():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 10)
+			self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				self.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 15)
+				self.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 30)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -1138,7 +1186,7 @@ class SSHConnection():
 		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
 		if attach_status:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Completed in ' + str(attach_cnt+4) + ' seconds'
+			html_cell = '<pre style="background-color:white">CAT-M module Attachment Completed in ' + str(attach_cnt+4) + ' seconds'
 			if (nRSRQ is not None) and (nRSRP is not None):
 				html_cell += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
 				html_cell += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm</pre>'
@@ -1147,9 +1195,11 @@ class SSHConnection():
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'OK', 1, html_queue)
 		else:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Failed</pre>'
+			logging.error('\u001B[1m CAT-M module Attachment Failed\u001B[0m')
+			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
+			self.AutoTerminateUEandeNB()
 
 	def PingCatM(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '':
@@ -1160,7 +1210,7 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.prematureExit = True
+			self.AutoTerminateUEandeNB()
 			return
 		try:
 			statusQueue = SimpleQueue()
@@ -1179,6 +1229,8 @@ class SSHConnection():
 				if result is not None:
 					moduleIPAddr = result.group('ipaddr')
 				else:
+					self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+					self.AutoTerminateUEandeNB()
 					return
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 			device_id = 'catm'
@@ -2409,15 +2461,16 @@ class SSHConnection():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def IperfNoS1(self):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = True
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.AutoTerminateUEandeNB()
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
+			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
 			iServerIPAddr = self.eNBIPAddress
@@ -3447,6 +3500,11 @@ class SSHConnection():
 			self.ShowTestID()
 			self.eNB_instance = '0'
 			self.TerminateeNB()
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.testCase_id = 'AUTO-KILL-flexran-ctl'
+			self.desc = 'Automatic Termination of FlexRan CTL'
+			self.ShowTestID()
+			self.TerminateFlexranCtrl()
 		self.prematureExit = True
 
 	def IdleSleep(self):
@@ -3716,7 +3774,7 @@ class SSHConnection():
 			if result is not None:
 				self.UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 12)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 30)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		count = 0
 		for board in usrp_boards:
@@ -4108,6 +4166,14 @@ def CheckClassValidity(action,id):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
+		if (forced_workspace_cleanup is None):
+			SSH.Build_eNB_forced_workspace_cleanup = False
+		else:
+			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+				SSH.Build_eNB_forced_workspace_cleanup = True
+			else:
+				SSH.Build_eNB_forced_workspace_cleanup = False
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
@@ -4564,7 +4630,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
+			if SSH.prematureExit:
+				break
 			for test in all_tests:
+				if SSH.prematureExit:
+					break
 				id = test.get('id')
 				if test_case_id != id:
 					continue
@@ -4645,10 +4715,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SSH.Perform_X2_Handover()
 				else:
 					sys.exit('Invalid action')
-				if SSH.prematureExit:
-					break
-			if SSH.prematureExit:
-				break
 		cnt += 1
 	if cnt == SSH.repeatCounts[0] and SSH.prematureExit:
 		logging.debug('Testsuite failed ' + str(cnt) + ' time(s)')

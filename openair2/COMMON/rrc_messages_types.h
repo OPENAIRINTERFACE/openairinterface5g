@@ -274,6 +274,7 @@ typedef struct RrcConfigurationReq_s {
   long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_repetitionLevelCEmodeA_r13				   [MAX_NUM_CCs];
   long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
 
   //SIB18
@@ -400,6 +401,7 @@ typedef struct NRRrcConfigurationReq_s {
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
   NR_ServingCellConfigCommon_t *scc;
   int                          ssb_SubcarrierOffset;
+  int                          pdsch_AntennaPorts;
 } gNB_RrcConfigurationReq;
 
 

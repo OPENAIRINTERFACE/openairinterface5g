@@ -723,7 +723,6 @@ void rlc_um_check_timer_dar_time_out(
   signed int     in_window;
   rlc_usn_t      old_vr_ur;
 
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_UM_CHECK_TIMER_DAR_TIME_OUT,VCD_FUNCTION_IN);
 
   if ((rlc_pP->t_reordering.running)) {
@@ -1130,12 +1129,12 @@ rlc_um_receive_process_dar (
       if (in_window < 0) {
         in_window = in_window + rlc_pP->rx_sn_modulo;
       }
-
       rlc_um_try_reassembly(ctxt_pP, rlc_pP, rlc_pP->vr_ur, in_window);
     }
 
 
     if (rlc_um_in_reordering_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur) < 0) {
+     //LOG_I(RLC, "[rlc_um_receive_process_dar] Problematic case 4 \n");
 #if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -1158,9 +1157,8 @@ rlc_um_receive_process_dar (
     do {
       rlc_pP->vr_ur = (rlc_pP->vr_ur+1) % rlc_pP->rx_sn_modulo;
     } while (rlc_um_get_pdu_from_dar_buffer(ctxt_pP, rlc_pP, rlc_pP->vr_ur) && (rlc_pP->vr_ur != rlc_pP->vr_uh));
-
     rlc_um_try_reassembly(ctxt_pP, rlc_pP, sn, rlc_pP->vr_ur);
-  }
+  }   
 
   // -if t-Reordering is running:
   //      -if VR(UX) <= VR(UR); or

@@ -35,55 +35,65 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *C,
                      unsigned int *K,
                      unsigned int *Zout, // [hna] Zout is Zc
-                     unsigned int *F)
+                     unsigned int *F,
+                     uint8_t BG)
 {
 
-  unsigned int L,Bprime,Bprime_by_C,Z,r,Kb,k,s,crc,Kprime;
+  unsigned int L,Bprime,Z,r,Kcb,Kb,k,s,crc,Kprime;
 
-  if (B<=8448) {
+  if (BG==1)
+    Kcb=8448;
+  else
+    Kcb=3840;
+
+  if (B<=Kcb) {
     L=0;
     *C=1;
     Bprime=B;
   } else {
     L=24;
-    *C = B/(8448-L);
+    *C = B/(Kcb-L);
 
-    if ((8448-L)*(*C) < B)
+    if ((Kcb-L)*(*C) < B)
       *C=*C+1;
 
     Bprime = B+((*C)*L);
 #ifdef DEBUG_SEGMENTATION
-    printf("Bprime %d\n",Bprime);
+    printf("Bprime %u\n",Bprime);
 #endif
   }
 
-  if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
-      LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
+  if ((*C)>MAX_NUM_NR_DLSCH_SEGMENTS) {
+    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }
 
   // Find K+
-  Bprime_by_C = Bprime/(*C);
-  if (Bprime <=192) {
-	  Kb = 6;
-  } else if (Bprime <=560) {
-	  Kb = 8;
-  } else if (Bprime <=640) {
-	  Kb = 9;
-  } else if (Bprime <=3840) {
-	  Kb = 10;;
-  } else {
-	  Kb = 22;
+  Kprime = Bprime/(*C);
+
+  if (BG==1)
+    Kb = 22;
+  else {
+    if (B > 640) {
+      Kb = 10;
+    } else if (B > 560) {
+      Kb = 9;
+    } else if (B > 192) {
+      Kb = 8;
+    }
+    else {
+      Kb = 6;
+    }
   }
 
 
-if ((Bprime_by_C%Kb) > 0)
-  Z  = (Bprime_by_C/Kb)+1;
+if ((Kprime%Kb) > 0)
+  Z  = (Kprime/Kb)+1;
 else
-	Z = (Bprime_by_C/Kb);
+  Z = (Kprime/Kb);
 
 #ifdef DEBUG_SEGMENTATION
- printf("nr segmetation B %d Bprime %d Bprime_by_C %d z %d \n", B, Bprime, Bprime_by_C, Z);
+ printf("nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
 #endif
 	  
   if (Z <= 2) {
@@ -110,7 +120,7 @@ else
       *K = *K + 8;
 
 #ifdef DEBUG_SEGMENTATION
-    printf("Z_by_C %d , K2 %d\n",Z,*K);
+    printf("Z_by_C %u , K2 %u\n",Z,*K);
 #endif
   } else if (Z <= 256) { // increase by 4 bytes til here
       *K = (Z>>4)<<4;
@@ -128,14 +138,19 @@ else
     //msg("nr_segmentation.c: Illegal codeword size !!!\n");
     return -1;
   }
-  *Zout = *K;
-  *K = *K*Kb;
 
-  *F = ((*K) - Bprime_by_C);
+  *Zout = *K;
+
+  if(BG==1)
+    *K = *K*22;
+  else
+    *K = *K*10;
+
+  *F = ((*K) - Kprime);
 
 #ifdef DEBUG_SEGMENTATION
-  printf("final nr seg output Z %d K %d F %d \n", *Zout, *K, *F);
-  printf("C %d, K %d, Bprime_bytes %d, Bprime %d, F %d\n",*C,*K,Bprime>>3,Bprime,*F);
+  printf("final nr seg output Z %u K %u F %u \n", *Zout, *K, *F);
+  printf("C %u, K %u, Bprime_bytes %u, Bprime %u, F %u\n",*C,*K,Bprime>>3,Bprime,*F);
 #endif
 
   if ((input_buffer) && (output_buffers)) {
@@ -145,13 +160,19 @@ else
     for (r=0; r<*C; r++) {
 
       k = 0;
-      Kprime = Bprime_by_C;
 
       while (k<((Kprime - L)>>3)) {
         output_buffers[r][k] = input_buffer[s];
 		//printf("encoding segment %d : byte %d (%d) => %d\n",r,k,(Kprime-L)>>3,input_buffer[s]);
         k++;
         s++;
+      }
+
+      if (*C > 1) { // add CRC
+        crc = crc24b(output_buffers[r],Kprime-L)>>8;
+        output_buffers[r][(Kprime-L)>>3] = ((uint8_t*)&crc)[2];
+        output_buffers[r][1+((Kprime-L)>>3)] = ((uint8_t*)&crc)[1];
+        output_buffers[r][2+((Kprime-L)>>3)] = ((uint8_t*)&crc)[0];
       }
 
       if (*F>0) {
@@ -161,16 +182,10 @@ else
         }
       }
 
-      if (*C > 1) { // add CRC
-        crc = crc24b(output_buffers[r],Kprime-L)>>8;
-        output_buffers[r][(Kprime-L)>>3] = ((uint8_t*)&crc)[2];
-        output_buffers[r][1+((Kprime-L)>>3)] = ((uint8_t*)&crc)[1];
-        output_buffers[r][2+((Kprime-L)>>3)] = ((uint8_t*)&crc)[0];
-      }
     }
   }
 
-  return 0;
+  return Kb;
 }
 
 

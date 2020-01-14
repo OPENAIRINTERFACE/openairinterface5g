@@ -32,6 +32,7 @@
 
 //#include "defs.h"
 #include "mac_proto.h"
+#include "executables/nr-softmodem.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
@@ -45,6 +46,14 @@ nr_l2_init_ue(void)
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
     
+    if (IS_SOFTMODEM_NOS1){
+        if (rlc_module_init(0) != 0) {
+    		LOG_I(RLC, "Problem at RLC initiation \n");
+    	}
+    	pdcp_layer_init();
+    	nr_ip_over_LTE_DRB_preconfiguration();
+    }
+
 
     return (1);
 }

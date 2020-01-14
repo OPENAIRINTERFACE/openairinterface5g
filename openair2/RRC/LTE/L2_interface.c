@@ -68,7 +68,7 @@ mac_rrc_data_req(
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
 
   if (LOG_DEBUGFLAG(DEBUG_RRC)) {
-    LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
+    LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
   }
 
   eNB_RRC_INST *rrc;
@@ -167,7 +167,7 @@ mac_rrc_data_req(
     if (ue_context_p == NULL) return(0);
 
     eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-    LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
+    LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %ld, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
     Srb_info=&ue_p->Srb0;
 
     // check if data is there for MAC
@@ -182,7 +182,7 @@ mac_rrc_data_req(
   }
 
   if( (Srb_id & RAB_OFFSET ) == PCCH) {
-    LOG_T(RRC,"[eNB %d] Frame %d PCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
+    LOG_T(RRC,"[eNB %d] Frame %d PCCH request (Srb_id %ld)\n",Mod_idP,frameP, Srb_id);
 
     // check if data is there for MAC
     if(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] > 0) { //Fill buffer
@@ -254,7 +254,7 @@ mac_rrc_data_ind(
 //--------------------------------------------------------------------------
 {
   if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
+    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
           module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
     /* do ITTI message */
     DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
@@ -279,7 +279,7 @@ mac_rrc_data_ind(
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, rntiP, frameP, sub_frameP,0);
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
-    LOG_D(RRC, "[eNB %d] Received SDU for CCCH on SRB %d\n", module_idP, srb_idP);
+    LOG_D(RRC, "[eNB %d] Received SDU for CCCH on SRB %ld\n", module_idP, srb_idP);
     ctxt.brOption = brOption;
 
     /*Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;

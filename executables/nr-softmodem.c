@@ -83,6 +83,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/TOOLS/nr_phy_scope.h"
 #include "stats.h"
 #include "nr-softmodem.h"
+#include "executables/softmodem-common.h"
+#include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
 
@@ -105,7 +107,6 @@ int config_sync_var=-1;
 #endif
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int mmapped_dma=0;
@@ -168,7 +169,7 @@ int rx_input_level_dBm;
 uint32_t do_forms=0;
 int otg_enabled;
 
-//int                             number_of_cards =   1;
+//int number_of_cards = 1;
 
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
@@ -189,46 +190,10 @@ int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
 
-typedef struct {
-  uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  int            phy_test;
-  uint8_t        usim_test;
-  int            emulate_rf;
-  int            wait_for_sync; //eNodeB only
-  int            single_thread_flag; //eNodeB only
-  int            chain_offset;
-  int            numerology;
-  unsigned int   start_msc;
-  uint32_t       clock_source;
-  int            hw_timing_advance;
-} softmodem_params_t;
 static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
-
-void set_parallel_conf(char *parallel_conf) {
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-}
-void set_worker_conf(char *worker_conf) {
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)	                  thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-}
-PARALLEL_CONF_t get_thread_parallel_conf(void) {
-	return thread_struct.parallel_conf;
-}
-WORKER_CONF_t get_thread_worker_conf(void) {
-	return thread_struct.worker_conf;
-}
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -246,7 +211,7 @@ char uecap_xer_in=0;
 uint8_t abstraction_flag=0;
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -520,7 +485,9 @@ static void get_options(void) {
   int tddflag, nonbiotflag;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
-  uint32_t start_telnetsrv;
+  uint32_t start_telnetsrv = 0;
+  uint32_t noS1;
+  uint32_t nokrnmod;
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
   paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
@@ -558,6 +525,7 @@ static void get_options(void) {
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL) set_worker_conf(worker_config);
+
 }
 
 
@@ -569,18 +537,18 @@ static void get_options(void) {
 
 
 
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
-		                     NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
+void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
+		             NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs])
 {
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
-    config[CC_id] = (nfapi_nr_config_request_t *) malloc(sizeof(nfapi_nr_config_request_t));
-    config[CC_id]->subframe_config.numerology_index_mu.value =1;
-    config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
-    config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-    config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
-    config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
-    config[CC_id]->sch_config.physical_cell_id.value = 0;
+    config[CC_id] = (nfapi_nr_config_request_scf_t *) malloc(sizeof(nfapi_nr_config_request_scf_t));
+    config[CC_id]->ssb_config.scs_common.value = 1;
+    config[CC_id]->cell_config.frame_duplex_type.value = 1; //FDD
+    //config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+    config[CC_id]->carrier_config.dl_grid_size[1].value = 106;
+    config[CC_id]->carrier_config.ul_grid_size[1].value = 106;
+    config[CC_id]->cell_config.phy_cell_id.value = 0;
     ///dl frequency to be filled in
     /*  //Set some default values that may be overwritten while reading options
         frame_parms[CC_id]->frame_type          = FDD;
@@ -873,6 +841,30 @@ static  void wait_nfapi_init(char *thread_name) {
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
+void init_pdcp(void) {
+  //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
+    if (IS_SOFTMODEM_NOS1){
+    	printf("IS_SOFTMODEM_NOS1 option enabled \n");
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+    }
+
+    pdcp_module_init(pdcp_initmask);
+
+    /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {*/
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    //}
+  /*} else {
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }*/
+}
+
 int main( int argc, char **argv )
 {
   int i, ru_id, CC_id = 0;
@@ -894,6 +886,7 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
+  get_common_options();
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -939,6 +932,9 @@ init_opt();
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
+
 
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
@@ -958,6 +954,7 @@ init_opt();
     flexran_agent_start(i);
   }
 */
+
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);

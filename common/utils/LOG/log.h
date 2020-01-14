@@ -25,7 +25,6 @@
 * \date 2009 - 2014
 * \version 0.5
 * @ingroup util
-
 */
 
 #ifndef __LOG_H__
@@ -297,7 +296,7 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-int isLogInitDone (void);
+int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
@@ -363,14 +362,14 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 
 
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOG globalconfiguration parameters                                                                   */
-/*   optname                            help                                                paramflags       XXXptr                    defXXXval              type   numelt */
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*   LOG globalconfiguration parameters                                                                                                                                                */
+/*   optname                               help                                          paramflags         XXXptr               defXXXval                          type        numelt */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,         strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,         iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,         strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,   "Default log level for all componemts\n",              0, strptr:(char **)&gloglevel, defstrval:log_level_names[2].name, TYPE_STRING,     0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,  "Default console output option, for all components\n", 0, iptr:&(consolelog),         defintval:1,                       TYPE_INT,        0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS, LOG_CONFIG_HELP_OPTIONS,                               0, strlistptr:NULL,            defstrlistval:NULL,                TYPE_STRINGLIST, 0} \
   }
 
 #define LOG_OPTIONS_IDX   2

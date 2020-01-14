@@ -42,28 +42,44 @@
 
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch)
+void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch,unsigned char N_RB_UL)
 {
-  int i;
-  int r;
+  int i, r;
 
   if (ulsch) {
 #ifdef DEBUG_ULSCH_FREE
     printf("Freeing ulsch %p\n",ulsch);
 #endif
 
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
+
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
+    a_segments = a_segments/273;
+  }  
+
+  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]) {
 
         if (ulsch->harq_processes[i]->a) {
-          free16(ulsch->harq_processes[i]->a,MAX_NR_ULSCH_PAYLOAD_BYTES);
+          free16(ulsch->harq_processes[i]->a,ulsch_bytes);
           ulsch->harq_processes[i]->a = NULL;
         }
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,MAX_NR_ULSCH_PAYLOAD_BYTES);
+          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
           ulsch->harq_processes[i]->b = NULL;
         }
-        for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS; r++) {
+        if (ulsch->harq_processes[i]->e) {
+          free16(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
+          ulsch->harq_processes[i]->e = NULL;
+        }
+        if (ulsch->harq_processes[i]->f) {
+          free16(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
+          ulsch->harq_processes[i]->f = NULL;
+        }
+        for (r=0; r<a_segments; r++) {
           if (ulsch->harq_processes[i]->c[r]) {
             free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             ulsch->harq_processes[i]->c[r] = NULL;
@@ -87,24 +103,20 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch)
 }
 
 
-
-NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag)
+NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
+                               int number_of_harq_pids,
+                               uint8_t abstraction_flag)
 {
-
   NR_UE_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,r;
-  unsigned char bw_scaling =1;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
-  switch (N_RB_UL) {
+  if (N_RB_UL != 273) {
+    a_segments = a_segments*N_RB_UL;
+    a_segments = a_segments/273;
+  }  
 
-  case 106:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
-  }
+  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   ulsch = (NR_UE_ULSCH_t *)malloc16(sizeof(NR_UE_ULSCH_t));
 
@@ -124,25 +136,25 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, u
       //      printf("ulsch->harq_processes[%d] %p\n",i,ulsch->harq_processes[i]);
       if (ulsch->harq_processes[i]) {
         memset(ulsch->harq_processes[i], 0, sizeof(NR_UL_UE_HARQ_t));
-        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
-        ulsch->harq_processes[i]->a = (unsigned char*)malloc16(MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        ulsch->harq_processes[i]->b = (uint8_t*)malloc16(ulsch_bytes);
+        ulsch->harq_processes[i]->a = (unsigned char*)malloc16(ulsch_bytes);
 
         if (ulsch->harq_processes[i]->a) {
-          bzero(ulsch->harq_processes[i]->a,MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(ulsch->harq_processes[i]->a,ulsch_bytes);
         } else {
           printf("Can't allocate PDU\n");
           exit_flag=1;
         }
 
         if (ulsch->harq_processes[i]->b)
-          bzero(ulsch->harq_processes[i]->b,MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling);
+          bzero(ulsch->harq_processes[i]->b,ulsch_bytes);
         else {
           LOG_E(PHY,"Can't get b\n");
           exit_flag=1;
         }
 
         if (abstraction_flag==0) {
-          for (r=0; r<MAX_NUM_NR_ULSCH_SEGMENTS/bw_scaling; r++) {
+          for (r=0; r<a_segments; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(8448);
             ulsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384); //max size for coded output
@@ -159,6 +171,20 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, u
               printf("Can't get d\n");
               exit_flag=2;
             }
+          }
+          ulsch->harq_processes[i]->e = (uint8_t*)malloc16(14*N_RB_UL*12*8);
+          if (ulsch->harq_processes[i]->e) {
+            bzero(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
+          } else {
+            printf("Can't get e\n");
+            exit_flag=1;
+          }
+          ulsch->harq_processes[i]->f = (uint8_t*)malloc16(14*N_RB_UL*12*8);
+          if (ulsch->harq_processes[i]->f) {
+            bzero(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
+          } else {
+            printf("Can't get f\n");
+            exit_flag=1;
           }
         }
 
@@ -180,19 +206,17 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, u
   }
 
   LOG_E(PHY,"new_ue_ulsch exit flag, size of  %d ,   %zu\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
-  free_nr_ue_ulsch(ulsch);
+  free_nr_ue_ulsch(ulsch,N_RB_UL);
   return(NULL);
 
 
 }
 
 
-
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
-                     NR_DL_FRAME_PARMS* frame_parms,
-                     uint8_t harq_pid)
+                      NR_DL_FRAME_PARMS* frame_parms,
+                      uint8_t harq_pid)
 {
-
 /////////////////////////parameters and variables declaration/////////////////////////
 ///////////
 
@@ -205,11 +229,12 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint8_t mod_order; 
   uint16_t Kr,r,r_offset;
   uint8_t BG;
-  uint32_t E;
+  uint32_t E,Kb;
   uint8_t Ilbrm; 
   uint32_t Tbslbrm; 
   uint8_t nb_re_dmrs; 
   uint16_t length_dmrs;
+  uint16_t R;
   float Coderate;
 
 ///////////
@@ -225,7 +250,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
-  mod_order = nr_get_Qm(harq_process->mcs,1);
+  mod_order = nr_get_Qm_ul(harq_process->mcs,0);
+  R = nr_get_code_rate_ul(harq_process->mcs, 0);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -239,13 +265,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 
-  /*
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
-  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
-    channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-  }
-  */
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs);
@@ -253,9 +273,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  
-
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
@@ -290,16 +307,10 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
-    nr_segmentation(harq_process->b,
-        harq_process->c,
-        harq_process->B,
-        &harq_process->C,
-        &harq_process->K,
-        pz,
-        &harq_process->F);
-
-    F = harq_process->F;
-    Coderate = (float) A /(float) G;
+    if (R<1024)
+      Coderate = (float) R /(float) 1024;
+    else
+      Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
       BG = 2;
@@ -308,6 +319,16 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       BG = 1;
     }
 
+    Kb=nr_segmentation(harq_process->b,
+                       harq_process->c,
+                       harq_process->B,
+                       &harq_process->C,
+                       &harq_process->K,
+                       pz,
+                       &harq_process->F,
+                       BG);
+
+    F = harq_process->F;
     Kr = harq_process->K;
 #ifdef DEBUG_DLSCH_CODING
     uint16_t Kr_bytes;
@@ -317,6 +338,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////
 
+opp_enabled=0;
 
 ///////////////////////// c---->| LDCP coding |---->d /////////////////////////
 ///////////
@@ -351,7 +373,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       }
       printf("\n");*/
 
-    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
@@ -376,7 +398,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     }
 
 #ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+    printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
         r,
         G,
         Kr*3,
@@ -393,6 +415,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->Nl, r);
 
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->Nl,harq_process->C);
+
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           BG,
@@ -400,6 +424,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                           harq_process->d[r],
                           harq_process->e+r_offset,
                           harq_process->C,
+			  F,
+                          Kr-F-2*(*pz),
                           harq_process->rvidx,
                           E);
 

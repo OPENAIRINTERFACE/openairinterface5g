@@ -85,13 +85,19 @@ uint8_t get_delta(uint8_t ap, uint8_t config) {
   return ((config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][2]):(pdsch_dmrs_2[ap][2]));
 }
 
-uint16_t get_dmrs_freq_idx(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
+uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
   uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
   return dmrs_idx;
 }
 
-uint8_t get_l0(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+uint8_t get_l0(uint16_t dlDmrsSymbPos) {
 
-  return ((mapping_type==NFAPI_NR_PDSCH_MAPPING_TYPE_A)?dmrs_typeA_position:0);
-
+  uint16_t mask=dlDmrsSymbPos;
+  int l0;
+  for (l0=0;l0<14;l0++) {
+    if ((mask&1) == 1) break;
+    mask>>=1;
+  }
+  AssertFatal(l0 < 4,"impossible l0 %d\n",l0);
+  return (l0);
 }

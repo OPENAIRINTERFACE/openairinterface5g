@@ -118,8 +118,7 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb) {
   }
 }
 
-
-int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol) {
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms, uint32_t *rb_alloc, uint8_t mod_order, uint8_t subframe, uint8_t symbol) {
   int rb,re_pbch_sss=0;
   int rb_alloc_ind,nsymb;
   nsymb = (frame_parms->Ncp==NORMAL) ? 14 : 12;
@@ -205,7 +204,7 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
   return(re_pbch_sss);
 }
 
-int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe) {
+int adjust_G(LTE_DL_FRAME_PARMS *frame_parms, uint32_t *rb_alloc, uint8_t mod_order, uint8_t subframe) {
   int rb,re_pbch_sss=0;
   uint8_t rb_alloc_ind;
 
@@ -286,7 +285,16 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_orde
   return(0);
 }
 
-int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode) {
+int get_G(LTE_DL_FRAME_PARMS *frame_parms,
+          uint16_t nb_rb,
+          uint32_t *rb_alloc,
+          uint8_t mod_order,
+          uint8_t Nl,
+          uint8_t num_pdcch_symbols,
+          int frame,
+          uint8_t subframe,
+          uint8_t beamforming_mode)
+{
   int G_adj;
 
   if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
@@ -319,8 +327,16 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
   }
 }
 
-
-int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe,uint8_t beamforming_mode) {
+int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,
+                     uint16_t nb_rb,
+                     uint32_t *rb_alloc,
+                     uint8_t mod_order,
+                     uint8_t Nl,
+                     uint8_t num_pdcch_symbols,
+                     int frame,
+                     uint8_t subframe,
+                     uint8_t beamforming_mode)
+{
   //int G_adj;
   /*if (is_pmch_subframe(frame,subframe,frame_parms) == 0) {
     G_adj= adjust_G(frame_parms,rb_alloc,mod_order,subframe);
@@ -353,13 +369,10 @@ int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb
   return((int)frame_parms->N_RB_DL * mod_order * 120);
 }
 
-
 // following function requires dlsch_tbs_full.h
 #include "PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 
-unsigned char SE2I_TBS(float SE,
-                       unsigned char N_PRB,
-                       unsigned char symbPerRB) {
+unsigned char SE2I_TBS(float SE, unsigned char N_PRB, unsigned char symbPerRB) {
   unsigned char I_TBS= -1;
   int throughPutGoal = 0;
   short diffOld = TBStable[0][N_PRB-1] - throughPutGoal; // always positive because of unsigned arithmetic
@@ -393,7 +406,6 @@ unsigned char SE2I_TBS(float SE,
 }
 
 //added for ALU icic purpose
-
 uint8_t Get_SB_size(uint8_t n_rb_dl) {
   if(n_rb_dl<27)
     return 4;
@@ -402,6 +414,4 @@ uint8_t Get_SB_size(uint8_t n_rb_dl) {
   else
     return 8;
 }
-
-
 //end ALU's algo

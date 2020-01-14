@@ -59,8 +59,8 @@
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
 #include "NR_asn_constant.h"
+#include "executables/thread-common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"
@@ -78,10 +78,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(char *parallel_conf);
-extern void set_worker_conf(char *worker_conf);
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+
 extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
@@ -259,7 +256,7 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
   // fix DL and UL Allocation lists
   
   for (int i=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
-    printf("Checking element %d : %d\n",i,*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
+    printf("Checking element %d : %ld\n",i,*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
     if (*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0>32) {
       printf("removing pdsch_TimeDomainAllocationList element %d\n",i);
       free(scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
@@ -279,9 +276,10 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
     scc->tdd_UL_DL_ConfigurationCommon->pattern2=NULL;
   }
 
-  if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1)
+  if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1) {
     free(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing);
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing=NULL;
+  }
 }
 
 void RCconfig_nr_flexran()
@@ -521,6 +519,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
   int ssb_SubcarrierOffset = 0;
+  int pdsch_AntennaPorts = 1;
   int ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
@@ -528,6 +527,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
   paramdef_t SSBsParams[] = SSBPARAMS_DESC;
   paramlist_def_t SSBsParamList = {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET, NULL, 0};
+  paramdef_t PDSCHANTENNAParams[] = PDSCHANTENNAPARAMS_DESC;
+  paramlist_def_t PDSCHANTENNAParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
    ////////// Physical parameters
 
 
@@ -560,6 +561,9 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
     config_getlist(&SSBsParamList, NULL, 0, aprefix);
     if (SSBsParamList.numelt > 0) config_get(SSBsParams,sizeof(SSBsParams)/sizeof(paramdef_t),aprefix);
+
+    config_getlist(&PDSCHANTENNAParamList, NULL, 0, aprefix);
+    if (PDSCHANTENNAParamList.numelt > 0) config_get(PDSCHANTENNAParams,sizeof(PDSCHANTENNAParams)/sizeof(paramdef_t),aprefix);
 
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
@@ -643,15 +647,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
 
 
+        printf("SSB SCO %d\n",ssb_SubcarrierOffset);
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
+        printf("pdsch_AntennaPorts %d\n",pdsch_AntennaPorts);
+	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
-
-
     }//End for (k=0; k <num_gnbs ; k++)
-
-
   }//End if (num_gnbs>0)
 
 

@@ -52,6 +52,7 @@ typedef struct {
   int slot;
 
   fapi_nr_dl_config_request_t dl_config_req;
+  fapi_nr_ul_config_request_t ul_config_req;
 } nr_dcireq_t;
 
 typedef struct {
@@ -91,6 +92,8 @@ typedef struct {
     uint32_t slot;
     /// ssb_index, if ssb is not present in current TTI, thie value set to -1
     int ssb_index;
+    /// dci reception indication structure
+    fapi_nr_dci_indication_t *dci_ind;
 } nr_uplink_indication_t;
 
 // Downlink subframe P7
@@ -220,7 +223,7 @@ int handle_bcch_bch(UE_nr_rxtx_proc_t *proc, module_id_t module_id, int cc_id, u
    \param pduP      pointer to pdu*/
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
 
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type);
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci);
 
 #endif
 

@@ -20,8 +20,7 @@
 #include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <sys/sysinfo.h>
+#include "threads_t.h"
 #include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
@@ -30,12 +29,11 @@
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "SIMULATION/ETH_TRANSPORT/proto.h"
-
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "proto_agent.h"
+#include "executables/softmodem-common.h"
 
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
@@ -78,7 +76,6 @@
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
-#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
@@ -149,7 +146,7 @@
     {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,      0},   \
     {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
-    {"clock",             CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
+    {"clock-source",      CONFIG_HLP_CLK,         0,               iptr:&clock_source,                 defintval:0,          TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
     {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
   }
@@ -169,10 +166,10 @@
 
 #define DEFAULT_DLF 2680000000
 
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters common to eNodeB and UE                                                                                */
-/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters common to eNodeB and UE                                                          */
+/*   optname                 helpstr                  paramflags      XXXptr                              defXXXval              type         numelt   */
+/*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define RF_CONFIG_FILE      softmodem_params.rf_config_file
 #define PHY_TEST            softmodem_params.phy_test
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
@@ -185,28 +182,27 @@
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
-    {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)},\
-    {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
-    {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&PHY_TEST,                     defintval:0,                    TYPE_INT,       0},                     \
-    {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&USIM_TEST,                   defintval:0,                    TYPE_UINT8,     0},                     \
-    {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&CLOCK_SOURCE,                 defintval:0,                    TYPE_UINT,      0},                     \
-    {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&WAIT_FOR_SYNC,                defintval:0,                    TYPE_INT,       0},                     \
-    {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
-    {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
-    {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&CHAIN_OFFSET,                 defintval:0,                    TYPE_INT,       0},                     \
-    {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
-    {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
-    {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
-    {"s" ,                      CONFIG_HLP_SNR,         0,                      dblptr:&snr_dB,                     defdblval:25,                   TYPE_DOUBLE,    0},   \
-    {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
-    {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
-    {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
-    {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
-    {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,                         defintval:0,                    TYPE_INT,       0},                     \
-    {"rfsim",                   CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&rfsim,                        defintval:0,                    TYPE_INT,       0},                     \
-    {"basicsim",                CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&basicsim,                     defintval:0,                    TYPE_INT,       0},                     \
-    {"nokrnmod",                CONFIG_HLP_NOKRNMOD,    PARAMFLAG_BOOL,         uptr:&nokrnmod,                     defintval:0,                    TYPE_INT,       0},                     \
-    {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         uptr:&nonbiot,                      defuintval:0,                   TYPE_INT,       0},                     \
+    {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\
+    {"ulsch-max-errors",     CONFIG_HLP_ULMAXE,       0,              uptr:&ULSCH_max_consecutive_errors, defuintval:0,          TYPE_UINT,   0},                     \
+    {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
+    {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
+    {"clock",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
+    {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
+    {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
+    {"C" ,                   CONFIG_HLP_DLF,          0,              uptr:&(downlink_frequency[0][0]),   defuintval:2680000000, TYPE_UINT,   0},                     \
+    {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
+    {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
+    {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
+    {"S" ,                   CONFIG_HLP_MSLOTS,       PARAMFLAG_BOOL, u8ptr:&exit_missed_slots,           defintval:1,           TYPE_UINT8,  0},                     \
+    {"numerology" ,          CONFIG_HLP_NUMEROLOGY,   PARAMFLAG_BOOL, iptr:&NUMEROLOGY,                   defintval:0,           TYPE_INT,    0},                     \
+    {"emulate-rf" ,          CONFIG_HLP_EMULATE_RF,   PARAMFLAG_BOOL, iptr:&EMULATE_RF,                   defintval:0,           TYPE_INT,    0},                     \
+    {"parallel-config",      CONFIG_HLP_PARALLEL_CMD, 0,              strptr:(char **)&parallel_config,   defstrval:NULL,        TYPE_STRING, 0},                     \
+    {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:(char **)&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
+    {"noS1",                 CONFIG_HLP_NOS1,         PARAMFLAG_BOOL, uptr:&noS1,                         defintval:0,           TYPE_INT,    0},                     \
+    {"rfsim",                CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&rfsim,                        defintval:0,           TYPE_INT,    0},                     \
+    {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
+    {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
+    {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
   }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
@@ -242,51 +238,6 @@
   }
 
 /***************************************************************************************************************************************/
-/*  */
-#include "threads_t.h"
-//extern threads_t threads;
-
-//extern THREAD_STRUCT thread_struct;
-THREAD_STRUCT thread_struct;
-
-static inline void set_parallel_conf(char *parallel_conf) {
-  mapping config[]= {
-    FOREACH_PARALLEL(GENERATE_ENUMTXT)
-    {NULL,-1}
-  };
-  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
-  if (thread_struct.parallel_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
-    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  }
-}
-
-static inline void set_worker_conf(char *worker_conf) {
-  mapping config[]={
-    FOREACH_WORKER(GENERATE_ENUMTXT)
-    {NULL, -1}
-  };
-  thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
-  if (thread_struct.worker_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
-    thread_struct.worker_conf = WORKER_DISABLE ;
-  }
-}
-
-static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-
-static inline WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}
-
-/*PARALLEL_CONF_t get_thread_parallel_conf(void);
-WORKER_CONF_t   get_thread_worker_conf(void);
-void set_parallel_conf(char *parallel_conf);
-void set_worker_conf(char *worker_conf);
-*/
-
 
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
@@ -295,23 +246,6 @@ void set_worker_conf(char *worker_conf);
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
 #define SOFTMODEM_DOFORMS_BIT         (1<<15)
-typedef struct {
-  uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  int            phy_test;
-  uint8_t        usim_test;
-  int            emulate_rf;
-  int            wait_for_sync; //eNodeB only
-  int            single_thread_flag; //eNodeB only
-  int            chain_offset;
-  int            numerology;
-  unsigned int   start_msc;
-  uint32_t       clock_source;
-  uint32_t       timing_source; 
-  int            hw_timing_advance;
-  uint32_t       send_dmrs_sync; 
-} softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
@@ -329,7 +263,6 @@ uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
-extern double snr_dB;
 
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -339,7 +272,7 @@ extern uint8_t exit_missed_slots;
 extern uint64_t num_missed_slots; // counter for the number of missed slots
 
 extern int oaisim_flag;
-extern volatile int  oai_exit;
+extern volatile int oai_exit;
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 extern pthread_cond_t sync_cond;
@@ -351,8 +284,7 @@ extern double cpuf;
 // In lte-enb.c
 extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
-extern void init_eNB(int single_thread_flag,
-                     int wait_for_sync);
+extern void init_eNB(int single_thread_flag, int wait_for_sync);
 
 // In lte-ru.c
 extern void stop_ru(RU_t *ru);
@@ -361,15 +293,10 @@ extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
-extern void init_RU(char*,
-                    clock_source_t clock_source,
-                    clock_source_t time_source,
-                    int send_dmrssync);
+extern void init_RU(char *, clock_source_t clock_source, clock_source_t time_source, int send_dmrssync);
 
 // In lte-ue.c
-extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
-                            openair0_config_t *openair0_cfg);
-
+extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
 extern void init_UE(int nb_inst,
@@ -384,11 +311,7 @@ extern void init_UE(int nb_inst,
                     int txpowermax,
                     LTE_DL_FRAME_PARMS *fp);
 
-extern void init_thread(int sched_runtime,
-                        int sched_deadline,
-                        int sched_fifo,
-                        cpu_set_t *cpuset,
-                        char *name);
+extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -399,24 +322,17 @@ extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
 extern void RCConfig_sim(void);
-extern void init_ocm(double,double);
+extern void init_ocm(void);
 extern void init_ue_devices(PHY_VARS_UE *);
 
-PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
-                          uint8_t UE_id,
-                          uint8_t abstraction_flag);
+PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 
 void init_eNB_afterRU(void);
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 
-extern void init_UE_stub_single_thread(int nb_inst,
-                                       int eMBMS_active,
-                                       int uecap_xer_in,
-                                       char *emul_iface);
+extern void init_UE_stub_single_thread(int nb_inst, int eMBMS_active, int uecap_xer_in, char *emul_iface);
 
-extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t UE_id,
-                                 uint8_t abstraction_flag);
+extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 
 #endif

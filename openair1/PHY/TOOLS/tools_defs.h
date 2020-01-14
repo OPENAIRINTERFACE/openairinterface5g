@@ -32,8 +32,6 @@
 #include <stdint.h>
 #include "PHY/sse_intrin.h"
 
-#define CEILIDIV(a,b) ((a+b-1)/b)
-#define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
 struct complex {
   double x;

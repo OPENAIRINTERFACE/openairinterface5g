@@ -11,11 +11,11 @@
 #include <common/utils/system.h>
 
 typedef struct timer_elm_s {
-  timer_type_t      type;     ///< Timer type
-  long              instance;
+  timer_type_t type;     ///< Timer type
+  long instance;
   long duration;
   uint64_t timeout;
-  void              *timer_arg; ///< Optional argument that will be passed when timer expires
+  void *timer_arg; ///< Optional argument that will be passed when timer expires
 } timer_elm_t ;
 
 typedef struct task_list_s {

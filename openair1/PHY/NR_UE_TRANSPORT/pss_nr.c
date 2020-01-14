@@ -234,8 +234,8 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   if (N_ID_2 == 0) {
     char output_file[255];
     char sequence_name[255];
-    sprintf(output_file, "pss_seq_%d_%d.m", N_ID_2, length);
-    sprintf(sequence_name, "pss_seq_%d_%d", N_ID_2, length);
+    sprintf(output_file, "pss_seq_%d_%u.m", N_ID_2, length);
+    sprintf(sequence_name, "pss_seq_%d_%u", N_ID_2, length);
     printf("file %s sequence %s\n", output_file, sequence_name);
 
     LOG_M(output_file, sequence_name, primary_synchro, LENGTH_PSS_NR, 1, 1);
@@ -298,14 +298,14 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   if (N_ID_2 == 0) {
     char output_file[255];
     char sequence_name[255];
-    sprintf(output_file, "%s%d_%d%s","pss_seq_t_", N_ID_2, length, ".m");
-    sprintf(sequence_name, "%s%d_%d","pss_seq_t_", N_ID_2, length);
+    sprintf(output_file, "%s%d_%u%s","pss_seq_t_", N_ID_2, length, ".m");
+    sprintf(sequence_name, "%s%d_%u","pss_seq_t_", N_ID_2, length);
 
     printf("file %s sequence %s\n", output_file, sequence_name);
 
     LOG_M(output_file, sequence_name, primary_synchro_time, length, 1, 1);
-    sprintf(output_file, "%s%d_%d%s","pss_seq_f_", N_ID_2, length, ".m");
-    sprintf(sequence_name, "%s%d_%d","pss_seq_f_", N_ID_2, length);
+    sprintf(output_file, "%s%d_%u%s","pss_seq_f_", N_ID_2, length, ".m");
+    sprintf(sequence_name, "%s%d_%u","pss_seq_f_", N_ID_2, length);
     LOG_M(output_file, sequence_name, synchroF_tmp, length, 1, 1);
   }
 
@@ -900,7 +900,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
         pss_source = pss_index;
 
 #ifdef DEBUG_PSS_NR
-        printf("pss_index %d: n %6d peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
+        printf("pss_index %d: n %6u peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
 #endif
       }
     }

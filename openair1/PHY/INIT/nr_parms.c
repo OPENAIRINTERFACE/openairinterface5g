@@ -27,10 +27,11 @@ uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
 
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_frame_index)
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
 {
 
   int mu = fp->numerology_index;
+  uint8_t half_frame_index = fp->half_frame_bit;
   int symbol = 0;
   uint8_t n, n_temp;
   nr_ssb_type_e type = fp->ssb_type;
@@ -79,13 +80,16 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_f
   return symbol;
 }
 
-
 int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
-			 int mu,
+			 nfapi_nr_config_request_scf_t* cfg,
+			 int mu0,
 			 int Ncp,
-			 int N_RB_DL)
+			 int N_RB_DL,
+                         int N_RB_UL)
 
 {
+
+  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : mu0;
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
@@ -96,9 +100,11 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
+  fp->half_frame_bit = 0;  // half frame bit initialized to 0 here
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
+  fp->N_RB_UL = N_RB_UL;
 
   switch(mu) {
 
@@ -224,6 +230,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
   fp->nb_antenna_ports_eNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_rx = 1; // default value until overwritten by RRCConnectionReconfiguration
+  fp->nb_antennas_tx = 1; // default value until overwritten by RRCConnectionReconfiguration
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
@@ -231,35 +239,43 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
   fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
   fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
-                                      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
+			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9){
-	if(fp->frame_type && (fp->ssb_type==2))
-		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-	else
-		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  }  
-  else
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
     fp->Lmax = 64;
+  }
 
+  fp->N_ssb = 0;
+  int num_tx_ant = (cfg == NULL) ? fp->Lmax : cfg->carrier_config.num_tx_ant.value;
+
+  for (int p=0; p<num_tx_ant; p++)
+    fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
 }
 
-int nr_init_frame_parms(nfapi_nr_config_request_t* config,
+int nr_init_frame_parms(nfapi_nr_config_request_scf_t* config,
                         NR_DL_FRAME_PARMS *fp)
 {
 
-  fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
-  fp->frame_type = !(config->subframe_config.duplex_mode.value);
-  fp->L_ssb = config->sch_config.ssb_scg_position_in_burst.value;
+  fp->frame_type = config->cell_config.frame_duplex_type.value;
+  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask.value ;
+  int N_RB_DL = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
+  int N_RB_UL = config->carrier_config.ul_grid_size[config->ssb_config.scs_common.value].value;
   return nr_init_frame_parms0(fp,
-			      config->subframe_config.numerology_index_mu.value,
-			      config->subframe_config.dl_cyclic_prefix_type.value,
-			      config->rf_config.dl_carrier_bandwidth.value);
+			      config,
+			      0,
+			      NFAPI_CP_NORMAL,
+			      N_RB_DL,
+                              N_RB_UL);
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
@@ -269,9 +285,9 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
-  /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
-  nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
-  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset)/(1<<mu);
+  int N_RB_UL = N_RB_DL;
+  nr_init_frame_parms0(fp,NULL,mu,Ncp,N_RB_DL,N_RB_UL);
+  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset);
   return 0;
 }
 
@@ -286,6 +302,8 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->samples_per_frame_wCP=%d\n",fp->samples_per_frame_wCP);
   LOG_I(PHY,"fp->samples_per_subframe=%d\n",fp->samples_per_subframe);
   LOG_I(PHY,"fp->samples_per_frame=%d\n",fp->samples_per_frame);
+  LOG_I(PHY,"fp->dl_CarrierFreq=%lu\n",fp->dl_CarrierFreq);
+  LOG_I(PHY,"fp->ul_CarrierFreq=%lu\n",fp->ul_CarrierFreq);
 }
 
 

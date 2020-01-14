@@ -215,7 +215,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   int rx_power=0; //aarx,
   //nfapi_nr_config_request_t* config;
 
-  int n_ssb_crb=(fp->N_RB_DL-20);
+  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
+
   // First try TDD normal prefix, mu 1
   fp->Ncp=NORMAL;
   fp->frame_type=TDD;

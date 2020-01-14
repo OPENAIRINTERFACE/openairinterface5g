@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include "nr_phy_scope.h"
+#include "executables/nr-softmodem-common.h"
 
 #define TPUT_WINDOW_LENGTH 100
 int otg_enabled;
@@ -176,7 +177,7 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
+//  uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
   int Qm = 2;
@@ -363,7 +364,7 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   memmove( tput_enb[UE_id], &tput_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
 
   tput_time_enb[UE_id][TPUT_WINDOW_LENGTH-1]  = (float) 0;
-  tput_enb[UE_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;
+//  tput_enb[UE_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;
 
   fl_set_xyplot_data(form->pusch_tput,tput_time_enb[UE_id],tput_enb[UE_id],TPUT_WINDOW_LENGTH,"","","");
 
@@ -588,8 +589,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   time = calloc(samples_per_frame,sizeof(float));
   corr = calloc(samples_per_frame,sizeof(float));
 
-  chest_t = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time;
-  chest_f = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates;
+  chest_t = (int16_t**) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time;
+  chest_f = (int16_t**) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
 
   pbch_llr = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
@@ -696,8 +697,8 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
         if (chest_f[(atx<<1)+arx] != NULL) {
           for (k=0; k<frame_parms->ofdm_symbol_size; k++) {
             freq[ind] = (float)ind;
-            Re = (float)(chest_f[(atx<<1)+arx][(2*k)]);
-            Im = (float)(chest_f[(atx<<1)+arx][(2*k)+1]);
+            Re = (float)(chest_f[(atx<<1)+arx][6144+(2*k)]);
+            Im = (float)(chest_f[(atx<<1)+arx][6144+(2*k)+1]);
 
             chest_f_abs[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
             ind++;

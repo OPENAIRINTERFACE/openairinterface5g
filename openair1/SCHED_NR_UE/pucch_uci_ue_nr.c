@@ -1,5 +1,4 @@
-/*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+/* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
@@ -212,11 +211,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-                            CC_id,
-                            frame_tx,
-                            gNB_id,
-                            ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-                            nr_tti_tx); // nr_tti_rx used for meas gap
+				CC_id,
+				frame_tx,
+				gNB_id,
+				0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+				nr_tti_tx); // nr_tti_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -591,7 +590,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format2_nr:
     {
       nr_generate_pucch2(ue,
-                         ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                         0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                          ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated[gNB_id],
@@ -609,7 +608,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
@@ -922,7 +921,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
       /* a valid resource has already be found outside this function */
       resource_set_found = TRUE;
       ready_pucch_resource_id = TRUE;
-      pucch_resource_indicator = pucch_resource_indicator;
+      //pucch_resource_indicator = pucch_resource_indicator;
     }
 
     if (resource_set_found == TRUE) {
@@ -1214,4 +1213,5 @@ void set_csi_nr(int csi_status, uint32_t csi_payload)
     dummy_csi_payload = csi_payload;
   }
 }
+
 

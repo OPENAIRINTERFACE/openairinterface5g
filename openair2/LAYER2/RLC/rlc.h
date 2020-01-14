@@ -197,7 +197,7 @@ rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_
 #define rlc_mbms_ue_get_lcid_by_rb_id(uE_mOD,rB_iD) rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD]
 
 #define rlc_mbms_ue_set_lcid_by_rb_id(uE_mOD,rB_iD,lOG_cH_iD) do { \
-    AssertFatal(rB_iD<NB_RB_MBMS_MAX, "INVALID RB ID %u", rB_iD); \
+    AssertFatal(rB_iD<NB_RB_MBMS_MAX, "INVALID RB ID %ld", rB_iD); \
     rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
   } while (0);
 
@@ -620,10 +620,10 @@ rlc_op_status_t rlc_stat_req     (
   unsigned int *const stat_timer_poll_retransmit_timed_out,
   unsigned int *const stat_timer_status_prohibit_timed_out);
 
-/*! \fn int rlc_module_init(void)
+/*! \fn int rlc_module_init(int enb_flag)
 * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).
 */
-int rlc_module_init(void);
+int rlc_module_init(int enb_flag);
 
 /** @} */
 

@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch,uint8_t N_RB_UL);
 
 NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
@@ -75,7 +75,8 @@ void nr_ulsch_unscrambling(int16_t* llr,
 
 
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
-                         gNB_L1_rxtx_proc_t *proc,
+                         int frame_rx,
+                         int slot_rx,
                          int UE_id,
                          uint8_t harq_pid);
-
+int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);

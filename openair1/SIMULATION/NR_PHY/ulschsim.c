@@ -52,45 +52,11 @@
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+
 double cpuf;
 int nfapi_mode = 0;
-
-int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
-  return (0);
-}
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
-  return (0);
-}
-
-int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
-  return (0);
-}
-
-int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {
-  return (0);
-}
-
-uint32_t from_nrarfcn(int nr_bandP, uint32_t dl_earfcn) {
-  return (0);
-}
-int32_t get_nr_uldl_offset(int eutra_bandP) {
-  return (0);
-}
-
-NR_IF_Module_t *
-NR_IF_Module_init(int Mod_id) {
-  return (NULL);
-}
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
-  const char *msg = s == NULL ? "no comment" : s;
-  printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
-  exit(-1);
-}
+uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -101,7 +67,7 @@ int main(int argc, char **argv)
 {
   char c;
   int i,sf;
-  double SNR, snr0 = -2.0, snr1 = 2.0; //, SNR_lin;
+  double SNR, snr0 = -2.0, snr1 = 2.0, SNR_lin;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
   FILE *output_fd = NULL;
@@ -120,7 +86,7 @@ int main(int argc, char **argv)
   //unsigned char pbch_phase = 0;
   int frame = 0, subframe = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  //double sigma;
+  double sigma;
   unsigned char qbits = 8;
   int ret;
   int loglvl = OAILOG_WARNING;
@@ -410,22 +376,23 @@ int main(int argc, char **argv)
   uint8_t nb_re_dmrs = 6;
   uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
-  uint16_t N_RE_prime;
+  uint16_t N_RE_prime,code_rate;
   unsigned char mod_order;
   uint8_t Nl = 1;
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id+1][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
-  mod_order = nr_get_Qm(Imcs, 1);
+  mod_order = nr_get_Qm_ul(Imcs, 0);
+  code_rate = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
-  printf("\n");
-  printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
+  TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+
+  printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 
   /////////// setting rel15_ul parameters ///////////
   rel15_ul->number_rbs     = nb_rb;
@@ -436,6 +403,7 @@ int main(int argc, char **argv)
   rel15_ul->n_layers       = Nl;
   rel15_ul->nb_re_dmrs     = nb_re_dmrs;
   rel15_ul->length_dmrs    = length_dmrs;
+  rel15_ul->R              = code_rate;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -487,7 +455,7 @@ int main(int argc, char **argv)
   ////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef DEBUG_NR_ULSCHSIM
-  for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
+  for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
 #endif
 
   /////////////////////////ULSCH coding/////////////////////////
@@ -529,11 +497,15 @@ int main(int argc, char **argv)
   
         //if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 
-        //SNR_lin = pow(10, SNR / 10.0);
-        //sigma = 1.0 / sqrt(2 * SNR_lin);
+#if 1
+        SNR_lin = pow(10, SNR / 10.0);
+        sigma = 1.0 / sqrt(2 * SNR_lin);
+        channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
+                                                   modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
+                                                   qbits);
+#else
         channel_output_fixed[i] = (short) quantize(0.01, modulated_input[i], qbits);
-        //channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0, modulated_input[i] + sigma * gaussdouble(0.0, 1.0), qbits);
-        //channel_output_fixed[i] = (char)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
+#endif
         //printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);
 
         //Uncoded BER
@@ -545,9 +517,10 @@ int main(int argc, char **argv)
         if (channel_output_uncoded[i] != ulsch_ue->harq_processes[harq_pid]->f[i])
           errors_bit_uncoded = errors_bit_uncoded + 1;
       }
-
+/*
       printf("errors bits uncoded %u\n", errors_bit_uncoded);
       printf("\n");
+*/
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);
@@ -570,13 +543,13 @@ int main(int argc, char **argv)
           errors_bit++;
         }
       }
-
+/*
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
-          printf("errors_bit %d (trial %d)\n", errors_bit, trial);
+          printf("errors_bit %u (trial %d)\n", errors_bit, trial);
       }
-      printf("\n");
+      printf("\n");*/
     }
     
     printf("*****************************************\n");
@@ -586,7 +559,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("\n");
 
-    if (errors_bit == 0) {
+    if (n_errors == 0) {
       printf("PUSCH test OK\n");
       printf("\n");
       break;
@@ -594,30 +567,6 @@ int main(int argc, char **argv)
     printf("\n");
   }
 
-  for (i = 0; i < 2; i++) {
-
-    printf("----------------------\n");
-    printf("freeing codeword %d\n", i);
-    printf("----------------------\n");
-
-    printf("gNB ulsch[0][%d]\n", i); // [hna] ulsch[0] is for RA
-
-    free_gNB_ulsch(gNB->ulsch[0][i]);
-
-    printf("gNB ulsch[%d][%d]\n",UE_id+1, i);
-
-    free_gNB_ulsch(gNB->ulsch[UE_id+1][i]);
-
-    for (sf = 0; sf < 2; sf++) {
-
-      printf("UE  ulsch[%d][0][%d]\n", sf, i);
-
-      if (UE->ulsch[sf][0][i])
-        free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
-    }
-
-    printf("\n");
-  }
 
   if (output_fd)
     fclose(output_fd);

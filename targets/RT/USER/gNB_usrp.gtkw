@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
-[*] Sat May 18 17:25:11 2019
+[*] Tue Dec 17 15:31:51 2019
 [*]
-[dumpfile] "/tmp/openair_dump_gNB40.vcd"
-[dumpfile_mtime] "Sat May 18 17:11:31 2019"
-[dumpfile_size] 53148516
-[savefile] "/home/caracal/raymond/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
-[timestart] 11552775390
-[size] 1840 795
-[pos] -1 -1
-*-13.848083 11552814436 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/tmp/gNB.vcd"
+[dumpfile_mtime] "Tue Dec 17 15:25:49 2019"
+[dumpfile_size] 6343431
+[savefile] "/home/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 1517712000
+[size] 1920 1018
+[pos] -9 -33
+*-19.276148 1518358451 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
-[sst_vpaned_height] 197
+[sst_vpaned_height] 267
 @28
 functions.trx_read
 functions.trx_write
@@ -24,9 +24,8 @@ variables.frame_number_TX1_UE[63:0]
 functions.ue_gain_control
 @420
 variables.frame_number_RX1_UE[63:0]
-@25
-variables.trx_ts_ue[63:0]
 @24
+variables.trx_ts_ue[63:0]
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
 variables.frame_number_RX0_RU[63:0]
@@ -61,7 +60,11 @@ functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
 functions.phy_procedures_ru_feptx_ofdm0
 functions.phy_procedures_ru_feptx_ofdm1
+functions.phy_procedures_ru_feptx_ofdm2
 functions.phy_procedures_ru_feptx_prec0
 functions.phy_procedures_ru_feptx_prec1
+functions.phy_procedures_ru_feptx_prec2
+@22
+variables.ru_tx_ofdm_mask[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

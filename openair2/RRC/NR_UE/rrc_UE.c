@@ -259,7 +259,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-int8_t openair_rrc_top_init_ue_nr(void){
+int8_t openair_rrc_top_init_ue_nr(char* rrc_config_path){
 
     if(NB_NR_UE_INST > 0){
         NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -324,12 +324,21 @@ int8_t openair_rrc_top_init_ue_nr(void){
 	if (phy_test==1) {
 	  // read in files for RRCReconfiguration and RBconfig
 	  FILE *fd;
-	  fd = fopen("reconfig.raw","r");
+	  char filename[1024];
+	  if (rrc_config_path)
+	    sprintf(filename,"%s/reconfig.raw",rrc_config_path);
+	  else
+	    sprintf(filename,"reconfig.raw");
+	  fd = fopen(filename,"r");
           char buffer[1024];
 	  int msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
-	  fd = fopen("rbconfig.raw","r");
+	  if (rrc_config_path)
+	    sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
+	  else
+	    sprintf(filename,"rbconfig.raw");
+	  fd = fopen(filename,"r");
 	  msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
@@ -409,7 +418,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL,NULL, NULL, NULL);
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL);
     }
     
     return 0;

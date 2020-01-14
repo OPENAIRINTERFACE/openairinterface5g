@@ -57,32 +57,30 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
                   uint32_t frame);
 
 /**
-\brief Generate configuration for SIB1 (eNB).
+\brief Generate configuration for SIB1 (gNB).
 @param carrier pointer to Carrier information
-@param Mod_id Instance of eNB
-@param Component carrier Component carrier to configure
 @param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
+uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
+#if defined(ENABLE_ITTI)
+  , gNB_RrcConfigurationReq *configuration
+#endif
+                  );
 
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
-		           int Mod_id,
-				   int CC_id,
-				   gNB_RrcConfigurationReq *configuration);
-
-void  do_RLC_BEARER(uint8_t Mod_id,
+void do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
                     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
                     rlc_bearer_config_t  *rlc_config);
+void do_MAC_CELLGROUP(uint8_t Mod_id,
+                      int CC_id,
+                      NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+                      mac_cellgroup_t *mac_cellgroup_config);
 
-void  do_MAC_CELLGROUP(uint8_t Mod_id,
-                       int CC_id,
-                       struct NR_MAC_CellGroupConfig *mac_CellGroupConfig,
-                       mac_cellgroup_t  *mac_cellgroup_config);
+void do_PHYSICALCELLGROUP(uint8_t Mod_id,
+                          int CC_id,
+                          NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig,
+                          physicalcellgroup_t *physicalcellgroup_config);
 
-void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
-                           int CC_id,
-                           struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
-                           physicalcellgroup_t *physicalcellgroup_config);
 
-void  do_SpCellConfig(gNB_RRC_INST *rrc,
+void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);

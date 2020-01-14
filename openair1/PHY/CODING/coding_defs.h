@@ -38,7 +38,7 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
-#define MAX_LDPC_ITERATIONS 5
+#define MAX_LDPC_ITERATIONS 10//5
 #define MAX_LDPC_ITERATIONS_MBSFN 4
 
 #define LTE_NULL 2
@@ -454,14 +454,21 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *C,
                      unsigned int *K,
                      unsigned int *Zout,
-                     unsigned int *F);
+                     unsigned int *F,
+                     uint8_t BG);
 
-uint32_t nr_compute_tbs(uint8_t mcs,
-						uint16_t nb_rb,
-						uint16_t nb_symb_sch,
-						uint8_t nb_re_dmrs,
-						uint16_t length_dmrs,
-						uint8_t Nl);
+uint32_t nr_compute_tbs(uint16_t Qm,
+                        uint16_t R,
+			uint16_t nb_rb,
+			uint16_t nb_symb_sch,
+			uint16_t nb_dmrs_prb,
+                        uint16_t nb_rb_oh,
+			uint8_t Nl);
+
+uint32_t nr_compute_tbslbrm(uint16_t table,
+			    uint16_t nb_rb,
+		            uint8_t Nl,
+                            uint8_t C);
 
 void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
 
@@ -474,6 +481,8 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
                           uint8_t *w,
                           uint8_t *e,
                           uint8_t C,
+			  uint32_t F,
+			  uint32_t Foffset,
                           uint8_t rvidx,
                           uint32_t E);
 
@@ -486,7 +495,9 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
                              uint8_t C,
                              uint8_t rvidx,
                              uint8_t clear,
-                             uint32_t E);
+                             uint32_t E,
+			     uint32_t F,
+			     uint32_t Foffset);
 
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;

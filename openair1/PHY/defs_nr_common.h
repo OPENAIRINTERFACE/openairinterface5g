@@ -35,7 +35,7 @@
 
 #include "PHY/impl_defs_top.h"
 #include "defs_common.h"
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
@@ -102,13 +102,13 @@
 #define NR_MAX_PUSCH_ENCODED_LENGTH NR_MAX_PDSCH_ENCODED_LENGTH
 #define NR_MAX_PDSCH_TBS 3824
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS 16
+#define MAX_NUM_NR_DLSCH_SEGMENTS 34
 #define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
 
 #define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
 #define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
 
-#define MAX_NUM_NR_CHANNEL_BITS (14*273*12*6)  // 14 symbols, 273 RB
+#define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
 
 typedef enum {
@@ -226,10 +226,10 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
-  /// Placeholder to replace overlapping fields below
-  nfapi_nr_rf_config_t rf_config;
+  //  /// Placeholder to replace overlapping fields below
+  //  nfapi_nr_rf_config_t rf_config;
   /// Placeholder to replace SSB overlapping fields below
-  nfapi_nr_sch_config_t sch_config;
+  //  nfapi_nr_sch_config_t sch_config;
   /// Number of resource blocks (RB) in DL
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -239,11 +239,11 @@ typedef struct NR_DL_FRAME_PARMS {
   /// Total Number of Resource Block Groups SubSets: this is P
   uint8_t N_RBGS;
   /// EUTRA Band
-  uint8_t eutra_band;
+  uint16_t eutra_band;
   /// DL carrier frequency
-  uint32_t dl_CarrierFreq;
+  uint64_t dl_CarrierFreq;
   /// UL carrier frequency
-  uint32_t ul_CarrierFreq;
+  uint64_t ul_CarrierFreq;
   /// TX attenuation
   uint32_t att_tx;
   /// RX attenuation
@@ -321,6 +321,8 @@ typedef struct NR_DL_FRAME_PARMS {
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
 
+  uint8_t half_frame_bit;
+
   //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
@@ -330,6 +332,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t Lmax;
   /// SS block pattern (max 64 ssb, each bit is on/off ssb)
   uint64_t L_ssb;
+  /// Total number of SSB transmitted
+  uint8_t N_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 

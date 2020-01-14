@@ -104,6 +104,10 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..]
   int32_t **txdataF_BF;
+  /// \brief holds the transmit data before beamforming in the frequency domain.
+  /// - first index: tx antenna [0..nb_antennas_tx[
+  /// - second index: sample [0..]
+  int32_t **txdataF;
   /// \brief holds the transmit data before beamforming for epdcch/mpdcch
   /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
   /// - second index: sampl [0..]
@@ -146,6 +150,44 @@ typedef struct {
   int32_t **drs_ch_estimates;
 } RU_CALIBRATION;
 
+
+typedef struct RU_prec_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx_prec;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx_prec;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx_prec;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx_prec;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx_prec;
+  int symbol;
+  int p;//logical
+  int aa;//physical MAX nb_tx
+  struct RU_t_s *ru;
+  int index;
+} RU_prec_t;
+
+typedef struct RU_feptx_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx;
+  struct RU_t_s *ru;
+  int aa;//physical MAX nb_tx
+  int half_slot;//first or second half of a slot
+  int slot;//current slot
+  int symbol;//current symbol
+  int nb_antenna_ports;//number of logical port
+  int index;
+}RU_feptx_t;
 
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
@@ -339,8 +381,14 @@ typedef struct RU_proc_t_s {
   int ru_rx_ready;
   int ru_tx_ready;
   int emulate_rf_busy;
-} RU_proc_t;
 
+  /// structure for precoding thread
+  RU_prec_t prec[16];
+  /// structure for feptx thread
+  RU_feptx_t feptx[16];
+  /// mask for checking process finished
+  int feptx_mask;
+} RU_proc_t;
 
 typedef enum {
   LOCAL_RF        =0,
@@ -420,6 +468,8 @@ typedef struct RU_t_s {
   int nb_rx;
   /// number of TX paths on device
   int nb_tx;
+  /// number of logical antennas at TX beamformer input
+  int nb_log_antennas;
   /// maximum PDSCH RS EPRE
   int max_pdschReferenceSignalPower;
   /// maximum RX gain
@@ -495,10 +545,16 @@ typedef struct RU_t_s {
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
   void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru);
 
+  /// Timing data copy statistics (TX)
+  time_stats_t txdataF_copy_stats;
+  /// Timing statistics (TX)
+  time_stats_t precoding_stats;
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
   time_stats_t ofdm_mod_stats;
+  /// Timing statistics (TX)
+  time_stats_t ofdm_total_stats;
   /// Timing wait statistics
   time_stats_t ofdm_demod_wait_stats;
   /// Timing wakeup statistics
@@ -518,10 +574,12 @@ typedef struct RU_t_s {
   /// RX and TX buffers for precoder output
   RU_COMMON common;
   RU_CALIBRATION calibration;
-  /// beamforming weight vectors per eNB
+  /// beamforming weight list size
+  int nb_bfw;
+  /// beamforming weight list of values
+  int32_t *bw_list[NUMBER_OF_eNB_MAX+1];
+  /// beamforming weight vectors
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
-  /// beamforming weight vectors per gNB
-  int32_t **nrbeam_weights[NUMBER_OF_gNB_MAX+1][16];
   /// received frequency-domain signal for PRACH (IF4p5 RRU)
   int16_t **prach_rxsigF;
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU)

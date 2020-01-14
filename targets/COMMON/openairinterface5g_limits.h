@@ -14,28 +14,25 @@
 // now , if we use --mu option in UE, compiling error will occur.
 // This problem will be fixed in the future.
 #                ifndef UESIM_EXPANSION
-#                    define NUMBER_OF_UE_MAX 16
-#                    define NUMBER_OF_NR_UE_MAX 16
-#                    define NUMBER_OF_UCI_VARS_MAX 56
-#                    define NUMBER_OF_CONNECTED_eNB_MAX 3
-#                    define NUMBER_OF_CONNECTED_gNB_MAX 3
+#                    define NUMBER_OF_UE_MAX 4
+#                    define NUMBER_OF_NR_UE_MAX 4
+#                    define NUMBER_OF_UCI_VARS_MAX 14
+#                    define NUMBER_OF_CONNECTED_eNB_MAX 1
+#                    define NUMBER_OF_CONNECTED_gNB_MAX 1
 #            	 else
 #                    define NUMBER_OF_UE_MAX 256
-#                    define NUMBER_OF_NR_UE_MAX 16
 #                    define NUMBER_OF_UCI_VARS_MAX 256
 #                    define NUMBER_OF_CONNECTED_eNB_MAX 1
 #                    define NUMBER_OF_CONNECTED_gNB_MAX 3
 #                endif
 #            else
 #                    define NUMBER_OF_UE_MAX 256
-#                    define NUMBER_OF_NR_UE_MAX 256
 #                    define NUMBER_OF_UCI_VARS_MAX 256
 #                    define NUMBER_OF_CONNECTED_eNB_MAX 1
 #                    define NUMBER_OF_CONNECTED_gNB_MAX 1
 #            endif
 #        else
 #                    define NUMBER_OF_UE_MAX 1
-#                    define NUMBER_OF_NR_UE_MAX 1
 #                    define NUMBER_OF_UCI_VARS_MAX 56
 #                    define NUMBER_OF_CONNECTED_eNB_MAX 1
 #                    define NUMBER_OF_CONNECTED_gNB_MAX 1
@@ -53,20 +50,17 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 */
 #            ifndef UESIM_EXPANSION
 #                define NUMBER_OF_UE_MAX 16
-#                define NUMBER_OF_NR_UE_MAX 20
 #                define NUMBER_OF_UCI_VARS_MAX 56
 #                define NUMBER_OF_CONNECTED_eNB_MAX 3
 #                define NUMBER_OF_CONNECTED_gNB_MAX 3
 #            else
 #                define NUMBER_OF_UE_MAX 256
-#                define NUMBER_OF_NR_UE_MAX 20
 #                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #                define NUMBER_OF_CONNECTED_gNB_MAX 3
 #            endif
 #        else
 #                define NUMBER_OF_UE_MAX 256
-#                define NUMBER_OF_NR_UE_MAX 256
 #                define NUMBER_OF_UCI_VARS_MAX 256
 #                define NUMBER_OF_CONNECTED_eNB_MAX 1
 #                define NUMBER_OF_CONNECTED_gNB_MAX 1
@@ -76,7 +70,6 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 #            undef  NUMBER_OF_gNB_MAX
 
 #            undef  NUMBER_OF_UE_MAX
-#            undef  NUMBER_OF_NR_UE_MAX
 
 #            undef  NUMBER_OF_RU_MAX
 #            undef  NUMBER_OF_NR_RU_MAX
@@ -85,7 +78,6 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 #            define NUMBER_OF_gNB_MAX 3
 
 #            define NUMBER_OF_UE_MAX 3
-#            define NUMBER_OF_NR_UE_MAX 3
 
 #            define NUMBER_OF_RU_MAX 3
 #            define NUMBER_OF_NR_RU_MAX 3
@@ -95,7 +87,6 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 #            undef  NUMBER_OF_gNB_MAX
 
 #            undef  NUMBER_OF_UE_MAX
-#            undef  NUMBER_OF_NR_UE_MAX
 
 #            undef  NUMBER_OF_CONNECTED_eNB_MAX
 #            undef  NUMBER_OF_CONNECTED_gNB_MAX
@@ -107,7 +98,6 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 #            define NUMBER_OF_gNB_MAX 2
 
 #            define NUMBER_OF_UE_MAX 120
-#            define NUMBER_OF_NR_UE_MAX 120
 
 #            define NUMBER_OF_RU_MAX 16
 #            define NUMBER_OF_NR_RU_MAX 16

@@ -649,7 +649,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l,slot,symb,q;
   int eNB_id;
   int th_id;
-  int n_ssb_crb=(fp->N_RB_DL-20);
+  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
   int k_ssb=0;
   uint32_t ****pusch_dmrs;
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
@@ -877,6 +877,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       pbch_vars[eNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
       pbch_vars[eNB_id]->dl_ch_estimates     = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
       pbch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
+      pbch_vars[eNB_id]->dl_ch_estimates_time = (int32_t **)malloc16_clear( 8*sizeof(int32_t *) );
       pbch_vars[eNB_id]->llr                 = (int16_t *)malloc16_clear( 1920 ); //
       prach_vars[eNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
       prach_vars[eNB_id]->prach              = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -888,6 +889,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
           int idx = (j<<1)+i;
           pbch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t *)malloc16_clear( sizeof(int32_t)*20*12*4 );
           pbch_vars[eNB_id]->dl_ch_estimates[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
+          pbch_vars[eNB_id]->dl_ch_estimates_time[idx]= (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
           pbch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*20*12*4 );
         }
       }

@@ -107,21 +107,6 @@ void handle_nr_sr(NR_UL_IND_t *UL_info) {
 }
 
 void handle_nr_cqi(NR_UL_IND_t *UL_info) {
-  if (nfapi_mode == 1) {
-    if (UL_info->cqi_ind.number_of_cqis>0) {
-      LOG_D(PHY,"UL_info->cqi_ind.number_of_cqis:%d\n", UL_info->cqi_ind.number_of_cqis);
-      nfapi_cqi_indication_t ind;
-      ind.header.message_id = NFAPI_RX_CQI_INDICATION;
-      ind.sfn_sf = UL_info->frame<<4 | UL_info->slot;
-      ind.cqi_indication_body = UL_info->cqi_ind;
-
-      //      oai_nfapi_cqi_indication(&ind);
-
-      UL_info->cqi_ind.number_of_cqis=0;
-    }
-  }
-  else
-  {
 
     /*
     for (int i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
@@ -135,7 +120,7 @@ void handle_nr_cqi(NR_UL_IND_t *UL_info) {
           &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
     */
     UL_info->cqi_ind.number_of_cqis=0;
-  }
+
 }
 
 void handle_nr_harq(NR_UL_IND_t *UL_info) {
@@ -273,7 +258,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   handle_nr_cqi(UL_info);
   handle_nr_harq(UL_info);
   // clear HI prior to handling ULSCH
-  mac->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi                     = 0;
+  mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
 
   if (nfapi_mode != 1) {
@@ -283,24 +268,27 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
           (UL_info->frame+((UL_info->slot>(9-sf_ahead))?1:0)) % 1024,
           (UL_info->slot+sf_ahead)%10);
       */
-      nfapi_nr_config_request_t *cfg = &mac->config[CC_id];
+      nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
-                                (UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
-                                (UL_info->slot+sf_ahead)%spf);
+				UL_info->frame,
+				UL_info->slot,
+				(UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
+				(UL_info->slot+sf_ahead)%spf);
+      
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
       sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sf_ahead)) ? 1 : 0)) % 1024;
       sched_info->slot        = (UL_info->slot+sf_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
-      sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
+      sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 
-      if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
-          (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
-        sched_info->UL_req      = &mac->UL_req[CC_id];
+      if ((mac->common_channels[CC_id].ServingCellConfigCommon->tdd_UL_DL_ConfigurationCommon==NULL) ||
+          (is_nr_UL_slot(mac->common_channels[CC_id].ServingCellConfigCommon,(sched_info->slot+sf_ahead)%spf)>0))
+        sched_info->UL_tti_req      = &mac->UL_tti_req[CC_id];
       else
-        sched_info->UL_req      = NULL;
+        sched_info->UL_tti_req      = NULL;
 
       sched_info->TX_req      = &mac->TX_req[CC_id];
 #ifdef DUMP_FAPI
@@ -315,14 +303,17 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         ifi->NR_Schedule_response(sched_info);
       }
 
-      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->slot,sched_info->DL_req->dl_config_request_body.number_pdu);
+      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
+	    sched_info->frame,
+	    sched_info->slot,
+	    sched_info->DL_req->dl_tti_request_body.nPDUs);
     }
   }
 }
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {
   AssertFatal(Mod_id<MAX_MODULES,"Asking for Module %d > %d\n",Mod_id,MAX_IF_MODULES);
-  LOG_D(PHY,"Installing callbacks for IF_Module - UL_indication\n");
+  LOG_I(PHY,"Installing callbacks for IF_Module - UL_indication\n");
 
   if (if_inst[Mod_id]==NULL) {
     if_inst[Mod_id] = (NR_IF_Module_t*)malloc(sizeof(NR_IF_Module_t));

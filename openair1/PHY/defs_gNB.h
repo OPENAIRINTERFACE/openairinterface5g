@@ -61,29 +61,6 @@ typedef struct {
 } NR_PBCH_parms_t;
 
 
-typedef struct {
-  /// Length of DCI payload in bits
-  uint16_t size;
-  /// Aggregation level
-  uint8_t L;
-  /// HARQ PID
-  uint8_t harq_pid;
-  /// PDCCH parameters
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params;
-  /// CCE list
-  nr_cce_t cce_list[NR_MAX_PDCCH_AGG_LEVEL];
-  /// DCI pdu
-  uint64_t dci_pdu[2];
-} NR_gNB_DCI_ALLOC_t;
-
-
-typedef struct {
-  uint8_t     num_dci;
-  uint8_t     num_pdsch_rnti;
-  NR_gNB_DCI_ALLOC_t dci_alloc[256];
-} NR_gNB_PDCCH;
-
-
 typedef enum {
   NR_SCH_IDLE,
   NR_ACTIVE,
@@ -94,7 +71,7 @@ typedef enum {
 
 typedef struct {
   /// Nfapi DLSCH PDU
-  nfapi_nr_dl_config_dlsch_pdu dlsch_pdu;
+  nfapi_nr_dl_tti_pdsch_pdu pdsch_pdu;
   /// pointer to pdu from MAC interface (this is "a" in 36.212)
   uint8_t *pdu;
   /// The payload + CRC size in bits, "B" from 36-212
@@ -112,11 +89,11 @@ typedef struct {
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
   /// Concatenated sequences
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *e;
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Interleaver outputs
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t *f;
   /// Number of code segments
   uint32_t C;
   /// Number of bits in "small" code segments
@@ -296,7 +273,7 @@ typedef struct {
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  int16_t *w[MAX_NUM_NR_ULSCH_SEGMENTS];
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 
@@ -377,11 +354,15 @@ typedef struct {
   /// \brief Hold the channel estimates in time domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..4*ofdm_symbol_size[
-  int32_t **drs_ch_estimates_time;
+  int32_t **ul_ch_estimates_time;
   /// \brief Hold the channel estimates in frequency domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates;
+  int32_t **ul_ch_estimates;
+  /// \brief Uplink channel estimates extracted in PRBS.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_estimates_ext;
   /// \brief Holds the compensated signal.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
@@ -394,6 +375,28 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_magb;
+  /// \brief Cross-correlation of two UE signals.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: symbol [0..]
+  int32_t **rho;
+  /// \f$\log_2(\max|H_i|^2)\f$
+  int16_t log2_maxh;
+  /// \brief Magnitude of Uplink Channel first layer (16QAM level/First 64QAM level).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_UL[
+  int32_t **ul_ch_mag0;
+  /// \brief Magnitude of Uplink Channel second layer (16QAM level/First 64QAM level).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_UL[
+  int32_t **ul_ch_mag1[8][8];
+  /// \brief Magnitude of Uplink Channel, first layer (2nd 64QAM level).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_UL[
+  int32_t **ul_ch_magb0;
+  /// \brief Magnitude of Uplink Channel second layer (2nd 64QAM level).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_UL[
+  int32_t **ul_ch_magb1[8][8];
   /// measured RX power based on DRS
   int ulsch_power[2];
   /// \brief llr values.
@@ -595,12 +598,13 @@ typedef struct PHY_VARS_gNB_s {
   int                  rx_total_gain_dB;
   int                  (*nr_start_if)(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB);
   uint8_t              local_flag;
-  nfapi_nr_config_request_t  gNB_config;
+  nfapi_nr_config_request_scf_t  gNB_config;
   NR_DL_FRAME_PARMS    frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
   NR_IF_Module_t       *if_inst;
   NR_UL_IND_t          UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
+
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
   /// NFAPI RX ULSCH CRC information
@@ -616,27 +620,24 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t         Sched_INFO;
-  NR_gNB_PDCCH        pdcch_vars;
-  NR_gNB_PBCH         pbch;
-  // LTE_eNB_PHICH       phich_vars[2];
+  //Sched_Rsp_t         Sched_INFO;
+  nfapi_nr_ul_tti_request_t     UL_tti_req;
+  
+  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
+  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
+  nfapi_nr_dl_tti_ssb_pdu      ssb_pdu;
 
-  NR_gNB_COMMON       common_vars;
-/*  LTE_eNB_UCI         uci_vars[NUMBER_OF_UE_MAX];
-    LTE_eNB_SRS         srs_vars[NUMBER_OF_UE_MAX];*/
+  int num_pdsch_rnti;
+  NR_gNB_PBCH         pbch;
+  nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
+  NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
-  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
+  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX+1][2];  // [Nusers times + number of RA][2 codewords], index 0 in [NUMBER_OF_UE_MAX+1] is for RA
-  // LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];     // Nusers + number of RA
+  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
-/*
-  LTE_eNB_UE_stats    UE_stats[NUMBER_OF_UE_MAX];
-  LTE_eNB_UE_stats   *UE_stats_ptr[NUMBER_OF_UE_MAX];
-*/
   uint8_t pbch_configured;
-  uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char gNB_generate_rar;
 
   /// NR synchronization sequences
@@ -654,9 +655,12 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
+  
+  /// PUSCH DMRS
+  uint32_t nr_gold_pusch[2][20][2][NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD];
 
   /// Indicator set to 0 after first SR
-  uint8_t first_sr[NUMBER_OF_UE_MAX];
+  uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
 
   /// PRACH root sequence
   uint32_t X_u[64][839];
@@ -670,7 +674,6 @@ typedef struct PHY_VARS_gNB_s {
   /// N0 (used for abstraction)
   double N0;
 
-  unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
 
@@ -688,89 +691,29 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
-  // PDSCH Variables
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // PUCCH variables
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_UE_MAX];
-
-  // UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_UE_MAX];
-
-  // TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_UE_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_UE_MAX];
-
-  // CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_UE_MAX];
-
-  // SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
-  uint8_t ncs_cell[20][7];
-
-  // Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_UE_MAX];
-
-  // Transmission mode per UE
-  uint8_t transmission_mode[NUMBER_OF_UE_MAX];
-
-  /// cba_last successful reception for each group, used for collision detection
-  uint8_t cba_last_reception[4];
-
-  // Pointers for active physicalConfigDedicated to be applied in current slot
-  struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
-
-
-  uint32_t rb_mask_ul[4];
-
-  /// Information regarding TM5
-  MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
-
-
-  /// target_ue_dl_mcs : only for debug purposes
-  uint32_t target_ue_dl_mcs;
-  /// target_ue_ul_mcs : only for debug purposes
-  uint32_t target_ue_ul_mcs;
-  /// target_ue_dl_rballoc : only for debug purposes
-  uint32_t ue_dl_rb_alloc;
-  /// target ul PRBs : only for debug
-  uint32_t ue_ul_nb_rb;
-
-  ///check for Total Transmissions
-  uint32_t check_for_total_transmissions;
-
-  ///check for MU-MIMO Transmissions
-  uint32_t check_for_MUMIMO_transmissions;
-
-  ///check for SU-MIMO Transmissions
-  uint32_t check_for_SUMIMO_transmissions;
-
-  ///check for FULL MU-MIMO Transmissions
-  uint32_t  FULL_MUMIMO_transmissions;
-
-  /// Counter for total bitrate, bits and throughput in downlink
-  uint32_t total_dlsch_bitrate;
-  uint32_t total_transmitted_bits;
-  uint32_t total_system_throughput;
-
-  int hw_timing_advance;
-
+  /*
   time_stats_t phy_proc;
+  */
   time_stats_t phy_proc_tx;
+  /*
   time_stats_t phy_proc_rx;
+  */
   time_stats_t rx_prach;
-
+  /*
   time_stats_t ofdm_mod_stats;
+  */
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t tinput;
+  time_stats_t tprep;
+  time_stats_t tparity;
+  time_stats_t toutput;
+  
   time_stats_t dlsch_rate_matching_stats;
-  time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_interleaving_stats;
-
+  time_stats_t dlsch_segmentation_stats;
+  /*
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_channel_estimation_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
@@ -781,29 +724,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_deinterleaving_stats;
   time_stats_t ulsch_demultiplexing_stats;
   time_stats_t ulsch_llr_stats;
-  time_stats_t ulsch_tc_init_stats;
-  time_stats_t ulsch_tc_alpha_stats;
-  time_stats_t ulsch_tc_beta_stats;
-  time_stats_t ulsch_tc_gamma_stats;
-  time_stats_t ulsch_tc_ext_stats;
-  time_stats_t ulsch_tc_intl1_stats;
-  time_stats_t ulsch_tc_intl2_stats;
-
-#ifdef LOCALIZATION
-  /// time state for localization
-  time_stats_t localization_stats;
-#endif
-
-  int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
-  int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
-  int32_t pucch1_stats_thres[NUMBER_OF_UE_MAX][10*1024];
-  int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
-  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][2*10*1024];
-  int32_t pusch_stats_rb[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_round[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
-  int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
+  */
 } PHY_VARS_gNB;
 
 #endif

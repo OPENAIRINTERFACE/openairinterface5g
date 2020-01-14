@@ -45,6 +45,7 @@
 #include <math.h>
 #include "common_lib.h"
 #include "msc.h"
+#include "fapi_nr_ue_interface.h"
 
 //#include <complex.h>
 #include "assertions.h"
@@ -470,65 +471,7 @@ typedef struct {
 #ifdef NR_PDCCH_DEFS_NR_UE
 
 #define MAX_NR_DCI_DECODED_SLOT     10    // This value is not specified
-#define NBR_NR_FORMATS              8     // The number of formats is 8 (0_0, 0_1, 1_0, 1_1, 2_0, 2_1, 2_2, 2_3)
-#define NBR_NR_DCI_FIELDS           56    // The number of different dci fields defined in TS 38.212 subclause 7.3.1
 
-#define IDENTIFIER_DCI_FORMATS           0
-#define CARRIER_IND                      1
-#define SUL_IND_0_1                      2
-#define SLOT_FORMAT_IND                  3
-#define PRE_EMPTION_IND                  4
-#define BLOCK_NUMBER                     5
-#define CLOSE_LOOP_IND                   6
-#define BANDWIDTH_PART_IND               7
-#define SHORT_MESSAGE_IND                8
-#define SHORT_MESSAGES                   9
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
-#define TIME_DOM_RESOURCE_ASSIGNMENT    12
-#define VRB_TO_PRB_MAPPING              13
-#define PRB_BUNDLING_SIZE_IND           14
-#define RATE_MATCHING_IND               15
-#define ZP_CSI_RS_TRIGGER               16
-#define FREQ_HOPPING_FLAG               17
-#define TB1_MCS                         18
-#define TB1_NDI                         19
-#define TB1_RV                          20
-#define TB2_MCS                         21
-#define TB2_NDI                         22
-#define TB2_RV                          23
-#define MCS                             24
-#define NDI                             25
-#define RV                              26
-#define HARQ_PROCESS_NUMBER             27
-#define DAI_                            28
-#define FIRST_DAI                       29
-#define SECOND_DAI                      30
-#define TB_SCALING                      31
-#define TPC_PUSCH                       32
-#define TPC_PUCCH                       33
-#define PUCCH_RESOURCE_IND              34
-#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
-#define SRS_RESOURCE_IND                36
-#define PRECOD_NBR_LAYERS               37
-#define ANTENNA_PORTS                   38
-#define TCI                             39
-#define SRS_REQUEST                     40
-#define TPC_CMD                         41
-#define CSI_REQUEST                     42
-#define CBGTI                           43
-#define CBGFI                           44
-#define PTRS_DMRS                       45
-#define BETA_OFFSET_IND                 46
-#define DMRS_SEQ_INI                    47
-#define UL_SCH_IND                      48
-#define PADDING_NR_DCI                  49
-#define SUL_IND_0_0                     50
-#define RA_PREAMBLE_INDEX               51
-#define SUL_IND_1_0                     52
-#define SS_PBCH_INDEX                   53
-#define PRACH_MASK_INDEX                54
-#define RESERVED_NR_DCI                 55
 
 
 typedef enum {
@@ -759,12 +702,6 @@ typedef struct {
   /// \brief PDCCH/DCI e-sequence (input to rate matching).
   /// - first index: ? [0..96*N_RB_DL[
   int16_t *e_rx;
-  /// number of PDCCH symbols in current subframe
-  uint8_t num_pdcch_symbols;
-  /// Allocated CRNTI for UE
-  uint16_t crnti;
-  /// 1: the allocated crnti is Temporary C-RNTI / 0: otherwise
-  uint8_t crnti_is_temporary;
   /// Total number of PDU errors (diagnostic mode)
   uint32_t dci_errors;
   /// Total number of PDU received
@@ -773,11 +710,14 @@ typedef struct {
   uint32_t dci_false;
   /// Total number of DCI missed (diagnostic mode)
   uint32_t dci_missed;
-  /// nCCE for PUCCH per subframe
+  /// nCCE for PDCCH per subframe
   uint8_t nCCE[10];
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
+  int nb_search_space;
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
@@ -788,7 +728,7 @@ typedef struct {
 
   int n_RB_BWP[NR_NBR_SEARCHSPACE_ACT_BWP];
   uint32_t nb_search_space;
-#endif
+  #endif*/
 } NR_UE_PDCCH;
 
 #define PBCH_A 24
@@ -810,6 +750,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **dl_ch_estimates_ext;
+  /// \brief Hold the channel estimates in time domain (used for tracking).
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..2*ofdm_symbol_size[
+  int32_t **dl_ch_estimates_time;
   int log2_maxh;
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint32_t pbch_a_interleaved;
@@ -945,6 +889,7 @@ typedef struct {
   // point to the current rxTx thread index
   uint8_t current_thread_id[40];
 
+  t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   NR_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   NR_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
@@ -990,7 +935,7 @@ typedef struct {
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// PDSCH DMRS
-  uint32_t nr_gold_pdsch[2][20][2][52];
+  uint32_t nr_gold_pdsch[2][20][2][NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD];
 
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];
