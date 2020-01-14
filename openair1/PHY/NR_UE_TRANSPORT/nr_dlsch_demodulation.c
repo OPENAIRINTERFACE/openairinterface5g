@@ -288,7 +288,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
 
-  if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
+  if (frame_parms->nb_antenna_ports_gNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
     LOG_I(PHY,"dlsch: using pmi %x (%p)\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch[0]);
 #endif
@@ -349,7 +349,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        frame_parms,
                                        dlsch0_harq->mimo_mode);
     }
-  } else if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
+  } else if (beamforming_mode==0) { //else if nb_antennas_ports_gNB==1 && beamforming_mode == 0
 		  //printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
 					pdsch_vars[eNB_id]->dl_ch_estimates,
@@ -380,10 +380,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
     		frame,nr_tti_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
     		frame,nr_tti_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
@@ -391,7 +391,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
-  n_tx = frame_parms->nb_antenna_ports_eNB;
+  n_tx = frame_parms->nb_antenna_ports_gNB;
   n_rx = frame_parms->nb_antennas_rx;
 
   nr_dlsch_scale_channel(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -404,9 +404,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -423,7 +423,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 						   len,
                            nb_rb);
         avgs = 0;
-        for (aatx=0;aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
+        for (aatx=0;aatx<frame_parms->nb_antenna_ports_gNB;aatx++)
           for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
             avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
@@ -483,9 +483,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_tti_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -596,9 +596,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // MRC
@@ -641,9 +641,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 
@@ -1019,9 +1019,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    printf("[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_tti_rx,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // Please keep it: useful for debugging
@@ -1092,7 +1092,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 
   uint32_t *bundle_deint = malloc(N_bundle*sizeof(uint32_t));
 
-  printf("N_bundle %d L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
+  printf("N_bundle %u L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 
   if (symbol==start_symbol)
 	  nb_re = 6;
@@ -1118,6 +1118,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 		  //printf("k %d m %d bundle_deint %d llr_deint %d\n", k, m, bundle_deint[k], llr_deint[bundle_deint[k]*nb_re*L+m]);
 	  }
   }
+  free(bundle_deint);
 }
 
 //==============================================================================================
@@ -1148,7 +1149,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
   QAM_amp128b = _mm_setzero_si128();
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
@@ -1400,7 +1401,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->nb_antenna_ports_eNB==1) { // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_gNB==1) { // 10 out of 12 so don't reduce size
       nb_rb=1+(5*nb_rb/6);
     }
     else {
@@ -1408,7 +1409,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
     }
   }
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
     if (mod_order == 4) {
       QAM_amp128  = vmovq_n_s16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = vmovq_n_s16(0);
@@ -1816,7 +1817,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];
@@ -1867,7 +1868,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   int16_t y = (len)>>x;
   //printf("nb_rb*nre = %d = %d * 2^(%d)\n",nb_rb*nre,y,x);
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = _mm_setzero_si128();
@@ -1884,7 +1885,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[0], coeff128),15)));
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[1], coeff128),15)));
 
-	    /*if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
+	    /*if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_gNB!=1)) {
           dl_ch128+=2;
         }
         else {*/
@@ -1920,7 +1921,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = vdupq_n_s32(0);
@@ -1936,7 +1937,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
         avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[2],dl_ch128[2]));
         avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[3],dl_ch128[3]));
 
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_gNB!=1)) {
           dl_ch128+=4;
         } else {
           avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[4],dl_ch128[4]));
@@ -2030,7 +2031,7 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
   int32x4_t norm128D;
   int16x4_t *dl_ch128;
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++){
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++){
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       max = 0;
       min = 0;
@@ -2456,7 +2457,7 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
   int prb,nb_rb=0;
   unsigned short k;
   int i,j,aarx;
-  int32_t *dl_ch0=NULL,*dl_ch0p=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1p=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
+  int32_t *dl_ch0=NULL,*dl_ch0_ext=NULL,*dl_ch1=NULL,*dl_ch1_ext=NULL,*rxF=NULL,*rxF_ext=NULL;
 
   k = frame_parms->first_carrier_offset + 516; //0
 
@@ -2512,8 +2513,8 @@ unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
               if ((i&1)!=frame_parms->nushift) {
                 rxF_ext[j]=rxF[i];
                 //        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-                dl_ch0_ext[j]=dl_ch0p[i];
-                dl_ch1_ext[j++]=dl_ch1p[i];
+                dl_ch0_ext[j]=dl_ch0[i];
+                dl_ch1_ext[j++]=dl_ch1[i];
               }
             }
             dl_ch0_ext+=6;
@@ -2602,7 +2603,7 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t nr_tti_rx,unsigned int *
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
-  if (ue->frame_parms.nb_antenna_ports_eNB == 2) {
+  if (ue->frame_parms.nb_antenna_ports_gNB == 2) {
     sprintf(fname,"dlsch%d_ch_r%d_ext10.m",eNB_id,round);
     sprintf(vname,"dl%d_ch_r%d_ext10",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
@@ -2636,7 +2637,7 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t nr_tti_rx,unsigned int *
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
   write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);
-  if (ue->frame_parms.nb_antenna_ports_eNB == 2) {
+  if (ue->frame_parms.nb_antenna_ports_gNB == 2) {
     sprintf(fname,"dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
     sprintf(vname,"dl%d_rxF_r%d_comp1",eNB_id,round);
     write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp1[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);

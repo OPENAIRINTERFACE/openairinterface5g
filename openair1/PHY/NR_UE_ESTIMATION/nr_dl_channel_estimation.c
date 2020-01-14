@@ -192,12 +192,12 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       uint8_t eNB_offset,
-			       unsigned char Ns,
-			       unsigned char symbol,
-			       int dmrss,
-			       uint8_t ssb_index,
-			       uint8_t n_hf)
+                               uint8_t eNB_offset,
+                               unsigned char Ns,
+                               unsigned char symbol,
+                               int dmrss,
+                               uint8_t ssb_index,
+                               uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx,p;
@@ -206,9 +206,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
   //int slot_pbch;
-  //fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
-  // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)
-  //uint8_t ssb_periodicity = 10;// ue->ssb_periodicity;
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
@@ -452,7 +449,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     {
         // do ifft of channel estimate
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
-            for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
+            for (p=0; p<ue->frame_parms.nb_antenna_ports_gNB; p++) {
                 if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
                 {
   		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, ue->current_thread_id[Ns], symbol, ch_offset);

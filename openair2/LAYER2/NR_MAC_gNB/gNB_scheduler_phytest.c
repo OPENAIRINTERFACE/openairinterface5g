@@ -31,6 +31,7 @@
 #include "nr_mac_gNB.h"
 #include "SCHED_NR/sched_nr.h"
 #include "mac_proto.h"
+#include "nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"

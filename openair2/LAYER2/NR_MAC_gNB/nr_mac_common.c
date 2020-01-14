@@ -111,6 +111,119 @@ void get_band(uint64_t downlink_frequency,
 	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
 }
 
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
+{
+
+  if (nr_band < 100)  { //FR1
+   switch(mu) {
+    case 0 :
+      if (nb_rb<=25)
+        return 5; 
+      if (nb_rb<=52)
+        return 10;
+      if (nb_rb<=79)
+        return 15;
+      if (nb_rb<=106)
+        return 20;
+      if (nb_rb<=133)
+        return 25;
+      if (nb_rb<=160)
+        return 30;
+      if (nb_rb<=216)
+        return 40;
+      if (nb_rb<=270)
+        return 50;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 1 :
+      if (nb_rb<=11)
+        return 5; 
+      if (nb_rb<=24)
+        return 10;
+      if (nb_rb<=38)
+        return 15;
+      if (nb_rb<=51)
+        return 20;
+      if (nb_rb<=65)
+        return 25;
+      if (nb_rb<=78)
+        return 30;
+      if (nb_rb<=106)
+        return 40;
+      if (nb_rb<=133)
+        return 50;
+      if (nb_rb<=162)
+        return 60;
+      if (nb_rb<=189)
+        return 70;
+      if (nb_rb<=217)
+        return 80;
+      if (nb_rb<=245)
+        return 90;
+      if (nb_rb<=273)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 2 :
+      if (nb_rb<=11)
+        return 10; 
+      if (nb_rb<=18)
+        return 15;
+      if (nb_rb<=24)
+        return 20;
+      if (nb_rb<=31)
+        return 25;
+      if (nb_rb<=38)
+        return 30;
+      if (nb_rb<=51)
+        return 40;
+      if (nb_rb<=65)
+        return 50;
+      if (nb_rb<=79)
+        return 60;
+      if (nb_rb<=93)
+        return 70;
+      if (nb_rb<=107)
+        return 80;
+      if (nb_rb<=121)
+        return 90;
+      if (nb_rb<=135)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+  else {
+   switch(mu) {
+    case 2 :
+      if (nb_rb<=66)
+        return 50;
+      if (nb_rb<=132)
+        return 100;
+      if (nb_rb<=264)
+        return 200;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 3 :
+      if (nb_rb<=32)
+        return 50;
+      if (nb_rb<=66)
+        return 100;
+      if (nb_rb<=132)
+        return 200;
+      if (nb_rb<=264)
+        return 400;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+
+}
+
 uint32_t to_nrarfcn(int nr_bandP,
                     uint64_t dl_CarrierFreq,
                     uint32_t bw)

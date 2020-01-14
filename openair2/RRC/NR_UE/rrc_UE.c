@@ -80,7 +80,7 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
     }
 
-    //nr_rrc_mac_config_req_ue( module_id_t module_id, int CC_id, uint8_t gNB_index, NR_MIB_t *mibP, NR_MAC_CellGroupConfig_t *mac_cell_group_configP, NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, NR_SpCellConfig_t *spcell_configP );
+    //nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
 
     return 0;
 }
@@ -124,8 +124,9 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
                 }else{
                     //  after first time, update it and free the memory after.
+                    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst->cell_group_config, 0);
+                    NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
             }
@@ -168,8 +169,7 @@ int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
     int i;
     if(NR_UE_rrc_inst->cell_group_config==NULL){
-        //  initial list
-      
+      //  initial list
         if(cell_group_config->spCellConfig != NULL){
             if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
                 if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
@@ -179,8 +179,6 @@ int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
                 }
             }
         } 
-       
-
     }else{
         //  maintain list
         if(cell_group_config->spCellConfig != NULL){
@@ -259,7 +257,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-int8_t openair_rrc_top_init_ue_nr(char* rrc_config_path){
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 
     if(NB_NR_UE_INST > 0){
         NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -347,7 +345,7 @@ int8_t openair_rrc_top_init_ue_nr(char* rrc_config_path){
         NR_UE_rrc_inst = NULL;
     }
 
-    return 0;
+    return NR_UE_rrc_inst;
 }
 
 
@@ -418,7 +416,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
       
-      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL);
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL);
     }
     
     return 0;

@@ -49,10 +49,13 @@
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch,uint16_t N_RB)
+
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
 {
   int i;
   int r;
+
+  NR_gNB_DLSCH_t *dlsch = *dlschptr;
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   if (dlsch) {
@@ -269,7 +272,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
+
   free_gNB_dlsch(dlsch,N_RB);
+
   return(NULL);
 
 
@@ -318,7 +323,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
   unsigned int G;
   unsigned int crc=1;
-  uint8_t harq_pid = dlsch->harq_ids[frame%2][slot];
+  uint8_t harq_pid = dlsch->harq_ids[frame&2][slot];
   AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
@@ -470,16 +475,15 @@ int nr_dlsch_encoding(unsigned char *a,
 
     E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15->nrOfLayers, r);
 
-#ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
-	   r,
-	   dlsch->harq_processes[harq_pid]->C,
-	   G,
-	   E,
-	   F,
-	   Kr-F-2*(*Zc),
-	   mod_order,nb_rb);
-#endif
+    //#ifdef DEBUG_DLSCH_CODING
+    LOG_D(PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+	  r,
+	  dlsch->harq_processes[harq_pid]->C,
+	  G,
+	  E,
+	  F,
+	  Kr-F-2*(*Zc),
+	  mod_order,nb_rb);
 
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
     if (rel15->nrOfLayers < Nl)
@@ -502,7 +506,7 @@ int nr_dlsch_encoding(unsigned char *a,
     stop_meas(dlsch_rate_matching_stats);
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
-      LOG_D(PHY,"output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
+      printf("output ratematching e[%d]= %d r_offset %u\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
 #endif
 
     start_meas(dlsch_interleaving_stats);
@@ -514,7 +518,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
-      LOG_D(PHY,"output interleaving f[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->f[i+r_offset], r_offset);
+      printf("output interleaving f[%d]= %d r_offset %u\n", i,dlsch->harq_processes[harq_pid]->f[i+r_offset], r_offset);
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)
       write_output("enc_output.m","enc",dlsch->harq_processes[harq_pid]->f,G,1,4);

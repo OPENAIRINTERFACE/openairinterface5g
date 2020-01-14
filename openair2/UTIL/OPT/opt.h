@@ -110,22 +110,17 @@ typedef enum radio_type_e {
  * function def
 */
 
-void trace_pdu(int direction,
-               uint8_t *pdu_buffer,
-               unsigned int pdu_buffer_size,
-               int ueid,
-               int rntiType,
-               int rnti,
-               uint16_t sysFrame,
-               uint8_t subframe,
-               int oob_event,
-               int oob_event_value);
+extern int opt_enabled;
+#define trace_pdu(x...) if (opt_enabled) trace_pdu_implementation(x)
+
+void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+                              int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
+                              int oob_event, int oob_event_value);
 
 int init_opt(void);
 
 void terminate_opt(void);
 
-extern int opt_enabled;
 //double *timing_analyzer(int index, int direction );
 
 #endif /* OPT_H_ */

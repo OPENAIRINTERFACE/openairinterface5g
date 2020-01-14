@@ -345,9 +345,9 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
 
       I_pucch[ind] = (float)pucch1ab_comp[2*(ind)];
       Q_pucch[ind] = (float)pucch1ab_comp[2*(ind)+1];
-      A_pucch[ind] = 10*log10(pucch1_comp[ind]);
+      A_pucch[ind] = pucch1_comp?(10*log10(pucch1_comp[ind])):0;
       B_pucch[ind] = ind;
-      C_pucch[ind] = (float)pucch1_thres[ind];
+      C_pucch[ind] = pucch1_thres?(float)pucch1_thres[ind]:0;
     }
     fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
     fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
@@ -492,7 +492,7 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   //int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
   int samples_per_frame = frame_parms->samples_per_frame;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_eNB;
+  uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_gNB;
   int16_t **rxsig_t;
   float **rxsig_t_dB;
   float *time;
@@ -840,7 +840,7 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
   free(bit);
   free(bit_pdcch);
   free(llr_pdcch);
-
+  free(chest_t_abs);
   /*
   free(chest_f_abs);
   for (arx=0; arx<nb_antennas_rx; arx++) {
@@ -898,9 +898,9 @@ void reset_stats_gNB(FL_OBJECT *button,
 static void *scope_thread_gNB(void *arg) {
   int UE_id;
   int ue_cnt=0;
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
-#endif
+//# ifdef ENABLE_XFORMS_WRITE_STATS
+//  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
+//#endif
 
   while (!oai_exit) {
     ue_cnt=0;

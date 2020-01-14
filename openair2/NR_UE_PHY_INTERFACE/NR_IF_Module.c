@@ -218,7 +218,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
-	ret_mask |= (handle_bcch_bch( dl_info->proc,
+	ret_mask |= (handle_bcch_bch(dl_info->proc,
 				     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,

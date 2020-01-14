@@ -539,122 +539,122 @@ typedef struct ccparams_lte_s {
 } ccparams_lte_t;
 
 #define CCPARAMS_CHECK {                             \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,                             \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,                             \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
+    { { NULL } } ,						     \
     { .s1a= { config_check_modify_integer, UETIMER_T300_OKVALUES, UETIMER_T300_MODVALUES,8}} ,\
     { .s1a= { config_check_modify_integer, UETIMER_T301_OKVALUES, UETIMER_T301_MODVALUES,8}} ,\
     { .s1a= { config_check_modify_integer, UETIMER_T310_OKVALUES, UETIMER_T310_MODVALUES,7}} ,\
     { .s1a= { config_check_modify_integer, UETIMER_T311_OKVALUES, UETIMER_T311_MODVALUES,7}} ,\
     { .s1a= { config_check_modify_integer, UETIMER_N310_OKVALUES, UETIMER_N310_MODVALUES,8}} ,\
     { .s1a= { config_check_modify_integer, UETIMER_N311_OKVALUES, UETIMER_N311_MODVALUES,8}} ,\
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } } ,						     \
-    { .s5 = { NULL } }                               \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } } ,						     \
+    {  { NULL } }                               \
 }
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
