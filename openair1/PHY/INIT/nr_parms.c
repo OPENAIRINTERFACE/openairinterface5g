@@ -290,8 +290,11 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int Ncp) 
 {
 
-  fp->dl_CarrierFreq = (config->carrier_config.dl_frequency)*1e3 + (config->carrier_config.dl_bandwidth)*5e5;
-  fp->ul_CarrierFreq = (config->carrier_config.uplink_frequency)*1e3 + (config->carrier_config.uplink_bandwidth)*5e5;
+  uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
+  fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
+
+  uint64_t ul_bw_khz = (12*config->carrier_config.ul_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
+  fp->ul_CarrierFreq = ((ul_bw_khz>>1) + config->carrier_config.uplink_frequency)*1000 ;
 
   fp->numerology_index = config->ssb_config.scs_common;
   fp->N_RB_UL = config->carrier_config.ul_grid_size[fp->numerology_index];

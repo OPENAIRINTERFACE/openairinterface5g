@@ -405,15 +405,20 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   */
   memcpy((void*)gNB_config,phy_config->cfg,sizeof(*phy_config->cfg));
   RC.gNB[Mod_id]->mac_enabled     = 1;
-  fp->dl_CarrierFreq = (gNB_config->carrier_config.dl_frequency.value)*1e3 + (gNB_config->carrier_config.dl_bandwidth.value)*5e5;
+
+  uint64_t dl_bw_khz = (12*gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
+  fp->dl_CarrierFreq = ((dl_bw_khz>>1) + gNB_config->carrier_config.dl_frequency.value)*1000 ;
 
   int32_t dlul_offset = 0;
   lte_frame_type_t frame_type = 0;
   
   get_band(fp->dl_CarrierFreq,&fp->nr_band,&dlul_offset,&frame_type);
 
-  fp->ul_CarrierFreq = (gNB_config->carrier_config.uplink_frequency.value)*1e3 + (gNB_config->carrier_config.uplink_bandwidth.value)*5e5;
+  uint64_t ul_bw_khz = (12*gNB_config->carrier_config.ul_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
+  fp->ul_CarrierFreq = ((ul_bw_khz>>1) + gNB_config->carrier_config.uplink_frequency.value)*1000 ;
 
+  AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+dlul_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
+  
   fp->threequarter_fs = openair0_cfg[0].threequarter_fs;
   LOG_I(PHY,"Configuring MIB for instance %d, : (Nid_cell %d,DL freq %llu, UL freq %llu)\n",
         Mod_id,
