@@ -17,7 +17,7 @@ openairinterface5g
 ├── maketags : Script to generate emacs tags
 ├── nfapi : Contains the NFAPI code. A local Readme file provides more details.
 ├── openair1 : 3GPP LTE Rel-10/12 PHY layer + PHY RF simulation. A local Readme file provides more details.
-├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation.
+├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP + LTE Rel-14 M2AP implementation.
     ├── COMMON
     ├── DOCS
     ├── ENB_APP
@@ -28,12 +28,15 @@ openairinterface5g
     ├── RRC/LITE
     ├── UTIL
     ├── X2AP
+    ├── M2AP
+    ├── MCE_APP
 ├── openair3: 3GPP LTE Rel10 for S1AP, NAS GTPV1-U for both ENB and UE.
     ├── COMMON
     ├── DOCS
     ├── GTPV1-U
     ├── NAS
     ├── S1AP
+    ├── M3AP
     ├── SCTP
     ├── SECU
     ├── UDP
@@ -48,6 +51,7 @@ v1.2.0 -> January 2020. This version adds the following implemented features:
              - PUSCH CE - 8 Repetitions
            * Improved CDRX implementation for monolithic eNB
            * Experimental eMBMS support (now also on eNB side)
+           * Experimental MCE - Multicast Coordination Entity
            * Bug fixes
           This version also has an improved code quality:
            * Better Test Coverage in Continuous Integration:
