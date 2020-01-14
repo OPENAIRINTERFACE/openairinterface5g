@@ -213,6 +213,8 @@ typedef enum {
 #define ENB_CONFIG_STRING_RRC_INACTIVITY_THRESHOLD      "rrc_inactivity_threshold"
 #define ENB_CONFIG_STRING_MEASUREMENT_REPORTS           "enable_measurement_reports"
 #define ENB_CONFIG_STRING_X2                            "enable_x2"
+#define ENB_CONFIG_STRING_ENB_M2                        "enable_enb_m2"
+#define ENB_CONFIG_STRING_MCE_M2                        "enable_mce_m2"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -236,6 +238,8 @@ typedef enum {
 {ENB_CONFIG_STRING_RRC_INACTIVITY_THRESHOLD,     NULL,   0,            uptr:NULL,   defintval:0,                 TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_MEASUREMENT_REPORTS,          NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
 {ENB_CONFIG_STRING_X2,                           NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
+{ENB_CONFIG_STRING_ENB_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
+{ENB_CONFIG_STRING_MCE_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
 }															     	
 #define ENB_ENB_ID_IDX                  0
 #define ENB_CELL_TYPE_IDX               1
@@ -255,6 +259,8 @@ typedef enum {
 #define ENB_RRC_INACTIVITY_THRES_IDX    15
 #define ENB_ENABLE_MEASUREMENT_REPORTS  16
 #define ENB_ENABLE_X2                   17
+#define ENB_ENABLE_ENB_M2               18
+#define ENB_ENABLE_MCE_M2               19
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define ENBPARAMS_CHECK {                                         \
@@ -262,6 +268,10 @@ typedef enum {
   { .s5 = { NULL } },                                             \
   { .s5 = { NULL } },                                             \
   { .s2 = { config_check_intrange, TRACKING_AREA_CODE_OKRANGE } },\
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
   { .s5 = { NULL } },                                             \
   { .s5 = { NULL } },                                             \
   { .s5 = { NULL } },                                             \
@@ -305,6 +315,32 @@ typedef enum {
   { .s2 = { config_check_intrange, MCC_MNC_OKRANGES } },             \
   { .s2 = { config_check_intrange, MCC_MNC_OKRANGES } },             \
   { .s1 = { config_check_intval,   MNC_DIGIT_LENGTH_OKVALUES, 2 } }, \
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define ENB_CONFIG_STRING_MBMS_CONFIGURATION_DATA_LIST                     "mbms_configuration_data_list"
+
+#define ENB_CONFIG_STRING_MBMS_SYNC_AREA           "mbms_sync_area"
+
+#define ENB_MBMS_SYNC_AREA_IDX     0
+
+#define MBMS_CONFIG_PARAMS_DESC {                                                                  \
+/*   optname                              helpstr               paramflags XXXptr     def val          type    numelt */ \
+  {ENB_CONFIG_STRING_MBMS_SYNC_AREA           , NULL,        0, uptr:NULL, defuintval:0, TYPE_UINT, 0},    \
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define ENB_CONFIG_STRING_MBMS_SERVICE_AREA_LIST                     "mbms_service_area_list"
+
+#define ENB_CONFIG_STRING_MBMS_SERVICE_AREA           "mbms_service_area"
+
+#define ENB_MBMS_SERVICE_AREA_IDX     0
+
+#define MBMSPARAMS_DESC {                                                                  \
+/*   optname                              helpstr               paramflags XXXptr     def val          type    numelt */ \
+  {ENB_CONFIG_STRING_MBMS_SERVICE_AREA, NULL,        0, uptr:NULL, defuintval:0, TYPE_UINT, 0},    \
 }
 
 
@@ -407,6 +443,7 @@ typedef enum {
 
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pusch_maxNumRepetitionCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pusch_maxNumRepetitionCEmodeB_r13"
+#define ENB_CONFIG_STRING_PUSCH_REPETITION_LEVEL_CE_MODE_A_R13			"pusch_repetitionLevelCEmodeA_r13"
 #define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                    "pusch_HoppingOffset_v1310"
 
 
@@ -921,6 +958,39 @@ typedef struct srb1_params_s {
 #define ENB_X2_IPV4_ADDRESS_IDX          0
 #define ENB_X2_IPV6_ADDRESS_IDX          1
 #define ENB_X2_IP_ADDRESS_PREFERENCE_IDX 2
+
+
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* M2 configuration parameters section name */
+#define ENB_CONFIG_STRING_TARGET_MCE_M2_IP_ADDRESS                "target_mce_m2_ip_address"
+
+/* M2 configuration parameters names   */
+
+
+#define ENB_CONFIG_STRING_TARGET_MCE_M2_IPV4_ADDRESS              "ipv4"
+#define ENB_CONFIG_STRING_TARGET_MCE_M2_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_TARGET_MCE_M2_IP_ADDRESS_PREFERENCE     "preference"
+
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            M2 configuration parameters                                                             */
+/*   optname                                          helpstr   paramflags    XXXptr       defXXXval         type           numelt     */
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+#define M2PARAMS_DESC {  \
+{ENB_CONFIG_STRING_TARGET_MCE_M2_IPV4_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_MCE_M2_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_MCE_M2_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+}
+
+#define ENB_M2_IPV4_ADDRESS_IDX          0
+#define ENB_M2_IPV6_ADDRESS_IDX          1
+#define ENB_M2_IP_ADDRESS_PREFERENCE_IDX 2
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /* SCTP configuration parameters section name */
 #define ENB_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
@@ -954,6 +1024,10 @@ typedef struct srb1_params_s {
 #define ENB_PORT_FOR_S1U_IDX                       4
 #define ENB_IPV4_ADDR_FOR_X2C_IDX		   5
 #define ENB_PORT_FOR_X2C_IDX			   6
+#define ENB_IPV4_ADDR_FOR_M2C_IDX                 7
+#define ENB_PORT_FOR_M2C_IDX                      8
+#define MCE_IPV4_ADDR_FOR_M2C_IDX                 9
+#define MCE_PORT_FOR_M2C_IDX                      10
 
 /* S1 interface configuration parameters names   */
 #define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME "ENB_INTERFACE_NAME_FOR_S1_MME"
@@ -965,6 +1039,13 @@ typedef struct srb1_params_s {
 /* X2 interface configuration parameters names */
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C         "ENB_IPV4_ADDRESS_FOR_X2C"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_X2C              "ENB_PORT_FOR_X2C"
+
+/* M2 interface configuration parameters names */
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_M2C         "ENB_IPV4_ADDRESS_FOR_M2C"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_M2C              "ENB_PORT_FOR_M2C"
+#define ENB_CONFIG_STRING_MCE_IPV4_ADDR_FOR_M2C         "MCE_IPV4_ADDRESS_FOR_M2C"
+#define ENB_CONFIG_STRING_MCE_PORT_FOR_M2C              "MCE_PORT_FOR_M2C"
+
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            S1/X2 interface configuration parameters                                                                 */
@@ -978,6 +1059,10 @@ typedef struct srb1_params_s {
 {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
+{ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_M2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_M2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
+{ENB_CONFIG_STRING_MCE_IPV4_ADDR_FOR_M2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_MCE_PORT_FOR_M2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
 }   
 
 
@@ -1156,4 +1241,6 @@ typedef struct srb1_params_s {
 
 #include "enb_paramdef_emtc.h"
 #include "enb_paramdef_sidelink.h"
+#include "enb_paramdef_mce.h"
+#include "enb_paramdef_mme.h"
 #endif

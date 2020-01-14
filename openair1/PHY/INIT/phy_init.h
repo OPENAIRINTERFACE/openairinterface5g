@@ -177,6 +177,18 @@ void phy_config_sib2_ue(module_id_t                          Mod_id,
                         LTE_AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
                         struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
 
+ /*!
+  \fn void phy_config_mbsfn_list_ue(module_id_t Mod_id,uint8_t CC_id
+      struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList)
+  \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of MBSFN config list from SIB2 (at UE).
+  @param Mod_id Instance id
+  @param CC_id
+  @param mbsfn_SubframeConfigList MBSFN subframe configuration
+ */
+void phy_config_mbsfn_list_ue(module_id_t                          Mod_id,
+                        int                                  CC_id,
+                        struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
+
 
 /*!
   \fn phy_config_afterHO_ue
@@ -375,6 +387,9 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 void phy_cleanup(void);
 
 void phy_config_request(PHY_Config_t *phy_config);
+void phy_config_update_sib2_request(PHY_Config_t *phy_config);
+void phy_config_update_sib13_request(PHY_Config_t *phy_config);
+
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);

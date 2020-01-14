@@ -200,6 +200,7 @@ typedef struct RrcConfigurationReq_s {
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
   int                     nb_antenna_ports[MAX_NUM_CCs];
   int                     eMBMS_configured;
+  int                     eMBMS_M2_configured;
   int                     eMTC_configured;
   int                     SL_configured;
 
@@ -280,6 +281,7 @@ typedef struct RrcConfigurationReq_s {
   long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_repetitionLevelCEmodeA_r13				   [MAX_NUM_CCs];
   long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
 #endif
   //SIB18

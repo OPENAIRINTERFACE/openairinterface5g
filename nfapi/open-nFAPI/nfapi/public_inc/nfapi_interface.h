@@ -704,6 +704,23 @@ typedef struct {
 #define NFAPI_PUCCH_CONFIG_N_AN_CS_TAG 0x003E
 #define NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG 0x003F
 
+typedef struct{
+       nfapi_uint8_tlv_t mbsfn_area_idx;
+       nfapi_uint16_tlv_t mbsfn_area_id_r9;
+} nfapi_embms_sib13_config_t;
+#define NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDX_TAG 0x0039
+#define NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDR9_TAG 0x0040
+
+typedef struct {
+       nfapi_tl_t tl;
+       uint16_t  num_mbsfn_config;
+       uint16_t  radioframe_allocation_period[8];
+       uint16_t  radioframe_allocation_offset[8];
+       uint8_t  fourframes_flag[8];
+       int32_t  mbsfn_subframeconfig[8];
+} nfapi_embms_mbsfn_config_t;
+#define NFAPI_EMBMS_MBSFN_CONFIG_TAG 0x0041
+
 typedef struct {
        nfapi_uint8_tlv_t radioframe_allocation_period;
        nfapi_uint8_tlv_t radioframe_allocation_offset;
@@ -1111,6 +1128,9 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+        // addition nfpai tlvs for embms MBSFN config //TOBE REVIEWED
+        nfapi_embms_sib13_config_t embms_sib13_config;
+        nfapi_embms_mbsfn_config_t embms_mbsfn_config;
 	nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
@@ -1133,6 +1153,9 @@ typedef struct {
 	nfapi_prach_config_t prach_config;
 	nfapi_pusch_config_t pusch_config;
 	nfapi_pucch_config_t pucch_config;
+        // addition nfpai tlvs for embms MBSFN config //TOBE REVIEWED
+        nfapi_embms_sib13_config_t embms_sib13_config;
+        nfapi_embms_mbsfn_config_t embms_mbsfn_config;
         nfapi_fembms_config_t fembms_config;
 	nfapi_srs_config_t srs_config;
 	nfapi_uplink_reference_signal_config_t uplink_reference_signal_config;
