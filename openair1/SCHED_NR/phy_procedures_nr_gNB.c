@@ -49,40 +49,6 @@
 #endif
 
 extern uint8_t nfapi_mode;
-/*
-int return_ssb_type(nfapi_config_request_t *cfg)
-{
-  int mu = cfg->subframe_config.numerology_index_mu.value;
-  nr_ssb_type_e ssb_type;
-
-  switch(mu) {
-
-  case NR_MU_0:
-    ssb_type = nr_ssb_type_A;
-    break;
-
-  case NR_MU_1:
-    ssb_type = nr_ssb_type_B;
-    break;
-
-  case NR_MU_3:
-    ssb_type = nr_ssb_type_D;
-    break;
-
-  case NR_MU_4:
-    ssb_type = nr_ssb_type_E;
-    break;
-
-  default:
-    AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
-  }
-
-  LOG_D(PHY, "SSB type %d\n", ssb_type);
-  return ssb_type;
-
-}*/
-
-
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
   fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + cfg->ssb_table.ssb_subcarrier_offset.value);
@@ -90,13 +56,17 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
+
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t ssb_index, n_hf;
-  int ssb_start_symbol, rel_slot;
+  uint16_t ssb_start_symbol, rel_slot;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-  uint16_t slots_per_hf = fp->slots_per_frame / 2;
+  uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
+
+  if (slot==0)
+    gNB->skipped_slots = 0;
 
   n_hf = fp->half_frame_bit;
 
@@ -108,41 +78,44 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
       n_hf=1;
   }
 
-  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
+  // to set a effective slot number in the half frame where the SSB is supposed to be
   rel_slot = (n_hf)? (slot-slots_per_hf) : slot; 
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
-  if(rel_slot<10 && rel_slot>=0)  {
-    for (int i=0; i<2; i++)  {  // max two SSB per frame
+  if ((slot==8) || (slot==9) || (slot==18) || (slot==19) || (slot==28) || (slot==29))
+    gNB->skipped_slots = gNB->skipped_slots + 1;
+  else {
+    if(rel_slot<slots_per_hf && rel_slot>=0)  {
+      for (int i=0; i<2; i++)  {  // max two SSB per frame
       
-      ssb_index = i + 2*rel_slot; // computing the ssb_index
-      if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+        ssb_index = i + ((rel_slot - gNB->skipped_slots)<<1); // computing the ssb_index
+        if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	
-        gNB->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = ssb_index;
-        fp->ssb_index = ssb_index;
-	int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
-	ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
+          fp->ssb_index = ssb_index;
+	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
+	  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 	
-	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
+	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
-	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+	  nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	  nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
-	if (cfg->carrier_config.num_tx_ant.value <= 4)
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	else
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+          if (cfg->carrier_config.num_tx_ant.value <= 4)
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+          else
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
-	nr_generate_pbch(&gNB->pbch,
-			 &gNB->ssb_pdu,
-			 gNB->nr_pbch_interleaver,
-			 &txdataF[0][txdataF_offset],
-			 AMP,
-			 ssb_start_symbol,
-			 n_hf,cfg->carrier_config.num_tx_ant.value,
-			 frame, cfg, fp);
+	  nr_generate_pbch(&gNB->pbch,
+	                   &gNB->ssb_pdu,
+			   gNB->nr_pbch_interleaver,
+			   &txdataF[0][txdataF_offset],
+			   AMP,
+			   ssb_start_symbol,
+			   n_hf,cfg->carrier_config.num_tx_ant.value,
+			   frame, cfg, fp);
+        }
       }
     }
   }
@@ -161,7 +134,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   
   
   if (cfg->ssb_table.ssb_period.value > 1) 
-    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ;  // 10ms is the frame length
+    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ; 
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;

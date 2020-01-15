@@ -242,7 +242,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   ///Payload generation
   memset((void *)pbch, 0, sizeof(NR_gNB_PBCH));
   pbch->pbch_a=0;
-  uint8_t ssb_index = ssb_pdu->ssb_pdu_rel15.SsbBlockIndex;
+  uint8_t ssb_index = frame_parms->ssb_index;
   uint8_t *pbch_pdu = (uint8_t*)&ssb_pdu->ssb_pdu_rel15.bchPayload;
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
     pbch->pbch_a |= ((pbch_pdu[i>>3]>>(7-(i&7)))&1)<<i;
