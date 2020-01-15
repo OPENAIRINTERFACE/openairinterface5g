@@ -126,7 +126,7 @@ DL-DCCH-MessageType ::= CHOICE {
 		loggedMeasurementConfiguration-r10		LoggedMeasurementConfiguration-r10,
 		rnReconfiguration-r10					RNReconfiguration-r10,
 		rrcConnectionResume-r13					RRCConnectionResume-r13,
-		spare4 NULL, spare3 NULL, spare2 NULL, spare1 NULL
+		spare3 NULL, spare2 NULL, spare1 NULL
 	},
 	messageClassExtension	SEQUENCE {}
 }
