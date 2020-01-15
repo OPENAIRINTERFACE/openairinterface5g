@@ -7,7 +7,9 @@
    4. [eNB PDCP Layer](#enb-pdcp-layer)
    5. [eNB RRC Layer](#enb-rrc-layer)
    6. [eNB X2AP](#enb-x2ap)
-   7. [eNB Advanced Features](#enb-advanced-features)
+   7. [eNB/MCE M2AP](#enbmce-m2ap)
+   8. [MCE/MME M3AP](#mcemme-m3ap)
+   9. [eNB Advanced Features](#enb-advanced-features)
 2. [OpenAirInterface Functional Split](#openairinterface-functional-split)
 3. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
    1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
@@ -141,6 +143,7 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - X2-U interface implemented
 
 ## eNB/MCE M2AP ##
+
 The M2AP layer is based on **3GPP 36.443** v14.0.1:
  - M2 Setup Request
  - M2 Setup Response 
@@ -151,6 +154,7 @@ The M2AP layer is based on **3GPP 36.443** v14.0.1:
  - M2 Session Start Response
 
 ## MCE/MME M3AP ##
+
 The M3AP layer is based on **3GPP 36.444** v14.0.1:
  - M3 Setup Request
  - M3 Setup Response 
