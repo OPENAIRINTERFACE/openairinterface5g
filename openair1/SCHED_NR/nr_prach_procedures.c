@@ -30,9 +30,9 @@
  * \warning
  */
 
-#include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nfapi_nr_interface_scf.h"
 #include "fapi_nr_l1.h"
 #include "nfapi_pnf.h"
@@ -71,12 +71,13 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int subframe) {
   for (i=0;i<gNB->num_RU;i++) {
     ru=gNB->RU_list[i];
     for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
-      gNB->prach_vars.rxsigF[0][aa] = gNB->RU_list[i]->prach_rxsigF[ru_aa];
+      gNB->prach_vars.rxsigF[aa] = gNB->RU_list[i]->prach_rxsigF[ru_aa];
     }
   }
 
   rx_nr_prach(gNB,
-	      0,
+	      frame,
+	      subframe,
 	      &max_preamble[0],
 	      &max_preamble_energy[0],
 	      &max_preamble_delay[0]

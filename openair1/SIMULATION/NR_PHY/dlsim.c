@@ -621,7 +621,7 @@ int main(int argc, char **argv)
 
 
    
-  nr_l2_init_ue();
+  nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
   
   UE->if_inst = nr_ue_if_module_init(0);
@@ -658,7 +658,7 @@ int main(int argc, char **argv)
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,scc,secondaryCellGroup->spCellConfig);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,secondaryCellGroup->spCellConfig);
 
 
   nr_dcireq_t dcireq;

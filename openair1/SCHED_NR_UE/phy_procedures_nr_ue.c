@@ -3273,7 +3273,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
     uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
-    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
+    //    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
     uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
     uint16_t pdsch_nb_rb =  dlsch0->harq_processes[harq_pid]->nb_rb;
     uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
