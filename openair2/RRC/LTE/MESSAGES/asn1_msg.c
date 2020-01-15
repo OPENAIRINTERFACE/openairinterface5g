@@ -872,7 +872,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   if (PLMN_identity_info == NULL)
     exit(1);
 
-  memset(&PLMN_identity_info,0,num_plmn * sizeof(LTE_PLMN_IdentityInfo_t));
+  memset(PLMN_identity_info,0,num_plmn * sizeof(LTE_PLMN_IdentityInfo_t));
   memset(&schedulingInfo,0,sizeof(LTE_SchedulingInfo_t));
   memset(&sib_type,0,sizeof(LTE_SIB_Type_t));
   if(configuration->eMBMS_M2_configured){
