@@ -509,7 +509,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       case LTE_DL_DCCH_MessageType__c1_PR_spare1:
       case LTE_DL_DCCH_MessageType__c1_PR_spare2:
       case LTE_DL_DCCH_MessageType__c1_PR_spare3:
-      case LTE_DL_DCCH_MessageType__c1_PR_spare4:
   	    break;
       case LTE_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
         LOG_I(F1AP, "Received ueInformationRequest_r9\n");

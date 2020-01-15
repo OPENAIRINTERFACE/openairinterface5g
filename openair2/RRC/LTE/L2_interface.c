@@ -301,6 +301,7 @@ mac_rrc_data_ind(
         return (-1);
       } 
       rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
+      ue_context_p->ue_context.Status = RRC_RECONFIGURED;
     }
   }
 
