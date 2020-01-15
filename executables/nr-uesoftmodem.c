@@ -111,6 +111,16 @@ static pthread_t forms_thread; //xforms
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+// Raphael : missing
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+uint16_t sf_ahead=6; //??? value ???
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
+
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
 volatile int             start_UE = 0;

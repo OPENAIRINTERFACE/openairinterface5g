@@ -33,10 +33,13 @@
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
 
 /* TODO: handle time a bit more properly */
+#if 0
 static uint64_t nr_rlc_current_time;
 static int      nr_rlc_current_time_last_frame;
 static int      nr_rlc_current_time_last_subframe;
+#endif
 
+#if 0
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
@@ -196,9 +199,11 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   ret.head_sdu_is_segmented = 0;
   return ret;
 }
+#endif
 
 int oai_emulation;
 
+#if 0
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const srb_flag_t   srb_flagP,
                                   const MBMS_flag_t  MBMS_flagP,
@@ -250,7 +255,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   return RLC_OP_STATUS_OK;
 }
+#endif
 
+#if 0
 int rlc_module_init(int enb_flag)
 {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -271,10 +278,13 @@ int rlc_module_init(int enb_flag)
 
   return 0;
 }
+#endif
 
+#if 0
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
 {
 }
+#endif
 
 static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
 {
@@ -745,6 +755,7 @@ static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
   }
 }
 
+#if 0
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const LTE_DRB_ToAddModList_t   * const drb2add_listP,
@@ -789,7 +800,9 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   return RLC_OP_STATUS_OK;
 }
+#endif
 
+#if 0
 rlc_op_status_t rrc_rlc_config_req   (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t      srb_flagP,
@@ -848,12 +861,16 @@ rlc_op_status_t rrc_rlc_config_req   (
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
   return RLC_OP_STATUS_OK;
 }
+#endif
 
+#if 0
 void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP)
 {
   /* nothing to do */
 }
+#endif
 
+#if 0
 rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 {
   LOG_D(RLC, "%s:%d:%s: remove UE %d\n", __FILE__, __LINE__, __FUNCTION__, x->rnti);
@@ -863,3 +880,4 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 
   return RLC_OP_STATUS_OK;
 }
+#endif

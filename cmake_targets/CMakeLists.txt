@@ -1722,6 +1722,7 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
+  ${LTE_RLC_SRC}
   )
 
 set (MAC_SRC
@@ -2612,6 +2613,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -2627,7 +2629,8 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
-  PHY_COMMON PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON NFAPI_USER_LIB S1AP_LIB S1AP_ENB
+  PHY_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON S1AP_LIB S1AP_ENB
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})

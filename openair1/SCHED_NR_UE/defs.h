@@ -292,7 +292,7 @@ int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance);
 void nr_process_timing_advance_rar(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint16_t timing_advance);
 
-unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
+unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
 
 void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 

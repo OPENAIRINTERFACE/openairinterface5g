@@ -2208,7 +2208,7 @@ void nr_ue_process_mac_pdu(
 //---------------------------------------------------------------------------------
 
 
-unsigned char *parse_header(unsigned char *mac_header,
+unsigned char *nr_parse_header(unsigned char *mac_header,
 			    unsigned char *num_ce,
 			    unsigned char *num_sdu,
 			    unsigned char *rx_ces,
@@ -2336,7 +2336,7 @@ nr_ue_send_sdu(module_id_t module_idP,
 
 
     payload_ptr =
-	parse_header(sdu, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths,
+	nr_parse_header(sdu, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths,
 		     sdu_len);
 
 #ifdef DEBUG_HEADER_PARSING

@@ -55,6 +55,9 @@
   extern char do_forms;
 #endif
 
+// Missing stuff?
+int next_ra_frame = 0;
+module_id_t next_Mod_id = 0;
 
 extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
@@ -844,4 +847,17 @@ void init_NR_UE(int nb_inst) {
 
   printf("UE threads created by %ld\n", gettid());
 }
+
+/* HACK: this function is needed to compile the UE
+ * fix it somehow
+ */
+int8_t find_dlsch(uint16_t rnti,
+                  PHY_VARS_eNB *eNB,
+                  find_type_t type)
+{
+  printf("you cannot read this\n");
+  abort();
+}
+
+void multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP) {}
 
