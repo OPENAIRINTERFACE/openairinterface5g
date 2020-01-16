@@ -273,7 +273,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   mac_rlc_status_resp_t rlc_status;
   nfapi_nr_config_request_t *cfg = &gNB_mac->config[0];
 
-  // TODO not sure why NR_MAX_NB_RB was used here
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
 
@@ -295,7 +294,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     ta_len = gNB_mac->ta_len;
 
     TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
-    //printf("TBS_bytes=%d (bytes)\n",TBS_bytes);
 
     //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
     //through the LTE stack
@@ -349,14 +347,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
             sdu_lcids[num_sdus] = lcid;
             sdu_length_total += sdu_lengths[num_sdus];
-
-	    /*
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]++;
-            UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
-            UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[num_sdus];
-	    */
-	    
             header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
             header_length_total += header_length_last;
 
@@ -369,17 +359,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         }
       }
 
-      // // last header does not have length field
-      // if (header_length_total) {
-      //   header_length_total -= header_length_last;
-      //   header_length_total++;
-      // }
-
     } //if (IS_SOFTMODEM_NOS1)
     else {
       //When the --NOS1 option is not enabled, DLSCH transmissions with random data
       //occur every time that the current function is called (dlsch phytest mode)
-
 
       // fill dlsch_buffer with random data
       for (i = 0; i < TBS_bytes; i++){
@@ -410,7 +393,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         post_padding = 0;
       }
 
-
       offset = nr_generate_dlsch_pdu(module_idP,
                                      (unsigned char *) mac_sdus,
                                      (unsigned char *) mac_pdu,
@@ -426,7 +408,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         for (int j = 0; j < (TBS_bytes - offset); j++)
           mac_pdu[offset + j] = 0;
       }
-
 
       //TX_req->segments[0].segment_length = 8;
       TX_req->segments[0].segment_length = TBS_bytes + 2;
@@ -454,12 +435,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         }
         #endif
       }
-      // Printing bit by bit for debugging purpose
-      /*for (int k = 0; k < TBS; k++){
-        printf("MAC PDU %u\n",((( mac_payload[k/8]) & (1 << (k & 7))) >> (k & 7)));
-        if ((k+1)%8 == 0)
-          printf("\n");
-      }*/
     }
     else {  // There is no data from RLC or MAC header, so don't schedule
     }
