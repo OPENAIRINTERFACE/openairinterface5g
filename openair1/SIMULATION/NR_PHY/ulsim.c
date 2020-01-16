@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
-  int start_symbol = NR_SYMBOLS_PER_SLOT - nb_symb_sch;
+  int start_symbol = 0;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -441,17 +441,6 @@ int main(int argc, char **argv)
   }
 
   unsigned char harq_pid = 0;
-  unsigned int TBS;
-  unsigned int available_bits;
-  uint8_t nb_re_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1?6:4);
-  uint8_t length_dmrs = 1;
-  unsigned char mod_order;
-  uint16_t code_rate;
-
-  mod_order      = nr_get_Qm_ul(Imcs, 0);
-  code_rate      = nr_get_code_rate_ul(Imcs, 0);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
@@ -459,7 +448,7 @@ int main(int argc, char **argv)
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
-  
+
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
   uint32_t errors_decoding   = 0;
@@ -471,7 +460,33 @@ int main(int argc, char **argv)
 
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
-  
+
+  unsigned int TBS;
+  uint16_t number_dmrs_symbols = 0;
+  unsigned int available_bits;
+  uint8_t nb_re_dmrs;
+  uint8_t length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+  unsigned char mod_order;
+  uint16_t code_rate;
+
+  for (i = start_symbol; i < nb_symb_sch; i++)
+      number_dmrs_symbols += is_dmrs_symbol(i,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            nb_symb_sch,
+                                            &UE->dmrs_UplinkConfig,
+                                            UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
+                                            frame_parms->ofdm_symbol_size);
+
+  mod_order      = nr_get_Qm_ul(Imcs, 0);
+  nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
+  code_rate      = nr_get_code_rate_ul(Imcs, 0);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
+
   printf("\n");
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -493,7 +508,6 @@ int main(int argc, char **argv)
       rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
       rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
       rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = nb_re_dmrs;
       rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
       rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
       rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
@@ -515,8 +529,8 @@ int main(int argc, char **argv)
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
       pusch_pdu->mcs_table = 0; 
-      pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table); 
-      pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
+      pusch_pdu->target_code_rate = code_rate;
+      pusch_pdu->qam_mod_order = mod_order;
       pusch_pdu->transform_precoding = 0;
       pusch_pdu->data_scrambling_id = 0;
       pusch_pdu->nrOfLayers = 1;
@@ -535,13 +549,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.rv_index = 0;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
-      pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
-						     pusch_pdu->target_code_rate,
-						     pusch_pdu->rb_size,
-						     pusch_pdu->nr_of_symbols,
-						     nb_re_dmrs*length_dmrs,
-						     0,
-						     pusch_pdu->nrOfLayers = 1);
+      pusch_pdu->pusch_data.tb_size = TBS;
       pusch_pdu->pusch_data.num_cb = 0;
 
 
@@ -669,7 +677,7 @@ int main(int argc, char **argv)
         break;
     } // frame loop
 
-    if(is_frame_in_error == 0 || number_of_frames==1)
+    if(is_frame_in_error == 0)
       break;
   } // SNR loop
 

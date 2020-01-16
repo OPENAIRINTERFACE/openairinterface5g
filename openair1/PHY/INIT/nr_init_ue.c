@@ -702,7 +702,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   for (i=0; i<MAX_NR_OF_UL_ALLOCATIONS; i++) {
     ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeA;
+    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
   }
 
   //------------- config DMRS parameters--------------//

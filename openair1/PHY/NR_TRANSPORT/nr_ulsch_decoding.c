@@ -279,6 +279,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            NR_DL_FRAME_PARMS *frame_parms,
                            uint32_t frame,
                            uint16_t nb_symb_sch,
+                           uint16_t nb_re_dmrs,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
                            uint8_t is_crnti)
@@ -324,7 +325,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint16_t R               = nfapi_ulsch_pdu_rel15->R;
   uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
   uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
-  uint8_t nb_re_dmrs      = nfapi_ulsch_pdu_rel15->nb_re_dmrs;
   uint8_t length_dmrs     = nfapi_ulsch_pdu_rel15->length_dmrs;
   // ------------------------------------------------------------------
 
@@ -352,7 +352,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d, nb_re_dmrs %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb, nb_re_dmrs, Qm, n_layers);
 
   if (harq_process->round == 0) {
 
