@@ -245,52 +245,26 @@ void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
     const uint8_t rbs_retx[NFAPI_CC_MAX]);
 
 void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
-    int slice_idx,
-    frame_t frameP,
-    sub_frame_t subframeP,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+                                              int slice_idx,
+                                              frame_t frameP,
+                                              sub_frame_t subframeP,
+                                              uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                              uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
-    int slice_idx,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
-    int slice_idx,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES]);
-
-void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
-    int frameP,
-    sub_frame_t subframeP,
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id,
-                                      int frameP,
-                                      sub_frame_t subframeP);
+                                               int slice_idx,
+                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
-    int UE_id,
-    uint8_t CC_id,
-    int N_RBG,
-    int min_rb_unit,
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+                                            int UE_id,
+                                            uint8_t CC_id,
+                                            int N_RBG,
+                                            uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                            uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                            uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f.
@@ -715,10 +689,10 @@ int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid, uint8_t
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
 void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
-void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
+void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
 
-void swap_UEs(UE_list_t *listP, int nodeiP, int nodejP, int ul_flag);
 int prev(UE_list_t *listP, int nodeP, int ul_flag);
+void add_ue_list(UE_list_t *listP, int UE_id, int ul_flag);
 void dump_ue_list(UE_list_t *listP, int ul_flag);
 int UE_num_active_CC(UE_list_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
@@ -745,7 +719,6 @@ void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
                      UE_TEMPLATE *UE_template);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
-void sort_UEs(module_id_t Mod_idP, int slice_idx, int frameP, sub_frame_t subframeP);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.

@@ -738,9 +738,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint16_t                temp_total_rbs_count;
   unsigned char           temp_total_ue_count;
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
-  uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i;
-  uint16_t                j,c;
+  uint16_t                j;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
   uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
   //  uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
@@ -795,8 +794,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   // Store the DLSCH buffer for each logical channel
   store_dlsch_buffer(Mod_id,0, frameP, subframeP);
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-  assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required,
-                      min_rb_unit);
+  assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required);
 #else
   memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*MAX_MOBILES_PER_ENB);
 #endif
@@ -856,23 +854,14 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
         nb_rbs_required_remaining[CC_id][UE_id] = cmin(average_rbs_per_user[CC_id], dlsch_ue_select[CC_id].list[i].nb_rb);
       }
 
-      /* slicing support has been introduced into the scheduler. Provide dummy
-       * data so that the preprocessor "simply works" */
-      for (c = 0; c < MAX_NUM_CCs; ++c)
-        for (j = 0; j < N_RBG_MAX; ++j)
-          slice_allocation[c][j] = 1;
-
       LOG_T(MAC,"calling dlsch_scheduler_pre_processor_allocate .. \n ");
       dlsch_scheduler_pre_processor_allocate (Mod_id,
                                               UE_id,
                                               CC_id,
                                               N_RBG[CC_id],
-                                              min_rb_unit[CC_id],
-                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
-                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required_remaining,
-                                              rballoc_sub,
-                                              slice_allocation,
-                                              MIMO_mode_indicator);
+                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
+                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+                                              rballoc_sub);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;
 

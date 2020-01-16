@@ -50,12 +50,10 @@ void init_UE_list(UE_list_t *UE_list)
   UE_list->head = -1;
   UE_list->head_ul = -1;
   UE_list->avail = 0;
-  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-    UE_list->next[list_el] = list_el + 1;
-    UE_list->next_ul[list_el] = list_el + 1;
+  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB; list_el++) {
+    UE_list->next[list_el] = -1;
+    UE_list->next_ul[list_el] = -1;
   }
-  UE_list->next[list_el] = -1;
-  UE_list->next_ul[list_el] = -1;
   memset(UE_list->DLSCH_pdu, 0, sizeof(UE_list->DLSCH_pdu));
   memset(UE_list->UE_template, 0, sizeof(UE_list->UE_template));
   memset(UE_list->eNB_UE_stats, 0, sizeof(UE_list->eNB_UE_stats));
