@@ -191,7 +191,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       break;
 
     case NR_MU_3:
-      switch(N_RB_DL){
+      switch(fp->N_RB_DL){
         case 66:
           fp->ofdm_symbol_size = 1024;
           fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
