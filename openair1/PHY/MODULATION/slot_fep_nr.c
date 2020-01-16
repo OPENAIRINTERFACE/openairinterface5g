@@ -117,8 +117,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     return(-1);
     }*/
 
-  if (Ns<0 || Ns>=20) {
-    printf("slot_fep: Ns must be between 0 and 19\n");
+  if (Ns<0 || Ns>=(frame_parms->slots_per_frame-1)) {
+    printf("slot_fep: Ns must be between 0 and %d\n",frame_parms->slots_per_frame-1);
     return(-1);
   }
 

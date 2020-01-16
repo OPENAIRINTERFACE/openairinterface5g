@@ -191,9 +191,16 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       break;
 
     case NR_MU_3:
-      fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
-      fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
-      fp->ssb_type = nr_ssb_type_D;
+      switch(N_RB_DL){
+        case 66:
+          fp->ofdm_symbol_size = 1024;
+          fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
+          fp->nb_prefix_samples0 = 88;
+          fp->nb_prefix_samples = 72;
+          fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
+          fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
+          fp->ssb_type = nr_ssb_type_D;
+      }
       break;
 
     case NR_MU_4:

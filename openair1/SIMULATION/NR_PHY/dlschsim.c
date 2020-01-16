@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint16_t N_RB_DL = 106, mu = 1;
+	uint16_t N_RB_DL = 106, mu = 1; 
 	//unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
 	int frame = 0, slot = 0;

@@ -64,7 +64,8 @@ nr_bandentry_t nr_bandtable[] = {
   {82,  832000,  862000,     000,     000, 20, 166400},
   {83,  703000,  748000,     000,     000, 20, 140600},
   {84, 1920000, 1980000,     000,     000, 20, 384000},
-  {86, 1710000, 1785000,     000,     000, 20, 342000}
+  {86, 1710000, 1785000,     000,     000, 20, 342000},
+  {257, 26500000, 29500000,26500000,29500000, 1, 2054167}
 };
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
@@ -234,8 +235,8 @@ uint32_t to_nrarfcn(int nr_bandP,
   int i;
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
-  AssertFatal(nr_bandP < 86, "nr_band %d > 86\n", nr_bandP);
-  for (i = 0; i < 30 && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(nr_bandP < 258, "nr_band %d > 257\n", nr_bandP);
+  for (i = 0; i < 33 && nr_bandtable[i].band != nr_bandP; i++);
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
@@ -267,8 +268,8 @@ uint64_t from_nrarfcn(int nr_bandP,
   if (nr_bandP < 77 || nr_bandP > 79) deltaFglobal = 5;
   else                                deltaFglobal = 15;
   
-  AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
-  for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(nr_bandP < 258, "nr_band %d > 257\n", nr_bandP);
+  for (i = 0; i < 33 && nr_bandtable[i].band != nr_bandP; i++);
   AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
  
   LOG_I(PHY,"Computing dl_frequency (pointA %llu => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %llu))\n",

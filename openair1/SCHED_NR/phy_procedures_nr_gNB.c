@@ -86,7 +86,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   if ((slot==8) || (slot==9) || (slot==18) || (slot==19) || (slot==28) || (slot==29))
     gNB->skipped_slots = gNB->skipped_slots + 1;
   else {
-    if(rel_slot<slots_per_hf && rel_slot>=0)  {
+    if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
       for (int i=0; i<2; i++)  {  // max two SSB per frame
       
         ssb_index = i + ((rel_slot - gNB->skipped_slots)<<1); // computing the ssb_index
@@ -95,7 +95,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
           fp->ssb_index = ssb_index;
 	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
 	  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
-	
+
 	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
 	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
@@ -294,6 +294,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
     case 106: timing_advance_update /= 16; break;
     case 217: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
+    case 66: timing_advance_update /= 12; break;
     default: abort();
   }
 

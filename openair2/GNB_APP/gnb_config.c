@@ -79,7 +79,7 @@
 
 extern uint16_t sf_ahead;
 
-extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
+extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
 void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
@@ -645,7 +645,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	
         // Parse optional physical parameters
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
-
 
         printf("SSB SCO %d\n",ssb_SubcarrierOffset);
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;

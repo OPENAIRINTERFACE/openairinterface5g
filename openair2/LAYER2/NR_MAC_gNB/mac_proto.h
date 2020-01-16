@@ -42,6 +42,7 @@ void config_common(int Mod_idP,
                    int pdsch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,

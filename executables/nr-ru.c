@@ -1098,6 +1098,13 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
+  } else if (mu == NR_MU_3) {
+    if (N_RB == 66) {
+      cfg->sample_rate = 122.88e6;
+      cfg->samples_per_frame = 1228800;
+      cfg->tx_bw = 100e6;
+      cfg->rx_bw = 100e6;
+    }
   } else {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
   }

@@ -128,7 +128,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 */
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
 

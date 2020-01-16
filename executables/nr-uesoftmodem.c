@@ -122,7 +122,7 @@ static double            snr_dB=20;
 
 int                      threequarter_fs=0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
@@ -518,7 +518,15 @@ void init_openair0(void) {
     openair0_cfg[card].configFilename = NULL;
     openair0_cfg[card].threequarter_fs = frame_parms[0]->threequarter_fs;
 
-    if(frame_parms[0]->N_RB_DL == 217) {
+    if(frame_parms[0]->N_RB_DL == 66) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=122.88e6;
+          openair0_cfg[card].samples_per_frame = 1228800;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
+    }else if(frame_parms[0]->N_RB_DL == 217) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=92.16e6;

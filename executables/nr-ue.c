@@ -170,7 +170,6 @@ static void UE_synch(void *arg) {
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu64", UL %"PRIu64" (oai_exit %d, rx_num_channels %d)\n",
            UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,
            oai_exit, openair0_cfg[0].rx_num_channels);
@@ -291,6 +290,12 @@ static void UE_synch(void *arg) {
             openair0_cfg[UE->rf_map.card].rx_bw=10.0e6;
             openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
             //            openair0_cfg[0].rx_gain[0] -= 0;
+            break;
+
+          case 66:
+            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
+            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
+            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
             break;
         }
 
@@ -610,7 +615,6 @@ void *UE_thread(void *arg) {
   openair0_timestamp timestamp;
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
-  const uint16_t table_sf_slot[20] = {0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9};
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -696,7 +700,7 @@ void *UE_thread(void *arg) {
     curMsg->UE->current_thread_id[slot_nr] = thread_idx;
     curMsg->proc.CC_id = 0;
     curMsg->proc.nr_tti_rx= slot_nr;
-    curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
+    curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
     curMsg->proc.frame_rx = ((absolute_slot/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
