@@ -92,12 +92,12 @@ void feptx0(RU_t *ru,
                    CYCLIC_PREFIX);
     } else {
       if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
-        if (slot == 0) {//just use one slot chance
-          normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+        if ((slot&1) == 0) {//just use one slot chance
+          normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
                             (int*)&ru->common.txdata[aa][slot_offset],
                             2,
                             fp);
-          PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF+fp->ofdm_symbol_size*2],
+          PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF+fp->ofdm_symbol_size*2],
                        (int*)&ru->common.txdata[aa][slot_offset+((fp->ofdm_symbol_size>>2)*2+fp->ofdm_symbol_size*2)],
                        fp->ofdm_symbol_size,
                        10,
