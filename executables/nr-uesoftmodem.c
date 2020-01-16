@@ -27,6 +27,7 @@
 #include "assertions.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 //#include "common/utils/threadPool/thread-pool.h"
@@ -216,6 +217,10 @@ int oaisim_flag=0;
 int emulate_rf = 0;
 
 tpool_t *Tpool;
+#ifdef UE_DLSCH_PARALLELISATION
+tpool_t *Tpool_dl;
+#endif
+
 
 char *usrp_args=NULL;
 
@@ -684,6 +689,12 @@ int main( int argc, char **argv ) {
   Tpool = &pool;
   char params[]="-1,-1"; 
   initTpool(params, Tpool, false);
+#ifdef UE_DLSCH_PARALLELISATION
+  tpool_t pool_dl;
+  Tpool_dl = &pool_dl;
+  char params_dl[]="-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1"; 
+  initTpool(params_dl, Tpool_dl, false);
+#endif
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
