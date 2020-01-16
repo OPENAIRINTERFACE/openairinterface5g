@@ -997,8 +997,6 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   }
 }
 
-#define SF0_LIMIT 1
-
 void
 dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
                                     int slice_idx,
@@ -1016,9 +1014,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
   UE_sched_ctrl_t *ue_sched_ctl;
   int N_RB_DL, RBGsize, RBGsize_last;
   int N_RBG[NFAPI_CC_MAX];
-#ifdef SF0_LIMIT
-  int sf0_lower, sf0_upper;
-#endif
   rnti_t rnti;
   uint8_t *vrb_map;
   COMMON_channels_t *cc;
@@ -1120,39 +1115,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
     }
 
     N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
-#ifdef SF0_LIMIT
-
-    switch (N_RBG[CC_id]) {
-      case 6:
-        sf0_lower = 0;
-        sf0_upper = 5;
-        break;
-
-      case 8:
-        sf0_lower = 2;
-        sf0_upper = 5;
-        break;
-
-      case 13:
-        sf0_lower = 4;
-        sf0_upper = 7;
-        break;
-
-      case 17:
-        sf0_lower = 7;
-        sf0_upper = 9;
-        break;
-
-      case 25:
-        sf0_lower = 11;
-        sf0_upper = 13;
-        break;
-
-      default:
-        AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
-    }
-
-#endif
 
     switch (N_RB_DL) {
       case 6:
@@ -1194,17 +1156,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
     // Initialize Subbands according to VRB map
     for (i = 0; i < N_RBG[CC_id]; i++) {
       int rb_size = i == N_RBG[CC_id] - 1 ? RBGsize_last : RBGsize;
-#ifdef SF0_LIMIT
-
-      // for avoiding 6+ PRBs around DC in subframe 0 (avoid excessive errors)
-      /* TODO: make it proper - allocate those RBs, do not "protect" them, but
-        * compute number of available REs and limit MCS according to the
-        * TBS table 36.213 7.1.7.2.1-1 (can be done after pre-processor)
-        */
-      if (subframeP == 0 && i >= sf0_lower && i <= sf0_upper)
-        rballoc_sub[CC_id][i] = 1;
-
-#endif
 
       // for SI-RNTI,RA-RNTI and P-RNTI allocations
       for (j = 0; j < rb_size; j++) {
