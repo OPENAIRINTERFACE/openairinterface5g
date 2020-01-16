@@ -460,10 +460,10 @@ function report_test {
                     echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
                     echo "        <td>N/A</td>" >> ./test_simulator_results.html
                     NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
-                    NB_ENB_TUNNEL_UP=`egrep -c "Interface oaitun_enb1 successfuly configured" $ENB_LOG`
+                    NB_ENB_TUNNEL_UP=`egrep -c "Interface oaitun_enb1 successfully configured" $ENB_LOG`
                     NB_UE_GOT_SYNC=`egrep -c "rfsimulator: Success" $UE_LOG`
                     NB_ENB_SYNCED_WITH_UE=`egrep -c "Initial sync: starting PBCH detection" $UE_LOG`
-                    NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfuly configured" $UE_LOG`
+                    NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfully configured" $UE_LOG`
                     if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
