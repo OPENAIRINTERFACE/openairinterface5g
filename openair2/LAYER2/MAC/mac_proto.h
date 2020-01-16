@@ -156,8 +156,11 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 void schedule_dlsch(module_id_t module_idP, frame_t frameP,
                     sub_frame_t subframe, int *mbsfn_flag);
 
-void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
-                      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
+void schedule_ue_spec(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      int *mbsfn_flag);
 void schedule_ue_spec_br(module_id_t   module_idP,
                          frame_t       frameP,
                          sub_frame_t   subframeP);
