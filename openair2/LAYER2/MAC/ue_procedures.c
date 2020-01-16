@@ -2035,9 +2035,9 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         if (sdu_lengths[num_sdus]) {
           sdu_length_total += sdu_lengths[num_sdus];
           sdu_lcids[num_sdus] = lcid;
-          LOG_I(MAC,
-                "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
-                module_idP, sdu_lengths[num_sdus], lcid);
+          //LOG_I(MAC,
+          //      "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
+          //      module_idP, sdu_lengths[num_sdus], lcid);
 
           if (buflen ==
               (bsr_len + phr_len + total_rlc_pdu_header_len +

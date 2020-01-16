@@ -922,7 +922,8 @@ class SSHConnection():
 
 		if enbDidSync and eNBinNoS1:
 			self.command('ifconfig oaitun_enb1', '\$', 4)
-			result = re.search('inet addr', str(self.ssh.before))
+			self.command('ifconfig oaitun_enb1', '\$', 4)
+			result = re.search('inet addr:1|inet 1', str(self.ssh.before))
 			if result is not None:
 				logging.debug('\u001B[1m oaitun_enb1 interface is mounted and configured\u001B[0m')
 			else:
@@ -1125,6 +1126,7 @@ class SSHConnection():
 		if fullSyncStatus and gotSyncStatus and self.air_interface == 'lte':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			if result is None:
+				self.command('ifconfig oaitun_ue1', '\$', 4)
 				self.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
 				result = re.search('inet addr:1|inet 1', str(self.ssh.before))
@@ -3319,6 +3321,9 @@ class SSHConnection():
 		uciStatMsgCount = 0
 		pdcpDataReqFailedCount = 0
 		badDciCount = 0
+		f1aRetransmissionCount = 0
+		fatalErrorCount = 0
+		macBsrTimerExpiredCount = 0
 		rrcConnectionRecfgComplete = 0
 		no_cell_sync_found = False
 		mib_found = False
@@ -3371,9 +3376,18 @@ class SSHConnection():
 			result = re.search('PDCP data request failed', str(line))
 			if result is not None and not exitSignalReceived:
 				pdcpDataReqFailedCount += 1
-			result = re.search('bad DCI 1A', str(line))
+			result = re.search('bad DCI 1', str(line))
 			if result is not None and not exitSignalReceived:
 				badDciCount += 1
+			result = re.search('Format1A Retransmission but TBS are different', str(line))
+			if result is not None and not exitSignalReceived:
+				f1aRetransmissionCount += 1
+			result = re.search('FATAL ERROR', str(line))
+			if result is not None and not exitSignalReceived:
+				fatalErrorCount += 1
+			result = re.search('MAC BSR Triggered ReTxBSR Timer expiry', str(line))
+			if result is not None and not exitSignalReceived:
+				macBsrTimerExpiredCount += 1
 			result = re.search('Generating RRCConnectionReconfigurationComplete', str(line))
 			if result is not None:
 				rrcConnectionRecfgComplete += 1
@@ -3492,7 +3506,19 @@ class SSHConnection():
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if badDciCount > 0:
-			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1A" message(s)'
+			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1(A)" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if f1aRetransmissionCount > 0:
+			statMsg = 'UE showed ' + str(f1aRetransmissionCount) + ' "Format1A Retransmission but TBS are different" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if fatalErrorCount > 0:
+			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "FATAL ERROR:" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if macBsrTimerExpiredCount > 0:
+			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if self.eNBmbmsEnables[0]:
