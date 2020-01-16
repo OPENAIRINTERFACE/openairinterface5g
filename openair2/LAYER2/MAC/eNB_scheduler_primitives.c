@@ -2776,19 +2776,21 @@ get_min_rb_unit(module_id_t module_id,
   int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
-    case 6:     // 1.4 MHz
+    case 6:       // 1.4MHz
       min_rb_unit = 1;
       break;
 
-    case 25:      // 5HMz
+    case 15:      // 3MHz
+    case 25:      // 5MHz
       min_rb_unit = 2;
       break;
 
-    case 50:      // 10HMz
+    case 50:      // 10MHz
       min_rb_unit = 3;
       break;
 
-    case 100:     // 20HMz
+    case 75:      // 15MHz
+    case 100:     // 20MHz
       min_rb_unit = 4;
       break;
 
