@@ -1673,7 +1673,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 }
 
 
-int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
 		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_sgnb_addition_req_ACK, int ue_id)
 {
         
@@ -1790,5 +1790,65 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 	    x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
 		return ret;
+
+}
+
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id, int SgNB_ue_id)
+{
+	X2AP_X2AP_PDU_t                     	 pdu;
+	X2AP_SgNBReconfigurationComplete_t               *out;
+	X2AP_SgNBReconfigurationComplete_IEs_t           *ie;
+
+	uint8_t  *buffer;
+	uint32_t  len;
+	int       ret = 0;
+
+	DevAssert(instance_p != NULL);
+	DevAssert(x2ap_eNB_data_p != NULL);
+
+	x2ap_eNB_data_p->state = X2AP_ENB_STATE_WAITING;
+
+
+	/* Prepare the X2AP message to encode */
+	memset(&pdu, 0, sizeof(pdu));
+	pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+	pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_sgNBReconfigurationCompletion;
+	pdu.choice.initiatingMessage.criticality = X2AP_Criticality_ignore;
+	pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_SgNBReconfigurationComplete;
+	out = &pdu.choice.initiatingMessage.value.choice.SgNBReconfigurationComplete;
+
+	ie = (X2AP_SgNBReconfigurationComplete_IEs_t *)calloc(1, sizeof(X2AP_SgNBReconfigurationComplete_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID;
+	ie->criticality= X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBReconfigurationComplete_IEs__value_PR_UE_X2AP_ID;
+	ie->value.choice.UE_X2AP_ID = ue_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBReconfigurationComplete_IEs_t *)calloc(1, sizeof(X2AP_SgNBReconfigurationComplete_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID;
+	ie->criticality = X2AP_Criticality_reject;
+	ie->value.present = X2AP_SgNBReconfigurationComplete_IEs__value_PR_SgNB_UE_X2AP_ID;
+	ie->value.choice.SgNB_UE_X2AP_ID = SgNB_ue_id;
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+	ie = (X2AP_SgNBReconfigurationComplete_IEs_t *)calloc(1, sizeof(X2AP_SgNBReconfigurationComplete_IEs_t));
+	ie->id = X2AP_ProtocolIE_ID_id_ResponseInformationSgNBReconfComp;
+	ie->criticality = X2AP_Criticality_ignore;
+	ie->value.present = X2AP_SgNBReconfigurationComplete_IEs__value_PR_ResponseInformationSgNBReconfComp;
+	ie->value.choice.ResponseInformationSgNBReconfComp.present = X2AP_ResponseInformationSgNBReconfComp_PR_success_SgNBReconfComp;
+	// meNBtoSgNBContainer should contain the RRCReconfigurationComplete message from the UE but in the specs 36.423(9.1.4.4) its presence is not mandatory
+	ie->value.choice.ResponseInformationSgNBReconfComp.choice.success_SgNBReconfComp.meNBtoSgNBContainer = NULL;
+	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+    if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+        X2AP_ERROR("Failed to encode ENDC X2 SgNB_addition request message\n");
+        return -1;
+    }
+
+    x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
+
+	return ret;
 
 }

@@ -121,7 +121,7 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
                                           X2AP_X2AP_PDU_t *pdu);
 
 static
-int x2ap_gNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
                                           uint32_t assoc_id,
                                           uint32_t stream,
                                           X2AP_X2AP_PDU_t *pdu);
@@ -156,7 +156,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* seNBinitiatedSeNBRelease */
   { 0, 0, 0 }, /* seNBCounterCheck */
   { 0, 0, 0 },  /* retrieveUEContext */
-  { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_gNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
+  { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_eNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
@@ -1477,7 +1477,7 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
   DevAssert(instance_p != NULL);
 
   x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
-  return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0);
+  return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0); // Not the right place to call the X2 function. Used only initially for testing.
 
 }
 
@@ -1782,7 +1782,7 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
 
 
 static
-int x2ap_gNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
                                           uint32_t assoc_id,
                                           uint32_t stream,
                                           X2AP_X2AP_PDU_t *pdu)
@@ -1900,6 +1900,8 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = ie->value.choice.SgNBtoMeNBContainer.size;
 
 	  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+	  x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(instance_p, x2ap_eNB_data,0,0); // Not the right place to call the X2 function. Used only initially for testing.
 
 	  return 0;
 
