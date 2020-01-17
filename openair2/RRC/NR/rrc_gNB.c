@@ -449,6 +449,10 @@ void *rrc_gnb_task(void *args_p) {
     	rrc_gNB_process_AdditionRequestInformation(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ(msg_p));
     	break;
 
+      case X2AP_ENDC_SGNB_RECONF_COMPLETE:
+    	  LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+    	  break;
+
 
       default:
         LOG_E(NR_RRC, "[gNB %d] Received unexpected message %s\n", instance, msg_name_p);

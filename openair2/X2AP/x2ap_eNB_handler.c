@@ -126,6 +126,12 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
                                           uint32_t stream,
                                           X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
+
 
 /* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
@@ -157,7 +163,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* seNBCounterCheck */
   { 0, 0, 0 },  /* retrieveUEContext */
   { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_eNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
-  { 0, 0, 0 },
+  { x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete, 0, 0 }, /*X2AP_ProcedureCode_id_sgNBReconfigurationCompletion*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
@@ -1905,6 +1911,84 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 
 	  return 0;
 
+}
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu) {
+
+	X2AP_SgNBReconfigurationComplete_t               *x2SgNBReconfigurationComplete;
+	X2AP_SgNBReconfigurationComplete_IEs_t           *ie;
+
+	x2ap_eNB_instance_t                *instance_p;
+	x2ap_eNB_data_t                    *x2ap_eNB_data;
+	MessageDef                         *msg;
+	int                                ue_id;
+
+		  DevAssert (pdu != NULL);
+		  x2SgNBReconfigurationComplete = &pdu->choice.initiatingMessage.value.choice.SgNBReconfigurationComplete;
+
+		  /*if (stream == 0) {
+		    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+		    // TODO: send a x2 failure response
+		    return 0;
+		  }*/
+
+		  X2AP_DEBUG ("Received X2 SgNB Reconfiguration complete message\n");
+
+		  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+		  DevAssert(x2ap_eNB_data != NULL);
+
+		  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
+
+		  instance_p = x2ap_eNB_get_instance(instance);
+		  DevAssert(instance_p != NULL);
+
+		  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+		  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RECONF_COMPLETE);
+
+		  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+		  if (ie == NULL ) {
+		    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		    return -1;
+		  }
+
+		  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).MeNB_ue_x2_id = ie->value.choice.UE_X2AP_ID;
+
+
+		  /* X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID */
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID, true);
+		  if (ie == NULL ) {
+			  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+			  return -1;
+		  }
+
+		  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).SgNB_ue_x2_id = ie->value.choice.SgNB_UE_X2AP_ID;
+
+
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_ResponseInformationSgNBReconfComp, true);
+		  if (ie == NULL ) {
+			  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+			  return -1;
+		  }
+
+		  if(ie->value.choice.ResponseInformationSgNBReconfComp.present == X2AP_ResponseInformationSgNBReconfComp_PR_success_SgNBReconfComp){
+			  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).reconf_response = X2AP_RECONF_RESPONSE_SUCCESS;
+		  }
+		  else {
+			  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).reconf_response = X2AP_RECONF_RESPONSE_REJECT;
+		  }
+
+		  itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
+
+
+	return 0;
 }
 
 

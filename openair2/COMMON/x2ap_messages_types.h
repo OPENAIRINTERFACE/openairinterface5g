@@ -40,6 +40,7 @@
 #define X2AP_SENB_ADDITION_REQ(mSGpTR)              	(mSGpTR)->ittiMsg.x2ap_senb_addition_req
 #define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)         	(mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
 #define X2AP_ENDC_SGNB_ADDITION_REQ_ACK(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req_ACK
+#define X2AP_ENDC_SGNB_RECONF_COMPLETE(mSGpTR)          (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_reconf_complete
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
@@ -67,6 +68,13 @@ typedef enum {
   X2AP_T_RELOC_PREP_TIMEOUT,
   X2AP_TX2_RELOC_OVERALL_TIMEOUT
 } x2ap_handover_cancel_cause_t;
+
+typedef enum {
+	X2AP_RECONF_RESPONSE_SUCCESS,
+	X2AP_RECONF_RESPONSE_REJECT
+	/* Extensions may appear below */
+
+} x2ap_sgNB_reconf_response_information_t;
 
 typedef struct x2ap_handover_cancel_s {
   int rnti;
@@ -373,6 +381,18 @@ typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
 
 
 } x2ap_ENDC_sgnb_addition_req_ACK_t;
+
+typedef struct x2ap_ENDC_reconf_complete_s {
+  int MeNB_ue_x2_id;
+
+  int SgNB_ue_x2_id;
+
+  x2ap_sgNB_reconf_response_information_t reconf_response;
+
+  uint8_t rrc_buffer[4096 /* arbitrary, big enough */];
+  int rrc_buffer_size;
+
+} x2ap_ENDC_reconf_complete_t;
 
 
 #endif /* X2AP_MESSAGES_TYPES_H_ */

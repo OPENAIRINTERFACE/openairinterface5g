@@ -65,6 +65,9 @@ static int x2ap_eNB_decode_initiating_message(X2AP_X2AP_PDU_t *pdu)
     case X2AP_ProcedureCode_id_sgNBAdditionPreparation:
     	X2AP_INFO("X2AP_ProcedureCode_id_sgNBAdditionPreparation message!\n");
     break;
+    case X2AP_ProcedureCode_id_sgNBReconfigurationCompletion:
+        	X2AP_INFO("X2AP_ProcedureCode_id_sgNBReconfigurationCompletion message!\n");
+        break;
 
     default:
       X2AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
