@@ -2815,11 +2815,14 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   LTE_MAC_MainConfig_t                   *mac_MainConfig                   = NULL;
   LTE_MeasObjectToAddModList_t           *MeasObj_list                     = NULL;
   LTE_MeasObjectToAddMod_t               *MeasObj                          = NULL;
+  LTE_MeasObjectToAddMod_t               *MeasObj2                         = NULL;
   LTE_ReportConfigToAddModList_t         *ReportConfig_list                = NULL;
   LTE_ReportConfigToAddMod_t             *ReportConfig_per, *ReportConfig_A1,
                                          *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
+  LTE_ReportConfigToAddMod_t             *ReportConfig_NR                  = NULL;
   LTE_MeasIdToAddModList_t               *MeasId_list                      = NULL;
   LTE_MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
+  LTE_MeasIdToAddMod_t                   *MeasId6;
   long                                   *sr_ProhibitTimer_r9              = NULL;
   long                                   *logicalchannelgroup              = NULL;
   long                                   *logicalchannelgroup_drb          = NULL;
@@ -3116,6 +3119,16 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   MeasId5->measObjectId = 1;
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
+
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasId6 = calloc(1, sizeof(LTE_MeasIdToAddMod_t));
+    if (MeasId6 == NULL) exit(1);
+    MeasId6->measId = 7;
+    MeasId6->measObjectId = 2;
+    MeasId6->reportConfigId = 7;
+    ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId6);
+  }
+
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
   // Add one EUTRA Measurement Object
   MeasObj_list = CALLOC(1, sizeof(*MeasObj_list));
@@ -3165,6 +3178,27 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
 
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasObj2 = calloc(1, sizeof(LTE_MeasObjectToAddMod_t));
+    if (MeasObj2 == NULL) exit(1);
+    MeasObj2->measObjectId = 2;
+    MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;
+    MeasObj2->measObject.choice.measObjectNR_r15.quantityConfigSet_r15 = 1;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1));
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1 == NULL) exit(1);
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1__bandNR_r15));
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 == NULL) exit(1);
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->present = LTE_MeasObjectNR_r15__ext1__bandNR_r15_PR_setup;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
+
+    ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj2);
+  }
+
   if (!ue_context_pP->ue_context.measurement_info->events) {
     ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
   }
@@ -3177,6 +3211,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ReportConfig_A3 = CALLOC(1, sizeof(*ReportConfig_A3));
   ReportConfig_A4 = CALLOC(1, sizeof(*ReportConfig_A4));
   ReportConfig_A5 = CALLOC(1, sizeof(*ReportConfig_A5));
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR = CALLOC(1, sizeof(*ReportConfig_NR));
+  }
   ReportConfig_per->reportConfigId = 1;
   ReportConfig_per->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
   ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerType.present =
@@ -3282,6 +3319,30 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
+
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR->reportConfigId = 7;
+    ReportConfig_NR->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present = LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.present = LTE_ThresholdNR_r15_PR_nr_RSRP_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 46;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.reportOnLeave_r15 = FALSE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis = 2;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger = LTE_TimeToTrigger_ms80;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.maxReportCells = 4;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportInterval = LTE_ReportInterval_ms120;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportAmount = LTE_ReportConfigInterRAT__reportAmount_infinity;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 = calloc(1, sizeof(struct LTE_ReportConfigInterRAT__ext7));
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 == NULL) exit(1);
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 = calloc(1, sizeof(struct LTE_ReportQuantityNR_r15));
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 == NULL) exit(1);
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrp = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrq = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_sinr = TRUE;
+    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_NR);
+  }
+
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
 
   /* A3 event update */
@@ -7660,18 +7721,28 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.UE_Capability = 0;
         }
 
+        int eutra_index = -1;
+
+        for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
+          if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type == LTE_RAT_Type_eutra) {
+            if (eutra_index != -1) {
+              LOG_E(RRC, "fatal: more than 1 eutra capability\n");
+              exit(1);
+            }
+            eutra_index = i;
+          }
+          /* todo: improve nr dual connectivity capability checking */
+          if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr)
+            ue_context_p->ue_context.does_nr = 1;
+        }
+
         dec_rval = uper_decode(NULL,
                                &asn_DEF_LTE_UE_EUTRA_Capability,
                                (void **)&ue_context_p->ue_context.UE_Capability,
-                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-                               choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-                               array[0]->ueCapabilityRAT_Container.buf,
-                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-                               choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-                               array[0]->ueCapabilityRAT_Container.size, 0, 0);
-        ue_context_p->ue_context.UE_Capability_size = ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-            choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-            array[0]->ueCapabilityRAT_Container.size;
+                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.buf,
+                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size,
+                               0, 0);
+        ue_context_p->ue_context.UE_Capability_size = ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size;
 
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
