@@ -62,6 +62,7 @@ typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_fl
 /* UEs beyond that will be multiplexed on the same tun   */
 #define MAX_NUMBER_NETIF           16
 
+#define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
 #define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)
 #define LINK_ENB_PDCP_TO_GTPV1U_BIT     (1<< 14)
@@ -392,6 +393,17 @@ boolean_t pdcp_remove_UE(
 */
 //void rrc_pdcp_config_release ( const protocol_ctxt_t* const  ctxt_pP, rb_id_t);
 
+/*! \fn void pdcp_mbms_run(const protocol_ctxt_t* const  ctxt_pP)
+* \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
+* \param[in]  ctxt_pP           Running context.
+* \return none
+* \note None
+* @ingroup _pdcp
+*/
+void pdcp_mbms_run            (
+  const protocol_ctxt_t *const  ctxt_pP);
+
+
 /*! \fn void pdcp_run(const protocol_ctxt_t* const  ctxt_pP)
 * \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
 * \param[in]  ctxt_pP           Running context.
@@ -416,6 +428,9 @@ void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req);
 void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind);
 pdcp_data_ind_func_t get_pdcp_data_ind_func(void);
 //-----------------------------------------------------------------------------
+int pdcp_fifo_flush_mbms_sdus                      ( const protocol_ctxt_t *const  ctxt_pP);
+int pdcp_fifo_read_input_mbms_sdus_fromtun       ( const protocol_ctxt_t *const  ctxt_pP);
+
 
 /*
  * Following two types are utilized between NAS driver and PDCP

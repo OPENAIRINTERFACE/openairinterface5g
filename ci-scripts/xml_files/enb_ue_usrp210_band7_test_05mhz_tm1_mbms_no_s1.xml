@@ -1,0 +1,82 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-05-tm1-mbms-nos1-tunnel</htmlTabRef>
+	<htmlTabName>Test-05MHz-MBMS-TM1-noS1-tunnel</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>2</repeatCount>
+	<TestCaseRequestedList>
+ 030201 090109
+ 030103 000001 090103 000002 040605 000001 090109 030201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>15</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000003">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030103">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz/MBMS)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band17.tm1.mbms.25PRB.usrpb210.conf --noS1 --eNBs.[0].rrc_inactivity_threshold 0 --nokrnmod 1 --eNBs.[0].component_carriers.[0].eutra_band 7 --eNBs.[0].component_carriers.[0].downlink_frequency 2680000000 --eNBs.[0].component_carriers.[0].uplink_frequency_offset -120000000</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<testCase id="090103">
+		<class>Initialize_OAI_UE</class>
+		<desc>Initialize OAI UE (FDD/Band7/5MHz/MBMS)</desc>
+		<Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 120 --ue-txgain 0 --ue-max-power 0 --ue-scan-carrier --nokrnmod 1 --noS1</Initialize_OAI_UE_args>
+	</testCase>
+
+	<testCase id="090109">
+		<class>Terminate_OAI_UE</class>
+		<desc>Terminate OAI UE</desc>
+	</testCase>
+
+	<testCase id="040605">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1.5Mbps/UDP/MBMS-sink)(20 sec)</desc>
+		<iperf_args>-c 10.0.2.2 -u -b 1.5M -t 20 -i 1 -fm -B 10.0.2.1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_options>sink</iperf_options>
+	</testCase>
+
+</testCaseList>

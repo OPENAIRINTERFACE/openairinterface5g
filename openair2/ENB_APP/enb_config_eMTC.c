@@ -859,6 +859,21 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 config_fname);
   }
 
+  RRC_CONFIGURATION_REQ(msg_p).pusch_repetitionLevelCEmodeA_r13[cc_idx] = CALLOC(1, sizeof(long));
+  if (!strcmp(eMTCconfig->pusch_repetitionLevelCEmodeA_r13, "l1")) {
+    *RRC_CONFIGURATION_REQ(msg_p).pusch_repetitionLevelCEmodeA_r13[cc_idx] =  0;
+  } else if (!strcmp(eMTCconfig->pusch_repetitionLevelCEmodeA_r13, "l2")) {
+    *RRC_CONFIGURATION_REQ(msg_p).pusch_repetitionLevelCEmodeA_r13[cc_idx] =  1;
+  } else if (!strcmp(eMTCconfig->pusch_repetitionLevelCEmodeA_r13, "l3")) {
+    *RRC_CONFIGURATION_REQ(msg_p).pusch_repetitionLevelCEmodeA_r13[cc_idx] =  2;
+  } else if (!strcmp(eMTCconfig->pusch_repetitionLevelCEmodeA_r13, "l4")) {
+    *RRC_CONFIGURATION_REQ(msg_p).pusch_repetitionLevelCEmodeA_r13[cc_idx] =  3;
+  } else {
+    AssertFatal (0,
+    "Failed to parse eNB configuration file %s, pusch_repetitionLevelCEmodeA_r13 unknown value!\n",
+    config_fname);
+  }
+
   char rachCELevelInfoListPath[MAX_OPTNAME_SIZE * 2];
   config_getlist(&rachcelevellist, NULL, 0, brparamspath);
   RRC_CONFIGURATION_REQ (msg_p).rach_CE_LevelInfoList_r13_size[cc_idx] = rachcelevellist.numelt;

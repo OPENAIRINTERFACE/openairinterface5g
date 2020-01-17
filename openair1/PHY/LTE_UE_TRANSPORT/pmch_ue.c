@@ -59,10 +59,10 @@ void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,in
 #define NSYMB_PMCH 12
   sprintf(fname,"mch_rxF_ext0.m");
   sprintf(vname,"pmch_rxF_ext0");
-  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_ext[0],12*(ue->frame_parms.N_RB_DL)*12,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->rxdataF_ext[0],12*(ue->frame_parms.N_RB_DL)*12,1,1);
   sprintf(fname,"mch_ch_ext00.m");
   sprintf(vname,"pmch_ch_ext00");
-  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_estimates_ext[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   /*
     LOG_M("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*NSYMB_PMCH,1,1);
     LOG_M("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*NSYMB_PMCH,1,1);
@@ -71,16 +71,16 @@ void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,in
   */
   sprintf(fname,"mch_rxF_comp0.m");
   sprintf(vname,"pmch_rxF_comp0");
-  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_comp0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   sprintf(fname,"mch_rxF_llr.m");
   sprintf(vname,"pmch_llr");
-  LOG_M(fname,vname, ue->pdsch_vars_MCH[eNB_id]->llr[0],coded_bits_per_codeword,1,0);
+  LOG_M(fname,vname, ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->llr[0],coded_bits_per_codeword,1,0);
   sprintf(fname,"mch_mag1.m");
   sprintf(vname,"pmch_mag1");
-  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_mag0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   sprintf(fname,"mch_mag2.m");
   sprintf(vname,"pmch_mag2");
-  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_magb0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]->dl_ch_magb0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
 
   LOG_M("mch00_ch0.m","pmch00_ch0",
                &(ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
@@ -104,6 +104,7 @@ void fill_UE_dlsch_MCH(PHY_VARS_UE *ue,int mcs,int ndi,int rvidx,int eNB_id)
   LTE_UE_DLSCH_t *dlsch = ue->dlsch_MCH[eNB_id];
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
 
+  dlsch->Mdlharq = 1;
   //  dlsch->rnti   = M_RNTI;
   dlsch->harq_processes[0]->mcs   = mcs;
   dlsch->harq_processes[0]->rvidx = rvidx;
@@ -264,16 +265,16 @@ void mch_channel_level(int **dl_ch_estimates_ext,
 
     for (i=0; i<(nre>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      avg128 = _mm_add_epi32(avg128,_mm_srai_epi32(_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),log2_approx(nre>>2)-1));
 #elif defined(__arm__)
 
 #endif
     }
 
-    avg[aarx] = (((int*)&avg128)[0] +
+    avg[aarx] = (((((int*)&avg128)[0] +
                  ((int*)&avg128)[1] +
                  ((int*)&avg128)[2] +
-                 ((int*)&avg128)[3])/nre;
+                 ((int*)&avg128)[3])/(nre>>factor2(nre)))*(1<<(log2_approx(nre>>2)-1-factor2(nre))));
 
     //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
   }
@@ -318,17 +319,21 @@ void mch_channel_level_khz_1dot25(int **dl_ch_estimates_ext,
 
     for (i=0; i<(nre>>2); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      //avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      avg128 = _mm_add_epi32(avg128,_mm_srai_epi32(_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),log2_approx(nre>>2)-1));
 #elif defined(__arm__)
 
 #endif
     }
 
-    avg[aarx] = (((int*)&avg128)[0] +
+   // avg[aarx] = (((int*)&avg128)[0] +
+   //              ((int*)&avg128)[1] +
+   //              ((int*)&avg128)[2] +
+   //              ((int*)&avg128)[3])/nre;
+   avg[aarx] = (((((int*)&avg128)[0] +
                  ((int*)&avg128)[1] +
                  ((int*)&avg128)[2] +
-                 ((int*)&avg128)[3])/nre;
-
+                 ((int*)&avg128)[3])/(nre>>factor2(nre)))*(1<<(log2_approx(nre>>2)-1-factor2(nre))));
                 //printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
   }
 
@@ -1362,7 +1367,7 @@ int rx_pmch(PHY_VARS_UE *ue,
 {
 
   LTE_UE_COMMON *common_vars  = &ue->common_vars;
-  LTE_UE_PDSCH **pdsch_vars   = &ue->pdsch_vars_MCH[eNB_id];
+  LTE_UE_PDSCH **pdsch_vars   = &ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id];
   LTE_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
   LTE_UE_DLSCH_t   **dlsch        = &ue->dlsch_MCH[eNB_id];
   int avgs,aarx;
@@ -1453,7 +1458,7 @@ int rx_pmch_khz_1dot25(PHY_VARS_UE *ue,
   //unsigned int symbol; 
  
   LTE_UE_COMMON *common_vars  = &ue->common_vars; 
-  LTE_UE_PDSCH **pdsch_vars   = &ue->pdsch_vars_MCH[eNB_id]; 
+  LTE_UE_PDSCH **pdsch_vars   = &ue->pdsch_vars_MCH[ue->current_thread_id[subframe]][eNB_id]; 
   LTE_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms; 
   //LTE_UE_DLSCH_t   **dlsch        = &ue->dlsch_MCH[eNB_id]; 
   int avgs,aarx; 

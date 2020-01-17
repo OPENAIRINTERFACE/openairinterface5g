@@ -103,6 +103,7 @@ check_supported_distribution() {
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
 	"rhel7.6")     return 0 ;;
+	"rhel7.7")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -319,13 +320,13 @@ install_usrp_uhd_driver() {
     # quick workaround for RHE7.6
     local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader
       else
           $SUDO uhd_images_downloader
       fi
     else
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader -i $1
       else
           $SUDO uhd_images_downloader -i $1

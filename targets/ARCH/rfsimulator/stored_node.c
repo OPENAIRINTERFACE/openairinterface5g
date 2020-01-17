@@ -5,6 +5,25 @@
 
 #include <common/utils/simple_executable.h>
 
+volatile int             oai_exit = 0;
+
+int fullread(int fd, void *_buf, int count) {
+  char *buf = _buf;
+  int ret = 0;
+  int l;
+
+  while (count) {
+    l = read(fd, buf, count);
+
+    if (l <= 0) return -1;
+
+    count -= l;
+    buf += l;
+    ret += l;
+  }
+
+  return ret;
+}
 
 void fullwrite(int fd, void *_buf, int count) {
   char *buf = _buf;
@@ -62,10 +81,9 @@ sin_addr:
   bool connected=false;
 
   while(!connected) {
-    LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", IP, port);
-
+    //LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", IP, port);
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
-      LOG_I(HW,"rfsimulator: connection established\n");
+      //LOG_I(HW,"rfsimulator: connection established\n");
       connected=true;
     }
 
@@ -107,12 +125,13 @@ int main(int argc, char *argv[]) {
   if (strcmp(argv[2],"server")==0) {
     serviceSock=server_start(atoi(argv[3]));
   } else {
-    client_start(argv[2],atoi(argv[3]));
+    serviceSock=client_start(argv[2],atoi(argv[3]));
   }
 
   samplesBlockHeader_t header;
   int bufSize=100000;
   void *buff=malloc(bufSize);
+  uint64_t readTS=0;
 
   while (1) {
     //Rewind the file to loop on the samples
@@ -123,10 +142,12 @@ int main(int argc, char *argv[]) {
     setblocking(serviceSock, blocking);
     AssertFatal(read(fd,&header,sizeof(header)), "");
     fullwrite(serviceSock, &header, sizeof(header));
-    int dataSize=sizeof(sample_t)*header.size*header.nbAnt;
+    int dataSize=sizeof(int32_t)*header.size*header.nbAnt;
+    uint64_t wroteTS=header.timestamp;
 
     if (dataSize>bufSize) {
-      void * new_buff = realloc(buff, dataSize);
+      void *new_buff = realloc(buff, dataSize);
+
       if (new_buff == NULL) {
         free(buff);
         AssertFatal(1, "Could not reallocate");
@@ -138,9 +159,18 @@ int main(int argc, char *argv[]) {
     AssertFatal(read(fd,buff,dataSize) == dataSize, "");
     fullwrite(serviceSock, buff, dataSize);
     // Purge incoming samples
-    setblocking(serviceSock, notBlocking);
+    setblocking(serviceSock, blocking);
 
-    while(recv(serviceSock,buff, bufSize, MSG_DONTWAIT) > 0) {
+    while(readTS < wroteTS) {
+      if ( fullread(serviceSock, &header,sizeof(header)) != sizeof(header) ||
+           fullread(serviceSock, buff, sizeof(int32_t)*header.size*header.nbAnt) !=
+           sizeof(int32_t)*header.size*header.nbAnt
+         ) {
+        printf("error: %s\n", strerror(errno));
+        exit(1);
+      }
+
+      readTS=header.timestamp;
     }
   }
 
