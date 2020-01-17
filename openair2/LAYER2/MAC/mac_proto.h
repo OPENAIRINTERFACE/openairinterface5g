@@ -240,31 +240,25 @@ void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
                                          int CC_id,
                                          uint8_t rballoc_sub[N_RBG_MAX]);
 
-void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
-    int slice_idx,
-    const uint8_t rbs_retx[NFAPI_CC_MAX]);
-
 void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
-                                              int slice_idx,
+                                              int CC_id,
                                               frame_t frameP,
                                               sub_frame_t subframeP,
-                                              uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                              uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+                                              uint16_t nb_rbs_required[MAX_MOBILES_PER_ENB],
+                                              uint16_t nb_rbs_accounted[MAX_MOBILES_PER_ENB]);
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
-                                               int slice_idx,
-                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
+                                               int CC_id,
+                                               uint16_t nb_rbs_required[MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_accounted[MAX_MOBILES_PER_ENB],
+                                               uint8_t rballoc_sub[N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
                                             int UE_id,
                                             uint8_t CC_id,
-                                            int N_RBG,
-                                            uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                            uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                            uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
+                                            uint16_t nb_rbs_required,
+                                            uint16_t *nb_rbs_remaining,
+                                            uint8_t rballoc_sub[N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f.
@@ -688,8 +682,8 @@ int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid, uint8_t rach_resource_type);
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
-void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
-void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+void store_dlsch_buffer(module_id_t Mod_id, frame_t frameP, sub_frame_t subframeP);
+void assign_rbs_required(module_id_t Mod_id, int CC_id, uint16_t nb_rbs_required[MAX_MOBILES_PER_ENB]);
 
 int prev(UE_list_t *listP, int nodeP, int ul_flag);
 void add_ue_list(UE_list_t *listP, int UE_id, int ul_flag);

@@ -726,7 +726,163 @@ void dlsch_scheduler_pre_processor_reset_fairRR(
   }
 }
 
+// This function returns the estimated number of RBs required by each UE for downlink scheduling
+void assign_rbs_required_fairRR(
+    module_id_t Mod_id,
+    frame_t frameP,
+    sub_frame_t subframe,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]) {
+  uint16_t TBS = 0;
+  int UE_id, n, i, j, CC_id, pCCid, tmp;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  eNB_UE_STATS *eNB_UE_stats, *eNB_UE_stats_i, *eNB_UE_stats_j;
+  int N_RB_DL;
 
+  // clear rb allocations across all CC_id
+  for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+    if (UE_list->active[UE_id] != TRUE)
+      continue;
+
+    pCCid = UE_PCCID(Mod_id, UE_id);
+
+    // update CQI information across component carriers
+    for (n = 0; n < UE_list->numactiveCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_CCids[n][UE_id];
+      eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
+      eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
+    }
+
+    // provide the list of CCs sorted according to MCS
+    for (i = 0; i < UE_list->numactiveCCs[UE_id]; ++i) {
+      eNB_UE_stats_i =
+          &UE_list->eNB_UE_stats[UE_list->ordered_CCids[i][UE_id]][UE_id];
+
+      for (j = i + 1; j < UE_list->numactiveCCs[UE_id]; j++) {
+        DevAssert(j < NFAPI_CC_MAX);
+        eNB_UE_stats_j =
+            &UE_list->eNB_UE_stats[UE_list->ordered_CCids[j][UE_id]][UE_id];
+
+        if (eNB_UE_stats_j->dlsch_mcs1 > eNB_UE_stats_i->dlsch_mcs1) {
+          tmp = UE_list->ordered_CCids[i][UE_id];
+          UE_list->ordered_CCids[i][UE_id] = UE_list->ordered_CCids[j][UE_id];
+          UE_list->ordered_CCids[j][UE_id] = tmp;
+        }
+      }
+    }
+
+    if (UE_list->UE_template[pCCid][UE_id].dl_buffer_total > 0) {
+      LOG_D(MAC, "[preprocessor] assign RB for UE %d\n", UE_id);
+
+      for (i = 0; i < UE_list->numactiveCCs[UE_id]; i++) {
+        CC_id = UE_list->ordered_CCids[i][UE_id];
+        eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
+        const int min_rb_unit = get_min_rb_unit(Mod_id, CC_id);
+
+        if (eNB_UE_stats->dlsch_mcs1 == 0) {
+          nb_rbs_required[CC_id][UE_id] = 4; // don't let the TBS get too small
+        } else {
+          nb_rbs_required[CC_id][UE_id] = min_rb_unit;
+        }
+
+        TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, nb_rbs_required[CC_id][UE_id]);
+        LOG_D(MAC,
+              "[preprocessor] start RB assignement for UE %d CC_id %d dl "
+              "buffer %d (RB unit %d, MCS %d, TBS %d) \n",
+              UE_id,
+              CC_id,
+              UE_list->UE_template[pCCid][UE_id].dl_buffer_total,
+              nb_rbs_required[CC_id][UE_id],
+              eNB_UE_stats->dlsch_mcs1,
+              TBS);
+        N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+
+        /* calculating required number of RBs for each UE */
+        while (TBS < UE_list->UE_template[pCCid][UE_id].dl_buffer_total) {
+          nb_rbs_required[CC_id][UE_id] += min_rb_unit;
+
+          if (nb_rbs_required[CC_id][UE_id] > N_RB_DL) {
+            TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, N_RB_DL);
+            nb_rbs_required[CC_id][UE_id] = N_RB_DL;
+            break;
+          }
+
+          TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1,
+                           nb_rbs_required[CC_id][UE_id]);
+        } // end of while
+
+        LOG_D(MAC,
+              "[eNB %d] Frame %d: UE %d on CC %d: RB unit %d,  nb_required RB "
+              "%d (TBS %d, mcs %d)\n",
+              Mod_id,
+              frameP,
+              UE_id,
+              CC_id,
+              min_rb_unit,
+              nb_rbs_required[CC_id][UE_id],
+              TBS,
+              eNB_UE_stats->dlsch_mcs1);
+      }
+    }
+  }
+}
+
+void dlsch_scheduler_pre_processor_allocate_fairRR(
+    module_id_t Mod_id,
+    int UE_id,
+    uint8_t CC_id,
+    int N_RBG,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]) {
+  int i;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  int N_RB_DL =
+      to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  const int min_rb_unit = get_min_rb_unit(Mod_id, CC_id);
+
+  for (i = 0; i < N_RBG; i++) {
+    if (rballoc_sub[CC_id][i] != 0)
+      continue;
+
+    if (ue_sched_ctl->rballoc_sub_UE[CC_id][i] != 0)
+      continue;
+
+    if (nb_rbs_remaining[CC_id][UE_id] <= 0)
+      continue;
+
+    if (ue_sched_ctl->pre_nb_available_rbs[CC_id]
+        >= nb_rbs_required[CC_id][UE_id])
+      continue;
+
+    if (ue_sched_ctl->dl_pow_off[CC_id] == 0)
+      continue;
+
+    if ((i == N_RBG - 1) && ((N_RB_DL == 25) || (N_RB_DL == 50))) {
+      // Allocating last, smaller RBG
+      if (nb_rbs_remaining[CC_id][UE_id] >= min_rb_unit - 1) {
+        rballoc_sub[CC_id][i] = 1;
+        ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
+
+        nb_rbs_remaining[CC_id][UE_id] =
+            nb_rbs_remaining[CC_id][UE_id] - min_rb_unit + 1;
+        ue_sched_ctl->pre_nb_available_rbs[CC_id] =
+            ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit - 1;
+      }
+    } else {
+      // Allocating a standard-sized RBG
+      if (nb_rbs_remaining[CC_id][UE_id] >= min_rb_unit) {
+        rballoc_sub[CC_id][i] = 1;
+        ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
+
+        nb_rbs_remaining[CC_id][UE_id] =
+            nb_rbs_remaining[CC_id][UE_id] - min_rb_unit;
+        ue_sched_ctl->pre_nb_available_rbs[CC_id] =
+            ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit;
+      }
+    }
+  }
+}
 
 // This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
 void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
@@ -792,9 +948,9 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 
 #if (!defined(PRE_SCD_THREAD))
   // Store the DLSCH buffer for each logical channel
-  store_dlsch_buffer(Mod_id,0, frameP, subframeP);
+  store_dlsch_buffer(Mod_id, frameP, subframeP);
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-  assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required);
+  assign_rbs_required_fairRR(Mod_id, frameP, subframeP, nb_rbs_required);
 #else
   memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*MAX_MOBILES_PER_ENB);
 #endif
@@ -855,13 +1011,14 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
       }
 
       LOG_T(MAC,"calling dlsch_scheduler_pre_processor_allocate .. \n ");
-      dlsch_scheduler_pre_processor_allocate (Mod_id,
-                                              UE_id,
-                                              CC_id,
-                                              N_RBG[CC_id],
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
-                                              rballoc_sub);
+      dlsch_scheduler_pre_processor_allocate_fairRR(
+          Mod_id,
+          UE_id,
+          CC_id,
+          N_RBG[CC_id],
+          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required,
+          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+          rballoc_sub);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;
 

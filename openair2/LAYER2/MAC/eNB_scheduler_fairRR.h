@@ -94,6 +94,21 @@ void dlsch_scheduler_pre_processor_reset_fairRR(
     uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
     uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
+void assign_rbs_required_fairRR(
+    module_id_t Mod_id,
+    frame_t frameP,
+    sub_frame_t subframe,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+
+void dlsch_scheduler_pre_processor_allocate_fairRR(
+    module_id_t Mod_id,
+    int UE_id,
+    uint8_t CC_id,
+    int N_RBG,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
+
 void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                     frame_t       frameP,
                                     sub_frame_t   subframeP,

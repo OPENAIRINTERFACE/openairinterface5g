@@ -1184,19 +1184,6 @@ typedef struct {
   int tail_freelist; ///the tail position of the delete list
 } UE_free_list_t;
 
-/// Structure for saving the output of each pre_processor instance
-typedef struct {
-  uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
-
-  uint32_t bytes_lcid[MAX_MOBILES_PER_ENB][MAX_NUM_LCID];
-  uint32_t wb_pmi[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint8_t  mcs[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-
-} pre_processor_results_t;
-
 /**
  * slice specific scheduler for the DL
  */
@@ -1287,8 +1274,6 @@ typedef struct {
   /// number of active UL slices
   int      n_ul;
   slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
-
-  pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
 
   /// common rb allocation list between slices
   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
