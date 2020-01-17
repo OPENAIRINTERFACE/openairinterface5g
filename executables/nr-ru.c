@@ -1120,8 +1120,14 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->rx_num_channels=ru->nb_rx;
 
   for (i=0; i<ru->nb_tx; i++) {
-    cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
-    cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
+    if (ru->if_frequency == 0) {
+      cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
+      cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
+    }
+    else {
+      cfg->tx_freq[i] = (double)ru->if_frequency;
+      cfg->rx_freq[i] = (double)(ru->if_frequency+fp->ul_CarrierFreq-fp->dl_CarrierFreq);
+    }
     cfg->tx_gain[i] = ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
     cfg->configFilename = rf_config_file;
@@ -2335,6 +2341,7 @@ void RCconfig_RU(void)
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].uptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
