@@ -517,6 +517,7 @@ void init_openair0(void) {
   for (card=0; card<MAX_CARDS; card++) {
     openair0_cfg[card].configFilename = NULL;
     openair0_cfg[card].threequarter_fs = frame_parms[0]->threequarter_fs;
+    numerology = frame_parms[0]->numerology_index;
 
     if(frame_parms[0]->N_RB_DL == 66) {
       if (numerology==3) {
