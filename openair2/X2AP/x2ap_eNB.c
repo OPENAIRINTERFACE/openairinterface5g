@@ -447,7 +447,7 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
 }
 
 static
-void x2ap_eNB_handle_sgNB_add_req_ack(instance_t instance,
+void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
 		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_ENDC_sgnb_addition_req_ACK)
 {
   /* TODO: remove this hack (the goal is to find the correct
@@ -483,7 +483,7 @@ void x2ap_eNB_handle_sgNB_add_req_ack(instance_t instance,
   //target = x2ap_get_eNB(NULL, 17, 0);
   target = x2ap_is_eNB_id_in_list (3585); //Currently hardcoded. Need to extract it differently
   DevAssert(target != NULL);
-  x2ap_eNB_generate_ENDC_x2_SgNB_addition_request_ACK(instance_p, target, x2ap_ENDC_sgnb_addition_req_ACK, 0);
+  x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK(instance_p, target, x2ap_ENDC_sgnb_addition_req_ACK, 0);
 }
 
 
@@ -553,7 +553,7 @@ void *x2ap_task(void *arg) {
         break;
 
       case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
-    	  x2ap_eNB_handle_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
     			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
     	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
 
