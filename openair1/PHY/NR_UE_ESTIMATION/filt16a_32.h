@@ -124,4 +124,13 @@ extern short filt8_dcr1[8];
 extern short filt8_dcl1_h[8];
 
 extern short filt8_dcr1_h[8];
+
+extern short filt8_ml2[8];
+
+extern short filt8_mr2[8];
+
+extern short filt8_rr1[8];
+
+extern short filt8_rr2[8];
+
 #endif

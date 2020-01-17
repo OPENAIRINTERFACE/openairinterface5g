@@ -55,6 +55,9 @@
   extern char do_forms;
 #endif
 
+// Missing stuff?
+int next_ra_frame = 0;
+module_id_t next_Mod_id = 0;
 
 extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
@@ -383,7 +386,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nb_rb = 50;
     start_rb = 0;
     nb_symb_sch = 12;
-    start_symbol = 2;
+    start_symbol = 0;
     precod_nbr_layers = 1;
     mcs = 9;
     harq_pid = 0;
@@ -539,7 +542,7 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
     if (IS_SOFTMODEM_RFSIM ) {
-	 usleep(1000); // slow down, as would do actuall rf to let cpu for the synchro thread
+	 usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
     }
   }
 
@@ -639,7 +642,7 @@ void *UE_thread(void *arg) {
       }
     }
 
-    AssertFatal( !syncRunning, "At this point synchronisation can't be running\n");
+    AssertFatal( !syncRunning, "At this point synchronization can't be running\n");
 
     if (!UE->is_synchronized) {
       readFrame(UE, &timestamp);
@@ -668,7 +671,7 @@ void *UE_thread(void *arg) {
       // we have the decoded frame index in the return of the synch process
       // and we shifted above to the first slot of next frame
       decoded_frame_rx++;
-      // we do ++ first in the regular processing, so it will be beging of frame;
+      // we do ++ first in the regular processing, so it will be begin of frame;
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
@@ -736,7 +739,7 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-if (slot_nr==18)
+if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX - 1)%20)
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
@@ -746,7 +749,19 @@ if (slot_nr==18)
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     4),"");
+                     2),"");
+
+if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
+    AssertFatal( writeBlockSize ==
+                 UE->rfdevice.trx_write_func(&UE->rfdevice,
+                     timestamp+
+                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                     openair0_cfg[0].tx_sample_advance,
+                     txp,
+                     writeBlockSize,
+                     UE->frame_parms.nb_antennas_tx,
+                     3),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
@@ -832,7 +847,7 @@ void init_NR_UE(int nb_inst) {
     mac_inst->initial_bwp_ul.scs = UE->frame_parms.subcarrier_spacing;
     mac_inst->initial_bwp_ul.N_RB = UE->frame_parms.N_RB_UL;
     mac_inst->initial_bwp_ul.cyclic_prefix = UE->frame_parms.Ncp;
-    LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
+    LOG_I(PHY,"Initializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
 
 #ifdef UE_DLSCH_PARALLELISATION
@@ -844,4 +859,17 @@ void init_NR_UE(int nb_inst) {
 
   printf("UE threads created by %ld\n", gettid());
 }
+
+/* HACK: this function is needed to compile the UE
+ * fix it somehow
+ */
+int8_t find_dlsch(uint16_t rnti,
+                  PHY_VARS_eNB *eNB,
+                  find_type_t type)
+{
+  printf("you cannot read this\n");
+  abort();
+}
+
+void multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP) {}
 

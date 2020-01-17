@@ -404,7 +404,26 @@ static uint8_t unpack_nmm_frequency_bands_value(void* tlv, uint8_t **ppReadPacke
 	return ( pull16(ppReadPackedMsg, &value->number_of_rf_bands, end) &&
 			 pullarray16(ppReadPackedMsg, value->bands, NFAPI_MAX_NMM_FREQUENCY_BANDS, value->number_of_rf_bands, end));
 }
-
+static uint8_t pack_embms_mbsfn_config_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+       nfapi_embms_mbsfn_config_t* value = (nfapi_embms_mbsfn_config_t*)tlv;
+       
+       return ( push16(value->num_mbsfn_config, ppWritePackedMsg, end) &&
+                pusharray16(value->radioframe_allocation_period, 8,value->num_mbsfn_config ,ppWritePackedMsg, end) &&
+                pusharray16(value->radioframe_allocation_offset, 8,value->num_mbsfn_config ,ppWritePackedMsg, end) &&
+                pusharray8(value->fourframes_flag, 8,value->num_mbsfn_config,ppWritePackedMsg, end) &&
+                pusharrays32(value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, ppWritePackedMsg, end));
+}
+//static uint8_t unpack_embms_mbsfn_config_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t* end)
+//{
+//     nfapi_embms_mbsfn_config_t* value = (nfapi_embms_mbsfn_config_t*)tlv;
+//
+//     return ( pull16(ppReadPackedMsg, &value->num_mbsfn_config, end) &&
+//              pull16(ppReadPackedMsg, &value->radioframe_allocation_period, end) &&
+//              pull16(ppReadPackedMsg, &value->radioframe_allocation_offset, end) &&
+//              pull8(ppReadPackedMsg, &value->fourframes_flag, end) &&
+//                      pullarrays32(ppReadPackedMsg, value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, end));
+//}
 static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
 	nfapi_param_response_t *pNfapiMsg = (nfapi_param_response_t*)msg;
@@ -460,6 +479,11 @@ static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_PUCCH_CONFIG_N_CQI_RB_TAG, &(pNfapiMsg->pucch_config.n_cqi_rb), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_PUCCH_CONFIG_N_AN_CS_TAG, &(pNfapiMsg->pucch_config.n_an_cs), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG, &(pNfapiMsg->pucch_config.n1_pucch_an), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDX_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_idx), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_AREA_IDR9_TAG, &(pNfapiMsg->embms_sib13_config.mbsfn_area_id_r9), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+
+                       pack_tlv(NFAPI_EMBMS_MBSFN_CONFIG_TAG, &(pNfapiMsg->embms_mbsfn_config), ppWritePackedMsg, end, &pack_embms_mbsfn_config_value) &&
 
                        pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
                        pack_tlv(NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG, &(pNfapiMsg->fembms_config.radioframe_allocation_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&

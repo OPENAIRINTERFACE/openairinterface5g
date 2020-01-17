@@ -522,7 +522,7 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "Install EPC on EPC VM ($LOC_EPC_VM_NAME)"
         echo "############################################################"
-        echo "sudo [ -f 01proxy ] && cp 01proxy /etc/apt/apt.conf.d/" > $LOC_EPC_VM_CMDS
+        echo "[ -f 01proxy ] && sudo cp 01proxy /etc/apt/apt.conf.d/" > $LOC_EPC_VM_CMDS
         echo "touch /home/ubuntu/.hushlogin" >> $LOC_EPC_VM_CMDS
         echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf\"" >> $LOC_EPC_VM_CMDS
         echo "sudo apt-get update > zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS

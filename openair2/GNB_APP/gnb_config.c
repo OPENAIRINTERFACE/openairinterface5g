@@ -410,7 +410,7 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
 
-        //sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+        //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
@@ -682,7 +682,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
 
-    printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
+    printf("NRRRC %u: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
   
@@ -2684,7 +2684,7 @@ int RCconfig_nr_gtpu(void ) {
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   
-  paramdef_t GTPUParams[]  = GNBGTPUPARAMS_DESC;
+  paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -2976,7 +2976,7 @@ void NRRCConfig(void) {
 
 /* get global parameters, defined outside any section in the config file */
  
-  printf("Getting GNBSParams\n");
+  LOG_I(GNB_APP, "Getting GNBSParams\n");
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;

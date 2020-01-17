@@ -80,44 +80,68 @@ void feptx0(RU_t *ru,
 
   slot_offset = slot*(fp->samples_per_tti>>1); //slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
-  //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
+  //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.tti_tx,slot);
 
   for (aa=0; aa<ru->nb_tx; aa++) {
-    if (fp->Ncp == EXTENDED) PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
-                                          (int*)&ru->common.txdata[aa][slot_offset],
-                                          fp->ofdm_symbol_size,
-                                          6,
-                                          fp->nb_prefix_samples,
-                                          CYCLIC_PREFIX);
-    else {
-       /* AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
-		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
-		  fp->frame_type,ru->is_slave);
-       */
-      int num_symb = 7;
+    if (fp->Ncp == EXTENDED) {
+      PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                   (int*)&ru->common.txdata[aa][slot_offset],
+                   fp->ofdm_symbol_size,
+                   6,
+                   fp->nb_prefix_samples,
+                   CYCLIC_PREFIX);
+    } else {
+      if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
+        if ((slot&1) == 0) {//just use one slot chance
+          normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                            (int*)&ru->common.txdata[aa][slot_offset],
+                            2,
+                            fp);
+          PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF+fp->ofdm_symbol_size*2],
+                       (int*)&ru->common.txdata[aa][slot_offset+((fp->ofdm_symbol_size>>2)*2+fp->ofdm_symbol_size*2)],
+                       fp->ofdm_symbol_size,
+                       10,
+                       fp->ofdm_symbol_size>>2,
+                       CYCLIC_PREFIX);
+          LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d F(%d) t(%d) IS PMCH(%d)\n",
+                    ru->proc.frame_tx,
+                    ru->proc.tti_tx,
+                    slot,
+                    slot*slot_sizeF+fp->ofdm_symbol_size*2,
+                    slot_offset+((fp->ofdm_symbol_size>>2)*2+fp->ofdm_symbol_size*2),
+                    is_pmch_subframe(ru->proc.frame_tx,subframe,fp));
+        }
+      } else {
+         /* AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
+                        "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
+                        fp->frame_type,ru->is_slave);
+         */
+	      int num_symb = 7;
 
-      if (subframe_select(fp,subframe) == SF_S) num_symb=fp->dl_symbols_in_S_subframe+1;
-   
-      if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
-        //int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
-        //int32_t *dmrsp[2] ={dmrs,NULL}; //{&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
-        generate_drs_pusch((PHY_VARS_UE *)NULL,
-                           (UE_rxtx_proc_t*)NULL,
-                           fp,
-                           ru->common.txdataF_BF,
-                           0,
-                           AMP,
-                           0,
-                           0,
-                           fp->N_RB_DL,
-                           aa);
-      } 
-      normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
-                        (int*)&ru->common.txdata[aa][slot_offset],
-                        num_symb,
-                        fp);
+	      if (subframe_select(fp,subframe) == SF_S)
+             num_symb = fp->dl_symbols_in_S_subframe+1;
+
+	      if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
+            //int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
+            //int32_t *dmrsp[2] ={dmrs,NULL}; //{&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
+
+            generate_drs_pusch((PHY_VARS_UE *)NULL,
+                               (UE_rxtx_proc_t*)NULL,
+                               fp,
+                               ru->common.txdataF_BF,
+                               0,
+                               AMP,
+                               0,
+                               0,
+                               fp->N_RB_DL,
+                               aa);
+	      } 
+          normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                            (int*)&ru->common.txdata[aa][slot_offset],
+                            num_symb,
+                            fp);
+      }
     }
-
 
    /* 
     len = fp->samples_per_tti>>1;
@@ -152,10 +176,10 @@ void feptx0(RU_t *ru,
 	tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
 	if (tx_offset<0)
 	  tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	
+
 	if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti))
 	  tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	
+
 	ru->common.txdata[aa][tx_offset] = 0x00000000;
       }
     }*/
@@ -190,7 +214,7 @@ static void *feptx_thread(void *param)
     }
 	/*if(opp_enabled == 1 && ru->ofdm_mod_wakeup_stats.p_time>30*3000){
       print_meas_now(&ru->ofdm_mod_wakeup_stats,"fep wakeup",stderr);
-      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->tti_tx);
     }*/
   }
   return(NULL);
@@ -237,7 +261,7 @@ void feptx_ofdm_2thread(RU_t *ru,
       exit_fun( "ERROR pthread_cond_signal" );
       return;
     }
-	//start_meas(&ru->ofdm_mod_wakeup_stats);
+    //start_meas(&ru->ofdm_mod_wakeup_stats);
     
     pthread_mutex_unlock( &proc->mutex_feptx );
   }
@@ -249,7 +273,7 @@ void feptx_ofdm_2thread(RU_t *ru,
   stop_meas(&ru->ofdm_mod_wait_stats);
   /*if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.p_time>30*3000){
     print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
-    printf("delay in feptx wait on condition in frame_rx: %d  subframe_rx: %d \n", proc->frame_tx, proc->subframe_tx);
+    printf("delay in feptx wait on condition in frame_rx: %d  subframe_rx: %d \n", proc->frame_tx, proc->tti_tx);
   }*/
 
   stop_meas(&ru->ofdm_mod_stats);
@@ -297,16 +321,29 @@ void feptx_ofdm(RU_t *ru,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       } else {
+       if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)/*subframe==1*/){
+        normal_prefix_mod(&ru->common.txdataF_BF[aa][0],
+                          dummy_tx_b,
+                          2,
+                          fp);
+        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][fp->ofdm_symbol_size*2],
+                        dummy_tx_b+((fp->ofdm_symbol_size>>2)*2+fp->ofdm_symbol_size*2),
+                     fp->ofdm_symbol_size,
+                     10,
+                     fp->ofdm_symbol_size>>2,
+                    CYCLIC_PREFIX);
+        }else{
         normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F],
                           dummy_tx_b,
                           7,
                           fp);
-	// if S-subframe generate first slot only
+    // if S-subframe generate first slot only
 	if (subframe_select(fp,subframe) == SF_DL) 
 	  normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F+slot_sizeF],
 			    dummy_tx_b+(fp->samples_per_tti>>1),
 			    7,
 			    fp);
+	}
       }
 
       // if S-subframe generate first slot only

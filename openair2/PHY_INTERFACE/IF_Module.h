@@ -140,6 +140,8 @@ typedef struct IF_Module_s {
   void (*UL_indication)(UL_IND_t *UL_INFO);
   void (*schedule_response)(Sched_Rsp_t *Sched_INFO);
   void (*PHY_config_req)(PHY_Config_t *config_INFO);
+  void (*PHY_config_update_sib2_req)(PHY_Config_t* config_INFO);
+  void (*PHY_config_update_sib13_req)(PHY_Config_t* config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
   uint8_t current_subframe;
