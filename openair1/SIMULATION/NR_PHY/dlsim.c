@@ -232,7 +232,7 @@ int main(int argc, char **argv)
   int mcsIndex_set=0,rbStart_set=0,rbSize_set=0;
   int print_perf             = 0;
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -408,6 +408,9 @@ int main(int argc, char **argv)
       mcsIndex_set=1;
       break;
 
+    case 'm':
+      mu = atoi(optarg);
+      break;
 
     default:
     case 'h':
