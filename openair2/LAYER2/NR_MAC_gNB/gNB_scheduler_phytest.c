@@ -156,16 +156,13 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
-int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
-                         nfapi_tx_request_pdu_t *TX_req,
-                         nfapi_nr_config_request_t *cfg,
-                         nfapi_nr_coreset_t *coreset,
-                         nfapi_nr_search_space_t *search_space,
-                         int16_t pdu_index,
-                         nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config) {
+int configure_fapi_dl_pdu(nfapi_nr_dl_config_request_body_t *dl_req,
+                          nfapi_nr_config_request_t *cfg,
+                          nfapi_nr_coreset_t *coreset,
+                          nfapi_nr_search_space_t *search_space,
+                          nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config){
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
-  int TBS;
   uint16_t rnti = 0x1234;
   int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
   dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -242,9 +239,20 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
         params_rel15->rb_offset,
         params_rel15->first_symbol,
         params_rel15->search_space_type);
+
   nr_get_tbs_dl(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-  TBS = dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size;
-  LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+
+  return dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15.transport_block_size/8;
+}
+
+void configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
+                          nfapi_tx_request_pdu_t *tx_req,
+                          int tbs_bytes,
+                          int16_t pdu_index){
+  nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu + 1];
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15;
+
+  LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS (bytes): %d\n",
         dlsch_pdu_rel15->start_prb,
         dlsch_pdu_rel15->n_prb,
         dlsch_pdu_rel15->start_symbol,
@@ -252,14 +260,18 @@ int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
         dlsch_pdu_rel15->nb_layers,
         dlsch_pdu_rel15->nb_codewords,
         dlsch_pdu_rel15->mcs_idx,
-        TBS);
+        tbs_bytes);
+
   dl_req->number_dci++;
   dl_req->number_pdsch_rnti++;
   dl_req->number_pdu+=2;
-  TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size/8;
-  TX_req->pdu_index = pdu_index++;
-  TX_req->num_segments = 1;
-  return TBS/8; //Return TBS in bytes
+
+  tx_req->pdu_length = tbs_bytes;
+  tx_req->pdu_index = pdu_index++;
+  tx_req->num_segments = 1;
+  //tx_req->segments[0].segment_length = 8;
+  tx_req->segments[0].segment_length = tbs_bytes + 2;
+  tx_req->segments[0].segment_data = mac_pdu;
 }
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
@@ -269,7 +281,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   nfapi_nr_dl_config_request_body_t *dl_req;
-  nfapi_tx_request_pdu_t *TX_req;
+  nfapi_tx_request_pdu_t *tx_req;
   mac_rlc_status_resp_t rlc_status;
   nfapi_nr_config_request_t *cfg = &gNB_mac->config[0];
 
@@ -290,10 +302,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     LOG_D(MAC, "Scheduling UE specific search space DCI type 1 for UE_id %d CC_id %d frame %d slot %d\n", UE_id, CC_id, frameP, slotP);
 
     dl_req = &gNB_mac->DL_req[CC_id].dl_config_request_body;
-    TX_req = &gNB_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
+    tx_req = &gNB_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
     ta_len = gNB_mac->ta_len;
 
-    TBS_bytes = configure_fapi_dl_Tx(dl_req, TX_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], gNB_mac->pdu_index[CC_id], dlsch_config);
+    TBS_bytes = configure_fapi_dl_pdu(dl_req, cfg, &gNB_mac->coreset[CC_id][1], &gNB_mac->search_space[CC_id][1], dlsch_config);
 
     //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
     //through the LTE stack
@@ -310,7 +322,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       }*/
 
       for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
-        LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
+        LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
           module_idP, frameP, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
 
         if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
@@ -409,9 +421,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
           mac_pdu[offset + j] = 0;
       }
 
-      //TX_req->segments[0].segment_length = 8;
-      TX_req->segments[0].segment_length = TBS_bytes + 2;
-      TX_req->segments[0].segment_data = mac_pdu;
+      configure_fapi_dl_Tx(dl_req, tx_req, TBS_bytes, gNB_mac->pdu_index[CC_id]);
 
       gNB_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
       gNB_mac->TX_req[CC_id].sfn_sf = sfn_sf;
