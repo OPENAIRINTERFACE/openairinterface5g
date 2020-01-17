@@ -116,7 +116,7 @@ static int8_t threequarter_fs=0;
 uint32_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-//Temp fix for inexisting NR upper layer
+//Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
 #if defined(ENABLE_ITTI)
@@ -354,7 +354,7 @@ void *l2l1_task(void *arg) {
 
     switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
-        /* Start eNB thread */
+        /* Start gNB thread */
         LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
         start_gNB = 1;
         break;
@@ -411,7 +411,7 @@ void *l2l1_task(void *arg) {
 #endif
 
 int create_gNB_tasks(uint32_t gnb_nb) {
-  LOG_D(GNB_APP, "%s(gnb_nb:%d\n", __FUNCTION__, gnb_nb);
+  LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
 
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
@@ -506,7 +506,7 @@ static void get_options(void) {
     NRRCConfig();
     NB_gNB_INST = RC.nb_nr_inst;
     NB_RU   = RC.nb_RU;
-    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
+    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhu\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
   }
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
@@ -707,7 +707,7 @@ void wait_gNBs(void) {
  * helper function to terminate a certain ITTI task
  */
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
-  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
+  LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
   msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
@@ -717,11 +717,11 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
 extern void  nr_phy_free_RU(RU_t *);
 
 int stop_L1L2(module_id_t gnb_id) {
-  LOG_W(ENB_APP, "stopping nr-softmodem\n");
+  LOG_W(GNB_APP, "stopping nr-softmodem\n");
   oai_exit = 1;
 
   if (!RC.ru) {
-    LOG_F(ENB_APP, "no RU configured\n");
+    LOG_F(GNB_APP, "no RU configured\n");
     return -1;
   }
 
@@ -729,28 +729,28 @@ int stop_L1L2(module_id_t gnb_id) {
   if (RC.ru[gnb_id]) {
     if (RC.ru[gnb_id]->rfdevice.trx_stop_func) {
       RC.ru[gnb_id]->rfdevice.trx_stop_func(&RC.ru[gnb_id]->rfdevice);
-      LOG_I(ENB_APP, "turned off RU rfdevice\n");
+      LOG_I(GNB_APP, "turned off RU rfdevice\n");
     } else {
-      LOG_W(ENB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceding anyway!\n");
+      LOG_W(GNB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceeding anyway!\n");
     }
 
     if (RC.ru[gnb_id]->ifdevice.trx_stop_func) {
       RC.ru[gnb_id]->ifdevice.trx_stop_func(&RC.ru[gnb_id]->ifdevice);
-      LOG_I(ENB_APP, "turned off RU ifdevice\n");
+      LOG_I(GNB_APP, "turned off RU ifdevice\n");
     } else {
-      LOG_W(ENB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceding anyway!\n");
+      LOG_W(GNB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceeding anyway!\n");
     }
   } else {
-    LOG_W(ENB_APP, "no RU found for index %d\n", gnb_id);
+    LOG_W(GNB_APP, "no RU found for index %d\n", gnb_id);
     return -1;
   }
 
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, gnb_id);
   terminate_task(TASK_L2L1, gnb_id);
-  LOG_I(ENB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
+  LOG_I(GNB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
-  LOG_I(ENB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
+  LOG_I(GNB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
   kill_NR_RU_proc(gnb_id);
   oai_exit = 0;
 
@@ -771,7 +771,7 @@ int restart_L1L2(module_id_t gnb_id) {
   RU_t *ru = RC.ru[gnb_id];
   int cc_id;
   MessageDef *msg_p = NULL;
-  LOG_W(ENB_APP, "restarting nr-softmodem\n");
+  LOG_W(GNB_APP, "restarting nr-softmodem\n");
   /* block threads */
   sync_var = -1;
 
@@ -784,7 +784,7 @@ int restart_L1L2(module_id_t gnb_id) {
   /* TODO this should be done for all RUs associated to this gNB */
   memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
-  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
+  LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
 
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
     LOG_E(RRC, "Create task for RRC eNB failed\n");

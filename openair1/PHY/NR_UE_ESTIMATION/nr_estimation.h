@@ -90,4 +90,11 @@ void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint32_t rx_power_fil_dB,
                         uint8_t eNB_id);
 
+/*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
+@param Mod_id Module ID for UE
+@param eNB_index Index of eNB on which to act
+@returns Path loss in dB
+ */
+int16_t nr_get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+
 #endif

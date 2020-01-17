@@ -197,7 +197,7 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
 #endif
 
 
-
+#if 0
 int32_t pdcch_llr(NR_DL_FRAME_PARMS *frame_parms,
                   int32_t **rxdataF_comp,
                   char *pdcch_llr,
@@ -229,11 +229,12 @@ int32_t pdcch_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   return(0);
 }
+#endif
 
 //__m128i avg128P;
 
 //compute average channel_level on each (TX,RX) antenna pair
-void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
+void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
                          uint8_t nb_rb) {
@@ -651,7 +652,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 }
 
 
-void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
+void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
                          uint8_t symbol) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -686,6 +687,7 @@ void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
+#if 0
 void pdcch_siso(NR_DL_FRAME_PARMS *frame_parms,
                 int32_t **rxdataF_comp,
                 uint8_t l) {
@@ -700,7 +702,7 @@ void pdcch_siso(NR_DL_FRAME_PARMS *frame_parms,
     }
   }
 }
-
+#endif
 
 
 
@@ -812,10 +814,10 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                 coreset_freq_dom,
                                 coreset_nbr_rb,
                                 n_rb_offset);
-    LOG_DD("we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
-    LOG_DD("in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
+    LOG_DD("we enter nr_pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
+    LOG_DD("in nr_pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
     // compute channel level based on ofdm symbol 0
-    pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+    nr_pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
                         avgP,
                         coreset_nbr_rb);
@@ -851,9 +853,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
 
     if (frame_parms->nb_antennas_rx > 1) {
-      LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
+      LOG_DD("we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
              frame_parms->nb_antennas_rx);
-      pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
+      nr_pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     }
 
     LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);

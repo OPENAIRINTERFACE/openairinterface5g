@@ -3496,7 +3496,6 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
       (*caps)[1] = PROTOCOL__FLEX_BS_CAPABILITY__SDAP;
       (*caps)[2] = PROTOCOL__FLEX_BS_CAPABILITY__RRC;
       break;
-
     case ngran_eNB_DU:
     case ngran_gNB_DU:
       n_caps = 5;
@@ -3509,7 +3508,6 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
       (*caps)[3] = PROTOCOL__FLEX_BS_CAPABILITY__HIMAC;
       (*caps)[4] = PROTOCOL__FLEX_BS_CAPABILITY__RLC;
       break;
-
     case ngran_eNB:
     case ngran_ng_eNB:
     case ngran_gNB:
@@ -3526,6 +3524,8 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
       (*caps)[6] = PROTOCOL__FLEX_BS_CAPABILITY__SDAP;
       (*caps)[7] = PROTOCOL__FLEX_BS_CAPABILITY__RRC;
       break;
+    case ngran_eNB_MBMS_STA:
+     break;
   }
 
   return n_caps;
@@ -3541,31 +3541,31 @@ uint16_t flexran_get_capabilities_mask(mid_t mod_id) {
     case ngran_ng_eNB_CU:
     case ngran_gNB_CU:
       mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
       break;
-
     case ngran_eNB_DU:
     case ngran_gNB_DU:
       mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC);
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC);
       break;
-
     case ngran_eNB:
     case ngran_ng_eNB:
     case ngran_gNB:
       mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
-             | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
+           | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
       break;
+    case ngran_eNB_MBMS_STA:
+     break;
   }
 
   return mask;

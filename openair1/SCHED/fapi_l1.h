@@ -53,6 +53,11 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
 			    uint8_t codeword_index,
 			    uint8_t *sdu);
+
+void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
+			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
+			    uint8_t *sdu);
+
 void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
 			 nfapi_ul_config_request_pdu_t *ul_config_pdu,
 			 uint16_t frame,uint8_t subframe,uint8_t srs_present);

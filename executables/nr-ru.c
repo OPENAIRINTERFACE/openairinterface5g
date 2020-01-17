@@ -992,7 +992,7 @@ void wakeup_gNB_L1s(RU_t *ru) {
   if (ru->num_gNB==1 && ru->gNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call gNB function directly
     char string[20];
-    sprintf(string,"Incoming RU %d",ru->idx);
+    sprintf(string,"Incoming RU %u",ru->idx);
     LOG_D(PHY,"RU %d Call gNB_top\n",ru->idx);
     ru->gNB_top(gNB_list[0],ru->proc.frame_rx,ru->proc.tti_rx,string,ru);
   } else {
@@ -1172,7 +1172,7 @@ int setup_RU_buffers(RU_t *ru) {
     for (i=0; i<ru->nb_rx; i++) {
       card = i/4;
       ant = i%4;
-      printf("Mapping RU id %d, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      printf("Mapping RU id %u, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
       free(ru->common.rxdata[i]);
       ru->common.rxdata[i] = ru->openair0_cfg.rxbase[ru->rf_map.chain+ant];
       printf("rxdata[%d] @ %p\n",i,ru->common.rxdata[i]);
@@ -1186,7 +1186,7 @@ int setup_RU_buffers(RU_t *ru) {
     for (i=0; i<ru->nb_tx; i++) {
       card = i/4;
       ant = i%4;
-      printf("Mapping RU id %d, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      printf("Mapping RU id %u, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
       free(ru->common.txdata[i]);
       ru->common.txdata[i] = ru->openair0_cfg.txbase[ru->rf_map.chain+ant];
       printf("txdata[%d] @ %p\n",i,ru->common.txdata[i]);
@@ -1336,7 +1336,7 @@ static void *ru_thread_tx( void *param ) {
       for (int j=0; j<gNB->num_RU; j++) {
         if (ru == gNB->RU_list[j]) {
           if ((gNB_proc->RU_mask_tx&(1<<j)) > 0)
-            LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU tx %d (num_RU %d,mask %x) has not been served yet!\n",
+            LOG_E(PHY,"gNB %d frame %d, subframe %d : previous information from RU tx %d (num_RU %d,mask %x) has not been served yet!\n",
                   gNB->Mod_id,gNB_proc->frame_rx,gNB_proc->slot_rx,ru->idx,gNB->num_RU,gNB_proc->RU_mask_tx);
 
           gNB_proc->RU_mask_tx |= (1<<j);
@@ -1386,7 +1386,7 @@ static void *ru_thread( void *param ) {
   // set default return value
   ru_thread_status = 0;
   // set default return value
-  sprintf(threadname,"ru_thread %d",ru->idx);
+  sprintf(threadname,"ru_thread %u",ru->idx);
 
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
@@ -2009,7 +2009,7 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
         ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+        printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2033,7 +2033,7 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
         ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+        printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 
         if (ret<0) {
           printf("Exiting, cannot initialize transport protocol\n");
@@ -2056,7 +2056,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       ru->stop_rf                = stop_rf;
-      printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
+      printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       /*
           if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
             fill_rf_config(ru,rf_config_file);
@@ -2086,7 +2086,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
       ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 
       if (ret<0) {
         printf("Exiting, cannot initialize transport protocol\n");
@@ -2112,7 +2112,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
       ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 
       if (ret<0) {
         printf("Exiting, cannot initialize transport protocol\n");

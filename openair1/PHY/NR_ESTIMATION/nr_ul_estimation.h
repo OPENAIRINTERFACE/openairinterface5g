@@ -45,7 +45,8 @@
 				                     unsigned short p,
 				                     unsigned char symbol,
 				                     unsigned short bwp_start_subcarrier,
-				                     unsigned short nb_rb_pusch);
+				                     unsigned short nb_rb_pusch,
+				                     dmrs_UplinkConfig_t *dmrs_UplinkConfig);
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 

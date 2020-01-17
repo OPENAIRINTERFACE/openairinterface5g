@@ -74,6 +74,8 @@ extern UL_IND_t *UL_INFO;
 extern int next_ra_frame;
 extern module_id_t next_Mod_id;
 
+int mbms_rab_id = 2047;
+
 /*
  *
 #ifndef USER_MODE
@@ -792,6 +794,9 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
       if (j<28 && UE_mac_inst[module_idP].msi_status_v[j]==1) {
         LOG_D(MAC,"[UE %d] Frame %d : MCH->MTCH for sync area %d (eNB %d, %d bytes), j=%d\n", module_idP, frameP, sync_area, eNB_index, rx_lengths[i], j);
+        //This sucks I know ... workaround !
+       mbms_rab_id = rx_lcids[i];
+        //end sucks  :-(
         mac_rlc_data_ind(
           module_idP,
           UE_mac_inst[module_idP].crnti,
@@ -1096,6 +1101,7 @@ int ue_query_p_mch(module_id_t module_idP, uint32_t frameP, uint32_t subframe, i
 
 int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_t subframe, uint8_t eNB_index,uint8_t *sync_area, uint8_t *mcch_active) {
   int i = 0, j = 0, ii = 0, jj = 0, msi_pos = 0, mcch_mcs = -1, mtch_mcs = -1;
+  int l =0;
   int mcch_flag = 0, mtch_flag = 0, msi_flag = 0;
   long mch_scheduling_period = -1;
   uint8_t mch_lcid = 0;
@@ -1347,28 +1353,40 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
         // Acount for sf_allocable in CSA
         int num_sf_alloc = 0;
 
-        for (i = 0; i < 8; i++) {
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] == NULL)
+        for (l = 0; l < 8; l++) {
+          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l] == NULL)
             continue;
 
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
+          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
             continue;
 
-          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0];
+          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.choice.oneFrame.buf[0];
 
           for (j = 0; j < 6; j++)
             num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
+	    //num_sf_alloc=1;
         }
 
-        for (i = 0; i < 28; i++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[i] >= num_sf_alloc) {
-            if (UE_mac_inst[module_idP].pmch_stop_mtch[i] != 2047) {
-              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL)
+        for (l = 0; l < 28; l++) {
+          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
+            if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
+              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
                 mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
+               long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
+               long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
+               if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
+		       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
+
+                       mtch_mcs = -1;
+	       }/*else
+		       LOG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
+               	UE_mac_inst[module_idP].common_num_sf_alloc++;
+           	UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period);
+	      }
               else
                 mtch_mcs = -1;
 
-              mch_lcid = (uint8_t)i;
+              mch_lcid = (uint8_t)l;
               break;
             }
           }
@@ -1377,7 +1395,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
         // sf allocation is non-overlapping
         if ((msi_flag==1) || (mcch_flag==1) || (mtch_flag==1)) {
           LOG_D(MAC,"[UE %d] Frame %d Subframe %d: sync area %d SF alloc %d: msi flag %d, mcch flag %d, mtch flag %d\n",
-                module_idP, frameP, subframe,i,j,msi_flag,mcch_flag,mtch_flag);
+                module_idP, frameP, subframe,l,j,msi_flag,mcch_flag,mtch_flag);
           *sync_area=i;
           break;
         }
@@ -2017,9 +2035,9 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         if (sdu_lengths[num_sdus]) {
           sdu_length_total += sdu_lengths[num_sdus];
           sdu_lcids[num_sdus] = lcid;
-          LOG_I(MAC,
-                "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
-                module_idP, sdu_lengths[num_sdus], lcid);
+          //LOG_I(MAC,
+          //      "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
+          //      module_idP, sdu_lengths[num_sdus], lcid);
 
           if (buflen ==
               (bsr_len + phr_len + total_rlc_pdu_header_len +

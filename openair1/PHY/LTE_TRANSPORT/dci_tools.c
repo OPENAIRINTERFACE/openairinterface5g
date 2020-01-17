@@ -2014,10 +2014,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
   ulsch->harq_processes[harq_pid]->handled                               = 0;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ulsch->harq_processes[harq_pid]->repetition_number                     = ulsch_pdu->ulsch_pdu_rel13.repetition_number ;
   ulsch->harq_processes[harq_pid]->total_number_of_repetitions           = ulsch_pdu->ulsch_pdu_rel13.total_number_of_repetitions ;
-#endif
   ulsch->harq_processes[harq_pid]->first_rb                              = ulsch_pdu->ulsch_pdu_rel8.resource_block_start;
   ulsch->harq_processes[harq_pid]->nb_rb                                 = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
   ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;

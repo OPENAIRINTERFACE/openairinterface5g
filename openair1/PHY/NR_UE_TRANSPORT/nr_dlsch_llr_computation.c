@@ -39,8 +39,8 @@
 //#define DEBUG_LLR_SIC
 
 
-int16_t zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
-int16_t ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
+int16_t nr_zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
+int16_t nr_ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
 #if defined(__x86_64__) || defined(__i386__)
 __m128i rho_rpi __attribute__ ((aligned(16)));
 __m128i rho_rmi __attribute__ ((aligned(16)));
@@ -604,11 +604,11 @@ __m128i tmp_result4 __attribute__ ((aligned(16)));
 #define prodsum_psi_a_epi16(psi_r,a_r,psi_i,a_i,psi_a) tmp_result = _mm_mulhi_epi16(psi_r,a_r); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result2 = _mm_mulhi_epi16(psi_i,a_i); tmp_result2 = _mm_slli_epi16(tmp_result2,1); psi_a = _mm_adds_epi16(tmp_result,tmp_result2);
 
 // calculate interference magnitude
-#define interference_abs_epi16(psi,int_ch_mag,int_mag,c1,c2) tmp_result = _mm_cmplt_epi16(psi,int_ch_mag); tmp_result2 = _mm_xor_si128(tmp_result,(*(__m128i*)&ones[0])); tmp_result = _mm_and_si128(tmp_result,c1); tmp_result2 = _mm_and_si128(tmp_result2,c2); int_mag = _mm_or_si128(tmp_result,tmp_result2);
+#define interference_abs_epi16(psi,int_ch_mag,int_mag,c1,c2) tmp_result = _mm_cmplt_epi16(psi,int_ch_mag); tmp_result2 = _mm_xor_si128(tmp_result,(*(__m128i*)&nr_ones[0])); tmp_result = _mm_and_si128(tmp_result,c1); tmp_result2 = _mm_and_si128(tmp_result2,c2); int_mag = _mm_or_si128(tmp_result,tmp_result2);
 
 // calculate interference magnitude
-// tmp_result = ones in shorts corr. to interval 2<=x<=4, tmp_result2 interval < 2, tmp_result3 interval 4<x<6 and tmp_result4 interval x>6
-#define interference_abs_64qam_epi16(psi,int_ch_mag,int_two_ch_mag,int_three_ch_mag,a,c1,c3,c5,c7) tmp_result = _mm_cmplt_epi16(psi,int_two_ch_mag); tmp_result3 = _mm_xor_si128(tmp_result,(*(__m128i*)&ones[0])); tmp_result2 = _mm_cmplt_epi16(psi,int_ch_mag); tmp_result = _mm_xor_si128(tmp_result,tmp_result2); tmp_result4 = _mm_cmpgt_epi16(psi,int_three_ch_mag); tmp_result3 = _mm_xor_si128(tmp_result3,tmp_result4); tmp_result = _mm_and_si128(tmp_result,c3); tmp_result2 = _mm_and_si128(tmp_result2,c1); tmp_result3 = _mm_and_si128(tmp_result3,c5); tmp_result4 = _mm_and_si128(tmp_result4,c7); tmp_result = _mm_or_si128(tmp_result,tmp_result2); tmp_result3 = _mm_or_si128(tmp_result3,tmp_result4); a = _mm_or_si128(tmp_result,tmp_result3);
+// tmp_result = nr_ones in shorts corr. to interval 2<=x<=4, tmp_result2 interval < 2, tmp_result3 interval 4<x<6 and tmp_result4 interval x>6
+#define interference_abs_64qam_epi16(psi,int_ch_mag,int_two_ch_mag,int_three_ch_mag,a,c1,c3,c5,c7) tmp_result = _mm_cmplt_epi16(psi,int_two_ch_mag); tmp_result3 = _mm_xor_si128(tmp_result,(*(__m128i*)&nr_ones[0])); tmp_result2 = _mm_cmplt_epi16(psi,int_ch_mag); tmp_result = _mm_xor_si128(tmp_result,tmp_result2); tmp_result4 = _mm_cmpgt_epi16(psi,int_three_ch_mag); tmp_result3 = _mm_xor_si128(tmp_result3,tmp_result4); tmp_result = _mm_and_si128(tmp_result,c3); tmp_result2 = _mm_and_si128(tmp_result2,c1); tmp_result3 = _mm_and_si128(tmp_result3,c5); tmp_result4 = _mm_and_si128(tmp_result4,c7); tmp_result = _mm_or_si128(tmp_result,tmp_result2); tmp_result3 = _mm_or_si128(tmp_result3,tmp_result4); a = _mm_or_si128(tmp_result,tmp_result3);
 
 // calculates a_sq = int_ch_mag*(a_r^2 + a_i^2)*scale_factor
 #define square_a_epi16(a_r,a_i,int_ch_mag,scale_factor,a_sq) tmp_result = _mm_mulhi_epi16(a_r,a_r); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result = _mm_mulhi_epi16(tmp_result,scale_factor); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result = _mm_mulhi_epi16(tmp_result,int_ch_mag); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result2 = _mm_mulhi_epi16(a_i,a_i); tmp_result2 = _mm_slli_epi16(tmp_result2,1); tmp_result2 = _mm_mulhi_epi16(tmp_result2,scale_factor); tmp_result2 = _mm_slli_epi16(tmp_result2,1); tmp_result2 = _mm_mulhi_epi16(tmp_result2,int_ch_mag); tmp_result2 = _mm_slli_epi16(tmp_result2,1); a_sq = _mm_adds_epi16(tmp_result,tmp_result2);
@@ -1142,7 +1142,7 @@ int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   // printf("nr_dlsch_qpsk_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
   //    printf("qpsk_qpsk: len %d, llr16 %p\n",len,llr16);
-  qpsk_qpsk((short *)rxF,
+  nr_qpsk_qpsk((short *)rxF,
             (short *)rxF_i,
             (short *)llr16,
             (short *)rho,
@@ -1156,7 +1156,7 @@ int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
 //__m128i ONE_OVER_SQRT_8 __attribute__((aligned(16)));
 
-void qpsk_qpsk(short *stream0_in,
+void nr_qpsk_qpsk(short *stream0_in,
                short *stream1_in,
                short *stream0_out,
                short *rho01,
@@ -1390,7 +1390,7 @@ int nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  qpsk_qam16((short *)rxF,
+  nr_qpsk_qam16((short *)rxF,
              (short *)rxF_i,
              (short *)ch_mag_i,
              (short *)llr16,
@@ -1413,7 +1413,7 @@ __m128i SQRT_10_OVER_FOUR __attribute__((aligned(16)));
 __m128i ch_mag_int;
 #endif
 */
-void qpsk_qam16(int16_t *stream0_in,
+void nr_qpsk_qam16(int16_t *stream0_in,
                 int16_t *stream1_in,
                 int16_t *ch_mag_i,
                 int16_t *stream0_out,
@@ -1672,7 +1672,7 @@ int nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  qpsk_qam64((short *)rxF,
+  nr_qpsk_qam64((short *)rxF,
              (short *)rxF_i,
              (short *)ch_mag_i,
              (short *)llr16,
@@ -1695,7 +1695,7 @@ __m128i two_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
 __m128i three_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
 __m128i SQRT_42_OVER_FOUR __attribute__((aligned(16)));
 */
-void qpsk_qam64(short *stream0_in,
+void nr_qpsk_qam64(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag_i,
                 short *stream0_out,
@@ -1947,7 +1947,7 @@ __m128i ch_mag_over_2 __attribute__ ((aligned(16)));
 __m128i ch_mag_9_over_10 __attribute__ ((aligned(16)));
 */
 
-void qam16_qpsk(short *stream0_in,
+void nr_qam16_qpsk(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag,
                 short *stream0_out,
@@ -2440,7 +2440,7 @@ int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
 
-  qam16_qpsk((short *)rxF,
+  nr_qam16_qpsk((short *)rxF,
              (short *)rxF_i,
              (short *)ch_mag,
              (short *)llr16,
@@ -2453,7 +2453,7 @@ int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-void qam16_qam16(short *stream0_in,
+void nr_qam16_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -2981,7 +2981,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
 
-  qam16_qam16((short *)rxF,
+  nr_qam16_qam16((short *)rxF,
               (short *)rxF_i,
               (short *)ch_mag,
               (short *)ch_mag_i,
@@ -2995,7 +2995,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-void qam16_qam64(int16_t *stream0_in,
+void nr_qam16_qam64(int16_t *stream0_in,
                  int16_t *stream1_in,
                  int16_t *ch_mag,
                  int16_t *ch_mag_i,
@@ -3615,7 +3615,7 @@ int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
 
-  qam16_qam64((short *)rxF,
+  nr_qam16_qam64((short *)rxF,
               (short *)rxF_i,
               (short *)ch_mag,
               (short *)ch_mag_i,
@@ -3670,7 +3670,7 @@ __m128i ch_mag_2_over_42_with_sigma2 __attribute__((aligned(16)));
 
 */
 
-void qam64_qpsk(int16_t *stream0_in,
+void nr_qam64_qpsk(int16_t *stream0_in,
                 int16_t *stream1_in,
                 int16_t *ch_mag,
                 int16_t *stream0_out,
@@ -5175,7 +5175,7 @@ int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  qam64_qpsk((short *)rxF,
+  nr_qam64_qpsk((short *)rxF,
              (short *)rxF_i,
              (short *)ch_mag,
              (short *)llr16,
@@ -5189,7 +5189,7 @@ int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 
 
 
-void qam64_qam16(short *stream0_in,
+void nr_qam64_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -6718,7 +6718,7 @@ int nr_dlsch_64qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  qam64_qam16((short *)rxF,
+  nr_qam64_qam16((short *)rxF,
               (short *)rxF_i,
               (short *)ch_mag,
               (short *)ch_mag_i,
@@ -6731,6 +6731,7 @@ int nr_dlsch_64qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
+#if 0
 void qam64_qam64(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
@@ -8481,6 +8482,7 @@ void qam64_qam64(short *stream0_in,
   _m_empty();
 #endif
 }
+#endif
 
 
 int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,

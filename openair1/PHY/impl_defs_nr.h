@@ -119,7 +119,7 @@ SystemInformationBlockType1_nr_t;
 #define NR_TDD_SET_ALL_SYMBOLS             (0x3FFF)
 
 #define NR_DOWNLINK_SLOT                   (0x01)
-#define NR_UPLINK_SLOT                     (0x02)
+#define NR_UPLINK_SLOT                     (0x03)
 
 #define FRAME_DURATION_MICRO_SEC           (10000)  /* frame duration in microsecond */
 
@@ -537,6 +537,7 @@ typedef enum {
 typedef enum {
   pusch_dmrs_pos0 = 0,
   pusch_dmrs_pos1 = 1,
+  pusch_dmrs_pos2 = 2,
   pusch_dmrs_pos3 = 3,
 } pusch_dmrs_AdditionalPosition_t;
 typedef enum {

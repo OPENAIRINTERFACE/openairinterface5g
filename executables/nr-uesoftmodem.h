@@ -103,4 +103,5 @@ extern void print_opp_meas(void);
 void *UE_thread(void *arg);
 PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern tpool_t *Tpool;
+extern tpool_t *Tpool_dl;
 #endif
