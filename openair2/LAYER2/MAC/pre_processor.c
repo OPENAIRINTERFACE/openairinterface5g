@@ -879,15 +879,16 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
 // This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
 void
 dlsch_scheduler_pre_processor(module_id_t Mod_id,
-                              int slice_idx,
+                              int CC_id,
                               frame_t frameP,
-                              sub_frame_t subframeP,
-                              int *mbsfn_flag,
-                              uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]) {
+                              sub_frame_t subframeP) {
   int UE_id;
-  uint8_t CC_id;
   uint16_t i, j;
+  int slice_idx = 0;
   int min_rb_unit[NFAPI_CC_MAX];
+  uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
+  memset(rballoc_sub, 0, sizeof(rballoc_sub));
+
   eNB_MAC_INST *eNB = RC.mac[Mod_id];
   slice_info_t *sli = &eNB->slice_info;
   uint16_t (*nb_rbs_required)[MAX_MOBILES_PER_ENB]  = sli->pre_processor_results[slice_idx].nb_rbs_required;
@@ -907,8 +908,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
                                       min_rb_unit,
                                       nb_rbs_required,
                                       rballoc_sub,
-                                      MIMO_mode_indicator,
-                                      mbsfn_flag); // FIXME: Not sure if useful
+                                      MIMO_mode_indicator);
   // STATUS
   // Store the DLSCH buffer for each logical channel
   store_dlsch_buffer(Mod_id,
@@ -1005,8 +1005,7 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
                                     int min_rb_unit[NFAPI_CC_MAX],
                                     uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                     uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
-                                    int *mbsfn_flag) {
+                                    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]) {
   int UE_id;
   uint8_t CC_id;
   int i, j;
@@ -1024,9 +1023,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
     cc = &RC.mac[module_idP]->common_channels[CC_id];
     N_RBG[CC_id] = to_rbg(cc->mib->message.dl_Bandwidth);
     min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
-
-    if (mbsfn_flag[CC_id] > 0)    // If this CC is allocated for MBSFN skip it here
-      continue;
 
     for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; ++UE_id) {
       UE_list = &RC.mac[module_idP]->UE_list;

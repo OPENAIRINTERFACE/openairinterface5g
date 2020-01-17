@@ -142,9 +142,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 @param Mod_id Instance of eNB
 @param frame Frame index
 @param subframe Index of subframe
-@param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -159,8 +158,7 @@ void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 void schedule_ue_spec(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
-                      sub_frame_t subframe,
-                      int *mbsfn_flag);
+                      sub_frame_t subframe);
 void schedule_ue_spec_br(module_id_t   module_idP,
                          frame_t       frameP,
                          sub_frame_t   subframeP);
@@ -234,21 +232,18 @@ void clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
 
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int slice_idxP,
+                                   int CC_id,
                                    frame_t frameP,
-                                   sub_frame_t subframe,
-                                   int *mbsfn_flag,
-                                   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
+                                   sub_frame_t subframe);
 
 void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-    int slice_idx,
-    frame_t frameP,
-    sub_frame_t subframeP,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
-    int *mbsfn_flag);
+                                         int slice_idx,
+                                         frame_t frameP,
+                                         sub_frame_t subframeP,
+                                         int min_rb_unit[NFAPI_CC_MAX],
+                                         uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                         uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                         uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
     int slice_idx,

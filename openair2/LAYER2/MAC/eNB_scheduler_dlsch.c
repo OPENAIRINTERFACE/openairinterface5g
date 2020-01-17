@@ -421,7 +421,8 @@ set_ul_DAI(int module_idP,
 void
 schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag) {
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    schedule_ue_spec(module_idP, CC_id, frameP, subframeP, mbsfn_flag);
+    if (mbsfn_flag[CC_id] == 0)
+      schedule_ue_spec(module_idP, CC_id, frameP, subframeP);
   }
 }
 
@@ -447,8 +448,7 @@ void
 schedule_ue_spec(module_id_t module_idP,
                  int CC_id,
                  frame_t frameP,
-                 sub_frame_t subframeP,
-                 int *mbsfn_flag)
+                 sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
   int UE_id;
@@ -569,13 +569,10 @@ schedule_ue_spec(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_IN);
   start_meas(&eNB->schedule_dlsch_preprocessor);
-  memset(eNB->slice_info.rballoc_sub, 0, sizeof(eNB->slice_info.rballoc_sub));
   dlsch_scheduler_pre_processor(module_idP,
-                                0, //slice_idxP,
+                                CC_id,
                                 frameP,
-                                subframeP,
-                                mbsfn_flag,
-                                eNB->slice_info.rballoc_sub);
+                                subframeP);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
@@ -596,9 +593,6 @@ schedule_ue_spec(module_id_t module_idP,
   LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",
         CC_id);
   dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
-
-  //if (mbsfn_flag[CC_id] > 0)
-  //  return;
 
   for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d UE %d\n",
@@ -1627,8 +1621,7 @@ schedule_ue_spec(module_id_t module_idP,
 
   fill_DLSCH_dci(module_idP,
                  frameP,
-                 subframeP,
-                 mbsfn_flag);
+                 subframeP);
   stop_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,
                                           VCD_FUNCTION_OUT);
@@ -2520,8 +2513,7 @@ schedule_ue_spec_br(module_id_t module_idP,
 void
 fill_DLSCH_dci(module_id_t module_idP,
                frame_t frameP,
-               sub_frame_t subframeP,
-               int *mbsfn_flagP)
+               sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
   // loop over all allocated UEs and compute frequency allocations for PDSCH
@@ -2549,9 +2541,6 @@ fill_DLSCH_dci(module_id_t module_idP,
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     LOG_D(MAC, "Doing fill DCI for CC_id %d\n",
           CC_id);
-
-    if (mbsfn_flagP[CC_id] > 0)
-      continue;
 
     cc = &eNB->common_channels[CC_id];
     N_RBG = to_rbg(cc->mib->message.dl_Bandwidth);

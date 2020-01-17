@@ -619,8 +619,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                           min_rb_unit,
                                           (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
                                           rballoc_sub,
-                                          MIMO_mode_indicator,
-                                          mbsfn_flag);
+                                          MIMO_mode_indicator);
     }
   }
 
