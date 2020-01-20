@@ -1104,6 +1104,11 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
       cfg->samples_per_frame = 1228800;
       cfg->tx_bw = 100e6;
       cfg->rx_bw = 100e6;
+    } else if(N_RB == 32) {
+      cfg->sample_rate=61.44e6;
+      cfg->samples_per_frame = 614400;
+      cfg->tx_bw = 50e6;
+      cfg->rx_bw = 50e6;
     }
   } else {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
