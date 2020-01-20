@@ -794,7 +794,7 @@ void kill_gNB_proc(int inst) {
   proc = &gNB->proc;
   L1_proc     = &proc->L1_proc;
   L1_proc_tx  = &proc->L1_proc_tx;
-  LOG_I(PHY, "Killing TX CC_id %d inst %d\n",inst );
+  LOG_I(PHY, "Killing TX inst %d\n",inst );
   
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
     pthread_mutex_lock(&L1_proc->mutex);
@@ -871,7 +871,7 @@ void init_eNB_afterRU(void) {
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
-    LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, CC_id, RC.gNB[inst]);
+    LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
     gNB                                  =  RC.gNB[inst];
     phy_init_nr_gNB(gNB,0,0);
 
