@@ -90,7 +90,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #define NS_PER_SLOT 500000
 
-char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 extern double cpuf;
 
@@ -550,8 +550,8 @@ void ue_compute_srs_occasion(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t 
 	//    Simultaneous-AN-and-SRS is FALSE
 
 	// check PUCCH format 2/2a/2b transmissions
-	is_pucch2_subframe = is_cqi_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0);
-	is_pucch2_subframe = (is_ri_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0)) || is_pucch2_subframe;
+	is_pucch2_subframe = nr_is_cqi_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0);
+	is_pucch2_subframe = (nr_is_ri_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0)) || is_pucch2_subframe;
 
 	// check ACK/SR transmission
 	if(frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission == FALSE)
@@ -1459,7 +1459,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
     LOG_I(PHY,"mode %d\n",mode);
 
     if ((ue->mac_enabled==1) && (mode != calib_prach_tx)) {
-      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(ue->Mod_id,ue->CC_id,eNB_id);
+      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id);
     }
     else {
       ue->tx_power_dBm[nr_tti_tx] = ue->tx_power_max_dBm;
@@ -1471,7 +1471,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
 	  frame_tx,
 	  nr_tti_tx,
 	  ue->prach_resources[eNB_id]->ra_PreambleIndex,
-	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+	  nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id),
 	  ue->tx_power_dBm[nr_tti_tx],
 	  ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
 	  ue->prach_resources[eNB_id]->ra_TDD_map_index,
@@ -1480,7 +1480,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
     ue->tx_total_RE[nr_tti_tx] = 96;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
+    ue->prach_vars[eNB_id]->amp = nr_get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
 					     ue->tx_power_max_dBm,
 					     ue->frame_parms.N_RB_UL,
 					     6);
@@ -1503,7 +1503,7 @@ if (ue->prach_resources[eNB_id]!=NULL) {
     //      stop_meas(&ue->tx_prach);
     LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
 	  ue->Mod_id,
-	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+	  nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id),
 	  ue->tx_power_dBm[nr_tti_tx],
 	  dB_fixed(prach_power),
 	  ue->prach_vars[eNB_id]->amp);
@@ -1522,8 +1522,8 @@ if (ue->prach_resources[eNB_id]!=NULL) {
 LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, nr_tti_rx %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
       ue->Mod_id,frame_tx,nr_tti_tx,eNB_id,
       ue->prach_resources[eNB_id]->ra_PreambleIndex,
-      ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(ue->Mod_id,ue->CC_id,eNB_id),
-      get_PL(ue->Mod_id,ue->CC_id,eNB_id));
+      ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+      nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id));
 
 }
 
@@ -1567,6 +1567,7 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_com
   LOG_D(PHY, "[UE %d] Got timing advance command %u from MAC, new value is %u\n", Mod_id, ta_command, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
 
+#if 0
 void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
 								UE_nr_rxtx_proc_t *proc,
 								uint8_t eNB_id,
@@ -1722,10 +1723,10 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
 
     // check Periodic CQI/RI reporting
     cqi_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
-		  (is_cqi_TXOp(ue,proc,eNB_id)==1));
+		  (nr_is_cqi_TXOp(ue,proc,eNB_id)==1));
 
     ri_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
-		 (is_ri_TXOp(ue,proc,eNB_id)==1));
+		 (nr_is_ri_TXOp(ue,proc,eNB_id)==1));
 
     // compute CQI/RI resources
     compute_cqi_ri_resources(ue, ue->ulsch[eNB_id], eNB_id, ue->ulsch[eNB_id]->rnti, P_RNTI, CBA_RNTI, cqi_status, ri_status);
@@ -1930,7 +1931,7 @@ if (abstraction_flag == 0) {
   ue->tx_total_RE[nr_tti_tx] = nb_rb*12;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-  tx_amp = get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
+  tx_amp = nr_get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
 		      ue->tx_power_max_dBm,
 		      ue->frame_parms.N_RB_UL,
 		      nb_rb);
@@ -1939,7 +1940,7 @@ if (abstraction_flag == 0) {
 #endif
 #if T_TRACER
   T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-    T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
+    T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(nr_get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
 #endif
 
 #ifdef UE_DEBUG_TRACE
@@ -1989,6 +1990,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 #endif
 
 }
+#endif
 
 #if 0
 
@@ -2021,7 +2023,7 @@ void ue_srs_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
       if (ue->mac_enabled==1)
 	{
-	  tx_amp = get_tx_amp(Po_SRS,
+	  tx_amp = nr_get_tx_amp(Po_SRS,
 			      ue->tx_power_max_dBm,
 			      ue->frame_parms.N_RB_UL,
 			      nb_rb_srs);
@@ -2246,10 +2248,10 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   nb_cw = ( (ack_status_cw0 != 0) ? 1:0) + ( (ack_status_cw1 != 0) ? 1:0);
 
   cqi_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0)&&
-		(is_cqi_TXOp(ue,proc,eNB_id)==1));
+		(nr_is_cqi_TXOp(ue,proc,eNB_id)==1));
 
   ri_status = ((ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
-	       (is_ri_TXOp(ue,proc,eNB_id)==1));
+	       (nr_is_ri_TXOp(ue,proc,eNB_id)==1));
 
   // Part - II
   // if nothing to report ==> exit function
@@ -2304,7 +2306,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
       ue->tx_total_RE[nr_tti_tx] = 12;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-      tx_amp = get_tx_amp(Po_PUCCH,
+      tx_amp = nr_get_tx_amp(Po_PUCCH,
 			  ue->tx_power_max_dBm,
 			  ue->frame_parms.N_RB_UL,
 			  1);
@@ -2313,7 +2315,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
 
 #ifdef UE_DEBUG_TRACE
@@ -2412,7 +2414,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
       ue->tx_total_RE[nr_tti_tx] = 12;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-      tx_amp =  get_tx_amp(Po_PUCCH,
+      tx_amp =  nr_get_tx_amp(Po_PUCCH,
 			   ue->tx_power_max_dBm,
 			   ue->frame_parms.N_RB_UL,
 			   1);
@@ -2421,7 +2423,7 @@ void ue_pucch_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 #if T_TRACER
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id),T_INT(Mod_id), T_INT(frame_tx%1024), T_INT(nr_tti_tx),T_INT(ue->tx_power_dBm[nr_tti_tx]),
-	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
+	T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][eNB_id][0]->g_pucch),T_INT(nr_get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
 #endif
 #ifdef UE_DEBUG_TRACE
       LOG_I(PHY,"[UE  %d][RNTI %x] AbsSubFrame %d.%d Generating PUCCH 2 (RI or CQI), Po_PUCCH %d, isShortenPucch %d, amp %d\n",
@@ -2631,6 +2633,8 @@ void nr_ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0
 
     //printf("start adjust gain power avg db %d\n", ue->measurements.rx_power_avg_dB[eNB_id]);
     phy_adjust_gain_nr (ue,ue->measurements.rx_power_avg_dB[eNB_id],eNB_id);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
 
 }
 
@@ -2792,7 +2796,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
 
 
 
-unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
+unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
 {
 
   int gain_dB = power_dBm - power_max_dBm;
@@ -3046,7 +3050,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
     */
 
     LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI found %i --> rnti %x / crnti %x : format %d\n",
-	  ue->Mod_id,frame_rx%1024,nr_tti_rx,mode_string[ue->UE_mode[eNB_id]],
+	  ue->Mod_id,frame_rx%1024,nr_tti_rx,nr_mode_string[ue->UE_mode[eNB_id]],
 	  dci_cnt,
 	  dci_alloc_rx[0].rnti,
 	  ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti,
@@ -3309,6 +3313,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,
 #endif
 
 
+#if 0
 void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t *current_harq_processes)
 {
 
@@ -3345,6 +3350,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   harq_processes_dest->vrb_type       = current_harq_processes->vrb_type       ;
 
 }
+#endif
 
 /*void copy_ack_struct(nr_harq_status_t *harq_ack_dest, nr_harq_status_t *current_harq_ack)
   {
@@ -3358,10 +3364,12 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
 
+  if (!dlsch0)
+  	return;
   if (dlsch0->active == 0)
     return;
 
-  if (dlsch0 && (!dlsch1))  {
+  if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
     uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
     uint16_t pdsch_nb_rb =  dlsch0->harq_processes[harq_pid]->nb_rb;
@@ -4284,6 +4292,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;
   
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
+  
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
   /*
@@ -4416,7 +4426,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
 			   proc,
 			   eNB_id,
@@ -4436,7 +4446,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
     */
     
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
@@ -4671,7 +4681,7 @@ return (0);
 }
 
 
-uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,
+uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,
 		            UE_nr_rxtx_proc_t *proc,
 					uint8_t gNB_id)
 {
@@ -4693,7 +4703,7 @@ uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,
 }
 
 
-uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,
+uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 		           UE_nr_rxtx_proc_t *proc,
 				   uint8_t gNB_id)
 {

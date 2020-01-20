@@ -1255,6 +1255,8 @@ void init_eNB(int single_thread_flag,
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       eNB->if_inst->schedule_response   = schedule_response;
       eNB->if_inst->PHY_config_req      = phy_config_request;
+      eNB->if_inst->PHY_config_update_sib2_req      = phy_config_update_sib2_request;
+      eNB->if_inst->PHY_config_update_sib13_req      = phy_config_update_sib13_request;
       memset((void *)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
       memset((void *)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");

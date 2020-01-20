@@ -926,7 +926,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   int CC_id;
   int inst;
   PHY_VARS_gNB *gNB;
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure about to allocated RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC[0]:%d\n",RC.nb_nr_L1_inst,RC.nb_nr_L1_CC[0]);
+  LOG_I(PHY,"[nr-softmodem.c] gNB structure about to be allocated RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC[0]:%d\n",RC.nb_nr_L1_inst,RC.nb_nr_L1_CC[0]);
 
   if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB ***) malloc(RC.nb_nr_L1_inst*sizeof(PHY_VARS_gNB **));
 

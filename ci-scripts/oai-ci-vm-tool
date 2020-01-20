@@ -197,11 +197,15 @@ function variant__v4__cppcheck {
 }
 
 function variant__v5__gnb_usrp {
+    VM_MEMORY=8192
+    VM_CPU=8
     NB_PATTERN_FILES=9
     BUILD_OPTIONS="--gNB -w USRP"
 }
 
 function variant__v6__nr_ue_usrp {
+    VM_MEMORY=4096
+    VM_CPU=4
     NB_PATTERN_FILES=9
     BUILD_OPTIONS="--nrUE -w USRP"
 }
@@ -234,8 +238,8 @@ function variant__v20__l1_sim {
 }
     
 function variant__v21__rf_sim {
+    ARCHIVES_LOC=rf_sim
     RUN_OPTIONS="complex"
-    EXPERIMENTAL="true"
 }
 
 function variant__v22__l2_sim {

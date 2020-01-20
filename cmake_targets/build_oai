@@ -148,7 +148,7 @@ Options
 --uhd-images-dir
    Download UHD images in the indicated location
 --build-eclipse
-   Build eclipse project files. Paths are auto corrected by fixprj.sh
+   Build eclipse project files.
 --build-lib <libraries>
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay

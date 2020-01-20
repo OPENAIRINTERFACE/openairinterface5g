@@ -101,6 +101,8 @@ uint8_t table_9_2_2_1[16][8]={
 {1,0, 14,4, 0,3,6,9},
 {1,0, 14,26,0,3,0,0}
 };
+
+
 int8_t nr_ue_process_dlsch(module_id_t module_id,
 		                   int cc_id,
 						   uint8_t gNB_index,
@@ -236,17 +238,17 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
     return 0;
 }
 
-int8_t nr_ue_decode_mib(
-	UE_nr_rxtx_proc_t *proc,
-	module_id_t module_id,
-	int 		cc_id,
-	uint8_t 	gNB_index,
-	uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
-	uint32_t    ssb_length,
-	uint32_t 	ssb_index,
-	void 		*pduP,
-        uint16_t    cell_id ){
 
+int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
+                        module_id_t module_id,
+                        int cc_id,
+                        uint8_t gNB_index,
+                        uint8_t extra_bits,	//	8bits 38.212 c7.1.1
+                        uint32_t ssb_length,
+                        uint32_t ssb_index,
+                        void *pduP,
+                        uint16_t cell_id)
+{
     LOG_I(MAC,"[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
@@ -454,18 +456,16 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
         mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
 
-
-
         // type0-pdcch search space
         float big_o;
         float big_m;
         uint32_t temp;
-        SFN_C_TYPE sfn_c=SFN_C_IMPOSSIBLE;   //  only valid for mux=1
-        uint32_t n_c=UINT_MAX;
-        uint32_t number_of_search_space_per_slot=UINT_MAX;
-        uint32_t first_symbol_index=UINT_MAX;
-        uint32_t search_space_duration;  //  element of search space
-        uint32_t coreset_duration;  //  element of coreset
+        SFN_C_TYPE sfn_c = SFN_C_IMPOSSIBLE; // only valid for mux=1
+        uint32_t n_c = UINT_MAX;
+        uint32_t number_of_search_space_per_slot = UINT_MAX;
+        uint32_t first_symbol_index = UINT_MAX;
+        uint32_t search_space_duration; // element of search space
+        uint32_t coreset_duration;      // element of coreset
         
         //  38.213 table 10.1-1
 
@@ -515,7 +515,7 @@ int8_t nr_ue_decode_mib(
                 //  38.213 Table 13-13
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-//                sfn_c = SFN_C_EQ_SFN_SSB;
+                //sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
@@ -537,7 +537,7 @@ int8_t nr_ue_decode_mib(
                 //  38.213 Table 13-14
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-//                sfn_c = SFN_C_EQ_SFN_SSB;
+                //sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x7){    //  ssb_index(i) mod 8
                     case 0: 
@@ -579,7 +579,7 @@ int8_t nr_ue_decode_mib(
                 //  38.213 Table 13-15
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-//                sfn_c = SFN_C_EQ_SFN_SSB;
+                //sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
@@ -620,8 +620,8 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_ss_n_c = n_c;
         
 	    // fill in the elements in config request inside P5 message
-	mac->phy_config.Mod_id = module_id;
-	mac->phy_config.CC_id = cc_id;
+        mac->phy_config.Mod_id = module_id;
+        mac->phy_config.CC_id = cc_id;
 
 	    mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
@@ -641,7 +641,6 @@ int8_t nr_ue_decode_mib(
     //}
     return 0;
 }
-
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms

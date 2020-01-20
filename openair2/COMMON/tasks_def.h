@@ -50,6 +50,15 @@ TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,          1000)
 TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,          200)
 TASK_DEF(TASK_CU_F1,     TASK_PRIORITY_MED,          200)
 TASK_DEF(TASK_DU_F1,     TASK_PRIORITY_MED,          200)
+///   M3ap task, acts as both source and target
+TASK_DEF(TASK_M3AP,     TASK_PRIORITY_MED,          200)
+///   M3ap task, acts as both source and target
+TASK_DEF(TASK_M3AP_MME,     TASK_PRIORITY_MED,          200)
+///   M3ap task, acts as both source and target
+TASK_DEF(TASK_M3AP_MCE,     TASK_PRIORITY_MED,          200)
+///   M2ap task, acts as both source and target
+TASK_DEF(TASK_M2AP_MCE,     TASK_PRIORITY_MED,          200)
+TASK_DEF(TASK_M2AP_ENB,     TASK_PRIORITY_MED,          200)
 ///   X2ap task, acts as both source and target
 TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,          200)
 ///   Sctp task (Used by both S1AP and X2AP)

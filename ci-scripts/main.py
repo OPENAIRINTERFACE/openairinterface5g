@@ -121,6 +121,7 @@ class SSHConnection():
 		self.ADBIPAddress = ''
 		self.ADBUserName = ''
 		self.ADBPassword = ''
+		self.ADBCentralized = True
 		self.testCase_id = ''
 		self.testXMLfiles = []
 		self.nbTestXMLfiles = 0
@@ -128,20 +129,28 @@ class SSHConnection():
 		self.Build_eNB_args = ''
 		self.backgroundBuild = False
 		self.backgroundBuildTestId = ['', '', '']
+		self.Build_eNB_forced_workspace_cleanup = False
 		self.Initialize_eNB_args = ''
 		self.air_interface = 'lte'
 		self.eNB_instance = ''
 		self.eNB_serverId = ''
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
+		self.eNBmbmsEnables = [False, False, False]
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
 		self.iperf_profile = ''
+		self.iperf_options = ''
 		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
 		self.UEDevicesStatus = []
+		self.UEDevicesRemoteServer = []
+		self.UEDevicesRemoteUser = []
+		self.UEDevicesOffCmd = []
+		self.UEDevicesOnCmd = []
+		self.UEDevicesRebootCmd = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -180,6 +189,7 @@ class SSHConnection():
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
 		self.expectedNbOfConnectedUEs = 0
+		self.startTime = 0
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -207,7 +217,7 @@ class SSHConnection():
 					logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 2:
 				# Checking if we are really on the remote client defined by its IP address
-				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:"', '\$', 5)
+				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "', '\$', 5)
 				result = re.search(str(ipaddress), str(self.ssh.before))
 				if result is None:
 					self.close()
@@ -370,9 +380,16 @@ class SSHConnection():
 			self.air_interface = 'nr'
 		else:
 			self.air_interface = 'lte'
+		if self.Build_eNB_forced_workspace_cleanup:
+			self.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
 		self.command('mkdir -p ' + lSourcePath, '\$', 5)
 		self.command('cd ' + lSourcePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -535,9 +552,14 @@ class SSHConnection():
 		else:
 			self.air_interface = 'lte'
 			ue_prefix = ''
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -626,19 +648,33 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
+			EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
+			self.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + self.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
+			self.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
+			self.command('chmod 755 ./my-hss.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=hss_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/hss_' + self.testCase_id + '.log ./my-hss.sh', '\$', 5)
+		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC HSS')
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('source oaienv', '\$', 5)
 			self.command('cd scripts', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./run_hss 2>&1 | stdbuf -o0 awk \'{ print strftime("[%Y/%m/%d %H:%M:%S] ",systime()) $0 }\' | stdbuf -o0 tee -a hss_' + self.testCase_id + '.log &', 'Core state: 2 -> 3', 35)
-		else:
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the ltebox simulated HSS')
 			self.command('if [ -d ' + self.EPCSourceCodePath + '/scripts ]; then echo ' + self.eNBPassword + ' | sudo -S rm -Rf ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
 			self.command('mkdir -p ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			self.command('cd /opt/hss_sim0609', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
@@ -647,7 +683,14 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 MME')
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f mme_' + self.testCase_id + '.log', '\$', 5)
+			self.command('echo "./run_mme --config-file /usr/local/etc/oai/mme.conf --set-virt-if" > ./my-mme.sh', '\$', 5)
+			self.command('chmod 755 ./my-mme.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=mme_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/mme_' + self.testCase_id + '.log ./my-mme.sh', '\$', 5)
+		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('source oaienv', '\$', 5)
 			self.command('cd scripts', '\$', 5)
@@ -658,9 +701,11 @@ class SSHConnection():
 				sys.exit(1)
 			host_name = result.group('host_name')
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./run_mme 2>&1 | stdbuf -o0 tee -a mme_' + self.testCase_id + '.log &', 'MME app initialization complete', 100)
-		else:
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_mme', '\$', 5)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
@@ -669,14 +714,27 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS')
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f spgwc_' + self.testCase_id + '.log spgwu_' + self.testCase_id + '.log', '\$', 5)
+			self.command('echo "spgwc -c /usr/local/etc/oai/spgw_c.conf" > ./my-spgwc.sh', '\$', 5)
+			self.command('chmod 755 ./my-spgwc.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=spgwc_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwc_' + self.testCase_id + '.log ./my-spgwc.sh', '\$', 5)
+			time.sleep(5)
+			self.command('echo "spgwu -c /usr/local/etc/oai/spgw_u.conf" > ./my-spgwu.sh', '\$', 5)
+			self.command('chmod 755 ./my-spgwu.sh', '\$', 5)
+			self.command('sudo daemon --unsafe --name=spgwu_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwu_' + self.testCase_id + '.log ./my-spgwu.sh', '\$', 5)
+		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('source oaienv', '\$', 5)
 			self.command('cd scripts', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./run_spgw 2>&1 | stdbuf -o0 tee -a spgw_' + self.testCase_id + '.log &', 'Initializing SPGW-APP task interface: DONE', 30)
-		else:
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
@@ -796,6 +854,17 @@ class SSHConnection():
 			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
 		else:
 			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
+		self.eNBmbmsEnables[int(self.eNB_instance)] = False
+		self.command('grep enable_enb_m2 ' + ci_full_config_file, '\$', 2);
+		result = re.search('yes', str(self.ssh.before))
+		if result is not None:
+			self.eNBmbmsEnables[int(self.eNB_instance)] = True
+			logging.debug('\u001B[1m MBMS is enabled on this eNB\u001B[0m')
+		result = re.search('noS1', str(self.Initialize_eNB_args))
+		eNBinNoS1 = False
+		if result is not None:
+			eNBinNoS1 = True
+			logging.debug('\u001B[1m eNB is in noS1 configuration \u001B[0m')
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
@@ -814,6 +883,7 @@ class SSHConnection():
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 20
+		enbDidSync = False
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
@@ -852,18 +922,54 @@ class SSHConnection():
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
-					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+					enbDidSync = True
 					time.sleep(10)
 
-		self.close()
+		if enbDidSync and eNBinNoS1:
+			self.command('ifconfig oaitun_enb1', '\$', 4)
+			self.command('ifconfig oaitun_enb1', '\$', 4)
+			result = re.search('inet addr:1|inet 1', str(self.ssh.before))
+			if result is not None:
+				logging.debug('\u001B[1m oaitun_enb1 interface is mounted and configured\u001B[0m')
+			else:
+				logging.error('\u001B[1m oaitun_enb1 interface is either NOT mounted or NOT configured\u001B[0m')
+			if self.eNBmbmsEnables[int(self.eNB_instance)]:
+				self.command('ifconfig oaitun_enm1', '\$', 4)
+				result = re.search('inet addr', str(self.ssh.before))
+				if result is not None:
+					logging.debug('\u001B[1m oaitun_enm1 interface is mounted and configured\u001B[0m')
+				else:
+					logging.error('\u001B[1m oaitun_enm1 interface is either NOT mounted or NOT configured\u001B[0m')
 
-	def InitializeUE_common(self, device_id):
-		logging.debug('send adb commands')
+		self.close()
+		self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
+		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+
+	def InitializeUE_common(self, device_id, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			if not self.ADBCentralized:
+				# Reboot UE
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesRebootCmd[idx], '\$', 60)
+				# Wait
+				time.sleep(60)
+				# Put in LTE-Mode only
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode1 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode2 11"\'', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode3 11"\'', '\$', 60)
+				# enable data service
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
+				# we need to do radio on/off cycle to make sure of above changes
+				# airplane mode off // radio on
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
+				time.sleep(10)
+				# airplane mode on // radio off
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
+				self.close()
+				return
 			# enable data service
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
 
 			# The following commands are deprecated since we no longer work on Android 7+
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
@@ -885,11 +991,13 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
+		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.InitializeUE_common, args = (device_id,))
+			p = Process(target = self.InitializeUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			i += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -931,7 +1039,12 @@ class SSHConnection():
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			# We may have to regenerate the .u* files
 			if result is None:
-				self.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
+				self.command('ls /tmp/*.sed', '\$', 5)
+				result = re.search('adapt_usim_parameters', str(self.ssh.before))
+				if result is not None:
+					self.command('sed -f /tmp/adapt_usim_parameters.sed ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
+				else:
+					self.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				self.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
 		self.command('echo "ulimit -c unlimited && ./'+ self.air_interface +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
@@ -1019,18 +1132,24 @@ class SSHConnection():
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			if result is None:
 				self.command('ifconfig oaitun_ue1', '\$', 4)
-				result = re.search('inet addr', str(self.ssh.before))
+				self.command('ifconfig oaitun_ue1', '\$', 4)
+				# ifconfig output is different between ubuntu 16 and ubuntu 18
+				result = re.search('inet addr:1|inet 1', str(self.ssh.before))
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
 				else:
-					self.command('ifconfig oaitun_ue1', '\$', 4)
+					logging.debug(str(self.ssh.before))
+					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+					tunnelInterfaceStatus = False
+				if self.eNBmbmsEnables[0]:
+					self.command('ifconfig oaitun_uem1', '\$', 4)
 					result = re.search('inet addr', str(self.ssh.before))
 					if result is not None:
-						logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
-						tunnelInterfaceStatus = True
+						logging.debug('\u001B[1m oaitun_uem1 interface is mounted and configured\u001B[0m')
+						tunnelInterfaceStatus = tunnelInterfaceStatus and True
 					else:
-						logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
+						logging.error('\u001B[1m oaitun_uem1 interface is either NOT mounted or NOT configured\u001B[0m')
 						tunnelInterfaceStatus = False
 			else:
 				tunnelInterfaceStatus = True
@@ -1041,9 +1160,17 @@ class SSHConnection():
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
 			self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
+			if (self.ADBIPAddress != 'none'):
+				self.UEDevices = []
+				self.UEDevices.append('OAI-UE')
+				self.UEDevicesStatus = []
+				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
 		else:
 			if self.air_interface == 'lte':
-				self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+				if self.eNBmbmsEnables[0]:
+					self.htmlUEFailureMsg = 'oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
+				else:
+					self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
 				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			else:
 				self.htmlUEFailureMsg = 'nr-uesoftmodem did NOT synced'
@@ -1290,18 +1417,25 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def AttachUE_common(self, device_id, statusQueue, lock):
+	def AttachUE_common(self, device_id, statusQueue, lock, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			if device_id == '84B7N16418004022':
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+			if self.ADBCentralized:
+				if device_id == '84B7N16418004022':
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+				else:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 			else:
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
+				# airplane mode off // radio on
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
 			time.sleep(2)
 			max_count = 45
 			count = max_count
 			while count > 0:
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
+				if self.ADBCentralized:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry" | grep -m 1 mDataConnectionState', '\$', 15)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep -m 1 mDataConnectionState', '\$', 60)
 				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
@@ -1323,15 +1457,21 @@ class SSHConnection():
 				count = count - 1
 				if count == 15 or count == 30:
 					logging.debug('\u001B[1;30;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
-					if device_id == '84B7N16418004022':
-						self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+					if self.ADBCentralized:
+						if device_id == '84B7N16418004022':
+							self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+						else:
+							self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 					else:
-						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+						self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 					time.sleep(0.5)
-					if device_id == '84B7N16418004022':
-						self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+					if self.ADBCentralized:
+						if device_id == '84B7N16418004022':
+							self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
+						else:
+							self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 					else:
-						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
+						self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
 					time.sleep(0.5)
 				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(max_count-count) + ' times)\u001B[0m')
 				time.sleep(1)
@@ -1364,7 +1504,7 @@ class SSHConnection():
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
 				self.UEDevicesStatus[nb_ue_to_connect] = UE_STATUS_ATTACHING
-				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,))
+				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,))
 				p.daemon = True
 				p.start()
 				multi_jobs.append(p)
@@ -1405,13 +1545,16 @@ class SSHConnection():
 				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
 
-	def DetachUE_common(self, device_id):
+	def DetachUE_common(self, device_id, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			if device_id == '84B7N16418004022':
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+			if self.ADBCentralized:
+				if device_id == '84B7N16418004022':
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+				else:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 			else:
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
 			self.close()
 		except:
@@ -1432,7 +1575,7 @@ class SSHConnection():
 		cnt = 0
 		for device_id in self.UEDevices:
 			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
-			p = Process(target = self.DetachUE_common, args = (device_id,))
+			p = Process(target = self.DetachUE_common, args = (device_id,cnt,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1509,11 +1652,14 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
-	def DataDisableUE_common(self, device_id):
+	def DataDisableUE_common(self, device_id, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			# enable data service
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data disable', '\$', 60)
+			# disable data service
+			if self.ADBCentralized:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data disable"', '\$', 60)
+			else:
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data disable"\'', '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Disabled Data Service\u001B[0m')
 			self.close()
 		except:
@@ -1524,20 +1670,25 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
+		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.DataDisableUE_common, args = (device_id,))
+			p = Process(target = self.DataDisableUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			i += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
-	def DataEnableUE_common(self, device_id):
+	def DataEnableUE_common(self, device_id, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# enable data service
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+			if self.ADBCentralized:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
+			else:
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Enabled Data Service\u001B[0m')
 			self.close()
 		except:
@@ -1548,11 +1699,13 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
+		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.DataEnableUE_common, args = (device_id,))
+			p = Process(target = self.DataEnableUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			i += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1562,8 +1715,34 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		self.command('adb devices', '\$', 15)
-		self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",str(self.ssh.before))
+		if self.ADBCentralized:
+			self.command('adb devices', '\$', 15)
+			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",str(self.ssh.before))
+			self.close()
+		else:
+			if (os.path.isfile('./phones_list.txt')):
+				os.remove('./phones_list.txt')
+			self.command('ls /etc/*/phones*.txt', '\$', 5)
+			result = re.search('/etc/ci/phones_list.txt', str(self.ssh.before))
+			self.close()
+			if (result is not None) and (len(self.UEDevices) == 0):
+				self.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, '/etc/ci/phones_list.txt', '.')
+				if (os.path.isfile('./phones_list.txt')):
+					phone_list_file = open('./phones_list.txt', 'r')
+					for line in phone_list_file.readlines():
+						line = line.strip()
+						result = re.search('^#', line)
+						if result is not None:
+							continue
+						comma_split = line.split(",")
+						self.UEDevices.append(comma_split[0])
+						self.UEDevicesRemoteServer.append(comma_split[1])
+						self.UEDevicesRemoteUser.append(comma_split[2])
+						self.UEDevicesOffCmd.append(comma_split[3])
+						self.UEDevicesOnCmd.append(comma_split[4])
+						self.UEDevicesRebootCmd.append(comma_split[5])
+					phone_list_file.close()
+
 		if terminate_ue_flag == False:
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
@@ -1573,25 +1752,36 @@ class SSHConnection():
 			while cnt < len(self.UEDevices):
 				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
 				cnt += 1
-		self.close()
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		self.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
-		self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",str(self.ssh.before))
+		if self.ADBCentralized:
+			self.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
+			self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",str(self.ssh.before))
+		else:
+			if (os.path.isfile('./modules_list.txt')):
+				os.remove('./modules_list.txt')
+			self.command('ls /etc/*/modules*.txt', '\$', 5)
+			result = re.search('/etc/ci/modules_list.txt', str(self.ssh.before))
+			self.close()
+			if result is not None:
+				logging.debug('Found a module list file on ADB server')
 		if terminate_ue_flag == False:
 			if len(self.CatMDevices) == 0:
 				logging.debug('\u001B[1;37;41m CAT-M UE Not Found! \u001B[0m')
 				sys.exit(1)
 		self.close()
 
-	def CheckUEStatus_common(self, lock, device_id, statusQueue):
+	def CheckUEStatus_common(self, lock, device_id, statusQueue, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry', '\$', 15)
+			if self.ADBCentralized:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry"', '\$', 15)
+			else:
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\'', '\$', 60)
 			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', str(self.ssh.before))
 			serviceState = 'Service State: UNKNOWN'
 			if result is not None:
@@ -1648,11 +1838,13 @@ class SSHConnection():
 		multi_jobs = []
 		lock = Lock()
 		status_queue = SimpleQueue()
+		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,))
+			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			i += 1
 		for job in multi_jobs:
 			job.join()
 		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
@@ -1708,9 +1900,12 @@ class SSHConnection():
 				sys.exit('Insufficient Parameter')
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			self.command('ifconfig oaitun_ue1', '\$', 4)
-			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
+			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', str(self.ssh.before))
 			if result is not None:
-				UE_IPAddress = result.group('ueipaddress')
+				if result.group('ueipaddress') is not None:
+					UE_IPAddress = result.group('ueipaddress')
+				else:
+					UE_IPAddress = result.group('ueipaddress2')
 				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
 				self.UEIPAddresses.append(UE_IPAddress)
 			else:
@@ -1726,7 +1921,10 @@ class SSHConnection():
 				continue
 			count = 0
 			while count < 4:
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
+				if self.ADBCentralized:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "ip addr show | grep rmnet"', '\$', 15)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ip addr show | grep rmnet"\'', '\$', 60)
 				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
@@ -2269,17 +2467,33 @@ class SSHConnection():
 			ipnumbers[3] = '1'
 		EPC_Iperf_UE_IPAddress = ipnumbers[0] + '.' + ipnumbers[1] + '.' + ipnumbers[2] + '.' + ipnumbers[3]
 
-		# Launch iperf server on EPC side
-		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-		self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+		# Launch iperf server on EPC side (true for ltebox and old open-air-cn0
+		# But for OAI-Rel14-CUPS, we launch from python executor and we are using its IP address as iperf client address
+		launchFromEpc = True
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			launchFromEpc = False
+			cmd = 'hostname -I'
+			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+			if ret.stdout is not None:
+				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
 		port = 5001 + idx
-		if udpIperf:
-			self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		if launchFromEpc:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			if udpIperf:
+				self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			else:
+				self.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			self.close()
 		else:
-			self.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+			if udpIperf:
+				cmd = 'nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			else:
+				cmd = 'nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
+			logging.debug(cmd + '\n')
+			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
 		time.sleep(0.5)
-		self.close()
 
 		# Launch iperf client on UE
 		if (device_id == 'OAI-UE'):
@@ -2315,15 +2529,23 @@ class SSHConnection():
 		self.close()
 
 		# Kill iperf server on EPC side
-		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
-		self.close()
+		if launchFromEpc:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
+			self.close()
+		else:
+			cmd = 'killall --signal SIGKILL iperf'
+			logging.debug(cmd + '\n')
+			subprocess.run(cmd, shell=True)
+			time.sleep(1)
+			self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1):
-			time.sleep(1)
-			if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-				os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+			if launchFromEpc:
+				time.sleep(1)
+				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
+				self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
 		if (device_id == 'OAI-UE'):
@@ -2343,7 +2565,10 @@ class SSHConnection():
 				self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
 				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 				# Checking if iperf / iperf3 are installed
-				self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
+				if self.ADBCentralized:
+					self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ls /data/local/tmp"\'', '\$', 60)
 				result = re.search('iperf3', str(self.ssh.before))
 				if result is None:
 					result = re.search('iperf', str(self.ssh.before))
@@ -2377,22 +2602,32 @@ class SSHConnection():
 			else:
 				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-				if (useIperf3):
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
+				if self.ADBCentralized:
+					if (useIperf3):
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
+					else:
+						self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+						result = re.search('-u', str(self.iperf_args))
+						if result is None:
+							self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+							udpIperf = False
+						else:
+							self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 				else:
 					self.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-					result = re.search('-u', str(self.iperf_args))
-					if result is None:
-						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
-						udpIperf = False
-					else:
-						self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+					self.command('echo $USER; nohup ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &\' > /dev/null 2>&1', self.ADBUserName, 60)
+
 			time.sleep(0.5)
 			self.close()
 
-			# Launch the IPERF client on the EPC side for DL
-			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			# Launch the IPERF client on the EPC side for DL (true for ltebox and old open-air-cn
+			# But for OAI-Rel14-CUPS, we launch from python executor
+			launchFromEpc = True
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				launchFromEpc = False
+			if launchFromEpc:
+				self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+				self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
@@ -2402,16 +2637,31 @@ class SSHConnection():
 				modified_options = str(self.iperf_args)
 			time.sleep(0.5)
 
-			self.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			if launchFromEpc:
+				self.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			else:
+				if (os.path.isfile('iperf_' + self.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_' + self.testCase_id + '_' + device_id + '.log')
 			if (useIperf3):
 				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
 				clientStatus = 0
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
-				iperf_status = self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				if launchFromEpc:
+					iperf_status = self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				else:
+					cmd = 'iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 > iperf_' + self.testCase_id + '_' + device_id + '.log'
+					message = cmd + '\n'
+					logging.debug(cmd)
+					ret = subprocess.run(cmd, shell=True)
+					iperf_status = ret.returncode
+					self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
+					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+					self.command('cat ' + self.EPCSourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				if iperf_status < 0:
-					self.close()
+					if launchFromEpc:
+						self.close()
 					message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
@@ -2425,11 +2675,17 @@ class SSHConnection():
 				self.command('killall iperf', '\$', 5)
 			else:
 				self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+				if self.ADBCentralized:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps" | grep --color=never iperf | grep -v grep\'', '\$', 60)
 				result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
 				if result is not None:
 					pid_iperf = result.group('pid')
-					self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+					if self.ADBCentralized:
+						self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+					else:
+						self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"\'', '\$', 60)
 			self.close()
 			# if the client report is absent, try to analyze the server log file
 			if (clientStatus == -1):
@@ -2445,7 +2701,8 @@ class SSHConnection():
 			# in case of OAI UE: 
 			if (device_id == 'OAI-UE'):
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-					pass
+					if not launchFromEpc:
+						self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
 				else:
 					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 					self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', self.EPCSourceCodePath + '/scripts')
@@ -2478,17 +2735,18 @@ class SSHConnection():
 			iClientIPAddr = self.eNBIPAddress
 			iClientUser = self.eNBUserName
 			iClientPasswd = self.eNBPassword
-		# Starting the iperf server
-		self.open(iServerIPAddr, iServerUser, iServerPasswd)
-		# args SHALL be "-c client -u any"
-		# -c 10.0.1.2 -u -b 1M -t 30 -i 1 -fm -B 10.0.1.1
-		# -B 10.0.1.1 -u -s -i 1 -fm
-		server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
-		server_options = server_options.replace('-c','-B')
-		self.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
-		time.sleep(0.5)
-		self.close()
+		if self.iperf_options != 'sink':
+			# Starting the iperf server
+			self.open(iServerIPAddr, iServerUser, iServerPasswd)
+			# args SHALL be "-c client -u any"
+			# -c 10.0.1.2 -u -b 1M -t 30 -i 1 -fm -B 10.0.1.1
+			# -B 10.0.1.1 -u -s -i 1 -fm
+			server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
+			server_options = server_options.replace('-c','-B')
+			self.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
+			self.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
+			time.sleep(0.5)
+			self.close()
 
 		# Starting the iperf client
 		modified_options = self.Iperf_ComputeModifiedBW(0, 1)
@@ -2504,14 +2762,22 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 			clientStatus = -2
 		else:
-			clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
+			if self.iperf_options == 'sink':
+				clientStatus = 0
+				status_queue.put(0)
+				status_queue.put('OAI-UE')
+				status_queue.put('10.0.1.2')
+				status_queue.put('Sink Test : no check')
+			else:
+				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
 		self.close()
 
 		# Stopping the iperf server
-		self.open(iServerIPAddr, iServerUser, iServerPasswd)
-		self.command('killall --signal SIGKILL iperf', '\$', 5)
-		time.sleep(0.5)
-		self.close()
+		if self.iperf_options != 'sink':
+			self.open(iServerIPAddr, iServerUser, iServerPasswd)
+			self.command('killall --signal SIGKILL iperf', '\$', 5)
+			time.sleep(0.5)
+			self.close()
 		if (clientStatus == -1):
 			if (os.path.isfile('iperf_server_' + self.testCase_id + '.log')):
 				os.remove('iperf_server_' + self.testCase_id + '.log')
@@ -2519,9 +2785,10 @@ class SSHConnection():
 			self.Iperf_analyzeV2Server(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
 
 		# copying on the EPC server for logCollection
-		copyin_res = self.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
-		if (copyin_res == 0):
-			self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
+		if (clientStatus == -1):
+			copyin_res = self.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
+			if (copyin_res == 0):
+				self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
 		copyin_res = self.copyin(iClientIPAddr, iClientUser, iClientPasswd, '/tmp/tmp_iperf_' + self.testCase_id + '.log', 'iperf_' + self.testCase_id + '_OAI-UE.log')
 		if (copyin_res == 0):
 			self.copyout(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, 'iperf_' + self.testCase_id + '_OAI-UE.log', self.EPCSourceCodePath + '/scripts')
@@ -2729,10 +2996,14 @@ class SSHConnection():
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
-			if re.match('OAI', self.EPCType, re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				result = re.search('oai_hss -j', str(self.ssh.before))
+			elif re.match('OAI', self.EPCType, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
-			else:
+			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 				result = re.search('hss_sim s6as diam_hss', str(self.ssh.before))
+			else:
+				logging.error('This should not happen!')
 			if result is None:
 				logging.debug('\u001B[1;37;41m HSS Process Not Found! \u001B[0m')
 				status_queue.put(HSS_PROCESS_FAILED)
@@ -2746,10 +3017,14 @@ class SSHConnection():
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
-			if re.match('OAI', self.EPCType, re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				result = re.search('mme -c', str(self.ssh.before))
+			elif re.match('OAI', self.EPCType, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
-			else:
+			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 				result = re.search('mme', str(self.ssh.before))
+			else:
+				logging.error('This should not happen!')
 			if result is None:
 				logging.debug('\u001B[1;37;41m MME Process Not Found! \u001B[0m')
 				status_queue.put(MME_PROCESS_FAILED)
@@ -2762,12 +3037,17 @@ class SSHConnection():
 	def CheckSPGWProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			if re.match('OAI', self.EPCType, re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				self.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
+				result = re.search('spgwu -c ', str(self.ssh.before))
+			elif re.match('OAI', self.EPCType, re.IGNORECASE):
 				self.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
 				result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
-			else:
+			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 				self.command('stdbuf -o0 ps -aux | grep --color=never xGw | grep -v grep', '\$', 5)
 				result = re.search('xGw', str(self.ssh.before))
+			else:
+				logging.error('This should not happen!')
 			if result is None:
 				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
 				status_queue.put(SPGW_PROCESS_FAILED)
@@ -2801,6 +3081,7 @@ class SSHConnection():
 		ulschFailure = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
+		mbmsRequestMsg = 0
 		self.htmleNBFailureMsg = ''
 		isRRU = False
 		isSlave = False
@@ -2919,6 +3200,10 @@ class SSHConnection():
 			result = re.search('dropping, not enough RBs', str(line))
 			if result is not None:
 				dropNotEnoughRBs += 1
+			if self.eNBmbmsEnables[int(self.eNB_instance)]:
+				result = re.search('MBMS USER-PLANE.*Requesting.*bytes from RLC', str(line))
+				if result is not None:
+					mbmsRequestMsg += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		self.htmleNBFailureMsg = ''
@@ -2970,6 +3255,11 @@ class SSHConnection():
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if self.eNBmbmsEnables[int(self.eNB_instance)]:
+			if mbmsRequestMsg > 0:
+				rrcMsg = 'eNB requested ' + str(mbmsRequestMsg) + ' times the RLC for MBMS USER-PLANE'
+				logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+				self.htmleNBFailureMsg += rrcMsg + '\n'
 		if X2HO_inNbProcedures > 0:
 			rrcMsg = 'eNB completed ' + str(X2HO_inNbProcedures) + ' X2 Handover Connection procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
@@ -3036,6 +3326,9 @@ class SSHConnection():
 		uciStatMsgCount = 0
 		pdcpDataReqFailedCount = 0
 		badDciCount = 0
+		f1aRetransmissionCount = 0
+		fatalErrorCount = 0
+		macBsrTimerExpiredCount = 0
 		rrcConnectionRecfgComplete = 0
 		no_cell_sync_found = False
 		mib_found = False
@@ -3045,6 +3338,7 @@ class SSHConnection():
 		nrDecodeMib = 0
 		nrFoundDCI = 0
 		nrCRCOK = 0
+		mbms_messages = 0
 		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
@@ -3087,9 +3381,18 @@ class SSHConnection():
 			result = re.search('PDCP data request failed', str(line))
 			if result is not None and not exitSignalReceived:
 				pdcpDataReqFailedCount += 1
-			result = re.search('bad DCI 1A', str(line))
+			result = re.search('bad DCI 1', str(line))
 			if result is not None and not exitSignalReceived:
 				badDciCount += 1
+			result = re.search('Format1A Retransmission but TBS are different', str(line))
+			if result is not None and not exitSignalReceived:
+				f1aRetransmissionCount += 1
+			result = re.search('FATAL ERROR', str(line))
+			if result is not None and not exitSignalReceived:
+				fatalErrorCount += 1
+			result = re.search('MAC BSR Triggered ReTxBSR Timer expiry', str(line))
+			if result is not None and not exitSignalReceived:
+				macBsrTimerExpiredCount += 1
 			result = re.search('Generating RRCConnectionReconfigurationComplete', str(line))
 			if result is not None:
 				rrcConnectionRecfgComplete += 1
@@ -3097,6 +3400,10 @@ class SSHConnection():
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
 				no_cell_sync_found = True
+			if self.eNBmbmsEnables[0]:
+				result = re.search('TRIED TO PUSH MBMS DATA', str(line))
+				if result is not None:
+					mbms_messages += 1
 			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>.{1,4}), TX_ANT (?P<tx_ant>\d)", str(line))
 			if result is not None and (not mib_found):
 				try:
@@ -3204,8 +3511,28 @@ class SSHConnection():
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if badDciCount > 0:
-			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1A" message(s)'
+			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1(A)" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if f1aRetransmissionCount > 0:
+			statMsg = 'UE showed ' + str(f1aRetransmissionCount) + ' "Format1A Retransmission but TBS are different" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if fatalErrorCount > 0:
+			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "FATAL ERROR:" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if macBsrTimerExpiredCount > 0:
+			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if self.eNBmbmsEnables[0]:
+			if mbms_messages > 0:
+				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			else:
+				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
+				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
@@ -3267,12 +3594,12 @@ class SSHConnection():
 		if result is not None:
 			self.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
 			self.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem || true', '\$', 5)
-			time.sleep(5)
+			time.sleep(10)
 			self.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 			result = re.search('-softmodem', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem || true', '\$', 5)
-				time.sleep(2)
+				time.sleep(5)
 		self.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.close()
 		# If tracer options is on, stopping tshark on EPC side
@@ -3316,6 +3643,7 @@ class SSHConnection():
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId != '0':
 					self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
@@ -3324,57 +3652,87 @@ class SSHConnection():
 				if (logStatus < 0):
 					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.preamtureExit = True
+					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
 					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT oai_hss || true', '\$', 5)
+			time.sleep(2)
+			self.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
+			result = re.search('oai_hss -j', str(self.ssh.before))
+			if result is not None:
+				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL oai_hss || true', '\$', 5)
+			self.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-hss.sh', '\$', 5)
+		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_hss oai_hss || true', '\$', 5)
 			time.sleep(2)
 			self.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_hss oai_hss || true', '\$', 5)
-		else:
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('cd scripts', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
+		else:
+			logging.error('This should not happen!')
 		self.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateMME(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_mme mme || true', '\$', 5)
 			time.sleep(2)
 			self.command('stdbuf -o0 ps -aux | grep mme | grep -v grep', '\$', 5)
-			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
+			result = re.search('mme -c', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_mme mme || true', '\$', 5)
-		else:
+			self.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-mme.sh', '\$', 5)
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_mme', '\$', 5)
+		else:
+			logging.error('This should not happen!')
 		self.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateSPGW(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT spgwc spgwu || true', '\$', 5)
+			time.sleep(2)
+			self.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
+			result = re.search('spgwc -c |spgwu -c ', str(self.ssh.before))
+			if result is not None:
+				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL spgwc spgwu || true', '\$', 5)
+			self.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-spgw*.sh', '\$', 5)
+			self.command('stdbuf -o0 ps -aux | grep tshark | grep -v grep', '\$', 5)
+			result = re.search('-w ', str(self.ssh.before))
+			if result is not None:
+				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT tshark || true', '\$', 5)
+				self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 ' + self.EPCSourceCodePath + '/scripts/*.pcap', '\$', 5)
+		elif re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_spgw spgw || true', '\$', 5)
 			time.sleep(2)
 			self.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', str(self.ssh.before))
 			if result is not None:
 				self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_spgw spgw || true', '\$', 5)
-		else:
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
+		else:
+			logging.error('This should not happen!')
 		self.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
@@ -3393,18 +3751,30 @@ class SSHConnection():
 		self.flexranCtrlStarted = False
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
-	def TerminateUE_common(self, device_id):
+	def TerminateUE_common(self, device_id, idx):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# back in airplane mode on (ie radio off)
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+			if self.ADBCentralized:
+				if device_id == '84B7N16418004022':
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+				else:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+			else:
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
 
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
+			if self.ADBCentralized:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"', '\$', 5)
+			else:
+				self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"\'', '\$', 60)
 			result = re.search('shell +(?P<pid>\d+)', str(self.ssh.before))
 			if result is not None:
 				pid_iperf = result.group('pid')
-				self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
+				if self.ADBCentralized:
+					self.command('stdbuf -o0 adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"', '\$', 5)
+				else:
+					self.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"\'', '\$', 60)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -3413,11 +3783,13 @@ class SSHConnection():
 		terminate_ue_flag = True
 		self.GetAllUEDevices(terminate_ue_flag)
 		multi_jobs = []
+		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target= SSH.TerminateUE_common, args = (device_id,))
+			p = Process(target= SSH.TerminateUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
+			i += 1
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -3429,7 +3801,7 @@ class SSHConnection():
 		result = re.search('-uesoftmodem', str(self.ssh.before))
 		if result is not None:
 			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT -r .*-uesoftmodem || true', '\$', 5)
-			time.sleep(5)
+			time.sleep(10)
 			self.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 			result = re.search('-uesoftmodem', str(self.ssh.before))
 			if result is not None:
@@ -3662,41 +4034,47 @@ class SSHConnection():
 
 	def LogCollectHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-		self.command('cd scripts', '\$', 5)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 		self.command('rm -f hss.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip hss.log.zip hss*.log', '\$', 60)
-			self.command('rm hss*.log', '\$', 5)
-		else:
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm hss*.log', '\$', 5)
+			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
+				self.command('zip hss.log.zip logs/hss*.* *.pcap', '\$', 60)
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f logs/hss*.* *.pcap', '\$', 5)
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/hss_sim0609/hss.log .', '\$', 60)
 			self.command('zip hss.log.zip hss.log', '\$', 60)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 
 	def LogCollectMME(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-		self.command('cd scripts', '\$', 5)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 		self.command('rm -f mme.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip mme.log.zip mme*.log', '\$', 60)
-			self.command('rm mme*.log', '\$', 5)
-		else:
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm mme*.log', '\$', 5)
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/ltebox/var/log/*Log.0 .', '\$', 5)
 			self.command('zip mme.log.zip mmeLog.0 s1apcLog.0 s1apsLog.0 s11cLog.0 libLog.0 s1apCodecLog.0', '\$', 60)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 
 	def LogCollectSPGW(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-		self.command('cd scripts', '\$', 5)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 		self.command('rm -f spgw.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE):
+		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			self.command('zip spgw.log.zip spgw*.log', '\$', 60)
-			self.command('rm spgw*.log', '\$', 5)
-		else:
+			self.command('echo ' + self.EPCPassword + ' | sudo -S rm spgw*.log', '\$', 5)
+		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
+		else:
+			logging.error('This option should not occur!')
 		self.close()
 
 	def LogCollectOAIUE(self):
@@ -3914,6 +4292,7 @@ class SSHConnection():
 				self.htmlFile.write('  <div id="build-tab" class="tab-pane fade">\n')
 			self.htmlFile.write('  <table class="table" border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th>Relative Time (ms)</th>\n')
 			self.htmlFile.write('        <th>Test Id</th>\n')
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
@@ -3937,7 +4316,7 @@ class SSHConnection():
 	def CreateHtmlTabFooter(self, passStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=2>Final Tab Status</th>\n')
+			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=3>Final Tab Status</th>\n')
 			if passStatus:
 				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')
 			else:
@@ -4011,7 +4390,9 @@ class SSHConnection():
 
 	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			currentTime = int(round(time.time() * 1000)) - self.startTime
 			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
 			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
 			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
@@ -4079,8 +4460,10 @@ class SSHConnection():
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			currentTime = int(round(time.time() * 1000)) - self.startTime
 			addOrangeBK = False
 			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
 			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
 			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
@@ -4119,9 +4502,9 @@ class SSHConnection():
 # Usage()
 #-----------------------------------------------------------
 def Usage():
-	print('------------------------------------------------------------')
+	print('----------------------------------------------------------------------------------------------------------------------')
 	print('main.py Ver:' + Version)
-	print('------------------------------------------------------------')
+	print('----------------------------------------------------------------------------------------------------------------------')
 	print('Usage: python main.py [options]')
 	print('  --help  Show this help.')
 	print('  --mode=[Mode]')
@@ -4129,25 +4512,35 @@ def Usage():
 	print('      InitiateHtml, FinalizeHtml')
 	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
 	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
-	print('  --eNBRepository=[eNB\'s Repository URL]                             or --ranRepository=[OAI RAN Repository URL]')
-	print('  --eNBBranch=[eNB\'s Branch Name]                                    or --ranBranch=[OAI RAN Repository Branch')
-	print('  --eNBCommitID=[eNB\'s Commit Number]                                or --ranCommitID=[OAI RAN Repository Commit SHA-1')
-	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]  or --ranAllowMerge=true/false')
-	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request] or --ranTargetBranch=[Target Branch]')
+	print('---------------------------------------------------------------------------------------------------- Git Options --')
+	print('  --ranRepository=[OAI RAN Repository URL]')
+	print('  --ranBranch=[OAI RAN Repository Branch]')
+	print('  --ranCommitID=[OAI RAN Repository Commit SHA-1]')
+	print('  --ranAllowMerge=[Allow Merge Request (with target branch) (true or false)]')
+	print('  --ranTargetBranch=[Target Branch in case of a Merge Request]')
+	print('--------------------------------------------------------------------------------------------- eNB Server Options --')
 	print('  --eNBIPAddress=[eNB\'s IP Address]')
 	print('  --eNBUserName=[eNB\'s Login User Name]')
 	print('  --eNBPassword=[eNB\'s Login Password]')
 	print('  --eNBSourceCodePath=[eNB\'s Source Code Path]')
+	print('------------------------------------------------------------------------------------------ OAI UE Server Options --')
+	print('  --UEIPAddress=[UE\'s IP Address]')
+	print('  --UEUserName=[UE\'s Login User Name]')
+	print('  --UEPassword=[UE\'s Login Password]')
+	print('  --UESourceCodePath=[UE\'s Source Code Path]')
+	print('--------------------------------------------------------------------------------------------- EPC Server Options --')
 	print('  --EPCIPAddress=[EPC\'s IP Address]')
 	print('  --EPCUserName=[EPC\'s Login User Name]')
 	print('  --EPCPassword=[EPC\'s Login Password]')
 	print('  --EPCSourceCodePath=[EPC\'s Source Code Path]')
-	print('  --EPCType=[EPC\'s Type: OAI or ltebox]')
+	print('  --EPCType=[EPC\'s Type: OAI or ltebox or OAI-Rel14-CUPS]')
+	print('--------------------------------------------------------------------------------------------- ABD Server Options --')
 	print('  --ADBIPAddress=[ADB\'s IP Address]')
 	print('  --ADBUserName=[ADB\'s Login User Name]')
 	print('  --ADBPassword=[ADB\'s Login Password]')
+	print('----------------------------------------------------------------------------------------------------------------------')
 	print('  --XMLTestFile=[XML Test File to be run]')
-	print('------------------------------------------------------------')
+	print('----------------------------------------------------------------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
 	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
@@ -4158,6 +4551,14 @@ def CheckClassValidity(action,id):
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
 		SSH.Build_eNB_args = test.findtext('Build_eNB_args')
+		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
+		if (forced_workspace_cleanup is None):
+			SSH.Build_eNB_forced_workspace_cleanup = False
+		else:
+			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+				SSH.Build_eNB_forced_workspace_cleanup = True
+			else:
+				SSH.Build_eNB_forced_workspace_cleanup = False
 		SSH.eNB_instance = test.findtext('eNB_instance')
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
@@ -4261,6 +4662,13 @@ def GetParametersFromXML(action):
 			if SSH.iperf_profile != 'balanced' and SSH.iperf_profile != 'unbalanced' and SSH.iperf_profile != 'single-ue':
 				logging.debug('ERROR: test-case has wrong profile ' + SSH.iperf_profile)
 				SSH.iperf_profile = 'balanced'
+		SSH.iperf_options = test.findtext('iperf_options')
+		if (SSH.iperf_options is None):
+			SSH.iperf_options = 'check'
+		else:
+			if SSH.iperf_options != 'check' and SSH.iperf_options != 'sink':
+				logging.debug('ERROR: test-case has wrong option ' + SSH.iperf_options)
+				SSH.iperf_options = 'check'
 
 	if action == 'IdleSleep':
 		string_field = test.findtext('idle_sleep_time_in_sec')
@@ -4400,16 +4808,25 @@ while len(argvs) > 1:
 		SSH.EPCSourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
-		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE):
+		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
 			SSH.EPCType = matchReg.group(1)
 		else:
-			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox)')
+			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS)')
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		SSH.ADBIPAddress = matchReg.group(1)
 	elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE)
 		SSH.ADBUserName = matchReg.group(1)
+	elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE)
+		if re.match('centralized', matchReg.group(1), re.IGNORECASE) or re.match('distributed', matchReg.group(1), re.IGNORECASE):
+			if re.match('distributed', matchReg.group(1), re.IGNORECASE):
+				SSH.ADBCentralized = False
+			else:
+				SSH.ADBCentralized = True
+		else:
+			sys.exit('Invalid ADB Type: ' + matchReg.group(1) + ' -- (should be centralized or distributed)')
 	elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE)
 		SSH.ADBPassword = matchReg.group(1)
@@ -4611,6 +5028,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	cnt = 0
 	SSH.prematureExit = True
+	SSH.startTime = int(round(time.time() * 1000))
 	while cnt < SSH.repeatCounts[0] and SSH.prematureExit:
 		SSH.prematureExit = False
 		for test_case_id in todo_tests:
