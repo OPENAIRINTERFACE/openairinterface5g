@@ -6,7 +6,6 @@ import "header.proto";
 import "time_common.proto";
 import "config_messages.proto";
 import "controller_commands.proto";
-import "control_delegation.proto";
 import "config_common.proto";
 
 message flexran_message {
