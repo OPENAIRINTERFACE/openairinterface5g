@@ -88,8 +88,11 @@ Options
 -i | --install-system-files
    Install OpenAirInterface required files in Linux system
    This option will require root password
--g | --run-with-gdb
-   Add debugging symbols to compilation directives. It also disables any compiler optimization. Only for debugging. Do not use in normal operation!
+-g | --run-with-gdb <Release | RelWithDebInfo | MinSizeRel | Debug
+  specify the build mode used by cmake. defaults to Debug mode if -g is used alone, with no mode parameter
+  if -g is not specifies, Release mode is used.
+-G | --cmaketrace
+   enable cmake debugging messages
 --eNB
   Makes the LTE softmodem
 --gNB
@@ -190,12 +193,43 @@ function main() {
             INSTALL_SYSTEM_FILES=1
             echo_info "Will copy OpenAirInterface files in Linux directories"
             shift;;
-       -g | --run-with-gdb)
-            GDB=1
-            CMAKE_BUILD_TYPE="Debug"
-            echo_info "Will Compile with gdb symbols and disable compiler optimization"
-            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug --trace-expand"
+       -g | --run-with-gdb) 
+            case "$2" in
+                "Release")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="Release"
+                    echo_info "Will Compile without gdb symbols and with compiler optimization"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release"
+                    shift
+                    ;;
+                "RelWithDebInfo")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="RelWithDebInfo"
+                    echo_info "Will Compile with gdb symbols"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo"                      
+                    shift
+                    ;;
+                "MinSizeRel")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="MinSizeRel"
+                    echo_info "Will Compile for minimal exec size"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel"                      
+                    shift
+                    ;;                    
+                "Debug" | *)
+                    GDB=1
+                    CMAKE_BUILD_TYPE="Debug"
+                    echo_info "Will Compile with gdb symbols and disable compiler optimization"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+                    if [ "$2" == "Debug" ] ; then
+                    	shift
+                    fi
+                    ;;
+            esac
             shift;;
+       -G | --cmaketrace)
+       	   CMAKE_CMD="$CMAKE_CMD --trace-expand"
+       	   shift;;
        --eNB)
             eNB=1
             echo_info "Will compile eNB"
@@ -513,22 +547,17 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-
-  if [ "$T_TRACER" =  "False" ] ; then
-      build_dir=ran_build_noLOG
+  if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
+    build_dir=phy_simulators
   else
-      build_dir=ran_build  
+    if [ "$T_TRACER" =  "False" ] ; then
+        build_dir=ran_build_noLOG
+    else
+        build_dir=ran_build  
+    fi
   fi
-
-  if [ "$gNB" = "1" ] ; then
-     exec=nr-softmodem
-  elif [ "$nrUE" = "1" ] ; then
-     exec=nr-uesoftmodem
-  elif [ "$eNB" = "1" ] ; then
-     exec=lte-softmodem
-  elif [ "$UE" = "1" ] ; then
-     exec=lte-uesoftmodem
-  fi
+  [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
+  mkdir -p $DIR/$build_dir/build
 
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
@@ -537,8 +566,7 @@ function main() {
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
     # softmodem compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
-    mkdir -p $DIR/$build_dir/build
+
     cmake_file=$DIR/$build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
@@ -561,29 +589,30 @@ function main() {
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
-  fi
 
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" ] ; then
-    echo_info "Compiling $exec"
-    compilations \
-	  $build_dir $exec \
-	  $exec $dbin/$exec.$REL
-	  
-# if --eNB --UE are both provided together as build options
-	  if [ "$eNB" = "1" -a "$UE" = "1" ] ; then
-	    echo_info "Compiling lte-uesoftmodem"
-        compilations \
-	      $build_dir lte-uesoftmodem \
-	      lte-uesoftmodem $dbin/lte-uesoftmodem.$REL	  
-	  fi
-	  
-# if --gNB --nrUE are both provided together as build options
-	  if [ "$gNB" = "1" -a "$nrUE" = "1" ] ; then
-	    echo_info "Compiling nr-uesoftmodem"
-        compilations \
-	      $build_dir nr-uesoftmodem \
-	      nr-uesoftmodem $dbin/nr-uesoftmodem.$REL	  
-	  fi
+  execlist=""
+  if [ "$eNB" = "1" ] ; then
+     execlist="$execlist lte-softmodem"
+  fi
+  if [ "$gNB" = "1" ] ; then
+     execlist="$execlist nr-softmodem"
+  fi  
+  if [ "$UE" = 1 ] ; then
+     execlist="$execlist lte-uesoftmodem"
+  fi  
+  if [ "$nrUE" = 1 ] ; then
+     execlist="$execlist nr-uesoftmodem"
+  fi  
+
+  for f in $execlist ; do
+  	  echo_info "Compiling $f..."
+      compilations \
+	$build_dir $f \
+	$f $dbin/$f.$REL
+  done
+
+
+
 
 # mandatory shared libraries common to UE and (e/g)NB
 
@@ -603,10 +632,9 @@ function main() {
 	  $build_dir rb_tool \
 	  rb_tool $dbin/rb_tool
       cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-  fi
-  
+
   if [ "$UE" = 1 ] ; then
-    # ue_ip driver compilation
+
     echo_info "Compiling UE specific part"
     compilations \
       $build_dir ue_ip \
@@ -645,15 +673,12 @@ function main() {
       echo_warning "not generated UE NAS files: binaries not found"
     fi
   fi
+fi 
+
 
   if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    cd $OPENAIR_DIR/cmake_targets/phy_simulators
-    [ "$CLEAN" = "1" ] && rm -rf build
-    mkdir -p build
-    cd build
-    rm -f *sim
+    cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
-  fi
 
   ##################
   # PHY simulators #
@@ -674,7 +699,7 @@ function main() {
 #	   lte-simulators $config_libconfig_shlib \
 #	   lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
   fi
-
+  fi
   ###################
   # Core simulators #
   ###################
@@ -781,7 +806,6 @@ function main() {
   # Build RF device and transport protocol libraries #
   ####################################################
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
-
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
           rm -f liboai_device.so
