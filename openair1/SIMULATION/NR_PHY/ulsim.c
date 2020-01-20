@@ -553,7 +553,7 @@ int main(int argc, char **argv)
       scheduled_response.ul_config = &ul_config;
       scheduled_response.dl_config = NULL;
 
-      ul_config.sfn_slot = slot;
+      ul_config.slot = slot;
       ul_config.number_pdus = 1;
       ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
       ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
