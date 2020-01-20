@@ -128,6 +128,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
     } else if (ENB_NAS_USE_TUN) {
       ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+      LOG_I(PDCP, "ENB_NAS_USE_TUN is enabled, ret: %d, ctxt_pP->module_id:%d, sizeToWrite:%d, header size:%d \n", ctxt_pP->module_id, ret, sizeToWrite, sizeof (pdcp_data_ind_header_t));
     } else if (PDCP_USE_NETLINK) {
       memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;

@@ -1076,8 +1076,9 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
     - transform precoding
 */
 
-void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
+                               uint8_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id);

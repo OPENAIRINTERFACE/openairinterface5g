@@ -145,4 +145,15 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+void
+nr_rx_sdu(const module_id_t enb_mod_idP,
+       const int CC_idP,
+       const frame_t frameP,
+       const sub_frame_t subframeP,
+       const rnti_t rntiP,
+       uint8_t *sduP,
+       const uint16_t sdu_lenP,
+       const uint16_t timing_advance,
+       const uint8_t ul_cqi);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

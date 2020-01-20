@@ -2481,9 +2481,11 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 #endif
 
   uint8_t harq_pid = 0; //temporary implementation
+  uint8_t data_existing = 0;
 
-  nr_ue_ulsch_procedures(ue,
+  data_existing = nr_ue_ulsch_procedures(ue,
                          harq_pid,
+                         frame_tx,
                          slot_tx,
                          thread_id,
                          gNB_id);
@@ -2498,13 +2500,15 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-
-  nr_ue_pusch_common_procedures(ue,
+  //if(data_existing){
+	  LOG_I(PHY, "Sending data \n");
+	  nr_ue_pusch_common_procedures(ue,
                                 harq_pid,
                                 slot_tx,
                                 thread_id,
                                 gNB_id,
                                 &ue->frame_parms);
+  //}
 
 
 

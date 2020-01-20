@@ -182,7 +182,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
 
             if (UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].crc_indication_rel8.crc_flag == 1) { // CRC error indication
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
-              rx_sdu(UL_info->module_id,
+              nr_rx_sdu(UL_info->module_id,
                      UL_info->CC_id,
                      NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
                      NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->slot,
@@ -192,8 +192,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
             } else {
-              LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->slot);
-              rx_sdu(UL_info->module_id,
+              LOG_I(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->slot);
+              nr_rx_sdu(UL_info->module_id,
                      UL_info->CC_id,
                      NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
                      NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->slot,

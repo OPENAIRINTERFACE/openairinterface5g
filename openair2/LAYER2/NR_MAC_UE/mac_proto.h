@@ -136,5 +136,9 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
 
 void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index);
 
+uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+           sub_frame_t subframe, uint8_t eNB_index,
+           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode);
+
 #endif
 /** @}*/

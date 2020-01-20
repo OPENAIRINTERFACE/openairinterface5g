@@ -945,6 +945,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   stop_meas(&mac->rx_ulsch_sdu);
 }
 
+
 //-----------------------------------------------------------------------------
 /*
  * Return the BSR table index corresponding to the number of bytes in input

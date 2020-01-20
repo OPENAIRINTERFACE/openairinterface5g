@@ -65,6 +65,9 @@ void mac_rlc_data_ind     (
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
+  if(ue == NULL)
+	  LOG_I(RLC, "RLC instance for the given UE was not found \n");
+
   switch (channel_idP) {
   case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
   case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
@@ -72,12 +75,13 @@ void mac_rlc_data_ind     (
   }
 
   if (rb != NULL) {
+	  LOG_W(RLC, "RB found! (channel ID %d) \n", channel_idP);
     rb->set_time(rb, nr_rlc_current_time);
     rb->recv_pdu(rb, buffer_pP, tb_sizeP);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
           __FILE__, __LINE__, __FUNCTION__, channel_idP);
-    exit(1);
+    //exit(1);
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);

@@ -593,16 +593,16 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                          p_procTime);
 
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-  #ifdef PRINT_CRC_CHECK
+  //#ifdef PRINT_CRC_CHECK
         //if (prnt_crc_cnt % 10 == 0)
           LOG_I(PHY, "Segment %d CRC OK\n",r);
-  #endif
+  //#endif
         ret = no_iteration_ldpc;
       } else {
-  #ifdef PRINT_CRC_CHECK
+  //#ifdef PRINT_CRC_CHECK
         //if (prnt_crc_cnt%10 == 0)
           LOG_I(PHY, "CRC NOK\n");
-  #endif
+  //#endif
         ret = ulsch->max_ldpc_iterations + 1;
       }
 
@@ -717,6 +717,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
            harq_process->c[r]);
 #endif
 
+  }
+
+  LOG_I(PHY, "output encoder: \n");
+  for (i = 0; i < harq_process->TBS / 8; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("0x%02x",harq_process->b[i]);
   }
 
   ulsch->last_iteration_cnt = ret;

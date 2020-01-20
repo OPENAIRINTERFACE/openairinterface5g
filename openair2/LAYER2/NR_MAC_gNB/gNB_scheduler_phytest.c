@@ -548,3 +548,211 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
     //pusch_pdu->beamforming; //not used for now
   }
 }
+
+void
+nr_rx_sdu(const module_id_t enb_mod_idP,
+       const int CC_idP,
+       const frame_t frameP,
+       const sub_frame_t subframeP,
+       const rnti_t rntiP,
+       uint8_t *sduP,
+       const uint16_t sdu_lenP,
+       const uint16_t timing_advance,
+       const uint8_t ul_cqi)
+//-----------------------------------------------------------------------------
+{
+  int current_rnti = 0;
+  int UE_id = -1;
+  int RA_id = 0;
+  int old_rnti = -1;
+  int old_UE_id = -1;
+  int crnti_rx = 0;
+  //int harq_pid = 0;
+  int first_rb = 0;
+  unsigned char num_ce = 0;
+  unsigned char num_sdu = 0;
+  unsigned char *payload_ptr = NULL;
+  unsigned char rx_ces[MAX_NUM_CE];
+  unsigned char rx_lcids[NB_RB_MAX];
+  unsigned short rx_lengths[NB_RB_MAX];
+  uint8_t lcgid = 0;
+  int lcgid_updated[4] = {0, 0, 0, 0};
+  //eNB_MAC_INST *mac = NULL;
+  UE_list_t *UE_list = NULL;
+  rrc_eNB_ue_context_t *ue_contextP = NULL;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  UE_TEMPLATE *UE_template_ptr = NULL;
+  /* Init */
+  current_rnti = rntiP;
+  UE_id = 0; //find_UE_id(enb_mod_idP, current_rnti);
+  //mac = RC.mac[enb_mod_idP];
+  //harq_pid = subframe2harqpid(&mac->common_channels[CC_idP], frameP, subframeP);
+  //UE_list = &mac->UE_list;
+  memset(rx_ces, 0, MAX_NUM_CE * sizeof(unsigned char));
+  memset(rx_lcids, 0, NB_RB_MAX * sizeof(unsigned char));
+  memset(rx_lengths, 0, NB_RB_MAX * sizeof(unsigned short));
+  //start_meas(&mac->rx_ulsch_sdu);
+
+  payload_ptr = parse_ulsch_header(sduP, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths, sdu_lenP);
+
+  if (payload_ptr == NULL) {
+    LOG_E(MAC,"[eNB %d] CC_id %d ulsch header unknown lcid(rnti %x, UE_id %d)\n",
+          enb_mod_idP,
+          CC_idP,
+          current_rnti,
+          UE_id);
+    return;
+  }
+
+  /* Control element */
+  for (int i = 0; i < num_ce; i++) {
+
+    switch (rx_ces[i]) {  // implement and process PHR + CRNTI + BSR
+      case POWER_HEADROOM:
+
+    	  break;
+
+      case CRNTI:
+    	  break;
+
+      case TRUNCATED_BSR:
+      case SHORT_BSR:
+
+    	  break;
+
+      case LONG_BSR:
+
+    	  break;
+
+      default:
+        LOG_E(MAC, "[eNB %d] CC_id %d Received unknown MAC header (0x%02x)\n",
+              enb_mod_idP,
+              CC_idP,
+              rx_ces[i]);
+        break;
+    } // end switch on control element
+  } // end for loop on control element
+
+  for (int i = 0; i < num_sdu; i++) {
+    LOG_I(MAC, "SDU Number %d MAC Subheader SDU_LCID %d, length %d\n",
+          i,
+          rx_lcids[i],
+          rx_lengths[i]);
+    T(T_ENB_MAC_UE_UL_SDU,
+      T_INT(enb_mod_idP),
+      T_INT(CC_idP),
+      T_INT(current_rnti),
+      T_INT(frameP),
+      T_INT(subframeP),
+      T_INT(rx_lcids[i]),
+      T_INT(rx_lengths[i]));
+    T(T_ENB_MAC_UE_UL_SDU_WITH_DATA,
+      T_INT(enb_mod_idP),
+      T_INT(CC_idP),
+      T_INT(current_rnti),
+      T_INT(frameP),
+      T_INT(subframeP),
+      T_INT(rx_lcids[i]),
+      T_INT(rx_lengths[i]),
+      T_BUFFER(payload_ptr, rx_lengths[i]));
+
+    switch (rx_lcids[i]) {
+      case CCCH:
+
+        break;
+
+      case DCCH:
+      case DCCH1:
+
+        break;
+
+      // all the DRBS
+      case DTCH:
+      default:
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+        LOG_T(MAC, "offset: %d\n",
+              (unsigned char) ((unsigned char *) payload_ptr - sduP));
+
+        for (int j = 0; j < 32; j++) {
+          LOG_T(MAC, "%x ", payload_ptr[j]);
+        }
+
+        LOG_T(MAC, "\n");
+#endif
+
+        if (rx_lcids[i] < NB_RB_MAX) {
+          LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
+                enb_mod_idP,
+                CC_idP,
+                frameP,
+                rx_lengths[i],
+                UE_id,
+                rx_lcids[i]);
+
+          if (UE_id != -1) {
+            /* Adjust buffer occupancy of the correponding logical channel group */
+            LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d \n",
+                  enb_mod_idP,
+                  CC_idP,
+                  frameP,
+                  rx_lengths[i],
+                  UE_id,
+                  rx_lcids[i]);
+
+
+            if ((rx_lengths[i] < SCH_PAYLOAD_SIZE_MAX) && (rx_lengths[i] > 0)) {  // MAX SIZE OF transport block
+              mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
+            } else {  /* rx_length[i] Max size */
+              UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+              LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
+                    enb_mod_idP,
+                    CC_idP,
+                    frameP,
+                    rx_lcids[i],
+                    UE_id);
+            }
+          } else {  // end if (UE_id != -1)
+            LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
+                  enb_mod_idP,
+                  CC_idP,
+                  frameP,
+                  rx_lcids[i],
+                  UE_id);
+          }
+        }
+
+        break;
+    }
+
+    payload_ptr += rx_lengths[i];
+  }
+
+  /* Program ACK for PHICH */
+
+  /*LOG_D(MAC, "Programming PHICH ACK for rnti %x harq_pid %d (first_rb %d)\n",
+        current_rnti,
+        harq_pid,
+        first_rb);
+  nfapi_hi_dci0_request_t *hi_dci0_req;
+  uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
+  hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP+sf_ahead_dl)%10];
+  nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
+  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci +
+                                      hi_dci0_req_body->number_of_hi];
+  memset((void *) hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+  hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
+  hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
+  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
+  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = first_rb;
+  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
+  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 1;
+  hi_dci0_req_body->number_of_hi++;
+  hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
+  hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+  hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, sf_ahead_dl);
+  hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;*/
+
+  /* NN--> FK: we could either check the payload, or use a phy helper to detect a false msg3 */
+
+}
+

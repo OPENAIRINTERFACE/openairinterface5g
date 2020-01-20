@@ -124,6 +124,7 @@ int                      threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+//int32_t					 uplink_counter = 0;
 
 
 extern int16_t nr_dlsch_demod_shift;
