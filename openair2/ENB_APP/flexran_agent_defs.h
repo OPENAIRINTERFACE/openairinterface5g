@@ -162,6 +162,8 @@ typedef struct {
   char    *cache_name;
 
   mid_t    mod_id;
+  uint64_t agent_id;
+  uint16_t capability_mask;
 
   /* lock for waiting before starting or soft-restart */
   pthread_cond_t      cond_node_ctrl;

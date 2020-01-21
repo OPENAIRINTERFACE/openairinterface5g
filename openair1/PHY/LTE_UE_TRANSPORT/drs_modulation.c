@@ -37,9 +37,9 @@
 //#define DEBUG_DRS
 
 int generate_drs_pusch(PHY_VARS_UE *ue,
-		       UE_rxtx_proc_t *proc,
-		       LTE_DL_FRAME_PARMS *frame_parms,
-		       int32_t **txdataF,
+                       UE_rxtx_proc_t *proc,
+                       LTE_DL_FRAME_PARMS *frame_parms,
+                       int32_t **txdataF,
                        uint8_t eNB_id,
                        short amp,
                        unsigned int subframe,
@@ -181,4 +181,3 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
   return(0);
 }
-

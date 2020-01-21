@@ -211,15 +211,10 @@ config_req_rlc_am (
 uint16_t pollPDU_tab[LTE_PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
 uint32_t maxRetxThreshold_tab[LTE_UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
 uint32_t pollByte_tab[LTE_PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 uint32_t PollRetransmit_tab[LTE_T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
 uint32_t am_t_Reordering_tab[32]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
 uint32_t t_StatusProhibit_tab[LTE_T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
-#else
-uint32_t PollRetransmit_tab[LTE_T_PollRetransmit_spare9]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
-uint32_t am_t_Reordering_tab[LTE_T_Reordering_spare1]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
-uint32_t t_StatusProhibit_tab[LTE_T_StatusProhibit_spare8]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
-#endif
+
 
 //-----------------------------------------------------------------------------
 void config_req_rlc_am_asn1 (
@@ -240,15 +235,9 @@ void config_req_rlc_am_asn1 (
     if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= LTE_UL_AM_RLC__maxRetxThreshold_t32) &&
         (config_am_pP->ul_AM_RLC.pollPDU<=LTE_PollPDU_pInfinity) &&
         (config_am_pP->ul_AM_RLC.pollByte<LTE_PollByte_spare1) &&
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         (config_am_pP->ul_AM_RLC.t_PollRetransmit<LTE_T_PollRetransmit_spare5) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
         (config_am_pP->dl_AM_RLC.t_StatusProhibit<LTE_T_StatusProhibit_spare2) ) {
-#else
-        (config_am_pP->ul_AM_RLC.t_PollRetransmitLTE_T_PollRetransmit_spare9) &&
-        (config_am_pP->dl_AM_RLC.t_Reordering<LTE_T_Reordering_spare1) &&
-        (config_am_pP->dl_AM_RLC.t_StatusProhibit<LTE_T_StatusProhibit_spare8) ) {
-#endif
       MSC_LOG_RX_MESSAGE(
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
@@ -277,8 +266,7 @@ void config_req_rlc_am_asn1 (
                        PollRetransmit_tab[config_am_pP->ul_AM_RLC.t_PollRetransmit],
                        am_t_Reordering_tab[config_am_pP->dl_AM_RLC.t_Reordering],
                        t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
-    }
-    else {
+    } else {
       MSC_LOG_RX_DISCARDED_MESSAGE(
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
@@ -684,7 +672,7 @@ rlc_am_mac_data_request (
 
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
             message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
             message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
             message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
@@ -783,7 +771,7 @@ rlc_am_mac_data_request (
 
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+            message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
             message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
             message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC AM DATA REQ: STATUS PDU\n\n");
             message_string_size += sprintf(&message_string[message_string_size], "Header      :\n");
@@ -811,8 +799,8 @@ rlc_am_mac_data_request (
       tb_p = tb_p->next;
     } /* while */
   } /* MESSAGE_CHART_GENERATOR && data_req.data.nb_elements > 0 */
-  data_req.buffer_occupancy_in_pdus = 0;
 
+  data_req.buffer_occupancy_in_pdus = 0;
   return data_req;
 }
 //-----------------------------------------------------------------------------
@@ -886,7 +874,7 @@ rlc_am_mac_data_indication (
             }
 
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
-              message_string_size += sprintf(&message_string[message_string_size], "Bearer	: %u\n", l_rlc_p->rb_id);
+              message_string_size += sprintf(&message_string[message_string_size], "Bearer	: %ld\n", l_rlc_p->rb_id);
               message_string_size += sprintf(&message_string[message_string_size], "PDU size	: %u\n", tb_size_in_bytes);
               message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
               message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
@@ -983,7 +971,7 @@ rlc_am_mac_data_indication (
 
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
               message_string_size = 0;
-              message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+              message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
               message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", ((struct mac_tb_ind *) (tb_p->data))->size);
               message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC AM DATA IND: STATUS PDU\n\n");
               message_string_size += sprintf(&message_string[message_string_size], "Header      :\n");
@@ -1051,7 +1039,7 @@ rlc_am_data_req (
       mui);
 
     if (LOG_DEBUGFLAG(DEBUG_RLC)) {
-      message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
+      message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
       message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", data_size);
       message_string_size += sprintf(&message_string[message_string_size], "MUI         : %u\n", mui);
       message_string_size += sprintf(&message_string[message_string_size], "CONF        : %u\n", ((struct rlc_am_data_req *) (sdu_pP->data))->conf);

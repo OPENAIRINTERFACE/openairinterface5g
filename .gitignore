@@ -2,10 +2,13 @@
 *.swp
 
 # log and exec file
+cmake_targets/log/
+cmake_targets/*/build/
+cmake_targets/ran_build/
+cmake_targets/nas_sim_tools/build/
 log/
 lte_build_oai/
 targets/bin/
-cmake_targets/nas_sim_tools/build/
 
 # vscode
 .vscode

@@ -8,13 +8,14 @@
 
 
 #include <intertask_interface.h>
+#include <common/utils/system.h>
 
 typedef struct timer_elm_s {
-  timer_type_t      type;     ///< Timer type
-  long              instance;
+  timer_type_t type;     ///< Timer type
+  long instance;
   long duration;
   uint64_t timeout;
-  void              *timer_arg; ///< Optional argument that will be passed when timer expires
+  void *timer_arg; ///< Optional argument that will be passed when timer expires
 } timer_elm_t ;
 
 typedef struct task_list_s {
@@ -263,7 +264,8 @@ extern "C" {
     pthread_mutex_unlock (&t->queue_cond_lock);
   }
 
-  void itti_poll_msg(task_id_t task_id, MessageDef **received_msg) {
+  void itti_poll_msg(task_id_t task_id, MessageDef **received_msg)
+  {
     //reception of one message, non-blocking
     task_list_t *t=&tasks[task_id];
     pthread_mutex_lock(&t->queue_cond_lock);
@@ -278,24 +280,13 @@ extern "C" {
     pthread_mutex_unlock (&t->queue_cond_lock);
   }
 
-  int itti_create_task(task_id_t task_id, void *(*start_routine)(void *), void *args_p) {
+  int itti_create_task(task_id_t task_id,
+		               void *(*start_routine)(void *),
+					   void *args_p)
+  {
     task_list_t *t=&tasks[task_id];
-    AssertFatal ( pthread_create (&t->thread, NULL, start_routine, args_p) ==0,
-                  "Thread creation for task %d failed!\n", task_id);
-    pthread_setname_np( t->thread, itti_get_task_name(task_id) );
+    threadCreate (&t->thread, start_routine, args_p, (char*)itti_get_task_name(task_id),-1,OAI_PRIORITY_RT);
     LOG_I(TMR,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
-#if 1 // BMC test RT prio
-    {
-      int policy;
-      struct sched_param sparam;
-      memset(&sparam, 0, sizeof(sparam));
-      sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-10;
-      policy = SCHED_FIFO ;
-      if (pthread_setschedparam(t->thread, policy, &sparam) != 0) {
-	LOG_E(TMR,"task %s : Failed to set pthread priority\n",  itti_get_task_name(task_id) );
-      }
-    }
-#endif
     return 0;
   }
 
@@ -303,14 +294,19 @@ extern "C" {
     pthread_exit (NULL);
   }
 
-  void itti_terminate_tasks(task_id_t task_id) {
+  void itti_terminate_tasks(task_id_t task_id)
+  {
     // Sends Terminate signals to all tasks.
     itti_send_terminate_message (task_id);
     usleep(100*1000); // Allow the tasks to receive the message before going returning to main thread
   }
 
-  int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
-                const message_info_t *messages_info) {
+  int itti_init(task_id_t task_max,
+		        thread_id_t thread_max,
+				MessagesIds messages_id_max,
+				const task_info_t *tasks_info,
+                const message_info_t *messages_info)
+  {
     AssertFatal(TASK_MAX<UINT16_MAX, "Max itti tasks");
 
     for(int i=0; i<task_max; ++i) {
@@ -335,7 +331,8 @@ extern "C" {
     int32_t       instance,
     timer_type_t  type,
     void         *timer_arg,
-    long         *timer_id) {
+    long         *timer_id)
+  {
     task_list_t *t=&tasks[task_id];
 
     do {
@@ -369,7 +366,8 @@ extern "C" {
     return 0;
   }
 
-  int timer_remove(long timer_id) {
+  int timer_remove(long timer_id)
+  {
     task_id_t task_id=(task_id_t)(timer_id&0xffff);
     int ret;
     pthread_mutex_lock (&tasks[task_id].queue_cond_lock);

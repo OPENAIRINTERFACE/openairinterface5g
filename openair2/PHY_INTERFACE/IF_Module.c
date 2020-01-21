@@ -34,10 +34,8 @@ void handle_rach(UL_IND_t *UL_info) {
                          NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf),
                          UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.preamble,
                          UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                         ,0
-#endif
+                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti,
+                         0
                         );
         free(UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list);
         UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles = 0;
@@ -55,15 +53,11 @@ void handle_rach(UL_IND_t *UL_info) {
                        NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
                        UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
                        UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-                       UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                       ,0
-#endif
+                       UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti,
+                       0
                       );
     }
   }
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");
@@ -86,8 +80,6 @@ void handle_rach(UL_IND_t *UL_info) {
 
     UL_info->rach_ind_br.rach_indication_body.number_of_preambles=0;
   }
-
-#endif
 }
 
 void handle_sr(UL_IND_t *UL_info) {

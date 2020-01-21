@@ -52,7 +52,7 @@ function variant_usage {
         if [ "$1" = "full" ]
         then        
             printf  "               VM_NAME=%-15s          ARCHIVES_LOC=%-15s\n" "$VM_NAME" "$ARCHIVES_LOC"
-            printf  "               VM_MEMORY=%-15s        VM_CPU=%-15s\n" "$VM_MEMORY" "$VM_CPU"       
+            printf  "               VM_MEMORY=%-15s        VM_CPU=%-15s           VM_DISK=%-15s\n" "$VM_MEMORY" "$VM_CPU" "$VM_DISK"
             printf  "               NB_PATTERN_FILES=%-15s BUILD_OPTIONS=%-15s\n" "$NB_PATTERN_FILES" "\"$BUILD_OPTIONS\""
             printf  "               LOG_PATTERN=%-15s      EXPERIMENTAL=%-15s\n\n\n" "$LOG_PATTERN"  "$EXPERIMENTAL"
         fi
@@ -182,16 +182,32 @@ function variant__v2__basic_sim {
 }
 
 function variant__v3__phy_sim {
-    NB_PATTERN_FILES=3
+    NB_PATTERN_FILES=12
     BUILD_OPTIONS="--phy_simulators"
-    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
+    VM_MEMORY=8192
+    VM_DISK=20
+    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111\" -q -np -b"
 }
 
 function variant__v4__cppcheck {
     VM_MEMORY=4096
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -I openair3/NAS/COMMON/UTIL -j4"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -I openair3/NAS/COMMON/UTIL -j4"
+}
+
+function variant__v5__gnb_usrp {
+    VM_MEMORY=8192
+    VM_CPU=8
+    NB_PATTERN_FILES=9
+    BUILD_OPTIONS="--gNB -w USRP"
+}
+
+function variant__v6__nr_ue_usrp {
+    VM_MEMORY=4096
+    VM_CPU=4
+    NB_PATTERN_FILES=9
+    BUILD_OPTIONS="--nrUE -w USRP"
 }
 
 function variant__v7__enb_ethernet {
@@ -200,6 +216,7 @@ function variant__v7__enb_ethernet {
     NB_PATTERN_FILES=8
     BUILD_OPTIONS="--eNB"
 }
+
 function variant__v8__ue_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=ue_eth
@@ -213,6 +230,7 @@ function variant__v10__flexran_rtc {
     BUILD_OPTIONS="cmake .. && make -j2"
     VARIANT_INFO="non-OSA"
 }
+
 function variant__v20__l1_sim {
     ARCHIVES_LOC=l1_sim
     RUN_OPTIONS="complex"
@@ -220,8 +238,8 @@ function variant__v20__l1_sim {
 }
     
 function variant__v21__rf_sim {
+    ARCHIVES_LOC=rf_sim
     RUN_OPTIONS="complex"
-    EXPERIMENTAL="true"
 }
 
 function variant__v22__l2_sim {
@@ -259,6 +277,7 @@ function check_set_variant {
             ARCHIVES_LOC=${VARIANTS_LONG[$i]//"-"/"_"}  
             VM_MEMORY=2048
             VM_CPU=4
+            VM_DISK=10
             EXPERIMENTAL=""
             NBARGS=$[$NBARGS+$VARIANT_OPTID]   
             variant__${VARIANTS_SHORT[$i]}__${VARIANTS_LONG[$i]//"-"/"_"}
@@ -352,10 +371,11 @@ fi
 VM_TEMPLATE=ci-
 
 
-# look for default ASN1 release in cmake directives
+# look for ASN1 release in cmake directives
 # It will be the release used when building
-ASN1VEROPT=( `grep "add_list2_option(RRC_ASN1_VERSION" cmake_targets/CMakeLists.txt` )
-ASN1VER=${ASN1VEROPT[1]//\"}
+ASN1VEROPT=( `grep "set (RRC_ASN1_VERSION" cmake_targets/CMakeLists.txt` )
+ASN1VER=${ASN1VEROPT[2]//\"}
+ASN1VER=${ASN1VER//)}
 unset ASN1VEROPT
 
 # variable to identify and store the command (build, create ...)
@@ -480,6 +500,7 @@ AUTHORIZED_VAR=("VM_OSREL RUN_EXPERIMENTAL OPTIONAL_APTCACHER TESTPLATFORM_OWNER
 # -V<xx> option.
 VM_NAME=""
 VM_MEMORY=0
+VM_DISK=0
 VM_CPU=0
 ARCHIVES_LOC=""
 LOG_PATTERN=""

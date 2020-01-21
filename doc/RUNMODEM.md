@@ -12,7 +12,7 @@
   </tr>
 </table>
 
-After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/lte_build_oai/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
+After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/ran_build/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
 
 # Basic Simulator
 

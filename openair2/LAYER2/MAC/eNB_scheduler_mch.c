@@ -60,10 +60,8 @@
 
 extern RAN_CONTEXT_t RC;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-int8_t
-get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
-                       uint8_t mbsfn_sync_area) {
+
+int8_t get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id, uint8_t mbsfn_sync_area) {
   // currently there is one-to-one mapping between sf allocation pattern and sync area
   if (mbsfn_sync_area >= MAX_MBSFN_AREA) {
     LOG_W(MAC,
@@ -645,11 +643,9 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     TBS =
 	get_TBS_DL(/*cc->pmch_Config[0]->dataMCS_r9*/cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
-#endif
 
     // there is MTCHs, loop if there are more than 1
     if (mtch_flag == 1 ) {
@@ -696,9 +692,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       //MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
-#endif
                                     );
 	bytes_in_buffer = rlc_status.bytes_in_buffer;
 
@@ -720,10 +714,8 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                  0
-#endif
                                  );
 	
 	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
@@ -753,9 +745,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    header_len_mtch = 0;
 	}
     }
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     //  }
-#endif
 
     // FINAL STEP: Prepare and multiplexe MSI, MCCH and MTCHs
     if ((sdu_length_total + header_len_msi + header_len_mcch +
@@ -1452,11 +1442,9 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     TBS =
 	get_TBS_DL(/*cc->pmch_Config[0]->dataMCS_r9*/cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
-#endif
 
     // there is MTCHs, loop if there are more than 1
     if (mtch_flag == 1 ) {
@@ -1503,9 +1491,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       //MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
-#endif
                                     );
 	bytes_in_buffer = rlc_status.bytes_in_buffer;
 
@@ -1527,10 +1513,8 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                  0
-#endif
                                  );
 	
 	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
@@ -1560,9 +1544,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    header_len_mtch = 0;
 	}
     }
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     //  }
-#endif
 
     // FINAL STEP: Prepare and multiplexe MSI, MCCH and MTCHs
     if ((sdu_length_total + header_len_msi + header_len_mcch +
@@ -1696,4 +1678,3 @@ MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   return (&RC.mac[module_idP]->common_channels[CC_id].MCH_pdu);
 }
 
-#endif

@@ -31,6 +31,7 @@ float tput_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
+
 static void ia_receiver_on_off( FL_OBJECT *button, long arg)
 {
   if (fl_get_button(button)) {
@@ -43,6 +44,7 @@ static void ia_receiver_on_off( FL_OBJECT *button, long arg)
     fl_set_object_color(button, FL_RED, FL_RED);
   }
 }
+
 static void dl_traffic_on_off( FL_OBJECT *button, long arg)
 {
   if (fl_get_button(button)) {
@@ -140,6 +142,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fdui->lte_phy_scope_enb->fdui = fdui;
   return fdui;
 }
+
 void phy_scope_eNB(FD_lte_phy_scope_enb *form,
                    PHY_VARS_eNB *phy_vars_enb,
                    int UE_id)
@@ -325,7 +328,9 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   free(bit);
   free(chest_f_abs);
 }
-FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
+
+FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
+{
     FL_OBJECT *obj;
     FD_lte_phy_scope_ue *fdui = fl_malloc( sizeof *fdui );
     // Define form
@@ -429,11 +434,13 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void ) {
     fdui->lte_phy_scope_ue->fdui = fdui;
     return fdui;
 }
+
 void phy_scope_UE(FD_lte_phy_scope_ue *form,
                   PHY_VARS_UE *phy_vars_ue,
                   int eNB_id,
                   int UE_id,
-                  uint8_t subframe){
+                  uint8_t subframe)
+{
     int i,arx,atx,ind,k;
     LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
     int nsymb_ce = frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti;
@@ -492,14 +499,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]!=NULL) {
       mod0 = get_Qm(mcs0);
       coded_bits_per_codeword0 = get_G(frame_parms,
-              phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-              phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
-              get_Qm(mcs0),
-              phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->Nl,
-              num_pdcch_symbols,
-              frame,
-              subframe,
-              beamforming_mode);
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->nb_rb,
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
+                                       get_Qm(mcs0),
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0]->harq_processes[harq_pid]->Nl,
+                                       num_pdcch_symbols,
+                                       frame,
+                                       subframe,
+                                       beamforming_mode);
     } else {
       coded_bits_per_codeword0 = 0; //frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
       mod0=0;
@@ -507,14 +514,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     if (phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]!=NULL) {
       mod1 = get_Qm(mcs1);
       coded_bits_per_codeword1 = get_G(frame_parms,
-               phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->nb_rb,
-               phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->rb_alloc_even,
-               get_Qm(mcs1),
-               phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->Nl,
-               num_pdcch_symbols,
-               frame,
-               subframe,
-               beamforming_mode);
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->nb_rb,
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->rb_alloc_even,
+                                       get_Qm(mcs1),
+                                       phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][1]->harq_processes[harq_pid]->Nl,
+                                       num_pdcch_symbols,
+                                       frame,
+                                       subframe,
+                                       beamforming_mode);
     } else {
       coded_bits_per_codeword1 = 0; //frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
       mod1=0;
@@ -526,9 +533,14 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         chest_t_abs[arx] = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
     }
     chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
-    llr0 = (float*) calloc(coded_bits_per_codeword0,sizeof(float)); // init to zero
+    //llr0 = (float*) calloc(coded_bits_per_codeword0,sizeof(float)); // Cppcheck returns "invalidFunctionArg" error.
+    llr0 = (float*) malloc(coded_bits_per_codeword0*sizeof(float));
+    memset((void *)llr0, 0,coded_bits_per_codeword0*sizeof(float)); // init to zero
     bit0 = malloc(coded_bits_per_codeword0*sizeof(float));
-    llr1 = (float*) calloc(coded_bits_per_codeword1,sizeof(float)); // init to zero
+
+    //llr1 = (float*) calloc(coded_bits_per_codeword1,sizeof(float)); // Cppcheck returns "invalidFunctionArg" error.
+    llr1 = (float*) malloc(coded_bits_per_codeword1*sizeof(float));
+    memset((void *)llr1, 0,coded_bits_per_codeword1*sizeof(float)); // init to zero
     bit1 = malloc(coded_bits_per_codeword1*sizeof(float));
     llr_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float)); // init to zero
     bit_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float));
@@ -822,6 +834,4 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       for (int m=0; m<coded_bits_per_codeword1; ++m)
           phy_vars_ue->pdsch_vars[subframe&0x1][eNB_id]->llr[0][m]=0;
       }*/
-  }
-
-
+}

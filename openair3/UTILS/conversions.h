@@ -371,6 +371,26 @@ do {                                                    \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)
 
+/*
+#define INT16_TO_3_BYTE_BUFFER(x, buf) \
+do {                            \
+	(buf)[0] = 0x00; \
+    (buf)[1] = (x) >> 8;        \
+    (buf)[2] = (x);             \
+} while(0)
+*/
+
+#define NR_FIVEGS_TAC_ID_TO_BIT_STRING(x, aSN)      \
+do {                                                    \
+    (aSN)->buf = calloc(3, sizeof(uint8_t));    \
+    (aSN)->size = 3;              \
+    (aSN)->buf[0] = 0x00;		  \
+    (aSN)->buf[1] = (x) >> 8;        \
+    (aSN)->buf[2] = (x);             \
+} while(0)
+
+
+
 /* TS 38.473 v15.2.1 section 9.3.1.55:
  * MaskedIMEISV is BIT_STRING(64)
  */

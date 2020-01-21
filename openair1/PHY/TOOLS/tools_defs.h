@@ -32,6 +32,8 @@
 #include <stdint.h>
 #include "PHY/sse_intrin.h"
 
+#define CEILIDIV(a,b) ((a+b-1)/b)
+#define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
 struct complex {
   double x;
@@ -67,8 +69,11 @@ The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
 void multadd_real_vector_complex_scalar(int16_t *x,
                                         int16_t *alpha,
                                         int16_t *y,
-                                        uint32_t N
-                                       );
+                                        uint32_t N);
+
+void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
+                                                     int16_t *alpha,
+                                                     int16_t *y);
 
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
@@ -120,7 +125,7 @@ int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *y,
                          uint32_t N,
                          int output_shift,
-			 int madd);
+                         int madd);
 
 /*!
   Element-wise multiplication and accumulation of two complex vectors x1 and x2.
@@ -135,11 +140,11 @@ int mult_cpx_conj_vector(int16_t *x1,
 */
 
 int multadd_cpx_vector(int16_t *x1,
-                    int16_t *x2,
-                    int16_t *y,
-                    uint8_t zero_flag,
-                    uint32_t N,
-		       int output_shift);
+                       int16_t *x2,
+                       int16_t *y,
+                       uint8_t zero_flag,
+                       uint32_t N,
+                       int output_shift);
 
 int mult_cpx_vector(int16_t *x1,
                     int16_t  *x2,
@@ -186,13 +191,13 @@ void idft24576(int16_t *sigF,int16_t *sig,int scale);
 
 void dft1536(int16_t *sigF,int16_t *sig,int scale);
 
+void dft3072(int16_t *sigF,int16_t *sig,int scale);
+
 void dft6144(int16_t *sigF,int16_t *sig,int scale);
 
 void dft12288(int16_t *sigF,int16_t *sig,int scale);
 
 void dft18432(int16_t *sigF,int16_t *sig,int scale);
-
-void dft3072(int16_t *sigF,int16_t *sig,int scale);
 
 void dft24576(int16_t *sigF,int16_t *sig,int scale);
 
@@ -231,9 +236,9 @@ int32_t add_cpx_vector(int16_t *x,
                        uint32_t N);
 
 int32_t sub_cpx_vector16(int16_t *x,
-			  int16_t *y,
-			  int16_t *z,
-			  uint32_t N);
+                         int16_t *y,
+                         int16_t *z,
+                         uint32_t N);
 
 int32_t add_cpx_vector32(int16_t *x,
                          int16_t *y,
@@ -292,6 +297,13 @@ void mmxcopy(void *dest,void *src,int size);
 */
 int32_t signal_energy(int32_t *,uint32_t);
 
+/*!\fn int32_t signal_energy_fixed_p9(int *input, uint32_t length);
+\brief Computes the signal energy per subcarrier
+\ the input signal has a fixed point representation of AMP_SHIFT bits
+\ the ouput energy has a fixed point representation of AMP_SHIFT bits
+*/
+int32_t signal_energy_amp_shift(int32_t *input, uint32_t length);
+
 #ifdef LOCALIZATION
 /*!\fn int32_t signal_energy(int *,uint32_t);
 \brief Computes the signal energy per subcarrier
@@ -336,14 +348,17 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 
 int8_t dB_fixed(uint32_t x);
+
 uint8_t dB_fixed64(uint64_t x);
 
 int8_t dB_fixed2(uint32_t x,uint32_t y);
 
 int16_t dB_fixed_times10(uint32_t x);
 
-int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
-                                    uint32_t last_pilot, int32_t ignore_prefix);
+int32_t phy_phase_compensation_top(uint32_t pilot_type,
+                                   uint32_t initial_pilot,
+                                   uint32_t last_pilot,
+                                   int32_t ignore_prefix);
 
 int32_t dot_product(int16_t *x,
                     int16_t *y,
@@ -410,5 +425,7 @@ void idft8192(int16_t *x,int16_t *y,int scale);
 
 
 double interp(double x, double *xs, double *ys, int count);
+
+int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format);
 
 #endif //__PHY_TOOLS_DEFS__H__

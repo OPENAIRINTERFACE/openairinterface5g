@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Feb 22 14:46:40 2018
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Sun May 19 21:39:57 2019
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Thu Feb 22 14:44:26 2018"
-[dumpfile_size] 3482761
-[savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 4525000000
-[size] 1920 1018
-[pos] 0 22
-*-21.506693 4530514310 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile_mtime] "Sun May 19 21:30:25 2019"
+[dumpfile_size] 11590554
+[savefile] "/home/sphex/raymond/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[timestart] 7629910000
+[size] 1840 795
+[pos] -1 -1
+*-21.832302 7639830000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 344
 [sst_expanded] 1
@@ -24,9 +24,11 @@ variables.trx_tst[63:0]
 functions.eNB_thread_rxtx0
 @24
 variables.frame_number_RX0_RU[63:0]
-variables.subframe_number_RX0_RU[63:0]
+@25
+variables.tti_number_RX0_RU[63:0]
+@24
 variables.frame_number_TX0_RU[63:0]
-variables.subframe_number_TX0_RU[63:0]
+variables.tti_number_TX0_RU[63:0]
 @28
 functions.mac_schedule_dlsch
 functions.macxface_eNB_dlsch_ulsch_scheduler
@@ -34,9 +36,7 @@ functions.macxface_ue_scheduler
 functions.phy_eNB_ofdm_mod_l
 @24
 variables.frame_number_RX0_eNB[63:0]
-@25
 variables.subframe_number_RX0_eNB[63:0]
-@24
 variables.frame_number_TX0_eNB[63:0]
 variables.subframe_number_TX0_eNB[63:0]
 variables.frame_number_RX1_eNB[63:0]
@@ -56,11 +56,13 @@ functions.phy_procedures_eNb_rx_uespec1
 functions.phy_enb_sfgen
 functions.phy_procedures_eNb_tx0
 functions.phy_procedures_eNb_tx1
+functions.phy_procedures_ru_feprx0
 functions.phy_procedures_ru_feprx1
 functions.phy_procedures_ru_feptx_ofdm0
 functions.phy_procedures_ru_feptx_ofdm1
 functions.phy_procedures_ru_feptx_prec0
 functions.phy_procedures_ru_feptx_prec1
+functions.eNB_thread_rxtx0
 functions.eNB_thread_rxtx1
 functions.phy_enb_sfgen
 functions.phy_enb_prach_rx

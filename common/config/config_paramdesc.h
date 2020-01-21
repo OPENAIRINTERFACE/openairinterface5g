@@ -34,9 +34,6 @@
 #define INCLUDE_CONFIG_PARAMDESC_H
 
 
-
-
-
 #define MAX_OPTNAME_SIZE 64
 #define CONFIG_MAXOPTLENGTH 512 /* max full option length, full option name exemple: (prefix1.[<index>].prefix2.optname */
 
@@ -104,8 +101,8 @@ typedef struct paramdef {
   char         *helpstr;                  /* help string */
   unsigned int paramflags;                /* value is a "ored" combination of above PARAMFLAG_XXXX values */
   union {                                 /* pointer to the parameter value, completed by the config module */
-    char **strptr;
-    char **strlistptr;
+    char      **strptr;
+    char      **strlistptr;
     uint8_t   *u8ptr;
     int8_t    *i8ptr;
     uint16_t  *u16ptr;

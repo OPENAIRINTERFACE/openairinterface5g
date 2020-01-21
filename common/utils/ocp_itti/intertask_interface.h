@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  Copyleft: OpenAirInterface software alliance and it's licence
+  Copyleft: OpenAirInterface software alliance and it's license
 */
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
   uint32_t      interval_sec;
   uint32_t      interval_us;
-  long     task_id;
+  long          task_id;
   int32_t       instance;
   timer_type_t  type;
   void         *timer_arg;
@@ -33,7 +33,7 @@ typedef struct {
 } timer_create_t;
 
 typedef struct {
-  long     task_id;
+  long          task_id;
   long          timer_id;
 } timer_delete_t;
 
@@ -289,6 +289,7 @@ typedef struct {
   TASK_DEF(TASK_DATA_FORWARDING, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_END_MARKER, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
+  TASK_DEF(TASK_RRC_GNB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
   TASK_DEF(TASK_RAL_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
@@ -299,6 +300,7 @@ typedef struct {
   TASK_DEF(TASK_M3AP_MCE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_SCTP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_ENB_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_GNB_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MCE_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MME_APP,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_FLEXRAN_AGENT,TASK_PRIORITY_MED, 200, NULL, NULL) \
@@ -412,10 +414,6 @@ typedef struct __attribute__ ((__packed__)) MessageDef_s {
 #define TIMER_HAS_EXPIRED(mSGpTR)           (mSGpTR)->ittiMsg.timer_has_expired
 
 #define INSTANCE_DEFAULT    (UINT16_MAX - 1)
-
-static inline int64_t clock_difftime_ns(struct timespec start, struct timespec end) {
-  return (int64_t)( end.tv_sec-start.tv_sec) * (int64_t)(1000*1000*1000) + end.tv_nsec-start.tv_nsec;
-}
 
 #ifdef __cplusplus
 extern "C" {
@@ -548,6 +546,7 @@ int timer_setup(
 int timer_remove(long timer_id);
 #define timer_stop timer_remove
 int signal_handle(int *end);
+int signal_mask(void);
 
 #ifdef __cplusplus
 }

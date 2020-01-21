@@ -124,7 +124,7 @@ FILE *input_fd=NULL;
 
 
 #if MAX_NUM_CCs == 1
-rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
+rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0}};
 double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0}};
 #else
@@ -138,7 +138,6 @@ double rx_gain_off = 0.0;
 double sample_rate=30.72e6;
 double bw = 10.0e6;
 
-
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
 
@@ -148,10 +147,8 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-int                      rx_input_level_dBm;
-
-int                             otg_enabled;
-
+int rx_input_level_dBm;
+int otg_enabled;
 
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
@@ -173,7 +170,8 @@ eth_params_t *eth_params;
 
 double cpuf;
 
-
+int oaisim_flag=0;
+//threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -522,7 +520,8 @@ static  void wait_nfapi_init(char *thread_name) {
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
-int main( int argc, char **argv ) {
+int main ( int argc, char **argv )
+{
   int i;
   int CC_id = 0;
   int ru_id;

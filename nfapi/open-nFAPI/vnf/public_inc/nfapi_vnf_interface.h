@@ -18,6 +18,7 @@
 #define _NFAPI_VNF_INTERFACE_H_
 
 #include "nfapi_interface.h"
+#include "nfapi_nr_interface.h"
 #include "debug.h"
 
 #include "netinet/in.h"
@@ -937,6 +938,7 @@ int nfapi_vnf_p7_del_pnf(nfapi_vnf_p7_config_t* config, int phy_id);
  *  may be released after this function call has returned or at a later pointer
  */
 int nfapi_vnf_p7_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_dl_config_request_t* req);
+int nfapi_vnf_p7_nr_dl_config_req(nfapi_vnf_p7_config_t* config, nfapi_nr_dl_config_request_t* req);
 
 /*! Send the UL_CONFIG.request
  *  \param config A pointer to the vnf p7 configuration

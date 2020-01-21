@@ -25,7 +25,6 @@
 * \date 2009 - 2014
 * \version 0.5
 * @ingroup util
-
 */
 
 #ifndef __LOG_H__
@@ -53,6 +52,7 @@
 #endif
 #include <pthread.h>
 #include "T.h"
+#include <common/utils/utils.h>
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -82,11 +82,11 @@ extern "C" {
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
 # define  OAILOG_DISABLE -1 /*!< \brief disable all LOG messages, cannot be used in LOG macros, use only in LOG module */
-# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
+# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" functionalities */
 # define  OAILOG_WARNING  1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
 # define  OAILOG_INFO     2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
-# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
-# define  OAILOG_TRACE    4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
+# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers, may impact real-time behavior */
+# define  OAILOG_TRACE    4 /*!< \brief second level debug-level messages, for developers, likely impact real-time behavior*/
 
 #define NUM_LOG_LEVEL 5 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
 /* @}*/
@@ -184,6 +184,7 @@ typedef enum {
   MIN_LOG_COMPONENTS = 0,
   PHY = MIN_LOG_COMPONENTS,
   MAC,
+  EMU,
   SIM,
   OCG,
   OMG,
@@ -200,6 +201,7 @@ typedef enum {
   NAS,
   PERF,
   OIP,
+  CLI,
   MSC,
   OCM,
   UDP_,
@@ -224,6 +226,10 @@ typedef enum {
   X2AP,
   M2AP,
   M3AP,
+  GNB_APP,
+  NR_RRC,
+  NR_MAC,
+  NR_PHY,
   LOADER,
   ASN,
   NFAPI_VNF,
@@ -294,7 +300,7 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-int isLogInitDone (void);
+int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
@@ -360,14 +366,14 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 
 
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOG globalconfiguration parameters                                                                   */
-/*   optname                            help                                                paramflags       XXXptr                    defXXXval              type   numelt */
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*   LOG global configuration parameters                                                                                                                                                */
+/*   optname                               help                                          paramflags         XXXptr               defXXXval                          type        numelt */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,         strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,         iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,         strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,   "Default log level for all componemts\n",              0, strptr:(char **)&gloglevel, defstrval:log_level_names[2].name, TYPE_STRING,     0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,  "Default console output option, for all components\n", 0, iptr:&(consolelog),         defintval:1,                       TYPE_INT,        0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS, LOG_CONFIG_HELP_OPTIONS,                               0, strlistptr:NULL,            defstrlistval:NULL,                TYPE_STRINGLIST, 0} \
   }
 
 #define LOG_OPTIONS_IDX   2
@@ -383,7 +389,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 // debugging macros
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
 #  if T_TRACER
-/* per component, level dependant macros */
+/* per component, level dependent macros */
 #    define LOG_E(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0)
 #    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0)
 #    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
@@ -392,33 +398,33 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
-/* bitmask dependant macros, to isolate debugging code */
+/* bitmask dependent macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
-/* bitmask dependant macros, to generate debug file such as matlab file or message dump */
+/* bitmask dependent macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
 /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
-#    define LOG_I(c, x...) /* */
-#    define LOG_W(c, x...) /* */
-#    define LOG_E(c, x...) /* */
-#    define LOG_D(c, x...) /* */
+#    define LOG_I(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)/* */
+#    define LOG_W(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ; } while(0)/* */
+#    define LOG_E(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x) ; } while(0)/* */
+#    define LOG_D(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x) ; } while(0)/* */
 #    define LOG_T(c, x...) /* */
 
 #    define LOG_DUMPMSG(c, b, s, x...) /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
 #    define LOG_DEBUGFLAG(D)  ( 0 )
 #    define LOG_DUMPFLAG(D) ( 0 )
-#    define LOG_M(file, vector, data, len, dec, format)
+#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
 #    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
 #define GCC_NOTUSED   __attribute__((unused))
 #define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B
 
-/* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
+/* unfiltered macros, useful for simulators or messages at init time, before log is configured */
 #define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 #define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
@@ -448,7 +454,10 @@ static __inline__ uint64_t rdtsc(void) {
 
 extern double cpuf;
 
-static inline uint64_t checkTCPU(int timeout, char *file, int line) {
+static inline uint64_t checkTCPU(int timeout,
+		                         char *file,
+								 int line)
+{
   static uint64_t __thread lastCPUTime=0;
   static uint64_t __thread last=0;
   uint64_t cur=rdtsc();
@@ -470,7 +479,10 @@ static inline uint64_t checkTCPU(int timeout, char *file, int line) {
   return cur;
 }
 
-static inline unsigned long long checkT(int timeout, char *file, int line) {
+static inline unsigned long long checkT(int timeout,
+		                                char *file,
+										int line)
+{
   static unsigned long long __thread last=0;
   unsigned long long cur=rdtsc();
   int microCycles=(int)(cpuf*1000);
@@ -490,7 +502,10 @@ typedef struct m {
   uint64_t maxArray[11];
 } Meas;
 
-static inline void printMeas(char *txt, Meas *M, int period) {
+static inline void printMeas(char *txt,
+		                     Meas *M,
+							 int period)
+{
   if (M->iterations%period == 0 ) {
     char txt2[512];
     sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
@@ -508,13 +523,19 @@ static inline void printMeas(char *txt, Meas *M, int period) {
   }
 }
 
-static inline int cmpint(const void *a, const void *b) {
+static inline int cmpint(const void *a,
+		                 const void *b)
+{
   uint64_t *aa=(uint64_t *)a;
   uint64_t *bb=(uint64_t *)b;
   return (int)(*aa-*bb);
 }
 
-static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
+static inline void updateTimes(uint64_t start,
+		                       Meas *M,
+							   int period,
+							   char *txt)
+{
   if (start!=0) {
     uint64_t end=rdtsc();
     long long diff=(end-start)/(cpuf*1000);
@@ -551,5 +572,3 @@ static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
 #endif
 
 #endif
-
-

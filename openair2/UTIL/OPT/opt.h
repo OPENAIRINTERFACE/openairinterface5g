@@ -49,7 +49,7 @@ This header file must be included */
 #ifndef project_include
   #define project_include
   #include "common/utils/LOG/log_if.h"
-  #include "PHY/impl_defs_lte.h"
+  #include "PHY/defs_RU.h"
 #endif
 
 #define PACKET_MAC_LTE_DEFAULT_UDP_PORT (9999)
@@ -68,14 +68,14 @@ typedef guint8   gboolean;
 #define CONFIG_HLP_TYPEMON       "Type of L2 monitoring messages: none,pcap,wireshark  \n"
 #define CONFIG_HLP_L2MONIP       "ip address for wireshark messages \n"
 #define CONFIG_HLP_L2MONPATH     "file path for pcap  messages on localhost \n"
-/*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for LOG utility                                                                                    */
-/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type       numelt   */
-/*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                                          */
+/*   optname                helpstr                 paramflags    XXXptr                  defXXXval                       type        numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------*/
 #define OPT_PARAMS_DESC {  \
-    {"type" ,                    CONFIG_HLP_TYPEMON,     0,                      strptr:&in_type,                  defstrval:"none",               TYPE_STRING,    0},       \
-    {"ip" ,                      CONFIG_HLP_L2MONIP,     0,                      strptr:&in_ip,                    defstrval:"127.0.0.1",          TYPE_STRING,    0},       \
-    {"path" ,                    CONFIG_HLP_L2MONPATH,   0,                      strptr:&in_path,                  defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    0},       \
+    {"type" ,               CONFIG_HLP_TYPEMON,     0,            strptr:&in_type,        defstrval:"none",               TYPE_STRING,    0},   \
+    {"ip" ,                 CONFIG_HLP_L2MONIP,     0,            strptr:(char**)&in_ip,  defstrval:"127.0.0.1",          TYPE_STRING,    0},   \
+    {"path" ,               CONFIG_HLP_L2MONPATH,   0,            strptr:(char**)&in_path,defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    0},   \
   }
 
 #define OPTTYPE_IDX 0
@@ -104,7 +104,6 @@ typedef enum radio_type_e {
   RADIO_TYPE_TDD = 2,
   RADIO_TYPE_MAX
 } radio_type_t;
-
 
 
 /**

@@ -29,7 +29,7 @@ OAI build/execute
  - cd cmake_targets
  - ./build_oai --UE
  (if necessary, use ./build_oai -I --UE to install required packages)
- - cd lte_build_oai/build/
+ - cd ran_build/build/
  - cp ../../../targets/bin/.ue* .
  - cp ../../../targets/bin/.usim* .
  - sudo insmod ../../../targets/bin/ue_ip.ko

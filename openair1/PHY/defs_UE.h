@@ -70,34 +70,34 @@
 #include "assertions.h"
 
 #ifdef MEX
-#include "mex.h"
-# define msg mexPrintf
-# undef LOG_D
-# undef LOG_E
-# undef LOG_I
-# undef LOG_N
-# undef LOG_T
-# undef LOG_W
-# undef LOG_M
-# define LOG_D(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_E(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_I(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_N(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_T(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_W(x, ...) mexPrintf(__VA_ARGS__)
-# define LOG_M(x, ...) mexPrintf(__VA_ARGS__)
+  #include "mex.h"
+  #define msg mexPrintf
+  #undef LOG_D
+  #undef LOG_E
+  #undef LOG_I
+  #undef LOG_N
+  #undef LOG_T
+  #undef LOG_W
+  #undef LOG_M
+  #define LOG_D(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_E(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_I(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_N(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_T(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_W(x, ...) mexPrintf(__VA_ARGS__)
+  #define LOG_M(x, ...) mexPrintf(__VA_ARGS__)
 #else
-# ifdef OPENAIR2
-#   if ENABLE_RAL
-#     include "collection/hashtable/hashtable.h"
-#     include "COMMON/ral_messages_types.h"
-#     include "UTIL/queue.h"
-#   endif
-#   include "common/utils/LOG/log.h"
-#   define msg(aRGS...) LOG_D(PHY, ##aRGS)
-# else
-#   define msg printf
-# endif
+  #ifdef OPENAIR2
+    #if ENABLE_RAL
+      #include "collection/hashtable/hashtable.h"
+      #include "COMMON/ral_messages_types.h"
+      #include "UTIL/queue.h"
+    #endif
+    #include "common/utils/LOG/log.h"
+    #define msg(aRGS...) LOG_D(PHY, ##aRGS)
+  #else
+    #define msg printf
+  #endif
 #endif
 
 
@@ -105,9 +105,9 @@
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// index of the current UE RX/TX proc
-  int                  proc_id;
+  int proc_id;
   /// Component Carrier index
-  uint8_t              CC_id;
+  uint8_t CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   /// subframe to act upon for transmission
@@ -139,7 +139,7 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_slot1_dl_processing;
   /// pthread attributes for fep_slot1 processing thread
- // pthread_attr_t attr_slot0_dl_processing;
+  // pthread_attr_t attr_slot0_dl_processing;
   pthread_attr_t attr_slot1_dl_processing;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
@@ -195,21 +195,21 @@ typedef struct {
 
 /// Structure holding timer_thread related elements (phy_stub_UE mode)
 typedef struct {
-	pthread_t pthread_timer;
-	/// mutex for waiting SF ticking
-	pthread_mutex_t mutex_ticking;
-	/// \brief ticking var for ticking thread.
-	/// \internal This variable is protected by \ref mutex_ticking.
-	int ticking_var;
-	/// condition variable for timer_thread;
-	pthread_cond_t cond_ticking;
-	//time_stats_t timer_stats;
+  pthread_t pthread_timer;
+  /// mutex for waiting SF ticking
+  pthread_mutex_t mutex_ticking;
+  /// \brief ticking var for ticking thread.
+  /// \internal This variable is protected by \ref mutex_ticking.
+  int ticking_var;
+  /// condition variable for timer_thread;
+  pthread_cond_t cond_ticking;
+  //time_stats_t timer_stats;
 
-	// below 3 members is used for waiting each UE threads(multiple UEs test) in L2 FAPI simulator.
-	// This used in UE_phy_stub_single_thread_rxn_txnp4
-	pthread_mutex_t mutex_single_thread;
-	pthread_cond_t  cond_single_thread;
-	int             num_single_thread[NUMBER_OF_UE_MAX];
+  // below 3 members is used for waiting each UE threads(multiple UEs test) in L2 FAPI simulator.
+  // This used in UE_phy_stub_single_thread_rxn_txnp4
+  pthread_mutex_t mutex_single_thread;
+  pthread_cond_t  cond_single_thread;
+  int             num_single_thread[NUMBER_OF_UE_MAX];
 } SF_ticking;
 
 typedef struct {
@@ -323,7 +323,7 @@ typedef struct {
   /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - third index: samples? [0..2*ofdm_symbol_size[
   int32_t **dl_ch_estimates_time[7];
-}LTE_UE_COMMON_PER_THREAD;
+} LTE_UE_COMMON_PER_THREAD;
 
 typedef struct {
   /// \brief Holds the transmit data in time domain.
@@ -425,9 +425,9 @@ typedef struct {
   int16_t *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
-    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
+  /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
   int16_t log2_maxh0;
-    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
+  /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
   int16_t log2_maxh1;
   /// \brief LLR shifts for subband scaling.
   /// - first index: ? [0..168*N_RB_DL[
@@ -601,7 +601,8 @@ typedef enum {
   /// detect only uplink DCIs in the current subframe
   DL_DCI = 0x2,
   /// detect both uplink and downlink DCIs in the current subframe
-  UL_DL_DCI = 0x3} dci_detect_mode_t;
+  UL_DL_DCI = 0x3
+} dci_detect_mode_t;
 
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
@@ -621,11 +622,8 @@ typedef struct {
   //uint8_t local_flag;
   /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
   runmode_t mode;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \brief Indicator that UE is configured for FeMBMS functionality (This flag should be avoided) ... just kept for PBCH initical scan (TODO)
   int FeMBMS_active;
-#endif
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
   /// \brief Indicator that UE should perform coarse scanning around carrier
@@ -708,10 +706,8 @@ typedef struct {
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150];
-#endif
 
   uint32_t X_u[64][839];
 

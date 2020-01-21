@@ -180,8 +180,6 @@ typedef struct {
 
 } mem_pool;
 
-mem_pool  *memBlockVar;
-#define mem_block_var (*memBlockVar)
 
 #ifdef __cplusplus
 }

@@ -36,7 +36,7 @@ int slot_fep_ul(RU_t *ru,
 #endif
   unsigned char aa;
   RU_COMMON *common=&ru->common;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   unsigned char symbol = l+((7-fp->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : fp->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : fp->nb_prefix_samples0);

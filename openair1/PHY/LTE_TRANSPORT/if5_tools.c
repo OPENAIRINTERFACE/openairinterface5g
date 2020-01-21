@@ -30,10 +30,9 @@
 * \warning
 */
 
+#include <time.h>
 #include "PHY/defs_eNB.h"
 #include "PHY/TOOLS/alaw_lut.h"
-
-
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include <intertask_interface.h>
@@ -51,9 +50,26 @@ int dummy_cnt = 0;
 int subframe_skip_extra = 0;
 int start_flag = 1;
 int offset_cnt = 1;
+
+static inline int64_t clock_difftime_ns(struct timespec start, struct timespec end)
+{
+  struct timespec temp;
+  int64_t temp_ns;
+
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  temp_ns = (int64_t)(temp.tv_sec) * (int64_t)1000000000 + (temp.tv_nsec);
+  return temp_ns;
+}
+
 void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t *seqno, uint16_t packet_type) {      
   
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
   int32_t *tx_buffer=NULL;
 #ifdef DEBUG_DL_MOBIPASS
@@ -202,7 +218,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
       header->ack = 0;
       header->word0 = 0;
 
-      txp[0] = (void*)&ru->common.txdata[0][subframe*ru->frame_parms.samples_per_tti];
+      txp[0] = (void*)&ru->common.txdata[0][subframe*ru->frame_parms->samples_per_tti];
       txp128 = (__m128i *) txp[0];
 
       for (packet_id=0; packet_id<fp->samples_per_tti/db_fulllength; packet_id++) {
@@ -247,7 +263,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
       header->ack = 0;
       header->word0 = 0;  
       
-      txp[0] = (void*)&ru->common.txdata[0][subframe*ru->frame_parms.samples_per_tti];
+      txp[0] = (void*)&ru->common.txdata[0][subframe*ru->frame_parms->samples_per_tti];
       txp128 = (__m128i *) txp[0];
                 
       for (packet_id=0; packet_id<fp->samples_per_tti/db_fulllength; packet_id++) {
@@ -310,7 +326,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 
 void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
 
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
 
   uint16_t packet_id=0, i=0, element_id=0;
@@ -456,7 +472,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       rx_buffer = (int32_t *)_rx_buffer;
       data_block_head = (__m128i *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t);
 
-      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms.samples_per_tti];
+      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms->samples_per_tti];
       rxp128 = (__m128i *) (rxp[0]);
 
       packet_id=0;
@@ -471,7 +487,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
                                           );
 
           //store rxdata and increase packet_id
-          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms.samples_per_tti)+packet_id*db_fulllength];
+          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms->samples_per_tti)+packet_id*db_fulllength];
           rxp128 = (__m128i *) (rxp[0]);
           for (i=0; i<db_fulllength>>2; i+=2) {
             r0 = _mm_loadu_si128(data_block++);
@@ -502,7 +518,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       IF5_mobipass_header_t *header = (IF5_mobipass_header_t *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES);
       data_block_head = (__m128i *)((uint8_t *)rx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t);
    
-      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms.samples_per_tti];
+      rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms->samples_per_tti];
       rxp128 = (__m128i *) (rxp[0]);
    
       RU_proc_t *proc = &ru->proc;
@@ -582,7 +598,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
           start_flag = 0;
 
           //store rxdata and increase packet_id
-          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms.samples_per_tti)+packet_id*db_fulllength];
+          rxp[0] = (void*)&ru->common.rxdata[0][(subframe*ru->frame_parms->samples_per_tti)+packet_id*db_fulllength];
           rxp128 = (__m128i *) (rxp[0]);
           for (i=0; i<db_fulllength>>2; i+=2) {
             r0 = _mm_loadu_si128(data_block++);

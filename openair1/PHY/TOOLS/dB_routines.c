@@ -575,7 +575,6 @@ int16_t dB_fixed_times10(uint32_t x)
 {
   int16_t dB_power=0;
 
-
   if (x==0) {
     dB_power = 0;
   } else if ( (x&0xff000000) != 0 ) {
@@ -597,17 +596,10 @@ int16_t dB_fixed_times10(uint32_t x)
   return dB_power;
 }
 
-uint8_t dB_fixed64(uint64_t x) {
 
-  if ((x<(((uint64_t)1)<<32))) return(dB_fixed((uint32_t)x));
-  else                         return(4*dB_table[255]+dB_fixed((uint32_t)(x>>32)));
-
-}
 int8_t dB_fixed(uint32_t x)
 {
-
   int8_t dB_power=0;
-
 
   if (x==0) {
     dB_power = 0;
@@ -630,7 +622,16 @@ int8_t dB_fixed(uint32_t x)
   return dB_power;
 }
 
-int8_t dB_fixed2(uint32_t x, uint32_t y)
+
+uint8_t dB_fixed64(uint64_t x)
+{
+  if ((x<(((uint64_t)1)<<32))) return(dB_fixed((uint32_t)x));
+  else                         return(4*dB_table[255]+dB_fixed((uint32_t)(x>>32)));
+}
+
+
+int8_t dB_fixed2(uint32_t x,
+                 uint32_t y)
 {
 
   if ((x>0) && (y>0) )

@@ -17,3 +17,7 @@ alias oait='cd $OPENAIR_TARGETS'
 alias oailte='cd $OPENAIR_TARGETS/RT/USER'
 alias oais='cd $OPENAIR_TARGETS/SIMU/USER'
 alias oaiex='cd $OPENAIR_TARGETS/SIMU/EXAMPLES'
+
+export IIOD_REMOTE=192.168.1.2
+#export IIOD_REMOTE=192.168.1.11
+

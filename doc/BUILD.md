@@ -60,7 +60,7 @@ cd cmake_targets/
 
 You can build the eNodeB and the UE separately, you may not need both of them depending on your oai usage.
 
-After completing the build, the binaries are available in the `cmake_targets/lte_build_oai/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel14 by default. It must be noticed that the option for building for a specific 3GPP release number is not tested by the CI and may be removed in the future. 
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel14 by default. It must be noticed that the option for building for a specific 3GPP release number is not tested by the CI and may be removed in the future. 
 
 ## Issue when building `nasmeh` module ##
 

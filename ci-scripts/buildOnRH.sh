@@ -179,7 +179,7 @@ echo "############################################################"
 echo "Checking build status" 
 echo "############################################################"
 
-LOG_PATTERN=.Rel14.txt
+LOG_PATTERN=.Rel15.txt
 NB_PATTERN_FILES=7
 
 LOG_FILES=`ls $ARCHIVES_LOC/*.txt`

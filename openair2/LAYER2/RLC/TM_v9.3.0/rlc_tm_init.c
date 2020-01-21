@@ -42,7 +42,7 @@ void config_req_rlc_tm (
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_p = &rlc_union_p->rlc.tm;
-    LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ (is_uplink_downlink=%d) RB %u\n",
+    LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ (is_uplink_downlink=%d) RB %ld\n",
           PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
           config_tmP->is_uplink_downlink,
           rb_idP);
@@ -52,7 +52,7 @@ void config_req_rlc_tm (
     rlc_tm_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
     rlc_tm_configure(ctxt_pP, rlc_p, config_tmP->is_uplink_downlink);
   } else {
-    LOG_E(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ RB %u RLC NOT FOUND\n",
+    LOG_E(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ RB %ld RLC NOT FOUND\n",
           PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
           rb_idP);
   }

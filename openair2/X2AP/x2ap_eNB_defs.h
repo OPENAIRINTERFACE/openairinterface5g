@@ -175,6 +175,12 @@ typedef struct x2ap_eNB_instance_s {
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
   uint32_t                subframeAssignment[MAX_NUM_CCs];
   uint32_t                specialSubframe[MAX_NUM_CCs];
+
+//#ifdef Rel15
+  uint32_t				  tdd_nRARFCN[MAX_NUM_CCs];
+  int16_t                 nr_SCS[MAX_NUM_CCs];
+//#endif
+
   int                     num_cc;
 
   net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];

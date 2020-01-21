@@ -164,13 +164,12 @@ int64_t dot_product64(int16_t *x,
                       uint32_t N, //must be a multiple of 8
                       uint8_t output_shift)
 {
-
   uint32_t n;
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *x128,*y128,mmtmp1,mmtmp2,mmtmp3,mmcumul,mmcumul_re,mmcumul_im;
   __m128i minus_i = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
-  int32_t result;
+  int64_t result;
 
   x128 = (__m128i*) x;
   y128 = (__m128i*) y;

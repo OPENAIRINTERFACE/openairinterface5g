@@ -68,11 +68,12 @@ function build_on_vm {
     then
         echo "VM_MEMORY           = $VM_MEMORY MBytes"
         echo "VM_CPU              = $VM_CPU"
+        echo "VM_DISK             = $VM_DISK GBytes"
         echo "############################################################"
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
         acquire_vm_create_lock
-        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        uvt-kvm create $VM_NAME release=$VM_OSREL --memory $VM_MEMORY --cpu $VM_CPU --disk $VM_DISK --unsafe-caching --template ci-scripts/template-host.xml
         echo "Waiting for VM to be started"
         uvt-kvm wait $VM_NAME --insecure
 
@@ -103,6 +104,7 @@ function build_on_vm {
     echo "############################################################"
     echo "[ -f 01proxy ] && sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
     echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
+    echo "git config --global https.postBuffer 123289600" >> $VM_CMDS
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         if [ $DAEMON -eq 0 ]
@@ -135,11 +137,21 @@ function build_on_vm {
         then
             echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-            echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            if [[ "$VM_NAME" == *"-phy-sim"* ]]
+            then
+                echo "sudo apt-get --yes install zip subversion libboost-dev make gcc >> zip-install.txt 2>&1" >> $VM_CMDS
+            else
+                echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            fi
         else
             echo "echo \"sudo apt-get --yes --quiet install zip daemon subversion libboost-dev \"" >> $VM_CMDS
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-            echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            if [[ "$VM_NAME" == *"-phy-sim"* ]]
+            then
+                echo "sudo apt-get --yes install zip daemon subversion libboost-dev make gcc >> zip-install.txt 2>&1" >> $VM_CMDS
+            else
+                echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+            fi
         fi
     fi
     echo "mkdir tmp" >> $VM_CMDS
@@ -173,12 +185,18 @@ function build_on_vm {
         echo "echo \"cd build\"" >> $VM_CMDS
         echo "cd build" >> $VM_CMDS
         echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
-        echo "$BUILD_OPTIONS > ../cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > ../cmake_targets/log/rt_controller.Rel15.txt 2>&1" >> $VM_CMDS
     fi
     if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
     then
         echo "echo \"source oaienv\"" >> $VM_CMDS
         echo "source oaienv" >> $VM_CMDS
+        if [[ "$VM_NAME" == *"-phy-sim"* ]]
+        then
+            echo "cd common/utils/T" >> $VM_CMDS
+            echo "make" >> $VM_CMDS
+            echo "cd ../../.." >> $VM_CMDS
+        fi
         echo "cd cmake_targets/" >> $VM_CMDS
         echo "mkdir log" >> $VM_CMDS
         echo "chmod 777 log" >> $VM_CMDS

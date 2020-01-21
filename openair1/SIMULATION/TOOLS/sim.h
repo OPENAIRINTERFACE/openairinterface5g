@@ -211,11 +211,11 @@ typedef enum {
   {"EPA_high",EPA_high},\
   {NULL, -1}
 
-#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
+#define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
 #define CHANNELMOD_SECTION "channelmod"
 #define CHANNELMOD_PARAMS_DESC {  \
-    {"s" ,CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED ,               dblptr:&snr_dB,                       defdblval:25,         TYPE_DOUBLE,      0},\
-    {"sinr_dB" ,NULL,     0                                 ,               dblptr:&sinr_dB,                       defdblval:0,         TYPE_DOUBLE,      0},\
+    {"s"      , CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB , defdblval:25, TYPE_DOUBLE, 0},\
+    {"sinr_dB", NULL          , 0                                , dblptr:&sinr_dB, defdblval:0 , TYPE_DOUBLE, 0},\
   }
 
 #include "platform_constants.h"
@@ -268,7 +268,7 @@ typedef struct {
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-                                     double sampling_rate,
+				                     double sampling_rate,
                                      double channel_bandwidth,
                                      double forgetting_factor,
                                      int32_t channel_offset,
@@ -432,7 +432,8 @@ void multipath_tv_channel(channel_desc_t *desc,
 /**@} */
 /**@} */
 
-void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+void rxAddInput( struct complex16 *input_sig,
+                 struct complex16 *after_channel_sig,
                  int rxAnt,
                  channel_desc_t *channelDesc,
                  int nbSamples,
@@ -448,22 +449,23 @@ void init_channelmod(void) ;
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
 
-
 #include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,
                uint16_t subframe,
                uint32_t offset,
                uint32_t length,
-               uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *ue_frame_parms,
                uint8_t UE_id,
                int CC_id);
 
 void do_UL_sig(sim_t *sim,
-               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,
-               uint32_t frame,int ru_id,uint8_t CC_id);
-
+               uint16_t subframe,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *frame_parms,
+               uint32_t frame,
+               int ru_id,
+               uint8_t CC_id);
 
 #endif
-
-

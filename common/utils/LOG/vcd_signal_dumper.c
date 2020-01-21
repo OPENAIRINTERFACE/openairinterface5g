@@ -76,10 +76,10 @@ const char* eurecomVariablesNames[] = {
   "frame_number_TX1_RU",
   "frame_number_RX0_RU",
   "frame_number_RX1_RU",
-  "subframe_number_TX0_RU",
-  "subframe_number_TX1_RU",
-  "subframe_number_RX0_RU",
-  "subframe_number_RX1_RU",
+  "tti_number_TX0_RU",
+  "tti_number_TX1_RU",
+  "tti_number_RX0_RU",
+  "tti_number_RX1_RU",
   "subframe_number_if4p5_north_out",
   "frame_number_if4p5_north_out",
   "subframe_number_if4p5_north_asynch_in",
@@ -238,7 +238,17 @@ const char* eurecomVariablesNames[] = {
   "ue0_drx_long_cycle",
   "ue0_drx_retransmission_harq0",
   "ue0_drx_active_time",
-  "ue0_drx_active_time_condition"
+  "ue0_drx_active_time_condition",
+  /*signal for NR*/
+  "frame_number_TX0_gNB",
+  "frame_number_TX1_gNB",
+  "frame_number_RX0_gNB",
+  "frame_number_RX1_gNB",
+  "slot_number_TX0_gNB",
+  "slot_number_TX1_gNB",
+  "slot_number_RX0_gNB",
+  "slot_number_RX1_gNB",
+  "ru_tx_ofdm_mask"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -276,7 +286,7 @@ const char* eurecomFunctionsNames[] = {
   "do_DL_sig",
   "do_UL_sig",
   "UE_trx_read",
- /* RRH signals  */ 
+  /* RRH signals  */
   "eNB_tx",
   "eNB_rx",
   "eNB_trx",
@@ -286,7 +296,6 @@ const char* eurecomFunctionsNames[] = {
   "eNB_proc_sleep",
   "trx_read_rf",
   "trx_write_rf",
-
   /* PHY signals  */
   "ue_synch",
   "ue_slot_fep",
@@ -320,6 +329,13 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_ru_feptx_ofdm7",
   "phy_procedures_ru_feptx_ofdm8",
   "phy_procedures_ru_feptx_ofdm9",
+  "phy_procedures_ru_feptx_ofdm10",
+  "phy_procedures_ru_feptx_ofdm11",
+  "phy_procedures_ru_feptx_ofdm12",
+  "phy_procedures_ru_feptx_ofdm13",
+  "phy_procedures_ru_feptx_ofdm14",
+  "phy_procedures_ru_feptx_ofdm15",
+  "phy_procedures_ru_feptx_ofdm16",
   "phy_procedures_ru_feptx_prec0",
   "phy_procedures_ru_feptx_prec1",
   "phy_procedures_ru_feptx_prec2",
@@ -335,6 +351,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_nr_ue_tx_ulsch_uespec",
   "phy_procedures_ue_tx_pucch",
   "phy_procedures_ue_tx_ulsch_common",
   "phy_procedures_ue_tx_prach",
@@ -358,6 +375,11 @@ const char* eurecomFunctionsNames[] = {
   "dlsch_decoding5",
   "dlsch_decoding6",
   "dlsch_decoding7",
+  "dlsch_segmentation",
+  "dlsch_deinterleaving",
+  "dlsch_rate_matching",
+  "dlsch_ldpc",
+  "dlsch_compine_seg",
   "dlsch_pmch_decoding",
   "rx_pdcch",
   "dci_decoding",
@@ -386,6 +408,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_enb_prach_rx",
   "phy_ru_prach_rx",
   "phy_enb_pdcch_tx",
+  "phy_enb_common_tx",
   "phy_enb_rs_tx",
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",
@@ -400,7 +423,6 @@ const char* eurecomFunctionsNames[] = {
   "phy_eNB_dlsch_scrambling",
   "phy_eNB_beam_precoding",
   "phy_eNB_ofdm_mod_l",
-
   /* MAC  signals  */
   "macxface_macphy_init",
   "macxface_macphy_exit",
@@ -417,7 +439,6 @@ const char* eurecomFunctionsNames[] = {
   "mac_dlsch_preprocessor",
   "mac_schedule_dlsch",
   "mac_fill_dlsch_dci",
-
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
   "macxface_ue_decode_pcch",
@@ -429,9 +450,7 @@ const char* eurecomFunctionsNames[] = {
   "macxface_ue_process_rar",
   "macxface_ue_scheduler",
   "macxface_ue_get_sr",
-
   "ue_send_mch_sdu",
-
   /*RLC signals   */
   "rlc_data_req",
   // "rlc_data_ind", // this calls "pdcp_data_ind",
@@ -441,7 +460,6 @@ const char* eurecomFunctionsNames[] = {
   "rlc_um_try_reassembly",
   "rlc_um_check_timer_dar_time_out",
   "rlc_um_receive_process_dar",
-
   /* PDCP signals   */
   "pdcp_run",
   "pdcp_data_req",
@@ -473,7 +491,6 @@ const char* eurecomFunctionsNames[] = {
   "itti_dump_enqueue_message_malloc",
   "itti_relay_thread",
   "test",
-  
   /* IF4/IF5 signals */
   "send_if4_ru",
   "send_if4_ru1",
@@ -483,10 +500,8 @@ const char* eurecomFunctionsNames[] = {
   "recv_if4_ru2",
   "send_if5",
   "recv_if5",
-
   "compress_if",
   "decompress_if",
-
   "nfapi_subframe",
   "generate_pcfich",
   "generate_dci0",
@@ -496,7 +511,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcch_modulation",
   "pdcch_interleaving",
   "pdcch_tx",
-
+  /*NR softmodem signal*/
+  "wakeup_txfh",
+  "gNB_thread_rxtx0",
+  "gNB_thread_rxtx1"
 };
 
 struct vcd_module_s vcd_modules[] = {
@@ -615,6 +633,10 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
+#if defined(ENABLE_ITTI)
+int signal_mask(void);
+#endif
+
 void *vcd_dumper_thread_rt(void *args)
 {
   vcd_queue_user_data_t *data;
@@ -623,7 +645,7 @@ void *vcd_dumper_thread_rt(void *args)
   uint32_t data_ready_wait;
 
 # if defined(ENABLE_ITTI)
-  signal_mask();
+  return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
 # endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;

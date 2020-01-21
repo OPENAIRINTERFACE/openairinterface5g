@@ -40,9 +40,9 @@
 
 
 #ifdef USER_MODE
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
 #endif
 
 //#include "COMMON/openair_defs.h"
@@ -61,15 +61,12 @@
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
 #include "MobilityControlInfo.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
 #include "SCellToAddMod-r10.h"
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #include "SystemInformationBlockType1-v1310-IEs.h"
-#endif
+
 
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
@@ -87,7 +84,6 @@
 #define SCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -106,11 +102,10 @@
 #define MAX_PMCH_perMBSFN 15
 /*!\brief MAX MCCH payload size  */
 #define MCCH_PAYLOAD_SIZE_MAX 128
-//#define MCH_PAYLOAD_SIZE_MAX 16384// this value is using in case mcs and TBS index are high
-#endif
+
 
 #ifdef USER_MODE
-#define printk printf
+  #define printk printf
 #endif //USER_MODE
 
 /*!\brief Maximum number of logical channl group IDs */
@@ -283,7 +278,6 @@ typedef struct {
   uint8_t payload[PCCH_PAYLOAD_SIZE_MAX] ;
 } __attribute__((__packed__))PCCH_PDU;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
   uint8_t payload[MCCH_PAYLOAD_SIZE_MAX] ;
@@ -305,7 +299,6 @@ typedef struct {
   uint8_t lcid:5;        // octet 2 MSB
   uint8_t stop_sf_LSB:8;
 } __attribute__((__packed__))MSI_ELEMENT;
-#endif
 /*! \brief Values of CCCH LCID for DLSCH */
 #define CCCH_LCHANID 0
 /*!\brief Values of BCCH logical channel (fake)*/
@@ -340,7 +333,6 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -348,7 +340,6 @@ typedef struct {
 #define MCH_SCHDL_INFO 3
 /*!\brief LCID of Carrier component activation/deactivation */
 #define CC_ACT_DEACT 27
-#endif
 
 // ULSCH LCHAN IDs
 /*!\brief LCID of extended power headroom for ULSCH */
@@ -364,10 +355,10 @@ typedef struct {
 /*!\brief LCID of long BSR for ULSCH */
 #define LONG_BSR 30
 /*!\bitmaps for BSR Triggers */
-#define	BSR_TRIGGER_NONE		(0)			/* No BSR Trigger */
-#define	BSR_TRIGGER_REGULAR		(1)			/* For Regular and ReTxBSR Expiry Triggers */
-#define	BSR_TRIGGER_PERIODIC	(2)			/* For BSR Periodic Timer Expiry Trigger */
-#define	BSR_TRIGGER_PADDING		(4)			/* For Padding BSR Trigger */
+#define BSR_TRIGGER_NONE    (0)     /* No BSR Trigger */
+#define BSR_TRIGGER_REGULAR   (1)     /* For Regular and ReTxBSR Expiry Triggers */
+#define BSR_TRIGGER_PERIODIC  (2)     /* For BSR Periodic Timer Expiry Trigger */
+#define BSR_TRIGGER_PADDING   (4)     /* For Padding BSR Trigger */
 
 
 /*! \brief Downlink SCH PDU Structure */
@@ -459,7 +450,7 @@ typedef struct {
   /// BCCH MCS
   uint32_t ccch_mcs;
 
-/// num active users
+  /// num active users
   uint16_t num_dlactive_UEs;
   ///  available number of PRBs for a give SF
   uint16_t available_prbs;
@@ -537,7 +528,7 @@ typedef struct {
   //  total rb used for retransmission
   uint32_t total_rbs_used_retx;
 
-   /// TX
+  /// TX
   /// Num pkt
   uint32_t num_pdu_tx[NB_RB_MAX];
   /// num bytes
@@ -596,13 +587,13 @@ typedef struct {
   uint32_t num_retransmission_rx;
   ///  total rb used for a new uplink transmission
   uint32_t rbs_used_rx;
-   ///  total rb used for a new uplink retransmission
+  ///  total rb used for a new uplink retransmission
   uint32_t rbs_used_retx_rx;
   ///  total rb used for a new uplink transmission
   uint32_t total_rbs_used_rx;
   /// snr
   int32_t      snr;
-   /// target snr
+  /// target snr
   int32_t    target_snr;
 
   /// num rx pdu
@@ -619,7 +610,7 @@ typedef struct {
   uint64_t total_overhead_bytes_rx;
   /// headers+ CE +  padding bytes for a MAC PDU
   uint64_t avg_overhead_bytes_rx;
- //
+  //
   uint32_t  ulsch_bitrate;
   //total
   uint32_t  total_ulsch_bitrate;
@@ -762,14 +753,14 @@ typedef struct {
   eNB_UE_estimated_distances distance;
 #endif
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
   uint8_t rach_resource_type;
 
- uint16_t mpdcch_repetition_cnt;
+  uint16_t mpdcch_repetition_cnt;
   struct PhysicalConfigDedicated  *physicalConfigDedicated;
   frame_t Msg2_frame;
   sub_frame_t Msg2_subframe;
-#endif
+
 } UE_TEMPLATE;
 
 /*! \brief scheduling control information set through an API (not used)*/
@@ -925,8 +916,6 @@ typedef struct {
   /// size off piggybacked RRC SDU
   uint8_t msg4_rrc_sdu_length;
   uint32_t msg4_delay;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;
   uint8_t msg2_mpdcch_done;
@@ -934,7 +923,6 @@ typedef struct {
   uint8_t msg4_mpdcch_done;
   uint8_t msg2_narrowband;
   uint32_t msg34_narrowband;
-#endif
 } RA_TEMPLATE;
 
 
@@ -988,9 +976,7 @@ typedef struct {
   uint32_t                         dl_CarrierFreq;
   BCCH_BCH_Message_t               *mib;
   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   RadioResourceConfigCommonSIB_t   *radioResourceConfigCommon_BR;
-#endif
   TDD_Config_t                     *tdd_Config;
   SchedulingInfoList_t             *schedulingInfoList;
   ARFCN_ValueEUTRA_t               ul_CarrierFreq;
@@ -1015,7 +1001,6 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// MBMS Flag
   uint8_t MBMS_flag;
   /// Outgoing MCCH pdu for PHY
@@ -1036,15 +1021,12 @@ typedef struct {
   struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
   /// Outgoing MCH pdu for PHY
   MCH_PDU MCH_pdu;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Rel13 parameters from SIB1
   SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
   /// Counter for SIB1-BR scheduling
   int SIB1_BR_cnt;
   /// Outgoing BCCH-BR pdu for PHY
   BCCH_PDU BCCH_BR_pdu[20];
-#endif
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
@@ -1225,10 +1207,8 @@ typedef struct {
   struct RACH_ConfigDedicated *rach_ConfigDedicated;
   /// pointer to RRC PHY configuration
   struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// pointer to RRC PHY configuration SCEll
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
-#endif
   /// pointer to TDD Configuration (NULL for FDD)
   TDD_Config_t *tdd_Config;
   /// Number of adjacent cells to measure
@@ -1301,7 +1281,6 @@ typedef struct {
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// number of active MBSFN area
   uint8_t num_active_mbsfn_area;
   /// MBSFN Area Info
@@ -1312,13 +1291,10 @@ typedef struct {
   uint8_t mcch_status;
   /// MSI status
   uint8_t msi_status;// could be an array if there are >1 MCH in one MBSFN area
-#endif
-  //#ifdef CBA
   /// CBA RNTI for each group
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
   /// last SFN for CBA channel access
   uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
-  //#endif
   /// total UE scheduler processing time
   time_stats_t ue_scheduler; // total
   /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation

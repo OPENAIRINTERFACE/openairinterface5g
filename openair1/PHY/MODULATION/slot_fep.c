@@ -27,7 +27,6 @@
 
 #define SOFFSET 0
 
-
 int slot_fep(PHY_VARS_UE *ue,
              unsigned char l,
              unsigned char Ns,
