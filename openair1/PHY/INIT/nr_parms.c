@@ -191,25 +191,24 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       break;
 
     case NR_MU_3:
+      fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
+      fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
+      fp->ssb_type = nr_ssb_type_D;
       switch(fp->N_RB_DL){
         case 66:
           fp->ofdm_symbol_size = 1024;
           fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
           fp->nb_prefix_samples0 = 88;
           fp->nb_prefix_samples = 72;
-          fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
-          fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
-          fp->ssb_type = nr_ssb_type_D;
           break;
-
         case 32:
           fp->ofdm_symbol_size = 512;
           fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
           fp->nb_prefix_samples0 = 44;
           fp->nb_prefix_samples = 36;
-          fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
-          fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
-          fp->ssb_type = nr_ssb_type_D;
+          break;
+      default:
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
       }
       break;
 
