@@ -62,9 +62,7 @@
 #include "PHY/phy_extern.h"
 
 
-#include "LAYER2/MAC/mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "common/utils/LOG/log_extern.h"

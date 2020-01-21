@@ -37,7 +37,6 @@
 #include "f1ap_cu_ue_context_management.h"
 #include <string.h>
 
-#include "openair2/LAYER2/MAC/mac_proto.h"
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
 #include "rrc_eNB_S1AP.h"
