@@ -679,7 +679,7 @@ void wait_RUs(void) {
 }
 
 void wait_gNBs(void) {
-  int i,j;
+  int i;
   int waiting=1;
 
   while (waiting==1) {
@@ -854,7 +854,7 @@ void init_pdcp(void) {
 
 int main( int argc, char **argv )
 {
-  int i, ru_id, CC_id = 0;
+  int ru_id, CC_id = 0;
   start_background_system();
 
   ///static configuration for NR at the moment

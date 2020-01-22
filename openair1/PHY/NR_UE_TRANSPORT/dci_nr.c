@@ -39,6 +39,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/sse_intrin.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 #include "assertions.h"
 #include "T.h"
@@ -725,52 +726,52 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				    s,
 				    log2_maxh,
 				    n_rb); // log2_maxh+I0_shift
-    if (frame_parms->nb_antennas_rx > 1) {
-      LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
-             frame_parms->nb_antennas_rx);
-      pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
-    }
+      if (frame_parms->nb_antennas_rx > 1) {
+        LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
+               frame_parms->nb_antennas_rx);
+        pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
+      }
 
-    LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
-    LOG_DD("in nr_pdcch_llr(rxdataF_comp -> llr)\n");
-    nr_pdcch_llr(frame_parms,
-                 pdcch_vars->rxdataF_comp,
-                 pdcch_vars->llr,
-                 s,
-                 n_rb);
+      LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
+      LOG_DD("in nr_pdcch_llr(rxdataF_comp -> llr)\n");
+      nr_pdcch_llr(frame_parms,
+                   pdcch_vars->rxdataF_comp,
+                   pdcch_vars->llr,
+                   s,
+                   n_rb);
 #if T_TRACER
     
-    //  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
-    //  T_INT(n_pdcch_symbols),
-    //  T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+      //  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
+      //  T_INT(n_pdcch_symbols),
+      //  T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
     
 #endif
 #ifdef DEBUG_DCI_DECODING
-    printf("demapping: slot %d, mi %d\n",slot,get_mi(frame_parms,slot));
+      printf("demapping: slot %d, mi %d\n",slot,get_mi(frame_parms,slot));
 #endif
-  }
-
-  LOG_DD("we enter nr_pdcch_demapping_deinterleaving()\n");
-  nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
-                                    (uint32_t *) pdcch_vars->e_rx,
-                                    frame_parms,
-                                    rel15->coreset.duration,
-                                    n_rb,
-                                    rel15->coreset.RegBundleSize,
-                                    rel15->coreset.InterleaverSize,
-                                    rel15->coreset.ShiftIndex);
-  nr_pdcch_unscrambling(rel15->rnti,
-                        frame_parms,
-                        slot,
-                        pdcch_vars->e_rx,
-                        rel15->coreset.duration*n_rb*9*2,
-                        // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
-                        rel15->coreset.pdcch_dmrs_scrambling_id);
-  LOG_DD("we end nr_pdcch_unscrambling()\n");
-  LOG_DD("Ending nr_rx_pdcch() function\n");
-  return (0);
     }
 
+    LOG_DD("we enter nr_pdcch_demapping_deinterleaving()\n");
+    nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
+                                      (uint32_t *) pdcch_vars->e_rx,
+                                      frame_parms,
+                                      rel15->coreset.duration,
+                                      n_rb,
+                                      rel15->coreset.RegBundleSize,
+                                      rel15->coreset.InterleaverSize,
+                                      rel15->coreset.ShiftIndex);
+    nr_pdcch_unscrambling(rel15->rnti,
+                          frame_parms,
+                          slot,
+                          pdcch_vars->e_rx,
+                          rel15->coreset.duration*n_rb*9*2,
+                          // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
+                          rel15->coreset.pdcch_dmrs_scrambling_id);
+    LOG_DD("we end nr_pdcch_unscrambling()\n");
+    LOG_DD("Ending nr_rx_pdcch() function\n");
+
+  }
+  return (0);
 }
   /*
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
