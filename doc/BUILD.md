@@ -105,6 +105,20 @@ Install it:
 $ sudo apt-get install --yes linux-headers-your-version
 ```
 
+On CentOS or RedHat Entreprise Linux:
+
+```bash
+$ uname -r
+3.10.0-1062.9.1.rt56.1033.el7.x86_64
+$ yum list installed | grep kernel | grep devel
+kernel-devel.x86_64              3.10.0-1062.9.1.el7         @rhel-7-server-rpms
+kernel-rt-devel.x86_64           3.10.0-1062.9.1.rt56.1033.el7
+```
+
+If your kernel is generic, install `kernel-devel` package: `sudo yum install kernel-devel`
+
+In most case, your kernel is real-time. Install `kernel-rt-devel` package: `sudo yum install kernel-rt-devel`
+
 # Building Optional Binaries
 
 ## Telnet Server
