@@ -721,8 +721,9 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  int slot_type         = nr_slot_select(cfg,frame,slot%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
-  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)-1))%((1<<cfg->ssb_config.scs_common.value)*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME));
+  int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
+  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+  int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
   int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
   int siglen=fp->samples_per_slot;
   int flags=1;
@@ -747,7 +748,14 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         prevslot_type == NR_UPLINK_SLOT) {
       flags = 2; // start of burst
     }
-    
+
+    if (cfg->cell_config.frame_duplex_type.value == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        nextslot_type == NR_UPLINK_SLOT) {
+      flags = 3; // end of burst
+    }
+   
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
     for (i=0; i<ru->nb_tx; i++)
@@ -1262,7 +1270,10 @@ void *ru_thread_tx( void *param ) {
 
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 1 );
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 0 );
 
     ret = pthread_mutex_lock(&proc->mutex_gNBs);
     AssertFatal(ret == 0,"mutex_lock return %d\n",ret);
@@ -1355,14 +1366,14 @@ void *ru_thread_tx( void *param ) {
         ret = pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
         // the thread can now be woken up
-        //if (L1_proc->instance_cnt_RUs == -1) {
+        if (L1_proc->instance_cnt_RUs == -1) {
           L1_proc->instance_cnt_RUs = 0;
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
                        "ERROR pthread_cond_signal for gNB_L1_thread\n");
-        //} //else AssertFatal(1==0,"gNB TX thread is not ready\n");
+        } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
       }
     }
   }
@@ -1502,11 +1513,11 @@ void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
 
-    if (proc->tti_rx == NR_UPLINK_SLOT || fp->frame_type == FDD) {
+    /*if (proc->tti_rx == NR_UPLINK_SLOT || fp->frame_type == FDD) {
 
       if (ru->feprx) ru->feprx(ru,proc->tti_rx);
 
-    }
+    }*/
 
     LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
     LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
