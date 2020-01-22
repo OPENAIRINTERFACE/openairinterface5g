@@ -366,14 +366,14 @@
 {GNB_CONFIG_STRING_HOPPINGID, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId,defint64val:40,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_P0NOMINAL, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal,defint64val:1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_SSBPOSITIONSINBURSTPR,NULL,0,uptr:&scc->ssb_PositionsInBurst->present,defuintval:NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap,TYPE_UINT,0/*139*/}, \
-{GNB_CONFIG_STRING_SSBPOSITIONSINBURST,NULL,0,iptr:&ssb_bitmap,defintval:0xff,TYPE_INT,0}, \
+{GNB_CONFIG_STRING_SSBPOSITIONSINBURST,NULL,0,u64ptr:&ssb_bitmap,defintval:0xff,TYPE_UINT64,0}, \
 {GNB_CONFIG_STRING_REFERENCESUBCARRIERSPACING,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity,defint64val:NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSLOTS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,defint64val:7,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,defint64val:6,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSLOTS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,defint64val:2,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSYMBOLS,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols,defint64val:4,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY2,NULL,0,iptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity,defintval:-1,TYPE_INT,0},\
+{GNB_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity,defintval:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSLOTS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots,defint64val:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSymbols,defint64val:-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFUPLINKSLOTS2,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSlots,defint64val:-1,TYPE_INT64,0},\

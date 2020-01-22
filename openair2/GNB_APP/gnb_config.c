@@ -213,8 +213,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 }
 
 
-void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
-
+void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 
   int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
   AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
@@ -232,14 +231,8 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
     scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[1] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[2] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[3] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[4] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[5] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;
+    for (int i=0; i<8; i++)
+      scc->ssb_PositionsInBurst->choice.longBitmap.buf[i] = (ssbmap>>(i<<3))&(0xff);
   }
 
   // fix UL absolute frequency
@@ -520,7 +513,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
   int ssb_SubcarrierOffset = 0;
   int pdsch_AntennaPorts = 1;
-  int ssb_bitmap=0xff;
+  uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
