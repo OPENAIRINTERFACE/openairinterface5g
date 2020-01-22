@@ -253,7 +253,7 @@ function report_test {
     ARCHIVES_LOC=archives/basic_sim/test
     if [ -d $ARCHIVES_LOC ]
     then
-        echo "   <h3>Basic Simulator Check</h3>" >> ./test_simulator_results.html
+        echo "   <h3>4G LTE Basic Simulator Check</h3>" >> ./test_simulator_results.html
 
         if [ -f $ARCHIVES_LOC/test_final_status.log ]
         then
@@ -373,7 +373,7 @@ function report_test {
 
     if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
     then
-        echo "   <h3>Basic Simulator + FlexRan Controller Check</h3>" >> ./test_simulator_results.html
+        echo "   <h3>4G LTE Basic Simulator + FlexRan Controller Check</h3>" >> ./test_simulator_results.html
         echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
         echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
         echo "   </div>" >> ./test_simulator_results.html
@@ -423,8 +423,8 @@ function report_test {
             echo "   </div>" >> ./test_simulator_results.html
         fi
 
-        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-rf-sim-test-details\">More details on 5G RF Simulator test results</button>" >> ./test_simulator_results.html
-        echo "   <div id=\"oai-rf-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-lte-rf-sim-test-details\">More details on 4G LTE RF Simulator test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-lte-rf-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
         echo "   <table border = \"1\">" >> ./test_simulator_results.html
         echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
         echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
@@ -643,8 +643,8 @@ function report_test {
             echo "   </div>" >> ./test_simulator_results.html
         fi
 
-        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-rf-sim-test-details\">More details on 5G RF Simulator test results</button>" >> ./test_simulator_results.html
-        echo "   <div id=\"oai-rf-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-nr-rf-sim-test-details\">More details on 5G NR RF Simulator test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-nr-rf-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
         echo "   <table border = \"1\">" >> ./test_simulator_results.html
         echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
         echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
@@ -743,7 +743,7 @@ function report_test {
     ARCHIVES_LOC=archives/l2_sim/test
     if [ -d $ARCHIVES_LOC ]
     then
-        echo "   <h3>L2-NFAPI Simulator Check</h3>" >> ./test_simulator_results.html
+        echo "   <h3>4G LTE L2-NFAPI Simulator Check</h3>" >> ./test_simulator_results.html
 
         if [ -f $ARCHIVES_LOC/test_final_status.log ]
         then
